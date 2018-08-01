@@ -1,6 +1,6 @@
 #!/bin/make
 RTE_DIR = ../rte
-RTE_KERNEL_DIR = ../rte/kernels
+RTE_KERNEL_DIR = ../rte/kernels-openacc
 RRTMGP_DIR = ../rrtmgp
 RRTMGP_KERNEL_DIR = ../rrtmgp/kernels
 VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
@@ -16,7 +16,7 @@ include $(RRTMGP_DIR)/Make.depends
 librte.a: $(RTE_SRC)
 	ar -rvs librte.a $(RTE_SRC)
 
-librrtmgp.a: $(RRTMGP_SRC) 
+librrtmgp.a: $(RRTMGP_SRC)
 	ar -rvs librrtmgp.a $(RRTMGP_SRC)
 
 clean:

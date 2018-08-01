@@ -164,7 +164,7 @@ contains
                                                ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
     real(wp), dimension(ncol,       ngpt), intent( in) :: sfc_emis         ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent( in) :: sfc_src          ! Surface source function [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_up, flux_dn ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_up, flux_dn ! Radiances [W/m2-str]
                                                                            ! Top level must contain incident flux boundary condition
     ! Local variables
     real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
@@ -184,7 +184,8 @@ contains
     ! For more than one angle use local arrays
     !
     top_level = MERGE(1, nlay+1, top_at_1)
-    radn_dn(:,top_level,:) = flux_dn(:, top_level, :) ! Flux boundary condition
+    call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
+
     do imu = 2, nmus
       Ds_ncol(:,:) = Ds(imu)
       call lw_solver_noscat(ncol, nlay, ngpt, &
@@ -215,15 +216,17 @@ contains
                                                           g       ! asymmetry parameter []
     real(wp), dimension(ncol,nlay,ngpt), intent( in) :: lay_source   ! Planck source at layer average temperature [W/m2]
     real(wp), dimension(ncol,nlay,ngpt), target, &
-                                         intent( in) :: lev_source_inc, lev_source_dec
+                                           intent(in   ) :: lev_source_inc, lev_source_dec
                                         ! Planck source at layer edge for radiation in increasing/decreasing ilay direction [W/m2]
                                         ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
-    real(wp), dimension(ncol,       ngpt), intent( in) :: sfc_emis         ! Surface emissivity      []
-    real(wp), dimension(ncol,       ngpt), intent( in) :: sfc_src          ! Surface source function [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis         ! Surface emissivity      []
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src          ! Surface source function [W/m2]
     real(wp), dimension(ncol,nlay+1,ngpt), &
-                                           intent(out) :: flux_up, flux_dn  ! Fluxes [W/m2]
-                                                                            ! Top level (= merge(1, nlay+1, top_at_1)
-                                                                            ! must contain incident flux boundary condition
+                                           intent(  out) :: flux_up   ! Fluxes [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), &
+                                           intent(inout) :: flux_dn  ! Fluxes [W/m2]
+                                                                              ! Top level (= merge(1, nlay+1, top_at_1)
+                                                                              ! must contain incident flux boundary condition
     ! ----------------------------------------------------------------------
     integer :: igpt
     real(wp), dimension(ncol,nlay  ) :: Rdif, Tdif, gamma1, gamma2
@@ -283,7 +286,7 @@ contains
     logical(wl),                intent( in) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent( in) :: tau          ! Absorption optical thickness []
     real(wp), dimension(ncol            ), intent( in) :: mu0          ! cosine of solar zenith angle
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
                                                                        ! Top level must contain incident flux boundary condition
     integer :: icol, ilev, igpt
     real(wp) :: mu0_inv(ncol)

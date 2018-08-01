@@ -177,12 +177,19 @@ contains
 
     ! -----------------
 
-    do icol = 1, ncol
-      do ilay = 1, nlay
-        ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        itropo = merge(1,2,tropo(icol,ilay))
+    ! -----------------
+    !$acc data pcopyin(gpoint_flavor, kmajor, col_mix, fmajor, jeta, tropo, jtemp, jpress) &
+    !$acc&     pcopy(tau)
+
+    ! optical depth calculation for major species
+    !$acc parallel loop gang vector collapse(3) private(itropo, iflav, tau_major)
+    do ilay = 1, nlay
+      do icol = 1, ncol
         ! optical depth calculation for major species
         do igpt = 1, ngpt
+          ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+          itropo = merge(1,2,tropo(icol,ilay))  ! WS: moved inside innermost loop
+
           ! binary species parameter (eta) and col_mix depend on band flavor
           iflav = gpoint_flavor(itropo, igpt)
           tau_major = &
@@ -194,6 +201,8 @@ contains
         end do ! igpt
       end do
     end do ! ilay
+    !$acc end data
+
   end subroutine gas_optical_depths_major
 
   ! ----------------------------------------------------------
@@ -238,7 +247,18 @@ contains
     integer  :: itl, itu, iml, imu
     integer  :: minor_start, minor_loc
     ! -----------------
+
+    !$acc data pcopyin(gpt_flv, kminor, minor_limits_gpt, minor_scales_with_density, scale_by_complement, &
+    !$acc&             kminor_start, idx_minor, idx_minor_scaling, &
+    !$acc&             play, tlay, col_gas, fminor, jeta, itropo, jtemp) &
+    !$acc&     pcopy(tau)
+
     do imnr = 1, size(scale_by_complement,dim=1) ! loop over minor absorbers in each band
+
+      !$acc  parallel loop gang vector collapse(2) &
+      !$acc& private(itl,itu,iml,imu,scaling,minor_start,tau_minor,iflav,minor_loc,kminor_loc) &
+      !$acc& present(gpt_flv, kminor, minor_limits_gpt, minor_scales_with_density, scale_by_complement, &
+      !$acc&         kminor_start, idx_minor, idx_minor_scaling,  play, tlay, col_gas, fminor, jeta, itropo, jtemp, tau)
       do icol = 1, ncol
         ! Get layer range
         itl = itropo(icol,1)
@@ -288,6 +308,9 @@ contains
         enddo
       enddo
     enddo
+
+    !$acc end data
+
   end subroutine gas_optical_depths_minor
   ! ----------------------------------------------------------
   !
@@ -316,10 +339,15 @@ contains
     integer  :: icol, ilay, iflav, igpt
     integer  :: itropo
     ! -----------------
+
+    !$acc data pcopyin(gpoint_flavor, krayl, play, tlay, col_dry, col_gas, fminor, jeta, tropo, jtemp)  &
+    !$acc&     pcopyout(tau_rayleigh)
+    !$acc parallel loop gang vector collapse(3) private(itropo, iflav, k)
     do ilay = 1, nlay
       do icol = 1, ncol
-        itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
         do igpt = 1, ngpt
+          !WS moved itropo inside loop for GPU
+          itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           iflav = gpoint_flavor(itropo, igpt)
           k = interpolate2D(fminor(:,:,iflav,icol,ilay), &
                             krayl(:,:,:,itropo),      &
@@ -328,6 +356,7 @@ contains
         end do ! igpt
       end do
     end do ! ilay
+    !$acc end data
   end subroutine compute_tau_rayleigh
 
   ! ----------------------------------------------------------
@@ -362,12 +391,17 @@ contains
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
     ! -----------------
 
+    !$acc data pcopyin(tlay, tlev, tsfc, fmajor, jeta, tropo, jtemp, jpress, &
+    !$acc&             gpoint_bands, pfracin, totplnk, gpoint_flavor)  &
+    !$acc& pcopyout(sfc_src, lay_src, lev_src_inc, lev_src_dec) pcreate(pfrac, planck_function)
+
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
+    !$acc parallel loop gang vector collapse(3) private(itropo, iflav)
     do icol = 1, ncol
       do ilay = 1, nlay
-        ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        itropo = merge(1,2,tropo(icol,ilay))
         do igpt = 1, ngpt
+          ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+          itropo = merge(1,2,tropo(icol,ilay))  !WS moved itropo inside loop for GPU
           iflav = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
           pfrac(igpt,ilay,icol) = &
             ! interpolation in temperature, pressure, and eta
@@ -381,23 +415,33 @@ contains
     ! Planck function by band for the surface
     ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
     !
+    !$acc parallel loop gang vector
     do icol = 1, ncol
       planck_function(1:nbnd,1,icol) = interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk)
-      !
-      ! Map to g-points
-      !
+    end do
+    !
+    ! Map to g-points
+    !
+    !$acc parallel loop gang vector collapse(2)
+    do icol = 1, ncol
       do igpt = 1, ngpt
         sfc_src(icol,igpt) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol)
       end do
     end do ! icol
 
+    !$acc parallel loop gang vector collapse(2)
     do icol = 1, ncol
       do ilay = 1, nlay
         ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
         planck_function(1:nbnd,ilay,icol) = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk)
-        !
-        ! Map to g-points
-        !
+      end do
+    end do
+    !
+    ! Map to g-points
+    !
+    !$acc parallel loop gang vector collapse(3)
+    do icol = 1, ncol
+      do ilay = 1, nlay
         do igpt = 1, ngpt
           lay_src(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,icol)
         end do
@@ -405,6 +449,7 @@ contains
     end do ! icol
 
     ! compute level source irradiances for each g-point, one each for upward and downward paths
+    ! Requires revision for OpenACC 
     do icol = 1, ncol
       planck_function(1:nbnd,       1,icol) = interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk)
       do ilay = 1, nlay
@@ -419,12 +464,15 @@ contains
       end do ! ilay
     end do ! icol
 
+    !$acc end data
+
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------
   !
   ! One dimensional interpolation -- return all values along second table dimension
   !
   pure function interpolate1D(val, offset, delta, table) result(res)
+  !$acc routine seq
     ! input
     real(wp), intent(in) :: val,    & ! axis value at which to evaluate table
                             offset, & ! minimum of table axis
@@ -448,6 +496,7 @@ contains
  !   This function returns a single value from a subset (in gpoint) of the k table
  !
   pure function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
+  !$acc routine seq
     real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species
                                        ! index(1) : reference eta level (temperature dependent)
                                        ! index(2) : reference temperature level
@@ -466,6 +515,7 @@ contains
   ! ----------------------------------------------------------
   ! interpolation in temperature, pressure, and eta
   pure function interpolate3D(scaling, fmajor, k, igpt, jeta, jtemp, jpress) result(res)
+  !$acc routine seq
     real(wp), dimension(2),     intent(in) :: scaling
     real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
                                                      ! index(1) : reference eta level (temperature dependent)
@@ -538,6 +588,10 @@ contains
     integer :: icol, ilay, iflav, igases(2), itropo, itemp
     integer, dimension(ncol) :: itropo_last
 
+    !$acc  data pcopyin(flavor,press_ref_log,temp_ref,press_ref_log_delta,temp_ref_min,temp_ref_delta,press_ref_trop_log,vmr_ref,nlay_ref,play,tlay,col_gas) &
+    !$acc&      pcopyout(jtemp,jpress,tropo,itropo_lower,itropo_upper,jeta,col_mix,fmajor,fminor) pcreate(ftemp,fpress,itropo_last)
+
+    !$acc parallel loop gang vector collapse(2) private(locpress,itropo)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -573,10 +627,19 @@ contains
             itropo_last(icol) = itropo
           endif
         endif
-        ! loop over implemented combinations of major species
+      enddo
+    enddo
+
+    ! loop over implemented combinations of major species
+    !$acc  parallel loop gang vector collapse(4)  private(igases, ratio_eta_half, eta, loceta, feta) &
+    !$acc& pcopyin(flavor,vmr_ref,itropo,jtemp,col_gas,col_mix,ftemp,fpress) pcopyout(col_mix,jeta,fminor,fmajor)
+    do ilay = 1, nlay
+      do icol = 1, ncol
         do iflav = 1, nflav
-          igases(:) = flavor(:,iflav)
           do itemp = 1, 2
+            igases(:) = flavor(:,iflav)
+            ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+            itropo = merge(1,2,tropo(icol,ilay))
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors
@@ -602,6 +665,7 @@ contains
         end do ! iflav
       end do ! icol,ilay
     end do
+    !$acc end data
 
   end subroutine interpolation
   ! ----------------------------------------------------------
@@ -617,6 +681,8 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: t
     ! -----------------------
+    !$acc data pcopyin(tau_abs,tau_rayleigh) pcopy(tau,ssa,g)
+    !$acc parallel loop gang vector private(t)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -631,6 +697,7 @@ contains
         end do
       end do
     end do
+    !$acc end data
   end subroutine combine_and_reorder_2str
   ! ----------------------------------------------------------
   !
@@ -648,6 +715,8 @@ contains
     integer :: icol, ilay, igpt, imom
     real(wp) :: t
     ! -----------------------
+    !$acc data pcopyin(tau_abs,tau_rayleigh) pcopy(tau,ssa,p)
+    !$acc parallel loop gang vector private(t)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -666,6 +735,7 @@ contains
         end do
       end do
     end do
+    !$acc end data
   end subroutine combine_and_reorder_nstr
   ! ----------------------------------------------------------
   pure subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")

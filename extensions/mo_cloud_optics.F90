@@ -208,7 +208,6 @@ contains
     error_msg = this%init(band_lims_wvn, name="RRTMGP cloud optics")
     !
     ! Error checking
-    !   Can we check for consistency between table bounds and _fac?
     !
     if(nband /= this%get_nband()) &
       error_msg = "cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
@@ -228,8 +227,23 @@ contains
     if(any([                          size(pade_sizreg_ssaliq), size(pade_sizreg_asyliq),               &
             size(pade_sizreg_extice), size(pade_sizreg_ssaice), size(pade_sizreg_asyice)] /= nbound))   &
       error_msg = "cloud_optics%init(): one or more Pade size regime arrays are inconsistently sized"
-    ! Load particle size boundaries
+    if(error_msg /= "") return
+    !
+    ! Consistency between size regimes and lower bounds
+    !
+    if(.false) then  ! Commented out for now because the files we're reading are inconsistent in this way
+    if(any([pade_sizreg_extliq(1), pade_sizreg_ssaliq(1), pade_sizreg_asyliq(1)] < radliq_lwr)) &
+      error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radliq_lwr"
+    if(any([pade_sizreg_extice(1), pade_sizreg_ssaice(1), pade_sizreg_asyice(1)] < radice_lwr)) &
+      error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radice_lwr"
+    if(any([pade_sizreg_extliq(nbound), pade_sizreg_ssaliq(nbound), pade_sizreg_asyliq(nbound)] > radliq_lwr)) &
+      error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radliq_upr"
+    if(any([pade_sizreg_extice(nbound), pade_sizreg_ssaice(nbound), pade_sizreg_asyice(nbound)] > radice_lwr)) &
+      error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radice_upr"
+    if(error_msg /= "") return
+    end if
 
+    ! Load particle size boundaries
     this%radliq_lwr = radliq_lwr
     this%radliq_upr = radliq_upr
     this%radice_lwr = radice_lwr
@@ -306,9 +320,6 @@ contains
 
     character(len=128)    :: error_msg
     ! ------- Local -------
-
-
-    real(wp) :: cwp(ncol,nlayers)              ! cloud water path (liquid + ice)
     real(wp) :: radliq                         ! cloud liquid droplet radius (microns)
     real(wp) :: radice                         ! cloud ice effective size (microns)
     real(wp) :: factor, fint
@@ -342,13 +353,9 @@ contains
 ! ------- Definitions -------
 
 ! ------- Cloud masks -------
-   cwp(:,:) = ciwp(:,:) + clwp(:,:)
-   cldmsk = .False.
-   liqmsk = .False.
-   icemsk = .False.
-   where (cldfrac >= 1.e-20_wp .and. cwp >= 1.e-20_wp) cldmsk = .True.
-   where (cldmsk .and. rel > 0.0_wp .and. clwp >= 1.e-20_wp) liqmsk = .True.
-   where (cldmsk .and. rei > 0.0_wp .and. ciwp >= 1.e-20_wp) icemsk = .True.
+   cldmsk = (cldfrac >= 1.e-20_wp      .and. clwp + ciwp >= 1.e-20_wp)
+   liqmsk = (cldmsk .and. rel > 0.0_wp .and. clwp >= 1.e-20_wp)
+   icemsk = (cldmsk .and. rei > 0.0_wp .and. ciwp >= 1.e-20_wp)
 
 ! ------- Error checking -------
     error_msg = ''
@@ -387,43 +394,43 @@ contains
           ! Liquid optical properties
           !
           if (liqmsk(icol,ilyr)) then
-             radliq = rel(icol,ilyr)
-             factor = radliq - cloud_spec%radliq_fac
-             index = int(factor)
-             if (index .eq. 0) index = 1
-             fint = factor - real(index)
+            radliq = rel(icol,ilyr)
+            factor = radliq - cloud_spec%radliq_fac
+            index = int(factor)
+            if (index .eq. 0) index = 1
+            fint = factor - real(index)
 
-             do ibnd = 1, nbnd
-                extliq(icol,ilyr,ibnd) = cloud_spec%lut_extliq(index,ibnd) + &
-                                 fint * (cloud_spec%lut_extliq(index+1,ibnd) - &
-                                         cloud_spec%lut_extliq(index,ibnd))
-                ssaliq(icol,ilyr,ibnd) = cloud_spec%lut_ssaliq(index,ibnd) + &
-                                 fint * (cloud_spec%lut_ssaliq(index+1,ibnd) - &
-                                         cloud_spec%lut_ssaliq(index,ibnd))
-                asyliq(icol,ilyr,ibnd) = cloud_spec%lut_asyliq(index,ibnd) + &
-                                 fint * (cloud_spec%lut_asyliq(index+1,ibnd) - &
-                                         cloud_spec%lut_asyliq(index,ibnd))
-             enddo
+            do ibnd = 1, nbnd
+              extliq(icol,ilyr,ibnd) = cloud_spec%lut_extliq(index,ibnd) + &
+                               fint * (cloud_spec%lut_extliq(index+1,ibnd) - &
+                                       cloud_spec%lut_extliq(index,ibnd))
+              ssaliq(icol,ilyr,ibnd) = cloud_spec%lut_ssaliq(index,ibnd) + &
+                               fint * (cloud_spec%lut_ssaliq(index+1,ibnd) - &
+                                       cloud_spec%lut_ssaliq(index,ibnd))
+              asyliq(icol,ilyr,ibnd) = cloud_spec%lut_asyliq(index,ibnd) + &
+                               fint * (cloud_spec%lut_asyliq(index+1,ibnd) - &
+                                       cloud_spec%lut_asyliq(index,ibnd))
+            enddo
           endif
           !
           ! Ice optical propertiesP for requested ice roughness (icergh)
           !
           if (icemsk(icol,ilyr)) then
-             radice = rei(icol,ilyr)
-             factor = radice * cloud_spec%radice_fac
-             index = int(factor)
-             fint = factor - real(index)
+            radice = rei(icol,ilyr)
+            factor = radice * cloud_spec%radice_fac
+            index = int(factor)
+            fint = factor - real(index)
 
-             do ibnd = 1, nbnd
-                extice(icol,ilyr,ibnd) = cloud_spec%lut_extice(index,ibnd,icergh) + &
-                                 fint * (cloud_spec%lut_extice(index+1,ibnd,icergh) - &
-                                         cloud_spec%lut_extice(index,ibnd,icergh))
-                ssaice(icol,ilyr,ibnd) = cloud_spec%lut_ssaice(index,ibnd,icergh) + &
-                                 fint * (cloud_spec%lut_ssaice(index+1,ibnd,icergh) - &
-                                         cloud_spec%lut_ssaice(index,ibnd,icergh))
-                asyice(icol,ilyr,ibnd) = cloud_spec%lut_asyice(index,ibnd,icergh) + &
-                                 fint * (cloud_spec%lut_asyice(index+1,ibnd,icergh) - &
-                                         cloud_spec%lut_asyice(index,ibnd,icergh))
+            do ibnd = 1, nbnd
+              extice(icol,ilyr,ibnd) = cloud_spec%lut_extice(index,ibnd,icergh) + &
+                               fint * (cloud_spec%lut_extice(index+1,ibnd,icergh) - &
+                                       cloud_spec%lut_extice(index,ibnd,icergh))
+              ssaice(icol,ilyr,ibnd) = cloud_spec%lut_ssaice(index,ibnd,icergh) + &
+                               fint * (cloud_spec%lut_ssaice(index+1,ibnd,icergh) - &
+                                       cloud_spec%lut_ssaice(index,ibnd,icergh))
+              asyice(icol,ilyr,ibnd) = cloud_spec%lut_asyice(index,ibnd,icergh) + &
+                               fint * (cloud_spec%lut_asyice(index+1,ibnd,icergh) - &
+                                       cloud_spec%lut_asyice(index,ibnd,icergh))
             enddo
           endif
         enddo
@@ -432,50 +439,50 @@ contains
       !
       ! Cloud optical properties from Pade coefficient method
       !
-       do icol = 1, ncol
-          do ilyr = 1, nlayers
+      do icol = 1, ncol
+        do ilyr = 1, nlayers
+          !
+          ! Liquid optical properties
+          !
+          if (liqmsk(icol,ilyr)) then
+            radliq = rel(icol,ilyr)
             !
-            ! Liquid optical properties
+            ! Define coefficient particle size regime for current size: extinction, ssa
             !
-            if (liqmsk(icol,ilyr)) then
-               radliq = rel(icol,ilyr)
-               !
-               ! Define coefficient particle size regime for current size: extinction, ssa
-               !
-               error_msg = get_irad(cloud_spec, radliq, .True., 'ext', irade)
-               if(error_msg /= "") return
-               error_msg = get_irad(cloud_spec, radliq, .True., 'ssa', irads)
-               if(error_msg /= "") return
-               error_msg = get_irad(cloud_spec, radliq, .True., 'asy', iradg)
-               if(error_msg /= "") return
+            error_msg = get_irad(cloud_spec, radliq, .True., 'ext', irade)
+            if(error_msg /= "") return
+            error_msg = get_irad(cloud_spec, radliq, .True., 'ssa', irads)
+            if(error_msg /= "") return
+            error_msg = get_irad(cloud_spec, radliq, .True., 'asy', iradg)
+            if(error_msg /= "") return
 
-               do ibnd = 1, nbnd
-                  extliq(icol,ilyr,ibnd) = cloud_spec%pade_ext(radliq, .True., ibnd, irade)
-                  ssaliq(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radliq, .True., ibnd, irads)
-                  asyliq(icol,ilyr,ibnd) = cloud_spec%pade_asy(radliq, .True., ibnd, iradg)
-               enddo
-            endif
-            !
-            ! Ice optical properties
-            !
-            if (icemsk(icol,ilyr)) then
-               radice = rei(icol,ilyr)
-               ! Define coefficient particle size regime for current size: extinction, ssa
-               error_msg = get_irad(cloud_spec, radice, .False., 'ext', irade)
-               if(error_msg /= "") return
-               error_msg = get_irad(cloud_spec, radice, .False., 'ssa', irads)
-               if(error_msg /= "") return
-               error_msg = get_irad(cloud_spec, radice, .False., 'asy', iradg)
-               if(error_msg /= "") return
+            do ibnd = 1, nbnd
+              extliq(icol,ilyr,ibnd) = cloud_spec%pade_ext(radliq, .True., ibnd, irade)
+              ssaliq(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radliq, .True., ibnd, irads)
+              asyliq(icol,ilyr,ibnd) = cloud_spec%pade_asy(radliq, .True., ibnd, iradg)
+            enddo
+          endif
+          !
+          ! Ice optical properties
+          !
+          if (icemsk(icol,ilyr)) then
+            radice = rei(icol,ilyr)
+            ! Define coefficient particle size regime for current size: extinction, ssa
+            error_msg = get_irad(cloud_spec, radice, .False., 'ext', irade)
+            if(error_msg /= "") return
+            error_msg = get_irad(cloud_spec, radice, .False., 'ssa', irads)
+            if(error_msg /= "") return
+            error_msg = get_irad(cloud_spec, radice, .False., 'asy', iradg)
+            if(error_msg /= "") return
 
-               do ibnd = 1, nbnd
-                 extice(icol,ilyr,ibnd) = cloud_spec%pade_ext(radice, .False., ibnd, irade, icergh)
-                 ssaice(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radice, .False., ibnd, irads, icergh)
-                 asyice(icol,ilyr,ibnd) = cloud_spec%pade_asy(radice, .False., ibnd, iradg, icergh)
-               enddo
-            endif
-          enddo
-       enddo
+            do ibnd = 1, nbnd
+             extice(icol,ilyr,ibnd) = cloud_spec%pade_ext(radice, .False., ibnd, irade, icergh)
+             ssaice(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radice, .False., ibnd, irads, icergh)
+             asyice(icol,ilyr,ibnd) = cloud_spec%pade_asy(radice, .False., ibnd, iradg, icergh)
+            enddo
+          endif
+        enddo
+      enddo
     endif
     !
     ! Combine liquid and ice contributions into total cloud optical properties

@@ -166,7 +166,6 @@ contains
   !
   ! ------------------------------------------------------------------------------
   function load_pade(this, band_lims_wvn, &
-                     radliq_lwr, radliq_upr, radice_lwr, radice_upr, &
                      pade_extliq, pade_ssaliq, pade_asyliq, &
                      pade_extice, pade_ssaice, pade_asyice, &
                      pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq, &
@@ -174,11 +173,6 @@ contains
                      result(error_msg)
     class(ty_cloud_optics),       intent(inout) :: this          ! cloud specification data
     real(wp), dimension(:,:),     intent(in   ) :: band_lims_wvn ! Spectral discretization
-    !
-    ! Particle size boundary limits
-    !
-    real(wp),                     intent(in   ) :: radliq_lwr, radliq_upr
-    real(wp),                     intent(in   ) :: radice_lwr, radice_upr
     !
     ! Pade coefficients: extinction, single-scattering albedo, and asymmetry factor for liquid and ice
     !
@@ -228,26 +222,25 @@ contains
             size(pade_sizreg_extice), size(pade_sizreg_ssaice), size(pade_sizreg_asyice)] /= nbound))   &
       error_msg = "cloud_optics%init(): one or more Pade size regime arrays are inconsistently sized"
     if(error_msg /= "") return
+
     !
-    ! Consistency between size regimes and lower bounds
+    ! Consistency among size regimes
     !
-    if(.false) then  ! Commented out for now because the files we're reading are inconsistent in this way
-    if(any([pade_sizreg_extliq(1), pade_sizreg_ssaliq(1), pade_sizreg_asyliq(1)] < radliq_lwr)) &
-      error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radliq_lwr"
-    if(any([pade_sizreg_extice(1), pade_sizreg_ssaice(1), pade_sizreg_asyice(1)] < radice_lwr)) &
-      error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radice_lwr"
-    if(any([pade_sizreg_extliq(nbound), pade_sizreg_ssaliq(nbound), pade_sizreg_asyliq(nbound)] > radliq_lwr)) &
+    this%radliq_lwr = pade_sizreg_extliq(1)
+    this%radliq_upr = pade_sizreg_extliq(nbound)
+    this%radice_lwr = pade_sizreg_extice(1)
+    this%radice_upr = pade_sizreg_extice(nbound)
+
+    if(any([pade_sizreg_ssaliq(1), pade_sizreg_asyliq(1)] < this%radliq_lwr)) &
+      error_msg = "cloud_optics%init(): one or more Pade size regimes have inconsistent lowest values"
+    if(any([pade_sizreg_ssaice(1), pade_sizreg_asyice(1)] < this%radice_lwr)) &
+      error_msg = "cloud_optics%init(): one or more Pade size regimes have inconsistent lower values"
+
+    if(any([pade_sizreg_ssaliq(nbound), pade_sizreg_asyliq(nbound)] > this%radliq_upr)) &
       error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radliq_upr"
-    if(any([pade_sizreg_extice(nbound), pade_sizreg_ssaice(nbound), pade_sizreg_asyice(nbound)] > radice_lwr)) &
+    if(any([pade_sizreg_ssaice(nbound), pade_sizreg_asyice(nbound)] > this%radice_upr)) &
       error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radice_upr"
     if(error_msg /= "") return
-    end if
-
-    ! Load particle size boundaries
-    this%radliq_lwr = radliq_lwr
-    this%radliq_upr = radliq_upr
-    this%radice_lwr = radice_lwr
-    this%radice_upr = radice_upr
 
     ! Allocate Pade coefficients
     allocate(this%pade_extliq(nband, nsizereg, ncoeff_ext), &

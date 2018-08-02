@@ -1,22 +1,17 @@
-! Module: mo_cloud_optics
-
-! This code is part of
-! RRTM for GCM Applications - Parallel (RRTMGP)
+! This code is part of Radiative Transfer for Energetics (RTE)
 !
-! Eli Mlawer and Robert Pincus
-! Andre Wehe and Jennifer Delamere
+! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015,  Atmospheric and Environmental Research and
+! Copyright 2015-2018,  Atmospheric and Environmental Research and
 ! Regents of the University of Colorado.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
-!
-! Description:
+! -------------------------------------------------------------------------------------------------
 ! This is the interface for routines that receive cloud physical properties
 ! and return cloud optical properties by band using LUT input data.
-!
+! -------------------------------------------------------------------------------------------------
 
 module mo_cloud_optics
   use mo_rte_kind,      only: wp
@@ -75,11 +70,11 @@ module mo_cloud_optics
 
 ! ------------------------------------------------------------------------------------------
   contains
-    generic,   public :: init_cldopt  => init_lut, init_pade
+    generic,   public :: load  => load_lut, load_pade
     procedure, public :: cloud_optics
     ! Internal procedures
-    procedure, private :: init_lut
-    procedure, private :: init_pade
+    procedure, private :: load_lut
+    procedure, private :: load_pade
     procedure, private :: pade_ext
     procedure, private :: pade_ssa
     procedure, private :: pade_asy
@@ -91,7 +86,7 @@ contains
   ! Cloud optics initialization function - LUT
   !
   ! ------------------------------------------------------------------------------
-  function init_lut(cloud_spec, &
+  function load_lut(this, band_lims_wvn, &
                     radliq_lwr, radliq_upr, radliq_fac, &
                     radice_lwr, radice_upr, radice_fac, &
                     lut_extliq, lut_ssaliq, lut_asyliq, &
@@ -102,7 +97,8 @@ contains
 
   ! ------- Input -------
 
-    class(ty_cloud_optics),     intent(inout) :: cloud_spec   ! cloud specification data
+    class(ty_cloud_optics),     intent(inout) :: this
+    real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! Spectral discretization
 
     ! Lookup table interpolation constants
     real(wp),                   intent(in   ) :: radliq_lwr   ! liquid particle size lower bound for interpolation
@@ -135,56 +131,53 @@ contains
     nsize_ice = size(lut_extice,dim=1)
     nrghice   = size(lut_extice,dim=3)
 
+    error_msg = this%init(band_lims_wvn, name="RRTMGP cloud optics")
     ! Load LUT constants
-    cloud_spec%radliq_lwr = radliq_lwr
-    cloud_spec%radliq_upr = radliq_upr
-    cloud_spec%radliq_fac = radliq_fac
-    cloud_spec%radice_lwr = radice_lwr
-    cloud_spec%radice_upr = radice_upr
-    cloud_spec%radice_fac = radice_fac
+    this%radliq_lwr = radliq_lwr
+    this%radliq_upr = radliq_upr
+    this%radliq_fac = radliq_fac
+    this%radice_lwr = radice_lwr
+    this%radice_upr = radice_upr
+    this%radice_fac = radice_fac
 
     ! Allocate LUT coefficients
-    allocate(cloud_spec%lut_extliq(nsize_liq, nband))
-    allocate(cloud_spec%lut_ssaliq(nsize_liq, nband))
-    allocate(cloud_spec%lut_asyliq(nsize_liq, nband))
-    allocate(cloud_spec%lut_extice(nsize_ice, nband, nrghice))
-    allocate(cloud_spec%lut_ssaice(nsize_ice, nband, nrghice))
-    allocate(cloud_spec%lut_asyice(nsize_ice, nband, nrghice))
+    allocate(this%lut_extliq(nsize_liq, nband), &
+             this%lut_ssaliq(nsize_liq, nband), &
+             this%lut_asyliq(nsize_liq, nband), &
+             this%lut_extice(nsize_ice, nband, nrghice), &
+             this%lut_ssaice(nsize_ice, nband, nrghice), &
+             this%lut_asyice(nsize_ice, nband, nrghice))
 
     ! Load LUT coefficients
-    cloud_spec%lut_extliq = lut_extliq
-    cloud_spec%lut_ssaliq = lut_ssaliq
-    cloud_spec%lut_asyliq = lut_asyliq
-    cloud_spec%lut_extice = lut_extice
-    cloud_spec%lut_ssaice = lut_ssaice
-    cloud_spec%lut_asyice = lut_asyice
+    this%lut_extliq = lut_extliq
+    this%lut_ssaliq = lut_ssaliq
+    this%lut_asyliq = lut_asyliq
+    this%lut_extice = lut_extice
+    this%lut_ssaice = lut_ssaice
+    this%lut_asyice = lut_asyice
 
-  end function init_lut
+  end function load_lut
 
   ! ------------------------------------------------------------------------------
   !
   ! Cloud optics initialization function - Pade
   !
   ! ------------------------------------------------------------------------------
-  function init_pade(cloud_spec, &
+  function load_pade(this, band_lims_wvn, &
                      radliq_lwr, radliq_upr, radice_lwr, radice_upr, &
                      pade_extliq, pade_ssaliq, pade_asyliq, &
                      pade_extice, pade_ssaice, pade_asyice, &
                      pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq, &
                      pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice) &
                      result(error_msg)
-  ! ------------------------------------------------------------------------------
-  ! Purpose:  Load Pade cloud optics coefficients into cloud optics object
-
-  ! ------- Input -------
-
-    class(ty_cloud_optics),       intent(inout) :: cloud_spec    ! cloud specification data
+    class(ty_cloud_optics),       intent(inout) :: this    ! cloud specification data
+    real(wp), dimension(:,:),     intent(in   ) :: band_lims_wvn ! Spectral discretization
 
     ! Particle size boundary limits
-    real(wp),                   intent(in   ) :: radliq_lwr   ! liquid particle size lower bound for interpolation
-    real(wp),                   intent(in   ) :: radliq_upr   ! liquid particle size upper bound for interpolation
-    real(wp),                   intent(in   ) :: radice_lwr   ! ice particle size lower bound for interpolation
-    real(wp),                   intent(in   ) :: radice_upr   ! ice particle size upper bound for interpolation
+    real(wp),                     intent(in   ) :: radliq_lwr   ! liquid particle size lower bound for interpolation
+    real(wp),                     intent(in   ) :: radliq_upr   ! liquid particle size upper bound for interpolation
+    real(wp),                     intent(in   ) :: radice_lwr   ! ice particle size lower bound for interpolation
+    real(wp),                     intent(in   ) :: radice_upr   ! ice particle size upper bound for interpolation
 
     real(wp), dimension(:,:,:),   intent(in)    :: pade_extliq   ! extinction: liquid
     real(wp), dimension(:,:,:),   intent(in)    :: pade_ssaliq   ! single scattering albedo: liquid
@@ -199,11 +192,11 @@ contains
     integer,  dimension(:),       intent(in)    :: pade_sizreg_extice ! particle size boundaries, extinction: ice
     integer,  dimension(:),       intent(in)    :: pade_sizreg_ssaice ! particle size boundaries, single scattering albedo: ice
     integer,  dimension(:),       intent(in)    :: pade_sizreg_asyice ! particle size boundaries, asymmetry parameter: ice
+    character(len=128)    :: error_msg
 
 ! ------- Local -------
 
     integer               :: nband, nrghice, nsizereg, ncoeff_ext, ncoeff_ssa_g, nbound
-    character(len=128)    :: error_msg
 
 ! ------- Definitions -------
 
@@ -218,44 +211,45 @@ contains
     nrghice      = size(pade_extice,dim=4)
     nbound       = size(pade_sizreg_extliq,dim=1)
 
+    error_msg = this%init(band_lims_wvn, name="RRTMGP cloud optics")
     ! Load particle size boundaries
-    cloud_spec%radliq_lwr = radliq_lwr
-    cloud_spec%radliq_upr = radliq_upr
-    cloud_spec%radice_lwr = radice_lwr
-    cloud_spec%radice_upr = radice_upr
+    this%radliq_lwr = radliq_lwr
+    this%radliq_upr = radliq_upr
+    this%radice_lwr = radice_lwr
+    this%radice_upr = radice_upr
 
     ! Allocate Pade coefficients
-    allocate(cloud_spec%pade_extliq(nband, nsizereg, ncoeff_ext))
-    allocate(cloud_spec%pade_ssaliq(nband, nsizereg, ncoeff_ssa_g))
-    allocate(cloud_spec%pade_asyliq(nband, nsizereg, ncoeff_ssa_g))
-    allocate(cloud_spec%pade_extice(nband, nsizereg, ncoeff_ext, nrghice))
-    allocate(cloud_spec%pade_ssaice(nband, nsizereg, ncoeff_ssa_g, nrghice))
-    allocate(cloud_spec%pade_asyice(nband, nsizereg, ncoeff_ssa_g, nrghice))
+    allocate(this%pade_extliq(nband, nsizereg, ncoeff_ext), &
+             this%pade_ssaliq(nband, nsizereg, ncoeff_ssa_g), &
+             this%pade_asyliq(nband, nsizereg, ncoeff_ssa_g), &
+             this%pade_extice(nband, nsizereg, ncoeff_ext, nrghice), &
+             this%pade_ssaice(nband, nsizereg, ncoeff_ssa_g, nrghice), &
+             this%pade_asyice(nband, nsizereg, ncoeff_ssa_g, nrghice))
 
     ! Load Pade coefficients
-    cloud_spec%pade_extliq = pade_extliq
-    cloud_spec%pade_ssaliq = pade_ssaliq
-    cloud_spec%pade_asyliq = pade_asyliq
-    cloud_spec%pade_extice = pade_extice
-    cloud_spec%pade_ssaice = pade_ssaice
-    cloud_spec%pade_asyice = pade_asyice
+    this%pade_extliq = pade_extliq
+    this%pade_ssaliq = pade_ssaliq
+    this%pade_asyliq = pade_asyliq
+    this%pade_extice = pade_extice
+    this%pade_ssaice = pade_ssaice
+    this%pade_asyice = pade_asyice
 
     ! Allocate Pade coefficient particle size regime boundaries
-    allocate(cloud_spec%pade_sizreg_extliq(nbound))
-    allocate(cloud_spec%pade_sizreg_ssaliq(nbound))
-    allocate(cloud_spec%pade_sizreg_asyliq(nbound))
-    allocate(cloud_spec%pade_sizreg_extice(nbound))
-    allocate(cloud_spec%pade_sizreg_ssaice(nbound))
-    allocate(cloud_spec%pade_sizreg_asyice(nbound))
+    allocate(this%pade_sizreg_extliq(nbound), &
+             this%pade_sizreg_ssaliq(nbound), &
+             this%pade_sizreg_asyliq(nbound), &
+             this%pade_sizreg_extice(nbound), &
+             this%pade_sizreg_ssaice(nbound), &
+             this%pade_sizreg_asyice(nbound))
 
     ! Load Pade coefficient particle size regime boundaries
-    cloud_spec%pade_sizreg_extliq = pade_sizreg_extliq
-    cloud_spec%pade_sizreg_ssaliq = pade_sizreg_ssaliq
-    cloud_spec%pade_sizreg_asyliq = pade_sizreg_asyliq
-    cloud_spec%pade_sizreg_extice = pade_sizreg_extice
-    cloud_spec%pade_sizreg_ssaice = pade_sizreg_ssaice
-    cloud_spec%pade_sizreg_asyice = pade_sizreg_asyice
-  end function init_pade
+    this%pade_sizreg_extliq = pade_sizreg_extliq
+    this%pade_sizreg_ssaliq = pade_sizreg_ssaliq
+    this%pade_sizreg_asyliq = pade_sizreg_asyliq
+    this%pade_sizreg_extice = pade_sizreg_extice
+    this%pade_sizreg_ssaice = pade_sizreg_ssaice
+    this%pade_sizreg_asyice = pade_sizreg_asyice
+  end function load_pade
 
   ! ------------------------------------------------------------------------------
   !
@@ -459,13 +453,9 @@ contains
 !
 ! Combine liquid and ice contributions into total cloud optical properties
 !
-       ! Main column loop
        do icol = 1, ncol
-
-          ! Main layer loop
           do ilyr = 1, nlayers
              if (cldmsk(icol,ilyr)) then
-
                 do ibnd = 1, nbnd
                    tauice = ciwp(icol,ilyr) * extice(icol,ilyr,ibnd)
                    tauliq = clwp(icol,ilyr) * extliq(icol,ilyr,ibnd)
@@ -496,13 +486,8 @@ contains
                      optical_props%p  (3,icol,ilyr,ibnd) = 0.1_wp
                    end select
                 enddo
-
              endif
-
-          ! End layer loop
           enddo
-
-       ! End column loop
        enddo
 !
 ! Cloud optical properties from Pade coefficient method

@@ -27,26 +27,26 @@ module mo_cloud_optics
 
   ! -----------------------------------------------------------------------------------
   type, extends(ty_optical_props), public :: ty_cloud_optics
+    private
     ! Cloud physical properties                         ! (ncol,nlay)
-    real(wp), dimension(:,:), allocatable :: cldfrac    ! cloud fraction
-    real(wp), dimension(:,:), allocatable :: ciwp       ! cloud ice water path
-    real(wp), dimension(:,:), allocatable :: clwp       ! cloud liquid water path
-    real(wp), dimension(:,:), allocatable :: rei        ! cloud ice particle effective size (microns)
-    real(wp), dimension(:,:), allocatable :: rel        ! cloud liquid particle effective radius (microns)
+    real(wp), dimension(:,:), allocatable, public :: cldfrac    ! cloud fraction
+    real(wp), dimension(:,:), allocatable, public :: ciwp       ! cloud ice water path
+    real(wp), dimension(:,:), allocatable, public :: clwp       ! cloud liquid water path
+    real(wp), dimension(:,:), allocatable, public :: rei        ! cloud ice particle effective size (microns)
+    real(wp), dimension(:,:), allocatable, public :: rel        ! cloud liquid particle effective radius (microns)
 
-    ! All other data should be privide
     !
     ! Ice surface roughness category - needed for Yang (2013) ice optics parameterization
-    integer :: icergh                                   ! (1 = none, 2 = medium, 3 = high)
+    integer :: icergh = 0                                ! (1 = none, 2 = medium, 3 = high)
 
     ! Method for interpolation of cloud optical property coefficients to particle size
-    logical :: do_lut                                   ! (.True. = LUT, .False. = Pade)
+    logical, public :: do_lut                                   ! (.True. = LUT, .False. = Pade)
 
     ! Particle size boundary limits
-    real(wp) :: radliq_lwr                     ! liquid particle size lower bound for interpolation
-    real(wp) :: radliq_upr                     ! liquid particle size upper bound for interpolation
-    real(wp) :: radice_lwr                     ! ice particle size lower bound for interpolation
-    real(wp) :: radice_upr                     ! ice particle size upper bound for interpolation
+    real(wp) :: radliq_lwr = 0._wp              ! liquid particle size lower bound for interpolation
+    real(wp) :: radliq_upr = 0._wp              ! liquid particle size upper bound for interpolation
+    real(wp) :: radice_lwr = 0._wp              ! ice particle size lower bound for interpolation
+    real(wp) :: radice_upr = 0._wp              ! ice particle size upper bound for interpolation
     ! Lookup table interpolation constants
     real(wp) :: radliq_fac                     ! constant for calculating interpolation indices for liquid
     real(wp) :: radice_fac                     ! constant for calculating interpolation indices for ice
@@ -73,6 +73,11 @@ module mo_cloud_optics
   contains
     generic,   public :: load  => load_lut, load_pade
     procedure, public :: cloud_optics
+    procedure, public :: get_min_radius_liq
+    procedure, public :: get_min_radius_ice
+    procedure, public :: get_max_radius_liq
+    procedure, public :: get_max_radius_ice
+    procedure, public :: get_num_ice_roughness_types
     ! Internal procedures
     procedure, private :: load_lut
     procedure, private :: load_pade
@@ -530,7 +535,47 @@ contains
      enddo
 
   end function cloud_optics
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Inquiry functions
+  !
+  !--------------------------------------------------------------------------------------------------------------------
+  function get_min_radius_liq(this) result(r)
+    class(ty_cloud_optics), intent(in   ) :: this
+    real(wp)                              :: r
 
+    r = this%radliq_lwr
+  end function get_min_radius_liq
+  !-----------------------------------------------
+  function get_max_radius_liq(this) result(r)
+    class(ty_cloud_optics), intent(in   ) :: this
+    real(wp)                              :: r
+
+    r = this%radliq_upr
+  end function get_max_radius_liq
+  !-----------------------------------------------
+  function get_min_radius_ice(this) result(r)
+    class(ty_cloud_optics), intent(in   ) :: this
+    real(wp)                              :: r
+
+    r = this%radice_lwr
+  end function get_min_radius_ice
+  !-----------------------------------------------
+  function get_max_radius_ice(this) result(r)
+    class(ty_cloud_optics), intent(in   ) :: this
+    real(wp)                              :: r
+
+    r = this%radice_upr
+  end function get_max_radius_ice
+  !-----------------------------------------------
+  function get_num_ice_roughness_types(this) result(i)
+    class(ty_cloud_optics), intent(in   ) :: this
+    integer                               :: i
+
+    i = 0
+    if(allocated(this%pade_extice)) i = size(this%pade_extice, dim=4)
+    if(allocated(this%lut_extice )) i = size(this%lut_extice,  dim=3)
+  end function get_num_ice_roughness_types
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Ancillary functions

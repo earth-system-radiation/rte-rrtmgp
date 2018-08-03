@@ -260,10 +260,10 @@ contains
       !$acc& present(gpt_flv, kminor, minor_limits_gpt, minor_scales_with_density, scale_by_complement, &
       !$acc&         kminor_start, idx_minor, idx_minor_scaling,  play, tlay, col_gas, fminor, jeta, itropo, jtemp, tau)
       do icol = 1, ncol
-        ! Get layer range
-        itl = itropo(icol,1)
-        itu = itropo(icol,2)
         do ilay = itl,itu
+        ! Get layer range  -- placed inside inner loop in order to collapse loops
+          itl = itropo(icol,1)
+          itu = itropo(icol,2)
           vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
           !
           ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
@@ -340,7 +340,7 @@ contains
     integer  :: itropo
     ! -----------------
 
-    !$acc data pcopyin(gpoint_flavor, krayl, play, tlay, col_dry, col_gas, fminor, jeta, tropo, jtemp)  &
+    !$acc data pcopyin(gpoint_flavor, krayl, col_dry, col_gas, fminor, jeta, tropo, jtemp)  &
     !$acc&     pcopyout(tau_rayleigh)
     !$acc parallel loop gang vector collapse(3) private(itropo, iflav, k)
     do ilay = 1, nlay

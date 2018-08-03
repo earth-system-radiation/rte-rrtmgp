@@ -28,16 +28,9 @@ module mo_cloud_optics
   ! -----------------------------------------------------------------------------------
   type, extends(ty_optical_props), public :: ty_cloud_optics
     private
-    ! Cloud physical properties                         ! (ncol,nlay)
-    real(wp), dimension(:,:), allocatable, public :: cldfrac    ! cloud fraction
-    real(wp), dimension(:,:), allocatable, public :: ciwp       ! cloud ice water path
-    real(wp), dimension(:,:), allocatable, public :: clwp       ! cloud liquid water path
-    real(wp), dimension(:,:), allocatable, public :: rei        ! cloud ice particle effective size (microns)
-    real(wp), dimension(:,:), allocatable, public :: rel        ! cloud liquid particle effective radius (microns)
-
     !
     ! Ice surface roughness category - needed for Yang (2013) ice optics parameterization
-    integer :: icergh = 0                                ! (1 = none, 2 = medium, 3 = high)
+    integer, public :: icergh = 0                                ! (1 = none, 2 = medium, 3 = high)
 
     ! Method for interpolation of cloud optical property coefficients to particle size
     logical, public :: do_lut                                   ! (.True. = LUT, .False. = Pade)
@@ -411,7 +404,7 @@ contains
             enddo
           endif
           !
-          ! Ice optical propertiesP for requested ice roughness (icergh)
+          ! Ice optical properties for requested ice roughness (icergh)
           !
           if (icemsk(icol,ilyr)) then
             radice = rei(icol,ilyr)

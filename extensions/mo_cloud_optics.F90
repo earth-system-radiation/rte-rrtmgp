@@ -196,7 +196,7 @@ contains
     ncoeff_ext   = size(pade_extliq,dim=3)
     ncoeff_ssa_g = size(pade_ssaliq,dim=3)
     nrghice      = size(pade_extice,dim=4)
-    nbound       = size(pade_sizreg_extliq,dim=1)
+    nbound       = size(pade_sizreg_extliq)
     error_msg = this%init(band_lims_wvn, name="RRTMGP cloud optics")
     !
     ! Error checking
@@ -219,8 +219,9 @@ contains
     if(any([                          size(pade_sizreg_ssaliq), size(pade_sizreg_asyliq),               &
             size(pade_sizreg_extice), size(pade_sizreg_ssaice), size(pade_sizreg_asyice)] /= nbound))   &
       error_msg = "cloud_optics%init(): one or more Pade size regime arrays are inconsistently sized"
+      if(nbound /= 4) &
+        error_msg = "cloud_optics%init(): Expecting precisely three size regimes for Pade approximants"
     if(error_msg /= "") return
-
     !
     ! Consistency among size regimes
     !
@@ -440,13 +441,9 @@ contains
             !
             ! Define coefficient particle size regime for current size: extinction, ssa
             !
-            error_msg = get_irad(cloud_spec, radliq, .True., 'ext', irade)
-            if(error_msg /= "") return
-            error_msg = get_irad(cloud_spec, radliq, .True., 'ssa', irads)
-            if(error_msg /= "") return
-            error_msg = get_irad(cloud_spec, radliq, .True., 'asy', iradg)
-            if(error_msg /= "") return
-
+            irade = get_irad(radliq, cloud_spec%pade_sizreg_extliq)
+            irads = get_irad(radliq, cloud_spec%pade_sizreg_ssaliq)
+            iradg = get_irad(radliq, cloud_spec%pade_sizreg_asyliq)
             do ibnd = 1, nbnd
               extliq(icol,ilyr,ibnd) = cloud_spec%pade_ext(radliq, .True., ibnd, irade)
               ssaliq(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radliq, .True., ibnd, irads)
@@ -458,13 +455,9 @@ contains
           !
           if (icemsk(icol,ilyr)) then
             radice = rei(icol,ilyr)
-            ! Define coefficient particle size regime for current size: extinction, ssa
-            error_msg = get_irad(cloud_spec, radice, .False., 'ext', irade)
-            if(error_msg /= "") return
-            error_msg = get_irad(cloud_spec, radice, .False., 'ssa', irads)
-            if(error_msg /= "") return
-            error_msg = get_irad(cloud_spec, radice, .False., 'asy', iradg)
-            if(error_msg /= "") return
+            irade = get_irad(radice, cloud_spec%pade_sizreg_extice)
+            irads = get_irad(radice, cloud_spec%pade_sizreg_ssaice)
+            iradg = get_irad(radice, cloud_spec%pade_sizreg_asyice)
 
             do ibnd = 1, nbnd
              extice(icol,ilyr,ibnd) = cloud_spec%pade_ext(radice, .False., ibnd, irade, icergh)
@@ -574,47 +567,17 @@ contains
   ! Ancillary functions
   !
   !--------------------------------------------------------------------------------------------------------------------
-  function get_irad(cloud_spec,rad,is_liquid,param,irad_out) result(error_msg)
-
-    class(ty_cloud_optics), intent(inout)      :: cloud_spec
-
-    real(wp), intent(in)                       :: rad        ! particle radius
-    logical, intent(in)                        :: is_liquid  ! T = liquid; F = ice
-    character(len=3), intent(in)               :: param      ! ext/ssa/asy
-    integer, intent(out)                       :: irad_out
-    character(len=128)                         :: error_msg
-
-    ! Local variables
-    integer                                    :: irad, nrad
-    integer, dimension(4)                      :: sizreg
-
-    irad_out = 0
-    error_msg = ""
-
-    if (is_liquid) then
-       nrad = 2
-       if (param .eq. 'ext') sizreg = cloud_spec%pade_sizreg_extliq(:)
-       if (param .eq. 'ssa') sizreg = cloud_spec%pade_sizreg_ssaliq(:)
-       if (param .eq. 'asy') sizreg = cloud_spec%pade_sizreg_asyliq(:)
-    else
-       nrad = 3
-       if (param .eq. 'ext') sizreg = cloud_spec%pade_sizreg_extice(:)
-       if (param .eq. 'ssa') sizreg = cloud_spec%pade_sizreg_ssaice(:)
-       if (param .eq. 'asy') sizreg = cloud_spec%pade_sizreg_asyice(:)
-    endif
-
-    do irad = 1, nrad
-       if (rad .ge. sizreg(irad) .and. rad .le. sizreg(irad+1)) then
-          irad_out = irad
-          return
-       endif
-    enddo
-
-! No size regime found
-    error_msg = "cloud_optics, get_irad: out-of-range particle size value"
-
+  function get_irad(rad, sizereg) result(irad)
+    real(wp),               intent(in) :: rad
+    integer, dimension(:), intent(in) :: sizereg
+    integer                            :: irad
+    !
+    ! Finds index into size regime table
+    ! This works only if there are precisely three size regimes (four bounds) and it's
+    !   previously guaranteed that sizereg(1) <= rad <= sizereg(4)
+    !
+    irad = min(floor((rad - real(sizereg(2), wp))/real(sizereg(3), wp)) + 2, 3)
   end function get_irad
-
   !---------------------------------------------------------------------------
   function pade_ext(cloud_spec,reff,is_liquid,ibnd,irad,icergh)
 

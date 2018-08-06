@@ -65,6 +65,7 @@ module mo_cloud_optics
 ! ------------------------------------------------------------------------------------------
   contains
     generic,   public :: load  => load_lut, load_pade
+    procedure, public :: finalize
     procedure, public :: cloud_optics
     procedure, public :: get_min_radius_liq
     procedure, public :: get_min_radius_ice
@@ -242,20 +243,12 @@ contains
     if(error_msg /= "") return
 
     ! Allocate Pade coefficients
-    allocate(this%pade_extliq(nband, nsizereg, ncoeff_ext), &
+    allocate(this%pade_extliq(nband, nsizereg, ncoeff_ext),   &
              this%pade_ssaliq(nband, nsizereg, ncoeff_ssa_g), &
              this%pade_asyliq(nband, nsizereg, ncoeff_ssa_g), &
              this%pade_extice(nband, nsizereg, ncoeff_ext,   nrghice), &
              this%pade_ssaice(nband, nsizereg, ncoeff_ssa_g, nrghice), &
              this%pade_asyice(nband, nsizereg, ncoeff_ssa_g, nrghice))
-
-    ! Load Pade coefficients
-    this%pade_extliq = pade_extliq
-    this%pade_ssaliq = pade_ssaliq
-    this%pade_asyliq = pade_asyliq
-    this%pade_extice = pade_extice
-    this%pade_ssaice = pade_ssaice
-    this%pade_asyice = pade_asyice
 
     ! Allocate Pade coefficient particle size regime boundaries
     allocate(this%pade_sizreg_extliq(nbound), &
@@ -265,6 +258,14 @@ contains
              this%pade_sizreg_ssaice(nbound), &
              this%pade_sizreg_asyice(nbound))
 
+    ! Load Pade coefficients
+    this%pade_extliq = pade_extliq
+    this%pade_ssaliq = pade_ssaliq
+    this%pade_asyliq = pade_asyliq
+    this%pade_extice = pade_extice
+    this%pade_ssaice = pade_ssaice
+    this%pade_asyice = pade_asyice
+
     ! Load Pade coefficient particle size regime boundaries
     this%pade_sizreg_extliq = pade_sizreg_extliq
     this%pade_sizreg_ssaliq = pade_sizreg_ssaliq
@@ -273,6 +274,31 @@ contains
     this%pade_sizreg_ssaice = pade_sizreg_ssaice
     this%pade_sizreg_asyice = pade_sizreg_asyice
   end function load_pade
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Finalize
+  !
+  !--------------------------------------------------------------------------------------------------------------------
+  subroutine finalize(this)
+    class(ty_cloud_optics), intent(inout) :: this
+
+    this%radliq_lwr = 0._wp
+    this%radliq_upr = 0._wp
+    this%radice_lwr = 0._wp
+    this%radice_upr = 0._wp
+    this%radliq_fac = 0._wp
+    this%radice_fac = 0._wp
+
+    ! Lookup table cloud optics coefficients
+    if(allocated(lut_extliq)) &
+      deallocate(lut_extliq, lut_ssaliq, lut_asyliq, lut_extice, lut_ssaice, lut_asyice)
+
+  ! Pade cloud optics coefficients
+    if(allocated(pade_extliq)) &
+      dellocate(pade_extliq, pade_ssaliq, pade_asyliq, pade_extice, pade_ssaice, pade_asyice, &
+                pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq, &
+                pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice)
+  end subroutine finalize
 
   ! ------------------------------------------------------------------------------
   !
@@ -282,12 +308,7 @@ contains
   function cloud_optics(cloud_spec, &
                         ncol, nlayers, nbnd, nrghice, &
                         cldfrac, clwp, ciwp, rel, rei, optical_props) result(error_msg)
-  ! ------------------------------------------------------------------------------
-
-  ! Purpose:  Compute the cloud optical properties for each cloudy layer.
-
-  ! ------- Input -------
-
+    ! Purpose:  Compute the cloud optical properties for each cloudy layer.
     class(ty_cloud_optics),             intent(inout) :: cloud_spec
                                                ! cloud specification data
     integer, intent(in) :: ncol                ! total number of columns

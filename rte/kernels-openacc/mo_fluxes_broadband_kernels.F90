@@ -1,7 +1,6 @@
 ! This code is part of Radiative Transfer for Energetics (RTE)
 !
-! Eli Mlawer and Robert Pincus
-! Andre Wehe and Jennifer Delamere
+! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
 ! Copyright 2015-2018,  Atmospheric and Environmental Research and
@@ -9,9 +8,11 @@
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
+! -------------------------------------------------------------------------------------------------
 !
 ! Kernels for computing broadband fluxes by summing over all elements in the spectral dimension
 !
+! -------------------------------------------------------------------------------------------------
 module mo_fluxes_broadband_kernels
   use, intrinsic :: iso_c_binding
   use mo_rte_kind, only: wp
@@ -22,13 +23,12 @@ module mo_fluxes_broadband_kernels
   interface net_broadband
     module procedure net_broadband_full, net_broadband_precalc
   end interface net_broadband
-
 contains
   ! ----------------------------------------------------------------------------
     !
     ! Spectral reduction over all points
     !
-  pure subroutine sum_broadband(ncol, nlev, ngpt, spectral_flux, broadband_flux) bind (C)
+  pure subroutine sum_broadband(ncol, nlev, ngpt, spectral_flux, broadband_flux) bind(C, name="sum_broadband")
     integer,                               intent(in ) :: ncol, nlev, ngpt
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux
     real(wp), dimension(ncol, nlev),       intent(out) :: broadband_flux
@@ -55,7 +55,8 @@ contains
   !
   ! Net flux: Spectral reduction over all points
   !
-  pure subroutine net_broadband_full(ncol, nlev, ngpt, spectral_flux_dn, spectral_flux_up, broadband_flux_net) bind (C)
+  pure subroutine net_broadband_full(ncol, nlev, ngpt, spectral_flux_dn, spectral_flux_up, broadband_flux_net) &
+    bind(C, name="net_broadband_full")
     integer,                               intent(in ) :: ncol, nlev, ngpt
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux_dn, spectral_flux_up
     real(wp), dimension(ncol, nlev),       intent(out) :: broadband_flux_net
@@ -78,7 +79,11 @@ contains
     !$acc end data
   end subroutine net_broadband_full
   ! ----------------------------------------------------------------------------
-  pure subroutine net_broadband_precalc(ncol, nlay, flux_dn, flux_up, broadband_flux_net) bind (C)
+  !
+  ! Net flux when bradband flux up and down are already available
+  !
+  pure subroutine net_broadband_precalc(ncol, nlay, flux_dn, flux_up, broadband_flux_net) &
+    bind(C, name="net_broadband_precalc")
     integer,                         intent(in ) :: ncol, nlay
     real(wp), dimension(ncol, nlay), intent(in ) :: flux_dn, flux_up
     real(wp), dimension(ncol, nlay), intent(out) :: broadband_flux_net

@@ -59,8 +59,8 @@ module mo_cloud_optics
     real(wp), dimension(:,:,:,:), allocatable :: pade_ssaice    ! (nband, nsizereg, ncoeff_ssa_g, nrghice)
     real(wp), dimension(:,:,:,:), allocatable :: pade_asyice    ! (nband, nsizereg, ncoeff_ssa_g, nrghice)
     ! Particle size regimes for Pade formulations
-    integer, dimension(:), allocatable :: pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq  ! (nbound)
-    integer, dimension(:), allocatable :: pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice  ! (nbound)
+    real(wp), dimension(:), allocatable :: pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq  ! (nbound)
+    real(wp), dimension(:), allocatable :: pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice  ! (nbound)
 
 ! ------------------------------------------------------------------------------------------
   contains
@@ -180,8 +180,8 @@ contains
     ! Boundaries of size regimes. Liquid and ice are separate;
     !   extinction is fit to different numbers of size bins than single-scattering albedo and asymmetry factor
     !
-    integer,  dimension(:),       intent(in)    :: pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq
-    integer,  dimension(:),       intent(in)    :: pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice
+    real(wp),  dimension(:),       intent(in)    :: pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq
+    real(wp),  dimension(:),       intent(in)    :: pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice
     character(len=128)    :: error_msg
 
 ! ------- Local -------
@@ -569,14 +569,14 @@ contains
   !--------------------------------------------------------------------------------------------------------------------
   function get_irad(rad, sizereg) result(irad)
     real(wp),               intent(in) :: rad
-    integer, dimension(:), intent(in) :: sizereg
+    real(wp), dimension(:), intent(in) :: sizereg
     integer                            :: irad
     !
     ! Finds index into size regime table
     ! This works only if there are precisely three size regimes (four bounds) and it's
     !   previously guaranteed that sizereg(1) <= rad <= sizereg(4)
     !
-    irad = min(floor((rad - real(sizereg(2), wp))/real(sizereg(3), wp)) + 2, 3)
+    irad = min(floor((rad - sizereg(2))/sizereg(3)) + 2, 3)
   end function get_irad
   !---------------------------------------------------------------------------
   function pade_ext(cloud_spec,reff,is_liquid,ibnd,irad,icergh)

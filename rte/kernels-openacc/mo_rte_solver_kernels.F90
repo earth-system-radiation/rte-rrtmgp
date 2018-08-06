@@ -173,7 +173,7 @@ contains
   ! ---------------------------------------------------------------
   subroutine lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
                                    tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_up, flux_dn) &
-                                   bind (C)
+                                   bind (C, name="lw_solver_noscat_GaussQuad")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     integer,                               intent(in   ) :: nmus          ! number of quadrature angles
@@ -324,11 +324,17 @@ contains
                 flux_up, flux_dn)
     !!$acc end data
   end subroutine lw_solver_2stream
-  ! ---------------------------------------------------------------
-  !   Shortwave kernels
-  ! ---------------------------------------------------------------
+  ! -------------------------------------------------------------------------------------------------
+  !
+  !   Top-level shortwave kernels
+  !
+  ! -------------------------------------------------------------------------------------------------
+  !
+  !   Extinction-only i.e. solar direct beam
+  !
+  ! -------------------------------------------------------------------------------------------------
     pure subroutine sw_solver_noscat(ncol, nlay, ngpt, &
-                                top_at_1, tau, mu0, flux_dir) bind (C)
+                                top_at_1, tau, mu0, flux_dir) bind (C, name="sw_solver_noscat")
       integer,                    intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
       logical(wl),                intent(in   ) :: top_at_1
       real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
@@ -376,11 +382,18 @@ contains
       end if
       !!$acc end data
     end subroutine sw_solver_noscat
-    ! ---------------------------------------------------------------
-     subroutine sw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
-                                   tau, ssa, g, mu0,           &
-                                   sfc_alb_dir, sfc_alb_dif,   &
-                                   flux_up, flux_dn, flux_dir) bind (C)
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Shortwave two-stream calculation:
+  !   compute layer reflectance, transmittance
+  !   compute solar source function for diffuse radiation
+  !   transport
+  !
+  ! -------------------------------------------------------------------------------------------------
+    subroutine sw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
+                                  tau, ssa, g, mu0,           &
+                                  sfc_alb_dir, sfc_alb_dif,   &
+                                  flux_up, flux_dn, flux_dir) bind (C, name="sw_solver_2stream")
       integer,                    intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
       logical(wl),                intent(in   ) :: top_at_1
       real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &  ! Optical thickness,
@@ -494,7 +507,7 @@ contains
   ! ---------------------------------------------------------------
   subroutine lw_transport_noscat(ncol, nlay, ngpt, top_at_1, &
                                  tau, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                                 radn_up, radn_dn) bind(C)
+                                 radn_up, radn_dn) bind(C, name="lw_transport_noscat")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: tau, &     ! Absorption optical thickness, pre-divided by mu []
@@ -568,7 +581,7 @@ contains
   !    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
   !
   pure subroutine lw_two_stream(ncol, nlay, ngpt, tau, w0, g, &
-                                gamma1, gamma2, Rdif, Tdif) bind(C)
+                                gamma1, gamma2, Rdif, Tdif) bind(C, name="lw_two_stream")
     integer,                             intent(in)  :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(in)  :: tau, w0, g
     real(wp), dimension(ncol,nlay,ngpt), intent(out) :: gamma1, gamma2, Rdif, Tdif
@@ -602,6 +615,7 @@ contains
           gamma1(icol,ilay,igpt)= LW_diff_sec * (1._wp - 0.5_wp * w0(icol,ilay,igpt) * (1._wp + g(icol,ilay,igpt))) ! Fu et al. Eq 2.9
           gamma2(icol,ilay,igpt)= LW_diff_sec *          0.5_wp * w0(icol,ilay,igpt) * (1._wp - g(icol,ilay,igpt))  ! Fu et al. Eq 2.10
 
+          ! Written to encourage vectorization of exponential, square root
           ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
           !   k = 0 for isotropic, conservative scattering; this lower limit on k
           !   gives relative error with respect to conservative solution
@@ -678,7 +692,7 @@ contains
                             sfc_emis, sfc_src,      &
                             lay_source, lev_source, &
                             gamma1, gamma2, rdif, tdif, tau, source_dn, source_up, source_sfc) &
-                            bind (C)
+                            bind (C, name="lw_source_2str")
     integer,                         intent(in) :: ncol, nlay, ngpt
     logical(wl),                     intent(in) :: top_at_1
     real(wp), dimension(ncol      , ngpt), intent(in) :: sfc_emis, sfc_src
@@ -746,7 +760,7 @@ contains
   !    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
   !
     pure subroutine sw_two_stream(ncol, nlay, ngpt, mu0, tau, w0, g, &
-                                  Rdif, Tdif, Rdir, Tdir, Tnoscat) bind (C)
+                                  Rdif, Tdif, Rdir, Tdir, Tnoscat) bind (C, name="sw_two_stream")
       integer,                             intent(in)  :: ncol, nlay, ngpt
       real(wp), dimension(ncol),           intent(in)  :: mu0
       real(wp), dimension(ncol,nlay,ngpt), intent(in)  :: tau, w0, g
@@ -841,6 +855,7 @@ contains
             ! Equation 15, multiplying top and bottom by exp(-k*tau),
             !   multiplying through by exp(-tau/mu0) to
             !   prefer underflow to overflow
+            ! Omitting direct transmittance
             !
             Tdir(icol,ilay,igpt) = &
                      -RT_term * ((1._wp + k_mu) * (alpha1 + k_gamma4) * Tnoscat(icol,ilay,igpt) - &
@@ -859,7 +874,7 @@ contains
   !   report direct beam as a byproduct
   !
   subroutine sw_source_2str(ncol, nlay, ngpt, top_at_1, Rdir, Tdir, Tnoscat, sfc_albedo, &
-                            source_up, source_dn, source_sfc, flux_dn_dir)
+                            source_up, source_dn, source_sfc, flux_dn_dir) bind(C, name="sw_source_2str")
     integer,                                 intent(in   ) :: ncol, nlay, ngpt
     logical(wl),                             intent(in   ) :: top_at_1
     real(wp), dimension(ncol, nlay  , ngpt), intent(in   ) :: Rdir, Tdir, Tnoscat ! Layer reflectance, transmittance for diffuse radiation
@@ -915,7 +930,7 @@ contains
                     albedo_sfc,           &
                     rdif, tdif,           &
                     src_dn, src_up, src_sfc, &
-                    flux_up, flux_dn)
+                    flux_up, flux_dn) bind(C, name="adding")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: albedo_sfc
@@ -1043,7 +1058,7 @@ contains
   ! Upper boundary condition
   !
   ! ---------------------------------------------------------------
-  pure subroutine apply_BC_gpt(ncol, nlay, ngpt, top_at_1, inc_flux, flux_dn) bind (C)
+  pure subroutine apply_BC_gpt(ncol, nlay, ngpt, top_at_1, inc_flux, flux_dn) bind (C, name="apply_BC_gpt")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux         ! Flux at top of domain
@@ -1072,7 +1087,7 @@ contains
     !$acc end data
   end subroutine apply_BC_gpt
   ! ---------------------
-  pure subroutine apply_BC_factor(ncol, nlay, ngpt, top_at_1, inc_flux, factor, flux_dn) bind (C)
+  pure subroutine apply_BC_factor(ncol, nlay, ngpt, top_at_1, inc_flux, factor, flux_dn) bind (C, name="apply_BC_factor")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux         ! Flux at top of domain
@@ -1103,7 +1118,7 @@ contains
     !$acc end data
   end subroutine apply_BC_factor
   ! ---------------------
-  pure subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C)
+  pure subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="apply_BC_0")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_dn          ! Flux to be used as input to solvers below

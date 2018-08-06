@@ -10,6 +10,7 @@
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
+! -------------------------------------------------------------------------------------------------
 !
 ! Description:  Addition of optical properties -- the first set are incremented by the second set.
 !   There are three possible representations of optical properties (scalar = optical depth only;
@@ -39,12 +40,16 @@ module mo_optical_props_kernels
 
   real(wp), parameter, private :: eps = 3.0_wp*tiny(1.0_wp)
 contains
-  ! ---------------------------------
-  ! ---------------------------------
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Delta-scaling, provided only for two-stream properties at present
+  !
+  ! -------------------------------------------------------------------------------------------------
   ! Delta-scale
   !   user-provided value of f (forward scattering)
   !
-  pure subroutine delta_scale_2str_f_k(ncol, nlay, ngpt, tau, ssa, g, f) bind(C)
+  pure subroutine delta_scale_2str_f_k(ncol, nlay, ngpt, tau, ssa, g, f) &
+      bind(C, name="delta_scale_2str_f_k")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) ::  tau, ssa, g
     real(wp), dimension(ncol, nlay, ngpt), intent(in   ) ::  f
@@ -72,11 +77,11 @@ contains
    !!$acc end data
   end subroutine delta_scale_2str_f_k
   ! ---------------------------------
-  ! ---------------------------------
   ! Delta-scale
   !   f = g*g
   !
-  pure subroutine delta_scale_2str_k(ncol, nlay, ngpt, tau, ssa, g) bind(C)
+  pure subroutine delta_scale_2str_k(ncol, nlay, ngpt, tau, ssa, g) &
+      bind(C, name="delta_scale_2str_k")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) ::  tau, ssa, g
 
@@ -103,11 +108,25 @@ contains
 
     !!$acc end data
   end subroutine delta_scale_2str_k
-  ! ---------------------------------
-  ! ---------------------------------
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Addition of optical properties: the first set are incremented by the second set.
+  !
+  !   There are three possible representations of optical properties (scalar = optical depth only;
+  !   two-stream = tau, single-scattering albedo, and asymmetry factor g, and
+  !   n-stream = tau, ssa, and phase function moments p.) Thus we need nine routines, three for
+  !   each choice of representation on the left hand side times three representations of the
+  !   optical properties to be added.
+  !
+  !   There are two sets of these nine routines. In the first the two sets of optical
+  !   properties are defined at the same spectral resolution. There is also a set of routines
+  !   to add properties defined at lower spectral resolution to a set defined at higher spectral
+  !   resolution (adding properties defined by band to those defined by g-point)
+  !
+  ! -------------------------------------------------------------------------------------------------
   pure subroutine increment_1scalar_by_1scalar(ncol, nlay, ngpt, &
                                                tau1,             &
-                                               tau2) bind(C)
+                                               tau2) bind(C, name="increment_1scalar_by_1scalar")
     integer,                              intent(in  ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2
@@ -131,7 +150,7 @@ contains
   ! increment 1scalar by 2stream
   pure subroutine increment_1scalar_by_2stream(ncol, nlay, ngpt, &
                                                tau1,             &
-                                               tau2, ssa2) bind(C)
+                                               tau2, ssa2) bind(C, name="increment_1scalar_by_2stream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2
@@ -156,7 +175,7 @@ contains
   ! increment 1scalar by nstream
   pure subroutine increment_1scalar_by_nstream(ncol, nlay, ngpt, &
                                                tau1,             &
-                                               tau2, ssa2) bind(C)
+                                               tau2, ssa2) bind(C, name="increment_1scalar_by_nstream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2
@@ -182,7 +201,7 @@ contains
   ! increment 2stream by 1scalar
   pure subroutine increment_2stream_by_1scalar(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
-                                               tau2) bind(C)
+                                               tau2) bind(C, name="increment_2stream_by_1scalar")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2
@@ -212,7 +231,7 @@ contains
   ! increment 2stream by 2stream
   pure subroutine increment_2stream_by_2stream(ncol, nlay, ngpt, &
                                                tau1, ssa1, g1,   &
-                                               tau2, ssa2, g2) bind(C)
+                                               tau2, ssa2, g2) bind(C, name="increment_2stream_by_2stream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1, g1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2, g2
@@ -250,7 +269,7 @@ contains
   ! increment 2stream by nstream
   pure subroutine increment_2stream_by_nstream(ncol, nlay, ngpt, nmom2, &
                                                tau1, ssa1, g1,          &
-                                               tau2, ssa2, p2) bind(C)
+                                               tau2, ssa2, p2) bind(C, name="increment_2stream_by_nstream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt, nmom2
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1, g1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2
@@ -291,7 +310,7 @@ contains
   ! increment nstream by 1scalar
   pure subroutine increment_nstream_by_1scalar(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
-                                               tau2) bind(C)
+                                               tau2) bind(C, name="increment_nstream_by_1scalar")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2
@@ -321,7 +340,7 @@ contains
   ! increment nstream by 2stream
   pure subroutine increment_nstream_by_2stream(ncol, nlay, ngpt, nmom1, &
                                                tau1, ssa1, p1,          &
-                                               tau2, ssa2, g2) bind(C)
+                                               tau2, ssa2, g2) bind(C, name="increment_nstream_by_2stream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt, nmom1
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(nmom1, &
@@ -368,7 +387,7 @@ contains
   ! increment nstream by nstream
   pure subroutine increment_nstream_by_nstream(ncol, nlay, ngpt, nmom1, nmom2, &
                                                tau1, ssa1, p1,                 &
-                                               tau2, ssa2, p2) bind(C)
+                                               tau2, ssa2, p2) bind(C, name="increment_nstream_by_nstream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt, nmom1, nmom2
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(nmom1, &
@@ -418,7 +437,7 @@ contains
   pure subroutine inc_1scalar_by_1scalar_bybnd(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2,             &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_1scalar_by_1scalar_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2
@@ -437,7 +456,7 @@ contains
   pure subroutine inc_1scalar_by_2stream_bybnd(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2, ssa2,       &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_1scalar_by_2stream_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2
@@ -456,7 +475,7 @@ contains
   pure subroutine inc_1scalar_by_nstream_bybnd(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2, ssa2,       &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_1scalar_by_nstream_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2
@@ -476,7 +495,7 @@ contains
   pure subroutine inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
                                                tau2,             &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_2stream_by_1scalar_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2
@@ -503,7 +522,7 @@ contains
   pure subroutine inc_2stream_by_2stream_bybnd(ncol, nlay, ngpt, &
                                                tau1, ssa1, g1,   &
                                                tau2, ssa2, g2,   &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_2stream_by_2stream_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1, g1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2, g2
@@ -537,7 +556,7 @@ contains
   pure subroutine inc_2stream_by_nstream_bybnd(ncol, nlay, ngpt, nmom2, &
                                                tau1, ssa1, g1,          &
                                                tau2, ssa2, p2,          &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_2stream_by_nstream_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nmom2, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1, g1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2
@@ -574,7 +593,7 @@ contains
   pure subroutine inc_nstream_by_1scalar_bybnd(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
                                                tau2,             &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_nstream_by_1scalar_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2
@@ -601,7 +620,7 @@ contains
   pure subroutine inc_nstream_by_2stream_bybnd(ncol, nlay, ngpt, nmom1, &
                                                tau1, ssa1, p1,          &
                                                tau2, ssa2, g2,          &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_nstream_by_2stream_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nmom1, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(nmom1, &
@@ -644,7 +663,7 @@ contains
   pure subroutine inc_nstream_by_nstream_bybnd(ncol, nlay, ngpt, nmom1, nmom2, &
                                                tau1, ssa1, p1,                 &
                                                tau2, ssa2, p2,                 &
-                                               nbnd, gpt_lims) bind(C)
+                                               nbnd, gpt_lims) bind(C, name="inc_nstream_by_nstream_bybnd")
     integer,                             intent(in   ) :: ncol, nlay, ngpt, nmom1, nmom2, nbnd
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(nmom1, &

@@ -23,7 +23,6 @@ module mo_fluxes_broadband_kernels
   interface net_broadband
     module procedure net_broadband_full, net_broadband_precalc
   end interface net_broadband
-
 contains
   ! ----------------------------------------------------------------------------
     !

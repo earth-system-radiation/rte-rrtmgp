@@ -290,16 +290,18 @@ contains
     this%radice_fac = 0._wp
 
     ! Lookup table cloud optics coefficients
-    if(allocated(lut_extliq)) &
-      deallocate(lut_extliq, lut_ssaliq, lut_asyliq, lut_extice, lut_ssaice, lut_asyice)
+    if(allocated(this%lut_extliq)) &
+      deallocate(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq, &
+                 this%lut_extice, this%lut_ssaice, this%lut_asyice)
 
   ! Pade cloud optics coefficients
-    if(allocated(pade_extliq)) &
-      dellocate(pade_extliq, pade_ssaliq, pade_asyliq, pade_extice, pade_ssaice, pade_asyice, &
-                pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq, &
-                pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice)
+    if(allocated(this%pade_extliq)) then
+      deallocate(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq, &
+                 this%pade_extice, this%pade_ssaice, this%pade_asyice, &
+                 this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq, &
+                 this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)
+    end if
   end subroutine finalize
-
   ! ------------------------------------------------------------------------------
   !
   ! Derive cloud optical properties from provided cloud physical properties
@@ -333,6 +335,8 @@ contains
 
     character(len=128)    :: error_msg
     ! ------- Local -------
+    integer, parameter                  :: max_re_moments = 3
+    real(wp), dimension(max_re_moments) :: re_moments ! re, re**2, re**3 etc.
     real(wp) :: radliq                         ! cloud liquid droplet radius (microns)
     real(wp) :: radice                         ! cloud ice effective size (microns)
     real(wp) :: factor, fint
@@ -342,7 +346,7 @@ contains
     logical :: icemsk(ncol,nlayers)            ! ice cloud mask
 
     integer :: index                           !
-    integer :: icol, ilyr, ibnd                !
+    integer :: icol, ilyr, ibnd, i             !
     integer :: irad, irade, irads, iradg       !
     integer :: icergh                          ! ice surface roughness
                                                ! (1 = none, 2 = medium, 3 = high)
@@ -362,7 +366,7 @@ contains
     real(wp) :: scatliq                        ! Liquid scattering term
 
     real(wp) :: g                              ! asymmetry parameter - local
-
+    integer  :: nsizereg
 ! ------- Definitions -------
 
 ! ------- Cloud masks -------
@@ -452,6 +456,8 @@ contains
       !
       ! Cloud optical properties from Pade coefficient method
       !
+      ! This assumes that all the Pade treaments have the same number of size regimes
+      nsizereg = size(cloud_spec%pade_sizreg_extice)-1
       do icol = 1, ncol
         do ilyr = 1, nlayers
           !
@@ -459,23 +465,29 @@ contains
           !
           if (liqmsk(icol,ilyr)) then
             radliq = rel(icol,ilyr)
+            re_moments(:max_re_moments) = [radliq, radliq*radliq, radliq*radliq*radliq]
+
             !
             ! Define coefficient particle size regime for current size: extinction, ssa
             !
             irade = get_irad(radliq, cloud_spec%pade_sizreg_extliq)
             irads = get_irad(radliq, cloud_spec%pade_sizreg_ssaliq)
             iradg = get_irad(radliq, cloud_spec%pade_sizreg_asyliq)
+
             do ibnd = 1, nbnd
               extliq(icol,ilyr,ibnd) = cloud_spec%pade_ext(radliq, .True., ibnd, irade)
               ssaliq(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radliq, .True., ibnd, irads)
               asyliq(icol,ilyr,ibnd) = cloud_spec%pade_asy(radliq, .True., ibnd, iradg)
             enddo
+            extliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg, 2, 3, irade, re_moments, cloud_spec%pade_extliq)
+!            asyliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg, 2, 2, iradg, re_moments, cloud_spec%pade_asyliq)
           endif
           !
           ! Ice optical properties
           !
           if (icemsk(icol,ilyr)) then
             radice = rei(icol,ilyr)
+            re_moments(:max_re_moments) = [radice, radice*radice, radice*radice*radice]
             irade = get_irad(radice, cloud_spec%pade_sizreg_extice)
             irads = get_irad(radice, cloud_spec%pade_sizreg_ssaice)
             iradg = get_irad(radice, cloud_spec%pade_sizreg_asyice)
@@ -599,6 +611,40 @@ contains
     !
     irad = min(floor((rad - sizereg(2))/sizereg(3)) + 2, 3)
   end function get_irad
+  !---------------------------------------------------------------------------
+  !
+  ! Evaluate Pade approximant of order [n/m] = [2/2] or [2/3]
+  !   It might be better to write this as a loop for general order
+  !
+  function pade_eval(nband, nrads, n, m, irad, re_moments, coeff_table)
+    integer,                intent(in) :: nband, nrads, m, n, irad
+    real(wp), dimension(nband, nrads, n+m+1), &
+                            intent(in) :: coeff_table
+    real(wp), dimension(           max(n,m)), &
+                            intent(in) :: re_moments ! [re, re**2, re**3] etc.
+    real(wp), dimension(nband)         :: pade_eval
+
+    integer :: iband
+
+    if(n+m == 5) then
+      do iband = 1, nband
+        pade_eval(iband) = (coeff_table(iband,irad,1) +                &
+                            coeff_table(iband,irad,2)*re_moments(1) +  &
+                            coeff_table(iband,irad,3)*re_moments(2)) / &
+                           (1.0_wp                    +                &
+                            coeff_table(iband,irad,4)*re_moments(1) +  &
+                            coeff_table(iband,irad,5)*re_moments(2))
+      end do
+    else if(n+m == 6) then
+      pade_eval(iband) = (coeff_table(iband,irad,1) +                &
+                          coeff_table(iband,irad,2)*re_moments(1) +  &
+                          coeff_table(iband,irad,3)*re_moments(2)) / &
+                         (1.0_wp                    +                &
+                          coeff_table(iband,irad,4)*re_moments(1) +  &
+                          coeff_table(iband,irad,5)*re_moments(2) +  &
+                          coeff_table(iband,irad,6)*re_moments(3))
+    end if
+  end function pade_eval
   !---------------------------------------------------------------------------
   function pade_ext(cloud_spec,reff,is_liquid,ibnd,irad,icergh)
 

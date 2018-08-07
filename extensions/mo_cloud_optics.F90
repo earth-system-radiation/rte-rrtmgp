@@ -418,16 +418,10 @@ contains
             fint = factor - real(index)
 
             do ibnd = 1, nbnd
-              extliq(icol,ilyr,ibnd) = cloud_spec%lut_extliq(index,ibnd) + &
-                               fint * (cloud_spec%lut_extliq(index+1,ibnd) - &
-                                       cloud_spec%lut_extliq(index,ibnd))
-              ssaliq(icol,ilyr,ibnd) = cloud_spec%lut_ssaliq(index,ibnd) + &
-                               fint * (cloud_spec%lut_ssaliq(index+1,ibnd) - &
-                                       cloud_spec%lut_ssaliq(index,ibnd))
-              asyliq(icol,ilyr,ibnd) = cloud_spec%lut_asyliq(index,ibnd) + &
-                               fint * (cloud_spec%lut_asyliq(index+1,ibnd) - &
-                                       cloud_spec%lut_asyliq(index,ibnd))
-            enddo
+              extliq(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_extliq(:,ibnd), index, fint)
+              ssaliq(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_ssaliq(:,ibnd), index, fint)
+              asyliq(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_asyliq(:,ibnd), index, fint)
+           end do
           endif
           !
           ! Ice optical properties for requested ice roughness (icergh)
@@ -439,16 +433,10 @@ contains
             fint = factor - real(index)
 
             do ibnd = 1, nbnd
-              extice(icol,ilyr,ibnd) = cloud_spec%lut_extice(index,ibnd,icergh) + &
-                               fint * (cloud_spec%lut_extice(index+1,ibnd,icergh) - &
-                                       cloud_spec%lut_extice(index,ibnd,icergh))
-              ssaice(icol,ilyr,ibnd) = cloud_spec%lut_ssaice(index,ibnd,icergh) + &
-                               fint * (cloud_spec%lut_ssaice(index+1,ibnd,icergh) - &
-                                       cloud_spec%lut_ssaice(index,ibnd,icergh))
-              asyice(icol,ilyr,ibnd) = cloud_spec%lut_asyice(index,ibnd,icergh) + &
-                               fint * (cloud_spec%lut_asyice(index+1,ibnd,icergh) - &
-                                       cloud_spec%lut_asyice(index,ibnd,icergh))
-            enddo
+              extice(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_extice(:,ibnd,icergh), index, fint)
+              ssaice(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_ssaice(:,ibnd,icergh), index, fint)
+              asyice(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_asyice(:,ibnd,icergh), index, fint)
+           end do
           endif
         enddo
       enddo
@@ -457,7 +445,7 @@ contains
       ! Cloud optical properties from Pade coefficient method
       !
       ! This assumes that all the Pade treaments have the same number of size regimes
-      nsizereg = size(cloud_spec%pade_sizreg_extice)-1
+      nsizereg = size(cloud_spec%pade_sizreg_extliq)-1
       do icol = 1, ncol
         do ilyr = 1, nlayers
           !
@@ -479,8 +467,11 @@ contains
               ssaliq(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radliq, .True., ibnd, irads)
               asyliq(icol,ilyr,ibnd) = cloud_spec%pade_asy(radliq, .True., ibnd, iradg)
             enddo
-            extliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg, 2, 3, irade, re_moments, cloud_spec%pade_extliq)
-!            asyliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg, 2, 2, iradg, re_moments, cloud_spec%pade_asyliq)
+!            extliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,3,irade,re_moments,cloud_spec%pade_extliq)
+!            ssaliq(icol,ilyr,1:nbnd) = 1._wp - max(0._wp,
+!                                       pade_eval(nbnd,nsizereg,2,3,irads,re_moments,cloud_spec%pade_ssaliq)
+!                                                  )
+!            asyliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,2,iradg,re_moments,cloud_spec%pade_asyliq)
           endif
           !
           ! Ice optical properties
@@ -613,14 +604,14 @@ contains
   end function get_irad
   !---------------------------------------------------------------------------
   !
-  ! Evaluate Pade approximant of order [n/m] = [2/2] or [2/3]
+  ! Evaluate Pade approximant of order [m/n] = [2/2] or [2/3]
   !   It might be better to write this as a loop for general order
   !
-  function pade_eval(nband, nrads, n, m, irad, re_moments, coeff_table)
+  function pade_eval(nband, nrads, m, n, irad, re_moments, coeff_table)
     integer,                intent(in) :: nband, nrads, m, n, irad
-    real(wp), dimension(nband, nrads, n+m+1), &
+    real(wp), dimension(nband, nrads, m+n+1), &
                             intent(in) :: coeff_table
-    real(wp), dimension(           max(n,m)), &
+    real(wp), dimension(           max(m,n)), &
                             intent(in) :: re_moments ! [re, re**2, re**3] etc.
     real(wp), dimension(nband)         :: pade_eval
 
@@ -628,22 +619,26 @@ contains
 
     if(n+m == 5) then
       do iband = 1, nband
-        pade_eval(iband) = (coeff_table(iband,irad,1) +                &
+        pade_eval(iband) = (coeff_table(iband,irad,1)               +  &
                             coeff_table(iband,irad,2)*re_moments(1) +  &
                             coeff_table(iband,irad,3)*re_moments(2)) / &
-                           (1.0_wp                    +                &
+                           (1.0_wp                                  +  &
                             coeff_table(iband,irad,4)*re_moments(1) +  &
                             coeff_table(iband,irad,5)*re_moments(2))
       end do
     else if(n+m == 6) then
-      pade_eval(iband) = (coeff_table(iband,irad,1) +                &
+      pade_eval(iband) = (coeff_table(iband,irad,1)               +  &
                           coeff_table(iband,irad,2)*re_moments(1) +  &
                           coeff_table(iband,irad,3)*re_moments(2)) / &
-                         (1.0_wp                    +                &
+                         (1.0_wp                                  +  &
                           coeff_table(iband,irad,4)*re_moments(1) +  &
                           coeff_table(iband,irad,5)*re_moments(2) +  &
                           coeff_table(iband,irad,6)*re_moments(3))
     end if
+!    if(any(pade_eval < 0._wp)) then
+!      print *, re_moments(1), irad
+!      print *, pack([(iband, iband = 1, nband)], pade_eval < 0._wp)
+!    end if
   end function pade_eval
   !---------------------------------------------------------------------------
   function pade_ext(cloud_spec,reff,is_liquid,ibnd,irad,icergh)
@@ -731,5 +726,13 @@ contains
                (1.0_wp+p(4)*reff+p(5)*reff2))
 
   end function pade_asy
+  !---------------------------------------------------------------------------
+  function table_interp(table, index, fint) result(x)
+    real(wp), dimension(:), intent(in) :: table
+    integer,                  intent(in) :: index
+    real(wp),                 intent(in) :: fint
+    real(wp)                             :: x
 
+    x = table(index) + fint * (table(index+1) - table(index))
+  end function table_interp
 end module mo_cloud_optics

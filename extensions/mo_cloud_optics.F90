@@ -307,31 +307,26 @@ contains
   ! Derive cloud optical properties from provided cloud physical properties
   !
   ! ------------------------------------------------------------------------------
-  function cloud_optics(cloud_spec, &
-                        ncol, nlayers, nbnd, nrghice, &
-                        cldfrac, clwp, ciwp, rel, rei, optical_props) result(error_msg)
-    ! Purpose:  Compute the cloud optical properties for each cloudy layer.
-    class(ty_cloud_optics),             intent(inout) :: cloud_spec
-                                               ! cloud specification data
-    integer, intent(in) :: ncol                ! total number of columns
-    integer, intent(in) :: nlayers             ! total number of layers
-    integer, intent(in) :: nbnd                ! number of bands
-    integer, intent(in) :: nrghice             ! number of ice roughness categories
-
-    real(wp), intent(in) :: cldfrac(:,:)       ! cloud fraction
-                                               !    Dimensions: (ncol,nlayers)
-    real(wp), intent(in) :: ciwp(:,:)          ! cloud ice water path
-                                               !    Dimensions: (ncol,nlayers)
-    real(wp), intent(in) :: clwp(:,:)          ! cloud liquid water path
-                                               !    Dimensions: (ncol,nlayers)
-    real(wp), intent(in) :: rei(:,:)           ! cloud ice particle effective size (microns)
-                                               !    Dimensions: (ncol,nlayers)
-    real(wp), intent(in) :: rel(:,:)           ! cloud liquid particle effective radius (microns)
-                                               !    Dimensions: (ncol,nlayers)
-
-  ! ------- Output -------
-    class(ty_optical_props_arry), intent(inout) :: optical_props
-                                               ! Dimensions: (ncol,nlayers,nbnd)
+  !
+  ! Compute single-scattering properties
+  !
+  function cloud_optics(this, &
+                        ncol, nlay, nbnd, nrghice, &
+                        liqmsk, icemsk,   &
+                        clwp, ciwp, rel, rei, optical_props) result(error_msg)
+    class(ty_cloud_optics), &
+              intent(inout) :: this
+    integer,  intent(in   ) :: ncol, nlay, nbnd
+    integer,  intent(in   ) :: nrghice              ! number of ice roughness categories
+    logical,  intent(in   ) :: liqmsk(ncol,nlay), & ! Cloud mask for liquid and ice clouds respectively
+                               icemsk(ncol,nlay)
+    real(wp), intent(in   ) :: ciwp(ncol,nlay), &     ! cloud ice water path
+                               clwp(ncol,nlay), &     ! cloud liquid water path
+                               rei(ncol,nlay), &      ! cloud ice particle effective size (microns)
+                               rel(ncol,nlay)      ! cloud liquid particle effective radius (microns)
+    class(ty_optical_props_arry), &
+              intent(inout) :: optical_props
+                                               ! Dimensions: (ncol,nlay,nbnd)
 
     character(len=128)    :: error_msg
     ! ------- Local -------
@@ -341,23 +336,19 @@ contains
     real(wp) :: radice                         ! cloud ice effective size (microns)
     real(wp) :: factor, fint
 
-    logical :: cldmsk(ncol,nlayers)            ! cloud mask
-    logical :: liqmsk(ncol,nlayers)            ! liquid cloud mask
-    logical :: icemsk(ncol,nlayers)            ! ice cloud mask
-
     integer :: index                           !
     integer :: icol, ilyr, ibnd, i             !
     integer :: irad, irade, irads, iradg       !
     integer :: icergh                          ! ice surface roughness
                                                ! (1 = none, 2 = medium, 3 = high)
 
-    real(wp) :: extliq(ncol,nlayers,nbnd)      ! liquid extinction coefficient
-    real(wp) :: ssaliq(ncol,nlayers,nbnd)      ! liquid single scattering albedo
-    real(wp) :: asyliq(ncol,nlayers,nbnd)      ! liquid asymmetry parameter
+    real(wp) :: extliq(ncol,nlay,nbnd)      ! liquid extinction coefficient
+    real(wp) :: ssaliq(ncol,nlay,nbnd)      ! liquid single scattering albedo
+    real(wp) :: asyliq(ncol,nlay,nbnd)      ! liquid asymmetry parameter
 
-    real(wp) :: extice(ncol,nlayers,nbnd)      ! ice extinction coefficients
-    real(wp) :: ssaice(ncol,nlayers,nbnd)      ! ice single scattering albedo
-    real(wp) :: asyice(ncol,nlayers,nbnd)      ! ice asymmetry parameter
+    real(wp) :: extice(ncol,nlay,nbnd)      ! ice extinction coefficients
+    real(wp) :: ssaice(ncol,nlay,nbnd)      ! ice single scattering albedo
+    real(wp) :: asyice(ncol,nlay,nbnd)      ! ice asymmetry parameter
 
     real(wp) :: tauliq                         ! liquid cloud extinction optical depth
     real(wp) :: tauice                         ! ice cloud extinction optical depth
@@ -369,30 +360,21 @@ contains
     integer  :: nsizereg
 ! ------- Definitions -------
 
-! ------- Cloud masks -------
-   cldmsk = (cldfrac >= 1.e-20_wp      .and. clwp + ciwp >= 1.e-20_wp)
-   liqmsk = (cldmsk .and. rel > 0.0_wp .and. clwp >= 1.e-20_wp)
-   icemsk = (cldmsk .and. rei > 0.0_wp .and. ciwp >= 1.e-20_wp)
-
 ! ------- Error checking -------
     error_msg = ''
-    icergh = cloud_spec%icergh
-    if (icergh < 1 .or. icergh > nrghice) then
+    icergh = this%icergh
+    if (icergh < 1 .or. icergh > nrghice) &
        error_msg = 'cloud optics: cloud ice surface roughness flag is out of bounds'
-       return
-    endif
-! For liquid OP, particle size is limited to radliq_lwr to radliq_upr microns
-   if( any(liqmsk .and. rel < cloud_spec%radliq_lwr) .or. &
-       any(liqmsk .and. rel > cloud_spec%radliq_upr) ) then
+
+    if(any(liqmsk .and. (rel < this%radliq_lwr .or. rel > this%radliq_upr))) &
       error_msg = 'cloud optics: liquid effective radius is out of bounds'
-      return
-   endif
-! For Yang (2013) ice OP, particle size is limited to radice_lwr to radice_upr microns
-   if( any(icemsk .and. rei < cloud_spec%radice_lwr) .or. &
-       any(icemsk .and. rei > cloud_spec%radice_upr) ) then
+
+    if(any(icemsk .and. (rei < this%radice_lwr .or. rei > this%radice_upr))) &
       error_msg = 'cloud optics: ice effective radius is out of bounds'
-      return
-   endif
+
+    if(any((liqmsk .and.  clwp < 0._wp) .or. (icemsk .and.  ciwp < 0._wp))) &
+      error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
+    if(error_msg /= "") return
 
     ! Initialize
     extliq(:,:,:) = 0.0_wp
@@ -404,23 +386,23 @@ contains
     !
     ! Cloud optical properties from LUT method
     !
-    if (cloud_spec%do_lut) then
+    if (this%do_lut) then
       do icol = 1, ncol
-        do ilyr = 1, nlayers
+        do ilyr = 1, nlay
           !
           ! Liquid optical properties
           !
           if (liqmsk(icol,ilyr)) then
             radliq = rel(icol,ilyr)
-            factor = radliq - cloud_spec%radliq_fac
+            factor = radliq - this%radliq_fac
             index = int(factor)
             if (index .eq. 0) index = 1
             fint = factor - real(index)
 
             do ibnd = 1, nbnd
-              extliq(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_extliq(:,ibnd), index, fint)
-              ssaliq(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_ssaliq(:,ibnd), index, fint)
-              asyliq(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_asyliq(:,ibnd), index, fint)
+              extliq(icol,ilyr,ibnd) = table_interp(this%lut_extliq(:,ibnd), index, fint)
+              ssaliq(icol,ilyr,ibnd) = table_interp(this%lut_ssaliq(:,ibnd), index, fint)
+              asyliq(icol,ilyr,ibnd) = table_interp(this%lut_asyliq(:,ibnd), index, fint)
            end do
           endif
           !
@@ -428,14 +410,14 @@ contains
           !
           if (icemsk(icol,ilyr)) then
             radice = rei(icol,ilyr)
-            factor = radice * cloud_spec%radice_fac
+            factor = radice * this%radice_fac
             index = int(factor)
             fint = factor - real(index)
 
             do ibnd = 1, nbnd
-              extice(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_extice(:,ibnd,icergh), index, fint)
-              ssaice(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_ssaice(:,ibnd,icergh), index, fint)
-              asyice(icol,ilyr,ibnd) = table_interp(cloud_spec%lut_asyice(:,ibnd,icergh), index, fint)
+              extice(icol,ilyr,ibnd) = table_interp(this%lut_extice(:,ibnd,icergh), index, fint)
+              ssaice(icol,ilyr,ibnd) = table_interp(this%lut_ssaice(:,ibnd,icergh), index, fint)
+              asyice(icol,ilyr,ibnd) = table_interp(this%lut_asyice(:,ibnd,icergh), index, fint)
            end do
           endif
         enddo
@@ -445,9 +427,9 @@ contains
       ! Cloud optical properties from Pade coefficient method
       !
       ! This assumes that all the Pade treaments have the same number of size regimes
-      nsizereg = size(cloud_spec%pade_sizreg_extliq)-1
+      nsizereg = size(this%pade_sizreg_extliq)-1
       do icol = 1, ncol
-        do ilyr = 1, nlayers
+        do ilyr = 1, nlay
           !
           ! Liquid optical properties
           !
@@ -458,20 +440,20 @@ contains
             !
             ! Define coefficient particle size regime for current size: extinction, ssa
             !
-            irade = get_irad(radliq, cloud_spec%pade_sizreg_extliq)
-            irads = get_irad(radliq, cloud_spec%pade_sizreg_ssaliq)
-            iradg = get_irad(radliq, cloud_spec%pade_sizreg_asyliq)
+            irade = get_irad(radliq, this%pade_sizreg_extliq)
+            irads = get_irad(radliq, this%pade_sizreg_ssaliq)
+            iradg = get_irad(radliq, this%pade_sizreg_asyliq)
 
             do ibnd = 1, nbnd
-              extliq(icol,ilyr,ibnd) = cloud_spec%pade_ext(radliq, .True., ibnd, irade)
-              ssaliq(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radliq, .True., ibnd, irads)
-              asyliq(icol,ilyr,ibnd) = cloud_spec%pade_asy(radliq, .True., ibnd, iradg)
+              extliq(icol,ilyr,ibnd) = this%pade_ext(radliq, .True., ibnd, irade)
+              ssaliq(icol,ilyr,ibnd) = this%pade_ssa(radliq, .True., ibnd, irads)
+              asyliq(icol,ilyr,ibnd) = this%pade_asy(radliq, .True., ibnd, iradg)
             enddo
-!            extliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,3,irade,re_moments,cloud_spec%pade_extliq)
+!            extliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,3,irade,re_moments,this%pade_extliq)
 !            ssaliq(icol,ilyr,1:nbnd) = 1._wp - max(0._wp,
-!                                       pade_eval(nbnd,nsizereg,2,3,irads,re_moments,cloud_spec%pade_ssaliq)
+!                                       pade_eval(nbnd,nsizereg,2,3,irads,re_moments,this%pade_ssaliq)
 !                                                  )
-!            asyliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,2,iradg,re_moments,cloud_spec%pade_asyliq)
+!            asyliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,2,iradg,re_moments,this%pade_asyliq)
           endif
           !
           ! Ice optical properties
@@ -479,14 +461,14 @@ contains
           if (icemsk(icol,ilyr)) then
             radice = rei(icol,ilyr)
             re_moments(:max_re_moments) = [radice, radice*radice, radice*radice*radice]
-            irade = get_irad(radice, cloud_spec%pade_sizreg_extice)
-            irads = get_irad(radice, cloud_spec%pade_sizreg_ssaice)
-            iradg = get_irad(radice, cloud_spec%pade_sizreg_asyice)
+            irade = get_irad(radice, this%pade_sizreg_extice)
+            irads = get_irad(radice, this%pade_sizreg_ssaice)
+            iradg = get_irad(radice, this%pade_sizreg_asyice)
 
             do ibnd = 1, nbnd
-             extice(icol,ilyr,ibnd) = cloud_spec%pade_ext(radice, .False., ibnd, irade, icergh)
-             ssaice(icol,ilyr,ibnd) = cloud_spec%pade_ssa(radice, .False., ibnd, irads, icergh)
-             asyice(icol,ilyr,ibnd) = cloud_spec%pade_asy(radice, .False., ibnd, iradg, icergh)
+             extice(icol,ilyr,ibnd) = this%pade_ext(radice, .False., ibnd, irade, icergh)
+             ssaice(icol,ilyr,ibnd) = this%pade_ssa(radice, .False., ibnd, irads, icergh)
+             asyice(icol,ilyr,ibnd) = this%pade_asy(radice, .False., ibnd, iradg, icergh)
             enddo
           endif
         enddo
@@ -508,8 +490,8 @@ contains
         optical_props%p  (:,:,:,:) = 0.0_wp
     end select
      do icol = 1, ncol
-        do ilyr = 1, nlayers
-           if (cldmsk(icol,ilyr)) then
+        do ilyr = 1, nlay
+           if (liqmsk(icol,ilyr) .or. icemsk(icol,ilyr)) then
               do ibnd = 1, nbnd
                  tauice = ciwp(icol,ilyr) * extice(icol,ilyr,ibnd)
                  tauliq = clwp(icol,ilyr) * extliq(icol,ilyr,ibnd)

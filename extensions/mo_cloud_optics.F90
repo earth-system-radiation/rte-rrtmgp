@@ -32,34 +32,33 @@ module mo_cloud_optics
     ! Ice surface roughness category - needed for Yang (2013) ice optics parameterization
     integer, public :: icergh = 0                                ! (1 = none, 2 = medium, 3 = high)
 
-    ! Particle size boundary limits
-    real(wp) :: radliq_lwr = 0._wp              ! liquid particle size lower bound for interpolation
-    real(wp) :: radliq_upr = 0._wp              ! liquid particle size upper bound for interpolation
-    real(wp) :: radice_lwr = 0._wp              ! ice particle size lower bound for interpolation
-    real(wp) :: radice_upr = 0._wp              ! ice particle size upper bound for interpolation
-    ! Lookup table interpolation constants
-    real(wp) :: radliq_fac                     ! constant for calculating interpolation indices for liquid
-    real(wp) :: radice_fac                     ! constant for calculating interpolation indices for ice
-    ! Lookup table cloud optics coefficients
-    real(wp), dimension(:,:    ), allocatable :: lut_extliq     ! (nsize_liq, nband)
-    real(wp), dimension(:,:    ), allocatable :: lut_ssaliq     ! (nsize_liq, nband)
-    real(wp), dimension(:,:    ), allocatable :: lut_asyliq     ! (nsize_liq, nband)
-    real(wp), dimension(:,:,:  ), allocatable :: lut_extice     ! (nsize_ice, nband, nrghice)
-    real(wp), dimension(:,:,:  ), allocatable :: lut_ssaice     ! (nsize_ice, nband, nrghice)
-    real(wp), dimension(:,:,:  ), allocatable :: lut_asyice     ! (nsize_ice, nband, nrghice)
+    !
+    ! Lookup table information
+    !
+    ! Upper and lower limits of the tables
+    real(wp) :: radliq_lwr = 0._wp, radliq_upr = 0._wp
+    real(wp) :: radice_lwr = 0._wp, radice_upr = 0._wp
+    ! How many steps in the table? (for convenience)
+    integer  :: liq_nsteps = 0,        ice_nsteps = 0
+    ! How big is each step in the table?
+    real(wp) :: liq_step_size = 0._wp, ice_step_size = 0._wp
+    !
+    ! The tables themselves.
+    !
+    real(wp), dimension(:,:    ), allocatable :: lut_extliq, lut_ssaliq, lut_asyliq     ! (nsize_liq, nband)
+    real(wp), dimension(:,:,:  ), allocatable :: lut_extice, lut_ssaice, lut_asyice     ! (nsize_ice, nband, nrghice)
 
-    ! Pade cloud optics coefficients
-    real(wp), dimension(:,:,:  ), allocatable :: pade_extliq    ! (nband, nsizereg, ncoeff_ext)
-    real(wp), dimension(:,:,:  ), allocatable :: pade_ssaliq    ! (nband, nsizereg, ncoeff_ssa_g)
-    real(wp), dimension(:,:,:  ), allocatable :: pade_asyliq    ! (nband, nsizereg, ncoeff_ssa_g)
-    real(wp), dimension(:,:,:,:), allocatable :: pade_extice    ! (nband, nsizereg, ncoeff_ext, nrghice)
-    real(wp), dimension(:,:,:,:), allocatable :: pade_ssaice    ! (nband, nsizereg, ncoeff_ssa_g, nrghice)
-    real(wp), dimension(:,:,:,:), allocatable :: pade_asyice    ! (nband, nsizereg, ncoeff_ssa_g, nrghice)
+    !
+    ! Pade approximant coefficients
+    !
+    real(wp), dimension(:,:,:  ), allocatable :: pade_extliq                 ! (nband, nsizereg, ncoeff_ext)
+    real(wp), dimension(:,:,:  ), allocatable :: pade_ssaliq,  pade_asyliq   ! (nband, nsizereg, ncoeff_ssa_g)
+    real(wp), dimension(:,:,:,:), allocatable :: pade_extice                 ! (nband, nsizereg, ncoeff_ext, nrghice)
+    real(wp), dimension(:,:,:,:), allocatable :: pade_ssaice, pade_asyice    ! (nband, nsizereg, ncoeff_ssa_g, nrghice)
     ! Particle size regimes for Pade formulations
     real(wp), dimension(:), allocatable :: pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq  ! (nbound)
     real(wp), dimension(:), allocatable :: pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice  ! (nbound)
-
-! ------------------------------------------------------------------------------------------
+    ! -----
   contains
     generic,   public :: load  => load_lut, load_pade
     procedure, public :: finalize
@@ -132,6 +131,10 @@ contains
       error_msg = "cloud_optics%init(): array ssaice isn't consistently sized"
     if(error_msg /= "") return
 
+    this%liq_nsteps = nsize_liq
+    this%ice_nsteps = nsize_ice
+    this%liq_step_size = (radliq_upr - radliq_lwr)/real(nsize_liq-1,wp)
+    this%ice_step_size = (radice_upr - radice_lwr)/real(nsize_ice-1,wp)
     ! Allocate LUT coefficients
     allocate(this%lut_extliq(nsize_liq, nband), &
              this%lut_ssaliq(nsize_liq, nband), &
@@ -143,10 +146,8 @@ contains
     ! Load LUT constants
     this%radliq_lwr = radliq_lwr
     this%radliq_upr = radliq_upr
-    this%radliq_fac = radliq_fac
     this%radice_lwr = radice_lwr
     this%radice_upr = radice_upr
-    this%radice_fac = radice_fac
 
     ! Load LUT coefficients
     this%lut_extliq = lut_extliq
@@ -283,15 +284,18 @@ contains
     this%radliq_upr = 0._wp
     this%radice_lwr = 0._wp
     this%radice_upr = 0._wp
-    this%radliq_fac = 0._wp
-    this%radice_fac = 0._wp
 
     ! Lookup table cloud optics coefficients
-    if(allocated(this%lut_extliq)) &
+    if(allocated(this%lut_extliq)) then
       deallocate(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq, &
                  this%lut_extice, this%lut_ssaice, this%lut_asyice)
+      this%liq_nsteps = 0
+      this%ice_nsteps = 0
+      this%liq_step_size = 0._wp
+      this%ice_step_size = 0._wp
+    end if
 
-  ! Pade cloud optics coefficients
+    ! Pade cloud optics coefficients
     if(allocated(this%pade_extliq)) then
       deallocate(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq, &
                  this%pade_extice, this%pade_ssaice, this%pade_asyice, &
@@ -331,11 +335,7 @@ contains
     real(wp), dimension(max_re_moments) :: re_moments ! re, re**2, re**3 etc.
     real(wp) :: radliq                         ! cloud liquid droplet radius (microns)
     real(wp) :: radice                         ! cloud ice effective size (microns)
-    real(wp) :: fint
-    real(wp) :: liq_step_size, ice_step_size
-    integer  :: liq_nsteps,    ice_nsteps
 
-    integer :: index                           !
     integer :: icol, ilyr, ibnd, i             !
     integer :: irad, irade, irads, iradg       !
     integer :: icergh                          ! ice surface roughness
@@ -375,61 +375,44 @@ contains
       error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
     if(error_msg /= "") return
 
-    ! Initialize
-    tauliq(:,:,:) = 0.0_wp
-    ssaliq(:,:,:) = 0.0_wp
-    asyliq(:,:,:) = 0.0_wp
-    tauice(:,:,:) = 0.0_wp
-    ssaice(:,:,:) = 0.0_wp
-    asyice(:,:,:) = 0.0_wp
     !
     ! Compute cloud optical properties. Use lookup tables if available, Pade approximants if not.
     !
     if (allocated(this%lut_extliq)) then
-      liq_nsteps = size(this%lut_extliq, 1)
-      ice_nsteps = size(this%lut_extice, 1)
-      liq_step_size = (this%radliq_upr - this%radliq_lwr)/real(liq_nsteps-1,wp)
-      ice_step_size = (this%radice_upr - this%radice_lwr)/real(ice_nsteps-1,wp)
-      do icol = 1, ncol
-        do ilyr = 1, nlay
-          !
-          ! Liquid optical properties
-          !
-          if (liqmsk(icol,ilyr)) then
-            radliq = rel(icol,ilyr)
-            index = min(floor((radliq - this%radliq_lwr)/liq_step_size)+1, liq_nsteps-1)
-            ! Yeah so this isn't right..
-            fint = (radliq - this%radliq_lwr)/liq_step_size - (index-1)
-
-            do ibnd = 1, nbnd
-              tauliq(icol,ilyr,ibnd) = table_interp(this%lut_extliq(:,ibnd), index, fint) * &
-                                       clwp(icol, ilyr)
-              ssaliq(icol,ilyr,ibnd) = table_interp(this%lut_ssaliq(:,ibnd), index, fint)
-              asyliq(icol,ilyr,ibnd) = table_interp(this%lut_asyliq(:,ibnd), index, fint)
-           end do
-          endif
-          !
-          ! Ice optical properties for requested ice roughness (icergh)
-          !
-          if (icemsk(icol,ilyr)) then
-            radice = rei(icol,ilyr)
-            index = min(floor((radice - this%radice_lwr)/ice_step_size)+1, ice_nsteps-1)
-            ! Yeah so this isn't right..
-            fint = (radice - this%radice_lwr)/ice_step_size - (index-1)
-
-            do ibnd = 1, nbnd
-              tauice(icol,ilyr,ibnd) = table_interp(this%lut_extice(:,ibnd,icergh), index, fint) * &
-                                       ciwp(icol, ilyr)
-              ssaice(icol,ilyr,ibnd) = table_interp(this%lut_ssaice(:,ibnd,icergh), index, fint)
-              asyice(icol,ilyr,ibnd) = table_interp(this%lut_asyice(:,ibnd,icergh), index, fint)
-           end do
-          endif
-        enddo
-      enddo
+      !
+      ! Liquid
+      !
+      tauliq = compute_from_table(ncol,nlay,nbnd, liqmsk, rel, this%liq_nsteps, this%liq_step_size, this%radliq_lwr, &
+                                  this%lut_extliq)
+      ssaliq = compute_from_table(ncol,nlay,nbnd, liqmsk, rel, this%liq_nsteps, this%liq_step_size, this%radliq_lwr, &
+                                  this%lut_ssaliq)
+      asyliq = compute_from_table(ncol,nlay,nbnd, liqmsk, rel, this%liq_nsteps, this%liq_step_size, this%radliq_lwr, &
+                                  this%lut_asyliq)
+      do ibnd = 1, nbnd
+        where(liqmsk) tauliq(1:ncol,1:nlay,ibnd) = tauliq(1:ncol,1:nlay,ibnd) * clwp(1:ncol,1:nlay)
+      end do
+      !
+      ! Ice
+      !
+      tauice = compute_from_table(ncol,nlay,nbnd, icemsk, rei, this%ice_nsteps, this%ice_step_size, this%radice_lwr, &
+                                  this%lut_extice(:,:,icergh))
+      ssaice = compute_from_table(ncol,nlay,nbnd, icemsk, rei, this%ice_nsteps, this%ice_step_size, this%radice_lwr, &
+                                  this%lut_ssaice(:,:,icergh))
+      asyice = compute_from_table(ncol,nlay,nbnd, icemsk, rei, this%ice_nsteps, this%ice_step_size, this%radice_lwr, &
+                                  this%lut_asyice(:,:,icergh))
+      do ibnd = 1, nbnd
+        where(icemsk) tauice(1:ncol,1:nlay,ibnd) = tauice(1:ncol,1:nlay,ibnd) * ciwp(1:ncol,1:nlay)
+      end do
     else
       !
       ! Cloud optical properties from Pade coefficient method
       !
+      tauliq(:,:,:) = 0._wp
+      ssaliq(:,:,:) = 0._wp
+      asyliq(:,:,:) = 0._wp
+      tauice(:,:,:) = 0._wp
+      ssaice(:,:,:) = 0._wp
+      asyice(:,:,:) = 0._wp
       ! This assumes that all the Pade treaments have the same number of size regimes
       nsizereg = size(this%pade_sizreg_extliq)-1
       do icol = 1, ncol
@@ -577,6 +560,47 @@ contains
   ! Ancillary functions
   !
   !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Linearly interpolate values from a lookup table with "nsteps" evenly-spaced
+  !   elements starting at "offset." The table's second dimension is band.
+  ! Returns 0 where the mask is false.
+  ! We could also try gather/scatter for efficiency
+  !
+  function compute_from_table(ncol, nlay, nbnd, mask, size, nsteps, step_size, offset, table)
+    integer,                          intent(in) :: ncol, nlay, nbnd, nsteps
+    logical,  dimension(ncol,  nlay), intent(in) :: mask
+    real(wp), dimension(ncol,  nlay), intent(in) :: size
+    real(wp),                         intent(in) :: step_size, offset
+    real(wp), dimension(nsteps,nbnd), intent(in) :: table
+    real(wp), dimension(ncol,nlay,nbnd)          :: compute_from_table
+    ! ---------------------------
+    integer  :: icol, ilay, ibnd
+    integer  :: index
+    real(wp) :: fint
+    ! ---------------------------
+    do ilay = 1,nlay
+      do icol = 1, ncol
+        if(mask(icol,ilay)) then
+          index = min(floor((size(icol,ilay) - offset)/step_size)+1, nsteps-1)
+          if(index <= 0) print *, size(icol,ilay), offset, step_size
+          fint = (size(icol,ilay) - offset)/step_size - (index-1)
+          do ibnd = 1, nbnd
+            compute_from_table(icol,ilay,ibnd) = table(index,  ibnd) + &
+                                         fint * (table(index+1,ibnd) - table(index,ibnd))
+          end do
+        else
+          do ibnd = 1, nbnd
+            compute_from_table(icol,ilay,ibnd) = 0._wp
+          end do
+        end if
+      end do
+    end do
+  end function compute_from_table
+  !---------------------------------------------------------------------------
+  !
+  ! Pade functions
+  !
+  !---------------------------------------------------------------------------
   function get_irad(rad, sizereg) result(irad)
     real(wp),               intent(in) :: rad
     real(wp), dimension(:), intent(in) :: sizereg
@@ -712,13 +736,4 @@ contains
                (1.0_wp+p(4)*reff+p(5)*reff2))
 
   end function pade_asy
-  !---------------------------------------------------------------------------
-  function table_interp(table, index, fint) result(x)
-    real(wp), dimension(:), intent(in) :: table
-    integer,                  intent(in) :: index
-    real(wp),                 intent(in) :: fint
-    real(wp)                             :: x
-
-    x = table(index) + fint * (table(index+1) - table(index))
-  end function table_interp
 end module mo_cloud_optics

@@ -11,8 +11,8 @@
 ! -------------------------------------------------------------------------------------------------
 ! Provides cloud optical properties as a function of effective radius for the RRTMGP bands
 !   Based on Mie calculations for liquid and Ping Yang lookup-tables for ice
-!   Can use either look-up tables or Pade approximates according to the do_lut flag
-!   Mike Iacono is the original author
+!   Can use either look-up tables or Pade approximates according to which data has been loaded
+!   Mike Iacono (AER) is the original author
 ! -------------------------------------------------------------------------------------------------
 
 module mo_cloud_optics
@@ -31,9 +31,6 @@ module mo_cloud_optics
     !
     ! Ice surface roughness category - needed for Yang (2013) ice optics parameterization
     integer, public :: icergh = 0                                ! (1 = none, 2 = medium, 3 = high)
-
-    ! Method for interpolation of cloud optical property coefficients to particle size
-    logical, public :: do_lut                                   ! (.True. = LUT, .False. = Pade)
 
     ! Particle size boundary limits
     real(wp) :: radliq_lwr = 0._wp              ! liquid particle size lower bound for interpolation
@@ -311,9 +308,9 @@ contains
   ! Compute single-scattering properties
   !
   function cloud_optics(this, &
-                        ncol, nlay, nbnd, nrghice, &
-                        liqmsk, icemsk,   &
-                        clwp, ciwp, rel, rei, optical_props) result(error_msg)
+                        ncol, nlay, nbnd, nrghice,            &
+                        liqmsk, icemsk, clwp, ciwp, rel, rei, &
+                        optical_props) result(error_msg)
     class(ty_cloud_optics), &
               intent(inout) :: this
     integer,  intent(in   ) :: ncol, nlay, nbnd
@@ -363,6 +360,9 @@ contains
 ! ------- Error checking -------
     error_msg = ''
     icergh = this%icergh
+    if(.not.(allocated(this%lut_extliq) .or. allocated(this%pade_extliq))) &
+       error_msg = 'cloud optics: no data has been initialized'
+
     if (icergh < 1 .or. icergh > nrghice) &
        error_msg = 'cloud optics: cloud ice surface roughness flag is out of bounds'
 
@@ -384,9 +384,9 @@ contains
     ssaice(:,:,:) = 0.0_wp
     asyice(:,:,:) = 0.0_wp
     !
-    ! Cloud optical properties from LUT method
+    ! Compute cloud optical properties. Use lookup tables if available, Pade approximants if not.
     !
-    if (this%do_lut) then
+    if (allocated(this%lut_extliq)) then
       do icol = 1, ncol
         do ilyr = 1, nlay
           !

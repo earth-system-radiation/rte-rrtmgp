@@ -339,16 +339,13 @@ contains
     integer :: icergh                          ! ice surface roughness
                                                ! (1 = none, 2 = medium, 3 = high)
 
-    real(wp) :: extliq(ncol,nlay,nbnd)      ! liquid extinction coefficient
+    real(wp) :: tauliq(ncol,nlay,nbnd)      ! liquid extinction coefficient
     real(wp) :: ssaliq(ncol,nlay,nbnd)      ! liquid single scattering albedo
     real(wp) :: asyliq(ncol,nlay,nbnd)      ! liquid asymmetry parameter
 
-    real(wp) :: extice(ncol,nlay,nbnd)      ! ice extinction coefficients
+    real(wp) :: tauice(ncol,nlay,nbnd)      ! ice extinction coefficients
     real(wp) :: ssaice(ncol,nlay,nbnd)      ! ice single scattering albedo
     real(wp) :: asyice(ncol,nlay,nbnd)      ! ice asymmetry parameter
-
-    real(wp) :: tauliq                         ! liquid cloud extinction optical depth
-    real(wp) :: tauice                         ! ice cloud extinction optical depth
 
     real(wp) :: scatice                        ! Ice scattering term
     real(wp) :: scatliq                        ! Liquid scattering term
@@ -377,10 +374,10 @@ contains
     if(error_msg /= "") return
 
     ! Initialize
-    extliq(:,:,:) = 0.0_wp
+    tauliq(:,:,:) = 0.0_wp
     ssaliq(:,:,:) = 0.0_wp
     asyliq(:,:,:) = 0.0_wp
-    extice(:,:,:) = 0.0_wp
+    tauice(:,:,:) = 0.0_wp
     ssaice(:,:,:) = 0.0_wp
     asyice(:,:,:) = 0.0_wp
     !
@@ -400,7 +397,8 @@ contains
             fint = factor - real(index)
 
             do ibnd = 1, nbnd
-              extliq(icol,ilyr,ibnd) = table_interp(this%lut_extliq(:,ibnd), index, fint)
+              tauliq(icol,ilyr,ibnd) = table_interp(this%lut_extliq(:,ibnd), index, fint) * &
+                                       clwp(icol, ilyr)
               ssaliq(icol,ilyr,ibnd) = table_interp(this%lut_ssaliq(:,ibnd), index, fint)
               asyliq(icol,ilyr,ibnd) = table_interp(this%lut_asyliq(:,ibnd), index, fint)
            end do
@@ -415,7 +413,8 @@ contains
             fint = factor - real(index)
 
             do ibnd = 1, nbnd
-              extice(icol,ilyr,ibnd) = table_interp(this%lut_extice(:,ibnd,icergh), index, fint)
+              tauice(icol,ilyr,ibnd) = table_interp(this%lut_extice(:,ibnd,icergh), index, fint) * &
+                                       ciwp(icol, ilyr)
               ssaice(icol,ilyr,ibnd) = table_interp(this%lut_ssaice(:,ibnd,icergh), index, fint)
               asyice(icol,ilyr,ibnd) = table_interp(this%lut_asyice(:,ibnd,icergh), index, fint)
            end do
@@ -445,11 +444,12 @@ contains
             iradg = get_irad(radliq, this%pade_sizreg_asyliq)
 
             do ibnd = 1, nbnd
-              extliq(icol,ilyr,ibnd) = this%pade_ext(radliq, .True., ibnd, irade)
+              tauliq(icol,ilyr,ibnd) = this%pade_ext(radliq, .True., ibnd, irade) * &
+                                       clwp(icol, ilyr)
               ssaliq(icol,ilyr,ibnd) = this%pade_ssa(radliq, .True., ibnd, irads)
               asyliq(icol,ilyr,ibnd) = this%pade_asy(radliq, .True., ibnd, iradg)
             enddo
-!            extliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,3,irade,re_moments,this%pade_extliq)
+!            tauliq(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,3,irade,re_moments,this%pade_extliq)
 !            ssaliq(icol,ilyr,1:nbnd) = 1._wp - max(0._wp,
 !                                       pade_eval(nbnd,nsizereg,2,3,irads,re_moments,this%pade_ssaliq)
 !                                                  )
@@ -466,7 +466,8 @@ contains
             iradg = get_irad(radice, this%pade_sizreg_asyice)
 
             do ibnd = 1, nbnd
-             extice(icol,ilyr,ibnd) = this%pade_ext(radice, .False., ibnd, irade, icergh)
+             tauice(icol,ilyr,ibnd) = this%pade_ext(radice, .False., ibnd, irade, icergh) * &
+                                      ciwp(icol, ilyr)
              ssaice(icol,ilyr,ibnd) = this%pade_ssa(radice, .False., ibnd, irads, icergh)
              asyice(icol,ilyr,ibnd) = this%pade_asy(radice, .False., ibnd, iradg, icergh)
             enddo
@@ -493,33 +494,31 @@ contains
         do ilyr = 1, nlay
            if (liqmsk(icol,ilyr) .or. icemsk(icol,ilyr)) then
               do ibnd = 1, nbnd
-                 tauice = ciwp(icol,ilyr) * extice(icol,ilyr,ibnd)
-                 tauliq = clwp(icol,ilyr) * extliq(icol,ilyr,ibnd)
-
+                 optical_props%tau(icol,ilyr,ibnd) = tauice(icol,ilyr,ibnd) + tauliq(icol,ilyr,ibnd)
                  select type(optical_props)
-                 type is (ty_optical_props_1scl)
-                   optical_props%tau(icol,ilyr,ibnd) = tauice + tauliq
                  type is (ty_optical_props_2str)
-                   optical_props%tau(icol,ilyr,ibnd) = tauice + tauliq
-                   scatice = ssaice(icol,ilyr,ibnd) * tauice
-                   scatliq = ssaliq(icol,ilyr,ibnd) * tauliq
+                   scatice = ssaice(icol,ilyr,ibnd) * tauice(icol,ilyr,ibnd)
+                   scatliq = ssaliq(icol,ilyr,ibnd) * tauliq(icol,ilyr,ibnd)
                    optical_props%ssa(icol,ilyr,ibnd) = (scatice + scatliq) / &
                                          optical_props%tau(icol,ilyr,ibnd)
                    optical_props%g  (icol,ilyr,ibnd) = &
                         (scatice * asyice(icol,ilyr,ibnd) + scatliq * asyliq(icol,ilyr,ibnd)) / &
                         (scatice + scatliq)
                  type is (ty_optical_props_nstr)
-                   optical_props%tau(icol,ilyr,ibnd) = tauice + tauliq
-                   scatice = ssaice(icol,ilyr,ibnd) * tauice
-                   scatliq = ssaliq(icol,ilyr,ibnd) * tauliq
+                   scatice = ssaice(icol,ilyr,ibnd) * tauice(icol,ilyr,ibnd)
+                   scatliq = ssaliq(icol,ilyr,ibnd) * tauliq(icol,ilyr,ibnd)
                    optical_props%ssa(icol,ilyr,ibnd) = (scatice + scatliq) / &
                                          optical_props%tau(icol,ilyr,ibnd)
                    g   = &
                         (scatice * asyice(icol,ilyr,ibnd) + scatliq * asyliq(icol,ilyr,ibnd)) / &
                         (scatice + scatliq)
-                   optical_props%p  (1,icol,ilyr,ibnd) = 1.0_wp
-                   optical_props%p  (2,icol,ilyr,ibnd) = g
-                   optical_props%p  (3,icol,ilyr,ibnd) = 0.1_wp
+                  !
+                  ! Henyey-Greenstein phase functino
+                  !
+                   optical_props%p  (1,icol,ilyr,ibnd) = g
+                   do i = 2, optical_props%get_nmom()
+                     optical_props%p(i,icol,ilyr,ibnd) = g * optical_props%p(i-1,icol,ilyr,ibnd)
+                   end do
                  end select
               enddo
            endif

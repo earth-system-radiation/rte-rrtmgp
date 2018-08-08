@@ -30,8 +30,8 @@ module mo_cloud_optics
     private
     !
     ! Ice surface roughness category - needed for Yang (2013) ice optics parameterization
-    integer, public :: icergh = 0                                ! (1 = none, 2 = medium, 3 = high)
-
+    !
+    integer            :: icergh = 0  ! (1 = none, 2 = medium, 3 = high)
     !
     ! Lookup table information
     !
@@ -68,6 +68,7 @@ module mo_cloud_optics
     procedure, public :: get_max_radius_liq
     procedure, public :: get_max_radius_ice
     procedure, public :: get_num_ice_roughness_types
+    procedure, public :: set_ice_roughness
     ! Internal procedures
     procedure, private :: load_lut
     procedure, private :: load_pade
@@ -338,8 +339,7 @@ contains
 
     integer :: icol, ilyr, ibnd, i             !
     integer :: irad, irade, irads, iradg       !
-    integer :: icergh                          ! ice surface roughness
-                                               ! (1 = none, 2 = medium, 3 = high)
+    integer :: icergh_max
 
     real(wp) :: tauliq(ncol,nlay,nbnd)      ! liquid extinction coefficient
     real(wp) :: ssaliq(ncol,nlay,nbnd)      ! liquid single scattering albedo
@@ -354,15 +354,24 @@ contains
 
     real(wp) :: g                              ! asymmetry parameter - local
     integer  :: nsizereg
-! ------- Definitions -------
-
-! ------- Error checking -------
+    ! ----------------------------------------
+    !
+    ! Error checking
+    !
+    ! ----------------------------------------
     error_msg = ''
-    icergh = this%icergh
-    if(.not.(allocated(this%lut_extliq) .or. allocated(this%pade_extliq))) &
-       error_msg = 'cloud optics: no data has been initialized'
+    if(.not.(allocated(this%lut_extliq) .or. allocated(this%pade_extliq))) then
+      error_msg = 'cloud optics: no data has been initialized'
+      return
+    end if
 
-    if (icergh < 1 .or. icergh > nrghice) &
+    if(.not. this%bands_are_equal(optical_props)) &
+      error_msg = "cloud optics: optical properties don't have the same band structure"
+
+    if(optical_props%get_nband() /= optical_props%get_ngpt() ) &
+      error_msg = "cloud optics: optical properties must be requested by band not g-points"
+
+    if (this%icergh < 1 .or. this%icergh > this%get_num_ice_roughness_types()) &
        error_msg = 'cloud optics: cloud ice surface roughness flag is out of bounds'
 
     if(any(liqmsk .and. (rel < this%radliq_lwr .or. rel > this%radliq_upr))) &
@@ -373,8 +382,10 @@ contains
 
     if(any((liqmsk .and.  clwp < 0._wp) .or. (icemsk .and.  ciwp < 0._wp))) &
       error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
+
     if(error_msg /= "") return
 
+    ! ----------------------------------------
     !
     ! Compute cloud optical properties. Use lookup tables if available, Pade approximants if not.
     !
@@ -382,24 +393,24 @@ contains
       !
       ! Liquid
       !
-      tauliq = compute_from_table(ncol,nlay,nbnd, liqmsk, rel, this%liq_nsteps, this%liq_step_size, this%radliq_lwr, &
+      tauliq = compute_from_table(ncol,nlay,nbnd,liqmsk,rel,this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
                                   this%lut_extliq)
-      ssaliq = compute_from_table(ncol,nlay,nbnd, liqmsk, rel, this%liq_nsteps, this%liq_step_size, this%radliq_lwr, &
+      ssaliq = compute_from_table(ncol,nlay,nbnd,liqmsk,rel,this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
                                   this%lut_ssaliq)
-      asyliq = compute_from_table(ncol,nlay,nbnd, liqmsk, rel, this%liq_nsteps, this%liq_step_size, this%radliq_lwr, &
+      asyliq = compute_from_table(ncol,nlay,nbnd,liqmsk,rel,this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
                                   this%lut_asyliq)
-      do ibnd = 1, nbnd
+      do ibnd = 1,nbnd
         where(liqmsk) tauliq(1:ncol,1:nlay,ibnd) = tauliq(1:ncol,1:nlay,ibnd) * clwp(1:ncol,1:nlay)
       end do
       !
       ! Ice
       !
-      tauice = compute_from_table(ncol,nlay,nbnd, icemsk, rei, this%ice_nsteps, this%ice_step_size, this%radice_lwr, &
-                                  this%lut_extice(:,:,icergh))
-      ssaice = compute_from_table(ncol,nlay,nbnd, icemsk, rei, this%ice_nsteps, this%ice_step_size, this%radice_lwr, &
-                                  this%lut_ssaice(:,:,icergh))
-      asyice = compute_from_table(ncol,nlay,nbnd, icemsk, rei, this%ice_nsteps, this%ice_step_size, this%radice_lwr, &
-                                  this%lut_asyice(:,:,icergh))
+      tauice = compute_from_table(ncol,nlay,nbnd,icemsk,rei,this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
+                                  this%lut_extice(:,:,this%icergh))
+      ssaice = compute_from_table(ncol,nlay,nbnd,icemsk,rei,this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
+                                  this%lut_ssaice(:,:,this%icergh))
+      asyice = compute_from_table(ncol,nlay,nbnd,icemsk,rei,this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
+                                  this%lut_asyice(:,:,this%icergh))
       do ibnd = 1, nbnd
         where(icemsk) tauice(1:ncol,1:nlay,ibnd) = tauice(1:ncol,1:nlay,ibnd) * ciwp(1:ncol,1:nlay)
       end do
@@ -454,10 +465,10 @@ contains
             iradg = get_irad(radice, this%pade_sizreg_asyice)
 
             do ibnd = 1, nbnd
-             tauice(icol,ilyr,ibnd) = this%pade_ext(radice, .False., ibnd, irade, icergh) * &
+             tauice(icol,ilyr,ibnd) = this%pade_ext(radice, .False., ibnd, irade, this%icergh) * &
                                       ciwp(icol, ilyr)
-             ssaice(icol,ilyr,ibnd) = this%pade_ssa(radice, .False., ibnd, irads, icergh)
-             asyice(icol,ilyr,ibnd) = this%pade_asy(radice, .False., ibnd, iradg, icergh)
+             ssaice(icol,ilyr,ibnd) = this%pade_ssa(radice, .False., ibnd, irads, this%icergh)
+             asyice(icol,ilyr,ibnd) = this%pade_asy(radice, .False., ibnd, iradg, this%icergh)
             enddo
           endif
         enddo
@@ -519,6 +530,28 @@ contains
   ! Inquiry functions
   !
   !--------------------------------------------------------------------------------------------------------------------
+  function set_ice_roughness(this, icergh) result(error_msg)
+    class(ty_cloud_optics), intent(inout) :: this
+    integer,                intent(in   ) :: icergh
+    character(len=128)                    :: error_msg
+
+    error_msg = "" 
+    if(icergh < 1) &
+      error_msg = "cloud_optics%set_ice_roughness(): must be > 0"
+    if(error_msg /= "") return
+
+    this%icergh = icergh
+  end function set_ice_roughness
+  !-----------------------------------------------
+  function get_num_ice_roughness_types(this) result(i)
+    class(ty_cloud_optics), intent(in   ) :: this
+    integer                               :: i
+
+    i = 0
+    if(allocated(this%pade_extice)) i = size(this%pade_extice, dim=4)
+    if(allocated(this%lut_extice )) i = size(this%lut_extice,  dim=3)
+  end function get_num_ice_roughness_types
+  !-----------------------------------------------
   function get_min_radius_liq(this) result(r)
     class(ty_cloud_optics), intent(in   ) :: this
     real(wp)                              :: r
@@ -546,15 +579,6 @@ contains
 
     r = this%radice_upr
   end function get_max_radius_ice
-  !-----------------------------------------------
-  function get_num_ice_roughness_types(this) result(i)
-    class(ty_cloud_optics), intent(in   ) :: this
-    integer                               :: i
-
-    i = 0
-    if(allocated(this%pade_extice)) i = size(this%pade_extice, dim=4)
-    if(allocated(this%lut_extice )) i = size(this%lut_extice,  dim=3)
-  end function get_num_ice_roughness_types
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Ancillary functions

@@ -331,7 +331,9 @@ contains
     real(wp), dimension(max_re_moments) :: re_moments ! re, re**2, re**3 etc.
     real(wp) :: radliq                         ! cloud liquid droplet radius (microns)
     real(wp) :: radice                         ! cloud ice effective size (microns)
-    real(wp) :: factor, fint
+    real(wp) :: fint
+    real(wp) :: liq_step_size, ice_step_size
+    integer  :: liq_nsteps,    ice_nsteps
 
     integer :: index                           !
     integer :: icol, ilyr, ibnd, i             !
@@ -384,6 +386,10 @@ contains
     ! Compute cloud optical properties. Use lookup tables if available, Pade approximants if not.
     !
     if (allocated(this%lut_extliq)) then
+      liq_nsteps = size(this%lut_extliq, 1)
+      ice_nsteps = size(this%lut_extice, 1)
+      liq_step_size = (this%radliq_upr - this%radliq_lwr)/real(liq_nsteps-1,wp)
+      ice_step_size = (this%radice_upr - this%radice_lwr)/real(ice_nsteps-1,wp)
       do icol = 1, ncol
         do ilyr = 1, nlay
           !
@@ -391,10 +397,9 @@ contains
           !
           if (liqmsk(icol,ilyr)) then
             radliq = rel(icol,ilyr)
-            factor = radliq - this%radliq_fac
-            index = int(factor)
-            if (index .eq. 0) index = 1
-            fint = factor - real(index)
+            index = min(floor((radliq - this%radliq_lwr)/liq_step_size)+1, liq_nsteps-1)
+            ! Yeah so this isn't right..
+            fint = (radliq - this%radliq_lwr)/liq_step_size - (index-1)
 
             do ibnd = 1, nbnd
               tauliq(icol,ilyr,ibnd) = table_interp(this%lut_extliq(:,ibnd), index, fint) * &
@@ -408,9 +413,9 @@ contains
           !
           if (icemsk(icol,ilyr)) then
             radice = rei(icol,ilyr)
-            factor = radice * this%radice_fac
-            index = int(factor)
-            fint = factor - real(index)
+            index = min(floor((radice - this%radice_lwr)/ice_step_size)+1, ice_nsteps-1)
+            ! Yeah so this isn't right..
+            fint = (radice - this%radice_lwr)/ice_step_size - (index-1)
 
             do ibnd = 1, nbnd
               tauice(icol,ilyr,ibnd) = table_interp(this%lut_extice(:,ibnd,icergh), index, fint) * &

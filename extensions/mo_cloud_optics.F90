@@ -72,9 +72,6 @@ module mo_cloud_optics
     ! Internal procedures
     procedure, private :: load_lut
     procedure, private :: load_pade
-    procedure, private :: pade_ext
-    procedure, private :: pade_ssa
-    procedure, private :: pade_asy
   end type ty_cloud_optics
 
 contains
@@ -433,18 +430,12 @@ contains
             irade = get_irad(radliq, this%pade_sizreg_extliq)
             irads = get_irad(radliq, this%pade_sizreg_ssaliq)
             iradg = get_irad(radliq, this%pade_sizreg_asyliq)
-
-            do ibnd = 1, nbnd
-              clouds_liq%tau(icol,ilyr,ibnd) = this%pade_ext(radliq, .True., ibnd, irade) * &
-                                       clwp(icol, ilyr)
-              clouds_liq%ssa(icol,ilyr,ibnd) = this%pade_ssa(radliq, .True., ibnd, irads)
-              clouds_liq%g  (icol,ilyr,ibnd) = this%pade_asy(radliq, .True., ibnd, iradg)
-            enddo
-!            clouds_liq%tau(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,3,irade,re_moments,this%pade_extliq)
-!            clouds_liq%ssa(icol,ilyr,1:nbnd) = 1._wp - max(0._wp,
-!                                       pade_eval(nbnd,nsizereg,2,3,irads,re_moments,this%pade_ssaliq)
-!                                                  )
-!            clouds_liq%g  (icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,2,iradg,re_moments,this%pade_asyliq  )
+            clouds_liq%tau(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,3,irade,re_moments,this%pade_extliq) * &
+                                               clwp(icol, ilyr)
+            clouds_liq%ssa(icol,ilyr,1:nbnd) = 1._wp - max(0._wp,                                             &
+                                               pade_eval(nbnd,nsizereg,2,2,irads,re_moments,this%pade_ssaliq) &
+                                                          )
+            clouds_liq%g  (icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,2,iradg,re_moments,this%pade_asyliq  )
           endif
           !
           ! Ice optical properties
@@ -455,13 +446,12 @@ contains
             irade = get_irad(radice, this%pade_sizreg_extice)
             irads = get_irad(radice, this%pade_sizreg_ssaice)
             iradg = get_irad(radice, this%pade_sizreg_asyice)
-
-            do ibnd = 1, nbnd
-             clouds_ice%tau(icol,ilyr,ibnd) = this%pade_ext(radice, .False., ibnd, irade, this%icergh) * &
-                                      ciwp(icol, ilyr)
-             clouds_ice%ssa (icol,ilyr,ibnd) = this%pade_ssa(radice, .False., ibnd, irads, this%icergh)
-             clouds_ice%g   (icol,ilyr,ibnd) = this%pade_asy(radice, .False., ibnd, iradg, this%icergh)
-            enddo
+            clouds_ice%tau(icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,3,irade,re_moments,this%pade_extice(:,:,:,this%icergh)) * &
+                                               clwp(icol, ilyr)
+            clouds_ice%ssa(icol,ilyr,1:nbnd) = 1._wp - max(0._wp,                                             &
+                                               pade_eval(nbnd,nsizereg,2,2,irads,re_moments,this%pade_ssaice(:,:,:,this%icergh)) &
+                                                          )
+            clouds_ice%g  (icol,ilyr,1:nbnd) = pade_eval(nbnd,nsizereg,2,2,iradg,re_moments,this%pade_asyice(:,:,:,this%icergh))
           endif
         enddo
       enddo
@@ -471,6 +461,9 @@ contains
     ! Combine liquid and ice contributions into total cloud optical properties
     !
    error_msg = clouds_ice%increment(clouds_liq)
+   !
+   ! Copy total cloud properties onto outputs
+   !
    ! Revise: should be scaled for absorption optical depth
    optical_props%tau(1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd)
    select type(optical_props)
@@ -614,128 +607,20 @@ contains
     real(wp) :: numer, denom
     integer  :: i
 
-    if(.false.) then
-    if(n+m == 5) then
-      do iband = 1, nband
-        pade_eval(iband) = (coeff_table(iband,irad,1)               +  &
-                            coeff_table(iband,irad,2)*re_moments(1) +  &
-                            coeff_table(iband,irad,3)*re_moments(2)) / &
-                           (1.0_wp                                  +  &
-                            coeff_table(iband,irad,4)*re_moments(1) +  &
-                            coeff_table(iband,irad,5)*re_moments(2))
-      end do
-    else if(n+m == 6) then
-      pade_eval(iband) = (coeff_table(iband,irad,1)               +  &
-                          coeff_table(iband,irad,2)*re_moments(1) +  &
-                          coeff_table(iband,irad,3)*re_moments(2)) / &
-                         (1.0_wp                                  +  &
-                          coeff_table(iband,irad,4)*re_moments(1) +  &
-                          coeff_table(iband,irad,5)*re_moments(2) +  &
-                          coeff_table(iband,irad,6)*re_moments(3))
-    end if
-    end if
     do iband = 1, nband
-      denom = 0._wp
-      do i = n+m, m, -1
-        denom = denom + coeff_table(iband,irad,i) * re_moments(1)
+      denom = coeff_table(iband,irad,n+m)
+      do i = n-1+m, 1+m, -1
+        denom = coeff_table(iband,irad,i) + re_moments(1) * denom
       end do
-      denom = 1._wp + denom
+      denom = 1._wp + re_moments(1) * denom
 
-      numer = 0._wp
-      do i = m, 1, -1
-        numer = numer + coeff_table(iband,irad,i) * re_moments(1)
+      numer = coeff_table(iband,irad,m)
+      do i = m-1, 1, -1
+        numer = coeff_table(iband,irad,i) + re_moments(1) * numer
       end do
-      numer = coeff_table(iband,irad,0) + numer
+      numer = coeff_table(iband,irad,0) + re_moments(1)*numer
 
       pade_eval(iband) = numer/denom
     end do
-
-
   end function pade_eval
-  !---------------------------------------------------------------------------
-  function pade_ext(cloud_spec,reff,is_liquid,ibnd,irad,icergh)
-
-    class(ty_cloud_optics), intent(inout) :: cloud_spec
-
-    real(wp), intent(in) :: reff            ! particle radius (microns)
-    logical, intent(in)  :: is_liquid       ! T = liquid; F = ice
-    integer, intent(in) :: ibnd             ! band number
-    integer, intent(in) :: irad             ! particle size regime
-    integer, intent(in), optional :: icergh ! ice roughness index
-
-    real(wp) :: pade_ext
-    real(wp) :: reff2, reff3
-
-    real(wp) :: p(6)                        ! extinction Pade coefficients
-
-    if (is_liquid) then
-       p(:) = cloud_spec%pade_extliq(ibnd,irad,:)
-    else
-       p(:) = cloud_spec%pade_extice(ibnd,irad,:,icergh)
-    endif
-    reff2 = reff * reff
-    reff3 = reff2 * reff
-! Pade formulation: Extinction Coefficient (Hogan and Bozzo, ECMWF, TM787, 2016)
-    pade_ext = (p(1) + p(2)*reff + p(3)*reff2) / &
-               (1.0_wp + p(4)*reff + p(5)*reff2 + p(6)*reff3)
-
-  end function pade_ext
-
-  !---------------------------------------------------------------------------
-  function pade_ssa(cloud_spec,reff,is_liquid,ibnd,irad,icergh)
-
-    class(ty_cloud_optics), intent(inout) :: cloud_spec
-
-    real(wp), intent(in) :: reff            ! particle radius (microns)
-    logical, intent(in)  :: is_liquid       ! T = liquid; F = ice
-    integer, intent(in) :: ibnd             ! band number
-    integer, intent(in) :: irad             ! particle size regime
-    integer, intent(in), optional :: icergh ! ice roughness index
-
-    real(wp) :: pade_ssa
-    real(wp) :: reff2
-
-    real(wp) :: p(5)                        ! ssa Pade coefficients
-
-    if (is_liquid) then
-       p(:) = cloud_spec%pade_ssaliq(ibnd,irad,:)
-    else
-       p(:) = cloud_spec%pade_ssaice(ibnd,irad,:,icergh)
-    endif
-    reff2 = reff * reff
-! Pade formulation: Single Scattering Albedo (Hogan and Bozzo, ECMWF, TM787, 2016)
-    pade_ssa = 1.0_wp - (p(1)+p(2)*reff+p(3)*reff2) / &
-                        (1.0_wp+p(4)*reff+p(5)*reff2)
-! Some values of ssa going slightly over 1.0 for Pade method. Replace small departures with 1.0 for now.
-    if (pade_ssa >= 1.0_wp .and. pade_ssa <= 1.0005_wp) pade_ssa = 1.0_wp
-
-  end function pade_ssa
-
-  !---------------------------------------------------------------------------
-  function pade_asy(cloud_spec,reff,is_liquid,ibnd,irad,icergh)
-
-    class(ty_cloud_optics), intent(inout) :: cloud_spec
-
-    real(wp), intent(in) :: reff            ! particle radius (microns)
-    logical, intent(in)  :: is_liquid       ! T = liquid; F = ice
-    integer, intent(in) :: ibnd             ! band number
-    integer, intent(in) :: irad             ! particle size regime
-    integer, intent(in), optional :: icergh ! ice roughness index
-
-    real(wp) :: pade_asy
-    real(wp) :: reff2
-
-    real(wp) :: p(5)                        ! g Pade coefficients
-
-    if (is_liquid) then
-       p(:) = cloud_spec%pade_asyliq(ibnd,irad,:)
-    else
-       p(:) = cloud_spec%pade_asyice(ibnd,irad,:,icergh)
-    endif
-    reff2 = reff * reff
-! Pade formulation: Asymmetry Parameter (Hogan and Bozzo, ECMWF, TM787, 2016)
-    pade_asy = ((p(1)+p(2)*reff+p(3)*reff2) / &
-               (1.0_wp+p(4)*reff+p(5)*reff2))
-
-  end function pade_asy
 end module mo_cloud_optics

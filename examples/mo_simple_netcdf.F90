@@ -14,7 +14,7 @@ module mo_simple_netcdf
 
   public :: dim_exists, get_dim_size, create_dim, &
             var_exists, get_var_size, create_var, &
-            read_field, read_char_vec, read_logical_vec, write_field
+            read_field, read_string, read_char_vec, read_logical_vec, write_field
 contains
   !--------------------------------------------------------------------------------------------------------------------
   function read_scalar(ncid, varName)
@@ -234,6 +234,7 @@ contains
       err_msg = "write_field: can't write variable " // trim(varName)
 
   end function write_string
+  !--------------------------------------------------------------------------------------------------------------------
   function read_logical_vec(ncid, varName, nx)
     integer,          intent(in) :: ncid
     character(len=*), intent(in) :: varName
@@ -284,7 +285,7 @@ contains
     integer :: dimid
     dim_exists = nf90_inq_dimid(ncid, trim(dimName), dimid) == NF90_NOERR
   end function dim_exists
-  !--------------------------------------------------------------------------------------------------------------------  !--------------------------------------------------------------------------------------------------------------------
+  !--------------------------------------------------------------------------------------------------------------------
   function var_exists(ncid, varName)
     !
     ! Does this variable exist (have a valid var_id) in the open netCDF file?

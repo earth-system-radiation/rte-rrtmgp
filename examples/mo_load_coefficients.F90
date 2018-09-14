@@ -24,14 +24,12 @@ module mo_load_coefficients
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_gas_optics,         only: ty_gas_optics
   ! --------------------------------------------------
+  use mo_simple_netcdf, only: read_field, read_char_vec, read_logical_vec, var_exists, get_dim_size
   use netcdf
   implicit none
   private
   public :: load_and_init
 
-  interface read_field
-    module procedure read_scalar, read_1d_field, read_2d_field, read_3d_field, read_4d_field
-  end interface
 contains
   subroutine stop_on_err(msg)
     use iso_fortran_env, only : error_unit
@@ -101,24 +99,24 @@ contains
     !
     if(nf90_open(trim(fileName), NF90_WRITE, ncid) /= NF90_NOERR) &
       call stop_on_err("load_and_init(): can't open file " // trim(fileName))
-    ntemps            = get_dim_length(ncid,'temperature')
-    npress            = get_dim_length(ncid,'pressure')
-    nabsorbers        = get_dim_length(ncid,'absorber')
-    nminorabsorbers   = get_dim_length(ncid,'minor_absorber')
-    nextabsorbers     = get_dim_length(ncid,'absorber_ext')
-    nmixingfracs      = get_dim_length(ncid,'mixing_fraction')
-    nlayers           = get_dim_length(ncid,'atmos_layer')
-    nbnds             = get_dim_length(ncid,'bnd')
-    ngpts             = get_dim_length(ncid,'gpt')
-    npairs            = get_dim_length(ncid,'pair')
+    ntemps            = get_dim_size(ncid,'temperature')
+    npress            = get_dim_size(ncid,'pressure')
+    nabsorbers        = get_dim_size(ncid,'absorber')
+    nminorabsorbers   = get_dim_size(ncid,'minor_absorber')
+    nextabsorbers     = get_dim_size(ncid,'absorber_ext')
+    nmixingfracs      = get_dim_size(ncid,'mixing_fraction')
+    nlayers           = get_dim_size(ncid,'atmos_layer')
+    nbnds             = get_dim_size(ncid,'bnd')
+    ngpts             = get_dim_size(ncid,'gpt')
+    npairs            = get_dim_size(ncid,'pair')
     nminor_absorber_intervals_lower &
-                      = get_dim_length(ncid,'minor_absorber_intervals_lower')
+                      = get_dim_size(ncid,'minor_absorber_intervals_lower')
     nminor_absorber_intervals_upper  &
-                      = get_dim_length(ncid,'minor_absorber_intervals_upper')
+                      = get_dim_size(ncid,'minor_absorber_intervals_upper')
     ninternalSourcetemps &
-                      = get_dim_length(ncid,'temperature_Planck')
-    ncontributors_lower = get_dim_length(ncid,'contributors_lower')
-    ncontributors_upper = get_dim_length(ncid,'contributors_upper')
+                      = get_dim_size(ncid,'temperature_Planck')
+    ncontributors_lower = get_dim_size(ncid,'contributors_lower')
+    ncontributors_upper = get_dim_size(ncid,'contributors_upper')
     ! -----------------
     !
     ! Read the many arrays
@@ -161,7 +159,7 @@ contains
     kminor_start_upper &
                       = read_field(ncid, 'kminor_start_upper', nminor_absorber_intervals_upper)
     vmr_ref           = read_field(ncid, 'vmr_ref', nlayers, nextabsorbers, ntemps)
-    
+
     kmajor            = read_field(ncid, 'kmajor',  ngpts, nmixingfracs,  npress+1, ntemps)
     if(var_exists(ncid, 'rayl_lower')) then
       rayl_lower = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,            ntemps)
@@ -236,188 +234,4 @@ contains
     ! --------------------------------------------------
     ncid = nf90_close(ncid)
   end subroutine load_and_init
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Ancillary functions
-  !
-  !--------------------------------------------------------------------------------------------------------------------
-  function read_scalar(ncid, varName)
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    real(wp)                     :: read_scalar
-
-    integer :: varid
-
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("read_field: can't find variable " // trim(varName))
-    if(nf90_get_var(ncid, varid, read_scalar)  /= NF90_NOERR) &
-      call stop_on_err("read_field: can't read variable " // trim(varName))
-
-  end function read_scalar
-  !--------------------------------------------------------------------------------------------------------------------
-  function read_1d_field(ncid, varName, nx)
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    integer,          intent(in) :: nx
-    real(wp), dimension(nx)      :: read_1d_field
-
-    integer :: varid
-
-    if(any(get_data_size(ncid, varName, 1) /= [nx])) &
-      call stop_on_err("read_field: variable " // trim(varName) // " size is inconsistent.")
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("read_field: can't find variable " // trim(varName))
-    if(nf90_get_var(ncid, varid, read_1d_field)  /= NF90_NOERR) &
-      call stop_on_err("read_field: can't read variable " // trim(varName))
-
-  end function read_1d_field
-  !--------------------------------------------------------------------------------------------------------------------
-  function read_2d_field(ncid, varName, nx, ny)
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    integer,          intent(in) :: nx, ny
-    real(wp), dimension(nx, ny)  :: read_2d_field
-
-    integer :: varid
-    if(any(get_data_size(ncid, varName, 2) /= [nx, ny])) &
-      call stop_on_err("read_field: variable " // trim(varName) // " size is inconsistent.")
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("read_field: can't find variable " // trim(varName))
-    if(nf90_get_var(ncid, varid, read_2d_field)  /= NF90_NOERR) &
-      call stop_on_err("read_field: can't read variable " // trim(varName))
-
-  end function read_2d_field
-  !--------------------------------------------------------------------------------------------------------------------
-  function read_3d_field(ncid, varName, nx, ny, nz)
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    integer,          intent(in) :: nx, ny, nz
-    real(wp), dimension(nx, ny, nz)  :: read_3d_field
-
-    integer :: varid
-
-    if(any(get_data_size(ncid, varName, 3) /= [nx, ny, nz])) &
-      call stop_on_err("read_field: variable " // trim(varName) // " size is inconsistent.")
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("read_field: can't find variable " // trim(varName))
-    if(nf90_get_var(ncid, varid, read_3d_field)  /= NF90_NOERR) &
-      call stop_on_err("read_field: can't read variable " // trim(varName))
-
-  end function read_3d_field
-  !--------------------------------------------------------------------------------------------------------------------
-  function read_4d_field(ncid, varName, nw, nx, ny, nz)
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    integer,          intent(in) :: nw, nx, ny, nz
-    real(wp), dimension(nw, nx, ny, nz)  :: read_4d_field
-
-    integer :: varid
-
-    if(any(get_data_size(ncid, varName, 4) /= [nw, nx, ny, nz])) &
-      call stop_on_err("read_field: variable " // trim(varName) // " size is inconsistent." )
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("read_field: can't find variable " // trim(varName))
-    if(nf90_get_var(ncid, varid, read_4d_field)  /= NF90_NOERR) &
-      call stop_on_err("read_field: can't read variable " // trim(varName))
-
-  end function read_4d_field
-  !--------------------------------------------------------------------------------------------------------------------
-  function read_logical_vec(ncid, varName, nx)
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    integer,          intent(in) :: nx
-    integer,      dimension(nx) :: read_logical_tmp
-    logical,      dimension(nx) :: read_logical_vec
-
-    integer :: varid
-    integer :: ix
-
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("read_logical_vec: can't find variable " // trim(varName))
-    if(nf90_get_var(ncid, varid, read_logical_tmp)  /= NF90_NOERR) &
-      call stop_on_err("read_logical_vec: can't read variable " // trim(varName))
-    do ix = 1, nx
-      if (read_logical_tmp(ix) .eq. 0) then
-        read_logical_vec(ix) = .false.
-      else
-        read_logical_vec(ix) = .true.
-      endif
-    enddo
-
-  end function read_logical_vec
-  !--------------------------------------------------------------------------------------------------------------------
-  function read_char_vec(ncid, varName, nx)
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    integer,          intent(in) :: nx
-    character(len=32), dimension(nx) :: read_char_vec
-
-    integer :: varid
-
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("read_char_vec: can't find variable " // trim(varName))
-    if(nf90_get_var(ncid, varid, read_char_vec)  /= NF90_NOERR) &
-      call stop_on_err("read_char_vec: can't read variable " // trim(varName))
-
-  end function read_char_vec
-  !--------------------------------------------------------------------------------------------------------------------
-  function var_exists(ncid, varName)
-    !
-    ! Does this variable exist (have a valid var_id) in the open netCDF file?
-    !
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    logical :: var_exists
-
-    integer :: varId
-    var_exists = nf90_inq_varid(ncid, trim(varName), varid) == NF90_NOERR
-  end function var_exists
-  !--------------------------------------------------------------------------------------------------------------------
-  function get_dim_length(ncid, dimname)
-    !
-    ! Get the length of a dimension from an open netCDF file
-    !  This is unfortunately a two-step process
-    !
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: dimname
-    integer :: get_dim_length
-
-    integer :: dimid
-
-    if(nf90_inq_dimid(ncid, trim(dimname), dimid) == NF90_NOERR) then
-      if(nf90_inquire_dimension(ncid, dimid, len=get_dim_length) /= NF90_NOERR) get_dim_length = 0
-    else
-      get_dim_length = 0
-    end if
-
-  end function get_dim_length
-  !--------------------------------------------------------------------------------------------------------------------
-  function get_data_size(ncid, varName, n)
-    !
-    ! Returns the extents of a netcdf variable on disk
-    !
-    integer,          intent(in) :: ncid
-    character(len=*), intent(in) :: varName
-    integer,          intent(in) :: n
-    integer                      :: get_data_size(n)
-
-    integer :: i
-    integer :: varid, ndims, dimids(n)
-
-    get_data_size(n) = -1
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("get_data_size: can't find variable " // trim(varName))
-    if(nf90_inquire_variable(ncid, varid, ndims = ndims) /= NF90_NOERR) &
-      call stop_on_err("get_data_size: can't get information for variable " // trim(varName))
-    if(ndims /= n) &
-      call stop_on_err("get_data_size:  variable " // trim(varName) // " has the wrong number of dimensions" )
-    if(nf90_inquire_variable(ncid, varid, dimids = dimids) /= NF90_NOERR) &
-      call stop_on_err("get_data_size: can't read dimension ids for variable " // trim(varName))
-    do i = 1, n
-      if(nf90_inquire_dimension(ncid, dimids(i), len = get_data_size(i)) /= NF90_NOERR) &
-        call stop_on_err("get_data_size: can't get dimension lengths for variable " // trim(varName))
-    end do
-
-  end function get_data_size
-  !--------------------------------------------------------------------------------------------------------------------
 end module

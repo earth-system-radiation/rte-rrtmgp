@@ -51,4 +51,4 @@ mo_load_coefficients.o: mo_simple_netcdf.o mo_load_coefficients.F90
 mo_garand_atmos_io.o:   mo_simple_netcdf.o mo_garand_atmos_io.F90
 
 clean:
-	-rm ../garand-atmos *.o *.optrpt ../*.optrpt *.mod
+	-rm ../rrtmgp_garand_atmos *.o *.optrpt ../*.optrpt *.mod

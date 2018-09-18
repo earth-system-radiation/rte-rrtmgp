@@ -391,8 +391,6 @@ contains
     !
     real(wp), dimension(ncol,nlay,  ngas) :: vmr     ! volume mixing ratios
     real(wp), dimension(ncol,nlay,0:ngas) :: col_gas ! column amounts for each gas, plus col_dry
-    integer, dimension(ncol,2)            :: itropo_lower ! layer boundaries of lower atmosphere
-    integer, dimension(ncol,2)            :: itropo_upper ! layer boundaries of upper atmosphere
     real(wp), dimension(2,    nflav,ncol,nlay) :: col_mix ! combination of major species's column amounts
                                                          ! index(1) : reference temperature level
                                                          ! index(2) : flavor
@@ -483,7 +481,7 @@ contains
       this%press_ref_log_delta,this%temp_ref_min, this%temp_ref_delta, & ! inputs from object
       this%press_ref_trop_log, this%vmr_ref, this%get_nlay_ref(), &
       play,tlay,col_gas, & ! local input
-      jtemp,fmajor,fminor,col_mix,tropo,itropo_lower,itropo_upper,jeta,jpress) ! output
+      jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress) ! output
     call compute_tau_absorption(                     &
             ncol,nlay,ngpt,this%get_ngas(),nflav,    &  ! dimensions
             idx_h2o,                                 &
@@ -503,7 +501,7 @@ contains
             this%idx_minor_scaling_upper,            &
             this%kminor_start_lower,                 &
             this%kminor_start_upper,                 &
-            tropo,itropo_lower,itropo_upper,         &
+            tropo,                                   &
             col_mix,fmajor,fminor,                   &
             play,tlay,col_gas,                       &
             jeta,jtemp,jpress,                       &

@@ -34,15 +34,19 @@ VPATH = ../
 #
 ADDITIONS = mo_simple_netcdf.o mo_rfmip_io.o mo_load_coefficients.o
 
-all: rrtmgp_rfmip_lw
+all: rrtmgp_rfmip_lw rrtmgp_rfmip_sw
 
-rrtmgp_rfmip_lw: rrtmgp_rfmip_lw.o $(ADDITIONS)
+rrtmgp_rfmip_lw:   rrtmgp_rfmip_lw.o   $(ADDITIONS)
 
 rrtmgp_rfmip_lw.o: rrtmgp_rfmip_lw.F90 $(ADDITIONS)
 
-mo_rfmip_io.o:          mo_simple_netcdf.o mo_rfmip_io.F90           
+rrtmgp_rfmip_sw:   rrtmgp_rfmip_sw.o   $(ADDITIONS)
 
-mo_load_coefficients.o: mo_simple_netcdf.o mo_load_coefficients.F90
+rrtmgp_rfmip_sw.o: rrtmgp_rfmip_sw.F90 $(ADDITIONS)
+
+mo_rfmip_io.o:          mo_rfmip_io.F90          mo_simple_netcdf.o
+
+mo_load_coefficients.o: mo_load_coefficients.F90 mo_simple_netcdf.o
 
 clean:
 	-rm rrtmgp_rfmip_lw *.o *.mod *.optrpt ../*.optrpt

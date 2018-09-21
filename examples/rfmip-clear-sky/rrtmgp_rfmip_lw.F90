@@ -81,6 +81,10 @@ program rrtmgp_rfmip_lw
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_lw_bc, read_kdist_gas_names
+  !
+  ! Timing library
+  !
+  use gptl,              only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
   implicit none
   ! --------------------------------------------------
   !
@@ -112,6 +116,8 @@ program rrtmgp_rfmip_lw
   !   leverage what we know about the input file
   !
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
+
+  integer :: ret
   ! -------------------------------------------------------------------------------------------------
   !
   ! Code starts
@@ -201,6 +207,10 @@ program rrtmgp_rfmip_lw
   call stop_on_err(optical_props%alloc_1scl(block_size, nlay, k_dist))
   ! --------------------------------------------------
   !
+  ! Initialize timers
+  !
+  ret =  gptlinitialize()
+  !
   ! Loop over blocks
   !
   do b = 1, nblocks
@@ -210,6 +220,7 @@ program rrtmgp_rfmip_lw
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
     !
+    ret =  gptlstart('gas_optics')
     call stop_on_err(k_dist%gas_optics(p_lay(:,:,b), &
                                        p_lev(:,:,b),       &
                                        t_lay(:,:,b),       &
@@ -218,16 +229,24 @@ program rrtmgp_rfmip_lw
                                        optical_props,      &
                                        source,             &
                                        tlev = t_lev(:,:,b)))
+    ret =  gptlstop('gas_optics')
     !
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband
     !
+    ret =  gptlstart('rte_lw')
     call stop_on_err(rte_lw(optical_props,   &
                             top_at_1,        &
                             source,          &
                             spread(sfc_emis(:,b), 1, ncopies = k_dist%get_nband()), &
                             fluxes))
+    ret =  gptlstop('rte_lw')
   end do
+  !
+  ! End timers
+  !
+  ret = gptlpr(block_size)
+  ret = gptlfinalize()
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rld', flux_dn)

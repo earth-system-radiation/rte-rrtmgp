@@ -8,6 +8,13 @@ include $(RRTMGP_DIR)/Makefile.conf
 LDFLAGS   += -L$(RRTMGP_DIR)
 LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_DIR)
+#
+# Timing library
+#
+TIME_DIR = /Users/robert/Codes/GPTL/gptl-v5.5.3/macos
+LDFLAGS   += -L$(TIME_DIR)/lib
+LIBS      += -lgptl
+FCINCLUDE += -I$(TIME_DIR)/include
 
 #
 # netcdf library, module files

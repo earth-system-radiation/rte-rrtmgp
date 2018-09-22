@@ -77,6 +77,10 @@ program rrtmgp_rfmip_sw
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_sw_bc, read_kdist_gas_names
+  !
+  ! Timing library
+  !
+  use gptl,                   only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
   implicit none
   ! --------------------------------------------------
   !
@@ -110,6 +114,8 @@ program rrtmgp_rfmip_sw
   !   leverage what we know about the input file
   !
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
+
+  integer :: ret
   ! -------------------------------------------------------------------------------------------------
   !
   ! Code starts
@@ -199,6 +205,10 @@ program rrtmgp_rfmip_sw
   call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
   ! --------------------------------------------------
   !
+  ! Initialize timers
+  !
+  ret =  gptlinitialize()
+  !
   ! Loop over blocks
   !
   do b = 1, nblocks
@@ -208,12 +218,14 @@ program rrtmgp_rfmip_sw
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
     !
+    ret =  gptlstart('gas_optics (SW)')
     call stop_on_err(k_dist%gas_optics(p_lay(:,:,b), &
                                        p_lev(:,:,b),       &
                                        t_lay(:,:,b),       &
                                        gas_conc_array(b),  &
                                        optical_props,      &
                                        toa_flux))
+    ret =  gptlstop('gas_optics (SW)')
     !
     ! Normalize incoming solar flux to match RFMIP specification
     !
@@ -234,6 +246,7 @@ program rrtmgp_rfmip_sw
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband
     !
+    ret =  gptlstart('rte_lw')
     call stop_on_err(rte_sw(optical_props,   &
                             top_at_1,        &
                             solar_zenith_angle(:,b), &
@@ -241,6 +254,7 @@ program rrtmgp_rfmip_sw
                             spread(surface_albedo(:,b), 1, ncopies = k_dist%get_nband()), &
                             spread(surface_albedo(:,b), 1, ncopies = k_dist%get_nband()), &
                             fluxes))
+    ret =  gptlstop('rte_lw')
     !
     ! Zero out fluxes for which the original solar zenith angle is <= 0.
     !
@@ -251,6 +265,11 @@ program rrtmgp_rfmip_sw
       end if
     end do
   end do
+  !
+  ! End timers
+  !
+  ret = gptlpr(block_size)
+  ret = gptlfinalize()
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rsd', flux_dn)

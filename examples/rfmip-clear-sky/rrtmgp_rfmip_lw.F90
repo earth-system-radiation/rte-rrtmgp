@@ -84,7 +84,7 @@ program rrtmgp_rfmip_lw
   !
   ! Timing library
   !
-  use gptl,              only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
+  use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
   implicit none
   ! --------------------------------------------------
   !
@@ -220,7 +220,7 @@ program rrtmgp_rfmip_lw
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
     !
-    ret =  gptlstart('gas_optics')
+    ret =  gptlstart('gas_optics (LW)')
     call stop_on_err(k_dist%gas_optics(p_lay(:,:,b), &
                                        p_lev(:,:,b),       &
                                        t_lay(:,:,b),       &
@@ -229,7 +229,7 @@ program rrtmgp_rfmip_lw
                                        optical_props,      &
                                        source,             &
                                        tlev = t_lev(:,:,b)))
-    ret =  gptlstop('gas_optics')
+    ret =  gptlstop('gas_optics (LW)')
     !
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband

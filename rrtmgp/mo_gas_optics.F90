@@ -33,6 +33,7 @@ module mo_gas_optics
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_util_reorder
+  use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
   implicit none
   private
   real(wp), parameter :: pi = acos(-1._wp)
@@ -239,6 +240,7 @@ contains
     integer,  dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
+    integer :: ret
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)
@@ -249,12 +251,14 @@ contains
     !
     ! Gas optics
     !
+    ret =  gptlstart('compute_gas_taus')
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband, ngas, nflav,   &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
+    ret =  gptlstop('compute_gas_taus')
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -283,13 +287,14 @@ contains
     !
     ! Interpolate source function
     !
+    ret =  gptlstart('source')
     error_msg = source(this,                               &
                        ncol, nlay, ngpt, nband, nflav,     &
                        play, plev, tlay, tsfc,             &
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
                        tlev)
-
+    ret =  gptlstop('source')
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
@@ -323,6 +328,7 @@ contains
     integer,  dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
+    integer :: ret
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)
@@ -333,12 +339,14 @@ contains
     !
     ! Gas optics
     !
+    ret =  gptlstart('compute_gas_taus')
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband, ngas, nflav,   &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
+    ret =  gptlstop('compute_gas_taus')
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -400,6 +408,7 @@ contains
                                                           ! index(2) : reference temperature level
                                                           ! index(3) : flavor
                                                           ! index(4) : layer
+    integer :: ret
     ! ----------------------------------------------------------
     !
     ! Error checking
@@ -482,6 +491,7 @@ contains
       this%press_ref_trop_log, this%vmr_ref, this%get_nlay_ref(), &
       play,tlay,col_gas, & ! local input
       jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress) ! output
+    ret = gptlstart('compute_tau_absorption')
     call compute_tau_absorption(                     &
             ncol,nlay,ngpt,this%get_ngas(),nflav,    &  ! dimensions
             idx_h2o,                                 &
@@ -506,6 +516,7 @@ contains
             play,tlay,col_gas,                       &
             jeta,jtemp,jpress,                       &
             tau)
+    ret =  gptlstop('compute_tau_absorption')
     if (allocated(this%krayl)) then
       call compute_tau_rayleigh(     & !Rayleigh scattering optical depths
             ncol,nlay,ngpt,ngas,nflav,      & ! dimensions
@@ -555,6 +566,7 @@ contains
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(size(play,dim=1),size(play,dim=2)+1), target  :: tlev_arr
     real(wp), dimension(:,:),                                 pointer :: tlev_wk => NULL()
+    real(wp), dimension(ngpt,nlay,ncol) :: lay_source, lev_source_inc, lev_source_dec
     ! ----------------------------------------------------------
     error_msg = ""
     !
@@ -591,12 +603,17 @@ contains
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
+    ilay = gptlstart("compute_Planck_source")
     call compute_Planck_source(ncol, nlay, ngpt, nbnd, nflv, &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sources%sfc_source, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec)
+                sources%sfc_source, lay_source, lev_source_inc, lev_source_dec)
+    ilay = gptlstop("compute_Planck_source")
+    sources%lay_source     = reorder123x321(lay_source)
+    sources%lev_source_inc = reorder123x321(lev_source_inc)
+    sources%lev_source_dec = reorder123x321(lev_source_dec)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !

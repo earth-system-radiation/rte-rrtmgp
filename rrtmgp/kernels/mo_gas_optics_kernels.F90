@@ -17,6 +17,7 @@
 module mo_gas_optics_kernels
   use mo_rte_kind,      only: wp
   use mo_util_string,   only : string_loc_in_array
+  use gptl,              only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
   implicit none
 
   interface zero_array
@@ -94,6 +95,7 @@ contains
     !
     logical                    :: top_at_1
     integer, dimension(ncol,2) :: itropo_lower, itropo_upper
+    integer :: ret
     ! ----------------------------------------------------------------
 
     ! ---------------------
@@ -114,6 +116,7 @@ contains
     ! ---------------------
     ! Major Species
     ! ---------------------
+    ret = gptlstart("gas_optical_depths_major")
     call gas_optical_depths_major( &
           ncol,nlay,ngpt,nflav,           & ! dimensions
           gpoint_flavor,                  & ! inputs from object
@@ -121,9 +124,11 @@ contains
           col_mix,fmajor,                 &
           jeta,tropo,jtemp,jpress,        & ! local input
           tau)
+    ret = gptlstop("gas_optical_depths_major")
     ! ---------------------
     ! Minor Species - lower
     ! ---------------------
+    ret = gptlstart("gas_optical_depths_minor (lower)")
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,ngas,nflav,  & ! dimensions
            idx_h2o,                    &
@@ -139,9 +144,11 @@ contains
            col_gas,fminor,jeta,        &
            itropo_lower,jtemp,         &
            tau)
+    ret = gptlstop("gas_optical_depths_minor (lower)")
     ! ---------------------
     ! Minor Species - upper
     ! ---------------------
+    ret = gptlstart("gas_optical_depths_minor (upper)")
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,ngas,nflav,  & ! dimensions
            idx_h2o,                    &
@@ -157,7 +164,7 @@ contains
            col_gas,fminor,jeta,        &
            itropo_upper,jtemp,         &
            tau)
-
+    ret = gptlstop("gas_optical_depths_minor (upper)")
   end subroutine compute_tau_absorption
   ! --------------------------------------------------------------------------------------
 
@@ -380,8 +387,8 @@ contains
     integer,  dimension(:,:),     intent(in) :: gpoint_flavor ! change to provide size
 
     real(wp), dimension(ncol,     ngpt), intent(out) :: sfc_src
-    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lay_src
-    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lev_src_inc, lev_src_dec
+    real(wp), dimension(ngpt,nlay,ncol), intent(out) :: lay_src
+    real(wp), dimension(ngpt,nlay,ncol), intent(out) :: lev_src_inc, lev_src_dec
     ! -----------------
     ! local
     integer  :: ilay, icol, igpt, itropo, iflav
@@ -426,7 +433,7 @@ contains
         ! Map to g-points
         !
         do igpt = 1, ngpt
-          lay_src(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,icol)
+          lay_src(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,icol)
         end do
       end do ! ilay
     end do ! icol
@@ -440,8 +447,8 @@ contains
         ! Map to g-points
         !
         do igpt = 1, ngpt
-          lev_src_inc(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay+1,icol)
-          lev_src_dec(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,  icol)
+          lev_src_inc(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay+1,icol)
+          lev_src_dec(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,  icol)
         end do
       end do ! ilay
     end do ! icol

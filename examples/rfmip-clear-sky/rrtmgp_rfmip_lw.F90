@@ -84,7 +84,8 @@ program rrtmgp_rfmip_lw
   !
   ! Timing library
   !
-  use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
+  use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize, gptlsetoption, &
+                                   gptlpercent, gptloverhead
   implicit none
   ! --------------------------------------------------
   !
@@ -209,6 +210,8 @@ program rrtmgp_rfmip_lw
   !
   ! Initialize timers
   !
+  ret = gptlsetoption (gptlpercent, 1)        ! Turn on "% of" print
+  ret = gptlsetoption (gptloverhead, 0)       ! Turn off overhead estimate
   ret =  gptlinitialize()
   !
   ! Loop over blocks

@@ -80,7 +80,8 @@ program rrtmgp_rfmip_sw
   !
   ! Timing library
   !
-  use gptl,                   only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
+  use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize, gptlsetoption, &
+                                   gptlpercent, gptloverhead
   implicit none
   ! --------------------------------------------------
   !
@@ -207,6 +208,8 @@ program rrtmgp_rfmip_sw
   !
   ! Initialize timers
   !
+  ret = gptlsetoption (gptlpercent, 1)        ! Turn on "% of" print
+  ret = gptlsetoption (gptloverhead, 0)       ! Turn off overhead estimate
   ret =  gptlinitialize()
   !
   ! Loop over blocks
@@ -246,7 +249,7 @@ program rrtmgp_rfmip_sw
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband
     !
-    ret =  gptlstart('rte_lw')
+    ret =  gptlstart('rte_sw')
     call stop_on_err(rte_sw(optical_props,   &
                             top_at_1,        &
                             solar_zenith_angle(:,b), &
@@ -254,7 +257,7 @@ program rrtmgp_rfmip_sw
                             spread(surface_albedo(:,b), 1, ncopies = k_dist%get_nband()), &
                             spread(surface_albedo(:,b), 1, ncopies = k_dist%get_nband()), &
                             fluxes))
-    ret =  gptlstop('rte_lw')
+    ret =  gptlstop('rte_sw')
     !
     ! Zero out fluxes for which the original solar zenith angle is <= 0.
     !

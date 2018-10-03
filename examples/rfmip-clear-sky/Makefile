@@ -8,20 +8,27 @@ include $(RRTMGP_DIR)/Makefile.conf
 LDFLAGS   += -L$(RRTMGP_DIR)
 LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_DIR)
-#
-# Timing library
-#
-TIME_DIR = /Users/robert/Codes/GPTL/gptl-v5.5.3/macos
-LDFLAGS   += -L$(TIME_DIR)/lib
-LIBS      += -lgptl
-FCINCLUDE += -I$(TIME_DIR)/include
+
+TIMING=no
+ifeq ($(TIMING),yes)
+	#
+	# Timing library
+	#
+	FCINCLUDE += -I$(TIME_DIR)/include
+	# Compiler specific
+	FCFLAGS += -fpp -DUSE_TIMING
+	TIME_DIR = $(HOME)/Codes/GPTL/gptl-v5.5.3/macos
+	LDFLAGS   += -L$(TIME_DIR)/lib
+	LIBS      += -lgptl
+endif
+
 
 #
 # netcdf library, module files
 # C and Fortran interfaces respectively
 #
 NCHOME = /opt/local
-NFHOME = /Users/robert/Applications/$(FC)
+NFHOME = $(HOME)/Applications/$(FC)
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf

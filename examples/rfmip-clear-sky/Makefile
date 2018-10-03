@@ -9,20 +9,6 @@ LDFLAGS   += -L$(RRTMGP_DIR)
 LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_DIR)
 
-TIMING=no
-ifeq ($(TIMING),yes)
-	#
-	# Timing library
-	#
-	FCINCLUDE += -I$(TIME_DIR)/include
-	# Compiler specific
-	FCFLAGS += -fpp -DUSE_TIMING
-	TIME_DIR = $(HOME)/Codes/GPTL/gptl-v5.5.3/macos
-	LDFLAGS   += -L$(TIME_DIR)/lib
-	LIBS      += -lgptl
-endif
-
-
 #
 # netcdf library, module files
 # C and Fortran interfaces respectively
@@ -33,6 +19,26 @@ FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
+#
+# Setting macro TIMING=yes uses routines from the General Purpose Timing Library
+#  https://jmrosinski.github.io/GPTL/
+#
+TIMING=no
+# Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
+FCFLAGS += -fpp
+ifeq ($(TIMING),yes)
+	#
+	# Timing library
+	#
+	FCINCLUDE += -I$(TIME_DIR)/include
+	# Compiler specific
+	FCFLAGS += -DUSE_TIMING
+	# Installation specific
+	TIME_DIR = $(HOME)/Codes/GPTL/gptl-v5.5.3/macos
+	LDFLAGS   += -L$(TIME_DIR)/lib
+	LIBS      += -lgptl
+endif
+
 VPATH = ../
 
 # Compilation rules
@@ -41,7 +47,6 @@ VPATH = ../
 
 %: %.o
 	$(FC) $(FCFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
-
 
 #
 # Ancillary codes

@@ -240,7 +240,7 @@ program rrtmgp_rfmip_sw
     !
     ! Normalize incoming solar flux to match RFMIP specification
     !
-    def_tsi(1:ncol) = sum(toa_flux, dim=2)
+    def_tsi(1:block_size) = sum(toa_flux, dim=2)
     do igpt = 1, k_dist%get_ngpt()
       do icol = 1, block_size
         toa_flux(icol,igpt) = toa_flux(icol,igpt) * total_solar_irradiance(icol,b)/def_tsi(icol)

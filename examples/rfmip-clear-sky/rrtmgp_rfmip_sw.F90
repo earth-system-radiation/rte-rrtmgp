@@ -203,8 +203,8 @@ program rrtmgp_rfmip_sw
   !   gas optical properties, and source functions. The %alloc() routines carry along
   !   the spectral discretization from the k-distribution.
   !
-  allocate(flux_up(    block_size, nlay+1, nblocks), &
-           flux_dn(    block_size, nlay+1, nblocks))
+  allocate(flux_up(block_size, nlay+1, nblocks), &
+           flux_dn(block_size, nlay+1, nblocks))
   call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
   ! --------------------------------------------------
 #IFDEF USE_TIMING
@@ -271,7 +271,7 @@ program rrtmgp_rfmip_sw
     ret =  gptlstop('rte_sw')
 #ENDIF
     !
-    ! Zero out fluxes for which the original solar zenith angle is <= 0.
+    ! Zero out fluxes for which the original solar zenith angle is > 90 degrees.
     !
     do icol = 1, block_size
       if(.not. usecol(icol)) then

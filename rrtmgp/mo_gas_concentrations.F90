@@ -328,7 +328,7 @@ contains
   ! Inquiry functions
   !
   ! -------------------------------------------------------------------------------------
-  function get_num_gases(this)
+  pure function get_num_gases(this)
     class(ty_gas_concs), intent(in) :: this
     integer :: get_num_gases
 
@@ -336,7 +336,7 @@ contains
     return
   end function get_num_gases
   ! -------------------------------------------------------------------------------------
-  function get_gas_names(this)
+  pure function get_gas_names(this)
     class(ty_gas_concs), intent(in) :: this
     character(len=32), dimension(this%get_num_gases()) :: get_gas_names
 

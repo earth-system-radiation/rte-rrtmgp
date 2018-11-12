@@ -156,7 +156,7 @@ program rrtmgp_rfmip_sw
   !
   gases_to_use = kdist_gas_names
   print *, "Radiation calculation uses gases "
-  print *, "  ", [(trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))]
+  print *, "  ", (trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))
 
   ! --------------------------------------------------
   !

@@ -84,8 +84,8 @@ contains
     integer :: igas
     ! ---------
     error_msg = ''
-    if (w < 0._wp) then
-      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0'
+    if (w < 0._wp .or. w > 1._wp) then
+      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
       return
     endif
 
@@ -114,8 +114,8 @@ contains
     ! ---------
     error_msg = ''
 
-    if (any(w < 0._wp)) then
-      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0'
+    if (any(w < 0._wp .or. w > 1._wp)) then
+      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
     if(this%nlay > 0) then
       if(size(w) /= this%nlay) error_msg = 'ty_gas_concs%set_vmr: different dimension (nlay)'
@@ -149,8 +149,8 @@ contains
     ! ---------
     error_msg = ''
 
-    if (any(w < 0._wp)) then
-      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0'
+    if (any(w < 0._wp .or. w > 1._wp)) then
+      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
     if(this%ncol > 0 .and. size(w, 1) /= this%ncol) then
       error_msg = 'ty_gas_concs%set_vmr: different dimension (ncol)'

@@ -624,7 +624,7 @@ contains
     integer :: icol, ilay, iflav, igases(2), itropo, itemp
 
     !$acc  data pcopyin(flavor,press_ref_log,temp_ref,press_ref_log_delta,temp_ref_min,temp_ref_delta,press_ref_trop_log,vmr_ref,nlay_ref,play,tlay,col_gas) &
-    !$acc&      pcopyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor) pcreate(ftemp,fpress,itropo_last)
+    !$acc&      pcopyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor) pcreate(ftemp,fpress)
 
     !$acc parallel loop gang vector collapse(2) private(locpress,itropo)
     do ilay = 1, nlay

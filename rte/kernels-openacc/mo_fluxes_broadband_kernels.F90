@@ -71,6 +71,8 @@ contains
     integer  :: icol, ilev, igpt
     real(wp) :: total, tmp
 
+    !$acc enter data copyin(spectral_flux_dn, spectral_flux_up) create(broadband_flux_net)
+
     !$acc parallel loop gang vector collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
@@ -88,6 +90,9 @@ contains
         end do
       end do
     end do
+
+    !$acc exit data copyout(broadband_flux_net) delete(spectral_flux_dn, spectral_flux_up)
+    
   end subroutine net_broadband_full
   ! ----------------------------------------------------------------------------
   !

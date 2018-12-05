@@ -260,7 +260,7 @@ contains
     real(wp) :: scaling, kminor_loc, tau_minor ! minor species absorption coefficient, optical depth
     integer  :: icol, ilay, iflav, igpt, imnr
     integer  :: itl, itu, iml, imu
-    integer  :: minor_start, minor_loc
+    integer  :: minor_start, minor_loc, extent
     ! -----------------
 
     ! -----------------
@@ -270,9 +270,10 @@ contains
     ! First check skips the routine entirely if all columns are out of bounds...
     !
     if(any(layer_limits(:,1) > 0)) then
-      do imnr = 1, size(scale_by_complement,dim=1) ! loop over minor absorbers in each band
+      extent = size(scale_by_complement,dim=1)
 
-        !$acc parallel loop collapse(2) private(vmr)
+      !$acc parallel loop collapse(3) private(vmr)
+      do imnr = 1, extent  ! loop over minor absorbers in each band
         do icol = 1, ncol
           do ilay = 1 , nlay
             !
@@ -314,11 +315,9 @@ contains
                   tau_minor = 0._wp
                   iflav = gpt_flv(igpt) ! eta interpolation depends on flavor
                   minor_loc = minor_start + (igpt - iml) ! add offset to starting point
-                  kminor_loc = &
-                    interpolate2D(fminor(:,:,iflav,icol,ilay), &
-                                  kminor, &
-                                  minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
-                    tau_minor = kminor_loc * scaling
+                  kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
+                  tau_minor = kminor_loc * scaling
+                  !$acc atomic update
                   tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
                 enddo
               endif

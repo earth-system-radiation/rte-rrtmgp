@@ -36,16 +36,16 @@ contains
     integer  :: icol, ilev, igpt
     real(wp) :: total
 
-    !$acc enter data copyin(spectral_flux) create(broadband_flux) async
+    !$acc enter data copyin(spectral_flux) create(broadband_flux)
 
-    !$acc parallel loop gang vector collapse(2) async
+    !$acc parallel loop gang vector collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
         broadband_flux(icol,ilev) = 0
       end do
     end do
 
-    !$acc parallel loop gang vector collapse(3) async
+    !$acc parallel loop gang vector collapse(3)
     do ilev = 1, nlev
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -55,8 +55,7 @@ contains
       end do
     end do
 
-    !$acc exit data copyout(broadband_flux) delete(spectral_flux) async
-    !$acc wait
+    !$acc exit data copyout(broadband_flux) delete(spectral_flux)
 
   end subroutine sum_broadband
   ! ----------------------------------------------------------------------------

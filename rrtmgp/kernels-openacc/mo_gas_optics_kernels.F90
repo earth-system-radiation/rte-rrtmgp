@@ -425,7 +425,7 @@ contains
     !
     !$acc parallel loop gang vector
     do icol = 1, ncol
-      planck_function(1:nbnd,1,icol) = interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk)
+      call interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,1,icol))
     end do
     !
     ! Map to g-points
@@ -441,7 +441,7 @@ contains
     do icol = 1, ncol
       do ilay = 1, nlay
         ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
-        planck_function(1:nbnd,ilay,icol) = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk)
+        call interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,ilay,icol))
       end do
     end do
     !
@@ -459,13 +459,13 @@ contains
     ! compute level source irradiances for each g-point, one each for upward and downward paths
     !$acc parallel loop gang vector
     do icol = 1, ncol
-      planck_function(1:nbnd,       1,icol) = interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk)
+      call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,       1,icol))
     end do
 
     !$acc parallel loop gang vector collapse(2)
     do icol = 1, ncol
       do ilay = 2, nlay+1
-        planck_function(1:nbnd,ilay,icol) = interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk)
+        call interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,ilay,icol))
       end do
     end do
 
@@ -487,7 +487,7 @@ contains
   !
   ! One dimensional interpolation -- return all values along second table dimension
   !
-  pure function interpolate1D(val, offset, delta, table) result(res)
+  subroutine interpolate1D(val, offset, delta, table, res)
   !$acc routine seq
     ! input
     real(wp), intent(in) :: val,    & ! axis value at which to evaluate table
@@ -496,7 +496,7 @@ contains
     real(wp), dimension(:,:), &
               intent(in) :: table ! dimensions (axis, values)
     ! output
-    real(wp), dimension(size(table,dim=2)) :: res
+    real(wp), intent(out) ,dimension(size(table,dim=2)) :: res
 
     ! local
     real(wp) :: val0 ! fraction index adjusted by offset and delta
@@ -507,7 +507,7 @@ contains
     frac = val0 - int(val0) ! get fractional part
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
     res(:) = table(index,:) + frac * (table(index+1,:) - table(index,:))
-  end function interpolate1D
+  end subroutine interpolate1D
  ! ------------
  !   This function returns a single value from a subset (in gpoint) of the k table
  !

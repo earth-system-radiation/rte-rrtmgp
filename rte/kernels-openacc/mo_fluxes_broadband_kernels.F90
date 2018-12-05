@@ -25,9 +25,9 @@ module mo_fluxes_broadband_kernels
   end interface net_broadband
 contains
   ! ----------------------------------------------------------------------------
-    !
-    ! Spectral reduction over all points
-    !
+  !
+  ! Spectral reduction over all points
+  !
   pure subroutine sum_broadband(ncol, nlev, ngpt, spectral_flux, broadband_flux) bind (C, name="sum_broadband")
     integer,                               intent(in ) :: ncol, nlev, ngpt
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux
@@ -36,14 +36,16 @@ contains
     integer  :: icol, ilev, igpt
     real(wp) :: total
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc enter data copyin(spectral_flux) create(broadband_flux) async
+
+    !$acc parallel loop gang vector collapse(2) async
     do ilev = 1, nlev
       do icol = 1, ncol
         broadband_flux(icol,ilev) = 0
       end do
     end do
 
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) async
     do ilev = 1, nlev
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -52,6 +54,10 @@ contains
         end do
       end do
     end do
+
+    !$acc exit data copyout(broadband_flux) delete(spectral_flux) async
+    !$acc wait
+
   end subroutine sum_broadband
   ! ----------------------------------------------------------------------------
   !

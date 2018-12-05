@@ -36,20 +36,22 @@ contains
     integer  :: icol, ilev, igpt
     real(wp) :: total
 
-    !$acc data pcopyin(spectral_flux) pcopyout(broadband_flux)
-
-    !$acc parallel loop gang vector collapse(2) private(total) present(spectral_flux, broadband_flux)
+    !$acc parallel loop gang vector collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
-        total = 0._wp
-        do igpt = 1, ngpt
-          total = total + spectral_flux(icol, ilev, igpt)
-        end do
-        broadband_flux(icol,ilev) = total
+        broadband_flux(icol,ilev) = 0
       end do
     end do
 
-    !$acc end data
+    !$acc parallel loop gang vector collapse(3)
+    do ilev = 1, nlev
+      do icol = 1, ncol
+        do igpt = 1, ngpt
+          !$acc atomic update
+          broadband_flux(icol,ilev) = broadband_flux(icol,ilev) + spectral_flux(icol, ilev, igpt)
+        end do
+      end do
+    end do
   end subroutine sum_broadband
   ! ----------------------------------------------------------------------------
   !
@@ -60,23 +62,26 @@ contains
     integer,                               intent(in ) :: ncol, nlev, ngpt
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux_dn, spectral_flux_up
     real(wp), dimension(ncol, nlev),       intent(out) :: broadband_flux_net
-
     integer  :: icol, ilev, igpt
-    real(wp) :: total
+    real(wp) :: total, tmp
 
-    !$acc data pcopyin(spectral_flux_dn, spectral_flux_up) pcopyout(broadband_flux_net)
-
-    !$acc parallel loop gang vector collapse(2) private(total) present(spectral_flux_dn, spectral_flux_up, broadband_flux_net)
+    !$acc parallel loop gang vector collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
-        total = 0._wp
-        do igpt = 1, ngpt
-          total = total + spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt)
-        end do
-        broadband_flux_net(icol,ilev) = total
+        broadband_flux_net(icol,ilev) = 0
       end do
     end do
-    !$acc end data
+
+    !$acc parallel loop gang vector collapse(3)
+    do ilev = 1, nlev
+      do icol = 1, ncol
+        do igpt = 1, ngpt
+          tmp = spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt)
+          !$acc atomic update
+          broadband_flux_net(icol,ilev) = broadband_flux_net(icol,ilev) + tmp
+        end do
+      end do
+    end do
   end subroutine net_broadband_full
   ! ----------------------------------------------------------------------------
   !
@@ -87,18 +92,14 @@ contains
     integer,                         intent(in ) :: ncol, nlay
     real(wp), dimension(ncol, nlay), intent(in ) :: flux_dn, flux_up
     real(wp), dimension(ncol, nlay), intent(out) :: broadband_flux_net
-
     integer :: icol, ilay
 
-    !$acc data pcopyin(flux_dn, flux_up) pcopyout(broadband_flux_net)
-
-    !$acc parallel loop gang vector collapse(2) present(flux_dn, flux_up, broadband_flux_net)
+    !$acc parallel loop gang vector collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
          broadband_flux_net(icol,ilay) = flux_dn(icol,ilay) - flux_up(icol,ilay)
        end do
     end do
-    !$acc end data
   end subroutine net_broadband_precalc
   ! ----------------------------------------------------------------------------
 end module mo_fluxes_broadband_kernels

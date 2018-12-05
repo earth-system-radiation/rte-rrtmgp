@@ -57,10 +57,9 @@ contains
     real(wp) :: wf
     integer  :: icol, ilay, igpt
     ! --------------
-    !!$acc data pcopy(tau, ssa, g) pcopyin(f)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector present(tau, ssa, g, f) private(wf)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -68,13 +67,11 @@ contains
             wf = ssa(icol,ilay,igpt) * f(icol,ilay,igpt)
             tau(icol,ilay,igpt) = (1._wp - wf) * tau(icol,ilay,igpt)
             ssa(icol,ilay,igpt) = (ssa(icol,ilay,igpt) - wf) /  (1.0_wp - wf)
-            g  (icol,ilay,igpt) = (g  (icol,ilay,igpt) - f(icol,ilay,igpt)) / &
-                                          (1._wp - f(icol,ilay,igpt))
+            g  (icol,ilay,igpt) = (g  (icol,ilay,igpt) - f(icol,ilay,igpt)) / (1._wp - f(icol,ilay,igpt))
           end if
         end do
       end do
     end do
-   !!$acc end data
   end subroutine delta_scale_2str_f_k
   ! ---------------------------------
   ! Delta-scale
@@ -88,10 +85,9 @@ contains
     real(wp) :: f, wf
     integer  :: icol, ilay, igpt
     ! --------------
-    !!$acc data pcopy(tau, ssa, g)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector present(tau, ssa, g) private(f, wf)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -106,7 +102,6 @@ contains
       end do
     end do
 
-    !!$acc end data
   end subroutine delta_scale_2str_k
   ! -------------------------------------------------------------------------------------------------
   !
@@ -133,10 +128,9 @@ contains
 
     integer  :: icol, ilay, igpt
     ! --------------
-    !!$acc data pcopy(tau1) pcopyin(tau2)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector present(tau1, tau2)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -144,7 +138,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_1scalar_by_1scalar
   ! ---------------------------------
   ! increment 1scalar by 2stream
@@ -157,10 +150,9 @@ contains
 
     integer  :: icol, ilay, igpt
     ! --------------
-    !!$acc data pcopy(tau1) pcopyin(tau2,ssa2)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector present(tau1, tau2, ssa2)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -169,7 +161,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_1scalar_by_2stream
   ! ---------------------------------
   ! increment 1scalar by nstream
@@ -182,10 +173,9 @@ contains
 
     integer  :: icol, ilay, igpt
     ! --------------
-    !!$acc data pcopy(tau1) pcopyin(tau2,ssa2)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector present(tau1, tau2, ssa2)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -194,7 +184,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_1scalar_by_nstream
   ! ---------------------------------
   ! ---------------------------------
@@ -209,10 +198,9 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: tau12
     ! --------------
-    !!$acc data pcopy(tau1,ssa1) pcopyin(tau2)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector present(tau1, ssa1, tau2) private(tau12)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -225,7 +213,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_2stream_by_1scalar
   ! ---------------------------------
   ! increment 2stream by 2stream
@@ -239,11 +226,9 @@ contains
     integer :: icol, ilay, igpt
     real(wp) :: tau12, tauscat12
     ! --------------
-    !!$acc data pcopy(tau1, ssa1, g1) pcopyin(tau2, ssa2, g2)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector &
-    !!$acc& present(tau1, ssa1, tau2, tau2, ssa2, g2) private(tau12, tauscat12)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -263,7 +248,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_2stream_by_2stream
   ! ---------------------------------
   ! increment 2stream by nstream
@@ -279,11 +263,9 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: tau12, tauscat12
     ! --------------
-    !!$acc data pcopy(tau1, ssa1, g1) pcopyin(tau2, ssa2, p2)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector &
-    !!$acc& present(tau1, ssa1, tau2, tau2, ssa2, p2) private(tau12, tauscat12)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -303,7 +285,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_2stream_by_nstream
   ! ---------------------------------
   ! ---------------------------------
@@ -318,10 +299,9 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: tau12
     ! --------------
-    !!$acc data pcopy(tau1, ssa1) pcopyin(tau2)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector present(tau1, ssa1, tau2) private(tau12)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -334,7 +314,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_nstream_by_1scalar
   ! ---------------------------------
   ! increment nstream by 2stream
@@ -352,11 +331,9 @@ contains
     real(wp), dimension(nmom1) :: temp_moms ! TK
     integer  :: imom  !TK
     ! --------------
-    !!$acc data pcopy(tau1, ssa1, p1) pcopyin(tau2, ssa2, g2)
     ! --------------
 
-    !!$acc  parallel loop collapse(3) gang vector &
-    !!$acc& present(tau1, ssa1, p1, tau2, ssa2, g2) private(tau12, tauscat12, temp_moms, imom)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -381,7 +358,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_nstream_by_2stream
   ! ---------------------------------
   ! increment nstream by nstream
@@ -399,12 +375,10 @@ contains
     integer  :: icol, ilay, igpt, mom_lim
     real(wp) :: tau12, tauscat12
     ! --------------
-    !!$acc data pcopy(tau1, ssa1, p1) pcopyin(tau2, ssa2, p2)
     ! --------------
     mom_lim = min(nmom1, nmom2)
 
-    !!$acc  parallel loop collapse(3) gang vector &
-    !!$acc& present(tau1, ssa1, p1, tau2, ssa2, p2) private(tau12, tauscat12)
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -426,7 +400,6 @@ contains
         end do
       end do
     end do
-    !!$acc end data
   end subroutine increment_nstream_by_nstream
   ! ---------------------------------
   !
@@ -442,12 +415,18 @@ contains
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2
     integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims ! Starting and ending gpoint for each band
+    integer :: ibnd, igpt, icol, ilay
 
-    integer :: ibnd, igpt
-
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        tau1(:,:,igpt) = tau1(:,:,igpt) + tau2(:,:,ibnd)
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1 , nlay
+        do icol = 1 , ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
+            endif
+          end do
+        end do
       end do
     end do
   end subroutine inc_1scalar_by_1scalar_bybnd
@@ -461,12 +440,18 @@ contains
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2
     integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims ! Starting and ending gpoint for each band
+    integer :: ibnd, igpt, icol, ilay
 
-    integer :: ibnd, igpt
-
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        tau1(:,:,igpt) = tau1(:,:,igpt) + tau2(:,:,ibnd) * (1._wp - ssa2(:,:,ibnd))
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1 , nlay
+        do icol = 1 , ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd) * (1._wp - ssa2(icol,ilay,ibnd))
+            endif
+          end do
+        end do
       end do
     end do
   end subroutine inc_1scalar_by_2stream_bybnd
@@ -480,12 +465,18 @@ contains
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2
     integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims ! Starting and ending gpoint for each band
+    integer :: ibnd, igpt, icol, ilay
 
-    integer :: ibnd, igpt
-
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        tau1(:,:,igpt) = tau1(:,:,igpt) + tau2(:,:,ibnd) * (1._wp - ssa2(:,:,ibnd))
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1 , nlay
+        do icol = 1 , ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd) * (1._wp - ssa2(icol,ilay,ibnd))
+            endif
+          end do
+        end do
       end do
     end do
   end subroutine inc_1scalar_by_nstream_bybnd
@@ -504,14 +495,17 @@ contains
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12
 
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
-            ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / max(eps,tau12)
-            tau1(icol,ilay,igpt) = tau12
-            ! g is unchanged
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
+              ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / max(eps,tau12)
+              tau1(icol,ilay,igpt) = tau12
+              ! g is unchanged
+            endif
           end do
         end do
       end do
@@ -527,25 +521,27 @@ contains
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1, g1
     real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2, g2
     integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims ! Starting and ending gpoint for each band
-
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12, tauscat12
 
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            ! t=tau1 + tau2
-            tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
-            ! w=(tau1*ssa1 + tau2*ssa2) / t
-            tauscat12 = &
-               tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + &
-               tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd)
-            g1(icol,ilay,igpt) = &
-              (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + &
-               tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / max(eps,tauscat12)
-            ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
-            tau1(icol,ilay,igpt) = tau12
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              ! t=tau1 + tau2
+              tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
+              ! w=(tau1*ssa1 + tau2*ssa2) / t
+              tauscat12 = &
+                 tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + &
+                 tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd)
+              g1(icol,ilay,igpt) = &
+                (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + &
+                 tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / max(eps,tauscat12)
+              ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
+              tau1(icol,ilay,igpt) = tau12
+            endif
           end do
         end do
       end do
@@ -567,21 +563,24 @@ contains
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12, tauscat12
 
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            ! t=tau1 + tau2
-            tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
-            ! w=(tau1*ssa1 + tau2*ssa2) / t
-            tauscat12 = &
-               tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + &
-               tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd)
-            g1(icol,ilay,igpt) = &
-              (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(   icol,ilay,igpt)+ &
-               tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1, icol,ilay,ibnd)) / max(eps,tauscat12)
-            ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
-            tau1(icol,ilay,igpt) = tau12
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              ! t=tau1 + tau2
+              tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
+              ! w=(tau1*ssa1 + tau2*ssa2) / t
+              tauscat12 = &
+                 tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + &
+                 tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd)
+              g1(icol,ilay,igpt) = &
+                (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(   icol,ilay,igpt)+ &
+                 tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1, icol,ilay,ibnd)) / max(eps,tauscat12)
+              ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
+              tau1(icol,ilay,igpt) = tau12
+            endif
           end do
         end do
       end do
@@ -602,14 +601,17 @@ contains
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12
 
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
-            ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / max(eps,tau12)
-            tau1(icol,ilay,igpt) = tau12
-            ! p is unchanged
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
+              ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / max(eps,tau12)
+              tau1(icol,ilay,igpt) = tau12
+              ! p is unchanged
+            endif
           end do
         end do
       end do
@@ -633,26 +635,29 @@ contains
     real(wp), dimension(nmom1) :: temp_moms ! TK
     integer  :: imom  !TK
 
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
-            tauscat12 = &
-               tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + &
-               tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd)
-            !
-            ! Here assume Henyey-Greenstein
-            !
-            temp_moms(1) = g2(icol,ilay,ibnd)
-            do imom = 2, nmom1
-              temp_moms(imom) = temp_moms(imom-1) * g2(icol,ilay,ibnd)
-            end do
-            p1(1:nmom1, icol,ilay,igpt) = &
-                (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(1:nmom1, icol,ilay,igpt) + &
-                 tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_moms(1:nmom1)  ) / max(eps,tauscat12)
-            ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
-            tau1(icol,ilay,igpt) = tau12
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
+              tauscat12 = &
+                 tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + &
+                 tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd)
+              !
+              ! Here assume Henyey-Greenstein
+              !
+              temp_moms(1) = g2(icol,ilay,ibnd)
+              do imom = 2, nmom1
+                temp_moms(imom) = temp_moms(imom-1) * g2(icol,ilay,ibnd)
+              end do
+              p1(1:nmom1, icol,ilay,igpt) = &
+                  (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(1:nmom1, icol,ilay,igpt) + &
+                   tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_moms(1:nmom1)  ) / max(eps,tauscat12)
+              ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
+              tau1(icol,ilay,igpt) = tau12
+            endif
           end do
         end do
       end do
@@ -677,23 +682,26 @@ contains
     real(wp) :: tau12, tauscat12
 
     mom_lim = min(nmom1, nmom2)
-    do ibnd = 1, nbnd
-      do igpt = gpt_lims(1, ibnd), gpt_lims(2, ibnd)
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
-            tauscat12 = &
-               tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + &
-               tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd)
-            !
-            ! If op2 has more moments than op1 these are ignored;
-            !   if it has fewer moments the higher orders are assumed to be 0
-            !
-            p1(1:mom_lim, icol,ilay,igpt) = &
-                (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(1:mom_lim, icol,ilay,igpt) + &
-                 tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1:mom_lim, icol,ilay,ibnd)) / max(eps,tauscat12)
-            ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
-            tau1(icol,ilay,igpt) = tau12
+    !$acc parallel loop collapse(3)
+    do igpt = 1 , ngpt
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          do ibnd = 1, nbnd
+            if (igpt >= gpt_lims(1, ibnd) .and. igpt <= gpt_lims(2, ibnd) ) then
+              tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd)
+              tauscat12 = &
+                 tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + &
+                 tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd)
+              !
+              ! If op2 has more moments than op1 these are ignored;
+              !   if it has fewer moments the higher orders are assumed to be 0
+              !
+              p1(1:mom_lim, icol,ilay,igpt) = &
+                  (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(1:mom_lim, icol,ilay,igpt) + &
+                   tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1:mom_lim, icol,ilay,ibnd)) / max(eps,tauscat12)
+              ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
+              tau1(icol,ilay,igpt) = tau12
+            endif
           end do
         end do
       end do
@@ -712,9 +720,9 @@ contains
     integer,                             intent(in ) :: colS, colE
     real(wp), dimension(colE-colS+1,&
                              nlay,ngpt), intent(out) :: array_out
-
     integer :: icol, ilay, igpt
 
+    !$acc parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE
@@ -735,6 +743,7 @@ contains
 
     integer :: icol, ilay, igpt, imom
 
+    !$acc parallel loop collapse(4)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE
@@ -761,6 +770,7 @@ contains
 
     integer :: icol, ilay, igpt
 
+    !$acc parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE

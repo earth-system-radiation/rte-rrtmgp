@@ -196,11 +196,9 @@ contains
     ! -----------------
 
     ! -----------------
-    !$acc data pcopyin(gpoint_flavor, kmajor, col_mix, fmajor, jeta, tropo, jtemp, jpress) &
-    !$acc&     pcopy(tau)
 
     ! optical depth calculation for major species
-    !$acc parallel loop gang vector collapse(3) private(itropo, iflav, tau_major)
+    !$acc parallel loop gang vector collapse(3)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! optical depth calculation for major species
@@ -219,7 +217,6 @@ contains
         end do ! igpt
       end do
     end do ! ilay
-    !$acc end data
 
   end subroutine gas_optical_depths_major
 
@@ -266,11 +263,6 @@ contains
     integer  :: minor_start, minor_loc
     ! -----------------
 
-    !$acc data pcopyin(gpt_flv, kminor, minor_limits_gpt, minor_scales_with_density, scale_by_complement, &
-    !$acc&             kminor_start, idx_minor, idx_minor_scaling, &
-    !$acc&             play, tlay, col_gas, fminor, jeta, layer_limits, jtemp) &
-    !$acc&     pcopy(tau)
-
     ! -----------------
     !
     ! Guard against layer limits being 0 -- that means don't do anything i.e. there are no
@@ -280,10 +272,7 @@ contains
     if(any(layer_limits(:,1) > 0)) then
       do imnr = 1, size(scale_by_complement,dim=1) ! loop over minor absorbers in each band
 
-        !$acc  parallel loop gang vector &
-        !$acc& private(itl,itu,iml,imu,scaling,minor_start,tau_minor,iflav,minor_loc,kminor_loc) &
-        !$acc& present(gpt_flv, kminor, minor_limits_gpt, minor_scales_with_density, scale_by_complement, &
-        !$acc&         kminor_start, idx_minor, idx_minor_scaling,  play, tlay, col_gas, fminor, jeta, layer_limits, jtemp, tau)
+        !$acc parallel loop gang vector private(vmr)
         do icol = 1, ncol
           !
           ! This check skips individual columns with no pressures in range
@@ -336,7 +325,6 @@ contains
         enddo
       enddo
     end if
-    !$acc end data
 
   end subroutine gas_optical_depths_minor
   ! ----------------------------------------------------------
@@ -367,9 +355,7 @@ contains
     integer  :: itropo
     ! -----------------
 
-    !$acc data pcopyin(gpoint_flavor, krayl, col_dry, col_gas, fminor, jeta, tropo, jtemp)  &
-    !$acc&     pcopyout(tau_rayleigh)
-    !$acc parallel loop gang vector collapse(3) private(itropo, iflav, k)
+    !$acc parallel loop gang vector collapse(3)
     do ilay = 1, nlay
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -383,7 +369,6 @@ contains
         end do ! igpt
       end do
     end do ! ilay
-    !$acc end data
   end subroutine compute_tau_rayleigh
 
   ! ----------------------------------------------------------
@@ -418,12 +403,8 @@ contains
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
     ! -----------------
 
-    !$acc data pcopyin(tlay, tlev, tsfc, fmajor, jeta, tropo, jtemp, jpress, &
-    !$acc&             gpoint_bands, pfracin, totplnk, gpoint_flavor)  &
-    !$acc& pcopyout(sfc_src, lay_src, lev_src_inc, lev_src_dec) pcreate(pfrac, planck_function)
-
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
-    !$acc parallel loop gang vector collapse(3) private(itropo, iflav)
+    !$acc parallel loop gang vector collapse(3)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -500,8 +481,6 @@ contains
         end do
       end do ! ilay
     end do ! icol
-
-    !$acc end data
 
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------
@@ -623,10 +602,7 @@ contains
     ! local indexes
     integer :: icol, ilay, iflav, igases(2), itropo, itemp
 
-    !$acc  data pcopyin(flavor,press_ref_log,temp_ref,press_ref_log_delta,temp_ref_min,temp_ref_delta,press_ref_trop_log,vmr_ref,nlay_ref,play,tlay,col_gas) &
-    !$acc&      pcopyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor) pcreate(ftemp,fpress)
-
-    !$acc parallel loop gang vector collapse(2) private(locpress,itropo)
+    !$acc parallel loop gang vector collapse(2) copyout(jtemp,ftemp,jpress,fpress,tropo) copyin(tlay,temp_ref,play,press_ref_log)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -645,8 +621,7 @@ contains
     end do
 
     ! loop over implemented combinations of major species
-    !$acc  parallel loop gang vector collapse(4)  private(igases, ratio_eta_half, eta, loceta, feta) &
-    !$acc& pcopyin(flavor,vmr_ref,itropo,jtemp,col_gas,col_mix,ftemp,fpress) pcopyout(col_mix,jeta,fminor,fmajor)
+    !$acc parallel loop gang vector collapse(4) private(igases) copyin(flavor,tropo,vmr_ref,jtemp,col_gas,ftemp,fpress) copyout(jeta,fmajor) copy(col_mix,fminor)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! loop over implemented combinations of major species
@@ -680,7 +655,6 @@ contains
         end do ! iflav
       end do ! icol,ilay
     end do
-    !$acc end data
 
   end subroutine interpolation
   ! ----------------------------------------------------------
@@ -696,8 +670,7 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: t
     ! -----------------------
-    !$acc data pcopyin(tau_abs,tau_rayleigh) pcopy(tau,ssa,g)
-    !$acc parallel loop gang vector private(t)
+    !$acc parallel loop gang vector collapse(3)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -712,7 +685,6 @@ contains
         end do
       end do
     end do
-    !$acc end data
   end subroutine combine_and_reorder_2str
   ! ----------------------------------------------------------
   !
@@ -730,8 +702,7 @@ contains
     integer :: icol, ilay, igpt, imom
     real(wp) :: t
     ! -----------------------
-    !$acc data pcopyin(tau_abs,tau_rayleigh) pcopy(tau,ssa,p)
-    !$acc parallel loop gang vector private(t)
+    !$acc parallel loop gang vector collapse(3)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -750,7 +721,6 @@ contains
         end do
       end do
     end do
-    !$acc end data
   end subroutine combine_and_reorder_nstr
   ! ----------------------------------------------------------
   pure subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
@@ -759,6 +729,7 @@ contains
     ! -----------------------
     integer :: i,j,k
     ! -----------------------
+    !$acc parallel loop gang vector collapse(3)
     do k = 1, nk
       do j = 1, nj
         do i = 1, ni
@@ -775,6 +746,7 @@ contains
     ! -----------------------
     integer :: i,j,k,l
     ! -----------------------
+    !$acc parallel loop gang vector collapse(4)
     do l = 1, nl
       do k = 1, nk
         do j = 1, nj

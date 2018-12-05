@@ -25,9 +25,8 @@ contains
     real(wp), dimension(d3, d1, d2), intent(out) :: array_out
 
     integer :: i1, i2, i3
-    !$acc data pcopyin(array_in) pcopyout(array_out)
 
-    !$acc parallel loop gang vector collapse(3)  present(array_in, array_out)
+    !$acc parallel loop gang vector collapse(3)
     do i2 = 1, d2
       do i1 = 1, d1
         do i3 = 1, d3
@@ -35,7 +34,6 @@ contains
         end do
       end do
     end do
-    !$acc end data
   end subroutine reorder_123x312_kernel
   ! ----------------------------------------------------------------------------
   subroutine reorder_123x321_kernel(d1, d2, d3, array_in, array_out) & 
@@ -45,9 +43,8 @@ contains
     real(wp), dimension(d3, d2, d1), intent(out) :: array_out
 
     integer :: i1, i2, i3
-    !$acc data pcopyin(array_in) pcopyout(array_out)
 
-    !$acc parallel loop gang vector collapse(3)  present(array_in, array_out)
+    !$acc parallel loop gang vector collapse(3)
     do i1 = 1, d1
       do i2 = 1, d2
         do i3 = 1, d3
@@ -55,7 +52,6 @@ contains
         end do
       end do
     end do
-    !$acc end data
   end subroutine reorder_123x321_kernel
   ! ----------------------------------------------------------------------------
 end module mo_reorder_kernels

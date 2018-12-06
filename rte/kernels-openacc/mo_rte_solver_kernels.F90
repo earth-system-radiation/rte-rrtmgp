@@ -105,6 +105,10 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
+    ! NOTE: This kernel produces small differences between GPU and CPU
+    ! implementations on Ascent with PGI, we assume due to floating point
+    ! differences in the exp() function. These differences are small in the
+    ! RFMIP test case (10^-6).
     !$acc parallel loop gang vector collapse(3) &
     !$acc&     copyin(d(:ncol,:ngpt),tau(:ncol,:nlay,:ngpt)) &
     !$acc&     copyout(tau_loc(:ncol,:nlay,:ngpt),trans(:ncol,:nlay,:ngpt))
@@ -201,7 +205,9 @@ contains
     integer :: icol, ilev, igpt
     ! ------------------------------------
     ! ------------------------------------
-    !$acc  parallel loop gang vector collapse(2)
+    !$acc  parallel loop gang vector collapse(2) &
+    !$acc&     copyout(ds_ncol(:ncol,:ngpt)) &
+    !$acc&     copyin(ds(:1))
     do igpt = 1, ngpt
       do icol = 1, ncol
         Ds_ncol(icol, igpt) = Ds(1)
@@ -219,7 +225,9 @@ contains
     call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
 
     do imu = 2, nmus
-      !$acc  parallel loop gang vector collapse(2)
+      !$acc  parallel loop gang vector collapse(2) &
+      !$acc&     copyout(ds_ncol(:ncol,:ngpt)) &
+      !$acc&     copyin(ds(imu))
       do igpt = 1, ngpt
         do icol = 1, ncol
           Ds_ncol(icol, igpt) = Ds(imu)
@@ -229,7 +237,9 @@ contains
                             top_at_1, Ds_ncol, weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn)
-      !$acc  parallel loop gang vector collapse(3)
+      !$acc  parallel loop gang vector collapse(3) &
+      !$acc&     copyin(radn_up(:ncol,:nlay+1,ngpt),radn_dn(:ncol,:nlay+1,ngpt)) &
+      !$acc&     copy(flux_dn(:ncol,:nlay+1,ngpt),flux_up(:ncol,:nlay+1,ngpt))
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
           do icol = 1, ncol
@@ -306,7 +316,9 @@ contains
                         gamma1, gamma2, Rdif, Tdif, tau, &
                         source_dn, source_up, source_sfc)
 
-    !$acc  parallel loop gang vector collapse(2)
+    !$acc  parallel loop gang vector collapse(2) &
+    !$acc&     copyin(sfc_emis(:ncol,:ngpt)) &
+    !$acc&     copyout(sfc_albedo(:ncol,:ngpt))
     do igpt = 1, ngpt
       do icol = 1, ncol
         sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt)
@@ -342,7 +354,9 @@ contains
       real(wp) :: mu0_inv(ncol)
       ! ------------------------------------
       ! ------------------------------------
-      !$acc parallel loop gang vector
+      !$acc parallel loop gang vector &
+      !$acc&     copyin(mu0(:ncol)) &
+      !$acc&     copyout(mu0_inv(:ncol))
       do icol = 1, ncol
         mu0_inv(icol) = 1._wp/mu0(icol)
       enddo
@@ -356,7 +370,10 @@ contains
         !   radiation just passed through?
         ! layer index = level index - 1
         ! previous level is up (-1)
-        !$acc parallel loop gang vector collapse(2)
+        !$acc parallel loop gang vector collapse(2) &
+        !$acc&     copyin(tau(:ncol,2:nlay+1,:ngpt),mu0_inv(:ncol)) &
+        !$acc&     copyin(flux_dir(:ncol,:nlay+1,:ngpt)) &
+        !$acc&     copyout(flux_dir(:ncol,2:nlay+1,:ngpt))
         do igpt = 1, ngpt
           do icol = 1, ncol
             do ilev = 2, nlay+1
@@ -367,7 +384,10 @@ contains
       else
         ! layer index = level index
         ! previous level is up (+1)
-        !$acc parallel loop gang vector collapse(2)
+        !$acc parallel loop gang vector collapse(2) &
+        !$acc&     copyin(mu0_inv(:ncol),tau(:ncol,:nlay,:ngpt)) &
+        !$acc&     copyin(flux_dir(:ncol,:nlay+1,:ngpt)) &
+        !$acc&     copyout(flux_dir(:ncol,:nlay,:ngpt))
         do igpt = 1, ngpt
           do icol = 1, ncol
             do ilev = nlay, 1, -1
@@ -425,7 +445,9 @@ contains
       !
       ! adding computes only diffuse flux; flux_dn is total
       !
-      !$acc  parallel loop gang vector collapse(3)
+      !$acc  parallel loop gang vector collapse(3) &
+      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copyin(flux_dir(:ncol,:nlay+1,:ngpt))
       do igpt = 1, ngpt
         do ilay = 1, nlay+1
           do icol = 1, ncol
@@ -463,7 +485,10 @@ contains
       real(wp), parameter :: tau_thresh = sqrt(epsilon(tau))
       ! ---------------------------------------------------------------
       ! ---------------------------------------------------------------
-      !$acc  parallel loop gang vector collapse(3)
+      !$acc  parallel loop gang vector collapse(3) &
+      !$acc&     copyout(source_up(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyin(tau(:ncol,:nlay,:ngpt),trans(:ncol,:nlay,:ngpt),lay_source(:ncol,:nlay,:ngpt),lev_source_up(:ncol,:nlay,:ngpt),lev_source_dn(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyout(source_dn(:ncol,:nlay,:ngpt))
       do igpt = 1, ngpt
         do ilay = 1, nlay
           do icol = 1, ncol
@@ -513,7 +538,11 @@ contains
       !
       ! Top of domain is index 1
       !
-      !$acc  parallel loop gang vector collapse(2) 
+      !$acc  parallel loop gang vector collapse(2)  &
+      !$acc&     copyin(source_sfc(:ncol,:ngpt),source_up(:ncol,:nlay,:ngpt),trans(:ncol,:nlay,:ngpt)) &
+      !$acc&     copy(radn_dn(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copyin(sfc_albedo(:ncol,:ngpt),source_dn(:ncol,:nlay,:ngpt)) &
+      !$acc&     copy(radn_up(:ncol,:nlay+1,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Downward propagation
@@ -534,7 +563,10 @@ contains
       !
       ! Top of domain is index nlay+1
       !
-      !$acc  parallel loop gang vector collapse(2) 
+      !$acc  parallel loop gang vector collapse(2) &
+      !$acc&     copy(radn_up(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copy(radn_dn(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copyin(source_dn(:ncol,:nlay,:ngpt),sfc_albedo(:ncol,:ngpt),trans(:ncol,:nlay,:ngpt),source_up(:ncol,:nlay,:ngpt),source_sfc(:ncol,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Downward propagation
@@ -581,7 +613,11 @@ contains
     real(wp), parameter :: LW_diff_sec = 1.66  ! 1./cos(diffusivity angle)
     ! ---------------------------------
     ! ---------------------------------
-    !$acc  parallel loop gang vector collapse(3)
+    !$acc  parallel loop gang vector collapse(3) &
+    !$acc&     copyout(tdif(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(w0(:ncol,:nlay,:ngpt),g(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyout(gamma1(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),gamma2(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(tau(:ncol,:nlay,:ngpt))
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -639,7 +675,9 @@ contains
     integer :: icol, ilay, igpt
     ! ---------------------------------------------------------------
     ! ---------------------------------
-    !$acc  parallel loop gang vector collapse(3) 
+    !$acc  parallel loop gang vector collapse(3)  &
+    !$acc&     copy(lev_source(:ncol,:nlay+1,:ngpt)) &
+    !$acc&     copyin(lev_src_inc(:ncol,0:nlay,:ngpt),lev_src_dec(:ncol,:nlay+1,:ngpt))
     do igpt = 1, ngpt
       do ilay = 1, nlay+1
         do icol = 1,ncol
@@ -685,7 +723,14 @@ contains
     ! ---------------------------------------------------------------
     ! ---------------------------------
 
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyin(sfc_emis(:ncol,:ngpt),rdif(:ncol,:nlay,:ngpt)) &
+    !$acc&     copy(source_dn(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(sfc_src(:ncol,:ngpt)) &
+    !$acc&     copy(source_sfc(:ncol,:ngpt)) &
+    !$acc&     copyin(tdif(:ncol,:nlay,:ngpt),tau(:ncol,:nlay,:ngpt),lev_source(:ncol,:nlay+1,ngpt)) &
+    !$acc&     copy(source_up(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(gamma1(:ncol,:nlay,:ngpt),gamma2(:ncol,:nlay,:ngpt))
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -749,12 +794,23 @@ contains
       real(wp) :: mu0_inv(ncol)
       ! ---------------------------------
       ! ---------------------------------
-      !$acc parallel loop gang vector 
+      !$acc parallel loop gang vector  &
+      !$acc&     copyin(mu0(:ncol)) &
+      !$acc&     copyout(mu0_inv(:ncol))
       do icol = 1, ncol
         mu0_inv(icol) = 1._wp/mu0(icol)
       enddo
 
-      !$acc  parallel loop collapse(3)
+      ! NOTE: this kernel appears to cause small (10^-6) differences between GPU
+      ! and CPU. This *might* be floating point differences in implementation of
+      ! the exp function.
+      !$acc  parallel loop collapse(3) &
+      !$acc&     copyin(w0(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyout(tnoscat(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyin(g(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyout(rdir(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyin(mu0_inv(:ncol),tau(:ncol,:nlay,:ngpt),mu0(:ncol)) &
+      !$acc&     copyout(tdir(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),tdif(:ncol,:nlay,:ngpt))
       do igpt = 1, ngpt
         do ilay = 1, nlay
           do icol = 1, ncol
@@ -854,7 +910,13 @@ contains
     ! ---------------------------------
 
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) gang vector
+      !$acc  parallel loop collapse(2) gang vector &
+      !$acc&     copyin(rdir(:ncol,:nlay,:ngpt)) &
+      !$acc&     copy(flux_dn_dir(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copyout(source_dn(:ncol,:nlay,:ngpt)) &
+      !$acc&     copy(source_sfc(:ncol,:ngpt)) &
+      !$acc&     copyout(source_up(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyin(sfc_albedo(:ncol,:ngpt),tnoscat(:ncol,:nlay,:ngpt),tdir(:ncol,:nlay,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           do ilev = 1, nlay
@@ -868,7 +930,10 @@ contains
     else
       ! layer index = level index
       ! previous level is up (+1)
-      !$acc  parallel loop collapse(2) gang vector
+      !$acc  parallel loop collapse(2) gang vector &
+      !$acc&     copyin(rdir(:ncol,:nlay,:ngpt)) &
+      !$acc&     copy(source_dn(:ncol,:nlay,:ngpt),flux_dn_dir(:ncol,:nlay+1,:ngpt),source_sfc(:ncol,:ngpt),source_up(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyin(sfc_albedo(:ncol,:ngpt),tnoscat(:ncol,:nlay,:ngpt),tdir(:ncol,:nlay,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           do ilev = nlay, 1, -1
@@ -919,7 +984,12 @@ contains
     ! We write the loops out explicitly so compilers will have no trouble optimizing them.
     !
     if(top_at_1) then
-      !$acc parallel loop
+      !$acc parallel loop &
+      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt)) &
+      !$acc&     copyout(flux_up(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copyin(tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt)) &
+      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
       do igpt = 1, ngpt
         !$acc loop private(albedo, src, denom)
         do icol = 1, ncol
@@ -965,7 +1035,11 @@ contains
         end do
       end do
     else
-      !$acc parallel loop
+      !$acc parallel loop &
+      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt),tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt)) &
+      !$acc&     copy(flux_up(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
+      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
       do igpt = 1, ngpt
         !$acc loop private(albedo, src, denom)
         do icol = 1, ncol
@@ -1029,14 +1103,18 @@ contains
     ! --------------
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) gang vector
+      !$acc  parallel loop collapse(2) gang vector &
+      !$acc&     copyout(flux_dn(:ncol,1,:ngpt)) &
+      !$acc&     copyin(inc_flux(:ncol,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt)
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) gang vector
+      !$acc  parallel loop collapse(2) gang vector &
+      !$acc&     copyin(inc_flux(:ncol,:ngpt)) &
+      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt)
@@ -1058,14 +1136,20 @@ contains
 
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) gang vector
+      !$acc  parallel loop collapse(2) gang vector &
+      !$acc&     copyin(factor(:ncol)) &
+      !$acc&     copyout(flux_dn(:ncol,1,:ngpt)) &
+      !$acc&     copyin(inc_flux(:ncol,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt) * factor(icol)
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) gang vector
+      !$acc  parallel loop collapse(2) gang vector &
+      !$acc&     copyin(factor(:ncol)) &
+      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt)) &
+      !$acc&     copyin(inc_flux(:ncol,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt) * factor(icol)
@@ -1085,14 +1169,16 @@ contains
 
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) gang vector
+      !$acc  parallel loop collapse(2) gang vector &
+      !$acc&     copyout(flux_dn(:ncol,:1,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = 0._wp
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) gang vector
+      !$acc  parallel loop collapse(2) gang vector &
+      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt))
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = 0._wp

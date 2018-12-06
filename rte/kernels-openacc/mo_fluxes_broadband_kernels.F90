@@ -36,16 +36,17 @@ contains
     integer  :: icol, ilev, igpt
     real(wp) :: total
 
-    !$acc enter data copyin(spectral_flux) create(broadband_flux)
-
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) &
+    !$acc&     copyout(broadband_flux(:ncol,:nlev))
     do ilev = 1, nlev
       do icol = 1, ncol
         broadband_flux(icol,ilev) = 0
       end do
     end do
 
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyin(spectral_flux(:ncol,:nlev,:ngpt)) &
+    !$acc&     copy(broadband_flux(:,:))
     do ilev = 1, nlev
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -54,8 +55,6 @@ contains
         end do
       end do
     end do
-
-    !$acc exit data copyout(broadband_flux) delete(spectral_flux)
 
   end subroutine sum_broadband
   ! ----------------------------------------------------------------------------
@@ -70,16 +69,17 @@ contains
     integer  :: icol, ilev, igpt
     real(wp) :: total, tmp
 
-    !$acc enter data copyin(spectral_flux_dn, spectral_flux_up) create(broadband_flux_net)
-
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) &
+    !$acc&     copyout(broadband_flux_net(:ncol,:nlev))
     do ilev = 1, nlev
       do icol = 1, ncol
         broadband_flux_net(icol,ilev) = 0
       end do
     end do
 
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyin(spectral_flux_up(:ncol,:nlev,:ngpt),spectral_flux_dn(:ncol,:nlev,:ngpt)) &
+    !$acc&     copy(broadband_flux_net(:,:))
     do ilev = 1, nlev
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -90,8 +90,6 @@ contains
       end do
     end do
 
-    !$acc exit data copyout(broadband_flux_net) delete(spectral_flux_dn, spectral_flux_up)
-    
   end subroutine net_broadband_full
   ! ----------------------------------------------------------------------------
   !
@@ -104,7 +102,9 @@ contains
     real(wp), dimension(ncol, nlay), intent(out) :: broadband_flux_net
     integer :: icol, ilay
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) &
+    !$acc&     copyin(flux_up(:ncol,:nlay),flux_dn(:ncol,:nlay)) &
+    !$acc&     copyout(broadband_flux_net(:ncol,:nlay))
     do ilay = 1, nlay
       do icol = 1, ncol
          broadband_flux_net(icol,ilay) = flux_dn(icol,ilay) - flux_up(icol,ilay)

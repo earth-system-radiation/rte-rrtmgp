@@ -415,10 +415,15 @@ contains
     integer  :: ilay, icol, igpt, itropo, iflav
     real(wp) :: pfrac          (ngpt,nlay,  ncol)
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
+    real(wp) :: scaling_array(2) = (/1._wp,1._wp/)
     ! -----------------
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyin(tropo(:ncol,:nlay)) &
+    !$acc&     copyout(pfrac(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyin(gpoint_flavor(:,:ngpt),jpress(:ncol,:nlay)) &
+    !$acc&     copyin(scaling_array(:),pfracin(:,:,:,:),jtemp(:,:),fmajor(:,:,:,:,:,:),jeta(:,:,:,:))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -427,7 +432,7 @@ contains
           iflav = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
           pfrac(igpt,ilay,icol) = &
             ! interpolation in temperature, pressure, and eta
-            interpolate3D((/1._wp,1._wp/), fmajor(:,:,:,iflav,icol,ilay), pfracin, &
+            interpolate3D(scaling_array(:), fmajor(:,:,:,iflav,icol,ilay), pfracin, &
                           igpt, jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
         end do ! igpt
       end do ! col
@@ -437,21 +442,27 @@ contains
     ! Planck function by band for the surface
     ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
     !
-    !$acc parallel loop gang vector
+    !$acc parallel loop gang vector &
+    !$acc&     copy(planck_function(:,:,:)) &
+    !$acc&     copyin(totplnk(:,:),tsfc(:))
     do icol = 1, ncol
       call interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,1,icol))
     end do
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) &
+    !$acc&     copyout(sfc_src(:ncol,:ngpt)) &
+    !$acc&     copyin(planck_function(:,:1,:ncol),gpoint_bands(:ngpt),pfrac(:ngpt,sfc_lay,:ncol))
     do icol = 1, ncol
       do igpt = 1, ngpt
         sfc_src(icol,igpt) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol)
       end do
     end do ! icol
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) &
+    !$acc&     copyin(totplnk(:,:),tlay(:,:)) &
+    !$acc&     copy(planck_function(:,:,:))
     do icol = 1, ncol
       do ilay = 1, nlay
         ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
@@ -461,7 +472,10 @@ contains
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyin(planck_function(:,:nlay,:ncol),pfrac(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyout(lay_src(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(gpoint_bands(:ngpt))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -471,12 +485,16 @@ contains
     end do ! icol
 
     ! compute level source irradiances for each g-point, one each for upward and downward paths
-    !$acc parallel loop gang vector
+    !$acc parallel loop gang vector &
+    !$acc&     copy(planck_function(:,:,:)) &
+    !$acc&     copyin(totplnk(:,:),tlev(:,:))
     do icol = 1, ncol
       call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,       1,icol))
     end do
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) &
+    !$acc&     copyin(totplnk(:,:),tlev(:,:)) &
+    !$acc&     copy(planck_function(:,:,:))
     do icol = 1, ncol
       do ilay = 2, nlay+1
         call interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,ilay,icol))
@@ -486,7 +504,11 @@ contains
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyin(planck_function(:,:nlay+1,:ncol),pfrac(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyout(lev_src_inc(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(gpoint_bands(:ngpt)) &
+    !$acc&     copyout(lev_src_dec(:ncol,:nlay,:ngpt))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt

@@ -276,7 +276,12 @@ contains
     if(any(layer_limits(:,1) > 0)) then
       extent = size(scale_by_complement,dim=1)
 
-      !$acc parallel loop collapse(3) private(vmr)
+      !$acc parallel loop collapse(3) private(vmr) &
+      !$acc& copyin(kminor_start(:extent),idx_minor_scaling(:extent),layer_limits(:ncol,:),idx_minor(:extent),tlay(:ncol,:nlay)) &
+      !$acc& copy(tau(:,:,:)) &
+      !$acc& copyin(minor_scales_with_density(:extent),play(:ncol,:nlay),gpt_flv(:),minor_limits_gpt(:2,:extent)) &
+      !$acc& copyin(jeta(:,:,:,:),fminor(:,:,:,:,:),kminor(:,:,:),jtemp(:,:)) &
+      !$acc& copyin(col_gas(:ncol,:nlay,:),scale_by_complement(:extent))
       do imnr = 1, extent  ! loop over minor absorbers in each band
         do icol = 1, ncol
           do ilay = 1 , nlay
@@ -360,7 +365,11 @@ contains
     integer  :: itropo
     ! -----------------
 
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyin(col_gas(:ncol,:nlay,idx_h2o),tropo(:ncol,:nlay)) &
+    !$acc&     copyout(tau_rayleigh(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyin(jtemp(:,:),krayl(:,:,:,:),fminor(:,:,:,:,:),jeta(:,:,:,:)) &
+    !$acc&     copyin(col_dry(:ncol,:nlay),gpoint_flavor(:,:ngpt))
     do ilay = 1, nlay
       do icol = 1, ncol
         do igpt = 1, ngpt

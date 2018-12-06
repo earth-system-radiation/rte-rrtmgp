@@ -105,7 +105,9 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyin(d(:ncol,:ngpt),tau(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyout(tau_loc(:ncol,:nlay,:ngpt),trans(:ncol,:nlay,:ngpt))
     do igpt = 1, ngpt
       do ilev = 1, nlay
         do icol = 1, ncol
@@ -118,47 +120,52 @@ contains
       end do
     end do
 
-  !$acc parallel loop gang vector collapse(2)
-  do igpt = 1, ngpt
-    do icol = 1, ncol
-      !
-      ! Transport is for intensity
-      !   convert flux at top of domain to intensity assuming azimuthal isotropy
-      !
-      radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2._wp * pi * weight)
-      !
-      ! Surface albedo, surface source function
-      !
-      sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt)
-      source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt)
-    end do
-  end do
-
-  !
-  ! Source function for diffuse radiation
-  !
-  call lw_source_noscat(ncol, nlay, ngpt, &
-                        lay_source, lev_source_up, lev_source_dn, &
-                        tau_loc, trans, source_dn, source_up)
-  !
-  ! Transport
-  !
-  call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
-                           tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                           radn_up, radn_dn)
-
-  !
-  ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
-  !
-  !$acc parallel loop gang vector collapse(3)
-  do igpt = 1, ngpt
-    do ilev = 1, nlay+1
+    !$acc parallel loop gang vector collapse(2) &
+    !$acc&     copyout(source_sfc(:ncol,:ngpt)) &
+    !$acc&     copyin(sfc_src(:ncol,:ngpt),sfc_emis(:ncol,:ngpt)) &
+    !$acc&     copy(radn_dn(:ncol,top_level,:ngpt)) &
+    !$acc&     copyout(sfc_albedo(:ncol,:ngpt))
+    do igpt = 1, ngpt
       do icol = 1, ncol
-        radn_dn(icol,ilev,igpt) = 2._wp * pi * weight * radn_dn(icol,ilev,igpt)
-        radn_up(icol,ilev,igpt) = 2._wp * pi * weight * radn_up(icol,ilev,igpt)
+        !
+        ! Transport is for intensity
+        !   convert flux at top of domain to intensity assuming azimuthal isotropy
+        !
+        radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2._wp * pi * weight)
+        !
+        ! Surface albedo, surface source function
+        !
+        sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt)
+        source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt)
       end do
     end do
-  end do
+  
+    !
+    ! Source function for diffuse radiation
+    !
+    call lw_source_noscat(ncol, nlay, ngpt, &
+                          lay_source, lev_source_up, lev_source_dn, &
+                          tau_loc, trans, source_dn, source_up)
+    !
+    ! Transport
+    !
+    call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
+                             tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
+                             radn_up, radn_dn)
+  
+    !
+    ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
+    !
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copy(radn_up(:ncol,:nlay+1,:ngpt), radn_dn(:ncol,:nlay+1,:ngpt))
+    do igpt = 1, ngpt
+      do ilev = 1, nlay+1
+        do icol = 1, ncol
+          radn_dn(icol,ilev,igpt) = 2._wp * pi * weight * radn_dn(icol,ilev,igpt)
+          radn_up(icol,ilev,igpt) = 2._wp * pi * weight * radn_up(icol,ilev,igpt)
+        end do
+      end do
+    end do
 
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------

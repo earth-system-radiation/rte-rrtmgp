@@ -198,7 +198,11 @@ contains
     ! -----------------
 
     ! optical depth calculation for major species
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copy(tau(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyin(tropo(:ncol,:nlay),gpoint_flavor(:,:ngpt)) &
+    !$acc&     copyin(col_mix(:,:,:,:),kmajor(:,:,:,:),jtemp(:,:),fmajor(:,:,:,:,:,:),jeta(:,:,:,:)) &
+    !$acc&     copyin(jpress(:ncol,:nlay))
     do ilay = 1, nlay
       do icol = 1, ncol
         ! optical depth calculation for major species

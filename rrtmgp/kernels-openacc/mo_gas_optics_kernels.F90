@@ -706,7 +706,11 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: t
     ! -----------------------
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyout(g(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyout(tau(:ncol,:nlay,:ngpt)) &
+    !$acc&     copy(ssa(:ncol,:nlay,:ngpt))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -732,13 +736,17 @@ contains
     integer, intent(in) :: ncol, nlay, ngpt, nmom
     real(wp), dimension(ngpt,nlay,ncol), intent(in ) :: tau_abs, tau_rayleigh
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau, ssa
-    real(wp), dimension(ncol,nlay,ngpt,nmom), &
+    real(wp), dimension(nmom,ncol,nlay,ngpt), &
                                          intent(inout) :: p
     ! -----------------------
     integer :: icol, ilay, igpt, imom
     real(wp) :: t
     ! -----------------------
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copy(ssa(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyout(tau(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyout(p(:,:ncol,:nlay,:ngpt))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -765,7 +773,8 @@ contains
     ! -----------------------
     integer :: i,j,k
     ! -----------------------
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop gang vector collapse(3) &
+    !$acc&     copyout(array(:ni,:nj,:nk))
     do k = 1, nk
       do j = 1, nj
         do i = 1, ni
@@ -782,7 +791,8 @@ contains
     ! -----------------------
     integer :: i,j,k,l
     ! -----------------------
-    !$acc parallel loop gang vector collapse(4)
+    !$acc parallel loop gang vector collapse(4) &
+    !$acc&     copyout(array(:ni,:nj,:nk,:nl))
     do l = 1, nl
       do k = 1, nk
         do j = 1, nj

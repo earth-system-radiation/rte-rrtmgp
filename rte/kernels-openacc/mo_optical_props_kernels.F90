@@ -48,7 +48,7 @@ contains
   ! Delta-scale
   !   user-provided value of f (forward scattering)
   !
-  pure subroutine delta_scale_2str_f_k(ncol, nlay, ngpt, tau, ssa, g, f) &
+  subroutine delta_scale_2str_f_k(ncol, nlay, ngpt, tau, ssa, g, f) &
       bind(C, name="delta_scale_2str_f_k")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) ::  tau, ssa, g
@@ -80,7 +80,7 @@ contains
   ! Delta-scale
   !   f = g*g
   !
-  pure subroutine delta_scale_2str_k(ncol, nlay, ngpt, tau, ssa, g) &
+  subroutine delta_scale_2str_k(ncol, nlay, ngpt, tau, ssa, g) &
       bind(C, name="delta_scale_2str_k")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) ::  tau, ssa, g
@@ -123,7 +123,7 @@ contains
   !   resolution (adding properties defined by band to those defined by g-point)
   !
   ! -------------------------------------------------------------------------------------------------
-  pure subroutine increment_1scalar_by_1scalar(ncol, nlay, ngpt, &
+  subroutine increment_1scalar_by_1scalar(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2) bind(C, name="increment_1scalar_by_1scalar")
     integer,                              intent(in  ) :: ncol, nlay, ngpt
@@ -147,7 +147,7 @@ contains
   end subroutine increment_1scalar_by_1scalar
   ! ---------------------------------
   ! increment 1scalar by 2stream
-  pure subroutine increment_1scalar_by_2stream(ncol, nlay, ngpt, &
+  subroutine increment_1scalar_by_2stream(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2, ssa2) bind(C, name="increment_1scalar_by_2stream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
@@ -173,7 +173,7 @@ contains
   end subroutine increment_1scalar_by_2stream
   ! ---------------------------------
   ! increment 1scalar by nstream
-  pure subroutine increment_1scalar_by_nstream(ncol, nlay, ngpt, &
+  subroutine increment_1scalar_by_nstream(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2, ssa2) bind(C, name="increment_1scalar_by_nstream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
@@ -200,7 +200,7 @@ contains
   ! ---------------------------------
   ! ---------------------------------
   ! increment 2stream by 1scalar
-  pure subroutine increment_2stream_by_1scalar(ncol, nlay, ngpt, &
+  subroutine increment_2stream_by_1scalar(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
                                                tau2) bind(C, name="increment_2stream_by_1scalar")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
@@ -231,7 +231,7 @@ contains
   end subroutine increment_2stream_by_1scalar
   ! ---------------------------------
   ! increment 2stream by 2stream
-  pure subroutine increment_2stream_by_2stream(ncol, nlay, ngpt, &
+  subroutine increment_2stream_by_2stream(ncol, nlay, ngpt, &
                                                tau1, ssa1, g1,   &
                                                tau2, ssa2, g2) bind(C, name="increment_2stream_by_2stream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
@@ -270,7 +270,7 @@ contains
   end subroutine increment_2stream_by_2stream
   ! ---------------------------------
   ! increment 2stream by nstream
-  pure subroutine increment_2stream_by_nstream(ncol, nlay, ngpt, nmom2, &
+  subroutine increment_2stream_by_nstream(ncol, nlay, ngpt, nmom2, &
                                                tau1, ssa1, g1,          &
                                                tau2, ssa2, p2) bind(C, name="increment_2stream_by_nstream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt, nmom2
@@ -312,7 +312,7 @@ contains
   ! ---------------------------------
   ! ---------------------------------
   ! increment nstream by 1scalar
-  pure subroutine increment_nstream_by_1scalar(ncol, nlay, ngpt, &
+  subroutine increment_nstream_by_1scalar(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
                                                tau2) bind(C, name="increment_nstream_by_1scalar")
     integer,                              intent(in   ) :: ncol, nlay, ngpt
@@ -343,7 +343,7 @@ contains
   end subroutine increment_nstream_by_1scalar
   ! ---------------------------------
   ! increment nstream by 2stream
-  pure subroutine increment_nstream_by_2stream(ncol, nlay, ngpt, nmom1, &
+  subroutine increment_nstream_by_2stream(ncol, nlay, ngpt, nmom1, &
                                                tau1, ssa1, p1,          &
                                                tau2, ssa2, g2) bind(C, name="increment_nstream_by_2stream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt, nmom1
@@ -393,7 +393,7 @@ contains
   end subroutine increment_nstream_by_2stream
   ! ---------------------------------
   ! increment nstream by nstream
-  pure subroutine increment_nstream_by_nstream(ncol, nlay, ngpt, nmom1, nmom2, &
+  subroutine increment_nstream_by_nstream(ncol, nlay, ngpt, nmom1, nmom2, &
                                                tau1, ssa1, p1,                 &
                                                tau2, ssa2, p2) bind(C, name="increment_nstream_by_nstream")
     integer,                              intent(in   ) :: ncol, nlay, ngpt, nmom1, nmom2
@@ -443,7 +443,7 @@ contains
   !   (e.g. by band instead of by gpoint)
   !
   ! ---------------------------------
-  pure subroutine inc_1scalar_by_1scalar_bybnd(ncol, nlay, ngpt, &
+  subroutine inc_1scalar_by_1scalar_bybnd(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2,             &
                                                nbnd, gpt_lims) bind(C, name="inc_1scalar_by_1scalar_bybnd")
@@ -471,7 +471,7 @@ contains
   end subroutine inc_1scalar_by_1scalar_bybnd
   ! ---------------------------------
   ! increment 1scalar by 2stream
-  pure subroutine inc_1scalar_by_2stream_bybnd(ncol, nlay, ngpt, &
+  subroutine inc_1scalar_by_2stream_bybnd(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2, ssa2,       &
                                                nbnd, gpt_lims) bind(C, name="inc_1scalar_by_2stream_bybnd")
@@ -499,7 +499,7 @@ contains
   end subroutine inc_1scalar_by_2stream_bybnd
   ! ---------------------------------
   ! increment 1scalar by nstream
-  pure subroutine inc_1scalar_by_nstream_bybnd(ncol, nlay, ngpt, &
+  subroutine inc_1scalar_by_nstream_bybnd(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2, ssa2,       &
                                                nbnd, gpt_lims) bind(C, name="inc_1scalar_by_nstream_bybnd")
@@ -528,7 +528,7 @@ contains
 
     ! ---------------------------------
   ! increment 2stream by 1scalar
-  pure subroutine inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, &
+  subroutine inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
                                                tau2,             &
                                                nbnd, gpt_lims) bind(C, name="inc_2stream_by_1scalar_bybnd")
@@ -562,7 +562,7 @@ contains
   end subroutine inc_2stream_by_1scalar_bybnd
   ! ---------------------------------
   ! increment 2stream by 2stream
-  pure subroutine inc_2stream_by_2stream_bybnd(ncol, nlay, ngpt, &
+  subroutine inc_2stream_by_2stream_bybnd(ncol, nlay, ngpt, &
                                                tau1, ssa1, g1,   &
                                                tau2, ssa2, g2,   &
                                                nbnd, gpt_lims) bind(C, name="inc_2stream_by_2stream_bybnd")
@@ -604,7 +604,7 @@ contains
   end subroutine inc_2stream_by_2stream_bybnd
   ! ---------------------------------
   ! increment 2stream by nstream
-  pure subroutine inc_2stream_by_nstream_bybnd(ncol, nlay, ngpt, nmom2, &
+  subroutine inc_2stream_by_nstream_bybnd(ncol, nlay, ngpt, nmom2, &
                                                tau1, ssa1, g1,          &
                                                tau2, ssa2, p2,          &
                                                nbnd, gpt_lims) bind(C, name="inc_2stream_by_nstream_bybnd")
@@ -649,7 +649,7 @@ contains
   ! ---------------------------------
   ! ---------------------------------
   ! increment nstream by 1scalar
-  pure subroutine inc_nstream_by_1scalar_bybnd(ncol, nlay, ngpt, &
+  subroutine inc_nstream_by_1scalar_bybnd(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
                                                tau2,             &
                                                nbnd, gpt_lims) bind(C, name="inc_nstream_by_1scalar_bybnd")
@@ -683,7 +683,7 @@ contains
   end subroutine inc_nstream_by_1scalar_bybnd
   ! ---------------------------------
   ! increment nstream by 2stream
-  pure subroutine inc_nstream_by_2stream_bybnd(ncol, nlay, ngpt, nmom1, &
+  subroutine inc_nstream_by_2stream_bybnd(ncol, nlay, ngpt, nmom1, &
                                                tau1, ssa1, p1,          &
                                                tau2, ssa2, g2,          &
                                                nbnd, gpt_lims) bind(C, name="inc_nstream_by_2stream_bybnd")
@@ -735,7 +735,7 @@ contains
   end subroutine inc_nstream_by_2stream_bybnd
   ! ---------------------------------
   ! increment nstream by nstream
-  pure subroutine inc_nstream_by_nstream_bybnd(ncol, nlay, ngpt, nmom1, nmom2, &
+  subroutine inc_nstream_by_nstream_bybnd(ncol, nlay, ngpt, nmom1, nmom2, &
                                                tau1, ssa1, p1,                 &
                                                tau2, ssa2, p2,                 &
                                                nbnd, gpt_lims) bind(C, name="inc_nstream_by_nstream_bybnd")
@@ -790,7 +790,7 @@ contains
   ! Subsetting, meaning extracting some portion of the 3D domain
   !
   ! -------------------------------------------------------------------------------------------------
-  pure subroutine extract_subset_dim1_3d(ncol, nlay, ngpt, array_in, colS, colE, array_out) &
+  subroutine extract_subset_dim1_3d(ncol, nlay, ngpt, array_in, colS, colE, array_out) &
     bind (C, name="extract_subset_dim1_3d")
     integer,                             intent(in ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(in ) :: array_in
@@ -812,7 +812,7 @@ contains
 
   end subroutine extract_subset_dim1_3d
   ! ---------------------------------
-  pure subroutine extract_subset_dim2_4d(nmom, ncol, nlay, ngpt, array_in, colS, colE, array_out) &
+  subroutine extract_subset_dim2_4d(nmom, ncol, nlay, ngpt, array_in, colS, colE, array_out) &
     bind (C, name="extract_subset_dim2_4d")
     integer,                                  intent(in ) :: nmom, ncol, nlay, ngpt
     real(wp), dimension(nmom,ncol,nlay,ngpt), intent(in ) :: array_in
@@ -840,7 +840,7 @@ contains
   !
   ! Extract the absorption optical thickness which requires mulitplying by 1 - ssa
   !
-  pure subroutine extract_subset_absorption_tau(ncol, nlay, ngpt, tau_in, ssa_in, &
+  subroutine extract_subset_absorption_tau(ncol, nlay, ngpt, tau_in, ssa_in, &
                                                 colS, colE, tau_out)              &
     bind (C, name="extract_subset_absorption_tau")
     integer,                             intent(in ) :: ncol, nlay, ngpt

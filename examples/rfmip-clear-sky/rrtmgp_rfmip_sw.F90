@@ -77,13 +77,13 @@ program rrtmgp_rfmip_sw
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_sw_bc, read_kdist_gas_names
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
   !
   ! Timing library
   !
   use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize, gptlsetoption, &
                                    gptlpercent, gptloverhead
-#ENDIF
+#endif
   implicit none
   ! --------------------------------------------------
   !
@@ -207,14 +207,14 @@ program rrtmgp_rfmip_sw
            flux_dn(block_size, nlay+1, nblocks))
   call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
   ! --------------------------------------------------
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
   !
   ! Initialize timers
   !
   ret = gptlsetoption (gptlpercent, 1)        ! Turn on "% of" print
   ret = gptlsetoption (gptloverhead, 0)       ! Turn off overhead estimate
   ret =  gptlinitialize()
-#ENDIF
+#endif
   !
   ! Loop over blocks
   !
@@ -225,18 +225,18 @@ program rrtmgp_rfmip_sw
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
     !
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
     ret =  gptlstart('gas_optics (SW)')
-#ENDIF
+#endif
     call stop_on_err(k_dist%gas_optics(p_lay(:,:,b), &
                                        p_lev(:,:,b),       &
                                        t_lay(:,:,b),       &
                                        gas_conc_array(b),  &
                                        optical_props,      &
                                        toa_flux))
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
     ret =  gptlstop('gas_optics (SW)')
-#ENDIF
+#endif
     !
     ! Normalize incoming solar flux to match RFMIP specification
     !
@@ -257,9 +257,9 @@ program rrtmgp_rfmip_sw
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband
     !
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
     ret =  gptlstart('rte_sw')
-#ENDIF
+#endif
     call stop_on_err(rte_sw(optical_props,   &
                             top_at_1,        &
                             mu0,             &
@@ -267,9 +267,9 @@ program rrtmgp_rfmip_sw
                             spread(surface_albedo(:,b), 1, ncopies = k_dist%get_nband()), &
                             spread(surface_albedo(:,b), 1, ncopies = k_dist%get_nband()), &
                             fluxes))
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
     ret =  gptlstop('rte_sw')
-#ENDIF
+#endif
     !
     ! Zero out fluxes for which the original solar zenith angle is > 90 degrees.
     !
@@ -283,10 +283,10 @@ program rrtmgp_rfmip_sw
   !
   ! End timers
   !
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
   ret = gptlpr(block_size)
   ret = gptlfinalize()
-#ENDIF
+#endif
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rsd', flux_dn)

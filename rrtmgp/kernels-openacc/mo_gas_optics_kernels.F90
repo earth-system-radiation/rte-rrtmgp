@@ -198,7 +198,7 @@ contains
     ! -----------------
 
     ! optical depth calculation for major species
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copy(tau(:ngpt,:nlay,:ncol)) &
     !$acc&     copyin(tropo(:ncol,:nlay),gpoint_flavor(:,:ngpt)) &
     !$acc&     copyin(col_mix(:,:,:,:),kmajor(:,:,:,:),jtemp(:,:),fmajor(:,:,:,:,:,:),jeta(:,:,:,:)) &
@@ -365,7 +365,7 @@ contains
     integer  :: itropo
     ! -----------------
 
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copyin(col_gas(:ncol,:nlay,idx_h2o),tropo(:ncol,:nlay)) &
     !$acc&     copyout(tau_rayleigh(:ngpt,:nlay,:ncol)) &
     !$acc&     copyin(jtemp(:,:),krayl(:,:,:,:),fminor(:,:,:,:,:),jeta(:,:,:,:)) &
@@ -419,7 +419,7 @@ contains
     ! -----------------
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copyin(tropo(:ncol,:nlay)) &
     !$acc&     copyout(pfrac(:ngpt,:nlay,:ncol)) &
     !$acc&     copyin(gpoint_flavor(:,:ngpt),jpress(:ncol,:nlay)) &
@@ -442,7 +442,7 @@ contains
     ! Planck function by band for the surface
     ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
     !
-    !$acc parallel loop gang vector &
+    !$acc parallel loop &
     !$acc&     copy(planck_function(:,:,:)) &
     !$acc&     copyin(totplnk(:,:),tsfc(:))
     do icol = 1, ncol
@@ -451,7 +451,7 @@ contains
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(2) &
+    !$acc parallel loop collapse(2) &
     !$acc&     copyout(sfc_src(:ncol,:ngpt)) &
     !$acc&     copyin(planck_function(:,:1,:ncol),gpoint_bands(:ngpt),pfrac(:ngpt,sfc_lay,:ncol))
     do icol = 1, ncol
@@ -460,7 +460,7 @@ contains
       end do
     end do ! icol
 
-    !$acc parallel loop gang vector collapse(2) &
+    !$acc parallel loop collapse(2) &
     !$acc&     copyin(totplnk(:,:),tlay(:,:)) &
     !$acc&     copy(planck_function(:,:,:))
     do icol = 1, ncol
@@ -472,7 +472,7 @@ contains
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copyin(planck_function(:,:nlay,:ncol),pfrac(:ngpt,:nlay,:ncol)) &
     !$acc&     copyout(lay_src(:ncol,:nlay,:ngpt)) &
     !$acc&     copyin(gpoint_bands(:ngpt))
@@ -485,14 +485,14 @@ contains
     end do ! icol
 
     ! compute level source irradiances for each g-point, one each for upward and downward paths
-    !$acc parallel loop gang vector &
+    !$acc parallel loop &
     !$acc&     copy(planck_function(:,:,:)) &
     !$acc&     copyin(totplnk(:,:),tlev(:,:))
     do icol = 1, ncol
       call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,       1,icol))
     end do
 
-    !$acc parallel loop gang vector collapse(2) &
+    !$acc parallel loop collapse(2) &
     !$acc&     copyin(totplnk(:,:),tlev(:,:)) &
     !$acc&     copy(planck_function(:,:,:))
     do icol = 1, ncol
@@ -504,7 +504,7 @@ contains
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copyin(planck_function(:,:nlay+1,:ncol),pfrac(:ngpt,:nlay,:ncol)) &
     !$acc&     copyout(lev_src_inc(:ncol,:nlay,:ngpt)) &
     !$acc&     copyin(gpoint_bands(:ngpt)) &
@@ -547,7 +547,7 @@ contains
  ! ------------
  !   This function returns a single value from a subset (in gpoint) of the k table
  !
-  pure function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
+  function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
   !$acc routine seq
     real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species
                                        ! index(1) : reference eta level (temperature dependent)
@@ -566,7 +566,7 @@ contains
 
   ! ----------------------------------------------------------
   ! interpolation in temperature, pressure, and eta
-  pure function interpolate3D(scaling, fmajor, k, igpt, jeta, jtemp, jpress) result(res)
+  function interpolate3D(scaling, fmajor, k, igpt, jeta, jtemp, jpress) result(res)
   !$acc routine seq
     real(wp), dimension(2),     intent(in) :: scaling
     real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
@@ -638,7 +638,7 @@ contains
     ! local indexes
     integer :: icol, ilay, iflav, igases(2), itropo, itemp
 
-    !$acc parallel loop gang vector collapse(2) copyout(jtemp,ftemp,jpress,fpress,tropo) copyin(tlay,temp_ref,play,press_ref_log)
+    !$acc parallel loop collapse(2) copyout(jtemp,ftemp,jpress,fpress,tropo) copyin(tlay,temp_ref,play,press_ref_log)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -657,7 +657,7 @@ contains
     end do
 
     ! loop over implemented combinations of major species
-    !$acc parallel loop gang vector collapse(4) private(igases) copyin(flavor,tropo,vmr_ref,jtemp,col_gas,ftemp,fpress) copyout(jeta,fmajor) copy(col_mix,fminor)
+    !$acc parallel loop collapse(4) private(igases) copyin(flavor,tropo,vmr_ref,jtemp,col_gas,ftemp,fpress) copyout(jeta,fmajor) copy(col_mix,fminor)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! loop over implemented combinations of major species
@@ -697,7 +697,7 @@ contains
   !
   ! Combine absoprtion and Rayleigh optical depths for total tau, ssa, g
   !
-  pure subroutine combine_and_reorder_2str(ncol, nlay, ngpt, tau_abs, tau_rayleigh, tau, ssa, g) &
+  subroutine combine_and_reorder_2str(ncol, nlay, ngpt, tau_abs, tau_rayleigh, tau, ssa, g) &
       bind(C, name="combine_and_reorder_2str")
     integer,                             intent(in) :: ncol, nlay, ngpt
     real(wp), dimension(ngpt,nlay,ncol), intent(in   ) :: tau_abs, tau_rayleigh
@@ -706,7 +706,7 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: t
     ! -----------------------
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copyout(g(:ncol,:nlay,:ngpt)) &
     !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol)) &
     !$acc&     copyout(tau(:ncol,:nlay,:ngpt)) &
@@ -731,7 +731,7 @@ contains
   ! Combine absoprtion and Rayleigh optical depths for total tau, ssa, p
   !   using Rayleigh scattering phase function
   !
-  pure subroutine combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau_abs, tau_rayleigh, tau, ssa, p) &
+  subroutine combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau_abs, tau_rayleigh, tau, ssa, p) &
       bind(C, name="combine_and_reorder_nstr")
     integer, intent(in) :: ncol, nlay, ngpt, nmom
     real(wp), dimension(ngpt,nlay,ncol), intent(in ) :: tau_abs, tau_rayleigh
@@ -742,7 +742,7 @@ contains
     integer :: icol, ilay, igpt, imom
     real(wp) :: t
     ! -----------------------
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copy(ssa(:ncol,:nlay,:ngpt)) &
     !$acc&     copyout(tau(:ncol,:nlay,:ngpt)) &
     !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol)) &
@@ -767,13 +767,13 @@ contains
     end do
   end subroutine combine_and_reorder_nstr
   ! ----------------------------------------------------------
-  pure subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
+  subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
     integer, intent(in) :: ni, nj, nk
     real(wp), dimension(ni, nj, nk), intent(out) :: array
     ! -----------------------
     integer :: i,j,k
     ! -----------------------
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copyout(array(:ni,:nj,:nk))
     do k = 1, nk
       do j = 1, nj
@@ -785,13 +785,13 @@ contains
 
   end subroutine zero_array_3D
   ! ----------------------------------------------------------
-  pure subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
+  subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
     integer, intent(in) :: ni, nj, nk, nl
     real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
     ! -----------------------
     integer :: i,j,k,l
     ! -----------------------
-    !$acc parallel loop gang vector collapse(4) &
+    !$acc parallel loop collapse(4) &
     !$acc&     copyout(array(:ni,:nj,:nk,:nl))
     do l = 1, nl
       do k = 1, nk

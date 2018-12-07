@@ -26,7 +26,7 @@ contains
 
     integer :: i1, i2, i3
 
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copyout(array_out(:d3,:d1,:d2)) &
     !$acc&     copyin(array_in(:d1,:d2,:d3))
     do i2 = 1, d2
@@ -46,7 +46,7 @@ contains
 
     integer :: i1, i2, i3
 
-    !$acc parallel loop gang vector collapse(3) &
+    !$acc parallel loop collapse(3) &
     !$acc&     copyout(array_out(:d3,:d2,:d1)) &
     !$acc&     copyin(array_in(:d1,:d2,:d3))
     do i1 = 1, d1

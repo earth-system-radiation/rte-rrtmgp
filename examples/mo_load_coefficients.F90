@@ -60,11 +60,11 @@ contains
     real(wp), dimension(:,:,:  ),    allocatable :: vmr_ref
     real(wp), dimension(:,:,:,:),    allocatable :: kmajor
 
-    character(len=256), dimension(:), allocatable :: gas_minor, identifier_minor
-    character(len=256), dimension(:), allocatable :: minor_gases_lower,               minor_gases_upper
+    character(len=32), dimension(:),  allocatable :: gas_minor, identifier_minor
+    character(len=32), dimension(:),  allocatable :: minor_gases_lower,               minor_gases_upper
     integer, dimension(:,:),          allocatable :: minor_limits_gpt_lower,          minor_limits_gpt_upper
     logical, dimension(:),            allocatable :: minor_scales_with_density_lower, minor_scales_with_density_upper
-    character(len=256), dimension(:), allocatable :: scaling_gas_lower,               scaling_gas_upper
+    character(len=32), dimension(:),  allocatable :: scaling_gas_lower,               scaling_gas_upper
     logical, dimension(:),            allocatable :: scale_by_complement_lower,       scale_by_complement_upper
     integer, dimension(:),            allocatable :: kminor_start_lower,              kminor_start_upper
     real(wp), dimension(:,:,:),       allocatable :: kminor_lower,                    kminor_upper

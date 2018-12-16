@@ -81,13 +81,13 @@ program rrtmgp_rfmip_lw
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_lw_bc, read_kdist_gas_names
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
   !
   ! Timing library
   !
   use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize, gptlsetoption, &
                                    gptlpercent, gptloverhead
-#ENDIF
+#endif
   implicit none
   ! --------------------------------------------------
   !
@@ -158,7 +158,7 @@ program rrtmgp_rfmip_lw
   !
   gases_to_use = kdist_gas_names
   print *, "Radiation calculation uses gases "
-  print *, "  ", [(trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))]
+   print *, "  ", (trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))
 
   ! --------------------------------------------------
   !
@@ -209,14 +209,14 @@ program rrtmgp_rfmip_lw
   call stop_on_err(source%alloc            (block_size, nlay, k_dist))
   call stop_on_err(optical_props%alloc_1scl(block_size, nlay, k_dist))
   ! --------------------------------------------------
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
   !
   ! Initialize timers
   !
   ret = gptlsetoption (gptlpercent, 1)        ! Turn on "% of" print
   ret = gptlsetoption (gptloverhead, 0)       ! Turn off overhead estimate
   ret =  gptlinitialize()
-#ENDIF
+#endif
   !
   ! Loop over blocks
   !
@@ -227,9 +227,9 @@ program rrtmgp_rfmip_lw
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
     !
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
     ret =  gptlstart('gas_optics (LW)')
-#ENDIF
+#endif
     call stop_on_err(k_dist%gas_optics(p_lay(:,:,b), &
                                        p_lev(:,:,b),       &
                                        t_lay(:,:,b),       &
@@ -238,32 +238,32 @@ program rrtmgp_rfmip_lw
                                        optical_props,      &
                                        source,             &
                                        tlev = t_lev(:,:,b)))
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
     ret =  gptlstop('gas_optics (LW)')
-#ENDIF
+#endif
     !
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband
     !
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
     ret =  gptlstart('rte_lw')
-#ENDIF
+#endif
     call stop_on_err(rte_lw(optical_props,   &
                             top_at_1,        &
                             source,          &
                             spread(sfc_emis(:,b), 1, ncopies = k_dist%get_nband()), &
                             fluxes))
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
     ret =  gptlstop('rte_lw')
-#ENDIF
+#endif
   end do
-#IFDEF USE_TIMING
+#ifdef USE_TIMING
   !
   ! End timers
   !
   ret = gptlpr(block_size)
   ret = gptlfinalize()
-#ENDIF
+#endif
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rld', flux_dn)

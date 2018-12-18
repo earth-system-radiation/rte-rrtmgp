@@ -23,18 +23,19 @@ module mo_rrtmgp_constants
   use mo_rte_kind, only: wp
 
   ! -----------------------------------------
-  ! Physical constants
+  ! Physical constants, 2018 SI defintion of metric system
+  !   doi:10.1088/1681-7575/aa950a (see also https://www.nist.gov/si-redefinition/meet-constants)
   ! Boltzmann constant [J/K] = [(kg m^2)/(K s^2)]
-  real(wp), parameter :: k_boltz = 1.380650e-23_wp
+  real(wp), parameter :: k_boltz = 1.380649e-23_wp
 
   !  molecular weight of water [kg/mol]
   real(wp), parameter :: m_h2o =  0.018016_wp
 
   ! Avogadro's number [molec/mol]
-  real(wp), parameter :: avogad = 6.02214199e23_wp
+  real(wp), parameter :: avogad = 6.02214076e23_wp
 
   ! Universal gas constant [J/(mol K)]
-  real(wp), parameter :: R_univ_gconst = 8.314472_wp
+  real(wp), parameter :: R_univ_gconst = avogad * k_boltz
 
   ! -----------------------------------------
   !

@@ -68,6 +68,8 @@ module mo_gas_concentrations
       generic,   public :: get_vmr => get_vmr_1d, &
                                       get_vmr_2d
       generic,   public :: get_subset => get_subset_range
+      procedure, public :: get_num_gases
+      procedure, public :: get_gas_names
   end type ty_gas_concs
 contains
   ! -------------------------------------------------------------------------------------
@@ -321,6 +323,26 @@ contains
       deallocate(this%concs)
     end if
   end subroutine reset
+  ! -------------------------------------------------------------------------------------
+  !
+  ! Inquiry functions
+  !
+  ! -------------------------------------------------------------------------------------
+  pure function get_num_gases(this)
+    class(ty_gas_concs), intent(in) :: this
+    integer :: get_num_gases
+
+    get_num_gases = size(this%gas_name)
+    return
+  end function get_num_gases
+  ! -------------------------------------------------------------------------------------
+  pure function get_gas_names(this)
+    class(ty_gas_concs), intent(in) :: this
+    character(len=32), dimension(this%get_num_gases()) :: get_gas_names
+
+    get_gas_names(:) = this%gas_name(:)
+    return
+  end function get_gas_names
   ! -------------------------------------------------------------------------------------
   !
   ! Private procedures

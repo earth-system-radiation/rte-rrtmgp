@@ -118,7 +118,9 @@ program rrtmgp_rfmip_sw
   !
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
 
+#ifdef USE_TIMING
   integer :: ret
+#endif
   ! -------------------------------------------------------------------------------------------------
   !
   ! Code starts

@@ -239,7 +239,7 @@ contains
     real(wp), dimension(:),     allocatable :: gas_conc_temp_1d
     real(wp), dimension(:,:,:), allocatable :: gas_conc_temp_3d
     character(len=32)                       :: gas_name_in_file
-    character(len=32), dimension(10) :: &
+    character(len=32), dimension(11) :: &
       chem_name = ['co   ', &
                    'ch4  ', &
         				   'o2   ', &
@@ -249,7 +249,8 @@ contains
         				   'CCl4 ', &
         				   'ch4  ', &
         				   'CH3Br', &
-   			           'CH3Cl'], &
+   			           'CH3Cl', &
+                   'cfc22'], &
       desc_name = ['carbon_monoxide     ', &
                    'methane             ', &
                    'oxygen              ', &
@@ -259,7 +260,8 @@ contains
         				   'carbon_tetrachloride', &
         				   'methane             ', &
         				   'methyl_bromide      ', &
-        				   'methyl_chloride     ']
+        				   'methyl_chloride     ', &
+                   'hcfc22              ']
     ! ---------------------------
     if(any([ncol_l, nlay_l, nexp_l]  == 0)) &
       call stop_on_err("read_and_block_lw_bc: Haven't read problem size yet.")
@@ -292,7 +294,10 @@ contains
     !
     do g = 1, size(gas_names)
       gas_name_in_file = trim(lower_case(gas_names(g)))
-      if(gas_name_in_file == 'h2o' .or. gas_name_in_file == 'o3') cycle
+      !
+      ! RRTMGP gas optics include NO2; RFMIP doesn't have this
+      !
+      if(gas_name_in_file == 'h2o' .or. gas_name_in_file == 'o3' .or. gas_name_in_file == 'no2') cycle
       !
       ! Use a mapping between chemical formula and name if it exists
       !
@@ -303,17 +308,17 @@ contains
       ! Read the values as a function of experiment
       gas_conc_temp_1d = read_field(ncid, gas_name_in_file, nexp_l) * read_scaling(ncid, gas_name_in_file)
 
-	  do b = 1, nblocks
-        ! Does every value in this block belong to the same experiment?
-	    if(all(exp_num(1,b) == exp_num(2:,b))) then
-	      ! Provide a scalar value
-		    call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), gas_conc_temp_1d(exp_num(1,b))))
-		  else
-		  ! Create 2D field, blocksize x nlay, with scalar values from each experiment
-		  call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), &
-		                                             spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
-		  end if
-	  end do
+  	  do b = 1, nblocks
+          ! Does every value in this block belong to the same experiment?
+  	    if(all(exp_num(1,b) == exp_num(2:,b))) then
+  	      ! Provide a scalar value
+  		    call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), gas_conc_temp_1d(exp_num(1,b))))
+  		  else
+  		  ! Create 2D field, blocksize x nlay, with scalar values from each experiment
+  		  call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), &
+  		                                             spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
+  		  end if
+  	  end do
 
     end do
     ncid = nf90_close(ncid)

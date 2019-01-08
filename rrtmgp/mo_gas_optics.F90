@@ -594,7 +594,7 @@ contains
     call compute_Planck_source(ncol, nlay, ngpt, nbnd, nflv, &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
-                this%get_gpoint_bands(), this%planck_frac, this%temp_ref_min,&
+                this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
                 sources%sfc_source, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec)
   end function source

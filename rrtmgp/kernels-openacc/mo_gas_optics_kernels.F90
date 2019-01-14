@@ -196,11 +196,13 @@ contains
     ! -----------------
 
     ! -----------------
-    !$acc data pcopyin(gpoint_flavor, kmajor, col_mix, fmajor, jeta, tropo, jtemp, jpress) &
-    !$acc&     pcopy(tau)
 
     ! optical depth calculation for major species
-    !$acc parallel loop gang vector collapse(3) private(itropo, iflav, tau_major)
+    !$acc parallel loop collapse(3) &
+    !$acc&     copy(tau(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyin(tropo(:ncol,:nlay),gpoint_flavor(:,:ngpt)) &
+    !$acc&     copyin(col_mix(:,:,:,:),kmajor(:,:,:,:),jtemp(:,:),fmajor(:,:,:,:,:,:),jeta(:,:,:,:)) &
+    !$acc&     copyin(jpress(:ncol,:nlay))
     do ilay = 1, nlay
       do icol = 1, ncol
         ! optical depth calculation for major species
@@ -219,7 +221,6 @@ contains
         end do ! igpt
       end do
     end do ! ilay
-    !$acc end data
 
   end subroutine gas_optical_depths_major
 
@@ -263,13 +264,8 @@ contains
     real(wp) :: scaling, kminor_loc, tau_minor ! minor species absorption coefficient, optical depth
     integer  :: icol, ilay, iflav, igpt, imnr
     integer  :: itl, itu, iml, imu
-    integer  :: minor_start, minor_loc
+    integer  :: minor_start, minor_loc, extent
     ! -----------------
-
-    !$acc data pcopyin(gpt_flv, kminor, minor_limits_gpt, minor_scales_with_density, scale_by_complement, &
-    !$acc&             kminor_start, idx_minor, idx_minor_scaling, &
-    !$acc&             play, tlay, col_gas, fminor, jeta, layer_limits, jtemp) &
-    !$acc&     pcopy(tau)
 
     ! -----------------
     !
@@ -278,65 +274,67 @@ contains
     ! First check skips the routine entirely if all columns are out of bounds...
     !
     if(any(layer_limits(:,1) > 0)) then
-      do imnr = 1, size(scale_by_complement,dim=1) ! loop over minor absorbers in each band
+      extent = size(scale_by_complement,dim=1)
 
-        !$acc  parallel loop gang vector &
-        !$acc& private(itl,itu,iml,imu,scaling,minor_start,tau_minor,iflav,minor_loc,kminor_loc) &
-        !$acc& present(gpt_flv, kminor, minor_limits_gpt, minor_scales_with_density, scale_by_complement, &
-        !$acc&         kminor_start, idx_minor, idx_minor_scaling,  play, tlay, col_gas, fminor, jeta, layer_limits, jtemp, tau)
+      !$acc parallel loop collapse(3) private(vmr) &
+      !$acc& copyin(kminor_start(:extent),idx_minor_scaling(:extent),layer_limits(:ncol,:),idx_minor(:extent),tlay(:ncol,:nlay)) &
+      !$acc& copy(tau(:,:,:)) &
+      !$acc& copyin(minor_scales_with_density(:extent),play(:ncol,:nlay),gpt_flv(:),minor_limits_gpt(:2,:extent)) &
+      !$acc& copyin(jeta(:,:,:,:),fminor(:,:,:,:,:),kminor(:,:,:),jtemp(:,:)) &
+      !$acc& copyin(col_gas(:ncol,:nlay,:),scale_by_complement(:extent))
+      do imnr = 1, extent  ! loop over minor absorbers in each band
         do icol = 1, ncol
-          !
-          ! This check skips individual columns with no pressures in range
-          !
-          if(layer_limits(icol,1) > 0) then
-            do ilay = layer_limits(icol,1), layer_limits(icol,2)   ! WS: what is the average iteration count here?
-              vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
-              !
-              ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
-              !
-              scaling = col_gas(icol,ilay,idx_minor(imnr))
-              !
-              ! Density scaling (e.g. for h2o continuum, collision-induced absorption)
-              !
-              if (minor_scales_with_density(imnr)) then
+          do ilay = 1 , nlay
+            !
+            ! This check skips individual columns with no pressures in range
+            !
+            if(layer_limits(icol,1) > 0) then
+              if (ilay >= layer_limits(icol,1)  .and. ilay <= layer_limits(icol,2) ) then
+                vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
                 !
-                ! NOTE: P needed in hPa to properly handle density scaling.
+                ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
                 !
-                scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
-                if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
-                  ! scale by density of special gas
-                  if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
-                    scaling = scaling * (1._wp - vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o)) )
-                  else
-                    scaling = scaling *          vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o))
+                scaling = col_gas(icol,ilay,idx_minor(imnr))
+                !
+                ! Density scaling (e.g. for h2o continuum, collision-induced absorption)
+                !
+                if (minor_scales_with_density(imnr)) then
+                  !
+                  ! NOTE: P needed in hPa to properly handle density scaling.
+                  !
+                  scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
+                  if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
+                    ! scale by density of special gas
+                    if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
+                      scaling = scaling * (1._wp - vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o)) )
+                    else
+                      scaling = scaling *          vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o))
+                    endif
                   endif
                 endif
-              endif
-              !
-              ! Interpolation of absorption coefficient and calculation of optical depth
-              !
-              ! Which gpoint range does this minor gas affect?
-              iml = minor_limits_gpt(1,imnr)
-              imu = minor_limits_gpt(2,imnr)
-              ! What is the starting point in the stored array of minor absorption coefficients?
-              minor_start = kminor_start(imnr)
-              do igpt = iml,imu
-                tau_minor = 0._wp
-                iflav = gpt_flv(igpt) ! eta interpolation depends on flavor
-                minor_loc = minor_start + (igpt - iml) ! add offset to starting point
-                kminor_loc = &
-                  interpolate2D(fminor(:,:,iflav,icol,ilay), &
-                                kminor, &
-                                minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
+                !
+                ! Interpolation of absorption coefficient and calculation of optical depth
+                !
+                ! Which gpoint range does this minor gas affect?
+                iml = minor_limits_gpt(1,imnr)
+                imu = minor_limits_gpt(2,imnr)
+                ! What is the starting point in the stored array of minor absorption coefficients?
+                minor_start = kminor_start(imnr)
+                do igpt = iml,imu
+                  tau_minor = 0._wp
+                  iflav = gpt_flv(igpt) ! eta interpolation depends on flavor
+                  minor_loc = minor_start + (igpt - iml) ! add offset to starting point
+                  kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
                   tau_minor = kminor_loc * scaling
-                tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
-              enddo
-            enddo
-          end if
+                  !$acc atomic update
+                  tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
+                enddo
+              endif
+            endif
+          enddo
         enddo
       enddo
     end if
-    !$acc end data
 
   end subroutine gas_optical_depths_minor
   ! ----------------------------------------------------------
@@ -367,9 +365,11 @@ contains
     integer  :: itropo
     ! -----------------
 
-    !$acc data pcopyin(gpoint_flavor, krayl, col_dry, col_gas, fminor, jeta, tropo, jtemp)  &
-    !$acc&     pcopyout(tau_rayleigh)
-    !$acc parallel loop gang vector collapse(3) private(itropo, iflav, k)
+    !$acc parallel loop collapse(3) &
+    !$acc&     copyin(col_gas(:ncol,:nlay,idx_h2o),tropo(:ncol,:nlay)) &
+    !$acc&     copyout(tau_rayleigh(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyin(jtemp(:,:),krayl(:,:,:,:),fminor(:,:,:,:,:),jeta(:,:,:,:)) &
+    !$acc&     copyin(col_dry(:ncol,:nlay),gpoint_flavor(:,:ngpt))
     do ilay = 1, nlay
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -383,7 +383,6 @@ contains
         end do ! igpt
       end do
     end do ! ilay
-    !$acc end data
   end subroutine compute_tau_rayleigh
 
   ! ----------------------------------------------------------
@@ -416,14 +415,15 @@ contains
     integer  :: ilay, icol, igpt, itropo, iflav
     real(wp) :: pfrac          (ngpt,nlay,  ncol)
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
+    real(wp) :: scaling_array(2) = (/1._wp,1._wp/)
     ! -----------------
 
-    !$acc data pcopyin(tlay, tlev, tsfc, fmajor, jeta, tropo, jtemp, jpress, &
-    !$acc&             gpoint_bands, pfracin, totplnk, gpoint_flavor)  &
-    !$acc& pcopyout(sfc_src, lay_src, lev_src_inc, lev_src_dec) pcreate(pfrac, planck_function)
-
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
-    !$acc parallel loop gang vector collapse(3) private(itropo, iflav)
+    !$acc parallel loop collapse(3) &
+    !$acc&     copyin(tropo(:ncol,:nlay)) &
+    !$acc&     copyout(pfrac(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyin(gpoint_flavor(:,:ngpt),jpress(:ncol,:nlay)) &
+    !$acc&     copyin(scaling_array(:),pfracin(:,:,:,:),jtemp(:,:),fmajor(:,:,:,:,:,:),jeta(:,:,:,:))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -432,7 +432,7 @@ contains
           iflav = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
           pfrac(igpt,ilay,icol) = &
             ! interpolation in temperature, pressure, and eta
-            interpolate3D((/1._wp,1._wp/), fmajor(:,:,:,iflav,icol,ilay), pfracin, &
+            interpolate3D(scaling_array(:), fmajor(:,:,:,iflav,icol,ilay), pfracin, &
                           igpt, jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
         end do ! igpt
       end do ! col
@@ -442,31 +442,40 @@ contains
     ! Planck function by band for the surface
     ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
     !
-    !$acc parallel loop gang vector
+    !$acc parallel loop &
+    !$acc&     copy(planck_function(:,:,:)) &
+    !$acc&     copyin(totplnk(:,:),tsfc(:))
     do icol = 1, ncol
-      planck_function(1:nbnd,1,icol) = interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk)
+      call interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,1,icol))
     end do
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop collapse(2) &
+    !$acc&     copyout(sfc_src(:ncol,:ngpt)) &
+    !$acc&     copyin(planck_function(:,:1,:ncol),gpoint_bands(:ngpt),pfrac(:ngpt,sfc_lay,:ncol))
     do icol = 1, ncol
       do igpt = 1, ngpt
         sfc_src(icol,igpt) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol)
       end do
     end do ! icol
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop collapse(2) &
+    !$acc&     copyin(totplnk(:,:),tlay(:,:)) &
+    !$acc&     copy(planck_function(:,:,:))
     do icol = 1, ncol
       do ilay = 1, nlay
         ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
-        planck_function(1:nbnd,ilay,icol) = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk)
+        call interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,ilay,icol))
       end do
     end do
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop collapse(3) &
+    !$acc&     copyin(planck_function(:,:nlay,:ncol),pfrac(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyout(lay_src(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(gpoint_bands(:ngpt))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -476,22 +485,30 @@ contains
     end do ! icol
 
     ! compute level source irradiances for each g-point, one each for upward and downward paths
-    !$acc parallel loop gang vector
+    !$acc parallel loop &
+    !$acc&     copy(planck_function(:,:,:)) &
+    !$acc&     copyin(totplnk(:,:),tlev(:,:))
     do icol = 1, ncol
-      planck_function(1:nbnd,       1,icol) = interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk)
+      call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,       1,icol))
     end do
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop collapse(2) &
+    !$acc&     copyin(totplnk(:,:),tlev(:,:)) &
+    !$acc&     copy(planck_function(:,:,:))
     do icol = 1, ncol
       do ilay = 2, nlay+1
-        planck_function(1:nbnd,ilay,icol) = interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk)
+        call interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,ilay,icol))
       end do
     end do
 
     !
     ! Map to g-points
     !
-    !$acc parallel loop gang vector collapse(3)
+    !$acc parallel loop collapse(3) &
+    !$acc&     copyin(planck_function(:,:nlay+1,:ncol),pfrac(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyout(lev_src_inc(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(gpoint_bands(:ngpt)) &
+    !$acc&     copyout(lev_src_dec(:ncol,:nlay,:ngpt))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -501,14 +518,12 @@ contains
       end do ! ilay
     end do ! icol
 
-    !$acc end data
-
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------
   !
   ! One dimensional interpolation -- return all values along second table dimension
   !
-  pure function interpolate1D(val, offset, delta, table) result(res)
+  subroutine interpolate1D(val, offset, delta, table, res)
   !$acc routine seq
     ! input
     real(wp), intent(in) :: val,    & ! axis value at which to evaluate table
@@ -517,7 +532,7 @@ contains
     real(wp), dimension(:,:), &
               intent(in) :: table ! dimensions (axis, values)
     ! output
-    real(wp), dimension(size(table,dim=2)) :: res
+    real(wp), intent(out) ,dimension(size(table,dim=2)) :: res
 
     ! local
     real(wp) :: val0 ! fraction index adjusted by offset and delta
@@ -528,11 +543,11 @@ contains
     frac = val0 - int(val0) ! get fractional part
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
     res(:) = table(index,:) + frac * (table(index+1,:) - table(index,:))
-  end function interpolate1D
+  end subroutine interpolate1D
  ! ------------
  !   This function returns a single value from a subset (in gpoint) of the k table
  !
-  pure function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
+  function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
   !$acc routine seq
     real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species
                                        ! index(1) : reference eta level (temperature dependent)
@@ -551,7 +566,7 @@ contains
 
   ! ----------------------------------------------------------
   ! interpolation in temperature, pressure, and eta
-  pure function interpolate3D(scaling, fmajor, k, igpt, jeta, jtemp, jpress) result(res)
+  function interpolate3D(scaling, fmajor, k, igpt, jeta, jtemp, jpress) result(res)
   !$acc routine seq
     real(wp), dimension(2),     intent(in) :: scaling
     real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
@@ -623,10 +638,7 @@ contains
     ! local indexes
     integer :: icol, ilay, iflav, igases(2), itropo, itemp
 
-    !$acc  data pcopyin(flavor,press_ref_log,temp_ref,press_ref_log_delta,temp_ref_min,temp_ref_delta,press_ref_trop_log,vmr_ref,nlay_ref,play,tlay,col_gas) &
-    !$acc&      pcopyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor) pcreate(ftemp,fpress)
-
-    !$acc parallel loop gang vector collapse(2) private(locpress,itropo)
+    !$acc parallel loop collapse(2) copyout(jtemp,ftemp,jpress,fpress,tropo) copyin(tlay,temp_ref,play,press_ref_log)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -645,8 +657,7 @@ contains
     end do
 
     ! loop over implemented combinations of major species
-    !$acc  parallel loop gang vector collapse(4)  private(igases, ratio_eta_half, eta, loceta, feta) &
-    !$acc& pcopyin(flavor,vmr_ref,itropo,jtemp,col_gas,col_mix,ftemp,fpress) pcopyout(col_mix,jeta,fminor,fmajor)
+    !$acc parallel loop collapse(4) private(igases) copyin(flavor,tropo,vmr_ref,jtemp,col_gas,ftemp,fpress) copyout(jeta,fmajor) copy(col_mix,fminor)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! loop over implemented combinations of major species
@@ -680,14 +691,13 @@ contains
         end do ! iflav
       end do ! icol,ilay
     end do
-    !$acc end data
 
   end subroutine interpolation
   ! ----------------------------------------------------------
   !
   ! Combine absoprtion and Rayleigh optical depths for total tau, ssa, g
   !
-  pure subroutine combine_and_reorder_2str(ncol, nlay, ngpt, tau_abs, tau_rayleigh, tau, ssa, g) &
+  subroutine combine_and_reorder_2str(ncol, nlay, ngpt, tau_abs, tau_rayleigh, tau, ssa, g) &
       bind(C, name="combine_and_reorder_2str")
     integer,                             intent(in) :: ncol, nlay, ngpt
     real(wp), dimension(ngpt,nlay,ncol), intent(in   ) :: tau_abs, tau_rayleigh
@@ -696,8 +706,11 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: t
     ! -----------------------
-    !$acc data pcopyin(tau_abs,tau_rayleigh) pcopy(tau,ssa,g)
-    !$acc parallel loop gang vector private(t)
+    !$acc parallel loop collapse(3) &
+    !$acc&     copyout(g(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyout(tau(:ncol,:nlay,:ngpt)) &
+    !$acc&     copy(ssa(:ncol,:nlay,:ngpt))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -712,26 +725,28 @@ contains
         end do
       end do
     end do
-    !$acc end data
   end subroutine combine_and_reorder_2str
   ! ----------------------------------------------------------
   !
   ! Combine absoprtion and Rayleigh optical depths for total tau, ssa, p
   !   using Rayleigh scattering phase function
   !
-  pure subroutine combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau_abs, tau_rayleigh, tau, ssa, p) &
+  subroutine combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau_abs, tau_rayleigh, tau, ssa, p) &
       bind(C, name="combine_and_reorder_nstr")
     integer, intent(in) :: ncol, nlay, ngpt, nmom
     real(wp), dimension(ngpt,nlay,ncol), intent(in ) :: tau_abs, tau_rayleigh
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau, ssa
-    real(wp), dimension(ncol,nlay,ngpt,nmom), &
+    real(wp), dimension(nmom,ncol,nlay,ngpt), &
                                          intent(inout) :: p
     ! -----------------------
     integer :: icol, ilay, igpt, imom
     real(wp) :: t
     ! -----------------------
-    !$acc data pcopyin(tau_abs,tau_rayleigh) pcopy(tau,ssa,p)
-    !$acc parallel loop gang vector private(t)
+    !$acc parallel loop collapse(3) &
+    !$acc&     copy(ssa(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyout(tau(:ncol,:nlay,:ngpt)) &
+    !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol)) &
+    !$acc&     copyout(p(:,:ncol,:nlay,:ngpt))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -750,15 +765,16 @@ contains
         end do
       end do
     end do
-    !$acc end data
   end subroutine combine_and_reorder_nstr
   ! ----------------------------------------------------------
-  pure subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
+  subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
     integer, intent(in) :: ni, nj, nk
     real(wp), dimension(ni, nj, nk), intent(out) :: array
     ! -----------------------
     integer :: i,j,k
     ! -----------------------
+    !$acc parallel loop collapse(3) &
+    !$acc&     copyout(array(:ni,:nj,:nk))
     do k = 1, nk
       do j = 1, nj
         do i = 1, ni
@@ -769,12 +785,14 @@ contains
 
   end subroutine zero_array_3D
   ! ----------------------------------------------------------
-  pure subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
+  subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
     integer, intent(in) :: ni, nj, nk, nl
     real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
     ! -----------------------
     integer :: i,j,k,l
     ! -----------------------
+    !$acc parallel loop collapse(4) &
+    !$acc&     copyout(array(:ni,:nj,:nk,:nl))
     do l = 1, nl
       do k = 1, nk
         do j = 1, nj

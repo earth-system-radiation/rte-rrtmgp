@@ -269,7 +269,6 @@ contains
           !
           if(layer_limits(icol,1) > 0) then
             do ilay = layer_limits(icol,1), layer_limits(icol,2)
-              vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
               !
               ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
               !
@@ -283,11 +282,14 @@ contains
                 !
                 scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
                 if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
+                  ! vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
+                  vmr(1) = col_gas(icol,ilay,idx_minor_scaling(imnr))/col_gas(icol,ilay,0)
+                  vmr(2) = col_gas(icol,ilay,idx_h2o                )/col_gas(icol,ilay,0)
                   ! scale by density of special gas
                   if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
-                    scaling = scaling * (1._wp - vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o)) )
+                    scaling = scaling * (1._wp - vmr(1)) / (1._wp+vmr(2))
                   else
-                    scaling = scaling *          vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o))
+                    scaling = scaling *          vmr(1)  / (1._wp+vmr(2))
                   endif
                 endif
               endif

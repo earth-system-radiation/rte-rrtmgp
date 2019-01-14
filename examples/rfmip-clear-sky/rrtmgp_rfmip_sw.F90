@@ -96,6 +96,7 @@ program rrtmgp_rfmip_sw
   logical                    :: top_at_1
   integer                    :: b, icol, igpt
   character(len=6)           :: block_size_char
+  integer                    :: i
 
   character(len=32 ), &
             dimension(:),             allocatable :: kdist_gas_names, gases_to_use
@@ -220,6 +221,7 @@ program rrtmgp_rfmip_sw
   !
   ! Loop over blocks
   !
+  do i = 1, 32
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
@@ -282,6 +284,7 @@ program rrtmgp_rfmip_sw
       end if
     end do
   end do
+  end do 
   !
   ! End timers
   !

@@ -669,11 +669,10 @@ contains
           else
             ssa(icol,ilay,igpt) = 0._wp
           end if
-          p(1,icol,ilay,igpt) = 0.0_wp
-          p(2,icol,ilay,igpt) = 0.1_wp
           do imom = 1, nmom
             p(imom,icol,ilay,igpt) = 0.0_wp
           end do
+          if(nmom >= 2) p(2,icol,ilay,igpt) = 0.1_wp
         end do
       end do
     end do

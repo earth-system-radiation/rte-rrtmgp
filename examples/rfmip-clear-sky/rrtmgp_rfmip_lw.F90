@@ -120,7 +120,9 @@ program rrtmgp_rfmip_lw
   !
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
 
+#ifdef USE_TIMING
   integer :: ret
+#endif
   ! -------------------------------------------------------------------------------------------------
   !
   ! Code starts
@@ -158,7 +160,7 @@ program rrtmgp_rfmip_lw
   !
   gases_to_use = kdist_gas_names
   print *, "Radiation calculation uses gases "
-  print *, "  ", [(trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))]
+  print *, "  ", (trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))
 
   ! --------------------------------------------------
   !

@@ -387,7 +387,8 @@ contains
     ! -----------------
     ! local
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
-    integer  gptS, gptE
+    integer  :: gptS, gptE
+    real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
     real(wp) :: pfrac          (ngpt,nlay,  ncol)
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
     ! -----------------
@@ -397,13 +398,13 @@ contains
       do ilay = 1, nlay
         ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
         itropo = merge(1,2,tropo(icol,ilay))
-        do ibnd = 1, ngpt
+        do ibnd = 1, nbnd
           gptS = band_lims_gpt(1, ibnd)
           gptE = band_lims_gpt(2, ibnd)
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           pfrac(gptS:gptE,ilay,icol) = &
             ! interpolation in temperature, pressure, and eta
-            interpolate3D_byband((/1._wp,1._wp/), fmajor(:,:,:,iflav,icol,ilay), pfracin, &
+            interpolate3D_byband(one, fmajor(:,:,:,iflav,icol,ilay), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                           jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
         end do ! igpt
@@ -419,8 +420,12 @@ contains
       !
       ! Map to g-points
       !
-      do igpt = 1, ngpt
-        sfc_src(icol,igpt) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol)
+      do ibnd = 1, nbnd
+        gptS = band_lims_gpt(1, ibnd)
+        gptE = band_lims_gpt(2, ibnd)
+        do igpt = gptS, gptE
+          sfc_src(icol,igpt) = pfrac(igpt,sfc_lay,icol) * planck_function(ibnd, 1, icol)
+        end do
       end do
     end do ! icol
 
@@ -431,8 +436,12 @@ contains
         !
         ! Map to g-points
         !
-        do igpt = 1, ngpt
-          lay_src(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,icol)
+        do ibnd = 1, nbnd
+          gptS = band_lims_gpt(1, ibnd)
+          gptE = band_lims_gpt(2, ibnd)
+          do igpt = gptS, gptE
+            lay_src(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay,icol)
+          end do
         end do
       end do ! ilay
     end do ! icol
@@ -445,9 +454,13 @@ contains
         !
         ! Map to g-points
         !
-        do igpt = 1, ngpt
-          lev_src_inc(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay+1,icol)
-          lev_src_dec(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,  icol)
+        do ibnd = 1, nbnd
+          gptS = band_lims_gpt(1, ibnd)
+          gptE = band_lims_gpt(2, ibnd)
+          do igpt = gptS, gptE
+            lev_src_inc(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay+1,icol)
+            lev_src_dec(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay,  icol)
+          end do
         end do
       end do ! ilay
     end do ! icol

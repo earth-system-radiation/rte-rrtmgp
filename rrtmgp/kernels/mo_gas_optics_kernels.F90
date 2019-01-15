@@ -388,9 +388,8 @@ contains
     real(wp), dimension(:,:),     intent(in) :: totplnk       ! change to provide size
     integer,  dimension(:,:),     intent(in) :: gpoint_flavor ! change to provide size
 
-    real(wp), dimension(ncol,     ngpt), intent(out) :: sfc_src
-    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lay_src
-    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lev_src_inc, lev_src_dec
+    real(wp), dimension(ngpt,     ncol), intent(out) :: sfc_src
+    real(wp), dimension(ngpt,nlay,ncol), intent(out) :: lay_src, lev_src_inc, lev_src_dec
     ! -----------------
     ! local
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
@@ -431,7 +430,7 @@ contains
         gptS = band_lims_gpt(1, ibnd)
         gptE = band_lims_gpt(2, ibnd)
         do igpt = gptS, gptE
-          sfc_src(icol,igpt) = pfrac(igpt,sfc_lay,icol) * planck_function(ibnd, 1, icol)
+          sfc_src(igpt, icol) = pfrac(igpt,sfc_lay,icol) * planck_function(ibnd, 1, icol)
         end do
       end do
     end do ! icol
@@ -447,7 +446,7 @@ contains
           gptS = band_lims_gpt(1, ibnd)
           gptE = band_lims_gpt(2, ibnd)
           do igpt = gptS, gptE
-            lay_src(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay,icol)
+            lay_src(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay,icol)
           end do
         end do
       end do ! ilay
@@ -465,8 +464,8 @@ contains
           gptS = band_lims_gpt(1, ibnd)
           gptE = band_lims_gpt(2, ibnd)
           do igpt = gptS, gptE
-            lev_src_inc(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay+1,icol)
-            lev_src_dec(icol,ilay,igpt) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay,  icol)
+            lev_src_inc(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay+1,icol)
+            lev_src_dec(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(ibnd,ilay,  icol)
           end do
         end do
       end do ! ilay

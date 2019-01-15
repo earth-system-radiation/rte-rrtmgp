@@ -552,6 +552,8 @@ contains
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     integer :: icol, ilay
+    real(wp), dimension(ngpt,nlay,ncol)                               :: lay_src_t, lev_src_inc_t, lev_src_dec_t
+    real(wp), dimension(ngpt,     ncol)                               :: sfc_src_t
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(size(play,dim=1),size(play,dim=2)+1), target  :: tlev_arr
     real(wp), dimension(:,:),                                 pointer :: tlev_wk => NULL()
@@ -596,7 +598,11 @@ contains
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sources%sfc_source, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec)
+                sfc_src_t, lay_src_t, lev_src_inc_t, lev_src_dec_t)
+    sources%sfc_source = transpose(sfc_src_t)
+    sources%lay_source     = reorder123x321(lay_src_t)
+    sources%lev_source_inc = reorder123x321(lev_src_inc_t)
+    sources%lev_source_dec = reorder123x321(lev_src_dec_t)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !

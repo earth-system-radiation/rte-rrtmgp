@@ -68,4 +68,4 @@ mo_rfmip_io.o:          mo_rfmip_io.F90          mo_simple_netcdf.o
 mo_load_coefficients.o: mo_load_coefficients.F90 mo_simple_netcdf.o
 
 clean:
-	-rm rrtmgp_rfmip_lw *.o *.mod *.optrpt ../*.optrpt
+	-rm rrtmgp_rfmip_sw rrtmgp_rfmip_lw *.o *.mod *.optrpt ../*.optrpt

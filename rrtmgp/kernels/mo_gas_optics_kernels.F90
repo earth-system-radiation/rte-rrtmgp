@@ -251,10 +251,11 @@ contains
     ! local variables
     real(wp), parameter :: PaTohPa = 0.01
     real(wp) :: vmr_fact, dry_fact             ! conversion from column abundance to dry vol. mixing ratio;
-    real(wp) :: scaling, kminor_loc, tau_minor ! minor species absorption coefficient, optical depth
+    real(wp) :: scaling, kminor_loc            ! minor species absorption coefficient, optical depth
     integer  :: icol, ilay, iflav, igpt, imnr
     integer  :: itl, itu, iml, imu
     integer  :: minor_start, minor_loc
+    real(wp), dimension(ngpt, nlay, ncol) :: tau_minor
     ! -----------------
     !
     ! Guard against layer limits being 0 -- that means don't do anything i.e. there are no
@@ -262,6 +263,7 @@ contains
     ! First check skips the routine entirely if all columns are out of bounds...
     !
     if(any(layer_limits(:,1) > 0)) then
+      call zero_array(ngpt, nlay, ncol, tau_minor)
       do imnr = 1, size(scale_by_complement,dim=1) ! loop over minor absorbers in each band
         do icol = 1, ncol
           !
@@ -301,20 +303,25 @@ contains
               ! What is the starting point in the stored array of minor absorption coefficients?
               minor_start = kminor_start(imnr)
               do igpt = iml,imu
-                tau_minor = 0._wp
                 iflav = gpt_flv(igpt) ! eta interpolation depends on flavor
                 minor_loc = minor_start + (igpt - iml) ! add offset to starting point
                 kminor_loc = &
                   interpolate2D(fminor(:,:,iflav,icol,ilay), &
                                 kminor, &
                                 minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
-                  tau_minor = kminor_loc * scaling
-                tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
+                  tau_minor(igpt,ilay,icol) = tau_minor(igpt,ilay,icol) + kminor_loc * scaling
               enddo
             enddo
           end if
         enddo
       enddo
+      do icol = 1, ncol
+        do ilay = 1, nlay
+          do igpt = 1, ngpt
+              tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor(igpt,ilay,icol)
+            end do
+          end do
+        end do
     end if
   end subroutine gas_optical_depths_minor
   ! ----------------------------------------------------------

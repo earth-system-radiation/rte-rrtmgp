@@ -13,5 +13,5 @@ export F77FLAGS = -m64 -O3 -traceback                                        -qo
 #
 # Debugging
 #
-export FCFLAGS  = -m64 -g  -traceback -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f03
-export F77FLAGS = -m64 -g  -traceback                                        -check bounds,uninit,pointers,stack
+# export FCFLAGS  = -m64 -g  -traceback -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f03
+# export F77FLAGS = -m64 -g  -traceback                                        -check bounds,uninit,pointers,stack

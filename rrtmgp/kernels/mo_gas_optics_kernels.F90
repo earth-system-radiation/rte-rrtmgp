@@ -362,7 +362,7 @@ contains
   subroutine compute_Planck_source(ncol, nlay, ngpt, nbnd, nflav,  &
                     tlay, tlev, tsfc, sfc_lay,            &
                     fmajor, jeta, tropo, jtemp, jpress,   &
-                    gpoint_bands, pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, &
+                    gpoint_bands, band_lims_gpt, pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, &
                     sfc_src, lay_src, lev_src_inc, lev_src_dec)
     integer,                                    intent(in) :: ncol, nlay, ngpt, nbnd, nflav, sfc_lay
     real(wp), dimension(ncol,nlay  ),           intent(in) :: tlay
@@ -374,7 +374,8 @@ contains
     logical,  dimension(            ncol,nlay), intent(in) :: tropo
     integer,  dimension(            ncol,nlay), intent(in) :: jtemp, jpress
     ! Table-specific
-    integer, dimension(ngpt),     intent(in) :: gpoint_bands  ! band number for each g-point
+    integer, dimension(ngpt),     intent(in) :: gpoint_bands ! start and end g-point for each band
+    integer, dimension(2, nbnd),  intent(in) :: band_lims_gpt ! start and end g-point for each band
     real(wp),                     intent(in) :: temp_ref_min, totplnk_delta
     real(wp), dimension(:,:,:,:), intent(in) :: pfracin       ! change to provide size
     real(wp), dimension(:,:),     intent(in) :: totplnk       ! change to provide size
@@ -385,7 +386,8 @@ contains
     real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lev_src_inc, lev_src_dec
     ! -----------------
     ! local
-    integer  :: ilay, icol, igpt, itropo, iflav
+    integer  :: ilay, icol, igpt, ibnd, itropo, iflav
+    integer  gptS, gptE
     real(wp) :: pfrac          (ngpt,nlay,  ncol)
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
     ! -----------------
@@ -395,12 +397,15 @@ contains
       do ilay = 1, nlay
         ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
         itropo = merge(1,2,tropo(icol,ilay))
-        do igpt = 1, ngpt
-          iflav = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
-          pfrac(igpt,ilay,icol) = &
+        do ibnd = 1, ngpt
+          gptS = band_lims_gpt(1, ibnd)
+          gptE = band_lims_gpt(2, ibnd)
+          iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
+          pfrac(gptS:gptE,ilay,icol) = &
             ! interpolation in temperature, pressure, and eta
-            interpolate3D((/1._wp,1._wp/), fmajor(:,:,:,iflav,icol,ilay), pfracin, &
-                          igpt, jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
+            interpolate3D_byband((/1._wp,1._wp/), fmajor(:,:,:,iflav,icol,ilay), pfracin, &
+                          band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
+                          jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
         end do ! igpt
       end do ! col
     end do
@@ -518,7 +523,37 @@ contains
         fmajor(1,2,2) * k(igpt, jeta(2)  , jpress  , jtemp+1) + &
         fmajor(2,2,2) * k(igpt, jeta(2)+1, jpress  , jtemp+1) )
   end function interpolate3D
+  ! ----------------------------------------------------------
+  pure function interpolate3D_byband(scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress) result(res)
+    real(wp), dimension(2),     intent(in) :: scaling
+    real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
+                                                     ! index(1) : reference eta level (temperature dependent)
+                                                     ! index(2) : reference pressure level
+                                                     ! index(3) : reference temperature level
+    real(wp), dimension(:,:,:,:),intent(in) :: k ! (gpt, eta,temp,press)
+    integer,                     intent(in) :: gptS, gptE
+    integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
+    integer,                     intent(in) :: jtemp ! interpolation index for temperature
+    integer,                     intent(in) :: jpress ! interpolation index for pressure
+    real(wp), dimension(gptE-gptS+1)        :: res ! the result
 
+    ! Local variable
+    integer :: igpt
+    ! each code block is for a different reference temperature
+    do igpt = 1, gptE-gptS+1
+      res(igpt) =  &
+        scaling(1) * &
+        ( fmajor(1,1,1) * k(gptS+igpt-1, jeta(1)  , jpress-1, jtemp  ) + &
+          fmajor(2,1,1) * k(gptS+igpt-1, jeta(1)+1, jpress-1, jtemp  ) + &
+          fmajor(1,2,1) * k(gptS+igpt-1, jeta(1)  , jpress  , jtemp  ) + &
+          fmajor(2,2,1) * k(gptS+igpt-1, jeta(1)+1, jpress  , jtemp  ) ) + &
+        scaling(2) * &
+        ( fmajor(1,1,2) * k(gptS+igpt-1, jeta(2)  , jpress-1, jtemp+1) + &
+          fmajor(2,1,2) * k(gptS+igpt-1, jeta(2)+1, jpress-1, jtemp+1) + &
+          fmajor(1,2,2) * k(gptS+igpt-1, jeta(2)  , jpress  , jtemp+1) + &
+          fmajor(2,2,2) * k(gptS+igpt-1, jeta(2)+1, jpress  , jtemp+1) )
+    end do
+  end function interpolate3D_byband
   ! ----------------------------------------------------------
   ! Compute interpolation coefficients
   ! for calculations of major optical depths, minor optical depths, Rayleigh,

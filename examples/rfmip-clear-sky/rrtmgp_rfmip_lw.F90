@@ -223,7 +223,6 @@ program rrtmgp_rfmip_lw
   !
   ! Loop over blocks
   !
-  do i = 1, 32
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
@@ -260,7 +259,6 @@ program rrtmgp_rfmip_lw
 #ifdef USE_TIMING
     ret =  gptlstop('rte_lw')
 #endif
-  end do
   end do
 #ifdef USE_TIMING
   !

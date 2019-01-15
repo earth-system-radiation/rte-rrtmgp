@@ -221,7 +221,6 @@ program rrtmgp_rfmip_sw
   !
   ! Loop over blocks
   !
-  do i = 1, 32
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
@@ -284,7 +283,6 @@ program rrtmgp_rfmip_sw
       end if
     end do
   end do
-  end do 
   !
   ! End timers
   !

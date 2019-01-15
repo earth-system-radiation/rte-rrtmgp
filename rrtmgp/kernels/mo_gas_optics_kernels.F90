@@ -250,7 +250,7 @@ contains
     ! -----------------
     ! local variables
     real(wp), parameter :: PaTohPa = 0.01
-    real(wp), dimension(ngas) :: vmr
+    real(wp) :: vmr_fact, dry_fact             ! conversion from column abundance to dry vol. mixing ratio;
     real(wp) :: scaling, kminor_loc, tau_minor ! minor species absorption coefficient, optical depth
     integer  :: icol, ilay, iflav, igpt, imnr
     integer  :: itl, itu, iml, imu
@@ -282,14 +282,13 @@ contains
                 !
                 scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
                 if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
-                  ! vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
-                  vmr(1) = col_gas(icol,ilay,idx_minor_scaling(imnr))/col_gas(icol,ilay,0)
-                  vmr(2) = col_gas(icol,ilay,idx_h2o                )/col_gas(icol,ilay,0)
+                  vmr_fact = 1._wp / col_gas(icol,ilay,0)
+                  dry_fact = 1._wp / (1._wp + col_gas(icol,ilay,idx_h2o) * vmr_fact)
                   ! scale by density of special gas
                   if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
-                    scaling = scaling * (1._wp - vmr(1)) / (1._wp+vmr(2))
+                    scaling = scaling * (1._wp - col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact)
                   else
-                    scaling = scaling *          vmr(1)  / (1._wp+vmr(2))
+                    scaling = scaling *          col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact
                   endif
                 endif
               endif

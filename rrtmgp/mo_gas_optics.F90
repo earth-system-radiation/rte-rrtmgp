@@ -497,6 +497,9 @@ contains
     ! ---- calculate gas optical depths ----
     !
     call zero_array(ngpt, nlay, ncol, tau)
+#ifdef USE_TIMING
+    ret = gptlstart('interpolation')
+#endif
     call interpolation( &
       ncol,nlay,this%get_ngas(),nflav,this%get_neta(), & ! dimensions
       this%flavor, &
@@ -506,6 +509,7 @@ contains
       play,tlay,col_gas, & ! local input
       jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress) ! output
 #ifdef USE_TIMING
+    ret = gptlstop ('interpolation')
     ret = gptlstart('compute_tau_absorption')
 #endif
     call compute_tau_absorption(                     &
@@ -537,6 +541,9 @@ contains
     ret =  gptlstop('compute_tau_absorption')
 #endif
     if (allocated(this%krayl)) then
+#ifdef USE_TIMING
+    ret = gptlstart('rayleigh')
+#endif
       call compute_tau_rayleigh(     & !Rayleigh scattering optical depths
             ncol,nlay,ngpt,ngas,nflav,      & ! dimensions
             this%gpoint_flavor,             &
@@ -544,6 +551,9 @@ contains
             idx_h2o, col_dry_wk,col_gas,       &
             fminor,jeta,tropo,jtemp,        & ! local input
             tau_rayleigh)
+#ifdef USE_TIMING
+    ret = gptlstop('rayleigh')
+#endif
     end if
     if (error_msg /= '') return
 

@@ -232,7 +232,7 @@ contains
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           tau_major(gptS:gptE) = &
             ! interpolation in temperature, pressure, and eta
-            interpolate3D_byband(col_mix(:,iflav,icol,ilay),                                     &
+            interpolate3D_byflav(col_mix(:,iflav,icol,ilay),                                     &
                                  fmajor(:,:,:,iflav,icol,ilay), kmajor,                          &
                                  band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                                  jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
@@ -281,8 +281,8 @@ contains
     real(wp) :: vmr_fact, dry_fact             ! conversion from column abundance to dry vol. mixing ratio;
     real(wp) :: scaling, kminor_loc            ! minor species absorption coefficient, optical depth
     integer  :: icol, ilay, iflav, igpt, imnr
-    integer  :: itl, itu, iml, imu
-    integer  :: minor_start, minor_loc
+    integer  :: gptS, gptE
+    real(wp), dimension(ngpt) :: tau_minor
     ! -----------------
     !
     ! Guard against layer limits being 0 -- that means don't do anything i.e. there are no
@@ -324,19 +324,15 @@ contains
               ! Interpolation of absorption coefficient and calculation of optical depth
               !
               ! Which gpoint range does this minor gas affect?
-              iml = minor_limits_gpt(1,imnr)
-              imu = minor_limits_gpt(2,imnr)
-              ! What is the starting point in the stored array of minor absorption coefficients?
-              minor_start = kminor_start(imnr)
-              do igpt = iml,imu
-                iflav = gpt_flv(igpt) ! eta interpolation depends on flavor
-                minor_loc = minor_start + (igpt - iml) ! add offset to starting point
-                tau(igpt,ilay,icol) = tau(igpt,ilay,icol) +  &
-                                      scaling *                   &
-                                      interpolate2D(fminor(:,:,iflav,icol,ilay), &
-                                                    kminor, &
-                                                    minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
-              enddo
+              gptS = minor_limits_gpt(1,imnr)
+              gptE = minor_limits_gpt(2,imnr)
+              iflav = gpt_flv(gptS)
+              tau_minor(gptS:gptE) = scaling *                   &
+                                      interpolate2D_byflav(fminor(:,:,iflav,icol,ilay), &
+                                                           kminor, &
+                                                           kminor_start(imnr), kminor_start(imnr)+(gptE-gptS-1), &
+                                                           jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
+              tau(gptS:gptE,ilay,icol) = tau(gptS:gptE,ilay,icol) + tau_minor(gptS:gptE)
             enddo
           end if
         enddo
@@ -430,7 +426,7 @@ contains
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           pfrac(gptS:gptE,ilay,icol) = &
             ! interpolation in temperature, pressure, and eta
-            interpolate3D_byband(one, fmajor(:,:,:,iflav,icol,ilay), pfracin, &
+            interpolate3D_byflav(one, fmajor(:,:,:,iflav,icol,ilay), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                           jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
         end do ! band
@@ -516,9 +512,9 @@ contains
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
     res(:) = table(index,:) + frac * (table(index+1,:) - table(index,:))
   end function interpolate1D
- ! ------------
- !   This function returns a single value from a subset (in gpoint) of the k table
- !
+  ! ----------------------------------------------------------------------------------------
+  !   This function returns a single value from a subset (in gpoint) of the k table
+  !
   pure function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
     real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species
                                        ! index(1) : reference eta level (temperature dependent)
@@ -534,7 +530,28 @@ contains
       fminor(1,2) * k(igpt, jeta(2)  , jtemp+1) + &
       fminor(2,2) * k(igpt, jeta(2)+1, jtemp+1)
   end function interpolate2D
+  ! ----------------------------------------------------------
+  !   This function returns a range of values from a subset (in gpoint) of the k table
+  !
+  pure function interpolate2D_byflav(fminor, k, gptS, gptE, jeta, jtemp) result(res)
+    real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species
+                                       ! index(1) : reference eta level (temperature dependent)
+                                       ! index(2) : reference temperature level
+    real(wp), dimension(:,:,:), intent(in) :: k ! (g-point, eta, temp)
+    integer,                    intent(in) :: gptS, gptE, jtemp ! interpolation index for temperature
+    integer, dimension(2),      intent(in) :: jeta ! interpolation index for binary species parameter (eta)
+    real(wp), dimension(gptE-gptS+1)       :: res ! the result
 
+    ! Local variable
+    integer :: igpt
+    ! each code block is for a different reference temperature
+    do igpt = 1, gptE-gptS+1
+      res(igpt) = fminor(1,1) * k(igpt, jeta(1)  , jtemp  ) + &
+                  fminor(2,1) * k(igpt, jeta(1)+1, jtemp  ) + &
+                  fminor(1,2) * k(igpt, jeta(2)  , jtemp+1) + &
+                  fminor(2,2) * k(igpt, jeta(2)+1, jtemp+1)
+    end do
+  end function interpolate2D_byflav
   ! ----------------------------------------------------------
   ! interpolation in temperature, pressure, and eta
   pure function interpolate3D(scaling, fmajor, k, igpt, jeta, jtemp, jpress) result(res)
@@ -563,7 +580,7 @@ contains
         fmajor(2,2,2) * k(igpt, jeta(2)+1, jpress  , jtemp+1) )
   end function interpolate3D
   ! ----------------------------------------------------------
-  pure function interpolate3D_byband(scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress) result(res)
+  pure function interpolate3D_byflav(scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress) result(res)
     real(wp), dimension(2),     intent(in) :: scaling
     real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
                                                      ! index(1) : reference eta level (temperature dependent)
@@ -592,7 +609,7 @@ contains
           fmajor(1,2,2) * k(gptS+igpt-1, jeta(2)  , jpress  , jtemp+1) + &
           fmajor(2,2,2) * k(gptS+igpt-1, jeta(2)+1, jpress  , jtemp+1) )
     end do
-  end function interpolate3D_byband
+  end function interpolate3D_byflav
   ! ----------------------------------------------------------
   ! Compute interpolation coefficients
   ! for calculations of major optical depths, minor optical depths, Rayleigh,

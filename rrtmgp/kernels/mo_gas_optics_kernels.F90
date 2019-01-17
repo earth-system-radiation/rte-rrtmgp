@@ -33,9 +33,10 @@ contains
   !   (jeta,jtemp,jpress)
   !
   subroutine compute_tau_absorption(                &
-                ncol,nlay,ngpt,ngas,nflav,          &  ! dimensions
+                ncol,nlay,nbnd,ngpt,ngas,nflav,     &  ! dimensions
                 idx_h2o,                            &
                 gpoint_flavor,                      &
+                band_lims_gpt,                      &
                 kmajor,                             &
                 kminor_lower,                       &
                 kminor_upper,                       &
@@ -58,11 +59,12 @@ contains
                 tau)
     ! ---------------------
     ! input dimensions
-    integer,                                intent(in) :: ncol,nlay,ngpt,ngas,nflav
+    integer,                                intent(in) :: ncol,nlay,nbnd,ngpt,ngas,nflav
     integer,                                intent(in) :: idx_h2o
     ! ---------------------
     ! inputs from object
     integer,          dimension(2,ngpt),    intent(in) :: gpoint_flavor
+    integer,          dimension(2,nbnd),    intent(in) :: band_lims_gpt
     real(wp),         dimension(:,:,:,:),   intent(in) :: kmajor
     real(wp),         dimension(:,:,:),     intent(in) :: kminor_lower
     real(wp),         dimension(:,:,:),     intent(in) :: kminor_upper
@@ -122,8 +124,9 @@ contains
     ret = gptlstart("gas_optical_depths_major")
 #endif
     call gas_optical_depths_major( &
-          ncol,nlay,ngpt,nflav,           & ! dimensions
+          ncol,nlay,nbnd,ngpt,nflav,      & ! dimensions
           gpoint_flavor,                  & ! inputs from object
+          band_lims_gpt,                  &
           kmajor,                         &
           col_mix,fmajor,                 &
           jeta,tropo,jtemp,jpress,        & ! local input
@@ -186,17 +189,18 @@ contains
   !
   ! compute minor species optical depths
   !
-  subroutine gas_optical_depths_major(ncol,nlay,ngpt,nflav,           & ! dimensions
-                                      gpoint_flavor,                  & ! inputs from object
+  subroutine gas_optical_depths_major(ncol,nlay,nbnd,ngpt,nflav,      & ! dimensions
+                                      gpoint_flavor, band_lims_gpt,   & ! inputs from object
                                       kmajor,                         &
                                       col_mix,fmajor,                 &
                                       jeta,tropo,jtemp,jpress,        & ! local input
                                       tau)
     ! input dimensions
-    integer, intent(in) :: ncol, nlay, ngpt, nflav ! dimensions
+    integer, intent(in) :: ncol, nlay, nbnd, ngpt, nflav ! dimensions
 
     ! inputs from object
     integer,  dimension(2,ngpt),  intent(in) :: gpoint_flavor
+    integer,  dimension(2,nbnd),  intent(in) :: band_lims_gpt ! start and end g-point for each band
     real(wp), dimension(:,:,:,:), intent(in) :: kmajor
 
     ! inputs from profile or parent function
@@ -210,9 +214,10 @@ contains
     real(wp), dimension(ngpt,nlay,ncol), intent(inout) :: tau
     ! -----------------
     ! local variables
-    real(wp) :: tau_major ! major species optical depth
+    real(wp) :: tau_major(ngpt) ! major species optical depth
     ! local index
-    integer :: icol, ilay, iflav, igpt, itropo
+    integer :: icol, ilay, iflav, ibnd, igpt, itropo
+    integer :: gptS, gptE
 
     ! -----------------
 
@@ -221,15 +226,17 @@ contains
         ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
         itropo = merge(1,2,tropo(icol,ilay))
         ! optical depth calculation for major species
-        do igpt = 1, ngpt
-          ! binary species parameter (eta) and col_mix depend on band flavor
-          iflav = gpoint_flavor(itropo, igpt)
-          tau_major = &
+        do ibnd = 1, nbnd
+          gptS = band_lims_gpt(1, ibnd)
+          gptE = band_lims_gpt(2, ibnd)
+          iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
+          tau_major(gptS:gptE) = &
             ! interpolation in temperature, pressure, and eta
-            interpolate3D(col_mix(:,iflav,icol,ilay), &
-                          fmajor(:,:,:,iflav,icol,ilay), kmajor, &
-                          igpt, jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
-          tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_major
+            interpolate3D_byband(col_mix(:,iflav,icol,ilay),                                     &
+                                 fmajor(:,:,:,iflav,icol,ilay), kmajor,                          &
+                                 band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
+                                 jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
+          tau(gptS:gptE,ilay,icol) = tau(gptS:gptE,ilay,icol) + tau_major(gptS:gptE)
         end do ! igpt
       end do
     end do ! ilay
@@ -426,9 +433,9 @@ contains
             interpolate3D_byband(one, fmajor(:,:,:,iflav,icol,ilay), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                           jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
-        end do ! igpt
-      end do ! col
-    end do
+        end do ! band
+      end do   ! layer
+    end do     ! column
 
     !
     ! Planck function by band for the surface

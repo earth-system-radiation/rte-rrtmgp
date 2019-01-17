@@ -509,9 +509,10 @@ contains
     ret = gptlstart('compute_tau_absorption')
 #endif
     call compute_tau_absorption(                     &
-            ncol,nlay,ngpt,this%get_ngas(),nflav,    &  ! dimensions
+            ncol,nlay,nband,ngpt,this%get_ngas(),nflav, &  ! dimensions
             idx_h2o,                                 &
             this%gpoint_flavor,                      &
+            this%get_band_lims_gpoint(),             &
             this%kmajor,                             &
             this%kminor_lower,                       &
             this%kminor_upper,                       &

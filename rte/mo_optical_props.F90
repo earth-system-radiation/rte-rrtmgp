@@ -619,9 +619,9 @@ contains
       err_message = "validate: tau values out of range"
     if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%ssa,  0._wp, 1._wp)) &
       err_message = "validate: ssa values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%p(2,:,:,:),  &
+    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%p(1,:,:,:),  &
                                                                            -1._wp, 1._wp)) &
-      err_message = "validate: p(2,:,:,:)  = g values out of range"
+      err_message = "validate: p(1,:,:,:)  = g values out of range"
 
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
         err_message = trim(this%get_name()) // ': ' // trim(err_message)

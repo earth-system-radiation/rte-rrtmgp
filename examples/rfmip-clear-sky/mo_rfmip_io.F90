@@ -152,6 +152,7 @@ contains
     ! ---------------------------
     integer :: ncid
     integer :: nblocks
+    real(wp), dimension(ncol_l, nexp_l) :: temp2D
     ! ---------------------------
     if(any([ncol_l, nlay_l, nexp_l]  == 0)) call stop_on_err("read_and_block_sw_bc: Haven't read problem size yet.")
     if(mod(ncol_l*nexp_l, blocksize) /= 0 ) call stop_on_err("read_and_block_sw_bc: number of columns doesn't fit evenly into blocks.")
@@ -163,12 +164,14 @@ contains
     if(nf90_open(trim(fileName), NF90_NOWRITE, ncid) /= NF90_NOERR) &
       call stop_on_err("read_and_block_sw_bc: can't find file " // trim(fileName))
 
-    surface_albedo         = reshape(spread(read_field(ncid, "surface_albedo",         ncol_l), dim=1, ncopies=nexp_l), &
-                                     shape = [blocksize, nblocks])
-    total_solar_irradiance = reshape(spread(read_field(ncid, "total_solar_irradiance", ncol_l), dim=1, ncopies=nexp_l), &
-                                    shape = [blocksize, nblocks])
-    solar_zenith_angle     = reshape(spread(read_field(ncid, "solar_zenith_angle",     ncol_l), dim=1, ncopies=nexp_l), &
-                                     shape = [blocksize, nblocks])
+    temp2D(1:ncol_l,1:nexp_l) = spread(read_field(ncid, "surface_albedo",          ncol_l), dim=2, ncopies=nexp_l)
+    surface_albedo         = reshape(temp2D, shape = [blocksize, nblocks])
+
+    temp2D(1:ncol_l,1:nexp_l) = spread(read_field(ncid, "total_solar_irradiance",  ncol_l), dim=2, ncopies=nexp_l)
+    total_solar_irradiance = reshape(temp2D, shape = [blocksize, nblocks])
+
+    temp2D(1:ncol_l,1:nexp_l) = spread(read_field(ncid, "solar_zenith_angle",      ncol_l), dim=2, ncopies=nexp_l)
+    solar_zenith_angle     = reshape(temp2d, shape = [blocksize, nblocks])
 
     ncid = nf90_close(ncid)
   end subroutine read_and_block_sw_bc
@@ -185,23 +188,24 @@ contains
     ! ---------------------------
     integer :: ncid
     integer :: nblocks
+    real(wp), dimension(ncol_l, nexp_l) :: temp2D ! Required to make gfortran 8 work, not sure why
     ! ---------------------------
     if(any([ncol_l, nlay_l, nexp_l]  == 0)) &
       call stop_on_err("read_and_block_lw_bc: Haven't read problem size yet.")
     if(mod(ncol_l*nexp_l, blocksize) /= 0 ) &
       call stop_on_err("read_and_block_lw_bc: number of columns doesn't fit evenly into blocks.")
     nblocks = (ncol_l*nexp_l)/blocksize
-    !
-    ! Check that output arrays are sized correctly : blocksize, nlay, (ncol * nexp)/blocksize
-    !
 
     if(nf90_open(trim(fileName), NF90_NOWRITE, ncid) /= NF90_NOERR) &
       call stop_on_err("read_and_block_lw_bc: can't find file " // trim(fileName))
+    !
+    ! Allocate on assigment
+    !
+    temp2D(1:ncol_l,1:nexp_l) = spread(read_field(ncid, "surface_emissivity",  ncol_l), dim=2, ncopies=nexp_l)
+    surface_emissivity  = reshape(temp2D, shape = [blocksize, nblocks])
 
-    surface_emissivity  = reshape(spread(read_field(ncid, "surface_emissivity",  ncol_l), dim=1, ncopies=nexp_l), &
-                                  shape = [blocksize, nblocks])
-    surface_temperature = reshape(spread(read_field(ncid, "surface_temperature", ncol_l), dim=1, ncopies=nexp_l), &
-                                  shape = [blocksize, nblocks])
+    temp2D(1:ncol_l,1:nexp_l) = spread(read_field(ncid, "surface_temperature", ncol_l), dim=2, ncopies=nexp_l)
+    surface_temperature = reshape(temp2D, shape = [blocksize, nblocks])
 
     ncid = nf90_close(ncid)
   end subroutine read_and_block_lw_bc
@@ -235,7 +239,7 @@ contains
     real(wp), dimension(:),     allocatable :: gas_conc_temp_1d
     real(wp), dimension(:,:,:), allocatable :: gas_conc_temp_3d
     character(len=32)                       :: gas_name_in_file
-    character(len=32), dimension(10) :: &
+    character(len=32), dimension(11) :: &
       chem_name = ['co   ', &
                    'ch4  ', &
         				   'o2   ', &
@@ -245,7 +249,8 @@ contains
         				   'CCl4 ', &
         				   'ch4  ', &
         				   'CH3Br', &
-   			           'CH3Cl'], &
+   			           'CH3Cl', &
+                   'cfc22'], &
       desc_name = ['carbon_monoxide     ', &
                    'methane             ', &
                    'oxygen              ', &
@@ -255,7 +260,8 @@ contains
         				   'carbon_tetrachloride', &
         				   'methane             ', &
         				   'methyl_bromide      ', &
-        				   'methyl_chloride     ']
+        				   'methyl_chloride     ', &
+                   'hcfc22              ']
     ! ---------------------------
     if(any([ncol_l, nlay_l, nexp_l]  == 0)) &
       call stop_on_err("read_and_block_lw_bc: Haven't read problem size yet.")
@@ -264,7 +270,7 @@ contains
     nblocks = (ncol_l*nexp_l)/blocksize
     allocate(gas_conc_array(nblocks))
     ! Experiment index for each colum
-    exp_num = reshape(spread([(b, b = 1, nexp_l)], 1, ncopies = ncol_l), shape = [blocksize, nblocks])
+    exp_num = reshape(spread([(b, b = 1, nexp_l)], 1, ncopies = ncol_l), shape = [blocksize, nblocks], order=[1,2])
 
     if(nf90_open(trim(fileName), NF90_NOWRITE, ncid) /= NF90_NOERR) &
       call stop_on_err("read_and_block_gases_ty: can't find file " // trim(fileName))
@@ -272,13 +278,13 @@ contains
     ! Water vapor and ozone depend on col, lay, exp: look just like other fields
     !
     gas_conc_temp_3d = reshape(read_field(ncid, "water_vapor", nlay_l, ncol_l, nexp_l), &
-                               shape = [nlay_l, blocksize, nblocks])
+                               shape = [nlay_l, blocksize, nblocks]) * read_scaling(ncid, "water_vapor")
     do b = 1, nblocks
       call stop_on_err(gas_conc_array(b)%set_vmr('h2o', transpose(gas_conc_temp_3d(:,:,b))))
     end do
 
     gas_conc_temp_3d = reshape(read_field(ncid, "ozone", nlay_l, ncol_l, nexp_l), &
-                               shape = [nlay_l, blocksize, nblocks])
+                               shape = [nlay_l, blocksize, nblocks]) * read_scaling(ncid, "ozone")
     do b = 1, nblocks
       call stop_on_err(gas_conc_array(b)%set_vmr('o3', transpose(gas_conc_temp_3d(:,:,b))))
     end do
@@ -288,7 +294,10 @@ contains
     !
     do g = 1, size(gas_names)
       gas_name_in_file = trim(lower_case(gas_names(g)))
-      if(gas_name_in_file == 'h2o' .or. gas_name_in_file == 'o3') cycle
+      !
+      ! RRTMGP gas optics include NO2; RFMIP doesn't have this
+      !
+      if(gas_name_in_file == 'h2o' .or. gas_name_in_file == 'o3' .or. gas_name_in_file == 'no2') cycle
       !
       ! Use a mapping between chemical formula and name if it exists
       !
@@ -297,23 +306,40 @@ contains
       gas_name_in_file = trim(gas_name_in_file) // "_GM"
 
       ! Read the values as a function of experiment
-      gas_conc_temp_1d = read_field(ncid, gas_name_in_file, nexp_l)
+      gas_conc_temp_1d = read_field(ncid, gas_name_in_file, nexp_l) * read_scaling(ncid, gas_name_in_file)
 
-	  do b = 1, nblocks
-        ! Does every value in this block belong to the same experiment?
-	    if(all(exp_num(1,b) == exp_num(2:,b))) then
-	      ! Provide a scalar value
-		    call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), gas_conc_temp_1d(exp_num(1,b))))
-		  else
-		  ! Create 2D field, blocksize x nlay, with scalar values from each experiment
-		  call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), &
-		                                             spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
-		  end if
-	  end do
+  	  do b = 1, nblocks
+          ! Does every value in this block belong to the same experiment?
+  	    if(all(exp_num(1,b) == exp_num(2:,b))) then
+  	      ! Provide a scalar value
+  		    call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), gas_conc_temp_1d(exp_num(1,b))))
+  		  else
+  		  ! Create 2D field, blocksize x nlay, with scalar values from each experiment
+  		  call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), &
+  		                                             spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
+  		  end if
+  	  end do
 
     end do
     ncid = nf90_close(ncid)
   end subroutine read_and_block_gases_ty
+  !--------------------------------------------------------------------------------------------------------------------
+  function read_scaling(ncid, varName)
+    integer,          intent(in) :: ncid
+    character(len=*), intent(in) :: varName
+    real(wp)                     :: read_scaling
+
+    integer           :: varid
+    character(len=16) :: charUnits
+
+    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
+      call stop_on_err("read_scaling: can't find variable " // trim(varName))
+    if(nf90_get_att(ncid, varid, "units", charUnits)  /= NF90_NOERR) &
+      call stop_on_err("read_scaling: can't read attribute 'units' from variable " // trim(varName))
+    read(charUnits, *) read_scaling
+    return
+
+  end function read_scaling
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Reshape and reorder values (nominally fluxes) from RTE order (ncol, nlev, nblocks)
@@ -333,11 +359,12 @@ contains
     blocksize = size(values,1)
     nlev      = size(values,2)
     nblocks   = size(values,3)
+    if(nlev /= nlay_l+1)                   call stop_on_err('unblock_and_write: array values has the wrong number of levels')
     if(blocksize*nblocks /= ncol_l*nexp_l) call stop_on_err('unblock_and_write: array values has the wrong number of blocks/size')
 
     allocate(temp2D(nlev, ncol_l*nexp_l))
-    do b = 1, size(values, 3) ! nblocks
-      temp2D(:, ((b-1)*blocksize+1):(b*blocksize)) = transpose(values(:,:,b))
+    do b = 1, nblocks
+      temp2D(1:nlev, ((b-1)*blocksize+1):(b*blocksize)) = transpose(values(1:blocksize,1:nlev,b))
     end do
     !
     ! Check that output arrays are sized correctly : blocksize, nlay, (ncol * nexp)/blocksize

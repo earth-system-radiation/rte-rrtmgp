@@ -257,7 +257,7 @@ contains
     ! -----------------
     ! local variables
     real(wp), parameter :: PaTohPa = 0.01
-    real(wp), dimension(ngas) :: vmr
+    real(wp) :: vmr_fact, dry_fact             ! conversion from column abundance to dry vol. mixing ratio;
     real(wp) :: scaling, kminor_loc, tau_minor ! minor species absorption coefficient, optical depth
     integer  :: icol, ilay, iflav, igpt, imnr
     integer  :: itl, itu, iml, imu
@@ -276,7 +276,6 @@ contains
           !
           if(layer_limits(icol,1) > 0) then
             do ilay = layer_limits(icol,1), layer_limits(icol,2)
-              vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
               !
               ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
               !
@@ -290,11 +289,13 @@ contains
                 !
                 scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
                 if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
+                  vmr_fact = 1._wp / col_gas(icol,ilay,0)
+                  dry_fact = 1._wp / (1._wp + col_gas(icol,ilay,idx_h2o) * vmr_fact)
                   ! scale by density of special gas
                   if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
-                    scaling = scaling * (1._wp - vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o)) )
+                    scaling = scaling * (1._wp - col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact)
                   else
-                    scaling = scaling *          vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o))
+                    scaling = scaling *          col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact
                   endif
                 endif
               endif
@@ -676,11 +677,10 @@ contains
           else
             ssa(icol,ilay,igpt) = 0._wp
           end if
-          p(1,icol,ilay,igpt) = 0.0_wp
-          p(2,icol,ilay,igpt) = 0.1_wp
           do imom = 1, nmom
             p(imom,icol,ilay,igpt) = 0.0_wp
           end do
+          if(nmom >= 2) p(2,icol,ilay,igpt) = 0.1_wp
         end do
       end do
     end do

@@ -655,14 +655,14 @@ contains
     real(wp),           dimension(:,:,:,:), intent(in   ) :: planck_frac
     real(wp),           dimension(:,:,:),   intent(in   ), &
                                               allocatable :: rayl_lower, rayl_upper
-    character(len=256), dimension(:),       intent(in   ) :: gas_minor,identifier_minor
-    character(len=256), dimension(:),       intent(in   ) :: minor_gases_lower, &
+    character(len=*),   dimension(:),       intent(in   ) :: gas_minor,identifier_minor
+    character(len=*),   dimension(:),       intent(in   ) :: minor_gases_lower, &
                                                              minor_gases_upper
     integer,            dimension(:,:),     intent(in   ) :: minor_limits_gpt_lower, &
                                                              minor_limits_gpt_upper
     logical,            dimension(:),       intent(in   ) :: minor_scales_with_density_lower, &
                                                              minor_scales_with_density_upper
-    character(len=256), dimension(:),       intent(in   ) :: scaling_gas_lower, &
+    character(len=*),   dimension(:),       intent(in   ) :: scaling_gas_lower, &
                                                              scaling_gas_upper
     logical,            dimension(:),       intent(in   ) :: scale_by_complement_lower,&
                                                              scale_by_complement_upper
@@ -734,10 +734,10 @@ contains
     real(wp), dimension(:,:,:),   intent(in) :: vmr_ref
     real(wp), dimension(:,:,:,:), intent(in) :: kmajor
     real(wp), dimension(:,:,:),   intent(in) :: kminor_lower, kminor_upper
-    character(len=256), dimension(:), &
+    character(len=*),   dimension(:), &
                                   intent(in) :: gas_minor, &
                                                 identifier_minor
-    character(len=256), dimension(:), &
+    character(len=*),   dimension(:), &
                                   intent(in) :: minor_gases_lower, &
                                                 minor_gases_upper
     integer,  dimension(:,:),     intent(in) :: &
@@ -746,7 +746,7 @@ contains
     logical,  dimension(:),       intent(in) :: &
                                                 minor_scales_with_density_lower, &
                                                 minor_scales_with_density_upper
-    character(len=256), dimension(:),intent(in) :: &
+    character(len=*),   dimension(:),intent(in) :: &
                                                 scaling_gas_lower, &
                                                 scaling_gas_upper
     logical,  dimension(:),       intent(in) :: &
@@ -823,17 +823,17 @@ contains
     real(wp), dimension(:,:,:),   intent(in) :: vmr_ref
     real(wp), dimension(:,:,:,:), intent(in) :: kmajor
     real(wp), dimension(:,:,:),   intent(in) :: kminor_lower, kminor_upper
-    character(len=256), dimension(:), &
+    character(len=*),   dimension(:), &
                                   intent(in) :: gas_minor, &
                                                 identifier_minor
-    character(len=256), dimension(:), &
+    character(len=*),   dimension(:), &
                                   intent(in) :: minor_gases_lower, &
                                                 minor_gases_upper
     integer,  dimension(:,:),     intent(in) :: minor_limits_gpt_lower, &
                                                 minor_limits_gpt_upper
     logical,  dimension(:),       intent(in) :: minor_scales_with_density_lower, &
                                                 minor_scales_with_density_upper
-    character(len=256), dimension(:),&
+    character(len=*),   dimension(:),&
                                   intent(in) :: scaling_gas_lower, &
                                                 scaling_gas_upper
     logical,  dimension(:),       intent(in) :: scale_by_complement_lower, &
@@ -1359,16 +1359,16 @@ contains
     character(len=*), &
               dimension(:),       intent(in) :: gas_names
     real(wp), dimension(:,:,:),   intent(in) :: kminor_atm
-    character(len=256), dimension(:), &
+    character(len=*),   dimension(:), &
                                   intent(in) :: gas_minor, &
                                                 identifier_minor
-    character(len=256), dimension(:), &
+    character(len=*),   dimension(:), &
                                   intent(in) :: minor_gases_atm
     integer,  dimension(:,:),     intent(in) :: &
                                                 minor_limits_gpt_atm
     logical,  dimension(:),       intent(in) :: &
                                                 minor_scales_with_density_atm
-    character(len=256), dimension(:),intent(in) :: &
+    character(len=*),   dimension(:),intent(in) :: &
                                                 scaling_gas_atm
     logical,  dimension(:), intent(in) :: &
                                                 scale_by_complement_atm
@@ -1376,13 +1376,13 @@ contains
                                                 kminor_start_atm
 
     real(wp), dimension(:,:,:),  allocatable, intent(out) :: kminor_atm_red
-    character(len=256), dimension(:), &
+    character(len=*),   dimension(:), &
                                   allocatable, intent(out) :: minor_gases_atm_red
     integer,  dimension(:,:),     allocatable, intent(out) :: &
                                                 minor_limits_gpt_atm_red
     logical,  dimension(:),       allocatable, intent(out) :: &
                                                 minor_scales_with_density_atm_red
-    character(len=256), dimension(:),allocatable, intent(out) :: &
+    character(len=*),   dimension(:),allocatable, intent(out) :: &
                                                 scaling_gas_atm_red
     logical,  dimension(:), allocatable, intent(out) :: &
                                                 scale_by_complement_atm_red

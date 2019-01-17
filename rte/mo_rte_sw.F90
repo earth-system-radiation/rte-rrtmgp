@@ -90,8 +90,8 @@ contains
     !
     if(     size(mu0, 1)                                /=  ncol        ) &
       error_msg = "rte_sw: mu0 inconsistently sized"
-    if(any(mu0 <= 0._wp)) &
-      error_msg = "rte_sw: one or more mu0 <= 0"
+    if(any(mu0 <= 0._wp .or. mu0 > 1)) &
+      error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
 
     if(any([size(inc_flux, 1),    size(inc_flux, 2)]    /= [ncol, ngpt])) &
       error_msg = "rte_sw: inc_flux inconsistently sized"

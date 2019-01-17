@@ -21,10 +21,30 @@ FCINCLUDE += -I$(TIME_DIR)/include
 # C and Fortran interfaces respectively
 #
 NCHOME = /opt/local
-NFHOME = /Users/robert/Applications/$(FC)
+NFHOME = $(HOME)/Applications/$(FC)
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
+
+#
+# Setting macro TIMING=yes uses routines from the General Purpose Timing Library
+#  https://jmrosinski.github.io/GPTL/
+#
+TIMING=no
+# Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
+FCFLAGS += -fpp
+ifeq ($(TIMING),yes)
+	#
+	# Timing library
+	#
+	FCINCLUDE += -I$(TIME_DIR)/include
+	# Compiler specific
+	FCFLAGS += -DUSE_TIMING
+	# Installation specific
+	TIME_DIR = $(HOME)/Codes/GPTL/gptl-v5.5.3/macos
+	LDFLAGS   += -L$(TIME_DIR)/lib
+	LIBS      += -lgptl
+endif
 
 VPATH = ../
 
@@ -34,7 +54,6 @@ VPATH = ../
 
 %: %.o
 	$(FC) $(FCFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)
-
 
 #
 # Ancillary codes
@@ -56,4 +75,4 @@ mo_rfmip_io.o:          mo_rfmip_io.F90          mo_simple_netcdf.o
 mo_load_coefficients.o: mo_load_coefficients.F90 mo_simple_netcdf.o
 
 clean:
-	-rm rrtmgp_rfmip_lw *.o *.mod *.optrpt ../*.optrpt
+	-rm rrtmgp_rfmip_sw rrtmgp_rfmip_lw *.o *.mod *.optrpt ../*.optrpt

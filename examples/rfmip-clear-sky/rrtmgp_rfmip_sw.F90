@@ -77,11 +77,13 @@ program rrtmgp_rfmip_sw
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_sw_bc, read_kdist_gas_names
+#ifdef USE_TIMING
   !
   ! Timing library
   !
   use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize, gptlsetoption, &
                                    gptlpercent, gptloverhead
+#endif
   implicit none
   ! --------------------------------------------------
   !
@@ -94,6 +96,7 @@ program rrtmgp_rfmip_sw
   logical                    :: top_at_1
   integer                    :: b, icol, igpt
   character(len=6)           :: block_size_char
+  integer                    :: i
 
   character(len=32 ), &
             dimension(:),             allocatable :: kdist_gas_names, gases_to_use
@@ -116,7 +119,9 @@ program rrtmgp_rfmip_sw
   !
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
 
+#ifdef USE_TIMING
   integer :: ret
+#endif
   ! -------------------------------------------------------------------------------------------------
   !
   ! Code starts
@@ -154,7 +159,7 @@ program rrtmgp_rfmip_sw
   !
   gases_to_use = kdist_gas_names
   print *, "Radiation calculation uses gases "
-  print *, "  ", [(trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))]
+  print *, "  ", (trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))
 
   ! --------------------------------------------------
   !
@@ -201,10 +206,18 @@ program rrtmgp_rfmip_sw
   !   gas optical properties, and source functions. The %alloc() routines carry along
   !   the spectral discretization from the k-distribution.
   !
-  allocate(flux_up(    block_size, nlay+1, nblocks), &
-           flux_dn(    block_size, nlay+1, nblocks))
+  allocate(flux_up(block_size, nlay+1, nblocks), &
+           flux_dn(block_size, nlay+1, nblocks))
   call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
   ! --------------------------------------------------
+#ifdef USE_TIMING
+  !
+  ! Initialize timers
+  !
+  ret = gptlsetoption (gptlpercent, 1)        ! Turn on "% of" print
+  ret = gptlsetoption (gptloverhead, 0)       ! Turn off overhead estimate
+  ret =  gptlinitialize()
+#endif
   !
   ! Initialize timers
   !
@@ -221,18 +234,22 @@ program rrtmgp_rfmip_sw
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
     !
+#ifdef USE_TIMING
     ret =  gptlstart('gas_optics (SW)')
+#endif
     call stop_on_err(k_dist%gas_optics(p_lay(:,:,b), &
                                        p_lev(:,:,b),       &
                                        t_lay(:,:,b),       &
                                        gas_conc_array(b),  &
                                        optical_props,      &
                                        toa_flux))
+#ifdef USE_TIMING
     ret =  gptlstop('gas_optics (SW)')
+#endif
     !
     ! Normalize incoming solar flux to match RFMIP specification
     !
-    def_tsi(1:ncol) = sum(toa_flux, dim=2)
+    def_tsi(1:block_size) = sum(toa_flux, dim=2)
     do igpt = 1, k_dist%get_ngpt()
       do icol = 1, block_size
         toa_flux(icol,igpt) = toa_flux(icol,igpt) * total_solar_irradiance(icol,b)/def_tsi(icol)
@@ -243,23 +260,27 @@ program rrtmgp_rfmip_sw
     !   nighttime columns with a default solar zenith angle. We'll mask these out later, of
     !   course, but this gives us more work and so a better measure of timing.
     !
-    usecol(1:block_size)  = solar_zenith_angle(:,b) < 90._wp - 2._wp * spacing(90._wp)
-    mu0(1:block_size) = merge(cos(solar_zenith_angle(:,b) * acos(-1._wp)/180._wp), 0._wp, usecol)
+    usecol(1:block_size)  = solar_zenith_angle(1:block_size,b) < 90._wp - 2._wp * spacing(90._wp)
+    mu0(1:block_size) = merge(cos(solar_zenith_angle(:,b) * acos(-1._wp)/180._wp), 1._wp, usecol)
     !
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband
     !
+#ifdef USE_TIMING
     ret =  gptlstart('rte_sw')
+#endif
     call stop_on_err(rte_sw(optical_props,   &
                             top_at_1,        &
-                            solar_zenith_angle(:,b), &
-                            toa_flux,         &
+                            mu0,             &
+                            toa_flux,        &
                             spread(surface_albedo(:,b), 1, ncopies = k_dist%get_nband()), &
                             spread(surface_albedo(:,b), 1, ncopies = k_dist%get_nband()), &
                             fluxes))
+#ifdef USE_TIMING
     ret =  gptlstop('rte_sw')
+#endif
     !
-    ! Zero out fluxes for which the original solar zenith angle is <= 0.
+    ! Zero out fluxes for which the original solar zenith angle is > 90 degrees.
     !
     do icol = 1, block_size
       if(.not. usecol(icol)) then
@@ -271,8 +292,10 @@ program rrtmgp_rfmip_sw
   !
   ! End timers
   !
+#ifdef USE_TIMING
   ret = gptlpr(block_size)
   ret = gptlfinalize()
+#endif
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rsd', flux_dn)

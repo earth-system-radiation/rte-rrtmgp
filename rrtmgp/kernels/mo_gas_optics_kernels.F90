@@ -17,7 +17,9 @@
 module mo_gas_optics_kernels
   use mo_rte_kind,      only: wp
   use mo_util_string,   only : string_loc_in_array
+#ifdef USE_TIMING
   use gptl,              only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
+#endif
   implicit none
 
   interface zero_array
@@ -116,7 +118,9 @@ contains
     ! ---------------------
     ! Major Species
     ! ---------------------
+#ifdef USE_TIMING
     ret = gptlstart("gas_optical_depths_major")
+#endif
     call gas_optical_depths_major( &
           ncol,nlay,ngpt,nflav,           & ! dimensions
           gpoint_flavor,                  & ! inputs from object
@@ -124,11 +128,15 @@ contains
           col_mix,fmajor,                 &
           jeta,tropo,jtemp,jpress,        & ! local input
           tau)
+#ifdef USE_TIMING
     ret = gptlstop("gas_optical_depths_major")
+#endif
     ! ---------------------
     ! Minor Species - lower
     ! ---------------------
+#ifdef USE_TIMING
     ret = gptlstart("gas_optical_depths_minor (lower)")
+#endif
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,ngas,nflav,  & ! dimensions
            idx_h2o,                    &
@@ -144,11 +152,15 @@ contains
            col_gas,fminor,jeta,        &
            itropo_lower,jtemp,         &
            tau)
+#ifdef USE_TIMING
     ret = gptlstop("gas_optical_depths_minor (lower)")
+#endif
     ! ---------------------
     ! Minor Species - upper
     ! ---------------------
+#ifdef USE_TIMING
     ret = gptlstart("gas_optical_depths_minor (upper)")
+#endif
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,ngas,nflav,  & ! dimensions
            idx_h2o,                    &
@@ -164,7 +176,9 @@ contains
            col_gas,fminor,jeta,        &
            itropo_upper,jtemp,         &
            tau)
+#ifdef USE_TIMING
     ret = gptlstop("gas_optical_depths_minor (upper)")
+#endif
   end subroutine compute_tau_absorption
   ! --------------------------------------------------------------------------------------
 

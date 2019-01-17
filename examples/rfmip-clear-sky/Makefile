@@ -8,13 +8,6 @@ include $(RRTMGP_DIR)/Makefile.conf
 LDFLAGS   += -L$(RRTMGP_DIR)
 LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_DIR)
-#
-# Timing library
-#
-TIME_DIR = /Users/robert/Codes/GPTL/gptl-v5.5.3/macos
-LDFLAGS   += -L$(TIME_DIR)/lib
-LIBS      += -lgptl
-FCINCLUDE += -I$(TIME_DIR)/include
 
 #
 # netcdf library, module files
@@ -30,7 +23,7 @@ LIBS      += -lnetcdff -lnetcdf
 # Setting macro TIMING=yes uses routines from the General Purpose Timing Library
 #  https://jmrosinski.github.io/GPTL/
 #
-TIMING=no
+TIMING=yes
 # Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
 FCFLAGS += -fpp
 ifeq ($(TIMING),yes)

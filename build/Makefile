@@ -5,6 +5,26 @@ RRTMGP_DIR = ../rrtmgp
 RRTMGP_KERNEL_DIR = ../rrtmgp/kernels
 VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
 
+#
+# Setting macro TIMING=yes uses routines from the General Purpose Timing Library
+#  https://jmrosinski.github.io/GPTL/
+#
+TIMING=yes
+# Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
+FCFLAGS += -fpp
+ifeq ($(TIMING),yes)
+	#
+	# Timing library
+	#
+	FCINCLUDE += -I$(TIME_DIR)/include
+	# Compiler specific
+	FCFLAGS += -DUSE_TIMING
+	# Installation specific
+	TIME_DIR = $(HOME)/Codes/GPTL/gptl-v5.5.3/macos
+	LDFLAGS   += -L$(TIME_DIR)/lib
+	LIBS      += -lgptl
+endif
+
 include Makefile.conf
 include Makefile.rules
 
@@ -16,7 +36,7 @@ include $(RRTMGP_DIR)/Make.depends
 librte.a: $(RTE_SRC)
 	ar -rvs librte.a $(RTE_SRC)
 
-librrtmgp.a: $(RRTMGP_SRC) 
+librrtmgp.a: $(RRTMGP_SRC)
 	ar -rvs librrtmgp.a $(RRTMGP_SRC)
 
 clean:

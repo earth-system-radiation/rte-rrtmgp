@@ -96,7 +96,6 @@ program rrtmgp_rfmip_sw
   logical                    :: top_at_1
   integer                    :: b, icol, igpt
   character(len=6)           :: block_size_char
-  integer                    :: i
 
   character(len=32 ), &
             dimension(:),             allocatable :: kdist_gas_names, gases_to_use
@@ -120,7 +119,7 @@ program rrtmgp_rfmip_sw
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
 
 #ifdef USE_TIMING
-  integer :: ret
+  integer :: ret, i
 #endif
   ! -------------------------------------------------------------------------------------------------
   !
@@ -219,14 +218,11 @@ program rrtmgp_rfmip_sw
   ret =  gptlinitialize()
 #endif
   !
-  ! Initialize timers
-  !
-  ret = gptlsetoption (gptlpercent, 1)        ! Turn on "% of" print
-  ret = gptlsetoption (gptloverhead, 0)       ! Turn off overhead estimate
-  ret =  gptlinitialize()
-  !
   ! Loop over blocks
   !
+#ifdef USE_TIMING
+  do i = 1, 32
+#endif
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
@@ -293,6 +289,7 @@ program rrtmgp_rfmip_sw
   ! End timers
   !
 #ifdef USE_TIMING
+  end do
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif

@@ -581,10 +581,11 @@ contains
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     integer :: icol, ilay
+    real(wp), dimension(ngpt,nlay,ncol)                               :: lay_source_t, lev_source_inc_t, lev_source_dec_t
+    real(wp), dimension(ngpt,     ncol)                               :: sfc_source_t
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(size(play,dim=1),size(play,dim=2)+1), target  :: tlev_arr
     real(wp), dimension(:,:),                                 pointer :: tlev_wk => NULL()
-    real(wp), dimension(ngpt,nlay,ncol) :: lay_source, lev_source_inc, lev_source_dec
     ! ----------------------------------------------------------
     error_msg = ""
     !
@@ -627,16 +628,17 @@ contains
     call compute_Planck_source(ncol, nlay, ngpt, nbnd, nflv, &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
-                this%get_gpoint_bands(), this%planck_frac, this%temp_ref_min,&
+                this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sources%sfc_source, lay_source, lev_source_inc, lev_source_dec)
+                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
 #ifdef USE_TIMING
     ilay = gptlstop("compute_Planck_source")
     ilay = gptlstart("Planck-reorder123x321")
 #endif
-    sources%lay_source     = reorder123x321(lay_source)
-    sources%lev_source_inc = reorder123x321(lev_source_inc)
-    sources%lev_source_dec = reorder123x321(lev_source_dec)
+    sources%sfc_source     = transpose(sfc_source_t)
+    sources%lay_source     = reorder123x321(lay_source_t)
+    sources%lev_source_inc = reorder123x321(lev_source_inc_t)
+    sources%lev_source_dec = reorder123x321(lev_source_dec_t)
 #ifdef USE_TIMING
     ilay = gptlstop("Planck-reorder123x321")
 #endif

@@ -343,13 +343,15 @@ contains
   !
   ! compute Rayleigh scattering optical depths
   !
-  subroutine compute_tau_rayleigh(ncol,nlay,ngpt,ngas,nflav, &
-                                  gpoint_flavor,krayl,       &
-                                  idx_h2o, col_dry,col_gas,  &
-                                  fminor,jeta,tropo,jtemp,   &
+  subroutine compute_tau_rayleigh(ncol,nlay,nbnd,ngpt,ngas,nflav, &
+                                  gpoint_flavor,band_lims_gpt, &
+                                  krayl,                       &
+                                  idx_h2o, col_dry,col_gas,    &
+                                  fminor,jeta,tropo,jtemp,     &
                                   tau_rayleigh)
-    integer,                                  intent(in ) :: ncol,nlay,ngpt,ngas,nflav
+    integer,                                  intent(in ) :: ncol,nlay,nbnd,ngpt,ngas,nflav
     integer,  dimension(:,:),                 intent(in ) :: gpoint_flavor
+    integer, dimension(2, nbnd),              intent(in ) :: band_lims_gpt ! start and end g-point for each band
     real(wp), dimension(:,:,:,:),             intent(in ) :: krayl
     integer,                                  intent(in ) :: idx_h2o
     real(wp), dimension(ncol,nlay),           intent(in ) :: col_dry
@@ -362,22 +364,25 @@ contains
     real(wp), dimension(ngpt,nlay,ncol),      intent(out) :: tau_rayleigh
     ! -----------------
     ! local variables
-    real(wp) :: k ! rayleigh scattering coefficient
-    integer  :: icol, ilay, iflav, igpt
+    real(wp) :: k(ngpt) ! rayleigh scattering coefficient
+    integer  :: icol, ilay, iflav, ibnd, igpt, gptS, gptE
     integer  :: itropo
     ! -----------------
     do ilay = 1, nlay
       do icol = 1, ncol
         itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        do igpt = 1, ngpt
-          iflav = gpoint_flavor(itropo, igpt)
-          k = interpolate2D(fminor(:,:,iflav,icol,ilay), &
-                            krayl(:,:,:,itropo),      &
-                            igpt, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
-          tau_rayleigh(igpt,ilay,icol) =  k * (col_gas(icol,ilay,idx_h2o)+col_dry(icol,ilay))
-        end do ! igpt
+        do ibnd = 1, nbnd
+          gptS = band_lims_gpt(1, ibnd)
+          gptE = band_lims_gpt(2, ibnd)
+          iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
+          k(gptS:gptE) = interpolate2D_byflav(fminor(:,:,iflav,icol,ilay), &
+                                              krayl(:,:,:,itropo),      &
+                                              gptS, gptE, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
+          tau_rayleigh(gptS:gptE,ilay,icol) = k(gptS:gptE) * &
+                                              (col_gas(gptS:gptE,ilay,idx_h2o)+col_dry(gptS:gptE,ilay))
+        end do
       end do
-    end do ! ilay
+    end do
   end subroutine compute_tau_rayleigh
 
   ! ----------------------------------------------------------

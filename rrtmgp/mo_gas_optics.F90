@@ -545,10 +545,11 @@ contains
     ret = gptlstart('rayleigh')
 #endif
       call compute_tau_rayleigh(     & !Rayleigh scattering optical depths
-            ncol,nlay,ngpt,ngas,nflav,      & ! dimensions
+            ncol,nlay,nband,ngpt,ngas,nflav,& ! dimensions
             this%gpoint_flavor,             &
+            this%get_band_lims_gpoint(),    &
             this%krayl,                     & ! inputs from object
-            idx_h2o, col_dry_wk,col_gas,       &
+            idx_h2o, col_dry_wk,col_gas,    &
             fminor,jeta,tropo,jtemp,        & ! local input
             tau_rayleigh)
 #ifdef USE_TIMING

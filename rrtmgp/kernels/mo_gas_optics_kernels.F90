@@ -330,7 +330,7 @@ contains
               tau_minor(gptS:gptE) = scaling *                   &
                                       interpolate2D_byflav(fminor(:,:,iflav,icol,ilay), &
                                                            kminor, &
-                                                           kminor_start(imnr), kminor_start(imnr)+(gptE-gptS-1), &
+                                                           kminor_start(imnr), kminor_start(imnr)+(gptE-gptS), &
                                                            jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
               tau(gptS:gptE,ilay,icol) = tau(gptS:gptE,ilay,icol) + tau_minor(gptS:gptE)
             enddo
@@ -551,10 +551,10 @@ contains
     integer :: igpt
     ! each code block is for a different reference temperature
     do igpt = 1, gptE-gptS+1
-      res(igpt) = fminor(1,1) * k(igpt, jeta(1)  , jtemp  ) + &
-                  fminor(2,1) * k(igpt, jeta(1)+1, jtemp  ) + &
-                  fminor(1,2) * k(igpt, jeta(2)  , jtemp+1) + &
-                  fminor(2,2) * k(igpt, jeta(2)+1, jtemp+1)
+      res(igpt) = fminor(1,1) * k(gptS+igpt-1, jeta(1)  , jtemp  ) + &
+                  fminor(2,1) * k(gptS+igpt-1, jeta(1)+1, jtemp  ) + &
+                  fminor(1,2) * k(gptS+igpt-1, jeta(2)  , jtemp+1) + &
+                  fminor(2,2) * k(gptS+igpt-1, jeta(2)+1, jtemp+1)
     end do
   end function interpolate2D_byflav
   ! ----------------------------------------------------------

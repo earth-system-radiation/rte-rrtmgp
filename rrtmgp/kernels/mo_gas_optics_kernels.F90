@@ -379,7 +379,7 @@ contains
                                               krayl(:,:,:,itropo),      &
                                               gptS, gptE, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
           tau_rayleigh(gptS:gptE,ilay,icol) = k(gptS:gptE) * &
-                                              (col_gas(gptS:gptE,ilay,idx_h2o)+col_dry(gptS:gptE,ilay))
+                                              (col_gas(icol,ilay,idx_h2o)+col_dry(icol,ilay))
         end do
       end do
     end do

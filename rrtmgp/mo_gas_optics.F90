@@ -162,9 +162,11 @@ module mo_gas_optics
     procedure, private :: gas_optics_ext
     procedure, private :: check_key_species_present
     procedure, private :: get_minor_list
+    ! Interpolation table dimensions
     procedure, private :: get_nflav
-    procedure, private :: get_nlay_ref
     procedure, private :: get_neta
+    procedure, private :: get_npres
+    procedure, private :: get_ntemp
   end type
   ! -------------------------------------------------------------------------------------------------
   !
@@ -257,7 +259,7 @@ contains
     ret =  gptlstart('compute_gas_taus')
 #endif
     error_msg = compute_gas_taus(this,                       &
-                                 ncol, nlay, ngpt, nband, ngas, nflav,   &
+                                 ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
@@ -353,7 +355,7 @@ contains
     ret =  gptlstart('compute_gas_taus')
 #endif
     error_msg = compute_gas_taus(this,                       &
-                                 ncol, nlay, ngpt, nband, ngas, nflav,   &
+                                 ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
@@ -377,7 +379,7 @@ contains
   ! Returns optical properties and interpolation coefficients
   !
   function compute_gas_taus(this,                       &
-                            ncol, nlay, ngpt, nband, ngas, nflav, &
+                            ncol, nlay, ngpt, nband,    &
                             play, plev, tlay, gas_desc, &
                             optical_props,              &
                             jtemp, jpress, jeta, tropo, fmajor, &
@@ -385,7 +387,7 @@ contains
 
     class(ty_gas_optics), &
                                       intent(in   ) :: this
-    integer,                          intent(in   ) :: ncol, nlay, ngpt, nband, ngas, nflav
+    integer,                          intent(in   ) :: ncol, nlay, ngpt, nband
     real(wp), dimension(:,:),         intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
                                                        plev, &   ! level pressures [Pa, mb]; (ncol,nlay+1)
                                                        tlay      ! layer temperatures [K]; (ncol,nlay)
@@ -393,9 +395,9 @@ contains
     class(ty_optical_props_arry),     intent(inout) :: optical_props !inout because components are allocated
     ! Interpolation coefficients for use in internal source function
     integer,  dimension(            ncol, nlay), intent(  out) :: jtemp, jpress
-    integer,  dimension(2,    nflav,ncol, nlay), intent(  out) :: jeta
+    integer,  dimension(2,    this%get_nflav(),ncol, nlay), intent(  out) :: jeta
     logical,  dimension(            ncol, nlay), intent(  out) :: tropo
-    real(wp), dimension(2,2,2,nflav,ncol, nlay), intent(  out) :: fmajor
+    real(wp), dimension(2,2,2,this%get_nflav(),ncol, nlay), intent(  out) :: fmajor
     character(len=128)                                         :: error_msg
 
     ! Optional inputs
@@ -411,18 +413,19 @@ contains
     !
     ! Interpolation variables used in major gas but not elsewhere, so don't need exporting
     !
-    real(wp), dimension(ncol,nlay,  ngas) :: vmr     ! volume mixing ratios
-    real(wp), dimension(ncol,nlay,0:ngas) :: col_gas ! column amounts for each gas, plus col_dry
-    real(wp), dimension(2,    nflav,ncol,nlay) :: col_mix ! combination of major species's column amounts
+    real(wp), dimension(ncol,nlay,  this%get_ngas()) :: vmr     ! volume mixing ratios
+    real(wp), dimension(ncol,nlay,0:this%get_ngas()) :: col_gas ! column amounts for each gas, plus col_dry
+    real(wp), dimension(2,    this%get_nflav(),ncol,nlay) :: col_mix ! combination of major species's column amounts
                                                          ! index(1) : reference temperature level
                                                          ! index(2) : flavor
                                                          ! index(3) : layer
-    real(wp), dimension(2,2,  nflav,ncol,nlay) :: fminor ! interpolation fractions for minor species
+    real(wp), dimension(2,2,  this%get_nflav(),ncol,nlay) :: fminor ! interpolation fractions for minor species
                                                           ! index(1) : reference eta level (temperature dependent)
                                                           ! index(2) : reference temperature level
                                                           ! index(3) : flavor
                                                           ! index(4) : layer
     integer :: ret
+    integer :: ngas, nflav, neta, npres, ntemp
     ! ----------------------------------------------------------
     !
     ! Error checking
@@ -462,6 +465,11 @@ contains
     end if
 
     ! ----------------------------------------------------------
+    ngas  = this%get_ngas()
+    nflav = this%get_nflav()
+    neta  = this%get_neta()
+    npres = this%get_npres()
+    ntemp = this%get_ntemp()
     !
     ! Fill out the array of volume mixing ratios
     !
@@ -500,14 +508,25 @@ contains
 #ifdef USE_TIMING
     ret = gptlstart('interpolation')
 #endif
-    call interpolation( &
-      ncol,nlay,this%get_ngas(),nflav,this%get_neta(), & ! dimensions
-      this%flavor, &
-      this%press_ref_log,this%temp_ref, &
-      this%press_ref_log_delta,this%temp_ref_min, this%temp_ref_delta, & ! inputs from object
-      this%press_ref_trop_log, this%vmr_ref, this%get_nlay_ref(), &
-      play,tlay,col_gas, & ! local input
-      jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress) ! output
+    call interpolation(         &
+            ncol,nlay,                &        ! problem dimensions
+            ngas, nflav, neta, npres, ntemp, & ! interpolation dimensions
+            this%flavor,              &
+            this%press_ref_log,       &
+            this%temp_ref,            &
+            this%press_ref_log_delta, &
+            this%temp_ref_min,        &
+            this%temp_ref_delta,      &
+            this%press_ref_trop_log,  &
+            this%vmr_ref, &
+            play,         &
+            tlay,         &
+            col_gas,      &
+            jtemp,        & ! outputs
+            fmajor,fminor,&
+            col_mix,      &
+            tropo,        &
+            jeta,jpress)
 #ifdef USE_TIMING
     ret = gptlstop ('interpolation')
     ret = gptlstart('compute_tau_absorption')
@@ -544,13 +563,14 @@ contains
 #ifdef USE_TIMING
     ret = gptlstart('rayleigh')
 #endif
-      call compute_tau_rayleigh(     & !Rayleigh scattering optical depths
-            ncol,nlay,nband,ngpt,ngas,nflav,& ! dimensions
-            this%gpoint_flavor,             &
-            this%get_band_lims_gpoint(),    &
-            this%krayl,                     & ! inputs from object
-            idx_h2o, col_dry_wk,col_gas,    &
-            fminor,jeta,tropo,jtemp,        & ! local input
+      call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
+            ncol,nlay,nband,ngpt,        &
+            ngas,nflav,neta,npres,ntemp, & ! dimensions
+            this%gpoint_flavor,          &
+            this%get_band_lims_gpoint(), &
+            this%krayl,                  & ! inputs from object
+            idx_h2o, col_dry_wk,col_gas, &
+            fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
 #ifdef USE_TIMING
     ret = gptlstop('rayleigh')
@@ -1575,27 +1595,41 @@ contains
   end subroutine combine_and_reorder
 
   !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! return the number of reference pressure layers
-  !
-  pure function get_nlay_ref(this)
-    class(ty_gas_optics), intent(in) :: this
-    integer                                        :: get_nlay_ref
-
-    get_nlay_ref = size(this%kmajor,dim=3)
-  end function get_nlay_ref
-
+  ! Sizes of tables: pressure, temperate, eta (mixing fraction)
+  !   Equivalent routines for the number of gases and flavors (get_ngas(), get_nflav()) are defined above because they're
+  !   used in function defintions
+  ! Table kmajor has dimensions (ngpt, neta, npres, ntemp)
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! return extent of eta dimension
   !
   pure function get_neta(this)
     class(ty_gas_optics), intent(in) :: this
-    integer                                        :: get_neta
+    integer                          :: get_neta
 
     get_neta = size(this%kmajor,dim=2)
   end function
+  ! --------------------------------------------------------------------------------------
+  !
+  ! return the number of pressures in reference profile
+  !   absorption coefficient table is one bigger since a pressure is repeated in upper/lower atmos
+  !
+  pure function get_npres(this)
+    class(ty_gas_optics), intent(in) :: this
+    integer                          :: get_npres
 
+    get_npres = size(this%kmajor,dim=3)-1
+  end function get_npres
+  ! --------------------------------------------------------------------------------------
+  !
+  ! return the number of temperatures
+  !
+  pure function get_ntemp(this)
+    class(ty_gas_optics), intent(in) :: this
+    integer                          :: get_ntemp
+
+    get_ntemp = size(this%kmajor,dim=4)
+  end function get_ntemp
   !--------------------------------------------------------------------------------------------------------------------
   ! Generic procedures for checking sizes, limits
   !--------------------------------------------------------------------------------------------------------------------

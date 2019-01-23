@@ -343,16 +343,18 @@ contains
   !
   ! compute Rayleigh scattering optical depths
   !
-  subroutine compute_tau_rayleigh(ncol,nlay,nbnd,ngpt,ngas,nflav, &
+  subroutine compute_tau_rayleigh(ncol,nlay,nbnd,ngpt,         &
+                                  ngas,nflav,neta,npres,ntemp, &
                                   gpoint_flavor,band_lims_gpt, &
                                   krayl,                       &
                                   idx_h2o, col_dry,col_gas,    &
                                   fminor,jeta,tropo,jtemp,     &
-                                  tau_rayleigh)
-    integer,                                  intent(in ) :: ncol,nlay,nbnd,ngpt,ngas,nflav
-    integer,  dimension(:,:),                 intent(in ) :: gpoint_flavor
-    integer, dimension(2, nbnd),              intent(in ) :: band_lims_gpt ! start and end g-point for each band
-    real(wp), dimension(:,:,:,:),             intent(in ) :: krayl
+                                  tau_rayleigh) bind(C, name="compute_tau_rayleigh")
+    integer,                                  intent(in ) :: ncol,nlay,nbnd,ngpt
+    integer,                                  intent(in ) :: ngas,nflav,neta,npres,ntemp
+    integer,  dimension(2,ngpt),              intent(in ) :: gpoint_flavor
+    integer,  dimension(2,nbnd),              intent(in ) :: band_lims_gpt ! start and end g-point for each band
+    real(wp), dimension(ngpt,neta,ntemp,2),   intent(in ) :: krayl
     integer,                                  intent(in ) :: idx_h2o
     real(wp), dimension(ncol,nlay),           intent(in ) :: col_dry
     real(wp), dimension(ncol,nlay,0:ngas),    intent(in ) :: col_gas
@@ -619,22 +621,24 @@ contains
   ! Compute interpolation coefficients
   ! for calculations of major optical depths, minor optical depths, Rayleigh,
   ! and Planck fractions
-  subroutine interpolation(ncol,nlay,ngas,nflav,neta, &
-    flavor,press_ref_log,temp_ref,press_ref_log_delta,temp_ref_min,temp_ref_delta,press_ref_trop_log,vmr_ref,nlay_ref, &
-    play,tlay,col_gas, &
-    jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress)
+  subroutine interpolation( &
+                ncol,nlay,ngas,nflav,neta, npres, ntemp, &
+                flavor,                                  &
+                press_ref_log, temp_ref,press_ref_log_delta,    &
+                temp_ref_min,temp_ref_delta,press_ref_trop_log, &
+                vmr_ref,                                        &
+                play,tlay,col_gas,                              &
+                jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress) bind(C, name="interpolation")
     ! input dimensions
-    integer, intent(in) :: ncol,nlay,ngas,nflav,neta
-
-    ! inputs from object
-    integer,  dimension(:,:),    intent(in) :: flavor
-    real(wp), dimension(:),      intent(in) :: press_ref_log
-    real(wp), dimension(:),      intent(in) :: temp_ref
-    real(wp),                    intent(in) :: press_ref_log_delta, &
-                                               temp_ref_min, temp_ref_delta, &
-                                               press_ref_trop_log
-    real(wp), dimension(:,0:,:), intent(in) :: vmr_ref
-    integer,                     intent(in) :: nlay_ref
+    integer,                            intent(in) :: ncol,nlay
+    integer,                            intent(in) :: ngas,nflav,neta,npres,ntemp
+    integer,  dimension(2,nflav),       intent(in) :: flavor
+    real(wp), dimension(npres),         intent(in) :: press_ref_log
+    real(wp), dimension(npres),         intent(in) :: temp_ref
+    real(wp),                           intent(in) :: press_ref_log_delta, &
+                                                      temp_ref_min, temp_ref_delta, &
+                                                      press_ref_trop_log
+    real(wp), dimension(2,0:ngas,ntemp),intent(in) :: vmr_ref
 
     ! inputs from profile or parent function
     real(wp), dimension(ncol,nlay),        intent(in) :: play, tlay
@@ -664,12 +668,12 @@ contains
       do icol = 1, ncol
         ! index and factor for temperature interpolation
         jtemp(icol,ilay) = int((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta)
-        jtemp(icol,ilay) = min(size(temp_ref) - 1, max(1, jtemp(icol,ilay))) ! limit the index range
+        jtemp(icol,ilay) = min(npres - 1, max(1, jtemp(icol,ilay))) ! limit the index range
         ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta
 
         ! index and factor for pressure interpolation
         locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log(1)) / press_ref_log_delta
-        jpress(icol,ilay) = min(nlay_ref-2, max(1, int(locpress)))
+        jpress(icol,ilay) = min(npres-1, max(1, int(locpress)))
         fpress(icol,ilay) = locpress - float(jpress(icol,ilay))
 
         ! determine if in lower or upper part of atmosphere

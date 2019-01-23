@@ -125,8 +125,8 @@ module mo_gas_optics
     !   Allocated only when gas optics object is internal-source
     !
     real(wp), dimension(:,:,:,:), allocatable :: planck_frac   ! stored fraction of Planck irradiance in band for given g-point
-                                                               ! planck_frac(eta,temperature,pressure,g-point)
-    real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (reference temperatures,band)
+                                                               ! planck_frac(g-point, eta, pressure, temperature)
+    real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (Planck temperatures,band)
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
     ! -----------------------------------------------------------------------------------
     ! Solar source function spectral mapping
@@ -167,6 +167,7 @@ module mo_gas_optics
     procedure, private :: get_neta
     procedure, private :: get_npres
     procedure, private :: get_ntemp
+    procedure, private :: get_nPlanckTemp
   end type
   ! -------------------------------------------------------------------------------------------------
   !
@@ -250,8 +251,6 @@ contains
     nlay  = size(play,dim=2)
     ngpt  = this%get_ngpt()
     nband = this%get_nband()
-    ngas  = this%get_ngas()
-    nflav = this%get_nflav()
     !
     ! Gas optics
     !
@@ -299,7 +298,7 @@ contains
     ret =  gptlstart('source')
 #endif
     error_msg = source(this,                               &
-                       ncol, nlay, ngpt, nband, nflav,     &
+                       ncol, nlay, nband, ngpt,            &
                        play, plev, tlay, tsfc,             &
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
@@ -587,7 +586,7 @@ contains
   ! Compute Planck source functions at layer centers and levels
   !
   function source(this,                               &
-                  ncol, nlay, ngpt, nbnd, nflv,       &
+                  ncol, nlay, nbnd, ngpt,             &
                   play, plev, tlay, tsfc,             &
                   jtemp, jpress, jeta, tropo, fmajor, &
                   sources,                            & ! Planck sources
@@ -595,7 +594,7 @@ contains
                   result(error_msg)
     ! inputs
     class(ty_gas_optics),    intent(in ) :: this
-    integer,                               intent(in ) :: ncol, nlay, ngpt, nbnd, nflv
+    integer,                               intent(in ) :: ncol, nlay, nbnd, ngpt
     real(wp), dimension(ncol,nlay),        intent(in ) :: play   ! layer pressures [Pa, mb]
     real(wp), dimension(ncol,nlay+1),      intent(in ) :: plev   ! level pressures [Pa, mb]
     real(wp), dimension(ncol,nlay),        intent(in ) :: tlay   ! layer temperatures [K]
@@ -603,21 +602,21 @@ contains
     ! Interplation coefficients
     integer,  dimension(ncol,nlay),        intent(in ) :: jtemp, jpress
     logical,  dimension(ncol,nlay),        intent(in ) :: tropo
-    real(wp), dimension(2,2,2,nflv,ncol,nlay),   &
+    real(wp), dimension(2,2,2,this%get_nflav(),ncol,nlay),   &
                                            intent(in ) :: fmajor
-    integer,  dimension(2,   nflv,ncol,nlay),   &
+    integer,  dimension(2,   this%get_nflav(),ncol,nlay),   &
                                            intent(in ) :: jeta
     class(ty_source_func_lw    ),        intent(inout) :: sources
     real(wp), dimension(ncol,nlay+1),      intent(in ), &
                                       optional, target :: tlev          ! level temperatures [K]
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
-    integer :: icol, ilay
-    real(wp), dimension(ngpt,nlay,ncol)                               :: lay_source_t, lev_source_inc_t, lev_source_dec_t
-    real(wp), dimension(ngpt,     ncol)                               :: sfc_source_t
+    integer                                      :: icol, ilay
+    real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
+    real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
-    real(wp), dimension(size(play,dim=1),size(play,dim=2)+1), target  :: tlev_arr
-    real(wp), dimension(:,:),                                 pointer :: tlev_wk => NULL()
+    real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
+    real(wp), dimension(:,:),            pointer :: tlev_wk => NULL()
     ! ----------------------------------------------------------
     error_msg = ""
     !
@@ -657,7 +656,8 @@ contains
 #ifdef USE_TIMING
     ilay = gptlstart("compute_Planck_source")
 #endif
-    call compute_Planck_source(ncol, nlay, ngpt, nbnd, nflv, &
+    call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
+                this%get_nflav(), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
@@ -1136,7 +1136,7 @@ contains
   pure function source_is_internal(this)
     class(ty_gas_optics), intent(in) :: this
     logical                                        :: source_is_internal
-    source_is_internal = allocated(this%totplnk).and.allocated(this%planck_frac)
+    source_is_internal = allocated(this%totplnk) .and. allocated(this%planck_frac)
   end function source_is_internal
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1630,6 +1630,16 @@ contains
 
     get_ntemp = size(this%kmajor,dim=4)
   end function get_ntemp
+  ! --------------------------------------------------------------------------------------
+  !
+  ! return the number of temperatures for Planck function
+  !
+  pure function get_nPlanckTemp(this)
+    class(ty_gas_optics), intent(in) :: this
+    integer                          :: get_nPlanckTemp
+
+    get_nPlanckTemp = size(this%totplnk,dim=1) ! dimensions are Planck-temperature, band
+  end function get_nPlanckTemp
   !--------------------------------------------------------------------------------------------------------------------
   ! Generic procedures for checking sizes, limits
   !--------------------------------------------------------------------------------------------------------------------

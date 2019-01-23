@@ -131,7 +131,10 @@ contains
   !   (jeta,jtemp,jpress)
   !
   subroutine compute_tau_absorption(                &
-                ncol,nlay,nbnd,ngpt,ngas,nflav,     &  ! dimensions
+                ncol,nlay,nbnd,ngpt,                &  ! dimensions
+                ngas,nflav,neta,npres,ntemp,        &
+                nminorlower, nminorklower,          & ! number of minor contributors, total num absorption coeffs
+                nminorupper, nminorkupper,          &
                 idx_h2o,                            &
                 gpoint_flavor,                      &
                 band_lims_gpt,                      &
@@ -154,31 +157,33 @@ contains
                 col_mix,fmajor,fminor,              &
                 play,tlay,col_gas,                  &
                 jeta,jtemp,jpress,                  &
-                tau)
+                tau) bind(C, name="compute_tau_absorption")
     ! ---------------------
     ! input dimensions
-    integer,                                intent(in) :: ncol,nlay,nbnd,ngpt,ngas,nflav
+    integer,                                intent(in) :: ncol,nlay,nbnd,ngpt
+    integer,                                intent(in) :: ngas,nflav,neta,npres,ntemp
+    integer,                                intent(in) :: nminorlower, nminorklower,nminorupper, nminorkupper
     integer,                                intent(in) :: idx_h2o
     ! ---------------------
     ! inputs from object
-    integer,          dimension(2,ngpt),    intent(in) :: gpoint_flavor
-    integer,          dimension(2,nbnd),    intent(in) :: band_lims_gpt
-    real(wp),         dimension(:,:,:,:),   intent(in) :: kmajor
-    real(wp),         dimension(:,:,:),     intent(in) :: kminor_lower
-    real(wp),         dimension(:,:,:),     intent(in) :: kminor_upper
-    integer,          dimension(:,:),       intent(in) :: minor_limits_gpt_lower
-    integer,          dimension(:,:),       intent(in) :: minor_limits_gpt_upper
-    logical,          dimension(:),         intent(in) :: minor_scales_with_density_lower
-    logical,          dimension(:),         intent(in) :: minor_scales_with_density_upper
-    logical,          dimension(:),         intent(in) :: scale_by_complement_lower
-    logical,          dimension(:),         intent(in) :: scale_by_complement_upper
-    integer,          dimension(:),         intent(in) :: idx_minor_lower
-    integer,          dimension(:),         intent(in) :: idx_minor_upper
-    integer,          dimension(:),         intent(in) :: idx_minor_scaling_lower
-    integer,          dimension(:),         intent(in) :: idx_minor_scaling_upper
-    integer,          dimension(:),         intent(in) :: kminor_start_lower
-    integer,          dimension(:),         intent(in) :: kminor_start_upper
-    logical,          dimension(ncol,nlay), intent(in) :: tropo
+    integer,  dimension(2,ngpt),                  intent(in) :: gpoint_flavor
+    integer,  dimension(2,nbnd),                  intent(in) :: band_lims_gpt
+    real(wp), dimension(ngpt,neta,npres+1,ntemp), intent(in) :: kmajor
+    real(wp), dimension(nminorklower,neta,ntemp), intent(in) :: kminor_lower
+    real(wp), dimension(nminorkupper,neta,ntemp), intent(in) :: kminor_upper
+    integer,  dimension(2,nminorlower),           intent(in) :: minor_limits_gpt_lower
+    integer,  dimension(2,nminorupper),           intent(in) :: minor_limits_gpt_upper
+    logical,  dimension(  nminorlower),           intent(in) :: minor_scales_with_density_lower
+    logical,  dimension(  nminorupper),           intent(in) :: minor_scales_with_density_upper
+    logical,  dimension(  nminorlower),           intent(in) :: scale_by_complement_lower
+    logical,  dimension(  nminorupper),           intent(in) :: scale_by_complement_upper
+    integer,  dimension(  nminorlower),           intent(in) :: idx_minor_lower
+    integer,  dimension(  nminorupper),           intent(in) :: idx_minor_upper
+    integer,  dimension(  nminorlower),           intent(in) :: idx_minor_scaling_lower
+    integer,  dimension(  nminorupper),           intent(in) :: idx_minor_scaling_upper
+    integer,  dimension(  nminorlower),           intent(in) :: kminor_start_lower
+    integer,  dimension(  nminorupper),           intent(in) :: kminor_start_upper
+    logical,  dimension(ncol,nlay),               intent(in) :: tropo
     ! ---------------------
     ! inputs from profile or parent function
     real(wp), dimension(2,    nflav,ncol,nlay       ), intent(in) :: col_mix
@@ -187,8 +192,8 @@ contains
     real(wp), dimension(            ncol,nlay       ), intent(in) :: play, tlay      ! pressure and temperature
     real(wp), dimension(            ncol,nlay,0:ngas), intent(in) :: col_gas
     integer,  dimension(2,    nflav,ncol,nlay       ), intent(in) :: jeta
-    integer,  dimension(             ncol,nlay      ), intent(in) :: jtemp
-    integer,  dimension(             ncol,nlay      ), intent(in) :: jpress
+    integer,  dimension(            ncol,nlay       ), intent(in) :: jtemp
+    integer,  dimension(            ncol,nlay       ), intent(in) :: jpress
     ! ---------------------
     ! output - optical depth
     real(wp), dimension(ngpt,nlay,ncol), intent(inout) :: tau
@@ -221,13 +226,14 @@ contains
 #ifdef USE_TIMING
     ret = gptlstart("gas_optical_depths_major")
 #endif
-    call gas_optical_depths_major( &
-          ncol,nlay,nbnd,ngpt,nflav,      & ! dimensions
-          gpoint_flavor,                  & ! inputs from object
-          band_lims_gpt,                  &
-          kmajor,                         &
-          col_mix,fmajor,                 &
-          jeta,tropo,jtemp,jpress,        & ! local input
+    call gas_optical_depths_major(   &
+          ncol,nlay,nbnd,ngpt,       & ! dimensions
+          nflav,neta,npres,ntemp,    &
+          gpoint_flavor,             &
+          band_lims_gpt,             &
+          kmajor,                    &
+          col_mix,fmajor,            &
+          jeta,tropo,jtemp,jpress,   &
           tau)
 #ifdef USE_TIMING
     ret = gptlstop("gas_optical_depths_major")
@@ -239,7 +245,9 @@ contains
     ret = gptlstart("gas_optical_depths_minor (lower)")
 #endif
     call gas_optical_depths_minor(     &
-           ncol,nlay,ngpt,ngas,nflav,  & ! dimensions
+           ncol,nlay,ngpt,             & ! dimensions
+           ngas,nflav,npres,neta,      &
+           nminorlower,nminorklower,   &
            idx_h2o,                    &
            gpoint_flavor(1,:),         &
            kminor_lower,               &
@@ -263,7 +271,9 @@ contains
     ret = gptlstart("gas_optical_depths_minor (upper)")
 #endif
     call gas_optical_depths_minor(     &
-           ncol,nlay,ngpt,ngas,nflav,  & ! dimensions
+           ncol,nlay,ngpt,             & ! dimensions
+           ngas,nflav,npres,neta,      &
+           nminorupper,nminorkupper,   &
            idx_h2o,                    &
            gpoint_flavor(2,:),         &
            kminor_upper,               &
@@ -287,19 +297,20 @@ contains
   !
   ! compute minor species optical depths
   !
-  subroutine gas_optical_depths_major(ncol,nlay,nbnd,ngpt,nflav,      & ! dimensions
+  subroutine gas_optical_depths_major(ncol,nlay,nbnd,ngpt,&
+                                      nflav,neta,npres,ntemp,      & ! dimensions
                                       gpoint_flavor, band_lims_gpt,   & ! inputs from object
                                       kmajor,                         &
                                       col_mix,fmajor,                 &
                                       jeta,tropo,jtemp,jpress,        & ! local input
-                                      tau)
+                                      tau) bind(C, name="gas_optical_depths_major")
     ! input dimensions
-    integer, intent(in) :: ncol, nlay, nbnd, ngpt, nflav ! dimensions
+    integer, intent(in) :: ncol, nlay, nbnd, ngpt, nflav,neta,npres,ntemp  ! dimensions
 
     ! inputs from object
     integer,  dimension(2,ngpt),  intent(in) :: gpoint_flavor
     integer,  dimension(2,nbnd),  intent(in) :: band_lims_gpt ! start and end g-point for each band
-    real(wp), dimension(:,:,:,:), intent(in) :: kmajor
+    real(wp), dimension(ngpt,neta,npres+1,ntemp), intent(in) :: kmajor
 
     ! inputs from profile or parent function
     real(wp), dimension(2,    nflav,ncol,nlay), intent(in) :: col_mix
@@ -344,28 +355,32 @@ contains
   !
   ! compute minor species optical depths
   !
-  subroutine gas_optical_depths_minor(ncol, nlay,ngpt,ngas,nflav,   &
-                                      idx_h2o,            &
-                                      gpt_flv,            &
-                                      kminor,             &
-                                      minor_limits_gpt,   &
+  subroutine gas_optical_depths_minor(ncol,nlay,ngpt,        &
+                                      ngas,nflav,npres,neta, &
+                                      nminor,nminork,        &
+                                      idx_h2o,               &
+                                      gpt_flv,               &
+                                      kminor,                &
+                                      minor_limits_gpt,      &
                                       minor_scales_with_density,    &
-                                      scale_by_complement, &
+                                      scale_by_complement,   &
                                       idx_minor, idx_minor_scaling, &
-                                      kminor_start,        &
-                                      play, tlay,          &
-                                      col_gas,fminor,jeta, &
-                                      layer_limits,jtemp,        &
-                                      tau)
-    integer,                                  intent(in ) :: ncol,nlay,ngpt,ngas,nflav
+                                      kminor_start,          &
+                                      play, tlay,            &
+                                      col_gas,fminor,jeta,   &
+                                      layer_limits,jtemp,    &
+                                      tau) bind(C, name="gas_optical_depths_minor")
+    integer,                                  intent(in ) :: ncol,nlay,ngpt
+    integer,                                  intent(in ) :: ngas,nflav
+    integer,                                  intent(in ) :: npres,neta,nminor,nminork
     integer,                                  intent(in ) :: idx_h2o
-    integer,  dimension(:),                   intent(in ) :: gpt_flv
-    real(wp), dimension(:,:,:),               intent(in ) :: kminor
-    integer,  dimension(:,:),                 intent(in ) :: minor_limits_gpt
-    logical,  dimension(:),                   intent(in ) :: minor_scales_with_density
-    logical,  dimension(:),                   intent(in ) :: scale_by_complement
-    integer,  dimension(:),                   intent(in ) :: kminor_start
-    integer,  dimension(:),                   intent(in ) :: idx_minor, idx_minor_scaling
+    integer,  dimension(ngpt),                intent(in ) :: gpt_flv
+    real(wp), dimension(nminork,neta,npres),  intent(in ) :: kminor
+    integer,  dimension(2,nminor),            intent(in ) :: minor_limits_gpt
+    logical,  dimension(  nminor),            intent(in ) :: minor_scales_with_density
+    logical,  dimension(  nminor),            intent(in ) :: scale_by_complement
+    integer,  dimension(  nminor),            intent(in ) :: kminor_start
+    integer,  dimension(  nminor),            intent(in ) :: idx_minor, idx_minor_scaling
     real(wp), dimension(ncol,nlay),           intent(in ) :: play, tlay
     real(wp), dimension(ncol,nlay,0:ngas),    intent(in ) :: col_gas
     real(wp), dimension(2,2,nflav,ncol,nlay), intent(in ) :: fminor

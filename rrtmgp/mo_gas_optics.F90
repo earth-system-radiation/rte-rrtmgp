@@ -425,6 +425,7 @@ contains
                                                           ! index(4) : layer
     integer :: ret
     integer :: ngas, nflav, neta, npres, ntemp
+    integer :: nminorlower, nminorklower,nminorupper, nminorkupper
     ! ----------------------------------------------------------
     !
     ! Error checking
@@ -469,6 +470,11 @@ contains
     neta  = this%get_neta()
     npres = this%get_npres()
     ntemp = this%get_ntemp()
+    ! number of minor contributors, total num absorption coeffs
+    nminorlower  = size(this%minor_scales_with_density_lower)
+    nminorklower = size(this%kminor_lower, 1)
+    nminorupper  = size(this%minor_scales_with_density_upper)
+    nminorkupper = size(this%kminor_upper, 1)
     !
     ! Fill out the array of volume mixing ratios
     !
@@ -507,7 +513,7 @@ contains
 #ifdef USE_TIMING
     ret = gptlstart('interpolation')
 #endif
-    call interpolation(         &
+    call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
             ngas, nflav, neta, npres, ntemp, & ! interpolation dimensions
             this%flavor,              &
@@ -531,7 +537,10 @@ contains
     ret = gptlstart('compute_tau_absorption')
 #endif
     call compute_tau_absorption(                     &
-            ncol,nlay,nband,ngpt,this%get_ngas(),nflav, &  ! dimensions
+            ncol,nlay,nband,ngpt,                    &  ! dimensions
+            ngas,nflav,neta,npres,ntemp,             &
+            nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
+            nminorupper, nminorkupper,               &
             idx_h2o,                                 &
             this%gpoint_flavor,                      &
             this%get_band_lims_gpoint(),             &

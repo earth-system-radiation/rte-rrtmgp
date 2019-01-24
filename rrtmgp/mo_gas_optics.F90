@@ -33,9 +33,6 @@ module mo_gas_optics
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_util_reorder
-#ifdef USE_TIMING
-  use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
-#endif
   implicit none
   private
   real(wp), parameter :: pi = acos(-1._wp)
@@ -245,7 +242,6 @@ contains
     integer,  dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
-    integer :: ret
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)
@@ -254,18 +250,12 @@ contains
     !
     ! Gas optics
     !
-#ifdef USE_TIMING
-    ret =  gptlstart('compute_gas_taus')
-#endif
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
-#ifdef USE_TIMING
-    ret =  gptlstop('compute_gas_taus')
-#endif
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -294,18 +284,12 @@ contains
     !
     ! Interpolate source function
     !
-#ifdef USE_TIMING
-    ret =  gptlstart('source')
-#endif
     error_msg = source(this,                               &
                        ncol, nlay, nband, ngpt,            &
                        play, plev, tlay, tsfc,             &
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
                        tlev)
-#ifdef USE_TIMING
-    ret =  gptlstop('source')
-#endif
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
@@ -339,7 +323,6 @@ contains
     integer,  dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
-    integer :: ret
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)
@@ -350,18 +333,12 @@ contains
     !
     ! Gas optics
     !
-#ifdef USE_TIMING
-    ret =  gptlstart('compute_gas_taus')
-#endif
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
-#ifdef USE_TIMING
-    ret =  gptlstop('compute_gas_taus')
-#endif
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -423,7 +400,6 @@ contains
                                                           ! index(2) : reference temperature level
                                                           ! index(3) : flavor
                                                           ! index(4) : layer
-    integer :: ret
     integer :: ngas, nflav, neta, npres, ntemp
     integer :: nminorlower, nminorklower,nminorupper, nminorkupper
     ! ----------------------------------------------------------
@@ -510,9 +486,6 @@ contains
     ! ---- calculate gas optical depths ----
     !
     call zero_array(ngpt, nlay, ncol, tau)
-#ifdef USE_TIMING
-    ret = gptlstart('interpolation')
-#endif
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
             ngas, nflav, neta, npres, ntemp, & ! interpolation dimensions
@@ -532,10 +505,6 @@ contains
             col_mix,      &
             tropo,        &
             jeta,jpress)
-#ifdef USE_TIMING
-    ret = gptlstop ('interpolation')
-    ret = gptlstart('compute_tau_absorption')
-#endif
     call compute_tau_absorption(                     &
             ncol,nlay,nband,ngpt,                    &  ! dimensions
             ngas,nflav,neta,npres,ntemp,             &
@@ -564,13 +533,7 @@ contains
             play,tlay,col_gas,                       &
             jeta,jtemp,jpress,                       &
             tau)
-#ifdef USE_TIMING
-    ret =  gptlstop('compute_tau_absorption')
-#endif
     if (allocated(this%krayl)) then
-#ifdef USE_TIMING
-    ret = gptlstart('rayleigh')
-#endif
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
@@ -580,9 +543,6 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
-#ifdef USE_TIMING
-    ret = gptlstop('rayleigh')
-#endif
     end if
     if (error_msg /= '') return
 
@@ -662,9 +622,6 @@ contains
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
-#ifdef USE_TIMING
-    ilay = gptlstart("compute_Planck_source")
-#endif
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 this%get_nflav(), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
@@ -672,17 +629,10 @@ contains
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
                 sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
-#ifdef USE_TIMING
-    ilay = gptlstop("compute_Planck_source")
-    ilay = gptlstart("Planck-reorder123x321")
-#endif
     sources%sfc_source     = transpose(sfc_source_t)
     sources%lay_source     = reorder123x321(lay_source_t)
     sources%lev_source_inc = reorder123x321(lev_source_inc_t)
     sources%lev_source_dec = reorder123x321(lev_source_dec_t)
-#ifdef USE_TIMING
-    ilay = gptlstop("Planck-reorder123x321")
-#endif
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !

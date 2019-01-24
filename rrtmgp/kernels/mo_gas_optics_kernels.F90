@@ -17,9 +17,6 @@
 module mo_gas_optics_kernels
   use mo_rte_kind,      only: wp
   use mo_util_string,   only : string_loc_in_array
-#ifdef USE_TIMING
-  use gptl,              only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize
-#endif
   implicit none
 
   interface zero_array
@@ -202,7 +199,6 @@ contains
     !
     logical                    :: top_at_1
     integer, dimension(ncol,2) :: itropo_lower, itropo_upper
-    integer :: ret
     ! ----------------------------------------------------------------
 
     ! ---------------------
@@ -223,9 +219,6 @@ contains
     ! ---------------------
     ! Major Species
     ! ---------------------
-#ifdef USE_TIMING
-    ret = gptlstart("gas_optical_depths_major")
-#endif
     call gas_optical_depths_major(   &
           ncol,nlay,nbnd,ngpt,       & ! dimensions
           nflav,neta,npres,ntemp,    &
@@ -235,15 +228,9 @@ contains
           col_mix,fmajor,            &
           jeta,tropo,jtemp,jpress,   &
           tau)
-#ifdef USE_TIMING
-    ret = gptlstop("gas_optical_depths_major")
-#endif
     ! ---------------------
     ! Minor Species - lower
     ! ---------------------
-#ifdef USE_TIMING
-    ret = gptlstart("gas_optical_depths_minor (lower)")
-#endif
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,             & ! dimensions
            ngas,nflav,npres,neta,      &
@@ -261,15 +248,9 @@ contains
            col_gas,fminor,jeta,        &
            itropo_lower,jtemp,         &
            tau)
-#ifdef USE_TIMING
-    ret = gptlstop("gas_optical_depths_minor (lower)")
-#endif
     ! ---------------------
     ! Minor Species - upper
     ! ---------------------
-#ifdef USE_TIMING
-    ret = gptlstart("gas_optical_depths_minor (upper)")
-#endif
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,             & ! dimensions
            ngas,nflav,npres,neta,      &
@@ -287,9 +268,6 @@ contains
            col_gas,fminor,jeta,        &
            itropo_upper,jtemp,         &
            tau)
-#ifdef USE_TIMING
-    ret = gptlstop("gas_optical_depths_minor (upper)")
-#endif
   end subroutine compute_tau_absorption
   ! --------------------------------------------------------------------------------------
 

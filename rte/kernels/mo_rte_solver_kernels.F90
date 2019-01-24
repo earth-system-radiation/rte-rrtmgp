@@ -303,7 +303,7 @@ contains
       ! previous level is up (-1)
       do igpt = 1, ngpt
         do ilev = 2, nlay+1
-          flux_dir(:,ilev,igpt) = flux_dir(:,ilev-1,igpt) * exp(-tau(:,ilev,igpt)*mu0_inv(:))
+          flux_dir(:,ilev,igpt) = flux_dir(:,ilev-1,igpt) * exp(-tau(:,ilev-1,igpt)*mu0_inv(:))
         end do
       end do
     else

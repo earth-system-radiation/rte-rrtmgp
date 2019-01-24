@@ -23,7 +23,7 @@ LIBS      += -lnetcdff -lnetcdf
 # Setting macro TIMING=yes uses routines from the General Purpose Timing Library
 #  https://jmrosinski.github.io/GPTL/
 #
-TIMING=no
+TIMING=yes
 # Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
 FCFLAGS += -fpp
 ifeq ($(TIMING),yes)

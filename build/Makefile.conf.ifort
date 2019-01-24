@@ -3,13 +3,32 @@
 #
 # Fortran compiler command
 export FC = ifort
+#
+# Setting macro TIMING=yes uses routines from the General Purpose Timing Library
+#  https://jmrosinski.github.io/GPTL/
+#
+TIMING=yes
+# Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
+FCFLAGS = -fpp
+ifeq ($(TIMING),yes)
+	#
+	# Timing library
+	#
+	FCINCLUDE = -I$(TIME_DIR)/include
+	# Compiler specific
+	FCFLAGS += -DUSE_TIMING
+	# Installation specific
+	TIME_DIR = $(HOME)/Codes/GPTL/gptl-v5.5.3/macos
+endif
 
 # Fortran compiler flags
 #
 # Optimized
 #
-export FCFLAGS  = -m64 -O3 -traceback -assume realloc_lhs -extend-source 132 -qopt-report-phase=vec
-export F77FLAGS = -m64 -O3 -traceback                                        -qopt-report-phase=vec
+export FCFLAGS  += -m64 -O3 -traceback -assume realloc_lhs -extend-source 132 -qopt-report-phase=vec
+export F77FLAGS += -m64 -O3 -traceback                                        -qopt-report-phase=vec
+TIME_DIR = /Users/robert/Codes/GPTL/gptl-v5.5.3/macos
+FCINCLUDE += -I$(TIME_DIR)/include
 #
 # Debugging
 #

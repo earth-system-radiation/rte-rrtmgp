@@ -16,7 +16,7 @@ include $(RRTMGP_DIR)/Make.depends
 librte.a: $(RTE_SRC)
 	ar -rvs librte.a $(RTE_SRC)
 
-librrtmgp.a: $(RRTMGP_SRC) 
+librrtmgp.a: $(RRTMGP_SRC)
 	ar -rvs librrtmgp.a $(RRTMGP_SRC)
 
 clean:

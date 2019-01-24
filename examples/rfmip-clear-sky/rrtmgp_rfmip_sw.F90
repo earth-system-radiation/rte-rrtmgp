@@ -119,7 +119,7 @@ program rrtmgp_rfmip_sw
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
 
 #ifdef USE_TIMING
-  integer :: ret
+  integer :: ret, i
 #endif
   ! -------------------------------------------------------------------------------------------------
   !
@@ -220,6 +220,9 @@ program rrtmgp_rfmip_sw
   !
   ! Loop over blocks
   !
+#ifdef USE_TIMING
+  do i = 1, 32
+#endif
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
@@ -286,6 +289,7 @@ program rrtmgp_rfmip_sw
   ! End timers
   !
 #ifdef USE_TIMING
+  end do
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif

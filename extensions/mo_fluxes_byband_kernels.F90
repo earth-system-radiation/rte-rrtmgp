@@ -65,6 +65,7 @@ contains
     integer :: icol, ilev, igpt, ibnd
 
     do ibnd = 1, nbnd
+      igpt = band_lims(1,ibnd)
       do ilev = 1, nlev
         do icol = 1, ncol
           byband_flux_net(icol, ilev, ibnd) = spectral_flux_dn(icol, ilev, igpt) - &
@@ -80,7 +81,7 @@ contains
           end do
         end do
       end do
-    end do 
+    end do
   end subroutine net_byband_full
   ! ----------------------------------------------------------------------------
   pure subroutine net_byband_precalc(ncol, nlev, nbnd, byband_flux_dn, byband_flux_up, byband_flux_net) bind (C)

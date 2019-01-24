@@ -3,13 +3,13 @@
 #
 # Fortran compiler command
 export FC = ifort
-
+#
 # Fortran compiler flags
 #
 # Optimized
 #
-export FCFLAGS  = -m64 -O3 -traceback -assume realloc_lhs -extend-source 132 -qopt-report-phase=vec
-export F77FLAGS = -m64 -O3 -traceback                                        -qopt-report-phase=vec
+export FCFLAGS  += -m64 -O3 -traceback -assume realloc_lhs -extend-source 132 -qopt-report-phase=vec
+export F77FLAGS += -m64 -O3 -traceback                                        -qopt-report-phase=vec
 #
 # Debugging
 #

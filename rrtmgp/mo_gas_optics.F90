@@ -122,8 +122,8 @@ module mo_gas_optics
     !   Allocated only when gas optics object is internal-source
     !
     real(wp), dimension(:,:,:,:), allocatable :: planck_frac   ! stored fraction of Planck irradiance in band for given g-point
-                                                               ! planck_frac(eta,temperature,pressure,g-point)
-    real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (reference temperatures,band)
+                                                               ! planck_frac(g-point, eta, pressure, temperature)
+    real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (Planck temperatures,band)
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
     ! -----------------------------------------------------------------------------------
     ! Solar source function spectral mapping
@@ -159,9 +159,12 @@ module mo_gas_optics
     procedure, private :: gas_optics_ext
     procedure, private :: check_key_species_present
     procedure, private :: get_minor_list
+    ! Interpolation table dimensions
     procedure, private :: get_nflav
-    procedure, private :: get_nlay_ref
     procedure, private :: get_neta
+    procedure, private :: get_npres
+    procedure, private :: get_ntemp
+    procedure, private :: get_nPlanckTemp
   end type
   ! -------------------------------------------------------------------------------------------------
   !
@@ -244,13 +247,11 @@ contains
     nlay  = size(play,dim=2)
     ngpt  = this%get_ngpt()
     nband = this%get_nband()
-    ngas  = this%get_ngas()
-    nflav = this%get_nflav()
     !
     ! Gas optics
     !
     error_msg = compute_gas_taus(this,                       &
-                                 ncol, nlay, ngpt, nband, ngas, nflav,   &
+                                 ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
@@ -284,12 +285,11 @@ contains
     ! Interpolate source function
     !
     error_msg = source(this,                               &
-                       ncol, nlay, ngpt, nband, nflav,     &
+                       ncol, nlay, nband, ngpt,            &
                        play, plev, tlay, tsfc,             &
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
                        tlev)
-
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
@@ -334,7 +334,7 @@ contains
     ! Gas optics
     !
     error_msg = compute_gas_taus(this,                       &
-                                 ncol, nlay, ngpt, nband, ngas, nflav,   &
+                                 ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
@@ -355,7 +355,7 @@ contains
   ! Returns optical properties and interpolation coefficients
   !
   function compute_gas_taus(this,                       &
-                            ncol, nlay, ngpt, nband, ngas, nflav, &
+                            ncol, nlay, ngpt, nband,    &
                             play, plev, tlay, gas_desc, &
                             optical_props,              &
                             jtemp, jpress, jeta, tropo, fmajor, &
@@ -363,7 +363,7 @@ contains
 
     class(ty_gas_optics), &
                                       intent(in   ) :: this
-    integer,                          intent(in   ) :: ncol, nlay, ngpt, nband, ngas, nflav
+    integer,                          intent(in   ) :: ncol, nlay, ngpt, nband
     real(wp), dimension(:,:),         intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
                                                        plev, &   ! level pressures [Pa, mb]; (ncol,nlay+1)
                                                        tlay      ! layer temperatures [K]; (ncol,nlay)
@@ -371,9 +371,9 @@ contains
     class(ty_optical_props_arry),     intent(inout) :: optical_props !inout because components are allocated
     ! Interpolation coefficients for use in internal source function
     integer,  dimension(            ncol, nlay), intent(  out) :: jtemp, jpress
-    integer,  dimension(2,    nflav,ncol, nlay), intent(  out) :: jeta
+    integer,  dimension(2,    this%get_nflav(),ncol, nlay), intent(  out) :: jeta
     logical,  dimension(            ncol, nlay), intent(  out) :: tropo
-    real(wp), dimension(2,2,2,nflav,ncol, nlay), intent(  out) :: fmajor
+    real(wp), dimension(2,2,2,this%get_nflav(),ncol, nlay), intent(  out) :: fmajor
     character(len=128)                                         :: error_msg
 
     ! Optional inputs
@@ -389,17 +389,19 @@ contains
     !
     ! Interpolation variables used in major gas but not elsewhere, so don't need exporting
     !
-    real(wp), dimension(ncol,nlay,  ngas) :: vmr     ! volume mixing ratios
-    real(wp), dimension(ncol,nlay,0:ngas) :: col_gas ! column amounts for each gas, plus col_dry
-    real(wp), dimension(2,    nflav,ncol,nlay) :: col_mix ! combination of major species's column amounts
+    real(wp), dimension(ncol,nlay,  this%get_ngas()) :: vmr     ! volume mixing ratios
+    real(wp), dimension(ncol,nlay,0:this%get_ngas()) :: col_gas ! column amounts for each gas, plus col_dry
+    real(wp), dimension(2,    this%get_nflav(),ncol,nlay) :: col_mix ! combination of major species's column amounts
                                                          ! index(1) : reference temperature level
                                                          ! index(2) : flavor
                                                          ! index(3) : layer
-    real(wp), dimension(2,2,  nflav,ncol,nlay) :: fminor ! interpolation fractions for minor species
+    real(wp), dimension(2,2,  this%get_nflav(),ncol,nlay) :: fminor ! interpolation fractions for minor species
                                                           ! index(1) : reference eta level (temperature dependent)
                                                           ! index(2) : reference temperature level
                                                           ! index(3) : flavor
                                                           ! index(4) : layer
+    integer :: ngas, nflav, neta, npres, ntemp
+    integer :: nminorlower, nminorklower,nminorupper, nminorkupper
     ! ----------------------------------------------------------
     !
     ! Error checking
@@ -439,6 +441,16 @@ contains
     end if
 
     ! ----------------------------------------------------------
+    ngas  = this%get_ngas()
+    nflav = this%get_nflav()
+    neta  = this%get_neta()
+    npres = this%get_npres()
+    ntemp = this%get_ntemp()
+    ! number of minor contributors, total num absorption coeffs
+    nminorlower  = size(this%minor_scales_with_density_lower)
+    nminorklower = size(this%kminor_lower, 1)
+    nminorupper  = size(this%minor_scales_with_density_upper)
+    nminorkupper = size(this%kminor_upper, 1)
     !
     ! Fill out the array of volume mixing ratios
     !
@@ -474,18 +486,33 @@ contains
     ! ---- calculate gas optical depths ----
     !
     call zero_array(ngpt, nlay, ncol, tau)
-    call interpolation( &
-      ncol,nlay,this%get_ngas(),nflav,this%get_neta(), & ! dimensions
-      this%flavor, &
-      this%press_ref_log,this%temp_ref, &
-      this%press_ref_log_delta,this%temp_ref_min, this%temp_ref_delta, & ! inputs from object
-      this%press_ref_trop_log, this%vmr_ref, this%get_nlay_ref(), &
-      play,tlay,col_gas, & ! local input
-      jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress) ! output
+    call interpolation(               &
+            ncol,nlay,                &        ! problem dimensions
+            ngas, nflav, neta, npres, ntemp, & ! interpolation dimensions
+            this%flavor,              &
+            this%press_ref_log,       &
+            this%temp_ref,            &
+            this%press_ref_log_delta, &
+            this%temp_ref_min,        &
+            this%temp_ref_delta,      &
+            this%press_ref_trop_log,  &
+            this%vmr_ref, &
+            play,         &
+            tlay,         &
+            col_gas,      &
+            jtemp,        & ! outputs
+            fmajor,fminor,&
+            col_mix,      &
+            tropo,        &
+            jeta,jpress)
     call compute_tau_absorption(                     &
-            ncol,nlay,ngpt,this%get_ngas(),nflav,    &  ! dimensions
+            ncol,nlay,nband,ngpt,                    &  ! dimensions
+            ngas,nflav,neta,npres,ntemp,             &
+            nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
+            nminorupper, nminorkupper,               &
             idx_h2o,                                 &
             this%gpoint_flavor,                      &
+            this%get_band_lims_gpoint(),             &
             this%kmajor,                             &
             this%kminor_lower,                       &
             this%kminor_upper,                       &
@@ -507,12 +534,14 @@ contains
             jeta,jtemp,jpress,                       &
             tau)
     if (allocated(this%krayl)) then
-      call compute_tau_rayleigh(     & !Rayleigh scattering optical depths
-            ncol,nlay,ngpt,ngas,nflav,      & ! dimensions
-            this%gpoint_flavor,             &
-            this%krayl,                     & ! inputs from object
-            idx_h2o, col_dry_wk,col_gas,       &
-            fminor,jeta,tropo,jtemp,        & ! local input
+      call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
+            ncol,nlay,nband,ngpt,        &
+            ngas,nflav,neta,npres,ntemp, & ! dimensions
+            this%gpoint_flavor,          &
+            this%get_band_lims_gpoint(), &
+            this%krayl,                  & ! inputs from object
+            idx_h2o, col_dry_wk,col_gas, &
+            fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
     end if
     if (error_msg /= '') return
@@ -526,7 +555,7 @@ contains
   ! Compute Planck source functions at layer centers and levels
   !
   function source(this,                               &
-                  ncol, nlay, ngpt, nbnd, nflv,       &
+                  ncol, nlay, nbnd, ngpt,             &
                   play, plev, tlay, tsfc,             &
                   jtemp, jpress, jeta, tropo, fmajor, &
                   sources,                            & ! Planck sources
@@ -534,7 +563,7 @@ contains
                   result(error_msg)
     ! inputs
     class(ty_gas_optics),    intent(in ) :: this
-    integer,                               intent(in ) :: ncol, nlay, ngpt, nbnd, nflv
+    integer,                               intent(in ) :: ncol, nlay, nbnd, ngpt
     real(wp), dimension(ncol,nlay),        intent(in ) :: play   ! layer pressures [Pa, mb]
     real(wp), dimension(ncol,nlay+1),      intent(in ) :: plev   ! level pressures [Pa, mb]
     real(wp), dimension(ncol,nlay),        intent(in ) :: tlay   ! layer temperatures [K]
@@ -542,19 +571,21 @@ contains
     ! Interplation coefficients
     integer,  dimension(ncol,nlay),        intent(in ) :: jtemp, jpress
     logical,  dimension(ncol,nlay),        intent(in ) :: tropo
-    real(wp), dimension(2,2,2,nflv,ncol,nlay),   &
+    real(wp), dimension(2,2,2,this%get_nflav(),ncol,nlay),   &
                                            intent(in ) :: fmajor
-    integer,  dimension(2,   nflv,ncol,nlay),   &
+    integer,  dimension(2,   this%get_nflav(),ncol,nlay),   &
                                            intent(in ) :: jeta
     class(ty_source_func_lw    ),        intent(inout) :: sources
     real(wp), dimension(ncol,nlay+1),      intent(in ), &
                                       optional, target :: tlev          ! level temperatures [K]
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
-    integer :: icol, ilay
+    integer                                      :: icol, ilay
+    real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
+    real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
-    real(wp), dimension(size(play,dim=1),size(play,dim=2)+1), target  :: tlev_arr
-    real(wp), dimension(:,:),                                 pointer :: tlev_wk => NULL()
+    real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
+    real(wp), dimension(:,:),            pointer :: tlev_wk => NULL()
     ! ----------------------------------------------------------
     error_msg = ""
     !
@@ -591,12 +622,17 @@ contains
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
-    call compute_Planck_source(ncol, nlay, ngpt, nbnd, nflv, &
+    call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
+                this%get_nflav(), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
-                this%get_gpoint_bands(), this%planck_frac, this%temp_ref_min,&
+                this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sources%sfc_source, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec)
+                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
+    sources%sfc_source     = transpose(sfc_source_t)
+    sources%lay_source     = reorder123x321(lay_source_t)
+    sources%lev_source_inc = reorder123x321(lev_source_inc_t)
+    sources%lev_source_dec = reorder123x321(lev_source_dec_t)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1059,7 +1095,7 @@ contains
   pure function source_is_internal(this)
     class(ty_gas_optics), intent(in) :: this
     logical                                        :: source_is_internal
-    source_is_internal = allocated(this%totplnk).and.allocated(this%planck_frac)
+    source_is_internal = allocated(this%totplnk) .and. allocated(this%planck_frac)
   end function source_is_internal
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1518,27 +1554,51 @@ contains
   end subroutine combine_and_reorder
 
   !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! return the number of reference pressure layers
-  !
-  pure function get_nlay_ref(this)
-    class(ty_gas_optics), intent(in) :: this
-    integer                                        :: get_nlay_ref
-
-    get_nlay_ref = size(this%kmajor,dim=3)
-  end function get_nlay_ref
-
+  ! Sizes of tables: pressure, temperate, eta (mixing fraction)
+  !   Equivalent routines for the number of gases and flavors (get_ngas(), get_nflav()) are defined above because they're
+  !   used in function defintions
+  ! Table kmajor has dimensions (ngpt, neta, npres, ntemp)
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! return extent of eta dimension
   !
   pure function get_neta(this)
     class(ty_gas_optics), intent(in) :: this
-    integer                                        :: get_neta
+    integer                          :: get_neta
 
     get_neta = size(this%kmajor,dim=2)
   end function
+  ! --------------------------------------------------------------------------------------
+  !
+  ! return the number of pressures in reference profile
+  !   absorption coefficient table is one bigger since a pressure is repeated in upper/lower atmos
+  !
+  pure function get_npres(this)
+    class(ty_gas_optics), intent(in) :: this
+    integer                          :: get_npres
 
+    get_npres = size(this%kmajor,dim=3)-1
+  end function get_npres
+  ! --------------------------------------------------------------------------------------
+  !
+  ! return the number of temperatures
+  !
+  pure function get_ntemp(this)
+    class(ty_gas_optics), intent(in) :: this
+    integer                          :: get_ntemp
+
+    get_ntemp = size(this%kmajor,dim=4)
+  end function get_ntemp
+  ! --------------------------------------------------------------------------------------
+  !
+  ! return the number of temperatures for Planck function
+  !
+  pure function get_nPlanckTemp(this)
+    class(ty_gas_optics), intent(in) :: this
+    integer                          :: get_nPlanckTemp
+
+    get_nPlanckTemp = size(this%totplnk,dim=1) ! dimensions are Planck-temperature, band
+  end function get_nPlanckTemp
   !--------------------------------------------------------------------------------------------------------------------
   ! Generic procedures for checking sizes, limits
   !--------------------------------------------------------------------------------------------------------------------

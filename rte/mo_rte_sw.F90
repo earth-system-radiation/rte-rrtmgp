@@ -46,7 +46,7 @@ contains
                   sfc_alb_dir, sfc_alb_dif,        &
                   fluxes, inc_flux_dif) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: atmos           ! Optical properties provided as arrays
-    logical,                      intent(in   ) :: top_at_1        ! Is the top of the domain at index 1?
+    logical(wl),                  intent(in   ) :: top_at_1        ! Is the top of the domain at index 1?
                                                                    ! (if not, ordering is bottom-to-top)
     real(wp), dimension(:),       intent(in   ) :: mu0             ! cosine of solar zenith angle (ncol)
     real(wp), dimension(:,:),     intent(in   ) :: inc_flux,    &  ! incident flux at top of domain [W/m2] (ncol, ngpt)

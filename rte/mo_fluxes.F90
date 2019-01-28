@@ -17,7 +17,7 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_fluxes
-  use mo_rte_kind,      only: wp
+  use mo_rte_kind,      only: wp, wl
   use mo_optical_props, only: ty_optical_props
   use mo_fluxes_broadband_kernels, &
                         only: sum_broadband, net_broadband
@@ -68,7 +68,7 @@ module mo_fluxes
       real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_up ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
       real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_dn ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
       class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
-      logical,                           intent(in   ) :: top_at_1
+      logical(wl),                       intent(in   ) :: top_at_1
       real(kind=wp), dimension(:,:,:), optional, &
                                          intent(in   ) :: gpt_flux_dn_dir! Direct flux down
       character(len=128)                               :: error_msg
@@ -81,7 +81,7 @@ module mo_fluxes
     function are_desired_abstract(this)
       import ty_fluxes
       class(ty_fluxes), intent(in   ) :: this
-      logical                         :: are_desired_abstract
+      logical(wl)                     :: are_desired_abstract
     end function are_desired_abstract
     ! ----------------------
   end interface
@@ -96,7 +96,7 @@ contains
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_up ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_dn ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
-    logical,                           intent(in   ) :: top_at_1
+    logical(wl),                       intent(in   ) :: top_at_1
     real(kind=wp), dimension(:,:,:), optional, &
                                        intent(in   ) :: gpt_flux_dn_dir! Direct flux down
     character(len=128)                               :: error_msg
@@ -190,7 +190,7 @@ contains
   ! --------------------------------------------------------------------------------------
   function are_desired_broadband(this)
     class(ty_fluxes_broadband), intent(in   ) :: this
-    logical                                   :: are_desired_broadband
+    logical(wl),                              :: are_desired_broadband
 
     are_desired_broadband = any( [associated(this%flux_up),     &
                                   associated(this%flux_dn),     &

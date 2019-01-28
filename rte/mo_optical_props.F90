@@ -39,7 +39,7 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_optical_props
-  use mo_rte_kind,              only: wp
+  use mo_rte_kind,              only: wp, wl
   use mo_optical_props_kernels, only: &
         increment_1scalar_by_1scalar, increment_1scalar_by_2stream, increment_1scalar_by_nstream, &
         increment_2stream_by_1scalar, increment_2stream_by_2stream, increment_2stream_by_nstream, &
@@ -291,7 +291,7 @@ contains
   ! -------------------------------------------------------------------------------------------------
   pure function is_initialized_base(this)
     class(ty_optical_props), intent(in) :: this
-    logical                             :: is_initialized_base
+    logical(wl)                         :: is_initialized_base
 
     is_initialized_base = allocated(this%band2gpt)
   end function is_initialized_base
@@ -1121,7 +1121,7 @@ contains
   !
   pure function bands_are_equal(this, that)
     class(ty_optical_props), intent(in) :: this, that
-    logical                             :: bands_are_equal
+    logical(wl)                         :: bands_are_equal
 
     bands_are_equal = this%get_nband() == that%get_nband() .and. &
                       this%get_nband() > 0
@@ -1137,7 +1137,7 @@ contains
   !
   pure function gpoints_are_equal(this, that)
     class(ty_optical_props), intent(in) :: this, that
-    logical                             :: gpoints_are_equal
+    logical(wl)                         :: gpoints_are_equal
 
     gpoints_are_equal = this%bands_are_equal(that) .and. &
                         this%get_ngpt() == that%get_ngpt()

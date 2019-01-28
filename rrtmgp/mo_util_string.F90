@@ -17,6 +17,7 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_util_string
+  use mo_rte_kind, only : wl
   implicit none
   private
   public :: lower_case, string_in_array, string_loc_in_array
@@ -48,7 +49,7 @@ contains
   pure function string_in_array(string, array)
     character(len=*),               intent(in) :: string
     character(len=*), dimension(:), intent(in) :: array
-    logical                                    :: string_in_array
+    logical(wl)                                :: string_in_array
 
     integer :: i
     character(len=len_trim(string)) :: lc_string

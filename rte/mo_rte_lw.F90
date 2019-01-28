@@ -59,7 +59,7 @@ contains
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
-    logical,                      intent(in   ) :: top_at_1          ! Is the top of the domain at index 1?
+    logical(wl),                  intent(in   ) :: top_at_1          ! Is the top of the domain at index 1?
                                                                      ! (if not, ordering is bottom-to-top)
     type(ty_source_func_lw),      intent(in   ) :: sources
     real(wp), dimension(:,:),     intent(in   ) :: sfc_emis    ! emissivity at surface [] (nband, ncol)

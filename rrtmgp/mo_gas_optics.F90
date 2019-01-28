@@ -97,11 +97,11 @@ module mo_gas_optics
     ! Water vapor self- and foreign continua work like this, as do
     !   all collision-induced abosption pairs
     !
-    logical, dimension(:), allocatable :: minor_scales_with_density_lower, &
-                                          minor_scales_with_density_upper
-    logical, dimension(:), allocatable :: scale_by_complement_lower, scale_by_complement_upper
-    integer, dimension(:), allocatable :: idx_minor_lower,           idx_minor_upper
-    integer, dimension(:), allocatable :: idx_minor_scaling_lower,   idx_minor_scaling_upper
+    logical(wl), dimension(:), allocatable :: minor_scales_with_density_lower, &
+                                              minor_scales_with_density_upper
+    logical(wl), dimension(:), allocatable :: scale_by_complement_lower, scale_by_complement_upper
+    integer,     dimension(:), allocatable :: idx_minor_lower,           idx_minor_upper
+    integer,     dimension(:), allocatable :: idx_minor_scaling_lower,   idx_minor_scaling_upper
     !
     ! Index into table of absorption coefficients
     !
@@ -135,7 +135,7 @@ module mo_gas_optics
     ! Ancillary
     ! -----------------------------------------------------------------------------------
     ! Index into %gas_names -- is this a key species in any band?
-    logical, dimension(:), allocatable :: is_key
+    logical(wl), dimension(:), allocatable :: is_key
     ! -----------------------------------------------------------------------------------
 
   contains
@@ -236,10 +236,10 @@ contains
     ! ----------------------------------------------------------
     ! Local variables
     ! Interpolation coefficients for use in source function
-    integer,  dimension(size(play,dim=1), size(play,dim=2)) :: jtemp, jpress
-    logical,  dimension(size(play,dim=1), size(play,dim=2)) :: tropo
-    real(wp), dimension(2,2,2,this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: fmajor
-    integer,  dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
+    integer,     dimension(size(play,dim=1), size(play,dim=2)) :: jtemp, jpress
+    logical(wl), dimension(size(play,dim=1), size(play,dim=2)) :: tropo
+    real(wp),    dimension(2,2,2,this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: fmajor
+    integer,     dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
     ! ----------------------------------------------------------
@@ -317,10 +317,10 @@ contains
     ! ----------------------------------------------------------
     ! Local variables
     ! Interpolation coefficients for use in source function
-    integer,  dimension(size(play,dim=1), size(play,dim=2)) :: jtemp, jpress
-    logical,  dimension(size(play,dim=1), size(play,dim=2)) :: tropo
-    real(wp), dimension(2,2,2,this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: fmajor
-    integer,  dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
+    integer,     dimension(size(play,dim=1), size(play,dim=2)) :: jtemp, jpress
+    logical(wl), dimension(size(play,dim=1), size(play,dim=2)) :: tropo
+    real(wp),    dimension(2,2,2,this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: fmajor
+    integer,     dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
     ! ----------------------------------------------------------
@@ -370,10 +370,10 @@ contains
     type(ty_gas_concs),               intent(in   ) :: gas_desc  ! Gas volume mixing ratios
     class(ty_optical_props_arry),     intent(inout) :: optical_props !inout because components are allocated
     ! Interpolation coefficients for use in internal source function
-    integer,  dimension(            ncol, nlay), intent(  out) :: jtemp, jpress
-    integer,  dimension(2,    this%get_nflav(),ncol, nlay), intent(  out) :: jeta
-    logical,  dimension(            ncol, nlay), intent(  out) :: tropo
-    real(wp), dimension(2,2,2,this%get_nflav(),ncol, nlay), intent(  out) :: fmajor
+    integer,     dimension(            ncol, nlay), intent(  out) :: jtemp, jpress
+    integer,     dimension(2,    this%get_nflav(),ncol, nlay), intent(  out) :: jeta
+    logical(wl), dimension(            ncol, nlay), intent(  out) :: tropo
+    real(wp),    dimension(2,2,2,this%get_nflav(),ncol, nlay), intent(  out) :: fmajor
     character(len=128)                                         :: error_msg
 
     ! Optional inputs
@@ -547,7 +547,7 @@ contains
     if (error_msg /= '') return
 
     ! Combine optical depths and reorder for radiative transfer solver.
-    call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
+    call combine_and_reorder(tau, tau_rayleigh, logical(allocated(this%krayl), wl), optical_props)
 
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
@@ -570,12 +570,12 @@ contains
     real(wp), dimension(ncol),             intent(in ) :: tsfc   ! surface skin temperatures [K]
     ! Interplation coefficients
     integer,  dimension(ncol,nlay),        intent(in ) :: jtemp, jpress
-    logical,  dimension(ncol,nlay),        intent(in ) :: tropo
-    real(wp), dimension(2,2,2,this%get_nflav(),ncol,nlay),   &
+    logical(wl), dimension(ncol,nlay),     intent(in ) :: tropo
+    real(wp),    dimension(2,2,2,this%get_nflav(),ncol,nlay),   &
                                            intent(in ) :: fmajor
     integer,  dimension(2,   this%get_nflav(),ncol,nlay),   &
                                            intent(in ) :: jeta
-    class(ty_source_func_lw    ),        intent(inout) :: sources
+    class(ty_source_func_lw    ),          intent(inout) :: sources
     real(wp), dimension(ncol,nlay+1),      intent(in ), &
                                       optional, target :: tlev          ! level temperatures [K]
     character(len=128)                                 :: error_msg
@@ -679,11 +679,11 @@ contains
                                                              minor_gases_upper
     integer,            dimension(:,:),     intent(in   ) :: minor_limits_gpt_lower, &
                                                              minor_limits_gpt_upper
-    logical,            dimension(:),       intent(in   ) :: minor_scales_with_density_lower, &
+    logical(wl),        dimension(:),       intent(in   ) :: minor_scales_with_density_lower, &
                                                              minor_scales_with_density_upper
     character(len=*),   dimension(:),       intent(in   ) :: scaling_gas_lower, &
                                                              scaling_gas_upper
-    logical,            dimension(:),       intent(in   ) :: scale_by_complement_lower,&
+    logical(wl),        dimension(:),       intent(in   ) :: scale_by_complement_lower,&
                                                              scale_by_complement_upper
     integer,            dimension(:),       intent(in   ) :: kminor_start_lower,&
                                                              kminor_start_upper
@@ -762,13 +762,13 @@ contains
     integer,  dimension(:,:),     intent(in) :: &
                                                 minor_limits_gpt_lower, &
                                                 minor_limits_gpt_upper
-    logical,  dimension(:),       intent(in) :: &
+    logical(wl), dimension(:),    intent(in) :: &
                                                 minor_scales_with_density_lower, &
                                                 minor_scales_with_density_upper
     character(len=*),   dimension(:),intent(in) :: &
                                                 scaling_gas_lower, &
                                                 scaling_gas_upper
-    logical,  dimension(:),       intent(in) :: &
+    logical(wl), dimension(:),    intent(in) :: &
                                                 scale_by_complement_lower, &
                                                 scale_by_complement_upper
     integer,  dimension(:),       intent(in) :: &
@@ -850,21 +850,21 @@ contains
                                                 minor_gases_upper
     integer,  dimension(:,:),     intent(in) :: minor_limits_gpt_lower, &
                                                 minor_limits_gpt_upper
-    logical,  dimension(:),       intent(in) :: minor_scales_with_density_lower, &
+    logical(wl), dimension(:),    intent(in) :: minor_scales_with_density_lower, &
                                                 minor_scales_with_density_upper
     character(len=*),   dimension(:),&
                                   intent(in) :: scaling_gas_lower, &
                                                 scaling_gas_upper
-    logical,  dimension(:),       intent(in) :: scale_by_complement_lower, &
-                                                   scale_by_complement_upper
+    logical(wl), dimension(:),    intent(in) :: scale_by_complement_lower, &
+                                                scale_by_complement_upper
     integer,  dimension(:),       intent(in) :: kminor_start_lower, &
                                                 kminor_start_upper
     real(wp), dimension(:,:,:),   intent(in), &
                                  allocatable :: rayl_lower, rayl_upper
     character(len=128)                       :: err_message
     ! --------------------------------------------------------------------------
-    logical,  dimension(:),     allocatable :: gas_is_present
-    logical,  dimension(:),     allocatable :: key_species_present_init
+    logical(wl), dimension(:),  allocatable :: gas_is_present
+    logical(wl), dimension(:),  allocatable :: key_species_present_init
     integer,  dimension(:,:,:), allocatable :: key_species_red
     real(wp), dimension(:,:,:), allocatable :: vmr_ref_red
     character(len=256), &
@@ -1021,7 +1021,7 @@ contains
   function check_key_species_present_init(gas_names, &
     key_species_present_init) result(err_message)
 
-    logical, dimension(:), intent(in) :: key_species_present_init
+    logical(wl), dimension(:), intent(in) :: key_species_present_init
     character(len=*), dimension(:), intent(in) :: gas_names
 
     character(len=128)                             :: err_message
@@ -1073,7 +1073,7 @@ contains
     ! List of minor gases to be used in gas_optics()
     character(len=32), dimension(:), allocatable         :: get_minor_list
     ! Logical flag for minor species in specification (T = minor; F = not minor)
-    logical, dimension(size(names_spec))                 :: gas_is_present
+    logical(wl), dimension(size(names_spec))             :: gas_is_present
     integer                                              :: igas, icnt
 
     if (allocated(get_minor_list)) deallocate(get_minor_list)
@@ -1094,7 +1094,7 @@ contains
   !
   pure function source_is_internal(this)
     class(ty_gas_optics), intent(in) :: this
-    logical                                        :: source_is_internal
+    logical(wl)                                    :: source_is_internal
     source_is_internal = allocated(this%totplnk) .and. allocated(this%planck_frac)
   end function source_is_internal
   !--------------------------------------------------------------------------------------------------------------------
@@ -1103,7 +1103,7 @@ contains
   !
   pure function source_is_external(this)
     class(ty_gas_optics), intent(in) :: this
-    logical                                        :: source_is_external
+    logical(wl)                                    :: source_is_external
     source_is_external = allocated(this%solar_src)
   end function source_is_external
 
@@ -1219,7 +1219,7 @@ contains
   ! ---------------------------------------------------------------------------------------
   ! true is key_species_pair exists in key_species_list
   pure function key_species_pair_exists(key_species_list, key_species_pair)
-    logical :: key_species_pair_exists
+    logical(wl) :: key_species_pair_exists
     integer, dimension(:,:), intent(in) :: key_species_list
     integer, dimension(2), intent(in) :: key_species_pair
     integer :: i
@@ -1328,7 +1328,7 @@ contains
     integer,  dimension(:,:,:),   intent(in) :: key_species
     integer,  dimension(:,:,:), allocatable, intent(out) :: key_species_red
 
-    logical, dimension(:), allocatable, intent(out) :: key_species_present_init
+    logical(wl), dimension(:), allocatable, intent(out) :: key_species_present_init
     integer :: ip, ia, it, np, na, nt
 
     np = size(key_species,dim=1)
@@ -1385,11 +1385,11 @@ contains
                                   intent(in) :: minor_gases_atm
     integer,  dimension(:,:),     intent(in) :: &
                                                 minor_limits_gpt_atm
-    logical,  dimension(:),       intent(in) :: &
+    logical(wl), dimension(:),    intent(in) :: &
                                                 minor_scales_with_density_atm
     character(len=*),   dimension(:),intent(in) :: &
                                                 scaling_gas_atm
-    logical,  dimension(:), intent(in) :: &
+    logical(wl), dimension(:), intent(in) :: &
                                                 scale_by_complement_atm
     integer,  dimension(:), intent(in) :: &
                                                 kminor_start_atm
@@ -1399,11 +1399,11 @@ contains
                                   allocatable, intent(out) :: minor_gases_atm_red
     integer,  dimension(:,:),     allocatable, intent(out) :: &
                                                 minor_limits_gpt_atm_red
-    logical,  dimension(:),       allocatable, intent(out) :: &
+    logical(wl), dimension(:),    allocatable, intent(out) :: &
                                                 minor_scales_with_density_atm_red
-    character(len=*),   dimension(:),allocatable, intent(out) :: &
+    character(len=*),   dimension(:), allocatable, intent(out) :: &
                                                 scaling_gas_atm_red
-    logical,  dimension(:), allocatable, intent(out) :: &
+    logical(wl), dimension(:), allocatable, intent(out) :: &
                                                 scale_by_complement_atm_red
     integer,  dimension(:), allocatable, intent(out) :: &
                                                 kminor_start_atm_red
@@ -1412,7 +1412,7 @@ contains
     integer :: i, j
     integer :: idx_mnr, nm, tot_g, red_nm
     integer :: icnt, n_elim, ng
-    logical, dimension(:), allocatable :: gas_is_present
+    logical(wl), dimension(:), allocatable :: gas_is_present
 
     nm = size(minor_gases_atm)
     tot_g=0
@@ -1515,7 +1515,7 @@ contains
  subroutine combine_and_reorder(tau, tau_rayleigh, has_rayleigh, optical_props)
     real(wp), dimension(:,:,:),   intent(in) :: tau
     real(wp), dimension(:,:,:),   intent(in) :: tau_rayleigh
-    logical,                      intent(in) :: has_rayleigh
+    logical(wl),                  intent(in) :: has_rayleigh
     class(ty_optical_props_arry), intent(inout) :: optical_props
 
     integer :: ncol, nlay, ngpt, nmom

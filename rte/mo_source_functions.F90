@@ -15,7 +15,7 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_source_functions
-  use mo_rte_kind,      only: wp
+  use mo_rte_kind,      only: wp, wl
   use mo_optical_props, only: ty_optical_props
   implicit none
   ! -------------------------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ contains
   ! ------------------------------------------------------------------------------------------
   pure function is_allocated_lw(this)
     class(ty_source_func_lw), intent(in) :: this
-    logical                              :: is_allocated_lw
+    logical(wl)                          :: is_allocated_lw
 
     is_allocated_lw = this%is_initialized() .and. &
                       allocated(this%sfc_source)
@@ -125,7 +125,7 @@ contains
   ! ------------------------------------------------------------------------------------------
   pure function is_allocated_sw(this)
     class(ty_source_func_sw), intent(in) :: this
-    logical                              :: is_allocated_sw
+    logical(wl)                          :: is_allocated_sw
 
     is_allocated_sw = this%ty_optical_props%is_initialized() .and. &
                       allocated(this%toa_source)

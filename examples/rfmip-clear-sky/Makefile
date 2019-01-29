@@ -13,8 +13,8 @@ FCINCLUDE += -I$(RRTMGP_DIR)
 # netcdf library, module files
 # C and Fortran interfaces respectively
 #
-NCHOME = /usr/local
-NFHOME = /usr/local
+NCHOME = /opt/local
+NFHOME = $(HOME)/Applications/$(FC)
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
@@ -25,7 +25,7 @@ LIBS      += -lnetcdff -lnetcdf
 #
 TIMING=no
 # Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
-FCFLAGS += -cpp
+FCFLAGS += -fpp
 ifeq ($(TIMING),yes)
 	#
 	# Timing library

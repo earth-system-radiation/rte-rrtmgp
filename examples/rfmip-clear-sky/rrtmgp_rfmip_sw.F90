@@ -44,7 +44,7 @@ program rrtmgp_rfmip_sw
   !
   ! Working precision for real variables
   !
-  use mo_rte_kind,           only: wp
+  use mo_rte_kind,           only: wp, wl
   !
   ! Optical properties of the atmosphere as array of values
   !   In the longwave we include only absorption optical depth (_1scl)
@@ -93,7 +93,7 @@ program rrtmgp_rfmip_sw
                                 kdist_file = 'coefficients_sw.nc', &
                                 flxdn_file = 'rsd_template.nc', flxup_file = 'rsu_template.nc'
   integer                    :: nargs, ncol, nlay, nexp, nblocks, block_size
-  logical                    :: top_at_1
+  logical(wl)                :: top_at_1
   integer                    :: b, icol, igpt
   character(len=6)           :: block_size_char
 

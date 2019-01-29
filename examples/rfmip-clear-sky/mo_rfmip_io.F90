@@ -308,17 +308,17 @@ contains
       ! Read the values as a function of experiment
       gas_conc_temp_1d = read_field(ncid, gas_name_in_file, nexp_l) * read_scaling(ncid, gas_name_in_file)
 
-  	  do b = 1, nblocks
-          ! Does every value in this block belong to the same experiment?
-  	    if(all(exp_num(1,b) == exp_num(2:,b))) then
-  	      ! Provide a scalar value
-  		    call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), gas_conc_temp_1d(exp_num(1,b))))
-  		  else
-  		  ! Create 2D field, blocksize x nlay, with scalar values from each experiment
-  		  call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), &
-  		                                             spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
-  		  end if
-  	  end do
+      do b = 1, nblocks
+        ! Does every value in this block belong to the same experiment?
+        if(all(exp_num(1,b) == exp_num(2:,b))) then
+          ! Provide a scalar value
+          call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), gas_conc_temp_1d(exp_num(1,b))))
+        else
+          ! Create 2D field, blocksize x nlay, with scalar values from each experiment
+          call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), &
+          spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
+        end if
+      end do
 
     end do
     ncid = nf90_close(ncid)

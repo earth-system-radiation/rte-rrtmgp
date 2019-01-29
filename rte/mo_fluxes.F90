@@ -63,12 +63,12 @@ module mo_fluxes
     !
     function reduce_abstract(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
       import ty_fluxes, ty_optical_props
-      import wp
+      import wp, wl
       class(ty_fluxes),                  intent(inout) :: this
       real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_up ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
       real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_dn ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
       class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
-      logical(wl),                       intent(in   ) :: top_at_1
+      logical(kind=wl),                  intent(in   ) :: top_at_1
       real(kind=wp), dimension(:,:,:), optional, &
                                          intent(in   ) :: gpt_flux_dn_dir! Direct flux down
       character(len=128)                               :: error_msg
@@ -80,6 +80,7 @@ module mo_fluxes
     !
     function are_desired_abstract(this)
       import ty_fluxes
+      import wl
       class(ty_fluxes), intent(in   ) :: this
       logical(wl)                     :: are_desired_abstract
     end function are_desired_abstract
@@ -96,7 +97,7 @@ contains
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_up ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_dn ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
-    logical(wl),                       intent(in   ) :: top_at_1
+    logical(kind=wl),                  intent(in   ) :: top_at_1
     real(kind=wp), dimension(:,:,:), optional, &
                                        intent(in   ) :: gpt_flux_dn_dir! Direct flux down
     character(len=128)                               :: error_msg
@@ -190,7 +191,7 @@ contains
   ! --------------------------------------------------------------------------------------
   function are_desired_broadband(this)
     class(ty_fluxes_broadband), intent(in   ) :: this
-    logical(wl),                              :: are_desired_broadband
+    logical(kind=wl)                          :: are_desired_broadband
 
     are_desired_broadband = any( [associated(this%flux_up),     &
                                   associated(this%flux_dn),     &

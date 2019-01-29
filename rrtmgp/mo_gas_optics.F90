@@ -371,9 +371,9 @@ contains
     class(ty_optical_props_arry),     intent(inout) :: optical_props !inout because components are allocated
     ! Interpolation coefficients for use in internal source function
     integer,     dimension(            ncol, nlay), intent(  out) :: jtemp, jpress
-    integer,     dimension(2,    this%get_nflav(),ncol, nlay), intent(  out) :: jeta
+    integer,     dimension(2,    get_nflav(this),ncol, nlay), intent(  out) :: jeta
     logical(wl), dimension(            ncol, nlay), intent(  out) :: tropo
-    real(wp),    dimension(2,2,2,this%get_nflav(),ncol, nlay), intent(  out) :: fmajor
+    real(wp),    dimension(2,2,2,get_nflav(this),ncol, nlay), intent(  out) :: fmajor
     character(len=128)                                         :: error_msg
 
     ! Optional inputs
@@ -571,9 +571,9 @@ contains
     ! Interplation coefficients
     integer,  dimension(ncol,nlay),        intent(in ) :: jtemp, jpress
     logical(wl), dimension(ncol,nlay),     intent(in ) :: tropo
-    real(wp),    dimension(2,2,2,this%get_nflav(),ncol,nlay),   &
+    real(wp),    dimension(2,2,2,get_nflav(this),ncol,nlay),   &
                                            intent(in ) :: fmajor
-    integer,  dimension(2,   this%get_nflav(),ncol,nlay),   &
+    integer,  dimension(2,   get_nflav(this),ncol,nlay),   &
                                            intent(in ) :: jeta
     class(ty_source_func_lw    ),          intent(inout) :: sources
     real(wp), dimension(ncol,nlay+1),      intent(in ), &
@@ -1113,7 +1113,7 @@ contains
   !
   pure function get_gases(this)
     class(ty_gas_optics), intent(in) :: this
-    character(32), dimension(this%get_ngas())     :: get_gases
+    character(32), dimension(get_ngas(this))     :: get_gases
 
     get_gases = this%gas_names
   end function get_gases

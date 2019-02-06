@@ -232,7 +232,7 @@ contains
     ! Optional inputs
     real(wp), dimension(:,:),   intent(in   ), &
                            optional, target :: col_dry, &  ! Column dry amount; dim(ncol,nlay)
-                                               tlev        ! level temperatures [K]l (ncol,nlay+1)
+                                               tlev        ! level temperatures [K]; (ncol,nlay+1)
     ! ----------------------------------------------------------
     ! Local variables
     ! Interpolation coefficients for use in source function
@@ -475,7 +475,7 @@ contains
       col_dry_wk => col_dry_arr
     end if
     !
-    ! compute column gas amounts
+    ! compute column gas amounts [molec/cm^2]
     !
     col_gas(1:ncol,1:nlay,0) = col_dry_wk(1:ncol,1:nlay)
     do igas = 1, ngas
@@ -1167,8 +1167,8 @@ contains
   !
   function get_col_dry(vmr_h2o, plev, tlay, latitude) result(col_dry)
     ! input
-    real(wp), dimension(:,:), intent(in) :: vmr_h2o  ! volume mixing ratio of all gases excluding water; (ncol,nlay)
-    real(wp), dimension(:,:), intent(in) :: plev     ! Layer boundary pressures [Pa, mb] (ncol,nlay+1)
+    real(wp), dimension(:,:), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air; (ncol,nlay)
+    real(wp), dimension(:,:), intent(in) :: plev     ! Layer boundary pressures [Pa] (ncol,nlay+1)
     real(wp), dimension(:,:), intent(in) :: tlay     ! Layer temperatures [K] (ncol,nlay)
     real(wp), dimension(:),   optional, &
                               intent(in) :: latitude ! Latitude [degrees] (ncol)
@@ -1194,7 +1194,7 @@ contains
     end if
     delta_plev(:,:) = abs(plev(:,1:nlev-1) - plev(:,2:nlev))
 
-    ! Get average mass of air
+    ! Get average mass of moist air per mole of moist air
     m_air(:,:) = (m_dry+m_h2o*vmr_h2o(:,:))/(1.+vmr_h2o(:,:))
 
     ! Hydrostatic equation

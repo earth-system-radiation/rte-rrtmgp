@@ -1,5 +1,5 @@
 module mo_simple_netcdf
-  use mo_rte_kind, only: wp
+  use mo_rte_kind, only: wp, wl
   use netcdf
   implicit none
   private
@@ -240,7 +240,7 @@ contains
     character(len=*), intent(in) :: varName
     integer,          intent(in) :: nx
     integer,      dimension(nx) :: read_logical_tmp
-    logical,      dimension(nx) :: read_logical_vec
+    logical(wl),  dimension(nx) :: read_logical_vec
 
     integer :: varid
     integer :: ix
@@ -280,7 +280,7 @@ contains
     !
     integer,          intent(in) :: ncid
     character(len=*), intent(in) :: dimName
-    logical :: dim_exists
+    logical                      :: dim_exists
 
     integer :: dimid
     dim_exists = nf90_inq_dimid(ncid, trim(dimName), dimid) == NF90_NOERR
@@ -292,7 +292,7 @@ contains
     !
     integer,          intent(in) :: ncid
     character(len=*), intent(in) :: varName
-    logical :: var_exists
+    logical                      :: var_exists
 
     integer :: varId
     var_exists = nf90_inq_varid(ncid, trim(varName), varid) == NF90_NOERR

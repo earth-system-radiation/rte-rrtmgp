@@ -20,7 +20,7 @@ module mo_load_coefficients
   !
   ! Modules for working with rte and rrtmgp
   !
-  use mo_rte_kind,           only: wp
+  use mo_rte_kind,           only: wp, wl
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_gas_optics,         only: ty_gas_optics
   ! --------------------------------------------------
@@ -63,9 +63,9 @@ contains
     character(len=32), dimension(:),  allocatable :: gas_minor, identifier_minor
     character(len=32), dimension(:),  allocatable :: minor_gases_lower,               minor_gases_upper
     integer, dimension(:,:),          allocatable :: minor_limits_gpt_lower,          minor_limits_gpt_upper
-    logical, dimension(:),            allocatable :: minor_scales_with_density_lower, minor_scales_with_density_upper
+    logical(wl), dimension(:),        allocatable :: minor_scales_with_density_lower, minor_scales_with_density_upper
     character(len=32), dimension(:),  allocatable :: scaling_gas_lower,               scaling_gas_upper
-    logical, dimension(:),            allocatable :: scale_by_complement_lower,       scale_by_complement_upper
+    logical(wl), dimension(:),        allocatable :: scale_by_complement_lower,       scale_by_complement_upper
     integer, dimension(:),            allocatable :: kminor_start_lower,              kminor_start_upper
     real(wp), dimension(:,:,:),       allocatable :: kminor_lower,                    kminor_upper
 

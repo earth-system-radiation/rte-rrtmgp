@@ -4,9 +4,6 @@
 # Fortran compiler command
 export FC = ifort
 #
-# Setting macro TIMING=yes uses routines from the General Purpose Timing Library
-#  https://jmrosinski.github.io/GPTL/
-#
 # Fortran compiler flags
 #
 # Optimized

@@ -16,7 +16,7 @@
 !    This implementation provides band-by-band flux profiles
 !
 module mo_fluxes_byband
-  use mo_rte_kind,   only: wp
+  use mo_rte_kind,      only: wp
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_optical_props, only: ty_optical_props
   use mo_fluxes_byband_kernels, &

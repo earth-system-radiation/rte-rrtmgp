@@ -93,9 +93,10 @@ program rrtmgp_rfmip_lw
   !
   ! Local variables
   !
-  character(len=132)         :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-0-4_none.nc', &
+  character(len=132)         :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
                                 kdist_file = 'coefficients_lw.nc', &
-                                flxdn_file = 'rld_template.nc', flxup_file = 'rlu_template.nc'
+                                flxdn_file = 'rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc', &
+                                flxup_file = 'rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc'
   integer                    :: nargs, ncol, nlay, nexp, nblocks, block_size
   logical                    :: top_at_1
   integer                    :: b

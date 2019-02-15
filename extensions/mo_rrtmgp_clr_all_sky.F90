@@ -47,7 +47,7 @@ contains
                      t_sfc, sfc_emis, cloud_props,           &
                      allsky_fluxes, clrsky_fluxes,           &
                      aer_props, col_dry, t_lev, inc_flux, n_gauss_angles) result(error_msg)
-    type(ty_gas_optics), intent(in   ) :: k_dist       !< derived type with spectral information
+    type(ty_gas_optics_rrtmgp), intent(in   ) :: k_dist       !< derived type with spectral information
     type(ty_gas_concs),                intent(in   ) :: gas_concs    !< derived type encapsulating gas concentrations
     real(wp), dimension(:,:),          intent(in   ) :: p_lay, t_lay !< pressure [Pa], temperature [K] at layer centers (ncol,nlay)
     real(wp), dimension(:,:),          intent(in   ) :: p_lev        !< pressure at levels/interfaces [Pa] (ncol,nlay+1)
@@ -178,7 +178,7 @@ contains
                                  mu0, sfc_alb_dir, sfc_alb_dif, cloud_props, &
                                  allsky_fluxes, clrsky_fluxes,           &
                                  aer_props, col_dry, inc_flux, tsi_scaling) result(error_msg)
-    type(ty_gas_optics), intent(in   ) :: k_dist       !< derived type with spectral information
+    type(ty_gas_optics_rrtmgp), intent(in   ) :: k_dist       !< derived type with spectral information
     type(ty_gas_concs),                intent(in   ) :: gas_concs    !< derived type encapsulating gas concentrations
     real(wp), dimension(:,:),          intent(in   ) :: p_lay, t_lay !< pressure [Pa], temperature [K] at layer centers (ncol,nlay)
     real(wp), dimension(:,:),          intent(in   ) :: p_lev        !< pressure at levels/interfaces [Pa] (ncol,nlay+1)

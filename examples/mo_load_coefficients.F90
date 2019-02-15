@@ -22,7 +22,7 @@ module mo_load_coefficients
   !
   use mo_rte_kind,           only: wp, wl
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_gas_optics,         only: ty_gas_optics
+  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   ! --------------------------------------------------
   use mo_simple_netcdf, only: read_field, read_char_vec, read_logical_vec, var_exists, get_dim_size
   use netcdf
@@ -43,7 +43,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------------
   ! read optical coefficients from NetCDF file
   subroutine load_and_init(kdist, filename, available_gases)
-    class(ty_gas_optics), intent(inout) :: kdist
+    class(ty_gas_optics_rrtmgp), intent(inout) :: kdist
     character(len=*),     intent(in   ) :: filename
     class(ty_gas_concs),  intent(in   ) :: available_gases ! Which gases does the host model have available?
     ! --------------------------------------------------

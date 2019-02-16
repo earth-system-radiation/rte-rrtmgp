@@ -32,13 +32,14 @@ module mo_gas_optics_rrtmgp
   use mo_util_string,        only: lower_case, string_in_array, string_loc_in_array
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
+  use mo_gas_optics,         only: ty_gas_optics
   use mo_util_reorder
   implicit none
   private
   real(wp), parameter :: pi = acos(-1._wp)
 
   ! -------------------------------------------------------------------------------------------------
-  type, extends(ty_optical_props), public :: ty_gas_optics_rrtmgp
+  type, extends(ty_gas_optics), public :: ty_gas_optics_rrtmgp
     private
     !
     ! RRTMGP computes absorption in each band arising from
@@ -143,20 +144,19 @@ module mo_gas_optics_rrtmgp
     ! Public procedures
     ! public interface
     generic,   public :: load       => load_int,       load_ext
-    generic,   public :: gas_optics => gas_optics_int, gas_optics_ext
     procedure, public :: source_is_internal
     procedure, public :: source_is_external
     procedure, public :: get_ngas
     procedure, public :: get_gases
-    procedure, public :: get_press_ref_min
-    procedure, public :: get_press_ref_max
-    procedure, public :: get_temp_ref_min
-    procedure, public :: get_temp_ref_max
+    procedure, public :: get_press_min
+    procedure, public :: get_press_max
+    procedure, public :: get_temp_min
+    procedure, public :: get_temp_max
     ! Internal procedures
     procedure, private :: load_int
     procedure, private :: load_ext
-    procedure, private :: gas_optics_int
-    procedure, private :: gas_optics_ext
+    procedure, public  :: gas_optics_int
+    procedure, public  :: gas_optics_ext
     procedure, private :: check_key_species_present
     procedure, private :: get_minor_list
     ! Interpolation table dimensions
@@ -203,7 +203,7 @@ contains
   !
   pure function get_nflav(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    integer                                        :: get_nflav
+    integer                                 :: get_nflav
 
     get_nflav = size(this%flavor,dim=2)
   end function get_nflav
@@ -238,8 +238,8 @@ contains
     ! Interpolation coefficients for use in source function
     integer,     dimension(size(play,dim=1), size(play,dim=2)) :: jtemp, jpress
     logical(wl), dimension(size(play,dim=1), size(play,dim=2)) :: tropo
-    real(wp),    dimension(2,2,2,this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: fmajor
-    integer,     dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
+    real(wp),    dimension(2,2,2,get_nflav(this),size(play,dim=1), size(play,dim=2)) :: fmajor
+    integer,     dimension(2,    get_nflav(this),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
     ! ----------------------------------------------------------
@@ -319,8 +319,8 @@ contains
     ! Interpolation coefficients for use in source function
     integer,     dimension(size(play,dim=1), size(play,dim=2)) :: jtemp, jpress
     logical(wl), dimension(size(play,dim=1), size(play,dim=2)) :: tropo
-    real(wp),    dimension(2,2,2,this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: fmajor
-    integer,     dimension(2,    this%get_nflav(),size(play,dim=1), size(play,dim=2)) :: jeta
+    real(wp),    dimension(2,2,2,get_nflav(this),size(play,dim=1), size(play,dim=2)) :: fmajor
+    integer,     dimension(2,    get_nflav(this),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
     ! ----------------------------------------------------------
@@ -329,7 +329,7 @@ contains
     ngpt  = this%get_ngpt()
     nband = this%get_nband()
     ngas  = this%get_ngas()
-    nflav = this%get_nflav()
+    nflav = get_nflav(this)
     !
     ! Gas optics
     !
@@ -371,9 +371,9 @@ contains
     class(ty_optical_props_arry),     intent(inout) :: optical_props !inout because components are allocated
     ! Interpolation coefficients for use in internal source function
     integer,     dimension(                       ncol, nlay), intent(  out) :: jtemp, jpress
-    integer,     dimension(2,    this%get_nflav(),ncol, nlay), intent(  out) :: jeta
+    integer,     dimension(2,    get_nflav(this),ncol, nlay), intent(  out) :: jeta
     logical(wl), dimension(                       ncol, nlay), intent(  out) :: tropo
-    real(wp),    dimension(2,2,2,this%get_nflav(),ncol, nlay), intent(  out) :: fmajor
+    real(wp),    dimension(2,2,2,get_nflav(this),ncol, nlay), intent(  out) :: fmajor
     character(len=128)                                         :: error_msg
 
     ! Optional inputs
@@ -391,11 +391,11 @@ contains
     !
     real(wp), dimension(ncol,nlay,  this%get_ngas()) :: vmr     ! volume mixing ratios
     real(wp), dimension(ncol,nlay,0:this%get_ngas()) :: col_gas ! column amounts for each gas, plus col_dry
-    real(wp), dimension(2,    this%get_nflav(),ncol,nlay) :: col_mix ! combination of major species's column amounts
+    real(wp), dimension(2,    get_nflav(this),ncol,nlay) :: col_mix ! combination of major species's column amounts
                                                          ! index(1) : reference temperature level
                                                          ! index(2) : flavor
                                                          ! index(3) : layer
-    real(wp), dimension(2,2,  this%get_nflav(),ncol,nlay) :: fminor ! interpolation fractions for minor species
+    real(wp), dimension(2,2,  get_nflav(this),ncol,nlay) :: fminor ! interpolation fractions for minor species
                                                           ! index(1) : reference eta level (temperature dependent)
                                                           ! index(2) : reference temperature level
                                                           ! index(3) : flavor
@@ -442,7 +442,7 @@ contains
 
     ! ----------------------------------------------------------
     ngas  = this%get_ngas()
-    nflav = this%get_nflav()
+    nflav = get_nflav(this)
     neta  = this%get_neta()
     npres = this%get_npres()
     ntemp = this%get_ntemp()
@@ -571,9 +571,9 @@ contains
     ! Interplation coefficients
     integer,     dimension(ncol,nlay),     intent(in ) :: jtemp, jpress
     logical(wl), dimension(ncol,nlay),     intent(in ) :: tropo
-    real(wp),    dimension(2,2,2,this%get_nflav(),ncol,nlay),  &
+    real(wp),    dimension(2,2,2,get_nflav(this),ncol,nlay),  &
                                            intent(in ) :: fmajor
-    integer,     dimension(2,    this%get_nflav(),ncol,nlay),  &
+    integer,     dimension(2,    get_nflav(this),ncol,nlay),  &
                                            intent(in ) :: jeta
     class(ty_source_func_lw    ),          intent(inout) :: sources
     real(wp), dimension(ncol,nlay+1),      intent(in ), &
@@ -623,7 +623,7 @@ contains
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
-                this%get_nflav(), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
+                get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
@@ -1119,45 +1119,45 @@ contains
   !
   ! return the minimum pressure on the interpolation grids
   !
-  pure function get_press_ref_min(this)
+  pure function get_press_min(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_press_ref_min
+    real(wp)                                       :: get_press_min
 
-    get_press_ref_min = this%press_ref_min
-  end function get_press_ref_min
+    get_press_min = this%press_ref_min
+  end function get_press_min
 
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! return the maximum pressure on the interpolation grids
   !
-  pure function get_press_ref_max(this)
+  pure function get_press_max(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_press_ref_max
+    real(wp)                                       :: get_press_max
 
-    get_press_ref_max = this%press_ref_max
-  end function get_press_ref_max
+    get_press_max = this%press_ref_max
+  end function get_press_max
 
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! return the minimum temparature on the interpolation grids
   !
-  pure function get_temp_ref_min(this)
+  pure function get_temp_min(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_temp_ref_min
+    real(wp)                                       :: get_temp_min
 
-    get_temp_ref_min = this%temp_ref_min
-  end function get_temp_ref_min
+    get_temp_min = this%temp_ref_min
+  end function get_temp_min
 
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! return the maximum temparature on the interpolation grids
   !
-  pure function get_temp_ref_max(this)
+  pure function get_temp_max(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_temp_ref_max
+    real(wp)                                       :: get_temp_max
 
-    get_temp_ref_max = this%temp_ref_max
-  end function get_temp_ref_max
+    get_temp_max = this%temp_ref_max
+  end function get_temp_max
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Utility function, provided for user convenience

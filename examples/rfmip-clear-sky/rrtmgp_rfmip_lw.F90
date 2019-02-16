@@ -196,10 +196,10 @@ program rrtmgp_rfmip_lw
   !   This introduces an error but shows input sanitizing.
   !
   if(top_at_1) then
-    p_lev(:,1,:) = k_dist%get_press_ref_min() + epsilon(k_dist%get_press_ref_min())
+    p_lev(:,1,:) = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
   else
     p_lev(:,nlay+1,:) &
-                 = k_dist%get_press_ref_min() + epsilon(k_dist%get_press_ref_min())
+                 = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
   end if
 
   !

@@ -49,7 +49,7 @@ contains
   function compute_bc(k_dist,                      &
                       play, plev, tlay, gas_concs, &
                       flux_bc, mu0) result(error_msg)
-    type(ty_gas_optics_rrtmgp),      intent(in   ) :: k_dist
+    type(ty_gas_optics),      intent(in   ) :: k_dist
     real(wp), dimension(:,:), intent(in   ) :: play, &    ! layer pressures [Pa, mb]; (ncol,nlay)
                                                plev, &    ! level pressures [Pa, mb]; (ncol,nlay+1)
                                                tlay       ! layer temperatures [K]; (ncol,nlay)
@@ -109,7 +109,7 @@ contains
     top_at_1 = play(1, 1) < play(1, nlay)
     top_lay = merge(1, nlay, top_at_1)
     if(any(plev(:,top_lay) <= &
-           k_dist%get_press_ref_min() + 2._wp * spacing(k_dist%get_press_ref_min()))) then
+           k_dist%get_press_min() + 2._wp * spacing(k_dist%get_press_min()))) then
       error_msg = "compute_bc: pressures are too close to (or less than) min in gas optics "
       return
     end if
@@ -119,7 +119,7 @@ contains
     tlay_1lay(1:ncol,1) = tlay(1:ncol, top_lay)
     tlev_1lay(1:ncol,1) = tlay(1:ncol, top_lay)
     tlev_1lay(1:ncol,2) = tlay(1:ncol, top_lay)
-    plev_1lay(1:ncol,1) = k_dist%get_press_ref_min()
+    plev_1lay(1:ncol,1) = k_dist%get_press_min()
     plev_1lay(1:ncol,2) = plev(1:ncol, top_lay+1)
     !
     ! Maybe there are better ways to interpolate pressure but the single layer

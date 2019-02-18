@@ -5,7 +5,8 @@ RRTMGP_SRC = \
   mo_util_reorder.o \
   mo_gas_concentrations.o \
   mo_gas_optics_kernels.o \
-  mo_gas_optics.o
+  mo_gas_optics.o \
+  mo_gas_optics_rrtmgp.o
 
 #####
 # RRTMGP: RRTM for GCM Applications - Parallel
@@ -27,9 +28,15 @@ mo_gas_concentrations.o: mo_rte_kind.o mo_util_string.o mo_gas_concentrations.F9
 #
 # Gas optics
 #
-mo_gas_optics_kernels.o:       mo_rte_kind.o mo_gas_optics_kernels.F90
-mo_gas_optics.o: mo_rte_kind.o mo_rrtmgp_constants.o mo_util_reorder.o \
+mo_gas_optics_kernels.o: mo_rte_kind.o mo_gas_optics_kernels.F90
+
+mo_gas_optics.o: mo_rte_kind.o mo_gas_concentrations.o \
+  mo_optical_props.o mo_source_functions.o \
+  mo_gas_optics.F90
+
+mo_gas_optics_rrtmgp.o: mo_rte_kind.o mo_rrtmgp_constants.o mo_util_reorder.o \
   mo_util_string.o  mo_gas_optics_kernels.o \
   mo_gas_concentrations.o \
   mo_optical_props.o mo_source_functions.o \
-	mo_gas_optics.F90
+  mo_gas_optics.o \
+  mo_gas_optics_rrtmgp.F90

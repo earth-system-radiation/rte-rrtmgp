@@ -54,7 +54,7 @@ program rrtmgp_rfmip_lw
   !
   ! Gas optics: maps physical state of the atmosphere to optical properties
   !
-  use mo_gas_optics,         only: ty_gas_optics
+  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   !
   ! Gas optics uses a derived type to represent gas concentrations compactly...
   !
@@ -93,9 +93,10 @@ program rrtmgp_rfmip_lw
   !
   ! Local variables
   !
-  character(len=132)         :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-0-4_none.nc', &
+  character(len=132)         :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
                                 kdist_file = 'coefficients_lw.nc', &
-                                flxdn_file = 'rld_template.nc', flxup_file = 'rlu_template.nc'
+                                flxdn_file = 'rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc', &
+                                flxup_file = 'rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc'
   integer                    :: nargs, ncol, nlay, nexp, nblocks, block_size
   logical                    :: top_at_1
   integer                    :: b
@@ -110,7 +111,7 @@ program rrtmgp_rfmip_lw
   !
   ! Classes used by rte+rrtmgp
   !
-  type(ty_gas_optics)                            :: k_dist
+  type(ty_gas_optics_rrtmgp)                            :: k_dist
   type(ty_source_func_lw)                        :: source
   type(ty_optical_props_1scl)                    :: optical_props
   type(ty_fluxes_broadband)                      :: fluxes
@@ -195,10 +196,10 @@ program rrtmgp_rfmip_lw
   !   This introduces an error but shows input sanitizing.
   !
   if(top_at_1) then
-    p_lev(:,1,:) = k_dist%get_press_ref_min() + epsilon(k_dist%get_press_ref_min())
+    p_lev(:,1,:) = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
   else
     p_lev(:,nlay+1,:) &
-                 = k_dist%get_press_ref_min() + epsilon(k_dist%get_press_ref_min())
+                 = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
   end if
 
   !

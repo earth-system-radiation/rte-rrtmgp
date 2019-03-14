@@ -49,7 +49,7 @@ contains
   function compute_bc(k_dist,                      &
                       play, plev, tlay, gas_concs, &
                       flux_bc, mu0) result(error_msg)
-    type(ty_gas_optics),      intent(in   ) :: k_dist
+    class(ty_gas_optics),     intent(in   ) :: k_dist
     real(wp), dimension(:,:), intent(in   ) :: play, &    ! layer pressures [Pa, mb]; (ncol,nlay)
                                                plev, &    ! level pressures [Pa, mb]; (ncol,nlay+1)
                                                tlay       ! layer temperatures [K]; (ncol,nlay)

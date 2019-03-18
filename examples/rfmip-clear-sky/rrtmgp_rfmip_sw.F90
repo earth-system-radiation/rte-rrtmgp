@@ -76,7 +76,7 @@ program rrtmgp_rfmip_sw
   !
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
-                                   read_and_block_sw_bc, read_kdist_gas_names
+                                   read_and_block_sw_bc, determine_gas_names
 #ifdef USE_TIMING
   !
   ! Timing library
@@ -99,7 +99,7 @@ program rrtmgp_rfmip_sw
   character(len=6)           :: block_size_char
 
   character(len=32 ), &
-            dimension(:),             allocatable :: kdist_gas_names, gases_to_use
+            dimension(:),             allocatable :: kdist_gas_names, rfmip_gas_games
   real(wp), dimension(:,:,:),         allocatable :: p_lay, p_lev, t_lay, t_lev ! block_size, nlay, nblocks
   real(wp), dimension(:,:,:), target, allocatable :: flux_up, flux_dn
   real(wp), dimension(:,:  ),         allocatable :: surface_albedo, total_solar_irradiance, solar_zenith_angle
@@ -149,17 +149,13 @@ program rrtmgp_rfmip_sw
   print *, "Doing ",  nblocks, "blocks of size ", block_size
 
   !
-  ! Names of gases known to the k-distribution.
+  ! Identify the set of gases used in the calculation based on the forcing index
+  !   A gas might have a different name in the k-distribution than in the files
+  !   provided by RFMIP (e.g. 'co2' and 'carbon_dioxide')
   !
-  call read_kdist_gas_names(kdist_file, kdist_gas_names)
-  !
-  ! Which gases will be included in the calculation?
-  !    By default we'll use all the gases the k-distribution can handle, but
-  !    we could provide variants i.e. using equivalent concentrations per RFMIP
-  !
-  gases_to_use = kdist_gas_names
-  print *, "Radiation calculation uses gases "
-  print *, "  ", (trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))
+  call determine_gas_names(rfmip_file, kdist_file, flxup_file, kdist_gas_names, rfmip_gas_games)
+  print *, "Calculation uses RFMIP gas names "
+  print *, "  ", (trim(rfmip_gas_games(b)) // " ", b = 1, size(rfmip_gas_games))
 
   ! --------------------------------------------------
   !
@@ -177,7 +173,7 @@ program rrtmgp_rfmip_sw
   !
   ! Read the gas concentrations and surface properties
   !
-  call read_and_block_gases_ty(rfmip_file, block_size, gases_to_use, gas_conc_array)
+  call read_and_block_gases_ty(rfmip_file, block_size, kdist_gas_names, rfmip_gas_games, gas_conc_array)
   call read_and_block_sw_bc(rfmip_file, block_size, surface_albedo, total_solar_irradiance, solar_zenith_angle)
   !
   ! Read k-distribution information. load_and_init() reads data from netCDF and calls

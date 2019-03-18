@@ -80,7 +80,7 @@ program rrtmgp_rfmip_lw
   !
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
-                                   read_and_block_lw_bc, read_kdist_gas_names
+                                   read_and_block_lw_bc, determine_gas_names
 #ifdef USE_TIMING
   !
   ! Timing library
@@ -103,7 +103,7 @@ program rrtmgp_rfmip_lw
   character(len=6)           :: block_size_char
 
   character(len=32 ), &
-            dimension(:),             allocatable :: kdist_gas_names, gases_to_use
+            dimension(:),             allocatable :: kdist_gas_names, rfmip_gas_games
   real(wp), dimension(:,:,:),         allocatable :: p_lay, p_lev, t_lay, t_lev ! block_size, nlay, nblocks
   real(wp), dimension(:,:,:), target, allocatable :: flux_up, flux_dn
   real(wp), dimension(:,:  ),         allocatable :: sfc_emis, sfc_t            ! block_size, nblocks
@@ -111,7 +111,7 @@ program rrtmgp_rfmip_lw
   !
   ! Classes used by rte+rrtmgp
   !
-  type(ty_gas_optics_rrtmgp)                            :: k_dist
+  type(ty_gas_optics_rrtmgp)                     :: k_dist
   type(ty_source_func_lw)                        :: source
   type(ty_optical_props_1scl)                    :: optical_props
   type(ty_fluxes_broadband)                      :: fluxes
@@ -151,17 +151,13 @@ program rrtmgp_rfmip_lw
   print *, "Doing ",  nblocks, "blocks of size ", block_size
 
   !
-  ! Names of gases known to the k-distribution.
+  ! Identify the set of gases used in the calculation based on the forcing index
+  !   A gas might have a different name in the k-distribution than in the files
+  !   provided by RFMIP (e.g. 'co2' and 'carbon_dioxide')
   !
-  call read_kdist_gas_names(kdist_file, kdist_gas_names)
-  !
-  ! Which gases will be included in the calculation?
-  !    By default we'll use all the gases the k-distribution can handle, but
-  !    we could provide variants i.e. using equivalent concentrations per RFMIP
-  !
-  gases_to_use = kdist_gas_names
-  print *, "Radiation calculation uses gases "
-  print *, "  ", (trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))
+  call determine_gas_names(rfmip_file, kdist_file, flxup_file, kdist_gas_names, rfmip_gas_games)
+  print *, "Calculation uses RFMIP gas names "
+  print *, "  ", (trim(rfmip_gas_games(b)) // " ", b = 1, size(rfmip_gas_games))
 
   ! --------------------------------------------------
   !
@@ -179,7 +175,7 @@ program rrtmgp_rfmip_lw
   !
   ! Read the gas concentrations and surface properties
   !
-  call read_and_block_gases_ty(rfmip_file, block_size, gases_to_use, gas_conc_array)
+  call read_and_block_gases_ty(rfmip_file, block_size, kdist_gas_names, rfmip_gas_games, gas_conc_array)
   call read_and_block_lw_bc(rfmip_file, block_size, sfc_emis, sfc_t)
 
   !

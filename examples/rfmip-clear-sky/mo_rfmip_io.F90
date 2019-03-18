@@ -193,12 +193,12 @@ contains
   !                3 = CO2, CH4, N2O, CFC12eq, HFC-134eq
   !                All scenarios use 3D values of ozone, water vapor so those aren't listed here
   !
-  subroutine determine_gas_names(concentrationFile, kdistFile, outputFile, names_in_kdist, names_in_file)
-    character(len=*),                             intent(in   ) :: concentrationFile, kdistFile, outputFile
+  subroutine determine_gas_names(concentrationFile, kdistFile, forcing_index, names_in_kdist, names_in_file)
+    character(len=*),                             intent(in   ) :: concentrationFile, kdistFile
+    integer,                                      intent(in   ) :: forcing_index
     character(len=32), dimension(:), allocatable, intent(inout) :: names_in_kdist, names_in_file
     ! ----------------
-    integer :: ncid, num_gases, i
-    integer :: forcing_index
+    integer :: num_gases, i
     character(len=32), dimension(11) :: &
       chem_name = ['co   ', &
                    'ch4  ', &
@@ -223,15 +223,6 @@ contains
         				   'methyl_chloride     ', &
                    'hcfc22              ']
     ! ----------------
-    !
-    ! Determine forcing index
-    !
-    if(nf90_open(trim(outputFile), NF90_NOWRITE, ncid) /= NF90_NOERR) &
-      call stop_on_err("determine_gas_names: can't find file " // trim(outputFile))
-    if(nf90_get_att(ncid, NF90_GLOBAL, "forcing_index", forcing_index)  /= NF90_NOERR) &
-      call stop_on_err("determine_gas_names: can't reading attribute forcing_index from " // trim(outputFile))
-    ncid = nf90_close(ncid)
-
     select case (forcing_index)
     case (1)
       call read_kdist_gas_names(kdistFile, names_in_kdist)

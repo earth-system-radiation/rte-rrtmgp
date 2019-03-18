@@ -89,14 +89,13 @@ program rrtmgp_rfmip_sw
   !
   ! Local variables
   !
-  character(len=132)         :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
-                                kdist_file = 'coefficients_sw.nc', &
-                                flxdn_file = 'rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc', &
-                                flxup_file = 'rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc'
-  integer                    :: nargs, ncol, nlay, nexp, nblocks, block_size
-  logical                    :: top_at_1
-  integer                    :: b, icol, igpt
-  character(len=6)           :: block_size_char
+  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
+                        kdist_file = 'coefficients_sw.nc'
+  character(len=132) :: flxdn_file, flxup_file
+  integer            :: nargs, ncol, nlay, nexp, nblocks, block_size, forcing_index
+  logical            :: top_at_1
+  integer            :: b, icol, igpt
+  character(len=4)   :: block_size_char, forcing_index_char = '1'
 
   character(len=32 ), &
             dimension(:),             allocatable :: kdist_gas_names, rfmip_gas_games
@@ -107,7 +106,7 @@ program rrtmgp_rfmip_sw
   !
   ! Classes used by rte+rrtmgp
   !
-  type(ty_gas_optics_rrtmgp)                            :: k_dist
+  type(ty_gas_optics_rrtmgp)                     :: k_dist
   type(ty_optical_props_2str)                    :: optical_props
   type(ty_fluxes_broadband)                      :: fluxes
   real(wp), dimension(:,:), allocatable          :: toa_flux ! block_size, ngpt
@@ -125,37 +124,43 @@ program rrtmgp_rfmip_sw
   ! -------------------------------------------------------------------------------------------------
   !
   ! Code starts
-  ! Argument list:
-  !   block size, input file, coefficient file, upflux file, downflux file
   !   all arguments are optional
   !
+  print *, "Usage: rrtmgp_rfmip_sw [block_size] [rfmip_file] [k-distribution_file] [forcing_index (1,2,3)]"
   nargs = command_argument_count()
-  if(nargs >= 2) call get_command_argument(2, rfmip_file)
-  if(nargs >= 3) call get_command_argument(3, kdist_file)
-  if(nargs >= 4) call get_command_argument(4, flxup_file)
-  if(nargs >= 5) call get_command_argument(5, flxdn_file)
-
-  ! How big is the problem? Does it fit into blocks of the size we've specified?
-  !
   call read_size(rfmip_file, ncol, nlay, nexp)
   if(nargs >= 1) then
     call get_command_argument(1, block_size_char)
-    read(block_size_char, '(i6)') block_size
+    read(block_size_char, '(i4)') block_size
   else
     block_size = ncol
   end if
+  if(nargs >= 2) call get_command_argument(2, rfmip_file)
+  if(nargs >= 3) call get_command_argument(3, kdist_file)
+  if(nargs >= 4) then
+    call get_command_argument(4, forcing_index_char)
+  end if
+
+  !
+  ! How big is the problem? Does it fit into blocks of the size we've specified?
+  !
   if(mod(ncol*nexp, block_size) /= 0 ) call stop_on_err("rrtmgp_rfmip_sw: number of columns doesn't fit evenly into blocks.")
   nblocks = (ncol*nexp)/block_size
   print *, "Doing ",  nblocks, "blocks of size ", block_size
+
+  read(forcing_index_char, '(i4)') forcing_index
+  if(forcing_index < 1 .or. forcing_index > 3) &
+    stop "Forcing index is invalid (must be 1,2 or 3)"
+  flxdn_file = 'rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f' // trim(forcing_index_char) // '_gn.nc'
+  flxup_file = 'rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f' // trim(forcing_index_char) // '_gn.nc'
 
   !
   ! Identify the set of gases used in the calculation based on the forcing index
   !   A gas might have a different name in the k-distribution than in the files
   !   provided by RFMIP (e.g. 'co2' and 'carbon_dioxide')
   !
-  call determine_gas_names(rfmip_file, kdist_file, flxup_file, kdist_gas_names, rfmip_gas_games)
-  print *, "Calculation uses RFMIP gas names "
-  print *, "  ", (trim(rfmip_gas_games(b)) // " ", b = 1, size(rfmip_gas_games))
+  call determine_gas_names(rfmip_file, kdist_file, forcing_index, kdist_gas_names, rfmip_gas_games)
+  print *, "Calculation uses RFMIP gases: ", (trim(rfmip_gas_games(b)) // " ", b = 1, size(rfmip_gas_games))
 
   ! --------------------------------------------------
   !

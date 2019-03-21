@@ -26,7 +26,7 @@ module mo_cloud_sampling
                               ty_optical_props_nstr
   implicit none
   private
-  public :: sampled_mask_max_ran
+  public :: draw_samples, sampled_mask_max_ran, sampled_mask_exp_ran
 contains
   ! -------------------------------------------------------------------------------------------------
   !
@@ -163,6 +163,63 @@ contains
     end do
 
   end subroutine sampled_mask_max_ran
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Generate a McICA-sampled cloud mask for exponential-random overlap
+  !   The correlation coefficient is defined between pairs of layers
+  !
+  subroutine sampled_mask_exp_ran(ncol,nlay,nbnd,ngpt,randoms,cloud_frac,correlation,cloud_mask)
+    integer,                                intent(in ) :: ncol, nlay, nbnd, ngpt
+    real(wp), dimension(ngpt,nlay,ncol),    intent(in ) :: randoms
+    real(wp), dimension(ncol,nlay),         intent(in ) :: cloud_frac
+    real(wp), dimension(ncol,nlay-1),       intent(in ) :: correlation
+    logical,  dimension(ncol,nlay,ngpt),    intent(out) :: cloud_mask
+    ! ------------------------
+    integer                            :: icol, ilay, igpt
+    integer                            :: cloud_lay_fst, cloud_lay_lst
+    real(wp)                           :: rho ! correlation coefficient
+    real(wp), dimension(ngpt)          :: local_rands
+    logical, dimension(nlay)           :: cloud_mask_layer
+    ! ------------------------
+    !
+    ! Construct the cloud mask for each column
+    !
+    do icol = 1, ncol
+      cloud_mask_layer(1:nlay) = cloud_frac(icol,1:nlay) > 0._wp
+      if(.not. any(cloud_mask_layer)) then
+        cloud_mask(icol,1:nlay,1:ngpt) = .false.
+        cycle
+      end if
+      cloud_lay_fst = findloc(cloud_mask_layer, .true., dim=1)
+      cloud_lay_lst = findloc(cloud_mask_layer, .true., dim=1, back = .true.)
+      cloud_mask(icol,1:cloud_lay_fst,1:ngpt) = .false.
+
+      ilay = cloud_lay_fst
+      local_rands(1:ngpt) = randoms(1:ngpt,cloud_lay_fst,icol)
+      cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+      do ilay = cloud_lay_fst+1, cloud_lay_lst
+        !
+        ! Max-random overlap:
+        !   new  random deviates if the adjacent layer isn't cloudy
+        !   correlated  deviates if the adjacent layer is    cloudy
+        !
+        if(cloud_mask_layer(ilay-1)) then
+          !
+          ! Enforce correlation with the layer above
+          !
+          rho = correlation(icol,ilay-1)
+          local_rands(1:ngpt) =  rho*local_rands(1:ngpt) + sqrt(1._wp-rho*rho)*randoms(1:ngpt,ilay,icol)
+        else
+          local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
+        end if
+
+        cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+      end do
+
+      cloud_mask(icol,cloud_lay_lst+1:nlay, 1:ngpt) = .false.
+    end do
+
+  end subroutine sampled_mask_exp_ran
   ! -------------------------------------------------------------------------------------------------
   !
   ! Apply a true/false cloud mask to a homogeneous field

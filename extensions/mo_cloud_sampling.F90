@@ -150,13 +150,17 @@ contains
       local_rands(1:ngpt) = randoms(1:ngpt,cloud_lay_fst,icol)
       cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
       do ilay = cloud_lay_fst+1, cloud_lay_lst
-        !
-        ! Max-random overlap:
-        !   new  random deviates if the adjacent layer isn't cloudy
-        !   same random deviates if the adjacent layer is    cloudy
-        !
-        if(.not. cloud_mask_layer(ilay-1)) local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
-        cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+        if(cloud_mask_layer(ilay)) then
+          !
+          ! Max-random overlap:
+          !   new  random deviates if the adjacent layer isn't cloudy
+          !   same random deviates if the adjacent layer is    cloudy
+          !
+          if(.not. cloud_mask_layer(ilay-1)) local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
+          cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+        else
+          cloud_mask(icol,ilay,1:ngpt) = .false.
+        end if
       end do
 
       cloud_mask(icol,cloud_lay_lst+1:nlay, 1:ngpt) = .false.
@@ -198,22 +202,26 @@ contains
       local_rands(1:ngpt) = randoms(1:ngpt,cloud_lay_fst,icol)
       cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
       do ilay = cloud_lay_fst+1, cloud_lay_lst
-        !
-        ! Max-random overlap:
-        !   new  random deviates if the adjacent layer isn't cloudy
-        !   correlated  deviates if the adjacent layer is    cloudy
-        !
-        if(cloud_mask_layer(ilay-1)) then
+        if(cloud_mask_layer(ilay)) then
           !
-          ! Enforce correlation with the layer above
+          ! Exponential-random overlap:
+          !   new  random deviates if the adjacent layer isn't cloudy
+          !   correlated  deviates if the adjacent layer is    cloudy
           !
-          rho = correlation(icol,ilay-1)
-          local_rands(1:ngpt) =  rho*local_rands(1:ngpt) + sqrt(1._wp-rho*rho)*randoms(1:ngpt,ilay,icol)
-        else
-          local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
-        end if
+          if(cloud_mask_layer(ilay-1)) then
+            !
+            ! Enforce correlation with the adjacent layer
+            !
+            rho = correlation(icol,ilay-1)
+            local_rands(1:ngpt) =  rho*local_rands(1:ngpt) + sqrt(1._wp-rho*rho)*randoms(1:ngpt,ilay,icol)
+          else
+            local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
+          end if
 
-        cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+          cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+        else
+          cloud_mask(icol,ilay,1:ngpt) = .false.
+        end if
       end do
 
       cloud_mask(icol,cloud_lay_lst+1:nlay, 1:ngpt) = .false.

@@ -1,141 +1,189 @@
-! Module: mo_cloud_sampling
-
-! This code is part of
-! RRTM for GCM Applications - Parallel (RRTMGP)
+! This code is part of RRTM for GCM Applications - Parallel (RRTMGP)
 !
-! Eli Mlawer and Robert Pincus
-! Andre Wehe and Jennifer Delamere
+! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2016,  Atmospheric and Environmental Research and
+! Copyright 2015-2019,  Atmospheric and Environmental Research and
 ! Regents of the University of Colorado.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
+! -------------------------------------------------------------------------------------------------
 !
-! Description: Cloud state sampling for Monte Carlo Independent Column Approximation. 
-
-module mo_cloud_sampling 
-  use mo_rte_kind,      only: wp
-  use mo_rng,              only: ty_rng
-  implicit none 
-  
-  interface sample_clouds
-    module procedure sample_one_cloudfrac
-  end interface sample_clouds 
-  
-  private 
-  public :: set_overlap, sample_clouds, RAN_OVERLAP, MAX_OVERLAP, MAX_RAN_OVERLAP
-  
-  ! Overlap kinds -- should this be an ENUM? 
-  integer, parameter :: RAN_OVERLAP = 3, MAX_OVERLAP = 2, MAX_RAN_OVERLAP = 1
-  integer            :: overlap = MAX_RAN_OVERLAP
-contains 
-  !--------------------------------------------------------------------------------------------------------------------
-  function set_overlap(overlap_in) result(error_msg) 
-    integer, intent(in) :: overlap_in
-    character(len=128)  :: error_msg 
-  
-    if(.not. any(overlap_in == [RAN_OVERLAP,MAX_OVERLAP,MAX_RAN_OVERLAP])) then 
-      error_msg = "cloud sampling: invalid overlap"
-    else
-      overlap = overlap_in
-      error_msg = ""
-    end if
-  end function set_overlap
-  !--------------------------------------------------------------------------------------------------------------------
-  function sample_one_cloudfrac(ncol, nlay, ngpt, rngs, cld_frac, top_at_1, cld_mask) & 
-    result(error_msg) 
-    ! Input is a single cloud fraction 
-    ! Output is a cloud mask
-    ! Inputs and outputs have different dimensions because cloud optics is more efficient 
-    !   with spectral index first
-    ! See, for example, Raisanen et al., 2004, https://dx.doi.org/10.1256/qj.03.99
-    
-    integer,                             intent(in   ) :: ncol, nlay, ngpt
-    class(ty_rng), &
-              dimension(:),              intent(inout) :: rngs      !< random number generator states
-                                                                    ! SHould be length ncol
-    real(wp), dimension(ncol,nlay),      intent(in  )  :: cld_frac
-    logical,                             intent(in   ) :: top_at_1
-    ! Consider making rank a variable without column dimension 
-    !   Save space but wouldn't let operations be atomic 
-    logical,  dimension(ngpt,nlay,ncol), intent(  out) :: cld_mask
-    character(len=128)                                 :: error_msg 
-    !---------------------------------
-    ! Local variables
-    integer :: icol, ilay 
-    real(wp), dimension(ngpt,nlay,ncol) :: rank 
-    
-    !---------------------------------
-    error_msg = ""
-    select case(overlap) 
-      case default 
-        error_msg = 'sample_clouds: unknown overlap specified'
-      case(MAX_OVERLAP) 
-        !
-        ! For maximum overlap the same random number is used through the whole atmosphere 
-        ! Raisanen et al., 2004, https://dx.doi.org/10.1256/qj.03.99, Eq 4. 
-        !
-        do icol = 1, ncol
-          rank(1:ngpt,1,icol) = rngs(icol)%get_random(ngpt) 
-          do ilay = 2, nlay
-            rank(1:ngpt,ilay,icol) = rank(1:ngpt,1,icol)
-          end do 
-        end do 
-      case(RAN_OVERLAP, MAX_RAN_OVERLAP) 
-        ! 
-        ! For random overlap each layer gets a different random number, but there's no 
-        !   reason to generate the random numbers if there are no clouds 
-        !   (efficiency may overrule this) 
-        ! Raisanen et al., 2004, https://dx.doi.org/10.1256/qj.03.99, Eq 4. 
-        ! Max-random is a perturbation on this -- see below. 
-        !
-        do icol = 1, ncol
-          do ilay = 1, nlay
-            if(cld_frac(icol,ilay) > 0._wp) then 
-              rank(1:ngpt,ilay,icol) = rngs(icol)%get_random(ngpt) 
-            else
-              rank(1:ngpt,ilay,icol) = 0._wp
-            end if 
-          end do 
-        end do 
-    end select 
-    
-    if(overlap == MAX_RAN_OVERLAP) then 
-      ! Walk from top down and enforce max/random
-        ! Raisanen et al., 2004, https://dx.doi.org/10.1256/qj.03.99, Eq 14. 
-      if(top_at_1) then
-        do icol = 1, ncol
-          do ilay = 2, nlay
-            if(cld_frac(icol,ilay-1) > 0._wp) & 
-              rank(1:ngpt,ilay,icol) = MERGE(rank(1:ngpt,ilay-1,icol), & 
-                                             rank(1:ngpt,ilay  ,icol) * (1._wp - cld_frac(icol,ilay-1)), & 
-                                             rank(1:ngpt,ilay-1,icol) > (1._wp - cld_frac(icol,ilay-1)))
-          end do  
-        end do
-      else
-        do icol = 1, ncol
-          do ilay = nlay-1, 1, -1
-            if(cld_frac(icol,ilay+1) > 0._wp) & 
-              rank(1:ngpt,ilay,icol) = MERGE(rank(1:ngpt,ilay+1,icol), & 
-                                             rank(1:ngpt,ilay  ,icol) * (1._wp - cld_frac(icol,ilay+1)), & 
-                                             rank(1:ngpt,ilay+1,icol) > (1._wp - cld_frac(icol,ilay+1)))
-          end do  
-        end do
-      end if 
-    end if 
-    
+! This module provides a simple implementation of sampling for the
+!   Monte Carlo Independent Pixel Approximation (McICA, doi:10.1029/2002jd003322)
+! Cloud optical properties, defined by band and assumed homogenous within each cell (column/layer),
+!   are randomly sampled to preserve the mean cloud fraction and one of several possible overlap assumptions
+! Users supply random numbers with order ngpt,nlay,ncol
+!   These are only accessed if cloud_fraction(icol,ilay) > 0 so many values don't need to be filled in
+!
+! -------------------------------------------------------------------------------------------------
+module mo_cloud_sampling
+  use mo_rte_kind,      only: wp, wl
+  use mo_optical_props, only: ty_optical_props_arry, &
+                              ty_optical_props_1scl, &
+                              ty_optical_props_2str, &
+                              ty_optical_props_nstr
+  implicit none
+  private
+  public :: sampled_mask_max_ran
+contains
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Apply a T/F sampled cloud mask to cloud optical properties defined by band to produce
+  !   McICA-sampled cloud optical properties
+  !
+  function draw_samples(cloud_mask,clouds,clouds_sampled) result(error_msg)
+    logical, dimension(:,:,:),      intent(in   ) :: cloud_mask     ! Dimensions ncol,nlay,ngpt
+    class(ty_optical_props_arry),   intent(in   ) :: clouds         ! Defined by band
+    class(ty_optical_props_arry),   intent(inout) :: clouds_sampled ! Defined by g-point
+    character(len=128)                            :: error_msg
+    ! ------------------------
+    integer :: ncol,nlay,nbnd,ngpt
+    integer :: imom
+    ! ------------------------
     !
-    ! Convert from rank/random deviate to cloud mask
+    ! Error checking
+    !
+    error_msg = ""
+    if(.not. clouds%is_initialized()) then
+      error_msg = "draw_samples: cloud optical properties are not initialized"
+      return
+    end if
+    if(.not. clouds_sampled%is_initialized()) then
+      error_msg = "draw_samples: sampled cloud optical properties are not initialized"
+      return
+    end if
+
+    !
+    ! Variables clouds and clouds_sampled have to be of the same type (have the same set of fields)
+    !   nstr isn't supported
+    !   2str is checked at assignment
+    !
+    select type(clouds)
+    type is (ty_optical_props_1scl)
+      select type(clouds_sampled)
+      type is (ty_optical_props_2str)
+        error_msg = "draw_samples: by-band and sampled cloud properties need to be the same variable type"
+        return
+      type is (ty_optical_props_nstr)
+        error_msg = "draw_samples: by-band and sampled cloud properties need to be the same variable type"
+        return
+      end select
+    type is (ty_optical_props_nstr)
+      error_msg = "draw_samples: sampling isn't implemented yet for ty_optical_props_nstr"
+      return
+    end select
+
+    !
+    ! Spectral discretization
+    !
+    if(.not. clouds%bands_are_equal(clouds_sampled)) then
+      error_msg = "draw_samples: by-band and sampled cloud properties spectral structure is different"
+      return
+    end if
+
+    !
+    ! Array extents
+    !
+    ncol = clouds%get_ncol()
+    nlay = clouds%get_nlay()
+    nbnd = clouds%get_nband()
+    ngpt = clouds_sampled%get_ngpt()
+    if (any([size(cloud_mask,1), size(cloud_mask,2), size(cloud_mask,3)] /= [ncol,nlay,ngpt])) then
+      error_msg = "draw_samples: cloud mask and cloud optical properties have different ncol and/or nlay"
+      return
+    end if
+    if (any([clouds_sampled%get_ncol(), clouds_sampled%get_nlay()] /= [ncol,nlay])) then
+      error_msg = "draw_samples: sampled/unsampled cloud optical properties have different ncol and/or nlay"
+      return
+    end if
+    ! ------------------------
+    !
+    ! Finally - sample fields according to the cloud mask
+    !
+    ! Optical depth assignment works for 1scl, 2str (also nstr)
+    call apply_cloud_mask(ncol,nlay,nbnd,ngpt,clouds_sampled%get_band_lims_gpoint(),cloud_mask,clouds%tau,clouds_sampled%tau)
+    !
+    ! For 2-stream
+    !
+    select type(clouds)
+    type is (ty_optical_props_2str)
+      select type(clouds_sampled)
+      type is (ty_optical_props_2str)
+        call apply_cloud_mask(ncol,nlay,nbnd,ngpt,clouds_sampled%get_band_lims_gpoint(),cloud_mask,clouds%ssa,clouds_sampled%ssa)
+        call apply_cloud_mask(ncol,nlay,nbnd,ngpt,clouds_sampled%get_band_lims_gpoint(),cloud_mask,clouds%g,  clouds_sampled%g  )
+      class default
+          error_msg = "draw_samples: by-band and sampled cloud properties need to be the same variable type"
+      end select
+    end select
+  end function draw_samples
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Generate a McICA-sampled cloud mask for maximum-random overlap
+  !
+  subroutine sampled_mask_max_ran(ncol,nlay,nbnd,ngpt,randoms,cloud_frac,cloud_mask)
+    integer,                                intent(in ) :: ncol, nlay, nbnd, ngpt
+    real(wp), dimension(ngpt,nlay,ncol),    intent(in ) :: randoms
+    real(wp), dimension(ncol,nlay),         intent(in ) :: cloud_frac
+    logical,  dimension(ncol,nlay,ngpt),    intent(out) :: cloud_mask
+    ! ------------------------
+    integer                            :: icol, ilay, igpt
+    integer                            :: cloud_lay_fst, cloud_lay_lst
+    real(wp), dimension(ngpt)          :: local_rands
+    logical, dimension(nlay)           :: cloud_mask_layer
+    ! ------------------------
+    !
+    ! Construct the cloud mask for each column
     !
     do icol = 1, ncol
-      do ilay = 1, nlay
-        ! Could test for cloud fraction > 1; this would save lots of comparisons. 
-        cld_mask(1:ngpt,ilay,icol) = (rank(1:ngpt,ilay,icol) >= 1._wp - cld_frac(icol,ilay)) 
-      end do 
-    end do 
-  end function sample_one_cloudfrac
-  !--------------------------------------------------------------------------------------------------------------------
-end module mo_cloud_sampling 
+      cloud_mask_layer(1:nlay) = cloud_frac(icol,1:nlay) > 0._wp
+      if(.not. any(cloud_mask_layer)) then
+        cloud_mask(icol,1:nlay,1:ngpt) = .false.
+        cycle
+      end if
+      cloud_lay_fst = findloc(cloud_mask_layer, .true., dim=1)
+      cloud_lay_lst = findloc(cloud_mask_layer, .true., dim=1, back = .true.)
+      cloud_mask(icol,1:cloud_lay_fst,1:ngpt) = .false.
 
+      ilay = cloud_lay_fst
+      local_rands(1:ngpt) = randoms(1:ngpt,cloud_lay_fst,icol)
+      cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+      do ilay = cloud_lay_fst+1, cloud_lay_lst
+        !
+        ! Max-random overlap:
+        !   new  random deviates if the adjacent layer isn't cloudy
+        !   same random deviates if the adjacent layer is    cloudy
+        !
+        if(.not. cloud_mask_layer(ilay-1)) local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
+        cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+      end do
+
+      cloud_mask(icol,cloud_lay_lst+1:nlay, 1:ngpt) = .false.
+    end do
+
+  end subroutine sampled_mask_max_ran
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Apply a true/false cloud mask to a homogeneous field
+  !   This could be a kernel
+  !
+  subroutine apply_cloud_mask(ncol,nlay,nbnd,ngpt,band_lims_gpt,cloud_mask,input_field,sampled_field)
+    integer,                                intent(in ) :: ncol,nlay,nbnd,ngpt
+    integer,     dimension(2,nbnd),         intent(in ) :: band_lims_gpt
+    logical,     dimension(ncol,nlay,ngpt), intent(in ) :: cloud_mask
+    real(wp),    dimension(ncol,nlay,nbnd), intent(in ) :: input_field
+    real(wp),    dimension(ncol,nlay,ngpt), intent(out) :: sampled_field
+
+    integer :: icol,ilay,ibnd,igpt
+
+    do ibnd = 1, nbnd
+      do igpt = band_lims_gpt(1,ibnd), band_lims_gpt(2,ibnd)
+        do ilay = 1, nlay
+          sampled_field(1:ncol,ilay,igpt) = merge(input_field(1:ncol,ilay,ibnd), 0._wp, cloud_mask(1:ncol,ilay,igpt))
+        end do
+      end do
+    end do
+  end subroutine apply_cloud_mask
+  ! -------------------------------------------------------------------------------------------------
+end module mo_cloud_sampling

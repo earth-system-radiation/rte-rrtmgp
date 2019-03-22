@@ -170,13 +170,14 @@ contains
   ! -------------------------------------------------------------------------------------------------
   !
   ! Generate a McICA-sampled cloud mask for exponential-random overlap
-  !   The correlation coefficient is defined between pairs of layers
+  !   The overlap parameter alpha is defined between pairs of layers
+  !   for layer i, alpha(i) describes the overlap betwen cloud_frac(i) and cloud_frac(i+1)
   !
-  subroutine sampled_mask_exp_ran(ncol,nlay,ngpt,randoms,cloud_frac,correlation,cloud_mask)
+  subroutine sampled_mask_exp_ran(ncol,nlay,ngpt,randoms,cloud_frac,overlap_param,cloud_mask)
     integer,                                intent(in ) :: ncol, nlay, ngpt
     real(wp), dimension(ngpt,nlay,ncol),    intent(in ) :: randoms
     real(wp), dimension(ncol,nlay),         intent(in ) :: cloud_frac
-    real(wp), dimension(ncol,nlay-1),       intent(in ) :: correlation
+    real(wp), dimension(ncol,nlay-1),       intent(in ) :: overlap_param
     logical,  dimension(ncol,nlay,ngpt),    intent(out) :: cloud_mask
     ! ------------------------
     integer                            :: icol, ilay, igpt
@@ -212,7 +213,7 @@ contains
             !
             ! Enforce correlation with the adjacent layer
             !
-            rho = correlation(icol,ilay-1)
+            rho = overlap_param(icol,ilay-1)
             local_rands(1:ngpt) =  rho*local_rands(1:ngpt) + sqrt(1._wp-rho*rho)*randoms(1:ngpt,ilay,icol)
           else
             local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)

@@ -122,8 +122,8 @@ contains
   !
   ! Generate a McICA-sampled cloud mask for maximum-random overlap
   !
-  subroutine sampled_mask_max_ran(ncol,nlay,nbnd,ngpt,randoms,cloud_frac,cloud_mask)
-    integer,                                intent(in ) :: ncol, nlay, nbnd, ngpt
+  subroutine sampled_mask_max_ran(ncol,nlay,ngpt,randoms,cloud_frac,cloud_mask)
+    integer,                                intent(in ) :: ncol, nlay, ngpt
     real(wp), dimension(ngpt,nlay,ncol),    intent(in ) :: randoms
     real(wp), dimension(ncol,nlay),         intent(in ) :: cloud_frac
     logical,  dimension(ncol,nlay,ngpt),    intent(out) :: cloud_mask
@@ -172,8 +172,8 @@ contains
   ! Generate a McICA-sampled cloud mask for exponential-random overlap
   !   The correlation coefficient is defined between pairs of layers
   !
-  subroutine sampled_mask_exp_ran(ncol,nlay,nbnd,ngpt,randoms,cloud_frac,correlation,cloud_mask)
-    integer,                                intent(in ) :: ncol, nlay, nbnd, ngpt
+  subroutine sampled_mask_exp_ran(ncol,nlay,ngpt,randoms,cloud_frac,correlation,cloud_mask)
+    integer,                                intent(in ) :: ncol, nlay, ngpt
     real(wp), dimension(ngpt,nlay,ncol),    intent(in ) :: randoms
     real(wp), dimension(ncol,nlay),         intent(in ) :: cloud_frac
     real(wp), dimension(ncol,nlay-1),       intent(in ) :: correlation

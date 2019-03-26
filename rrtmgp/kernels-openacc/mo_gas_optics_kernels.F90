@@ -94,6 +94,7 @@ contains
     !
     logical                    :: top_at_1
     integer, dimension(ncol,2) :: itropo_lower, itropo_upper
+
     ! ----------------------------------------------------------------
 
     ! ---------------------
@@ -111,6 +112,12 @@ contains
       itropo_upper(:, 1) = maxloc(play, dim=2, mask=(.not. tropo))
       itropo_upper(:, 2) = nlay
     end if
+
+    !$acc enter data copyin(itropo_lower,itropo_upper,gpoint_flavor,kmajor,kminor_lower,kminor_upper,minor_limits_gpt_lower,minor_limits_gpt_upper,&
+    !$acc&                  minor_scales_with_density_lower,minor_scales_with_density_upper,scale_by_complement_lower,scale_by_complement_upper, &
+    !$acc&                  idx_minor_lower,idx_minor_upper,idx_minor_scaling_lower,idx_minor_scaling_upper,kminor_start_lower,kminor_start_upper,tropo, &
+    !$acc&                  col_mix,fmajor,fminor,play,tlay,col_gas,jeta,jtemp,jpress,tau)
+
     ! ---------------------
     ! Major Species
     ! ---------------------
@@ -158,6 +165,12 @@ contains
            itropo_upper,jtemp,         &
            tau)
 
+    !$acc exit data delete(itropo_lower,itropo_upper,gpoint_flavor,kmajor,kminor_lower,kminor_upper,minor_limits_gpt_lower,minor_limits_gpt_upper      , &
+    !$acc&                  minor_scales_with_density_lower,minor_scales_with_density_upper,scale_by_complement_lower,scale_by_complement_upper        , &
+    !$acc&                  idx_minor_lower,idx_minor_upper,idx_minor_scaling_lower,idx_minor_scaling_upper,kminor_start_lower,kminor_start_upper,tropo, &
+    !$acc&                  col_mix,fmajor,fminor,play,tlay,col_gas,jeta,jtemp,jpress)
+    !$acc exit data copyout(tau)
+
   end subroutine compute_tau_absorption
   ! --------------------------------------------------------------------------------------
 
@@ -198,11 +211,7 @@ contains
     ! -----------------
 
     ! optical depth calculation for major species
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(tau(:ngpt,:nlay,:ncol)) &
-    !$acc&     copyin(tropo(:ncol,:nlay),gpoint_flavor(:,:ngpt)) &
-    !$acc&     copyin(col_mix(:,:,:,:),kmajor(:,:,:,:),jtemp(:,:),fmajor(:,:,:,:,:,:),jeta(:,:,:,:)) &
-    !$acc&     copyin(jpress(:ncol,:nlay))
+    !$acc parallel loop collapse(3)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! optical depth calculation for major species
@@ -276,12 +285,7 @@ contains
     if(any(layer_limits(:,1) > 0)) then
       extent = size(scale_by_complement,dim=1)
 
-      !$acc parallel loop collapse(3) private(vmr) &
-      !$acc& copyin(kminor_start(:extent),idx_minor_scaling(:extent),layer_limits(:ncol,:),idx_minor(:extent),tlay(:ncol,:nlay)) &
-      !$acc& copy(tau(:,:,:)) &
-      !$acc& copyin(minor_scales_with_density(:extent),play(:ncol,:nlay),gpt_flv(:),minor_limits_gpt(:2,:extent)) &
-      !$acc& copyin(jeta(:,:,:,:),fminor(:,:,:,:,:),kminor(:,:,:),jtemp(:,:)) &
-      !$acc& copyin(col_gas(:ncol,:nlay,:),scale_by_complement(:extent))
+      !$acc parallel loop collapse(3) private(vmr)
       do imnr = 1, extent  ! loop over minor absorbers in each band
         do icol = 1, ncol
           do ilay = 1 , nlay
@@ -365,11 +369,7 @@ contains
     integer  :: itropo
     ! -----------------
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(col_gas(:ncol,:nlay,idx_h2o),tropo(:ncol,:nlay)) &
-    !$acc&     copyout(tau_rayleigh(:ngpt,:nlay,:ncol)) &
-    !$acc&     copyin(jtemp(:,:),krayl(:,:,:,:),fminor(:,:,:,:,:),jeta(:,:,:,:)) &
-    !$acc&     copyin(col_dry(:ncol,:nlay),gpoint_flavor(:,:ngpt))
+    !$acc parallel loop collapse(3)
     do ilay = 1, nlay
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -419,11 +419,7 @@ contains
     ! -----------------
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(tropo(:ncol,:nlay)) &
-    !$acc&     copyout(pfrac(:ngpt,:nlay,:ncol)) &
-    !$acc&     copyin(gpoint_flavor(:,:ngpt),jpress(:ncol,:nlay)) &
-    !$acc&     copyin(scaling_array(:),pfracin(:,:,:,:),jtemp(:,:),fmajor(:,:,:,:,:,:),jeta(:,:,:,:))
+    !$acc parallel loop collapse(3)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt

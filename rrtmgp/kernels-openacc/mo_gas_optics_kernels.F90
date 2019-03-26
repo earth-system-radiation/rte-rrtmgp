@@ -627,7 +627,11 @@ contains
     ! local indexes
     integer :: icol, ilay, iflav, igases(2), itropo, itemp
 
-    !$acc parallel loop collapse(2) copyout(jtemp,ftemp,jpress,fpress,tropo) copyin(tlay,temp_ref,play,press_ref_log)
+    !$acc enter data copyin(flavor,press_ref_log,temp_ref,vmr_ref,play,tlay,col_gas)
+    !$acc enter data create(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor)
+    !$acc enter data create(ftemp,fpress)
+
+    !$acc parallel loop collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -646,7 +650,7 @@ contains
     end do
 
     ! loop over implemented combinations of major species
-    !$acc parallel loop collapse(4) private(igases) copyin(flavor,tropo,vmr_ref,jtemp,col_gas,ftemp,fpress) copyout(jeta,fmajor) copy(col_mix,fminor)
+    !$acc parallel loop collapse(4) private(igases) present(vmr_ref)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! loop over implemented combinations of major species
@@ -680,6 +684,10 @@ contains
         end do ! iflav
       end do ! icol,ilay
     end do
+
+    !$acc exit data delete(flavor,press_ref_log,temp_ref,vmr_ref,play,tlay,col_gas)
+    !$acc exit data copyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor)
+    !$acc exit data delete(ftemp,fpress)
 
   end subroutine interpolation
   ! ----------------------------------------------------------

@@ -415,8 +415,14 @@ contains
     integer  :: ilay, icol, igpt, itropo, iflav
     real(wp) :: pfrac          (ngpt,nlay,  ncol)
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
-    real(wp) :: scaling_array(2) = (/1._wp,1._wp/)
+    real(wp) :: scaling_array(2)
     ! -----------------
+
+    scaling_array = (/1._wp,1._wp/)
+
+    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,scaling_array)
+    !$acc enter data create(sfc_src,lay_src,lev_src_inc,lev_src_dec)
+    !$acc enter data create(pfrac,planck_function)
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
     !$acc parallel loop collapse(3)
@@ -438,27 +444,21 @@ contains
     ! Planck function by band for the surface
     ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
     !
-    !$acc parallel loop &
-    !$acc&     copy(planck_function(:,:,:)) &
-    !$acc&     copyin(totplnk(:,:),tsfc(:))
+    !$acc parallel loop
     do icol = 1, ncol
       call interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,1,icol))
     end do
     !
     ! Map to g-points
     !
-    !$acc parallel loop collapse(2) &
-    !$acc&     copyout(sfc_src(:ncol,:ngpt)) &
-    !$acc&     copyin(planck_function(:,:1,:ncol),gpoint_bands(:ngpt),pfrac(:ngpt,sfc_lay,:ncol))
+    !$acc parallel loop collapse(2)
     do icol = 1, ncol
       do igpt = 1, ngpt
         sfc_src(icol,igpt) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol)
       end do
     end do ! icol
 
-    !$acc parallel loop collapse(2) &
-    !$acc&     copyin(totplnk(:,:),tlay(:,:)) &
-    !$acc&     copy(planck_function(:,:,:))
+    !$acc parallel loop collapse(2)
     do icol = 1, ncol
       do ilay = 1, nlay
         ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
@@ -468,10 +468,7 @@ contains
     !
     ! Map to g-points
     !
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(planck_function(:,:nlay,:ncol),pfrac(:ngpt,:nlay,:ncol)) &
-    !$acc&     copyout(lay_src(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gpoint_bands(:ngpt))
+    !$acc parallel loop collapse(3)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -481,16 +478,12 @@ contains
     end do ! icol
 
     ! compute level source irradiances for each g-point, one each for upward and downward paths
-    !$acc parallel loop &
-    !$acc&     copy(planck_function(:,:,:)) &
-    !$acc&     copyin(totplnk(:,:),tlev(:,:))
+    !$acc parallel loop
     do icol = 1, ncol
       call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,       1,icol))
     end do
 
-    !$acc parallel loop collapse(2) &
-    !$acc&     copyin(totplnk(:,:),tlev(:,:)) &
-    !$acc&     copy(planck_function(:,:,:))
+    !$acc parallel loop collapse(2)
     do icol = 1, ncol
       do ilay = 2, nlay+1
         call interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,ilay,icol))
@@ -500,11 +493,7 @@ contains
     !
     ! Map to g-points
     !
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(planck_function(:,:nlay+1,:ncol),pfrac(:ngpt,:nlay,:ncol)) &
-    !$acc&     copyout(lev_src_inc(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gpoint_bands(:ngpt)) &
-    !$acc&     copyout(lev_src_dec(:ncol,:nlay,:ngpt))
+    !$acc parallel loop collapse(3)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -513,6 +502,10 @@ contains
         end do
       end do ! ilay
     end do ! icol
+
+    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,scaling_array)
+    !$acc exit data copyout(sfc_src,lay_src,lev_src_inc,lev_src_dec)
+    !$acc exit data delete(pfrac,planck_function)
 
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------

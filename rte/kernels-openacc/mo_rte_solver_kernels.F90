@@ -105,13 +105,15 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
+    !$acc enter data copyin(d,tau,sfc_src,sfc_emis,radn_dn,lev_source_dec,lev_source_inc,lay_source,radn_up) async
+    !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo) async
+    !$acc enter data attach(lev_source_up,lev_source_dn) async
+
     ! NOTE: This kernel produces small differences between GPU and CPU
     ! implementations on Ascent with PGI, we assume due to floating point
     ! differences in the exp() function. These differences are small in the
     ! RFMIP test case (10^-6).
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(d(:ncol,:ngpt),tau(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyout(tau_loc(:ncol,:nlay,:ngpt),trans(:ncol,:nlay,:ngpt))
+    !$acc parallel loop collapse(3) async
     do igpt = 1, ngpt
       do ilev = 1, nlay
         do icol = 1, ncol
@@ -124,11 +126,7 @@ contains
       end do
     end do
 
-    !$acc parallel loop collapse(2) &
-    !$acc&     copyout(source_sfc(:ncol,:ngpt)) &
-    !$acc&     copyin(sfc_src(:ncol,:ngpt),sfc_emis(:ncol,:ngpt)) &
-    !$acc&     copy(radn_dn(:ncol,top_level,:ngpt)) &
-    !$acc&     copyout(sfc_albedo(:ncol,:ngpt))
+    !$acc parallel loop collapse(2) async
     do igpt = 1, ngpt
       do icol = 1, ncol
         !
@@ -150,6 +148,7 @@ contains
     call lw_source_noscat(ncol, nlay, ngpt, &
                           lay_source, lev_source_up, lev_source_dn, &
                           tau_loc, trans, source_dn, source_up)
+
     !
     ! Transport
     !
@@ -160,8 +159,7 @@ contains
     !
     ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
     !
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(radn_up(:ncol,:nlay+1,:ngpt), radn_dn(:ncol,:nlay+1,:ngpt))
+    !$acc parallel loop collapse(3) async
     do igpt = 1, ngpt
       do ilev = 1, nlay+1
         do icol = 1, ncol
@@ -170,6 +168,12 @@ contains
         end do
       end do
     end do
+
+    !$acc exit data copyout(d,tau,sfc_src,sfc_emis,radn_dn,lev_source_dec,lev_source_inc,lay_source,radn_up) async
+    !$acc exit data delete(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo) async
+    !$acc exit data detach(lev_source_up,lev_source_dn) async
+
+    !$acc wait
 
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------
@@ -483,10 +487,7 @@ contains
       real(wp), parameter :: tau_thresh = sqrt(epsilon(tau))
       ! ---------------------------------------------------------------
       ! ---------------------------------------------------------------
-      !$acc  parallel loop collapse(3) &
-      !$acc&     copyout(source_up(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyin(tau(:ncol,:nlay,:ngpt),trans(:ncol,:nlay,:ngpt),lay_source(:ncol,:nlay,:ngpt),lev_source_up(:ncol,:nlay,:ngpt),lev_source_dn(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyout(source_dn(:ncol,:nlay,:ngpt))
+      !$acc  parallel loop collapse(3) async
       do igpt = 1, ngpt
         do ilay = 1, nlay
           do icol = 1, ncol
@@ -536,11 +537,7 @@ contains
       !
       ! Top of domain is index 1
       !
-      !$acc  parallel loop collapse(2)  &
-      !$acc&     copyin(source_sfc(:ncol,:ngpt),source_up(:ncol,:nlay,:ngpt),trans(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(radn_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(sfc_albedo(:ncol,:ngpt),source_dn(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(radn_up(:ncol,:nlay+1,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Downward propagation
@@ -561,10 +558,7 @@ contains
       !
       ! Top of domain is index nlay+1
       !
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copy(radn_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copy(radn_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(source_dn(:ncol,:nlay,:ngpt),sfc_albedo(:ncol,:ngpt),trans(:ncol,:nlay,:ngpt),source_up(:ncol,:nlay,:ngpt),source_sfc(:ncol,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Downward propagation

@@ -35,18 +35,15 @@ contains
 
     integer  :: icol, ilev, igpt
     real(wp) :: total
-
-    !$acc parallel loop collapse(2) &
-    !$acc&     copyout(broadband_flux(:ncol,:nlev))
+    !$acc enter data copyin(spectral_flux) create(broadband_flux)
+    !$acc parallel loop collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
-        broadband_flux(icol,ilev) = 0
+        broadband_flux(icol,ilev) = 0._wp
       end do
     end do
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(spectral_flux(:ncol,:nlev,:ngpt)) &
-    !$acc&     copy(broadband_flux(:,:))
+    !$acc parallel loop collapse(3)
     do ilev = 1, nlev
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -55,7 +52,7 @@ contains
         end do
       end do
     end do
-
+    !$acc exit data delete(spectral_flux) copyout(broadband_flux)
   end subroutine sum_broadband
   ! ----------------------------------------------------------------------------
   !
@@ -69,17 +66,15 @@ contains
     integer  :: icol, ilev, igpt
     real(wp) :: total, tmp
 
-    !$acc parallel loop collapse(2) &
-    !$acc&     copyout(broadband_flux_net(:ncol,:nlev))
+    !$acc enter data copyin(spectral_flux_dn, spectral_flux_up) create(broadband_flux_net)
+    !$acc parallel loop collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
-        broadband_flux_net(icol,ilev) = 0
+        broadband_flux_net(icol,ilev) = 0._wp
       end do
     end do
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(spectral_flux_up(:ncol,:nlev,:ngpt),spectral_flux_dn(:ncol,:nlev,:ngpt)) &
-    !$acc&     copy(broadband_flux_net(:,:))
+    !$acc parallel loop collapse(3)
     do ilev = 1, nlev
       do icol = 1, ncol
         do igpt = 1, ngpt
@@ -89,7 +84,7 @@ contains
         end do
       end do
     end do
-
+    !$acc exit data delete(spectral_flux_dn, spectral_flux_up) copyout(broadband_flux_net)
   end subroutine net_broadband_full
   ! ----------------------------------------------------------------------------
   !
@@ -101,15 +96,14 @@ contains
     real(wp), dimension(ncol, nlay), intent(in ) :: flux_dn, flux_up
     real(wp), dimension(ncol, nlay), intent(out) :: broadband_flux_net
     integer :: icol, ilay
-
-    !$acc parallel loop collapse(2) &
-    !$acc&     copyin(flux_up(:ncol,:nlay),flux_dn(:ncol,:nlay)) &
-    !$acc&     copyout(broadband_flux_net(:ncol,:nlay))
+    !$acc enter data copyin(flux_dn, flux_up) create(broadband_flux_net)
+    !$acc parallel loop collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
          broadband_flux_net(icol,ilay) = flux_dn(icol,ilay) - flux_up(icol,ilay)
        end do
     end do
+    !$acc exit data delete(flux_dn, flux_up) copyout(broadband_flux_net)
   end subroutine net_broadband_precalc
   ! ----------------------------------------------------------------------------
 end module mo_fluxes_broadband_kernels

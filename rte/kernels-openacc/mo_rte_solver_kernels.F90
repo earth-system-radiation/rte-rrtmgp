@@ -174,8 +174,6 @@ contains
     !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo) async
     !$acc exit data detach(lev_source_up,lev_source_dn) async
 
-    !$acc wait
-
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------
   !
@@ -209,11 +207,13 @@ contains
 
     integer :: imu, top_level
     integer :: icol, ilev, igpt
+
+    !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn) async
+    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol) async
+
     ! ------------------------------------
     ! ------------------------------------
-    !$acc  parallel loop collapse(2) &
-    !$acc&     copyout(ds_ncol(:ncol,:ngpt)) &
-    !$acc&     copyin(ds(:1))
+    !$acc  parallel loop collapse(2) async
     do igpt = 1, ngpt
       do icol = 1, ncol
         Ds_ncol(icol, igpt) = Ds(1)
@@ -231,9 +231,7 @@ contains
     call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
 
     do imu = 2, nmus
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyout(ds_ncol(:ncol,:ngpt)) &
-      !$acc&     copyin(ds(imu))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           Ds_ncol(icol, igpt) = Ds(imu)
@@ -243,9 +241,7 @@ contains
                             top_at_1, Ds_ncol, weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn)
-      !$acc  parallel loop collapse(3) &
-      !$acc&     copyin(radn_up(:ncol,:nlay+1,ngpt),radn_dn(:ncol,:nlay+1,ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,ngpt),flux_up(:ncol,:nlay+1,ngpt))
+      !$acc  parallel loop collapse(3) async
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
           do icol = 1, ncol
@@ -256,6 +252,11 @@ contains
       end do
 
     end do ! imu loop
+
+    !$acc exit data copyout(flux_up,flux_dn) async
+    !$acc exit data delete(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol) async
+
+    !$acc wait
   end subroutine lw_solver_noscat_GaussQuad
   ! -------------------------------------------------------------------------------------------------
   !
@@ -297,7 +298,8 @@ contains
     real(wp), dimension(ncol       ,ngpt) :: source_sfc
     ! ------------------------------------
     ! ------------------------------------
-
+    !$acc enter data copyin(tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_dn)
+    !$acc enter data create(flux_up, Rdif, Tdif, gamma1, gamma2, sfc_albedo, lev_source, source_dn, source_up, source_sfc)
     !
     ! RRTMGP provides source functions at each level using the spectral mapping
     !   of each adjacent layer. Combine these for two-stream calculations
@@ -322,9 +324,7 @@ contains
                         gamma1, gamma2, Rdif, Tdif, tau, &
                         source_dn, source_up, source_sfc)
 
-    !$acc  parallel loop collapse(2) &
-    !$acc&     copyin(sfc_emis(:ncol,:ngpt)) &
-    !$acc&     copyout(sfc_albedo(:ncol,:ngpt))
+    !$acc  parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
         sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt)
@@ -338,6 +338,9 @@ contains
                 Rdif, Tdif,                        &
                 source_dn, source_up, source_sfc,  &
                 flux_up, flux_dn)
+    !$acc exit data delete(tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
+    !$acc exit data delete(Rdif, Tdif, gamma1, gamma2, sfc_albedo, lev_source, source_dn, source_up, source_sfc)
+    !$acc exit data copyout(flux_up, flux_dn)
   end subroutine lw_solver_2stream
   ! -------------------------------------------------------------------------------------------------
   !
@@ -360,9 +363,8 @@ contains
       real(wp) :: mu0_inv(ncol)
       ! ------------------------------------
       ! ------------------------------------
-      !$acc parallel loop &
-      !$acc&     copyin(mu0(:ncol)) &
-      !$acc&     copyout(mu0_inv(:ncol))
+      !$acc enter data copyin(tau, mu0) create(mu0_inv, flux_dir)
+      !$acc parallel loop
       do icol = 1, ncol
         mu0_inv(icol) = 1._wp/mu0(icol)
       enddo
@@ -376,9 +378,7 @@ contains
         !   radiation just passed through?
         ! layer index = level index - 1
         ! previous level is up (-1)
-        !$acc parallel loop collapse(2) &
-        !$acc&     copyin(tau(:ncol,2:nlay+1,:ngpt),mu0_inv(:ncol)) &
-        !$acc&     copy(flux_dir)
+        !$acc parallel loop collapse(2)
         do igpt = 1, ngpt
           do icol = 1, ncol
             do ilev = 2, nlay+1
@@ -389,9 +389,7 @@ contains
       else
         ! layer index = level index
         ! previous level is up (+1)
-        !$acc parallel loop collapse(2) &
-        !$acc&     copyin(mu0_inv(:ncol),tau(:ncol,:nlay,:ngpt)) &
-        !$acc&     copy(flux_dir)
+        !$acc parallel loop collapse(2)
         do igpt = 1, ngpt
           do icol = 1, ncol
             do ilev = nlay, 1, -1
@@ -400,6 +398,7 @@ contains
           end do
         end do
       end if
+      !$acc exit data delete(tau, mu0, mu0_inv) copyout(flux_dir)
     end subroutine sw_solver_noscat
   ! -------------------------------------------------------------------------------------------------
   !
@@ -451,7 +450,7 @@ contains
       !
       ! adding computes only diffuse flux; flux_dn is total
       !
-      !$acc  parallel loop collapse(3) 
+      !$acc  parallel loop collapse(3)
       do igpt = 1, ngpt
         do ilay = 1, nlay+1
           do icol = 1, ncol
@@ -610,11 +609,10 @@ contains
     real(wp), parameter :: LW_diff_sec = 1.66  ! 1./cos(diffusivity angle)
     ! ---------------------------------
     ! ---------------------------------
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copyout(tdif(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(w0(:ncol,:nlay,:ngpt),g(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyout(gamma1(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),gamma2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau(:ncol,:nlay,:ngpt))
+    !$acc enter data copyin(tau, w0, g)
+    !$acc enter data create(gamma1, gamma2, Rdif, Tdif)
+
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -653,6 +651,8 @@ contains
         end do
       end do
     end do
+    !$acc exit data delete (tau, w0, g)
+    !$acc exit data copyout(gamma1, gamma2, Rdif, Tdif)
   end subroutine lw_two_stream
   ! -------------------------------------------------------------------------------------------------
   !
@@ -672,9 +672,10 @@ contains
     integer :: icol, ilay, igpt
     ! ---------------------------------------------------------------
     ! ---------------------------------
-    !$acc  parallel loop collapse(3)  &
-    !$acc&     copy(lev_source(:ncol,:nlay+1,:ngpt)) &
-    !$acc&     copyin(lev_src_inc(:ncol,0:nlay,:ngpt),lev_src_dec(:ncol,:nlay+1,:ngpt))
+    !$acc enter data copyin(lev_src_inc, lev_src_dec)
+    !$acc enter data create(lev_source)
+
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay+1
         do icol = 1,ncol
@@ -689,6 +690,8 @@ contains
         end do
       end do
     end do
+    !$acc exit data delete (lev_src_inc, lev_src_dec)
+    !$acc exit data copyout(lev_source)
   end subroutine lw_combine_sources
   ! ---------------------------------------------------------------
   !
@@ -719,15 +722,10 @@ contains
     real(wp)            :: lev_source_bot, lev_source_top
     ! ---------------------------------------------------------------
     ! ---------------------------------
+    !$acc enter data copyin(sfc_emis, sfc_src, lay_source, tau, gamma1, gamma2, rdif, tdif, lev_source)
+    !$acc enter data create(source_dn, source_up, source_sfc)
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(sfc_emis(:ncol,:ngpt),rdif(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(source_dn(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(sfc_src(:ncol,:ngpt)) &
-    !$acc&     copy(source_sfc(:ncol,:ngpt)) &
-    !$acc&     copyin(tdif(:ncol,:nlay,:ngpt),tau(:ncol,:nlay,:ngpt),lev_source(:ncol,:nlay+1,ngpt)) &
-    !$acc&     copy(source_up(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gamma1(:ncol,:nlay,:ngpt),gamma2(:ncol,:nlay,:ngpt))
+    !$acc parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -757,6 +755,9 @@ contains
         end do
       end do
     end do
+    !$acc exit data delete(sfc_emis, sfc_src, lay_source, tau, gamma1, gamma2, rdif, tdif, lev_source)
+    !$acc exit data copyout(source_dn, source_up, source_sfc)
+
   end subroutine lw_source_2str
   ! -------------------------------------------------------------------------------------------------
   !
@@ -972,21 +973,13 @@ contains
     !   orientation of the arrays (whether the domain top is at the first or last index)
     ! We write the loops out explicitly so compilers will have no trouble optimizing them.
     !
+    !$acc enter data copyin(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc, flux_dn)
+    !$acc enter data create(flux_up, albedo, src, denom)
     if(top_at_1) then
 #ifdef __PGI
-      !$acc parallel loop  &
-      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyout(flux_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
+      !$acc parallel loop
 #else
-      !$acc parallel loop collapse(2) private(albedo, src, denom) &
-      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyout(flux_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
+      !$acc parallel loop collapse(2) private(albedo, src, denom)
 #endif
       do igpt = 1, ngpt
 #ifdef __PGI
@@ -1036,17 +1029,9 @@ contains
       end do
     else
 #ifdef __PGI
-      !$acc parallel loop &
-      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt),tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(flux_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
+      !$acc parallel loop
 #else
-      !$acc parallel loop collapse(2) private(albedo, src, denom) &
-      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt),tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(flux_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
+      !$acc parallel loop collapse(2) private(albedo, src, denom)
 #endif
       do igpt = 1, ngpt
 #ifdef __PGI
@@ -1096,6 +1081,8 @@ contains
         end do
       end do
     end if
+    !$acc exit data delete(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc, albedo, src, denom)
+    !$acc exit data copyout(flux_up, flux_dn)
   end subroutine adding
   ! ---------------------------------------------------------------
   !
@@ -1113,24 +1100,21 @@ contains
     ! --------------
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyout(flux_dn(:ncol,1,:ngpt)) &
-      !$acc&     copyin(inc_flux(:ncol,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt)
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyin(inc_flux(:ncol,:ngpt)) &
-      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt)
         end do
       end do
     end if
+    !$acc wait
   end subroutine apply_BC_gpt
   ! ---------------------
   subroutine apply_BC_factor(ncol, nlay, ngpt, top_at_1, inc_flux, factor, flux_dn) bind (C, name="apply_BC_factor")
@@ -1146,26 +1130,21 @@ contains
 
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyin(factor(:ncol)) &
-      !$acc&     copyout(flux_dn(:ncol,1,:ngpt)) &
-      !$acc&     copyin(inc_flux(:ncol,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt) * factor(icol)
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyin(factor(:ncol)) &
-      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt)) &
-      !$acc&     copyin(inc_flux(:ncol,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt) * factor(icol)
         end do
       end do
     end if
+    !$acc wait
   end subroutine apply_BC_factor
   ! ---------------------
   subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="apply_BC_0")
@@ -1179,22 +1158,21 @@ contains
 
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyout(flux_dn(:ncol,:1,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = 0._wp
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = 0._wp
         end do
       end do
     end if
+    !$acc wait
   end subroutine apply_BC_0
 
 end module mo_rte_solver_kernels

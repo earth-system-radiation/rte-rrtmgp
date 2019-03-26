@@ -174,8 +174,6 @@ contains
     !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo) async
     !$acc exit data detach(lev_source_up,lev_source_dn) async
 
-    !$acc wait
-
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------
   !
@@ -209,11 +207,13 @@ contains
 
     integer :: imu, top_level
     integer :: icol, ilev, igpt
+
+    !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn) async
+    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol) async
+
     ! ------------------------------------
     ! ------------------------------------
-    !$acc  parallel loop collapse(2) &
-    !$acc&     copyout(ds_ncol(:ncol,:ngpt)) &
-    !$acc&     copyin(ds(:1))
+    !$acc  parallel loop collapse(2) async
     do igpt = 1, ngpt
       do icol = 1, ncol
         Ds_ncol(icol, igpt) = Ds(1)
@@ -231,9 +231,7 @@ contains
     call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
 
     do imu = 2, nmus
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyout(ds_ncol(:ncol,:ngpt)) &
-      !$acc&     copyin(ds(imu))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           Ds_ncol(icol, igpt) = Ds(imu)
@@ -243,9 +241,7 @@ contains
                             top_at_1, Ds_ncol, weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn)
-      !$acc  parallel loop collapse(3) &
-      !$acc&     copyin(radn_up(:ncol,:nlay+1,ngpt),radn_dn(:ncol,:nlay+1,ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,ngpt),flux_up(:ncol,:nlay+1,ngpt))
+      !$acc  parallel loop collapse(3) async
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
           do icol = 1, ncol
@@ -256,6 +252,11 @@ contains
       end do
 
     end do ! imu loop
+
+    !$acc exit data copyout(flux_up,flux_dn) async
+    !$acc exit data delete(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol) async
+
+    !$acc wait
   end subroutine lw_solver_noscat_GaussQuad
   ! -------------------------------------------------------------------------------------------------
   !
@@ -1111,24 +1112,21 @@ contains
     ! --------------
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyout(flux_dn(:ncol,1,:ngpt)) &
-      !$acc&     copyin(inc_flux(:ncol,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt)
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyin(inc_flux(:ncol,:ngpt)) &
-      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt)
         end do
       end do
     end if
+    !$acc wait
   end subroutine apply_BC_gpt
   ! ---------------------
   subroutine apply_BC_factor(ncol, nlay, ngpt, top_at_1, inc_flux, factor, flux_dn) bind (C, name="apply_BC_factor")
@@ -1144,26 +1142,21 @@ contains
 
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyin(factor(:ncol)) &
-      !$acc&     copyout(flux_dn(:ncol,1,:ngpt)) &
-      !$acc&     copyin(inc_flux(:ncol,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt) * factor(icol)
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyin(factor(:ncol)) &
-      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt)) &
-      !$acc&     copyin(inc_flux(:ncol,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt) * factor(icol)
         end do
       end do
     end if
+    !$acc wait
   end subroutine apply_BC_factor
   ! ---------------------
   subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="apply_BC_0")
@@ -1177,22 +1170,21 @@ contains
 
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyout(flux_dn(:ncol,:1,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = 0._wp
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyout(flux_dn(:ncol,nlay+1,:ngpt))
+      !$acc  parallel loop collapse(2) async
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = 0._wp
         end do
       end do
     end if
+    !$acc wait
   end subroutine apply_BC_0
 
 end module mo_rte_solver_kernels

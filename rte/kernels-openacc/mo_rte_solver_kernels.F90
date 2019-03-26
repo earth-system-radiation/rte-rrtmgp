@@ -363,9 +363,8 @@ contains
       real(wp) :: mu0_inv(ncol)
       ! ------------------------------------
       ! ------------------------------------
-      !$acc parallel loop &
-      !$acc&     copyin(mu0(:ncol)) &
-      !$acc&     copyout(mu0_inv(:ncol))
+      !$acc enter data copyin(tau, mu0) create(mu0_inv, flux_dir)
+      !$acc parallel loop
       do icol = 1, ncol
         mu0_inv(icol) = 1._wp/mu0(icol)
       enddo
@@ -379,9 +378,7 @@ contains
         !   radiation just passed through?
         ! layer index = level index - 1
         ! previous level is up (-1)
-        !$acc parallel loop collapse(2) &
-        !$acc&     copyin(tau(:ncol,2:nlay+1,:ngpt),mu0_inv(:ncol)) &
-        !$acc&     copy(flux_dir)
+        !$acc parallel loop collapse(2)
         do igpt = 1, ngpt
           do icol = 1, ncol
             do ilev = 2, nlay+1
@@ -392,9 +389,7 @@ contains
       else
         ! layer index = level index
         ! previous level is up (+1)
-        !$acc parallel loop collapse(2) &
-        !$acc&     copyin(mu0_inv(:ncol),tau(:ncol,:nlay,:ngpt)) &
-        !$acc&     copy(flux_dir)
+        !$acc parallel loop collapse(2)
         do igpt = 1, ngpt
           do icol = 1, ncol
             do ilev = nlay, 1, -1
@@ -403,6 +398,7 @@ contains
           end do
         end do
       end if
+      !$acc exit data delete(tau, mu0, mu0_inv) copyout(flux_dir)
     end subroutine sw_solver_noscat
   ! -------------------------------------------------------------------------------------------------
   !
@@ -977,21 +973,13 @@ contains
     !   orientation of the arrays (whether the domain top is at the first or last index)
     ! We write the loops out explicitly so compilers will have no trouble optimizing them.
     !
+    !$acc enter data copyin(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc, flux_dn)
+    !$acc enter data create(flux_up, albedo, src, denom)
     if(top_at_1) then
 #ifdef __PGI
-      !$acc parallel loop  &
-      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyout(flux_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
+      !$acc parallel loop
 #else
-      !$acc parallel loop collapse(2) private(albedo, src, denom) &
-      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyout(flux_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
+      !$acc parallel loop collapse(2) private(albedo, src, denom)
 #endif
       do igpt = 1, ngpt
 #ifdef __PGI
@@ -1041,17 +1029,9 @@ contains
       end do
     else
 #ifdef __PGI
-      !$acc parallel loop &
-      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt),tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(flux_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
+      !$acc parallel loop
 #else
-      !$acc parallel loop collapse(2) private(albedo, src, denom) &
-      !$acc&     copyin(src_dn(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),src_sfc(:ncol,:ngpt),tdif(:ncol,:nlay,:ngpt),src_up(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(flux_up(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(albedo_sfc(:ncol,:ngpt))
+      !$acc parallel loop collapse(2) private(albedo, src, denom)
 #endif
       do igpt = 1, ngpt
 #ifdef __PGI
@@ -1101,6 +1081,8 @@ contains
         end do
       end do
     end if
+    !$acc exit data delete(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc, albedo, src, denom)
+    !$acc exit data copyout(flux_up, flux_dn)
   end subroutine adding
   ! ---------------------------------------------------------------
   !

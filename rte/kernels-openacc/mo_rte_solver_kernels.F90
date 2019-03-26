@@ -141,7 +141,7 @@ contains
         source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt)
       end do
     end do
-  
+
     !
     ! Source function for diffuse radiation
     !
@@ -155,7 +155,7 @@ contains
     call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
                              tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up, radn_dn)
-  
+
     !
     ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
     !
@@ -786,9 +786,10 @@ contains
       real(wp) :: mu0_inv(ncol)
       ! ---------------------------------
       ! ---------------------------------
-      !$acc parallel loop  &
-      !$acc&     copyin(mu0(:ncol)) &
-      !$acc&     copyout(mu0_inv(:ncol))
+      !$acc enter data copyin (mu0, tau, w0, g)
+      !$acc enter data create(Rdif, Tdif, Rdir, Tdir, Tnoscat, mu0_inv)
+
+      !$acc parallel loop
       do icol = 1, ncol
         mu0_inv(icol) = 1._wp/mu0(icol)
       enddo
@@ -796,13 +797,7 @@ contains
       ! NOTE: this kernel appears to cause small (10^-6) differences between GPU
       ! and CPU. This *might* be floating point differences in implementation of
       ! the exp function.
-      !$acc  parallel loop collapse(3) &
-      !$acc&     copyin(w0(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyout(tnoscat(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyin(g(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyout(rdir(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyin(mu0_inv(:ncol),tau(:ncol,:nlay,:ngpt),mu0(:ncol)) &
-      !$acc&     copyout(tdir(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),tdif(:ncol,:nlay,:ngpt))
+      !$acc  parallel loop collapse(3)
       do igpt = 1, ngpt
         do ilay = 1, nlay
           do icol = 1, ncol
@@ -879,6 +874,8 @@ contains
           end do
         end do
       end do
+      !$acc exit data delete (mu0, tau, w0, g, mu0_inv)
+      !$acc exit data copyout(Rdif, Tdif, Rdir, Tdir, Tnoscat)
 
     end subroutine sw_two_stream
   ! ---------------------------------------------------------------
@@ -900,15 +897,11 @@ contains
     integer :: icol, ilev, igpt
     ! ---------------------------------
     ! ---------------------------------
+    !$acc enter data copyin (Rdir, Tdir, Tnoscat, sfc_albedo, flux_dn_dir)
+    !$acc enter data create(source_dn, source_up, source_sfc)
 
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyin(rdir(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(flux_dn_dir(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyout(source_dn(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(source_sfc(:ncol,:ngpt)) &
-      !$acc&     copyout(source_up(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyin(sfc_albedo(:ncol,:ngpt),tnoscat(:ncol,:nlay,:ngpt),tdir(:ncol,:nlay,:ngpt))
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           do ilev = 1, nlay
@@ -922,10 +915,7 @@ contains
     else
       ! layer index = level index
       ! previous level is up (+1)
-      !$acc  parallel loop collapse(2) &
-      !$acc&     copyin(rdir(:ncol,:nlay,:ngpt)) &
-      !$acc&     copy(source_dn(:ncol,:nlay,:ngpt),flux_dn_dir(:ncol,:nlay+1,:ngpt),source_sfc(:ncol,:ngpt),source_up(:ncol,:nlay,:ngpt)) &
-      !$acc&     copyin(sfc_albedo(:ncol,:ngpt),tnoscat(:ncol,:nlay,:ngpt),tdir(:ncol,:nlay,:ngpt))
+      !$acc  parallel loop collapse(2) 
       do igpt = 1, ngpt
         do icol = 1, ncol
           do ilev = nlay, 1, -1
@@ -937,6 +927,8 @@ contains
         end do
       end do
     end if
+    !$acc exit data copyout(source_dn, source_up, source_sfc, flux_dn_dir)
+    !$acc exit data delete(Rdir, Tdir, Tnoscat, sfc_albedo)
 
   end subroutine sw_source_2str
 ! ---------------------------------------------------------------

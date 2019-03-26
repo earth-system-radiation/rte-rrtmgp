@@ -94,6 +94,7 @@ contains
     !
     logical                    :: top_at_1
     integer, dimension(ncol,2) :: itropo_lower, itropo_upper
+    integer :: icol
     ! ----------------------------------------------------------------
 
     ! ---------------------
@@ -101,15 +102,21 @@ contains
     ! ---------------------
     top_at_1 = play(1,1) < play(1, nlay)
     if(top_at_1) then
-      itropo_lower(:, 1) = minloc(play, dim=2, mask=tropo)
-      itropo_lower(:, 2) = nlay
-      itropo_upper(:, 1) = 1
-      itropo_upper(:, 2) = maxloc(play, dim=2, mask=(.not. tropo))
+      !$acc parallel loop collapse(1) copyin(play,tropo) copyout(itropo_lower, itropo_upper)
+      do icol = 1,ncol
+        itropo_lower(icol,1) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
+        itropo_lower(icol,2) = nlay
+        itropo_upper(icol,1) = 1
+        itropo_upper(icol,2) = maxloc(play(icol,:), dim=1, mask=(.not. tropo(icol,:)))
+      end do
     else
-      itropo_lower(:, 1) = 1
-      itropo_lower(:, 2) = minloc(play, dim=2, mask= tropo)
-      itropo_upper(:, 1) = maxloc(play, dim=2, mask=(.not. tropo))
-      itropo_upper(:, 2) = nlay
+      !$acc parallel loop collapse(1) copyin(play,tropo) copyout(itropo_lower, itropo_upper)
+      do icol = 1,ncol
+        itropo_lower(icol,1) = 1
+        itropo_lower(icol,2) = minloc(play(icol,:), dim=1, mask= tropo(icol,:))
+        itropo_upper(icol,1) = maxloc(play(icol,:), dim=1, mask=(.not.tropo(icol,:)))
+        itropo_upper(icol,2) = nlay
+      end do
     end if
     ! ---------------------
     ! Major Species

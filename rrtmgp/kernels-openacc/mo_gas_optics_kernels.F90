@@ -650,6 +650,8 @@ contains
     end do
 
     ! loop over implemented combinations of major species
+    ! PGI BUG WORKAROUND: if present(vmr_ref) isn't there, OpenACC runtime
+    ! thinks it isn't present.
     !$acc parallel loop collapse(4) private(igases) present(vmr_ref)
     do ilay = 1, nlay
       do icol = 1, ncol

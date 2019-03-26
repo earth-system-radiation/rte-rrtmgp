@@ -437,6 +437,8 @@ contains
       !
       ! Cell properties: transmittance and reflectance for direct and diffuse radiation
       !
+      !$acc enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_dn, flux_dir)
+      !$acc enter data create(Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up)
       call sw_two_stream(ncol, nlay, ngpt, mu0, &
                          tau , ssa , g   ,      &
                          Rdif, Tdif, Rdir, Tdir, Tnoscat)
@@ -449,9 +451,7 @@ contains
       !
       ! adding computes only diffuse flux; flux_dn is total
       !
-      !$acc  parallel loop collapse(3) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(flux_dir(:ncol,:nlay+1,:ngpt))
+      !$acc  parallel loop collapse(3) 
       do igpt = 1, ngpt
         do ilay = 1, nlay+1
           do icol = 1, ncol
@@ -459,6 +459,8 @@ contains
           end do
         end do
       end do
+      !$acc exit data copyout(flux_up, flux_dn, flux_dir)
+      !$acc exit data delete (tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
 
     end subroutine sw_solver_2stream
 
@@ -918,7 +920,7 @@ contains
     else
       ! layer index = level index
       ! previous level is up (+1)
-      !$acc  parallel loop collapse(2) 
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           do ilev = nlay, 1, -1

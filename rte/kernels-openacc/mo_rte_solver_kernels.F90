@@ -74,7 +74,8 @@ contains
                                            intent( in) :: lev_source_inc, lev_source_dec
     real(wp), dimension(ncol,       ngpt), intent( in) :: sfc_emis         ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent( in) :: sfc_src          ! Surface source function [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: radn_up, radn_dn ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up ! Radiances [W/m2-str]
                                                                            ! Top level must contain incident flux boundary condition
 
     ! Local variables, no g-point dependency
@@ -105,8 +106,8 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
-    !$acc enter data copyin(d,tau,sfc_src,sfc_emis,radn_dn,lev_source_dec,lev_source_inc,lay_source,radn_up) async
-    !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo) async
+    !$acc enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn) async
+    !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up) async
     !$acc enter data attach(lev_source_up,lev_source_dn) async
 
     ! NOTE: This kernel produces small differences between GPU and CPU
@@ -169,8 +170,8 @@ contains
       end do
     end do
 
-    !$acc exit data copyout(d,tau,sfc_src,sfc_emis,radn_dn,lev_source_dec,lev_source_inc,lay_source,radn_up) async
-    !$acc exit data delete(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo) async
+    !$acc exit data copyout(radn_dn,radn_up) async
+    !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo) async
     !$acc exit data detach(lev_source_up,lev_source_dn) async
 
     !$acc wait
@@ -199,7 +200,8 @@ contains
                                                ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis         ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src          ! Surface source function [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_up, flux_dn ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up ! Radiances [W/m2-str]
                                                                            ! Top level must contain incident flux boundary condition
     ! Local variables
     real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
@@ -527,7 +529,8 @@ contains
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_dn, &
                                                             source_up  ! Diffuse radiation emitted by the layer
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: source_sfc ! Surface source function [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_up, radn_dn ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up ! Radiances [W/m2-str]
                                                                              ! Top level must contain incident flux boundary condition
     ! Local variables
     integer :: igpt, ilev, icol

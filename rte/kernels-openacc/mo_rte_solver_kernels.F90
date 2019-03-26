@@ -438,6 +438,8 @@ contains
       !
       ! Cell properties: transmittance and reflectance for direct and diffuse radiation
       !
+      !$acc enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_dn, flux_dir)
+      !$acc enter data create(Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up)
       call sw_two_stream(ncol, nlay, ngpt, mu0, &
                          tau , ssa , g   ,      &
                          Rdif, Tdif, Rdir, Tdir, Tnoscat)
@@ -450,9 +452,7 @@ contains
       !
       ! adding computes only diffuse flux; flux_dn is total
       !
-      !$acc  parallel loop collapse(3) &
-      !$acc&     copy(flux_dn(:ncol,:nlay+1,:ngpt)) &
-      !$acc&     copyin(flux_dir(:ncol,:nlay+1,:ngpt))
+      !$acc  parallel loop collapse(3)
       do igpt = 1, ngpt
         do ilay = 1, nlay+1
           do icol = 1, ncol
@@ -460,6 +460,8 @@ contains
           end do
         end do
       end do
+      !$acc exit data copyout(flux_up, flux_dn, flux_dir)
+      !$acc exit data delete (tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
 
     end subroutine sw_solver_2stream
 
@@ -609,11 +611,10 @@ contains
     real(wp), parameter :: LW_diff_sec = 1.66  ! 1./cos(diffusivity angle)
     ! ---------------------------------
     ! ---------------------------------
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copyout(tdif(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(w0(:ncol,:nlay,:ngpt),g(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyout(gamma1(:ncol,:nlay,:ngpt),rdif(:ncol,:nlay,:ngpt),gamma2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau(:ncol,:nlay,:ngpt))
+    !$acc enter data copyin(tau, w0, g)
+    !$acc enter data create(gamma1, gamma2, Rdif, Tdif)
+
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -652,6 +653,8 @@ contains
         end do
       end do
     end do
+    !$acc exit data delete (tau, w0, g)
+    !$acc exit data copyout(gamma1, gamma2, Rdif, Tdif)
   end subroutine lw_two_stream
   ! -------------------------------------------------------------------------------------------------
   !
@@ -671,9 +674,10 @@ contains
     integer :: icol, ilay, igpt
     ! ---------------------------------------------------------------
     ! ---------------------------------
-    !$acc  parallel loop collapse(3)  &
-    !$acc&     copy(lev_source(:ncol,:nlay+1,:ngpt)) &
-    !$acc&     copyin(lev_src_inc(:ncol,0:nlay,:ngpt),lev_src_dec(:ncol,:nlay+1,:ngpt))
+    !$acc enter data copyin(lev_src_inc, lev_src_dec)
+    !$acc enter data create(lev_source)
+
+    !$acc  parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay+1
         do icol = 1,ncol
@@ -688,6 +692,8 @@ contains
         end do
       end do
     end do
+    !$acc exit data delete (lev_src_inc, lev_src_dec)
+    !$acc exit data copyout(lev_source)
   end subroutine lw_combine_sources
   ! ---------------------------------------------------------------
   !
@@ -718,15 +724,10 @@ contains
     real(wp)            :: lev_source_bot, lev_source_top
     ! ---------------------------------------------------------------
     ! ---------------------------------
+    !$acc enter data copyin(sfc_emis, sfc_src, lay_source, tau, gamma1, gamma2, rdif, tdif, lev_source)
+    !$acc enter data create(source_dn, source_up, source_sfc)
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(sfc_emis(:ncol,:ngpt),rdif(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(source_dn(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(sfc_src(:ncol,:ngpt)) &
-    !$acc&     copy(source_sfc(:ncol,:ngpt)) &
-    !$acc&     copyin(tdif(:ncol,:nlay,:ngpt),tau(:ncol,:nlay,:ngpt),lev_source(:ncol,:nlay+1,ngpt)) &
-    !$acc&     copy(source_up(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gamma1(:ncol,:nlay,:ngpt),gamma2(:ncol,:nlay,:ngpt))
+    !$acc parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -756,6 +757,9 @@ contains
         end do
       end do
     end do
+    !$acc exit data delete(sfc_emis, sfc_src, lay_source, tau, gamma1, gamma2, rdif, tdif, lev_source)
+    !$acc exit data copyout(source_dn, source_up, source_sfc)
+
   end subroutine lw_source_2str
   ! -------------------------------------------------------------------------------------------------
   !
@@ -919,7 +923,7 @@ contains
     else
       ! layer index = level index
       ! previous level is up (+1)
-      !$acc  parallel loop collapse(2) 
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           do ilev = nlay, 1, -1

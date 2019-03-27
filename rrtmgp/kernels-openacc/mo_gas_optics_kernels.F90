@@ -175,10 +175,10 @@ contains
            itropo_upper,jtemp,         &
            tau)
 
-    !$acc exit data delete(itropo_lower,itropo_upper,gpoint_flavor,kmajor,kminor_lower,kminor_upper,minor_limits_gpt_lower,minor_limits_gpt_upper      , &
-    !$acc&                  minor_scales_with_density_lower,minor_scales_with_density_upper,scale_by_complement_lower,scale_by_complement_upper        , &
-    !$acc&                  idx_minor_lower,idx_minor_upper,idx_minor_scaling_lower,idx_minor_scaling_upper,kminor_start_lower,kminor_start_upper,tropo, &
-    !$acc&                  col_mix,fmajor,fminor,play,tlay,col_gas,jeta,jtemp,jpress)
+    !$acc exit data delete(itropo_lower,itropo_upper,gpoint_flavor,kmajor,kminor_lower,kminor_upper,minor_limits_gpt_lower,minor_limits_gpt_upper     , &
+    !$acc&                 minor_scales_with_density_lower,minor_scales_with_density_upper,scale_by_complement_lower,scale_by_complement_upper        , &
+    !$acc&                 idx_minor_lower,idx_minor_upper,idx_minor_scaling_lower,idx_minor_scaling_upper,kminor_start_lower,kminor_start_upper,tropo, &
+    !$acc&                 col_mix,fmajor,fminor,play,tlay,col_gas,jeta,jtemp,jpress)
     !$acc exit data copyout(tau)
 
   end subroutine compute_tau_absorption
@@ -708,10 +708,8 @@ contains
     real(wp) :: t
     ! -----------------------
     !$acc parallel loop collapse(3) &
-    !$acc&     copyout(g(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol)) &
-    !$acc&     copyout(tau(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(ssa(:ncol,:nlay,:ngpt))
+    !$acc&     copy(tau, ssa, g) &
+    !$acc&     copyin(tau_rayleigh,tau_abs)
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -744,10 +742,8 @@ contains
     real(wp) :: t
     ! -----------------------
     !$acc parallel loop collapse(3) &
-    !$acc&     copy(ssa(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyout(tau(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol)) &
-    !$acc&     copyout(p(:,:ncol,:nlay,:ngpt))
+    !$acc&     copy(tau, ssa, p) &
+    !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol))
     do icol = 1, ncol
       do ilay = 1, nlay
         do igpt = 1, ngpt

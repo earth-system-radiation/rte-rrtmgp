@@ -474,7 +474,7 @@ contains
     ! ---- calculate gas optical depths ----
     !
     !$acc enter data create(tau, tau_rayleigh, tropo)
-    !$acc enter data copyin(play, tlay)
+    !$acc enter data copyin(play, tlay, col_gas)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation( &
       ncol,nlay,this%get_ngas(),nflav,this%get_neta(), & ! dimensions
@@ -523,7 +523,7 @@ contains
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
 
     !$acc exit data copyout(tau, tau_rayleigh, tropo)
-    !$acc exit data delete(play, tlay)
+    !$acc exit data delete(play, tlay, col_gas)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !

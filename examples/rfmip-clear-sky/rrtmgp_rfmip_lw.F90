@@ -54,7 +54,7 @@ program rrtmgp_rfmip_lw
   !
   ! Gas optics: maps physical state of the atmosphere to optical properties
   !
-  use mo_gas_optics,         only: ty_gas_optics
+  use mo_gas_optics,  only: ty_gas_optics
   !
   ! Gas optics uses a derived type to represent gas concentrations compactly...
   !
@@ -80,7 +80,7 @@ program rrtmgp_rfmip_lw
   !
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
-                                   read_and_block_lw_bc, read_kdist_gas_names
+                                   read_and_block_lw_bc, determine_gas_names
 #ifdef USE_TIMING
   !
   ! Timing library
@@ -93,16 +93,16 @@ program rrtmgp_rfmip_lw
   !
   ! Local variables
   !
-  character(len=132)         :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-0-4_none.nc', &
-                                kdist_file = 'coefficients_lw.nc', &
-                                flxdn_file = 'rld_template.nc', flxup_file = 'rlu_template.nc'
-  integer                    :: nargs, ncol, nlay, nexp, nblocks, block_size
-  logical                    :: top_at_1
-  integer                    :: b
-  character(len=6)           :: block_size_char
+  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
+                        kdist_file = 'coefficients_lw.nc'
+  character(len=132) :: flxdn_file, flxup_file
+  integer            :: nargs, ncol, nlay, nexp, nblocks, block_size, forcing_index, physics_index, n_quad_angles = 1
+  logical            :: top_at_1
+  integer            :: b
+  character(len=4)   :: block_size_char, forcing_index_char = '1', physics_index_char = '1'
 
   character(len=32 ), &
-            dimension(:),             allocatable :: kdist_gas_names, gases_to_use
+            dimension(:),             allocatable :: kdist_gas_names, rfmip_gas_games
   real(wp), dimension(:,:,:),         allocatable :: p_lay, p_lev, t_lay, t_lev ! block_size, nlay, nblocks
   real(wp), dimension(:,:,:), target, allocatable :: flux_up, flux_dn
   real(wp), dimension(:,:  ),         allocatable :: sfc_emis, sfc_t            ! block_size, nblocks
@@ -110,7 +110,7 @@ program rrtmgp_rfmip_lw
   !
   ! Classes used by rte+rrtmgp
   !
-  type(ty_gas_optics)                            :: k_dist
+  type(ty_gas_optics)                     :: k_dist
   type(ty_source_func_lw)                        :: source
   type(ty_optical_props_1scl)                    :: optical_props
   type(ty_fluxes_broadband)                      :: fluxes
@@ -121,46 +121,54 @@ program rrtmgp_rfmip_lw
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
 
 #ifdef USE_TIMING
-  integer :: ret
+  integer :: ret, i
 #endif
   ! -------------------------------------------------------------------------------------------------
   !
   ! Code starts
-  ! Argument list:
-  !   block size, input file, coefficient file, upflux file, downflux file
   !   all arguments are optional
   !
+  print *, "Usage: rrtmgp_rfmip_lw [block_size] [rfmip_file] [k-distribution_file] [forcing_index (1,2,3)] [physics_index (1,2)]"
   nargs = command_argument_count()
-  if(nargs >= 2) call get_command_argument(2, rfmip_file)
-  if(nargs >= 3) call get_command_argument(3, kdist_file)
-  if(nargs >= 4) call get_command_argument(4, flxup_file)
-  if(nargs >= 5) call get_command_argument(5, flxdn_file)
-
-  ! How big is the problem? Does it fit into blocks of the size we've specified?
-  !
   call read_size(rfmip_file, ncol, nlay, nexp)
   if(nargs >= 1) then
     call get_command_argument(1, block_size_char)
-    read(block_size_char, '(i6)') block_size
+    read(block_size_char, '(i4)') block_size
   else
     block_size = ncol
   end if
+  if(nargs >= 2) call get_command_argument(2, rfmip_file)
+  if(nargs >= 3) call get_command_argument(3, kdist_file)
+  if(nargs >= 4) call get_command_argument(4, forcing_index_char)
+  if(nargs >= 5) call get_command_argument(5, physics_index_char)
+
+  !
+  ! How big is the problem? Does it fit into blocks of the size we've specified?
+  !
   if(mod(ncol*nexp, block_size) /= 0 ) call stop_on_err("rrtmgp_rfmip_lw: number of columns doesn't fit evenly into blocks.")
   nblocks = (ncol*nexp)/block_size
   print *, "Doing ",  nblocks, "blocks of size ", block_size
 
+  read(forcing_index_char, '(i4)') forcing_index
+  if(forcing_index < 1 .or. forcing_index > 3) &
+    stop "Forcing index is invalid (must be 1,2 or 3)"
+
+  read(physics_index_char, '(i4)') physics_index
+  if(physics_index < 1 .or. physics_index > 2) &
+    stop "Physics index is invalid (must be 1 or 2)"
+  if(physics_index == 2) n_quad_angles = 3
+
+  flxdn_file = 'rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p' //  &
+               trim(physics_index_char) // 'f' // trim(forcing_index_char) // '_gn.nc'
+  flxup_file = 'rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p' // &
+               trim(physics_index_char) // 'f' // trim(forcing_index_char) // '_gn.nc'
   !
-  ! Names of gases known to the k-distribution.
+  ! Identify the set of gases used in the calculation based on the forcing index
+  !   A gas might have a different name in the k-distribution than in the files
+  !   provided by RFMIP (e.g. 'co2' and 'carbon_dioxide')
   !
-  call read_kdist_gas_names(kdist_file, kdist_gas_names)
-  !
-  ! Which gases will be included in the calculation?
-  !    By default we'll use all the gases the k-distribution can handle, but
-  !    we could provide variants i.e. using equivalent concentrations per RFMIP
-  !
-  gases_to_use = kdist_gas_names
-  print *, "Radiation calculation uses gases "
-  print *, "  ", (trim(gases_to_use(b)) // " ", b = 1, size(gases_to_use))
+  call determine_gas_names(rfmip_file, kdist_file, forcing_index, kdist_gas_names, rfmip_gas_games)
+  print *, "Calculation uses RFMIP gases: ", (trim(rfmip_gas_games(b)) // " ", b = 1, size(rfmip_gas_games))
 
   ! --------------------------------------------------
   !
@@ -178,7 +186,7 @@ program rrtmgp_rfmip_lw
   !
   ! Read the gas concentrations and surface properties
   !
-  call read_and_block_gases_ty(rfmip_file, block_size, gases_to_use, gas_conc_array)
+  call read_and_block_gases_ty(rfmip_file, block_size, kdist_gas_names, rfmip_gas_games, gas_conc_array)
   call read_and_block_lw_bc(rfmip_file, block_size, sfc_emis, sfc_t)
 
   !
@@ -217,11 +225,14 @@ program rrtmgp_rfmip_lw
   !
   ret = gptlsetoption (gptlpercent, 1)        ! Turn on "% of" print
   ret = gptlsetoption (gptloverhead, 0)       ! Turn off overhead estimate
-  ret =  gptlinitialize()
+  ret = gptlinitialize()
 #endif
   !
   ! Loop over blocks
   !
+#ifdef USE_TIMING
+  do i = 1, 32
+#endif
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
@@ -254,12 +265,13 @@ program rrtmgp_rfmip_lw
                             top_at_1,        &
                             source,          &
                             spread(sfc_emis(:,b), 1, ncopies = k_dist%get_nband()), &
-                            fluxes))
+                            fluxes, n_gauss_angles = n_quad_angles))
 #ifdef USE_TIMING
     ret =  gptlstop('rte_lw')
 #endif
   end do
 #ifdef USE_TIMING
+  end do
   !
   ! End timers
   !

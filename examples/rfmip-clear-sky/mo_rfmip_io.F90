@@ -31,37 +31,12 @@ module mo_rfmip_io
   use netcdf
   implicit none
   private
-  public :: read_kdist_gas_names, read_size, read_and_block_pt, &
+  public :: read_kdist_gas_names, determine_gas_names, read_size, read_and_block_pt, &
             read_and_block_sw_bc, read_and_block_lw_bc, read_and_block_gases_ty, &
             unblock_and_write
 
   integer :: ncol_l = 0, nlay_l = 0, nexp_l = 0 ! Local copies
 contains
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Read the names of the gases known to the k-distribution
-  !
-  !
-  subroutine read_kdist_gas_names(fileName, kdist_gas_names)
-    character(len=*),          intent(in   ) :: fileName
-    character(len=32), dimension(:), allocatable, &
-                               intent(  out) :: kdist_gas_names
-    ! ---------------------------
-    integer :: ncid, varid
-    character(len=9), parameter :: varName = "gas_names"
-    ! ---------------------------
-    if(nf90_open(trim(fileName), NF90_NOWRITE, ncid) /= NF90_NOERR) &
-      call stop_on_err("read_kdist_gas_names: can't open file " // trim(fileName))
-
-    allocate(kdist_gas_names(get_dim_size(ncid, 'absorber')))
-
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
-      call stop_on_err("read_kdist_gas_names: can't find variable " // trim(varName))
-    if(nf90_get_var(ncid, varid, kdist_gas_names)  /= NF90_NOERR) &
-      call stop_on_err("read_kdist_gas_names: can't read variable " // trim(varName))
-
-    ncid = nf90_close(ncid)
-  end subroutine read_kdist_gas_names
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Find the size of the problem: columns, layers, perturbations (experiments)
@@ -211,34 +186,19 @@ contains
   end subroutine read_and_block_lw_bc
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Read and reshape gas concentrations. RRTMGP requires gas concentrations to be supplied via a class
-  !   (ty_gas_concs). Gas concentrations are set via a call to gas_concs%set_vmr(name, values)
-  !   where `name` is nominally the chemical formula for the gas in question and `values` may be
-  !   a scalar, a 1-d profile assumed to apply to all columns, or an array of dimension (ncol, nlay).
-  ! This routine outputs a vector nblocks long of these types so each element of the array can be passed to
-  !   the rrtmgp gas optics calculation in turn.
+  ! Create a pair of string arrays - one containing the chemical name of each gas, used by the k-distribution, and
+  !   one containing the name as contained in the RFMIP input files - depending on the forcing scenario
+  ! Forcing index (1 = all available greenhouse gases;
+  !                2 = CO2, CH4, N2O, CFC11eq
+  !                3 = CO2, CH4, N2O, CFC12eq, HFC-134eq
+  !                All scenarios use 3D values of ozone, water vapor so those aren't listed here
   !
-  ! This routine exploits RFMIP conventions: only water vapor and ozone vary by column within
-  !   each experiment.
-  ! Fields in the RFMIP file have a trailing _GM (global mean); some fields use a chemical formula and other
-  !   a descriptive name, so a map is provided between these.
-  !
-  subroutine read_and_block_gases_ty(fileName, blocksize, gas_names, gas_conc_array)
-    character(len=*),           intent(in   ) :: fileName
-    integer,                    intent(in   ) :: blocksize
-    character(len=*),  dimension(:), &
-                                intent(in   ) :: gas_names ! Provided by gas_optics -- which gases do we want to read
-    type(ty_gas_concs), dimension(:), allocatable, &
-                                intent(  out) :: gas_conc_array
-
-    ! ---------------------------
-    integer :: ncid
-    integer :: nblocks
-    integer :: b, g
-    integer,  dimension(:,:),   allocatable :: exp_num
-    real(wp), dimension(:),     allocatable :: gas_conc_temp_1d
-    real(wp), dimension(:,:,:), allocatable :: gas_conc_temp_3d
-    character(len=32)                       :: gas_name_in_file
+  subroutine determine_gas_names(concentrationFile, kdistFile, forcing_index, names_in_kdist, names_in_file)
+    character(len=*),                             intent(in   ) :: concentrationFile, kdistFile
+    integer,                                      intent(in   ) :: forcing_index
+    character(len=32), dimension(:), allocatable, intent(inout) :: names_in_kdist, names_in_file
+    ! ----------------
+    integer :: num_gases, i
     character(len=32), dimension(11) :: &
       chem_name = ['co   ', &
                    'ch4  ', &
@@ -251,7 +211,7 @@ contains
         				   'CH3Br', &
    			           'CH3Cl', &
                    'cfc22'], &
-      desc_name = ['carbon_monoxide     ', &
+      conc_name = ['carbon_monoxide     ', &
                    'methane             ', &
                    'oxygen              ', &
           			   'nitrous_oxide       ', &
@@ -262,6 +222,98 @@ contains
         				   'methyl_bromide      ', &
         				   'methyl_chloride     ', &
                    'hcfc22              ']
+    ! ----------------
+    select case (forcing_index)
+    case (1)
+      call read_kdist_gas_names(kdistFile, names_in_kdist)
+      allocate(names_in_file(size(names_in_kdist)))
+      do i = 1, size(names_in_kdist)
+        names_in_file(i) = trim(lower_case(names_in_kdist(i)))
+        !
+        ! Use a mapping between chemical formula and name if it exists
+        !
+        if(string_in_array(names_in_file(i), chem_name)) &
+          names_in_file(i) = conc_name(string_loc_in_array(names_in_file(i), chem_name))
+      end do
+    case (2)
+      num_gases = 4
+      allocate(names_in_kdist(num_gases), names_in_file(num_gases))
+      names_in_kdist = ['co2  ', 'ch4  ', 'n2o  ', 'cfc11']
+      names_in_file =  ['carbon_dioxide', &
+                        'methane       ', &
+                        'nitrous_oxide ', &
+                        'cfc11eq       ']
+    case (3)
+      num_gases = 5
+      allocate(names_in_kdist(num_gases), names_in_file(num_gases))
+      names_in_kdist = ['co2   ', 'ch4   ', 'n2o   ', 'cfc12  ', &
+                       'hfc134a']
+      names_in_file =  ['carbon_dioxide', &
+                        'methane       ', &
+                        'nitrous_oxide ', &
+                        'cfc12eq       ', &
+                        'hfc134aeq     ']
+    case default
+      call stop_on_err("determine_gas_names: unknown value of forcing_index")
+    end select
+
+  end subroutine determine_gas_names
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Read the names of the gases known to the k-distribution
+  !
+  !
+  subroutine read_kdist_gas_names(fileName, kdist_gas_names)
+    character(len=*),          intent(in   ) :: fileName
+    character(len=32), dimension(:), allocatable, &
+                               intent(  out) :: kdist_gas_names
+    ! ---------------------------
+    integer :: ncid, varid
+    character(len=9), parameter :: varName = "gas_names"
+    ! ---------------------------
+    if(nf90_open(trim(fileName), NF90_NOWRITE, ncid) /= NF90_NOERR) &
+      call stop_on_err("read_kdist_gas_names: can't open file " // trim(fileName))
+
+    allocate(kdist_gas_names(get_dim_size(ncid, 'absorber')))
+
+    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) &
+      call stop_on_err("read_kdist_gas_names: can't find variable " // trim(varName))
+    if(nf90_get_var(ncid, varid, kdist_gas_names)  /= NF90_NOERR) &
+      call stop_on_err("read_kdist_gas_names: can't read variable " // trim(varName))
+
+    ncid = nf90_close(ncid)
+  end subroutine read_kdist_gas_names
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Read and reshape gas concentrations. RRTMGP requires gas concentrations to be supplied via a class
+  !   (ty_gas_concs). Gas concentrations are set via a call to gas_concs%set_vmr(name, values)
+  !   where `name` is nominally the chemical formula for the gas in question and `values` may be
+  !   a scalar, a 1-d profile assumed to apply to all columns, or an array of dimension (ncol, nlay).
+  ! This routine outputs a vector nblocks long of these types so each element of the array can be passed to
+  !   the rrtmgp gas optics calculation in turn.
+  !
+  ! This routine exploits RFMIP conventions: only water vapor and ozone vary by column within
+  !   each experiment.
+  ! Fields in the RFMIP file have a trailing _GM (global mean); some fields use a chemical formula and other
+  !   a descriptive name, so a map is provided between these.
+  !
+  subroutine read_and_block_gases_ty(fileName, blocksize, gas_names, names_in_file, gas_conc_array)
+    character(len=*),           intent(in   ) :: fileName
+    integer,                    intent(in   ) :: blocksize
+    character(len=*),  dimension(:), &
+                                intent(in   ) :: gas_names ! Names used by the k-distribution/gas concentration type
+    character(len=*),  dimension(:), &
+                                intent(in   ) :: names_in_file ! Corresponding names in the RFMIP file
+    type(ty_gas_concs), dimension(:), allocatable, &
+                                intent(  out) :: gas_conc_array
+
+    ! ---------------------------
+    integer :: ncid
+    integer :: nblocks
+    integer :: b, g
+    integer,  dimension(:,:),   allocatable :: exp_num
+    real(wp), dimension(:),     allocatable :: gas_conc_temp_1d
+    real(wp), dimension(:,:,:), allocatable :: gas_conc_temp_3d
     ! ---------------------------
     if(any([ncol_l, nlay_l, nexp_l]  == 0)) &
       call stop_on_err("read_and_block_lw_bc: Haven't read problem size yet.")
@@ -293,32 +345,25 @@ contains
     ! All other gases are a function of experiment only
     !
     do g = 1, size(gas_names)
-      gas_name_in_file = trim(lower_case(gas_names(g)))
       !
-      ! RRTMGP gas optics include NO2; RFMIP doesn't have this
+      ! Skip 3D fields above, also NO2 since RFMIP doesn't have this
       !
-      if(gas_name_in_file == 'h2o' .or. gas_name_in_file == 'o3' .or. gas_name_in_file == 'no2') cycle
-      !
-      ! Use a mapping between chemical formula and name if it exists
-      !
-      if(string_in_array(gas_name_in_file, chem_name)) &
-        gas_name_in_file = desc_name(string_loc_in_array(gas_name_in_file, chem_name))
-      gas_name_in_file = trim(gas_name_in_file) // "_GM"
+      if(string_in_array(gas_names(g), ['h2o', 'o3 ', 'no2'])) cycle
 
       ! Read the values as a function of experiment
-      gas_conc_temp_1d = read_field(ncid, gas_name_in_file, nexp_l) * read_scaling(ncid, gas_name_in_file)
+      gas_conc_temp_1d = read_field(ncid, trim(names_in_file(g)) // "_GM", nexp_l) * read_scaling(ncid, trim(names_in_file(g)) // "_GM")
 
-  	  do b = 1, nblocks
-          ! Does every value in this block belong to the same experiment?
-  	    if(all(exp_num(1,b) == exp_num(2:,b))) then
-  	      ! Provide a scalar value
-  		    call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), gas_conc_temp_1d(exp_num(1,b))))
-  		  else
-  		  ! Create 2D field, blocksize x nlay, with scalar values from each experiment
-  		  call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), &
-  		                                             spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
-  		  end if
-  	  end do
+      do b = 1, nblocks
+        ! Does every value in this block belong to the same experiment?
+        if(all(exp_num(1,b) == exp_num(2:,b))) then
+          ! Provide a scalar value
+          call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), gas_conc_temp_1d(exp_num(1,b))))
+        else
+          ! Create 2D field, blocksize x nlay, with scalar values from each experiment
+          call stop_on_err(gas_conc_array(b)%set_vmr(gas_names(g), &
+          spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
+        end if
+      end do
 
     end do
     ncid = nf90_close(ncid)

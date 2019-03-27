@@ -35,7 +35,7 @@ contains
     real(wp), dimension(ncol, nlev, nbnd), intent(out) :: byband_flux
 
     integer :: icol, ilev, igpt, ibnd
-    !$acc parallel loop collapse(3) copyin(spectral_flux) copyout(byband_flux)
+    !$acc parallel loop collapse(3) copyin(spectral_flux, band_lims) copyout(byband_flux)
     do ibnd = 1, nbnd
       do ilev = 1, nlev
         do icol = 1, ncol
@@ -60,7 +60,7 @@ contains
 
     integer :: icol, ilev, igpt, ibnd
 
-    !$acc parallel loop collapse(3) copyin(spectral_flux_dn, spectral_flux_up) copyout(byband_flux_net)
+    !$acc parallel loop collapse(3) copyin(spectral_flux_dn, spectral_flux_up, band_lims) copyout(byband_flux_net)
     do ibnd = 1, nbnd
       do ilev = 1, nlev
         do icol = 1, ncol

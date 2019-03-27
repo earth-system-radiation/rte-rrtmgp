@@ -48,12 +48,13 @@ contains
     character(len=128)                               :: error_msg
     ! ------
     integer :: ncol, nlev, ngpt, nbnd
+    integer, dimension(2, spectral_disc%get_nband()) :: band_lims
     ! ------
     ncol = size(gpt_flux_up, DIM=1)
     nlev = size(gpt_flux_up, DIM=2)
     ngpt = spectral_disc%get_ngpt()
     nbnd = spectral_disc%get_nband()
-
+    band_lims(:,:) = spectral_disc%get_band_lims_gpoint()
 
     ! Compute broadband fluxes
     !   This also checks that input arrays are consistently sized
@@ -107,20 +108,21 @@ contains
     end if
 
     ! -------
+    !$acc enter data copyin(band_lims)
     ! Band-by-band fluxes
     ! Up flux
     if(associated(this%bnd_flux_up)) then
-      call sum_byband(ncol, nlev, ngpt, nbnd, spectral_disc%get_band_lims_gpoint(), gpt_flux_up,     this%bnd_flux_up    )
+      call sum_byband(ncol, nlev, ngpt, nbnd, band_lims, gpt_flux_up,     this%bnd_flux_up    )
     end if
 
     ! -------
     ! Down flux
     if(associated(this%bnd_flux_dn)) then
-      call sum_byband(ncol, nlev, ngpt, nbnd, spectral_disc%get_band_lims_gpoint(), gpt_flux_dn,     this%bnd_flux_dn    )
+      call sum_byband(ncol, nlev, ngpt, nbnd, band_lims, gpt_flux_dn,     this%bnd_flux_dn    )
     end if
 
     if(associated(this%bnd_flux_dn_dir)) then
-      call sum_byband(ncol, nlev, ngpt, nbnd, spectral_disc%get_band_lims_gpoint(), gpt_flux_dn_dir, this%bnd_flux_dn_dir)
+      call sum_byband(ncol, nlev, ngpt, nbnd, band_lims, gpt_flux_dn_dir, this%bnd_flux_dn_dir)
     end if
 
     ! -------
@@ -133,9 +135,10 @@ contains
       if(associated(this%bnd_flux_dn) .and. associated(this%bnd_flux_up)) then
         call net_byband(ncol, nlev,       nbnd,                             this%bnd_flux_dn, this%bnd_flux_up, this%bnd_flux_net)
       else
-        call net_byband(ncol, nlev, ngpt, nbnd, spectral_disc%get_band_lims_gpoint(), gpt_flux_dn, gpt_flux_up, this%bnd_flux_net)
+        call net_byband(ncol, nlev, ngpt, nbnd, band_lims, gpt_flux_dn, gpt_flux_up, this%bnd_flux_net)
       end if
     end if
+    !$acc exit data delete(band_lims)
   end function reduce_byband
   ! --------------------------------------------------------------------------------------
   ! Are any fluxes desired from this set of g-point fluxes? We can tell because memory will

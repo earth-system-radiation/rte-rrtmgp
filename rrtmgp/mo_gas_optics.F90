@@ -509,6 +509,7 @@ contains
             jeta,jtemp,jpress,                       &
             tau)
     if (allocated(this%krayl)) then
+      !$acc enter data attach(col_dry_wk)
       call compute_tau_rayleigh(     & !Rayleigh scattering optical depths
             ncol,nlay,ngpt,ngas,nflav,      & ! dimensions
             this%gpoint_flavor,             &
@@ -516,6 +517,7 @@ contains
             idx_h2o, col_dry_wk,col_gas,       &
             fminor,jeta,tropo,jtemp,        & ! local input
             tau_rayleigh)
+      !$acc exit data detach(col_dry_wk)
     end if
     if (error_msg /= '') return
 

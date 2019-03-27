@@ -473,7 +473,7 @@ contains
     !
     ! ---- calculate gas optical depths ----
     !
-    !$acc enter data create(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor, fminor)
+    !$acc enter data create(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor, fminor, col_mix)
     !$acc enter data copyin(play, tlay, col_gas)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation( &
@@ -523,7 +523,7 @@ contains
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
 
     !$acc exit data copyout(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor, fminor)
-    !$acc exit data delete(play, tlay, col_gas)
+    !$acc exit data delete(play, tlay, col_gas, col_mix)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !

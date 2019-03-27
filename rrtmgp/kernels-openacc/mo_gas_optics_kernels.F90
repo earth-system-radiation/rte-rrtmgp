@@ -94,36 +94,37 @@ contains
     !
     logical                    :: top_at_1
     integer, dimension(ncol,2) :: itropo_lower, itropo_upper
-    integer                    :: icol
+    integer                    :: icol, idx_tropo
 
     ! ----------------------------------------------------------------
+
+    !$acc enter data create(itropo_lower,itropo_upper)
+    !$acc enter data copyin(gpoint_flavor,kmajor,kminor_lower,kminor_upper,minor_limits_gpt_lower,minor_limits_gpt_upper,&
+    !$acc&                  minor_scales_with_density_lower,minor_scales_with_density_upper,scale_by_complement_lower,scale_by_complement_upper, &
+    !$acc&                  idx_minor_lower,idx_minor_upper,idx_minor_scaling_lower,idx_minor_scaling_upper,kminor_start_lower,kminor_start_upper,tropo, &
+    !$acc&                  col_mix,fmajor,fminor,play,tlay,col_gas,jeta,jtemp,jpress,tau)
 
     ! ---------------------
     ! Layer limits of upper, lower atmospheres
     ! ---------------------
     top_at_1 = play(1,1) < play(1, nlay)
     if(top_at_1) then
-      !$acc parallel loop collapse(1) copyin(play,tropo) copyout(itropo_lower, itropo_upper)
+      !$acc parallel loop
       do icol = 1,ncol
-        itropo_lower(icol,1) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
         itropo_lower(icol,2) = nlay
+        itropo_lower(icol,1) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
         itropo_upper(icol,1) = 1
         itropo_upper(icol,2) = maxloc(play(icol,:), dim=1, mask=(.not. tropo(icol,:)))
       end do
     else
-      !$acc parallel loop collapse(1) copyin(play,tropo) copyout(itropo_lower, itropo_upper)
+      !$acc parallel loop
       do icol = 1,ncol
         itropo_lower(icol,1) = 1
         itropo_lower(icol,2) = minloc(play(icol,:), dim=1, mask= tropo(icol,:))
-        itropo_upper(icol,1) = maxloc(play(icol,:), dim=1, mask=(.not.tropo(icol,:)))
         itropo_upper(icol,2) = nlay
+        itropo_upper(icol,1) = maxloc(play(icol,:), dim=1, mask=(.not.tropo(icol,:)))
       end do
     end if
-
-    !$acc enter data copyin(itropo_lower,itropo_upper,gpoint_flavor,kmajor,kminor_lower,kminor_upper,minor_limits_gpt_lower,minor_limits_gpt_upper,&
-    !$acc&                  minor_scales_with_density_lower,minor_scales_with_density_upper,scale_by_complement_lower,scale_by_complement_upper, &
-    !$acc&                  idx_minor_lower,idx_minor_upper,idx_minor_scaling_lower,idx_minor_scaling_upper,kminor_start_lower,kminor_start_upper,tropo, &
-    !$acc&                  col_mix,fmajor,fminor,play,tlay,col_gas,jeta,jtemp,jpress,tau)
 
     ! ---------------------
     ! Major Species
@@ -138,10 +139,11 @@ contains
     ! ---------------------
     ! Minor Species - lower
     ! ---------------------
+    idx_tropo = 1
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,ngas,nflav,  & ! dimensions
-           idx_h2o,                    &
-           gpoint_flavor(1,:),         &
+           idx_h2o,idx_tropo,          &
+           gpoint_flavor,         &
            kminor_lower,               &
            minor_limits_gpt_lower,     &
            minor_scales_with_density_lower, &
@@ -156,10 +158,11 @@ contains
     ! ---------------------
     ! Minor Species - upper
     ! ---------------------
+    idx_tropo = 2
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,ngas,nflav,  & ! dimensions
-           idx_h2o,                    &
-           gpoint_flavor(2,:),         &
+           idx_h2o,idx_tropo,          &
+           gpoint_flavor,         &
            kminor_upper,               &
            minor_limits_gpt_upper,     &
            minor_scales_with_density_upper, &
@@ -245,7 +248,7 @@ contains
   ! compute minor species optical depths
   !
   subroutine gas_optical_depths_minor(ncol, nlay,ngpt,ngas,nflav,   &
-                                      idx_h2o,            &
+                                      idx_h2o,idx_tropo,  &
                                       gpt_flv,            &
                                       kminor,             &
                                       minor_limits_gpt,   &
@@ -258,8 +261,8 @@ contains
                                       layer_limits,jtemp,  &
                                       tau)
     integer,                                  intent(in ) :: ncol,nlay,ngpt,ngas,nflav
-    integer,                                  intent(in ) :: idx_h2o
-    integer,  dimension(:),                   intent(in ) :: gpt_flv
+    integer,                                  intent(in ) :: idx_h2o,idx_tropo
+    integer,  dimension(:,:),                   intent(in ) :: gpt_flv
     real(wp), dimension(:,:,:),               intent(in ) :: kminor
     integer,  dimension(:,:),                 intent(in ) :: minor_limits_gpt
     logical,  dimension(:),                   intent(in ) :: minor_scales_with_density
@@ -283,69 +286,61 @@ contains
     integer  :: minor_start, minor_loc, extent
     ! -----------------
 
-    ! -----------------
-    !
-    ! Guard against layer limits being 0 -- that means don't do anything i.e. there are no
-    !   layers with pressures in the upper or lower atmosphere respectively
-    ! First check skips the routine entirely if all columns are out of bounds...
-    !
-    if(any(layer_limits(:,1) > 0)) then
-      extent = size(scale_by_complement,dim=1)
+    extent = size(scale_by_complement,dim=1)
 
-      !$acc parallel loop collapse(3) private(vmr)
-      do imnr = 1, extent  ! loop over minor absorbers in each band
-        do icol = 1, ncol
-          do ilay = 1 , nlay
-            !
-            ! This check skips individual columns with no pressures in range
-            !
-            if(layer_limits(icol,1) > 0) then
-              if (ilay >= layer_limits(icol,1)  .and. ilay <= layer_limits(icol,2) ) then
-                vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
+    !$acc parallel loop collapse(3) private(vmr)
+    do imnr = 1, extent  ! loop over minor absorbers in each band
+      do icol = 1, ncol
+        do ilay = 1 , nlay
+          !
+          ! This check skips individual columns with no pressures in range
+          !
+          if(layer_limits(icol,1) > 0) then
+            if (ilay >= layer_limits(icol,1)  .and. ilay <= layer_limits(icol,2) ) then
+              vmr(1:ngas) = col_gas(icol,ilay,1:ngas)/col_gas(icol,ilay,0)
+              !
+              ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
+              !
+              scaling = col_gas(icol,ilay,idx_minor(imnr))
+              !
+              ! Density scaling (e.g. for h2o continuum, collision-induced absorption)
+              !
+              if (minor_scales_with_density(imnr)) then
                 !
-                ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
+                ! NOTE: P needed in hPa to properly handle density scaling.
                 !
-                scaling = col_gas(icol,ilay,idx_minor(imnr))
-                !
-                ! Density scaling (e.g. for h2o continuum, collision-induced absorption)
-                !
-                if (minor_scales_with_density(imnr)) then
-                  !
-                  ! NOTE: P needed in hPa to properly handle density scaling.
-                  !
-                  scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
-                  if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
-                    ! scale by density of special gas
-                    if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
-                      scaling = scaling * (1._wp - vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o)) )
-                    else
-                      scaling = scaling *          vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o))
-                    endif
+                scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
+                if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
+                  ! scale by density of special gas
+                  if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
+                    scaling = scaling * (1._wp - vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o)) )
+                  else
+                    scaling = scaling *          vmr(idx_minor_scaling(imnr)) / (1._wp+vmr(idx_h2o))
                   endif
                 endif
-                !
-                ! Interpolation of absorption coefficient and calculation of optical depth
-                !
-                ! Which gpoint range does this minor gas affect?
-                iml = minor_limits_gpt(1,imnr)
-                imu = minor_limits_gpt(2,imnr)
-                ! What is the starting point in the stored array of minor absorption coefficients?
-                minor_start = kminor_start(imnr)
-                do igpt = iml,imu
-                  tau_minor = 0._wp
-                  iflav = gpt_flv(igpt) ! eta interpolation depends on flavor
-                  minor_loc = minor_start + (igpt - iml) ! add offset to starting point
-                  kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
-                  tau_minor = kminor_loc * scaling
-                  !$acc atomic update
-                  tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
-                enddo
               endif
+              !
+              ! Interpolation of absorption coefficient and calculation of optical depth
+              !
+              ! Which gpoint range does this minor gas affect?
+              iml = minor_limits_gpt(1,imnr)
+              imu = minor_limits_gpt(2,imnr)
+              ! What is the starting point in the stored array of minor absorption coefficients?
+              minor_start = kminor_start(imnr)
+              do igpt = iml,imu
+                tau_minor = 0._wp
+                iflav = gpt_flv(idx_tropo,igpt) ! eta interpolation depends on flavor
+                minor_loc = minor_start + (igpt - iml) ! add offset to starting point
+                kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
+                tau_minor = kminor_loc * scaling
+                !$acc atomic update
+                tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
+              enddo
             endif
-          enddo
+          endif
         enddo
       enddo
-    end if
+    enddo
 
   end subroutine gas_optical_depths_minor
   ! ----------------------------------------------------------

@@ -475,6 +475,7 @@ contains
     !
     !$acc enter data create(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor, fminor, col_mix)
     !$acc enter data copyin(play, tlay, col_gas)
+    !$acc enter data copyin(this%flavor)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation( &
       ncol,nlay,this%get_ngas(),nflav,this%get_neta(), & ! dimensions
@@ -526,6 +527,7 @@ contains
 
     !$acc exit data copyout(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor, fminor)
     !$acc exit data delete(play, tlay, col_gas, col_mix)
+    !$acc exit data delete(this%flavor)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !

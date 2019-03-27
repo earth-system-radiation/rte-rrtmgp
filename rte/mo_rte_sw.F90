@@ -74,6 +74,8 @@ contains
 
     allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt), gpt_flux_dir(ncol, nlay+1, ngpt))
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
+    !!$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    ! Should also do sfc_alb_dir_gpt and sfc_alb_dif_gpt
 
     ! ------------------------------------------------------------------------------------
     !
@@ -122,6 +124,7 @@ contains
     if(len_trim(error_msg) > 0) then
       if(len_trim(atmos%get_name()) > 0) &
         error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
+      !!$acc exit data delete(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
       return
     end if
 
@@ -185,5 +188,6 @@ contains
     ! ...and reduce spectral fluxes to desired output quantities
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
+    !!$acc exit data delete(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
   end function rte_sw
 end module mo_rte_sw

@@ -35,24 +35,18 @@ contains
     real(wp), dimension(ncol, nlev, nbnd), intent(out) :: byband_flux
 
     integer :: icol, ilev, igpt, ibnd
-  !$acc enter data copyin(band_lims, spectral_flux) create(byband_flux)
-  !$acc parallel loop collapse(2)
-  do ibnd = 1, nbnd
-    do ilev = 1, nlev
-      do icol = 1, ncol
-        byband_flux(icol, ilev, ibnd) =  spectral_flux(icol, ilev, band_lims(1, ibnd))
-      end do
-    end do
-    do igpt = band_lims(1,ibnd)+1, band_lims(2,ibnd)
+    !$acc parallel loop collapse(3) copyin(spectral_flux) copyout(byband_flux)
+    do ibnd = 1, nbnd
       do ilev = 1, nlev
         do icol = 1, ncol
-          byband_flux(icol, ilev, ibnd) = byband_flux(icol, ilev, ibnd) + &
-                                          spectral_flux(icol, ilev, igpt)
+          byband_flux(icol, ilev, ibnd) =  spectral_flux(icol, ilev, band_lims(1, ibnd))
+          do igpt = band_lims(1,ibnd)+1, band_lims(2,ibnd)
+            byband_flux(icol, ilev, ibnd) = byband_flux(icol, ilev, ibnd) + &
+                                            spectral_flux(icol, ilev, igpt)
+          end do
         end do
       end do
-    end do
-  end do
-  !$acc exit data delete(band_lims, spectral_flux) copyout(byband_flux)
+    enddo
   end subroutine sum_byband
   ! ----------------------------------------------------------------------------
   !
@@ -66,18 +60,13 @@ contains
 
     integer :: icol, ilev, igpt, ibnd
 
-    !$acc enter data copyin(band_lims, spectral_flux_dn, spectral_flux_up) create(byband_flux_net)
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop collapse(3) copyin(spectral_flux_dn, spectral_flux_up) copyout(byband_flux_net)
     do ibnd = 1, nbnd
       do ilev = 1, nlev
         do icol = 1, ncol
           byband_flux_net(icol, ilev, ibnd) = spectral_flux_dn(icol, ilev, igpt) - &
                                               spectral_flux_up(icol, ilev, igpt)
-        end do
-      end do
-      do igpt = band_lims(1,ibnd)+1, band_lims(2,ibnd)
-        do ilev = 1, nlev
-          do icol = 1, ncol
+          do igpt = band_lims(1,ibnd)+1, band_lims(2,ibnd)
             byband_flux_net(icol, ilev, ibnd) = byband_flux_net(icol, ilev, ibnd) + &
                                                 spectral_flux_dn(icol, ilev, igpt) - &
                                                 spectral_flux_up(icol, ilev, igpt)
@@ -85,7 +74,6 @@ contains
         end do
       end do
     end do
-    !$acc exit data delete(band_lims, spectral_flux_dn, spectral_flux_up) copyout(byband_flux_net)
   end subroutine net_byband_full
   ! ----------------------------------------------------------------------------
   pure subroutine net_byband_precalc(ncol, nlev, nbnd, byband_flux_dn, byband_flux_up, byband_flux_net) bind (C)

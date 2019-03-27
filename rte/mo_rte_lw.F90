@@ -112,7 +112,7 @@ contains
 
     allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
     allocate(sfc_emis_gpt(ncol,         ngpt))
-    !$acc enter data create(gpt_flux_up,gpt_flux_dn,sfc_emis_gpt)
+    !!$acc enter data create(gpt_flux_up,gpt_flux_dn,sfc_emis_gpt)
     ! ------------------------------------------------------------------------------------
     !
     ! Error checking -- consistency of sizes and validity of values
@@ -168,7 +168,7 @@ contains
     if(len_trim(error_msg) > 0) then
       if(len_trim(optical_props%get_name()) > 0) &
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
-      !$acc exit data delete(gpt_flux_up,gpt_flux_dn,sfc_emis_gpt)
+      !!$acc exit data delete(gpt_flux_up,gpt_flux_dn,sfc_emis_gpt)
       return
     end if
 
@@ -226,6 +226,6 @@ contains
     ! ...and reduce spectral fluxes to desired output quantities
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
-    !$acc exit data delete(gpt_flux_up,gpt_flux_dn,sfc_emis_gpt)
+    !!$acc exit data delete(gpt_flux_up,gpt_flux_dn,sfc_emis_gpt)
   end function rte_lw
 end module mo_rte_lw

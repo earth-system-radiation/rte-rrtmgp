@@ -473,7 +473,7 @@ contains
     !
     ! ---- calculate gas optical depths ----
     !
-    !$acc enter data create(tau)
+    !$acc enter data create(tau, tau_rayleigh)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation( &
       ncol,nlay,this%get_ngas(),nflav,this%get_neta(), & ! dimensions
@@ -521,7 +521,7 @@ contains
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
 
-    !$acc exit data copyout(tau)
+    !$acc exit data copyout(tau, tau_rayleigh)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !

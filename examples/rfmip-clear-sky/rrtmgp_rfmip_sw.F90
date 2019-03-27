@@ -117,7 +117,7 @@ program rrtmgp_rfmip_sw
   !   leverage what we know about the input file
   !
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
-
+  real(wp), parameter :: deg_to_rad = acos(-1._wp)/180._wp
 #ifdef USE_TIMING
   integer :: ret, i
 #endif
@@ -259,7 +259,7 @@ program rrtmgp_rfmip_sw
     !   course, but this gives us more work and so a better measure of timing.
     !
     usecol(1:block_size)  = solar_zenith_angle(1:block_size,b) < 90._wp - 2._wp * spacing(90._wp)
-    mu0(1:block_size) = merge(cos(solar_zenith_angle(:,b) * acos(-1._wp)/180._wp), 1._wp, usecol)
+    mu0(1:block_size) = merge(cos(solar_zenith_angle(:,b) * deg_to_rad), 1._wp, usecol)
     !
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband

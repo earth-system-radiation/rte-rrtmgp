@@ -79,7 +79,6 @@ contains
     integer :: icol, iband, igpt
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
-    integer,  dimension(:,:),   allocatable :: limits
     ! --------------------------------------------------
     !
     ! Weights and angle secants for first order (k=1) Gaussian quadrature.
@@ -175,20 +174,11 @@ contains
     !
     allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
     allocate(sfc_emis_gpt(ncol,         ngpt))
-    allocate(limits(2,nband))
     !$acc enter data copyin(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data copyin(gauss_Ds, gauss_wts)
     !$acc enter data create(gpt_flux_dn, gpt_flux_up)
     !$acc enter data create(sfc_emis_gpt)
-    limits(1:2,1:nband) = optical_props%get_band_lims_gpoint()
-    !$acc parallel loop collapse(2) copyin(limits)
-    do iband = 1, nband
-      do icol = 1, ncol
-        do igpt = limits(1, iband), limits(2, iband)
-          sfc_emis_gpt(icol, igpt) = sfc_emis(iband,icol)
-        end do
-      end do
-    end do
+    call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     !
     !   Upper boundary condition
     !
@@ -246,4 +236,32 @@ contains
     !$acc exit data delete(sfc_emis_gpt, gauss_Ds, gauss_wts)
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
   end function rte_lw
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)
+  !
+  subroutine expand_and_transpose(ops,arr_in,arr_out)
+    class(ty_optical_props),  intent(in ) :: ops
+    real(wp), dimension(:,:), intent(in ) :: arr_in  ! (nband, ncol)
+    real(wp), dimension(:,:), intent(out) :: arr_out ! (ncol, igpt)
+    ! -------------
+    integer :: ncol, nband, ngpt
+    integer :: icol, iband, igpt
+    integer, dimension(2,ops%get_nband()) :: limits
+
+    ncol  = size(arr_in, 2)
+    nband = ops%get_nband()
+    ngpt  = ops%get_ngpt()
+    limits = ops%get_band_lims_gpoint()
+    !$acc parallel loop collapse(2) copyin(arr_in, limits)
+    do iband = 1, nband
+      do icol = 1, ncol
+        do igpt = limits(1, iband), limits(2, iband)
+          arr_out(icol, igpt) = arr_in(iband,icol)
+        end do
+      end do
+    end do
+
+  end subroutine expand_and_transpose
+  !--------------------------------------------------------------------------------------------------------------------
 end module mo_rte_lw

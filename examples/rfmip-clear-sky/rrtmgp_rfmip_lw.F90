@@ -245,7 +245,7 @@ program rrtmgp_rfmip_lw
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
     !
-    ! Expand the spectrally-constant surface albedo to a per-band albedo for each column
+    ! Expand the spectrally-constant surface emissivity to a per-band emissivity for each column
     !   (This is partly to show how to keep work on GPUs using OpenACC)
     !
     !$acc parallel loop collapse(2)

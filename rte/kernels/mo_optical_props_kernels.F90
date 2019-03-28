@@ -634,8 +634,6 @@ contains
                              nlay,ngpt), intent(out) :: array_out
 
     integer :: icol, ilay, igpt
-    !$acc enter data copyin(array_in) create(array_out)
-    !$acc parallel collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE
@@ -643,7 +641,6 @@ contains
         end do
       end do
     end do
-    !$acc exit data delete(array_in) copyout(array_out)
 
   end subroutine extract_subset_dim1_3d
   ! ---------------------------------
@@ -657,8 +654,6 @@ contains
 
     integer :: icol, ilay, igpt, imom
 
-    !$acc enter data copyin(array_in) create(array_out)
-    !$acc parallel collapse(4)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE
@@ -668,7 +663,6 @@ contains
         end do
       end do
     end do
-    !$acc exit data delete(array_in) copyout(array_out)
 
   end subroutine extract_subset_dim2_4d
   ! ---------------------------------
@@ -686,8 +680,6 @@ contains
 
     integer :: icol, ilay, igpt
 
-    !$acc enter data copyin(tau_in, ssa_in) create(tau_out)
-    !$acc parallel collapse(4)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE
@@ -696,7 +688,6 @@ contains
         end do
       end do
     end do
-    !$acc exit data delete(tau_in, ssa_in) copyout(tau_out)
 
   end subroutine extract_subset_absorption_tau
   ! -------------------------------------------------------------------------------------------------

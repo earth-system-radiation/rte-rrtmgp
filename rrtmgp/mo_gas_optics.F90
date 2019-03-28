@@ -249,6 +249,7 @@ contains
     !
     ! Gas optics
     !
+    !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband, ngas, nflav,   &
                                  play, plev, tlay, gas_desc, &
@@ -289,6 +290,7 @@ contains
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
                        tlev)
+    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
 
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
@@ -333,12 +335,14 @@ contains
     !
     ! Gas optics
     !
+    !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband, ngas, nflav,   &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
+    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -526,8 +530,8 @@ contains
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
 
-    !$acc exit data copyout(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor, fminor)
-    !$acc exit data delete(play, tlay, col_gas, col_mix)
+    !$acc exit data copyout(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor)
+    !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
     !$acc exit data delete(this%flavor, this%press_ref_log, this%temp_ref, this%vmr_ref, &
     !$acc&                 this%gpoint_flavor, this%krayl)
   end function compute_gas_taus
@@ -1515,7 +1519,9 @@ contains
       select type(optical_props)
         type is (ty_optical_props_1scl)
           ! User is asking for absorption optical depth
+          !$acc enter data create(optical_props%tau) copyin(tau)
           optical_props%tau = reorder123x321(tau)
+          !$acc exit data copyout(optical_props%tau) delete(tau)
         type is (ty_optical_props_2str)
           call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
                                         optical_props%tau, optical_props%ssa, optical_props%g)

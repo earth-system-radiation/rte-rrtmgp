@@ -25,21 +25,21 @@ contains
   !
   ! (x,y,z) -> (z,x,y)
   !
-  function reorder123x312(array)
-    real(wp), dimension(:,:,:), intent(in) :: array
-    real(wp), dimension(size(array,dim=3),size(array,dim=1),size(array,dim=2)) :: reorder123x312
+  subroutine reorder123x312(array, array_out)
+    real(wp), dimension(:,:,:), intent(in ) :: array
+    real(wp), dimension(:,:,:), intent(out) :: array_out
 
-    call reorder_123x312_kernel(size(array,dim=1), size(array,dim=2), size(array,dim=3), array, reorder123x312)
-  end function reorder123x312
+    call reorder_123x312_kernel(size(array,dim=1), size(array,dim=2), size(array,dim=3), array, array_out)
+  end subroutine reorder123x312
   ! -------------------------------------------------------------------------------------------------
   !
-  ! (x,y,z) -> (z,y,x) 
+  ! (x,y,z) -> (z,y,x)
   !
-  function reorder123x321(array)
-    real(wp), dimension(:,:,:), intent(in) :: array
-    real(wp), dimension(size(array,dim=3),size(array,dim=2),size(array,dim=1)) :: reorder123x321
+  subroutine reorder123x321(array, array_out)
+    real(wp), dimension(:,:,:), intent(in ) :: array
+    real(wp), dimension(:,:,:), intent(out) :: array_out
 
-    call reorder_123x321_kernel(size(array,dim=1), size(array,dim=2), size(array,dim=3), array, reorder123x321)
-  end function reorder123x321
+    call reorder_123x321_kernel(size(array,dim=1), size(array,dim=2), size(array,dim=3), array, array_out)
+  end subroutine reorder123x321
   ! -------------------------------------------------------------------------------------------------
 end module

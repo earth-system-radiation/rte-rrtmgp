@@ -13,6 +13,10 @@ FCINCLUDE += -I$(RRTMGP_DIR)
 # netcdf library, module files
 # C and Fortran interfaces respectively
 #
+# OLCF (Summit at Oak Ridge)
+NCHOME = $(OLCF_NETCDF_ROOT)
+NFHOME = $(OLCF_NETCDF_FORTRAN_ROOT)
+# Local development environment
 NCHOME = /opt/local
 NFHOME = $(HOME)/Applications/$(FC)
 FCINCLUDE += -I$(NFHOME)/include
@@ -25,7 +29,7 @@ LIBS      += -lnetcdff -lnetcdf
 #
 TIMING=no
 # Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
-FCFLAGS += -fpp
+#FCFLAGS += -fpp
 ifeq ($(TIMING),yes)
 	#
 	# Timing library

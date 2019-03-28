@@ -2,7 +2,7 @@
 # PG Fortran
 #
 # Fortran compiler command
-export FC = pgfortran
+export FC = ftn
 
 # Fortran compiler flags
 #

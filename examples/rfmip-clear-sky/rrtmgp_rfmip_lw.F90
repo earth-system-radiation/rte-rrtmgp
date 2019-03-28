@@ -218,6 +218,8 @@ program rrtmgp_rfmip_lw
            flux_dn(    block_size, nlay+1, nblocks))
   call stop_on_err(source%alloc            (block_size, nlay, k_dist))
   call stop_on_err(optical_props%alloc_1scl(block_size, nlay, k_dist))
+  !$acc enter data create(optical_props%tau)
+  !$acc enter data create(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -278,6 +280,8 @@ program rrtmgp_rfmip_lw
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
+  !$acc exit data delete(optical_props%tau)
+  !$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rld', flux_dn)

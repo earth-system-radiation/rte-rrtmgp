@@ -250,6 +250,7 @@ contains
     !
     ! Gas optics
     !
+    !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
@@ -290,6 +291,7 @@ contains
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
                        tlev)
+    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
@@ -333,12 +335,14 @@ contains
     !
     ! Gas optics
     !
+    !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
+    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -485,6 +489,10 @@ contains
     !
     ! ---- calculate gas optical depths ----
     !
+    !$acc enter data create(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor, fminor, col_mix)
+    !$acc enter data copyin(play, tlay, col_gas)
+    !$acc enter data copyin(this%flavor, this%press_ref_log, this%temp_ref, this%vmr_ref, &
+    !$acc&                  this%gpoint_flavor, this%krayl)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
@@ -534,6 +542,7 @@ contains
             jeta,jtemp,jpress,                       &
             tau)
     if (allocated(this%krayl)) then
+      !$acc enter data attach(col_dry_wk)
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
@@ -543,12 +552,16 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
+      !$acc exit data detach(col_dry_wk)
     end if
     if (error_msg /= '') return
 
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
-
+    !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
+    !$acc exit data delete(tau, tau_rayleigh, play, tlay, col_gas, col_mix, fminor)
+    !$acc exit data delete(this%flavor, this%press_ref_log, this%temp_ref, this%vmr_ref, &
+    !$acc&                 this%gpoint_flavor, this%krayl)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
@@ -630,9 +643,9 @@ contains
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
                 sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
     sources%sfc_source     = transpose(sfc_source_t)
-    sources%lay_source     = reorder123x321(lay_source_t)
-    sources%lev_source_inc = reorder123x321(lev_source_inc_t)
-    sources%lev_source_dec = reorder123x321(lev_source_dec_t)
+   call reorder123x321(lay_source_t, sources%lay_source)
+   call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
+   call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1516,30 +1529,46 @@ contains
 
     if (.not. has_rayleigh) then
       ! index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
-      optical_props%tau = reorder123x321(tau)
+      !$acc enter data copyin(tau)
+      !$acc enter data create(optical_props%tau)
+      call reorder123x321(tau, optical_props%tau)
       select type(optical_props)
         type is (ty_optical_props_2str)
+          !$acc enter data create(optical_props%ssa, optical_props%g)
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(     ncol,nlay,ngpt,optical_props%g  )
+          !$acc exit data copyout(optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
+          !$acc enter data create(optical_props%ssa, optical_props%p)
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(nmom,ncol,nlay,ngpt,optical_props%p  )
+          !$acc exit data copyout(optical_props%ssa, optical_props%p)
         end select
+      !$acc exit data copyout(optical_props%tau)
+      !$acc exit data delete(tau)
     else
       ! combine optical depth and rayleigh scattering
+      !$acc enter data copyin(tau, tau_rayleigh)
       select type(optical_props)
         type is (ty_optical_props_1scl)
           ! User is asking for absorption optical depth
-          optical_props%tau = reorder123x321(tau)
+          !$acc enter data create(optical_props%tau)
+          call reorder123x321(tau, optical_props%tau)
+          !$acc exit data copyout(optical_props%tau)
         type is (ty_optical_props_2str)
+          !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
           call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
                                         optical_props%tau, optical_props%ssa, optical_props%g)
+          !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
+          !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%p)
           call combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau, tau_rayleigh, &
                                         optical_props%tau, optical_props%ssa, optical_props%p)
+          !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%p)
       end select
+      !$acc exit data delete(tau, tau_rayleigh)
     end if
   end subroutine combine_and_reorder
 

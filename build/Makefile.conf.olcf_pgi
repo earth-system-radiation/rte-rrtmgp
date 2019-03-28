@@ -1,0 +1,14 @@
+#
+# PGI Fortran on Ascent/Summit
+#
+# Fortran compiler command
+export FC = mpif90
+
+# Fortran compiler flags
+#
+# Optimized
+#
+export FCFLAGS  = -O3 -g -ta=nvidia,cc70,ptxinfo -Minfo=accel
+export FCFLAGS  = -O3 -g -ta=nvidia,cc70,ptxinfo -Minfo=accel
+#export FCFLAGS  = -m64 -O3 -traceback -assume realloc_lhs -extend-source 132 -qopt-report-phase=vec
+#export F77FLAGS = -m64 -O3 -traceback                                        -qopt-report-phase=vec

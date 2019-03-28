@@ -184,7 +184,8 @@ contains
     ! For more than one angle use local arrays
     !
     top_level = MERGE(1, nlay+1, top_at_1)
-    radn_dn(:,top_level,:) = flux_dn(:, top_level, :) ! Flux boundary condition
+    call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
+
     do imu = 2, nmus
       Ds_ncol(:,:) = Ds(imu)
       call lw_solver_noscat(ncol, nlay, ngpt, &
@@ -284,7 +285,7 @@ contains
     logical(wl),                intent( in) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent( in) :: tau          ! Absorption optical thickness []
     real(wp), dimension(ncol            ), intent( in) :: mu0          ! cosine of solar zenith angle
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
                                                                        ! Top level must contain incident flux boundary condition
     integer :: icol, ilev, igpt
     real(wp) :: mu0_inv(ncol)

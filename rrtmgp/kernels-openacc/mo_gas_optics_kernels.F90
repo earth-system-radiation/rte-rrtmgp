@@ -416,7 +416,7 @@ contains
 
     extent = size(scale_by_complement,dim=1)
 
-    !$acc parallel loop collapse(3) private(vmr)
+    !$acc parallel loop collapse(3) 
     do imnr = 1, extent  ! loop over minor absorbers in each band
       do icol = 1, ncol
         do ilay = 1 , nlay
@@ -559,7 +559,7 @@ contains
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
     ! -----------------
 
-    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,scaling_array)
+    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,one)
     !$acc enter data create(sfc_src,lay_src,lev_src_inc,lev_src_dec)
     !$acc enter data create(pfrac,planck_function)
 
@@ -642,7 +642,7 @@ contains
       end do ! ilay
     end do ! icol
 
-    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,scaling_array)
+    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,one)
     !$acc exit data copyout(sfc_src,lay_src,lev_src_inc,lev_src_dec)
     !$acc exit data delete(pfrac,planck_function)
 

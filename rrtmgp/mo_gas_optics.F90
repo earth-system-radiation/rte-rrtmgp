@@ -1504,32 +1504,46 @@ contains
 
     if (.not. has_rayleigh) then
       ! index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
+      !$acc enter data copyin(tau)
+      !$acc enter data create(optical_props%tau)
       optical_props%tau = reorder123x321(tau)
       select type(optical_props)
         type is (ty_optical_props_2str)
+          !$acc enter data create(optical_props%ssa, optical_props%g)
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(     ncol,nlay,ngpt,optical_props%g  )
+          !$acc exit data copyout(optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
+          !$acc enter data create(optical_props%ssa, optical_props%p)
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(nmom,ncol,nlay,ngpt,optical_props%p  )
+          !$acc exit data copyout(optical_props%ssa, optical_props%p)
         end select
+      !$acc exit data copyout(optical_props%tau)
+      !$acc exit data delete(tau)
     else
       ! combine optical depth and rayleigh scattering
+      !$acc enter data copyin(tau, tau_rayleigh)
       select type(optical_props)
         type is (ty_optical_props_1scl)
           ! User is asking for absorption optical depth
-          !$acc enter data create(optical_props%tau) copyin(tau)
+          !$acc enter data create(optical_props%tau)
           optical_props%tau = reorder123x321(tau)
-          !$acc exit data copyout(optical_props%tau) delete(tau)
+          !$acc exit data copyout(optical_props%tau)
         type is (ty_optical_props_2str)
+          !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
           call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
                                         optical_props%tau, optical_props%ssa, optical_props%g)
+          !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
+          !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%p)
           call combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau, tau_rayleigh, &
                                         optical_props%tau, optical_props%ssa, optical_props%p)
+          !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%p)
       end select
+      !$acc exit data delete(tau, tau_rayleigh)
     end if
   end subroutine combine_and_reorder
 

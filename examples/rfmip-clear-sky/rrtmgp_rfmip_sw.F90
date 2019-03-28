@@ -210,6 +210,7 @@ program rrtmgp_rfmip_sw
   allocate(flux_up(block_size, nlay+1, nblocks), &
            flux_dn(block_size, nlay+1, nblocks))
   call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
+  !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -292,6 +293,7 @@ program rrtmgp_rfmip_sw
   !
 #ifdef USE_TIMING
   end do
+  !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif

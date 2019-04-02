@@ -489,10 +489,12 @@ contains
     !
     ! ---- calculate gas optical depths ----
     !
-    !$acc enter data create(tau, tau_rayleigh, jtemp, jpress, jeta, tropo, fmajor, fminor, col_mix)
+    !$acc enter data create(jtemp, jpress, jeta, tropo, fmajor)
+    !$acc enter data create(tau, tau_rayleigh)
     !$acc enter data copyin(play, tlay, col_gas)
-    !$acc enter data copyin(this%flavor, this%press_ref_log, this%temp_ref, this%vmr_ref, &
-    !$acc&                  this%gpoint_flavor, this%krayl)
+    !$acc enter data create(col_mix, fminor)
+    !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
+    !!!$acc enter data copyin(this%temp_ref)  ! this one causes problems
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
@@ -559,9 +561,10 @@ contains
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
-    !$acc exit data delete(tau, tau_rayleigh, play, tlay, col_gas, col_mix, fminor)
-    !$acc exit data delete(this%flavor, this%press_ref_log, this%temp_ref, this%vmr_ref, &
-    !$acc&                 this%gpoint_flavor, this%krayl)
+    !$acc exit data delete(tau, tau_rayleigh)
+    !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
+    !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
+    !!!$acc exit data delete(this%temp_ref)  ! this one causes problems
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !

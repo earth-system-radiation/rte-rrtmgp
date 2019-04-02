@@ -210,17 +210,14 @@ contains
     ! ---------------------
     ! Local variables
     !
-    logical                    :: top_at_1
+    logical(wl)                :: top_at_1
     integer, dimension(ncol,2) :: itropo_lower, itropo_upper
     integer                    :: icol, idx_tropo
 
     ! ----------------------------------------------------------------
 
-    !$acc enter data create(itropo_lower,itropo_upper)
-    !$acc enter data copyin(gpoint_flavor,kmajor,kminor_lower,kminor_upper,minor_limits_gpt_lower,minor_limits_gpt_upper,&
-    !$acc&                  minor_scales_with_density_lower,minor_scales_with_density_upper,scale_by_complement_lower,scale_by_complement_upper, &
-    !$acc&                  idx_minor_lower,idx_minor_upper,idx_minor_scaling_lower,idx_minor_scaling_upper,kminor_start_lower,kminor_start_upper,tropo, &
-    !$acc&                  col_mix,fmajor,fminor,play,tlay,col_gas,jeta,jtemp,jpress,tau)
+    !$acc enter data create(itropo_lower, itropo_upper)
+    !$acc enter data copyin(play, tlay, tropo, gpoint_flavor, jeta, jtemp, col_gas, fminor, tau)
 
     ! ---------------------
     ! Layer limits of upper, lower atmospheres
@@ -298,10 +295,8 @@ contains
            itropo_upper,jtemp,         &
            tau)
 
-    !$acc exit data delete(itropo_lower,itropo_upper,gpoint_flavor,kmajor,kminor_lower,kminor_upper,minor_limits_gpt_lower,minor_limits_gpt_upper     , &
-    !$acc&                 minor_scales_with_density_lower,minor_scales_with_density_upper,scale_by_complement_lower,scale_by_complement_upper        , &
-    !$acc&                 idx_minor_lower,idx_minor_upper,idx_minor_scaling_lower,idx_minor_scaling_upper,kminor_start_lower,kminor_start_upper,tropo, &
-    !$acc&                 col_mix,fmajor,fminor,play,tlay,col_gas,jeta,jtemp,jpress)
+    !$acc exit data delete(itropo_lower,itropo_upper)
+    !$acc exit data delete(play, tlay, tropo, gpoint_flavor, jeta, jtemp, col_gas, fminor)
     !$acc exit data copyout(tau)
 
   end subroutine compute_tau_absorption
@@ -633,7 +628,7 @@ contains
     ! Map to g-points
     !
     !$acc parallel loop collapse(3)
-	do igpt = 1, ngpt
+    do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
           lev_src_dec(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,  icol)
@@ -672,9 +667,9 @@ contains
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
     res(:) = table(index,:) + frac * (table(index+1,:) - table(index,:))
   end subroutine interpolate1D
- ! ------------
- !   This function returns a single value from a subset (in gpoint) of the k table
- !
+  ! ------------
+  !   This function returns a single value from a subset (in gpoint) of the k table
+  !
   function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
   !$acc routine seq
     real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species

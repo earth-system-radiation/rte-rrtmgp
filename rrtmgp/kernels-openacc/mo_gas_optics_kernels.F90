@@ -182,10 +182,10 @@ contains
     real(wp),    dimension(nminorkupper,neta,ntemp), intent(in) :: kminor_upper
     integer,     dimension(2,nminorlower),           intent(in) :: minor_limits_gpt_lower
     integer,     dimension(2,nminorupper),           intent(in) :: minor_limits_gpt_upper
-    logical, dimension(  nminorlower),           intent(in) :: minor_scales_with_density_lower
-    logical, dimension(  nminorupper),           intent(in) :: minor_scales_with_density_upper
-    logical, dimension(  nminorlower),           intent(in) :: scale_by_complement_lower
-    logical, dimension(  nminorupper),           intent(in) :: scale_by_complement_upper
+    logical(wl), dimension(  nminorlower),           intent(in) :: minor_scales_with_density_lower
+    logical(wl), dimension(  nminorupper),           intent(in) :: minor_scales_with_density_upper
+    logical(wl), dimension(  nminorlower),           intent(in) :: scale_by_complement_lower
+    logical(wl), dimension(  nminorupper),           intent(in) :: scale_by_complement_upper
     integer,     dimension(  nminorlower),           intent(in) :: idx_minor_lower
     integer,     dimension(  nminorupper),           intent(in) :: idx_minor_upper
     integer,     dimension(  nminorlower),           intent(in) :: idx_minor_scaling_lower
@@ -387,8 +387,8 @@ contains
     integer,     dimension(2, ngpt),             intent(in ) :: gpt_flv
     real(wp),    dimension(nminork,neta,npres),  intent(in ) :: kminor
     integer,     dimension(2,nminor),            intent(in ) :: minor_limits_gpt
-    logical, dimension(  nminor),            intent(in ) :: minor_scales_with_density
-    logical, dimension(  nminor),            intent(in ) :: scale_by_complement
+    logical(wl), dimension(  nminor),            intent(in ) :: minor_scales_with_density
+    logical(wl), dimension(  nminor),            intent(in ) :: scale_by_complement
     integer,     dimension(  nminor),            intent(in ) :: kminor_start
     integer,     dimension(  nminor),            intent(in ) :: idx_minor, idx_minor_scaling
     real(wp),    dimension(ncol,nlay),           intent(in ) :: play, tlay

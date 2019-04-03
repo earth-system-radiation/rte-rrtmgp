@@ -16,7 +16,6 @@
 
 module mo_gas_optics_kernels
   use mo_rte_kind,      only: wp, wl
-  use mo_util_string,   only : string_loc_in_array
   implicit none
 
   interface zero_array
@@ -183,10 +182,10 @@ contains
     real(wp),    dimension(nminorkupper,neta,ntemp), intent(in) :: kminor_upper
     integer,     dimension(2,nminorlower),           intent(in) :: minor_limits_gpt_lower
     integer,     dimension(2,nminorupper),           intent(in) :: minor_limits_gpt_upper
-    logical(wl), dimension(  nminorlower),           intent(in) :: minor_scales_with_density_lower
-    logical(wl), dimension(  nminorupper),           intent(in) :: minor_scales_with_density_upper
-    logical(wl), dimension(  nminorlower),           intent(in) :: scale_by_complement_lower
-    logical(wl), dimension(  nminorupper),           intent(in) :: scale_by_complement_upper
+    logical, dimension(  nminorlower),           intent(in) :: minor_scales_with_density_lower
+    logical, dimension(  nminorupper),           intent(in) :: minor_scales_with_density_upper
+    logical, dimension(  nminorlower),           intent(in) :: scale_by_complement_lower
+    logical, dimension(  nminorupper),           intent(in) :: scale_by_complement_upper
     integer,     dimension(  nminorlower),           intent(in) :: idx_minor_lower
     integer,     dimension(  nminorupper),           intent(in) :: idx_minor_upper
     integer,     dimension(  nminorlower),           intent(in) :: idx_minor_scaling_lower
@@ -235,7 +234,7 @@ contains
       !$acc parallel loop
       do icol = 1,ncol
         itropo_lower(icol,1) = 1
-        itropo_lower(icol,2) = minloc(play(icol,:), dim=1, mask= tropo(icol,:))
+        itropo_lower(icol,2) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
         itropo_upper(icol,2) = nlay
         itropo_upper(icol,1) = maxloc(play(icol,:), dim=1, mask=(.not.tropo(icol,:)))
       end do
@@ -388,8 +387,8 @@ contains
     integer,     dimension(2, ngpt),             intent(in ) :: gpt_flv
     real(wp),    dimension(nminork,neta,npres),  intent(in ) :: kminor
     integer,     dimension(2,nminor),            intent(in ) :: minor_limits_gpt
-    logical(wl), dimension(  nminor),            intent(in ) :: minor_scales_with_density
-    logical(wl), dimension(  nminor),            intent(in ) :: scale_by_complement
+    logical, dimension(  nminor),            intent(in ) :: minor_scales_with_density
+    logical, dimension(  nminor),            intent(in ) :: scale_by_complement
     integer,     dimension(  nminor),            intent(in ) :: kminor_start
     integer,     dimension(  nminor),            intent(in ) :: idx_minor, idx_minor_scaling
     real(wp),    dimension(ncol,nlay),           intent(in ) :: play, tlay

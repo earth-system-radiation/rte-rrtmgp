@@ -6,9 +6,15 @@ export FC = mpif90
 
 # Fortran compiler flags
 #
-# Optimized
+# NOTE: There is a bug in the PGI OpenACC implementation related to optimization
+# and C-compatible logical types (c_bool). The temporary workaround (until the
+# compiler bug is fixed) is to compile without optimization. Alternatively, we
+# can change all variables of type logical(wl) or logical(kind=c_bool) with
+# intent(in) to intent(inout), which access memory differently. Requiring
+# building without optimization seemed like the less intrusive approach for the
+# time being though. This allows the tests to build and run, and gives the right
+# answers against baselines, but will need to be fixed before running big
+# expensive jobs probably.
 #
-export FCFLAGS  = -O3 -g -ta=nvidia,cc70,ptxinfo -Minfo=accel
-export FCFLAGS  = -O3 -g -ta=nvidia,cc70,ptxinfo -Minfo=accel
-#export FCFLAGS  = -m64 -O3 -traceback -assume realloc_lhs -extend-source 132 -qopt-report-phase=vec
-#export F77FLAGS = -m64 -O3 -traceback                                        -qopt-report-phase=vec
+export FCFLAGS = -O0 -g -ta=nvidia,cc70,ptxinfo -Minfo=accel
+export FCFLAGS = -O0 -g -ta=nvidia,cc70,ptxinfo -Minfo=accel

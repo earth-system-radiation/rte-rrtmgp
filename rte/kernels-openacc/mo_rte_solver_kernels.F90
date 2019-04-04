@@ -204,6 +204,7 @@ contains
     ! Local variables
     real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
     real(wp), dimension(ncol,       ngpt) :: Ds_ncol
+    real(wp), dimension(ncol,       ngpt) :: flux_top
 
     integer :: imu, top_level
     integer :: icol, ilev, igpt
@@ -228,7 +229,13 @@ contains
     ! For more than one angle use local arrays
     !
     top_level = MERGE(1, nlay+1, top_at_1)
-    call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
+    !$acc parallel loop collapse(2) async
+    do igpt = 1,ngpt
+      do icol = 1,ncol
+        flux_top(icol,igpt) = flux_dn(icol,top_level,igpt)
+      end do
+    end do
+    call apply_BC(ncol, nlay, ngpt, top_at_1, flux_top, radn_dn)
 
     do imu = 2, nmus
       !$acc  parallel loop collapse(2) async

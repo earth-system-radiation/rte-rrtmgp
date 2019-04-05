@@ -222,10 +222,13 @@ program rrtmgp_rfmip_lw
   call stop_on_err(optical_props%alloc_1scl(block_size, nlay, k_dist))
   !
   ! OpenACC directives put data on the GPU where it can be reused with communication
+  ! NOTE: these are causing problems right now, most likely due to a compiler
+  ! bug related to the use of Fortran classes on the GPU.
   !
-  !$acc enter data create(sfc_emis_spec)
-  !$acc enter data create(optical_props%tau)
-  !$acc enter data create(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !!$acc enter data copyin(sfc_emis_spec)
+  !!$acc enter data copyin(optical_props%tau)
+  !!$acc enter data copyin(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !!$acc enter data copyin(source%band2gpt, source%gpt2band, source%band_lims_wvn)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -296,9 +299,10 @@ program rrtmgp_rfmip_lw
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
-  !$acc exit data delete(sfc_emis_spec)
-  !$acc exit data delete(optical_props%tau)
-  !$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !!$acc exit data delete(sfc_emis_spec)
+  !!$acc exit data delete(optical_props%tau)
+  !!$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !!$acc exit data delete(source%band2gpt, source%gpt2band, source%band_lims_wvn)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rld', flux_dn)

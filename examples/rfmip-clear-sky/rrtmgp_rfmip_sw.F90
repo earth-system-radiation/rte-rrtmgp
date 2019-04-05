@@ -224,8 +224,11 @@ program rrtmgp_rfmip_sw
            flux_dn(block_size, nlay+1, nblocks))
   allocate(mu0(block_size), sfc_alb_spec(nbnd,block_size))
   call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
+  ! Handle GPU data. Leave mu0, sfc_alb_spec, toa_flux, and def_tsi on CPU for
+  ! now, and let compiler or CUDA runtime handle data movement because not
+  ! everything is in kernels at the next level down yet.
   !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
-  !$acc enter data create(mu0,sfc_alb_spec,toa_flux,def_tsi)
+  !!!$acc enter data create(mu0,sfc_alb_spec,toa_flux,def_tsi)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -302,6 +305,7 @@ program rrtmgp_rfmip_sw
     do icol = 1, block_size
       mu0(icol) = merge(cos(solar_zenith_angle(icol,b)*deg_to_rad), 1._wp, usecol(icol,b))
     end do
+
     !
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband
@@ -334,11 +338,11 @@ program rrtmgp_rfmip_sw
   !
 #ifdef USE_TIMING
   end do
-  !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
-  !$acc exit data delete(mu0,sfc_alb_spec,toa_flux,def_tsi)
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
+  !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+  !!!$acc exit data delete(mu0,sfc_alb_spec,toa_flux,def_tsi)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rsd', flux_dn)

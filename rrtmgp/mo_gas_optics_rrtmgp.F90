@@ -495,6 +495,7 @@ contains
     !$acc enter data create(col_mix, fminor)
     !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
     !!!$acc enter data copyin(this%temp_ref)  ! this one causes problems
+    !!!$acc enter data copyin(this%kminor_lower, this%kminor_upper)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
@@ -565,6 +566,7 @@ contains
     !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
     !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
     !!!$acc exit data delete(this%temp_ref)  ! this one causes problems
+    !!!$acc exit data delete(this%kminor_lower, this%kminor_upper)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
@@ -646,9 +648,9 @@ contains
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
                 sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
     sources%sfc_source     = transpose(sfc_source_t)
-   call reorder123x321(lay_source_t, sources%lay_source)
-   call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
-   call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
+    call reorder123x321(lay_source_t, sources%lay_source)
+    call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
+    call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !

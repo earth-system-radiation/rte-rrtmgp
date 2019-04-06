@@ -236,12 +236,13 @@ contains
           names_in_file(i) = conc_name(string_loc_in_array(names_in_file(i), chem_name))
       end do
     case (2)
-      num_gases = 4
+      num_gases = 5
       allocate(names_in_kdist(num_gases), names_in_file(num_gases))
-      names_in_kdist = ['co2  ', 'ch4  ', 'n2o  ', 'cfc11']
+      names_in_kdist = ['co2  ', 'ch4  ', 'n2o  ', 'cfc12', 'cfc11']
       names_in_file =  ['carbon_dioxide', &
                         'methane       ', &
                         'nitrous_oxide ', &
+                        'cfc12         ', &
                         'cfc11eq       ']
     case (3)
       num_gases = 5

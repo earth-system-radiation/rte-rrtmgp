@@ -634,7 +634,6 @@ contains
                              nlay,ngpt), intent(out) :: array_out
 
     integer :: icol, ilay, igpt
-
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE

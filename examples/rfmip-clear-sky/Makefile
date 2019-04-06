@@ -1,6 +1,7 @@
-# Location of RTE+RRTMGP libraries, module files.
-RRTMGP_DIR = ../../build
-# Sets macros FC, FCFLAGS consistent with RTE+RRTMGP
+#
+# Here set variables RRTMGP_DIR, NCHOME, NFHOME, TIME_DIR (for GPTL)
+#
+include Makefile.libs
 include $(RRTMGP_DIR)/Makefile.conf
 #
 # RRTMGP library, module files
@@ -13,8 +14,6 @@ FCINCLUDE += -I$(RRTMGP_DIR)
 # netcdf library, module files
 # C and Fortran interfaces respectively
 #
-NCHOME = /opt/local
-NFHOME = $(HOME)/Applications/$(FC)
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
@@ -25,7 +24,7 @@ LIBS      += -lnetcdff -lnetcdf
 #
 TIMING=no
 # Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
-FCFLAGS += -fpp
+#FCFLAGS += -fpp
 ifeq ($(TIMING),yes)
 	#
 	# Timing library
@@ -33,8 +32,6 @@ ifeq ($(TIMING),yes)
 	FCINCLUDE += -I$(TIME_DIR)/include
 	# Compiler specific
 	FCFLAGS += -DUSE_TIMING
-	# Installation specific
-	TIME_DIR = $(HOME)/Codes/GPTL/gptl-v5.5.3/macos
 	LDFLAGS   += -L$(TIME_DIR)/lib
 	LIBS      += -lgptl
 endif
@@ -68,4 +65,4 @@ mo_rfmip_io.o:          mo_rfmip_io.F90          mo_simple_netcdf.o
 mo_load_coefficients.o: mo_load_coefficients.F90 mo_simple_netcdf.o
 
 clean:
-	-rm rrtmgp_rfmip_sw rrtmgp_rfmip_lw *.o *.mod *.optrpt ../*.optrpt
+	-rm rrtmgp_rfmip_sw rrtmgp_rfmip_lw *.o *.mod *.optrpt

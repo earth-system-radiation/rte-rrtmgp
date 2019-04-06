@@ -8,7 +8,7 @@ VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
 include Makefile.conf
 include Makefile.rules
 
-all: librte.a librrtmgp.a 
+all: librte.a librrtmgp.a
 
 include $(RTE_DIR)/Make.depends
 include $(RRTMGP_DIR)/Make.depends

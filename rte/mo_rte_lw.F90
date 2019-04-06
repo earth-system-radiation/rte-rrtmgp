@@ -76,7 +76,7 @@ contains
     !
     integer :: ncol, nlay, ngpt, nband
     integer :: n_quad_angs
-    integer :: icol
+    integer :: icol, iband, igpt
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
     ! --------------------------------------------------
@@ -110,8 +110,6 @@ contains
     nband = optical_props%get_nband()
     error_msg = ""
 
-    allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
-    allocate(sfc_emis_gpt(ncol,         ngpt))
     ! ------------------------------------------------------------------------------------
     !
     ! Error checking -- consistency of sizes and validity of values
@@ -174,14 +172,20 @@ contains
     !
     !    Lower boundary condition -- expand surface emissivity by band to gpoints
     !
-    do icol = 1, ncol
-      sfc_emis_gpt(icol, 1:ngpt) = optical_props%expand(sfc_emis(:,icol))
-    end do
+    allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
+    allocate(sfc_emis_gpt(ncol,         ngpt))
+    !$acc enter data copyin(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$acc enter data copyin(gauss_Ds, gauss_wts)
+    !$acc enter data create(gpt_flux_dn, gpt_flux_up)
+    !$acc enter data create(sfc_emis_gpt)
+    call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     !
     !   Upper boundary condition
     !
     if(present(inc_flux)) then
+      !$acc enter data copyin(inc_flux)
       call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl), inc_flux, gpt_flux_dn)
+      !$acc exit data delete(inc_flux)
     else
       !
       ! Default is zero incident diffuse flux
@@ -197,21 +201,25 @@ contains
         !
         ! No scattering two-stream calculation
         !
+        !$acc enter data copyin(optical_props%tau)
         call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
                               optical_props%tau,                                                  &
                               sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                               sfc_emis_gpt, sources%sfc_source,  &
                               gpt_flux_up, gpt_flux_dn)
+        !$acc exit data delete(optical_props%tau)
       class is (ty_optical_props_2str)
         !
         ! two-stream calculation with scattering
         !
+        !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
         call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
                                optical_props%tau, optical_props%ssa, optical_props%g,              &
                                sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                                sfc_emis_gpt, sources%sfc_source,       &
                                gpt_flux_up, gpt_flux_dn)
+        !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
       class is (ty_optical_props_nstr)
         !
         ! n-stream calculation
@@ -224,5 +232,36 @@ contains
     ! ...and reduce spectral fluxes to desired output quantities
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
+    !$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$acc exit data delete(sfc_emis_gpt, gauss_Ds, gauss_wts)
+    !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
   end function rte_lw
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)
+  !
+  subroutine expand_and_transpose(ops,arr_in,arr_out)
+    class(ty_optical_props),  intent(in ) :: ops
+    real(wp), dimension(:,:), intent(in ) :: arr_in  ! (nband, ncol)
+    real(wp), dimension(:,:), intent(out) :: arr_out ! (ncol, igpt)
+    ! -------------
+    integer :: ncol, nband, ngpt
+    integer :: icol, iband, igpt
+    integer, dimension(2,ops%get_nband()) :: limits
+
+    ncol  = size(arr_in, 2)
+    nband = ops%get_nband()
+    ngpt  = ops%get_ngpt()
+    limits = ops%get_band_lims_gpoint()
+    !$acc parallel loop collapse(2) copyin(arr_in, limits)
+    do iband = 1, nband
+      do icol = 1, ncol
+        do igpt = limits(1, iband), limits(2, iband)
+          arr_out(icol, igpt) = arr_in(iband,icol)
+        end do
+      end do
+    end do
+
+  end subroutine expand_and_transpose
+  !--------------------------------------------------------------------------------------------------------------------
 end module mo_rte_lw

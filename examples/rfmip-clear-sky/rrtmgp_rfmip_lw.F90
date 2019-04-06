@@ -96,24 +96,25 @@ program rrtmgp_rfmip_lw
   character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
                         kdist_file = 'coefficients_lw.nc'
   character(len=132) :: flxdn_file, flxup_file
-  integer            :: nargs, ncol, nlay, nexp, nblocks, block_size, forcing_index, physics_index, n_quad_angles = 1
+  integer            :: nargs, ncol, nlay, nbnd, nexp, nblocks, block_size, forcing_index, physics_index, n_quad_angles = 1
   logical            :: top_at_1
-  integer            :: b
+  integer            :: b, icol, ibnd
   character(len=4)   :: block_size_char, forcing_index_char = '1', physics_index_char = '1'
 
   character(len=32 ), &
             dimension(:),             allocatable :: kdist_gas_names, rfmip_gas_games
   real(wp), dimension(:,:,:),         allocatable :: p_lay, p_lev, t_lay, t_lev ! block_size, nlay, nblocks
   real(wp), dimension(:,:,:), target, allocatable :: flux_up, flux_dn
-  real(wp), dimension(:,:  ),         allocatable :: sfc_emis, sfc_t            ! block_size, nblocks
+  real(wp), dimension(:,:  ),         allocatable :: sfc_emis, sfc_t  ! block_size, nblocks (emissivity is spectrally constant)
+  real(wp), dimension(:,:  ),         allocatable :: sfc_emis_spec    ! nbands, block_size (spectrally-resolved emissivity)
 
   !
   ! Classes used by rte+rrtmgp
   !
-  type(ty_gas_optics_rrtmgp)                     :: k_dist
-  type(ty_source_func_lw)                        :: source
-  type(ty_optical_props_1scl)                    :: optical_props
-  type(ty_fluxes_broadband)                      :: fluxes
+  type(ty_gas_optics_rrtmgp)  :: k_dist
+  type(ty_source_func_lw)     :: source
+  type(ty_optical_props_1scl) :: optical_props
+  type(ty_fluxes_broadband)   :: fluxes
   !
   ! ty_gas_concentration holds multiple columns; we make an array of these objects to
   !   leverage what we know about the input file
@@ -141,7 +142,6 @@ program rrtmgp_rfmip_lw
   if(nargs >= 3) call get_command_argument(3, kdist_file)
   if(nargs >= 4) call get_command_argument(4, forcing_index_char)
   if(nargs >= 5) call get_command_argument(5, physics_index_char)
-
   !
   ! How big is the problem? Does it fit into blocks of the size we've specified?
   !
@@ -196,6 +196,7 @@ program rrtmgp_rfmip_lw
   call load_and_init(k_dist, trim(kdist_file), gas_conc_array(1))
   if(.not. k_dist%source_is_internal()) &
     stop "rrtmgp_rfmip_lw: k-distribution file isn't LW"
+  nbnd = k_dist%get_nband()
 
   !
   ! RRTMGP won't run with pressure less than its minimum. The top level in the RFMIP file
@@ -216,8 +217,18 @@ program rrtmgp_rfmip_lw
   !
   allocate(flux_up(    block_size, nlay+1, nblocks), &
            flux_dn(    block_size, nlay+1, nblocks))
+  allocate(sfc_emis_spec(nbnd, block_size))
   call stop_on_err(source%alloc            (block_size, nlay, k_dist))
   call stop_on_err(optical_props%alloc_1scl(block_size, nlay, k_dist))
+  !
+  ! OpenACC directives put data on the GPU where it can be reused with communication
+  ! NOTE: these are causing problems right now, most likely due to a compiler
+  ! bug related to the use of Fortran classes on the GPU.
+  !
+  !!$acc enter data copyin(sfc_emis_spec)
+  !!$acc enter data copyin(optical_props%tau)
+  !!$acc enter data copyin(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !!$acc enter data copyin(source%band2gpt, source%gpt2band, source%band_lims_wvn)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -236,6 +247,16 @@ program rrtmgp_rfmip_lw
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
+    !
+    ! Expand the spectrally-constant surface emissivity to a per-band emissivity for each column
+    !   (This is partly to show how to keep work on GPUs using OpenACC)
+    !
+    !$acc parallel loop collapse(2)
+    do icol = 1, block_size
+      do ibnd = 1, nbnd
+        sfc_emis_spec(ibnd,icol) = sfc_emis(icol,b)
+      end do
+    end do
     !
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
@@ -264,7 +285,7 @@ program rrtmgp_rfmip_lw
     call stop_on_err(rte_lw(optical_props,   &
                             top_at_1,        &
                             source,          &
-                            spread(sfc_emis(:,b), 1, ncopies = k_dist%get_nband()), &
+                            sfc_emis_spec,   &
                             fluxes, n_gauss_angles = n_quad_angles))
 #ifdef USE_TIMING
     ret =  gptlstop('rte_lw')
@@ -278,6 +299,10 @@ program rrtmgp_rfmip_lw
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
+  !!$acc exit data delete(sfc_emis_spec)
+  !!$acc exit data delete(optical_props%tau)
+  !!$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !!$acc exit data delete(source%band2gpt, source%gpt2band, source%band_lims_wvn)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rld', flux_dn)

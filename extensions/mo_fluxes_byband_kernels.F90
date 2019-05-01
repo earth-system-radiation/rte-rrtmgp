@@ -62,7 +62,6 @@ contains
 
     !$acc parallel loop collapse(3) copyin(spectral_flux_dn, spectral_flux_up, band_lims) copyout(byband_flux_net)
     do ibnd = 1, nbnd
-      igpt = band_lims(1,ibnd)
       do ilev = 1, nlev
         do icol = 1, ncol
           igpt = band_lims(1,ibnd)

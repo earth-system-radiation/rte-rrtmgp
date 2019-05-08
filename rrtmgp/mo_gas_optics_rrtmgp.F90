@@ -38,8 +38,14 @@ module mo_gas_optics_rrtmgp
   private
   real(wp), parameter :: pi = acos(-1._wp)
 
-  ! -------------------------------------------------------------------------------------------------
-  type, extends(ty_gas_optics), public :: ty_gas_optics_rrtmgp
+#if 0
+!! \section arg_table_mo_gas_optics_rrtmgp
+!! | local_name                | standard_name              | long_name                               | units | rank | type                      |    kind   | intent | optional |
+!! |---------------------------|----------------------------|-----------------------------------------|-------|------|---------------------------|-----------|--------|----------|
+!! | ty_gas_optics_rrtmgp_type | ty_gas_optics_rrtmgp_type  | definition of type ty_gas_optics_rrtmgp | DDT   |    0 | ty_gas_optics_rrtmgp_type |           | none   | F        |
+!!
+#endif
+  type, extends(ty_gas_optics), public :: ty_gas_optics_rrtmgp_type
     private
     !
     ! RRTMGP computes absorption in each band arising from

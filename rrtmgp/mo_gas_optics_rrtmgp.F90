@@ -42,10 +42,10 @@ module mo_gas_optics_rrtmgp
 !! \section arg_table_mo_gas_optics_rrtmgp
 !! | local_name                | standard_name              | long_name                               | units | rank | type                 |    kind   | intent | optional |
 !! |---------------------------|----------------------------|-----------------------------------------|-------|------|----------------------|-----------|--------|----------|
-!! | ty_gas_optics_rrtmgp_type | ty_gas_optics_rrtmgp_type  | definition of type ty_gas_optics_rrtmgp | DDT   |    0 | ty_gas_optics_rrtmgp_type |           | none   | F        |
+!! | ty_gas_optics_rrtmgp | ty_gas_optics_rrtmgp  | definition of type ty_gas_optics_rrtmgp | DDT   |    0 | ty_gas_optics_rrtmgp |           | none   | F        |
 !!
 #endif
-  type, extends(ty_gas_optics), public :: ty_gas_optics_rrtmgp_type
+  type, extends(ty_gas_optics), public :: ty_gas_optics_rrtmgp
     private
     !
     ! RRTMGP computes absorption in each band arising from
@@ -171,7 +171,7 @@ module mo_gas_optics_rrtmgp
     procedure, private :: get_npres
     procedure, private :: get_ntemp
     procedure, private :: get_nPlanckTemp
- end type ty_gas_optics_rrtmgp_type
+ end type ty_gas_optics_rrtmgp
   ! -------------------------------------------------------------------------------------------------
   !
   ! col_dry is the number of molecules per cm-2 of dry air
@@ -197,7 +197,7 @@ contains
   !
   pure function get_ngas(this)
     ! return the number of gases registered in the spectral configuration
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     integer                                        :: get_ngas
 
     get_ngas = size(this%gas_names)
@@ -208,7 +208,7 @@ contains
   ! "flavors" - all bands have a flavor even if there is one or no major gas)
   !
   pure function get_nflav(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     integer                                 :: get_nflav
 
     get_nflav = size(this%flavor,dim=2)
@@ -223,7 +223,7 @@ contains
                           optical_props, sources,           &
                           col_dry, tlev) result(error_msg)
     ! inputs
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     real(wp), dimension(:,:), intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
                                                plev, &   ! level pressures [Pa, mb]; (ncol,nlay+1)
                                                tlay      ! layer temperatures [K]; (ncol,nlay)
@@ -308,7 +308,7 @@ contains
                           optical_props, toa_src,       & ! mandatory outputs
                           col_dry) result(error_msg)      ! optional input
 
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     real(wp), dimension(:,:), intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
                                                plev, &   ! level pressures [Pa, mb]; (ncol,nlay+1)
                                                tlay      ! layer temperatures [K]; (ncol,nlay)
@@ -371,7 +371,7 @@ contains
                             jtemp, jpress, jeta, tropo, fmajor, &
                             col_dry) result(error_msg)
 
-    class(ty_gas_optics_rrtmgp_type), &
+    class(ty_gas_optics_rrtmgp), &
                                       intent(in   ) :: this
     integer,                          intent(in   ) :: ncol, nlay, ngpt, nband
     real(wp), dimension(:,:),         intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
@@ -586,7 +586,7 @@ contains
                   tlev)                               & ! optional input
                   result(error_msg)
     ! inputs
-    class(ty_gas_optics_rrtmgp_type),    intent(in ) :: this
+    class(ty_gas_optics_rrtmgp),    intent(in ) :: this
     integer,                               intent(in ) :: ncol, nlay, nbnd, ngpt
     real(wp), dimension(ncol,nlay),        intent(in ) :: play   ! layer pressures [Pa, mb]
     real(wp), dimension(ncol,nlay+1),      intent(in ) :: plev   ! level pressures [Pa, mb]
@@ -683,7 +683,7 @@ contains
                     kminor_start_lower,                             &
                     kminor_start_upper,                             &
                     totplnk, planck_frac, rayl_lower, rayl_upper) result(err_message)
-    class(ty_gas_optics_rrtmgp_type),     intent(inout) :: this
+    class(ty_gas_optics_rrtmgp),     intent(inout) :: this
     class(ty_gas_concs),                    intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*),   dimension(:),       intent(in   ) :: gas_names
     integer,            dimension(:,:,:),   intent(in   ) :: key_species
@@ -765,7 +765,7 @@ contains
                     kminor_start_lower, &
                     kminor_start_upper, &
                     solar_src, rayl_lower, rayl_upper)  result(err_message)
-    class(ty_gas_optics_rrtmgp_type), intent(inout) :: this
+    class(ty_gas_optics_rrtmgp), intent(inout) :: this
     class(ty_gas_concs),                intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*), &
               dimension(:),       intent(in) :: gas_names
@@ -854,7 +854,7 @@ contains
                            kminor_start_lower, &
                            kminor_start_upper, &
                            rayl_lower, rayl_upper) result(err_message)
-    class(ty_gas_optics_rrtmgp_type), intent(inout) :: this
+    class(ty_gas_optics_rrtmgp), intent(inout) :: this
     class(ty_gas_concs),                intent(in   ) :: available_gases
     character(len=*), &
               dimension(:),       intent(in) :: gas_names
@@ -1063,7 +1063,7 @@ contains
   !    present in the gas concentration object
   !
   function check_key_species_present(this, gas_desc) result(error_msg)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     class(ty_gas_concs),                intent(in) :: gas_desc
     character(len=128)                             :: error_msg
 
@@ -1087,7 +1087,7 @@ contains
   ! and are provided in ty_gas_concs.
   !
   function get_minor_list(this, gas_desc, ngas, names_spec)
-    class(ty_gas_optics_rrtmgp_type), intent(in)       :: this
+    class(ty_gas_optics_rrtmgp), intent(in)       :: this
     class(ty_gas_concs), intent(in)                      :: gas_desc
     integer, intent(in)                                  :: ngas
     character(32), dimension(ngas), intent(in)           :: names_spec
@@ -1115,7 +1115,7 @@ contains
   ! return true if initialized for internal sources, false otherwise
   !
   pure function source_is_internal(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     logical                          :: source_is_internal
     source_is_internal = allocated(this%totplnk) .and. allocated(this%planck_frac)
   end function source_is_internal
@@ -1124,7 +1124,7 @@ contains
   ! return true if initialized for external sources, false otherwise
   !
   pure function source_is_external(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     logical                          :: source_is_external
     source_is_external = allocated(this%solar_src)
   end function source_is_external
@@ -1134,7 +1134,7 @@ contains
   ! return the gas names
   !
   pure function get_gases(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     character(32), dimension(get_ngas(this))     :: get_gases
 
     get_gases = this%gas_names
@@ -1144,7 +1144,7 @@ contains
   ! return the minimum pressure on the interpolation grids
   !
   pure function get_press_min(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     real(wp)                                       :: get_press_min
 
     get_press_min = this%press_ref_min
@@ -1155,7 +1155,7 @@ contains
   ! return the maximum pressure on the interpolation grids
   !
   pure function get_press_max(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     real(wp)                                       :: get_press_max
 
     get_press_max = this%press_ref_max
@@ -1166,7 +1166,7 @@ contains
   ! return the minimum temparature on the interpolation grids
   !
   pure function get_temp_min(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     real(wp)                                       :: get_temp_min
 
     get_temp_min = this%temp_ref_min
@@ -1177,7 +1177,7 @@ contains
   ! return the maximum temparature on the interpolation grids
   !
   pure function get_temp_max(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     real(wp)                                       :: get_temp_max
 
     get_temp_max = this%temp_ref_max
@@ -1593,7 +1593,7 @@ contains
   ! return extent of eta dimension
   !
   pure function get_neta(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     integer                          :: get_neta
 
     get_neta = size(this%kmajor,dim=2)
@@ -1604,7 +1604,7 @@ contains
   !   absorption coefficient table is one bigger since a pressure is repeated in upper/lower atmos
   !
   pure function get_npres(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     integer                          :: get_npres
 
     get_npres = size(this%kmajor,dim=3)-1
@@ -1614,7 +1614,7 @@ contains
   ! return the number of temperatures
   !
   pure function get_ntemp(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     integer                          :: get_ntemp
 
     get_ntemp = size(this%kmajor,dim=4)
@@ -1624,7 +1624,7 @@ contains
   ! return the number of temperatures for Planck function
   !
   pure function get_nPlanckTemp(this)
-    class(ty_gas_optics_rrtmgp_type), intent(in) :: this
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
     integer                          :: get_nPlanckTemp
 
     get_nPlanckTemp = size(this%totplnk,dim=1) ! dimensions are Planck-temperature, band

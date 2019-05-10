@@ -39,13 +39,7 @@ module mo_gas_concentrations
     real(wp), dimension(:,:), allocatable :: conc
   end type conc_field
 
-!! \section arg_table_mo_gas_concentrations
-!! | local_name        | standard_name      | long_name                       | units | rank | type         |    kind   | intent | optional |
-!! |-------------------|--------------------|---------------------------------|-------|------|--------------|-----------|--------|----------|
-!! | ty_gas_concs_type | ty_gas_concs_type  | definition of type ty_gas_concs | DDT   |    0 | ty_gas_concs_type |           | none   | F        |
-!!
-
-  type, public :: ty_gas_concs_type
+  type, public :: ty_gas_concs
     !
     ! Data
     !
@@ -76,7 +70,7 @@ module mo_gas_concentrations
       generic,   public :: get_subset => get_subset_range
       procedure, public :: get_num_gases
       procedure, public :: get_gas_names
-  end type ty_gas_concs_type
+  end type ty_gas_concs
 contains
   ! -------------------------------------------------------------------------------------
   !
@@ -84,7 +78,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------
   function set_vmr_scalar(this, gas, w) result(error_msg)
-    class(ty_gas_concs_type), intent(inout) :: this
+    class(ty_gas_concs), intent(inout) :: this
     character(len=*),    intent(in   ) :: gas
     real(wp),            intent(in   ) :: w
     character(len=128)                 :: error_msg
@@ -93,7 +87,7 @@ contains
     ! ---------
     error_msg = ''
     if (w < 0._wp .or. w > 1._wp) then
-      error_msg = 'ty_gas_concs_type%set_vmr: concentrations should be >= 0, <= 1'
+      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
       return
     endif
 
@@ -112,7 +106,7 @@ contains
   end function set_vmr_scalar
   ! -------------------------------------------------------------------------------------
   function set_vmr_1d(this, gas, w) result(error_msg)
-    class(ty_gas_concs_type), intent(inout) :: this
+    class(ty_gas_concs), intent(inout) :: this
     character(len=*),    intent(in   ) :: gas
     real(wp), dimension(:), &
                          intent(in   ) :: w
@@ -123,10 +117,10 @@ contains
     error_msg = ''
 
     if (any(w < 0._wp .or. w > 1._wp)) then
-      error_msg = 'ty_gas_concs_type%set_vmr: concentrations should be >= 0, <= 1'
+      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
     if(this%nlay > 0) then
-      if(size(w) /= this%nlay) error_msg = 'ty_gas_concs_type%set_vmr: different dimension (nlay)'
+      if(size(w) /= this%nlay) error_msg = 'ty_gas_concs%set_vmr: different dimension (nlay)'
     else
       this%nlay = size(w)
     end if
@@ -147,7 +141,7 @@ contains
   end function set_vmr_1d
   ! --------------------
   function set_vmr_2d(this, gas, w) result(error_msg)
-    class(ty_gas_concs_type), intent(inout) :: this
+    class(ty_gas_concs), intent(inout) :: this
     character(len=*),    intent(in   ) :: gas
     real(wp), dimension(:,:),  &
                          intent(in   ) :: w
@@ -158,15 +152,15 @@ contains
     error_msg = ''
 
     if (any(w < 0._wp .or. w > 1._wp)) then
-      error_msg = 'ty_gas_concs_type%set_vmr: concentrations should be >= 0, <= 1'
+      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
     if(this%ncol > 0 .and. size(w, 1) /= this%ncol) then
-      error_msg = 'ty_gas_concs_type%set_vmr: different dimension (ncol)'
+      error_msg = 'ty_gas_concs%set_vmr: different dimension (ncol)'
     else
       this%ncol = size(w, 1)
     end if
     if(this%nlay > 0 .and. size(w, 2) /= this%nlay) then
-      error_msg = 'ty_gas_concs_type%set_vmr: different dimension (nlay)'
+      error_msg = 'ty_gas_concs%set_vmr: different dimension (nlay)'
     else
       this%nlay = size(w, 2)
     end if
@@ -194,7 +188,7 @@ contains
   ! 1D array ( lay depdendence only)
   !
   function get_vmr_1d(this, gas, array) result(error_msg)
-    class(ty_gas_concs_type) :: this
+    class(ty_gas_concs) :: this
     character(len=*),         intent(in ) :: gas
     real(wp), dimension(:),   intent(out) :: array
     character(len=128) :: error_msg
@@ -205,14 +199,14 @@ contains
 
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
-      error_msg = 'ty_gas_concs_type%get_vmr; gas ' // trim(gas) // ' not found'
+      error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' not found'
       array(:) = 0._wp
     else if(size(this%concs(igas)%conc, 1) > 1) then ! Are we requesting a single profile when many are present?
-      error_msg = 'ty_gas_concs_type%get_vmr; gas ' // trim(gas) // ' requesting single profile but many are available'
+      error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' requesting single profile but many are available'
       array(:) = 0._wp
     end if
     if(this%nlay > 0 .and. this%nlay /= size(array)) then
-      error_msg = 'ty_gas_concs_type%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
+      error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
       array(:) = 0._wp
     end if
     if(error_msg /= "") return
@@ -229,7 +223,7 @@ contains
   ! 2D array (col, lay)
   !
   function get_vmr_2d(this, gas, array) result(error_msg)
-    class(ty_gas_concs_type) :: this
+    class(ty_gas_concs) :: this
     character(len=*),         intent(in ) :: gas
     real(wp), dimension(:,:), intent(out) :: array
     character(len=128)                    :: error_msg
@@ -240,18 +234,18 @@ contains
 
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
-      error_msg = 'ty_gas_concs_type%get_vmr; gas ' // trim(gas) // ' not found'
+      error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' not found'
       array(:,:) = 0._wp
     end if
     !
     ! Is the requested array the correct size?
     !
     if(this%ncol > 0 .and. this%ncol /= size(array,1)) then
-      error_msg = 'ty_gas_concs_type%get_vmr; gas ' // trim(gas) // ' array is wrong size (ncol)'
+      error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (ncol)'
       array(:,:) = 0._wp
     end if
     if(this%nlay > 0 .and. this%nlay /= size(array,2)) then
-      error_msg = 'ty_gas_concs_type%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
+      error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
       array(:,:) = 0._wp
     end if
     if(error_msg /= "") return
@@ -271,9 +265,9 @@ contains
   !
   ! -------------------------------------------------------------------------------------
   function get_subset_range(this, start, n, subset) result(error_msg)
-    class(ty_gas_concs_type),      intent(in   ) :: this
+    class(ty_gas_concs),      intent(in   ) :: this
     integer,                  intent(in   ) :: start, n
-    class(ty_gas_concs_type),      intent(inout) :: subset
+    class(ty_gas_concs),      intent(inout) :: subset
     character(len=128)                      :: error_msg
     ! ---------------------
     integer :: i
@@ -315,7 +309,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------
   subroutine reset(this)
-    class(ty_gas_concs_type), intent(inout) :: this
+    class(ty_gas_concs), intent(inout) :: this
     ! -----------------
     integer :: i
     ! -----------------
@@ -335,7 +329,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------
   pure function get_num_gases(this)
-    class(ty_gas_concs_type), intent(in) :: this
+    class(ty_gas_concs), intent(in) :: this
     integer :: get_num_gases
 
     get_num_gases = size(this%gas_name)
@@ -343,7 +337,7 @@ contains
   end function get_num_gases
   ! -------------------------------------------------------------------------------------
   pure function get_gas_names(this)
-    class(ty_gas_concs_type), intent(in) :: this
+    class(ty_gas_concs), intent(in) :: this
     character(len=32), dimension(this%get_num_gases()) :: get_gas_names
 
     get_gas_names(:) = this%gas_name(:)
@@ -359,7 +353,7 @@ contains
   !   the gas isn't in the list already
   !
   subroutine increase_list_size(this)
-    class(ty_gas_concs_type), intent(inout) :: this
+    class(ty_gas_concs), intent(inout) :: this
     ! -----------------
     character(len=32), dimension(:), allocatable :: new_names
     type(conc_field),  dimension(:), allocatable :: new_concs
@@ -382,7 +376,7 @@ contains
   !
   function find_gas(this, gas)
     character(len=*),   intent(in) :: gas
-    class(ty_gas_concs_type), intent(in) :: this
+    class(ty_gas_concs), intent(in) :: this
     integer                        :: find_gas
     ! -----------------
     integer :: igas

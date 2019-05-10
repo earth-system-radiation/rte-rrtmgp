@@ -30,12 +30,12 @@ module mo_cloud_optics
   ! -----------------------------------------------------------------------------------
 #if 0
 !! \section arg_table_mo_cloud_optics
-!! | local_name           | standard_name         | long_name                               | units | rank | type            |    kind   | intent | optional |
-!! |----------------------|-----------------------|-----------------------------------------|-------|------|-----------------|-----------|--------|----------|
-!! | ty_cloud_optics_type | ty_cloud_optics_type  | definition of type ty_cloud_optics_type | DDT   |    0 | ty_cloud_optics_type |           | none   | F        |
+!! | local_name      | standard_name    | long_name                          | units | rank | type            |    kind   | intent | optional |
+!! |-----------------|------------------|------------------------------------|-------|------|-----------------|-----------|--------|----------|
+!! | ty_cloud_optics | ty_cloud_optics  | definition of type ty_cloud_optics | DDT   |    0 | ty_cloud_optics |           | none   | F        |
 !!
 #endif
-  type, extends(ty_optical_props), public :: ty_cloud_optics_type
+  type, extends(ty_optical_props), public :: ty_cloud_optics
     private
     !
     ! Ice surface roughness category - needed for Yang (2013) ice optics parameterization
@@ -81,7 +81,7 @@ module mo_cloud_optics
     ! Internal procedures
     procedure, private :: load_lut
     procedure, private :: load_pade
-  end type ty_cloud_optics_type
+  end type ty_cloud_optics
 
 contains
   ! ------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ contains
                     radice_lwr, radice_upr, radice_fac, &
                     lut_extliq, lut_ssaliq, lut_asyliq, &
                     lut_extice, lut_ssaice, lut_asyice) result(error_msg)
-    class(ty_cloud_optics_type),     intent(inout) :: this
+    class(ty_cloud_optics),     intent(inout) :: this
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! Spectral discretization
     ! Lookup table interpolation constants
     ! Lower and upper bounds of the tables; also the constant for calculating interpolation indices for liquid
@@ -175,7 +175,7 @@ contains
                      pade_sizreg_extliq, pade_sizreg_ssaliq, pade_sizreg_asyliq, &
                      pade_sizreg_extice, pade_sizreg_ssaice, pade_sizreg_asyice) &
                      result(error_msg)
-    class(ty_cloud_optics_type),       intent(inout) :: this          ! cloud specification data
+    class(ty_cloud_optics),       intent(inout) :: this          ! cloud specification data
     real(wp), dimension(:,:),     intent(in   ) :: band_lims_wvn ! Spectral discretization
     !
     ! Pade coefficients: extinction, single-scattering albedo, and asymmetry factor for liquid and ice
@@ -286,7 +286,7 @@ contains
   !
   !--------------------------------------------------------------------------------------------------------------------
   subroutine finalize(this)
-    class(ty_cloud_optics_type), intent(inout) :: this
+    class(ty_cloud_optics), intent(inout) :: this
 
     this%radliq_lwr = 0._wp
     this%radliq_upr = 0._wp
@@ -323,7 +323,7 @@ contains
                         ncol, nlay, nbnd, nrghice,                &
                         liqmsk, icemsk, clwp, ciwp, reliq, reice, &
                         optical_props) result(error_msg)
-    class(ty_cloud_optics_type), &
+    class(ty_cloud_optics), &
               intent(in   ) :: this
     integer,  intent(in   ) :: ncol, nlay, nbnd
     integer,  intent(in   ) :: nrghice              ! number of ice roughness categories
@@ -467,7 +467,7 @@ contains
   !
   !--------------------------------------------------------------------------------------------------------------------
   function set_ice_roughness(this, icergh) result(error_msg)
-    class(ty_cloud_optics_type), intent(inout) :: this
+    class(ty_cloud_optics), intent(inout) :: this
     integer,                intent(in   ) :: icergh
     character(len=128)                    :: error_msg
 
@@ -480,7 +480,7 @@ contains
   end function set_ice_roughness
   !-----------------------------------------------
   function get_num_ice_roughness_types(this) result(i)
-    class(ty_cloud_optics_type), intent(in   ) :: this
+    class(ty_cloud_optics), intent(in   ) :: this
     integer                               :: i
 
     i = 0
@@ -489,28 +489,28 @@ contains
   end function get_num_ice_roughness_types
   !-----------------------------------------------
   function get_min_radius_liq(this) result(r)
-    class(ty_cloud_optics_type), intent(in   ) :: this
+    class(ty_cloud_optics), intent(in   ) :: this
     real(wp)                              :: r
 
     r = this%radliq_lwr
   end function get_min_radius_liq
   !-----------------------------------------------
   function get_max_radius_liq(this) result(r)
-    class(ty_cloud_optics_type), intent(in   ) :: this
+    class(ty_cloud_optics), intent(in   ) :: this
     real(wp)                              :: r
 
     r = this%radliq_upr
   end function get_max_radius_liq
   !-----------------------------------------------
   function get_min_radius_ice(this) result(r)
-    class(ty_cloud_optics_type), intent(in   ) :: this
+    class(ty_cloud_optics), intent(in   ) :: this
     real(wp)                              :: r
 
     r = this%radice_lwr
   end function get_min_radius_ice
   !-----------------------------------------------
   function get_max_radius_ice(this) result(r)
-    class(ty_cloud_optics_type), intent(in   ) :: this
+    class(ty_cloud_optics), intent(in   ) :: this
     real(wp)                              :: r
 
     r = this%radice_upr

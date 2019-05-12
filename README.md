@@ -1,6 +1,6 @@
 # RTE+RRTMGP
 
-This is the repository for RTE+RRTMGP, a set of codes for computing radiative fluxes in planetary atmospheres. RTE+RRTMGP is described in a [manuscript submitted Jan 17, 2019](https://owncloud.gwdg.de/index.php/s/JQo9AeRu6uIwVyR) to [Journal of Advances in Modeling Earth Systems](http://james.agu.org). 
+This is the repository for RTE+RRTMGP, a set of codes for computing radiative fluxes in planetary atmospheres. RTE+RRTMGP is described in a [manuscript revised May 10, 2019](https://doi.org/10.1002/essoar.10500964.1) to [Journal of Advances in Modeling Earth Systems](http://james.agu.org). 
 
 RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. The k-distribution currently distributed with this package is applicable to the Earth's atmosphere under present-day, pre-industrial, and 4xCO2 conditions.
 

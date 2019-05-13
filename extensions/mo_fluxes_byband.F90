@@ -23,6 +23,11 @@ module mo_fluxes_byband
                         only: sum_byband, net_byband
   implicit none
 
+!! \section arg_table_mo_fluxes_byband Argument Table
+!! | local_name       | standard_name    | long_name                               | units | rank | type             |    kind   | intent | optional |
+!! |------------------|------------------|-----------------------------------------|-------|------|----------- ------|-----------|--------|----------|
+!! | ty_fluxes_byband | ty_fluxes_byband | Fortran DDT containing RRTMGP 3D fluxes | DDT   |    0 | ty_fluxes_byband |           | none   | F        |
+!!
   ! Output from radiation calculations
   !   Data components are pointers so results can be written directly into memory
   !   reduce() function accepts spectral flux profiles

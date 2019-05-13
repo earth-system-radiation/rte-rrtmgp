@@ -39,6 +39,11 @@ module mo_gas_concentrations
     real(wp), dimension(:,:), allocatable :: conc
   end type conc_field
 
+!! \section arg_table_mo_gas_concentrations
+!! | local_name   | standard_name | long_name                       | units | rank | type         |    kind   | intent | optional |
+!! |--------------|---------------|---------------------------------|-------|------|--------------|-----------|--------|----------|
+!! | ty_gas_concs | ty_gas_concs  | definition of type ty_gas_concs | DDT   |    0 | ty_gas_concs |           | none   | F        |
+!!
   type, public :: ty_gas_concs
     !
     ! Data

@@ -40,8 +40,8 @@ module mo_gas_optics_rrtmgp
 
 #if 0
 !! \section arg_table_mo_gas_optics_rrtmgp
-!! | local_name                | standard_name              | long_name                               | units | rank | type                 |    kind   | intent | optional |
-!! |---------------------------|----------------------------|-----------------------------------------|-------|------|----------------------|-----------|--------|----------|
+!! | local_name           | standard_name         | long_name                               | units | rank | type                 |    kind   | intent | optional |
+!! |----------------------|-----------------------|-----------------------------------------|-------|------|----------------------|-----------|--------|----------|
 !! | ty_gas_optics_rrtmgp | ty_gas_optics_rrtmgp  | definition of type ty_gas_optics_rrtmgp | DDT   |    0 | ty_gas_optics_rrtmgp |           | none   | F        |
 !!
 #endif

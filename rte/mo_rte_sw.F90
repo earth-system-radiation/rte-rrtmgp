@@ -143,7 +143,7 @@ contains
     !
     !$acc enter data copyin(mu0)
     !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-    
+
     !$acc enter data copyin(inc_flux)
     call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),   inc_flux, mu0, gpt_flux_dir)
     !$acc exit data delete(inc_flux)
@@ -160,7 +160,7 @@ contains
         !
         ! Direct beam only
         !
-        !$acc enter data copyin(atmos%tau)
+        !$acc enter data copyin(atmos, atmos%tau)
         call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               atmos%tau, mu0,                          &
                               gpt_flux_dir)
@@ -169,17 +169,17 @@ contains
         !
         !gpt_flux_up = 0._wp
         !gpt_flux_dn = 0._wp
-        !$acc exit data delete(atmos%tau)
+        !$acc exit data delete(atmos%tau, atmos)
       class is (ty_optical_props_2str)
         !
         ! two-stream calculation with scattering
         !
-        !$acc enter data copyin(atmos%tau, atmos%ssa, atmos%g)
+        !$acc enter data copyin(atmos, atmos%tau, atmos%ssa, atmos%g)
         call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
                                atmos%tau, atmos%ssa, atmos%g, mu0,      &
                                sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
                                gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-        !$acc exit data delete(atmos%tau, atmos%ssa, atmos%g)
+        !$acc exit data delete(atmos%tau, atmos%ssa, atmos%g, atmos)
         !$acc exit data delete(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
       class is (ty_optical_props_nstr)
         !

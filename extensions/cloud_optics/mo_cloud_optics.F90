@@ -436,13 +436,15 @@ contains
    !
    ! Copy total cloud properties onto outputs
    !
-   ! Revise: should be scaled for absorption optical depth
-   optical_props%tau(1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd)
    select type(optical_props)
+     optical_props%tau(1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd) * &
+                                      (1._wp - clouds_liq%ssa(1:ncol,1:nlay,1:nbnd))
    type is (ty_optical_props_2str)
+     optical_props%tau(1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd)
      optical_props%ssa(1:ncol,1:nlay,1:nbnd) = clouds_liq%ssa(1:ncol,1:nlay,1:nbnd)
      optical_props%g  (1:ncol,1:nlay,1:nbnd) = clouds_liq%g  (1:ncol,1:nlay,1:nbnd)
    type is (ty_optical_props_nstr)
+     optical_props%tau(  1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd)
      optical_props%ssa(  1:ncol,1:nlay,1:nbnd) = clouds_liq%ssa(1:ncol,1:nlay,1:nbnd)
      optical_props%p  (1,1:ncol,1:nlay,1:nbnd) = clouds_liq%g  (1:ncol,1:nlay,1:nbnd)
      do imom = 2, optical_props%get_nmom()

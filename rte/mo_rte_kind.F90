@@ -30,6 +30,10 @@ module mo_rte_kind
   !
   ! Logical - for use with kernels
   !
+#ifdef __NEEDS_TO_GET_A FIX_IN_PGI
   integer, parameter :: wl = c_bool
+#else
+  integer, parameter :: wl = kind(.true.)
+#endif
 
 end module mo_rte_kind

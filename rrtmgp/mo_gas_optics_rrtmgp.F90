@@ -493,9 +493,10 @@ contains
     !$acc enter data create(tau, tau_rayleigh)
     !$acc enter data copyin(play, tlay, col_gas)
     !$acc enter data create(col_mix, fminor)
+    !$acc enter data copyin(this)
     !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
-    !!!$acc enter data copyin(this%temp_ref)  ! this one causes problems
-    !!!$acc enter data copyin(this%kminor_lower, this%kminor_upper)
+    !$acc enter data copyin(this%temp_ref)  ! this one causes problems
+    !$acc enter data copyin(this%kminor_lower, this%kminor_upper)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions

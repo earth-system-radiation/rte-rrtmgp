@@ -89,7 +89,7 @@ program rrtmgp_rfmip_sw
   !
   ! Local variables
   !
-  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
+  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc', &
                         kdist_file = 'coefficients_sw.nc'
   character(len=132) :: flxdn_file, flxup_file
   integer            :: nargs, ncol, nlay, nbnd, ngpt, nexp, nblocks, block_size, forcing_index
@@ -227,7 +227,7 @@ program rrtmgp_rfmip_sw
   ! Handle GPU data. Leave mu0, sfc_alb_spec, toa_flux, and def_tsi on CPU for
   ! now, and let compiler or CUDA runtime handle data movement because not
   ! everything is in kernels at the next level down yet.
-  !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
+  !$acc enter data create(optical_props, optical_props%tau, optical_props%ssa, optical_props%g)
   !!!$acc enter data create(mu0,sfc_alb_spec,toa_flux,def_tsi)
   ! --------------------------------------------------
 #ifdef USE_TIMING
@@ -341,7 +341,7 @@ program rrtmgp_rfmip_sw
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
-  !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+  !$acc exit data delete(ooptical_props, ptical_props%tau, optical_props%ssa, optical_props%g)
   !!!$acc exit data delete(mu0,sfc_alb_spec,toa_flux,def_tsi)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)

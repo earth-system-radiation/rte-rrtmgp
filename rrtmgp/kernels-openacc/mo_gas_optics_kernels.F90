@@ -39,7 +39,7 @@ contains
     integer,                            intent(in) :: ngas,nflav,neta,npres,ntemp
     integer,     dimension(2,nflav),    intent(in) :: flavor
     real(wp),    dimension(npres),      intent(in) :: press_ref_log
-    real(wp),    dimension(npres),      intent(in) :: temp_ref
+    real(wp),    dimension(ntemp),      intent(in) :: temp_ref
     real(wp),                           intent(in) :: press_ref_log_delta, &
                                                       temp_ref_min, temp_ref_delta, &
                                                       press_ref_trop_log
@@ -257,7 +257,7 @@ contains
     idx_tropo = 1
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,             & ! dimensions
-           ngas,nflav,npres,neta,      &
+           ngas,nflav,ntemp,neta,      &
            nminorlower,nminorklower,   &
            idx_h2o,idx_tropo,          &
            gpoint_flavor,              &
@@ -278,7 +278,7 @@ contains
     idx_tropo = 2
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,             & ! dimensions
-           ngas,nflav,npres,neta,      &
+           ngas,nflav,ntemp,neta,      &
            nminorupper,nminorkupper,   &
            idx_h2o,idx_tropo,          &
            gpoint_flavor,              &
@@ -366,7 +366,7 @@ contains
   ! compute minor species optical depths
   !
   subroutine gas_optical_depths_minor(ncol,nlay,ngpt,        &
-                                      ngas,nflav,npres,neta, &
+                                      ngas,nflav,ntemp,neta, &
                                       nminor,nminork,        &
                                       idx_h2o,idx_tropo,     &
                                       gpt_flv,               &
@@ -382,10 +382,10 @@ contains
                                       tau) bind(C, name="gas_optical_depths_minor")
     integer,                                     intent(in ) :: ncol,nlay,ngpt
     integer,                                     intent(in ) :: ngas,nflav
-    integer,                                     intent(in ) :: npres,neta,nminor,nminork
+    integer,                                     intent(in ) :: ntemp,neta,nminor,nminork
     integer,                                     intent(in ) :: idx_h2o, idx_tropo
     integer,     dimension(2, ngpt),             intent(in ) :: gpt_flv
-    real(wp),    dimension(nminork,neta,npres),  intent(in ) :: kminor
+    real(wp),    dimension(nminork,neta,ntemp),  intent(in ) :: kminor
     integer,     dimension(2,nminor),            intent(in ) :: minor_limits_gpt
     logical(wl), dimension(  nminor),            intent(in ) :: minor_scales_with_density
     logical(wl), dimension(  nminor),            intent(in ) :: scale_by_complement
@@ -410,7 +410,7 @@ contains
 
     extent = size(scale_by_complement,dim=1)
 
-    !$acc parallel loop collapse(3) 
+    !$acc parallel loop collapse(3)
     do imnr = 1, extent  ! loop over minor absorbers in each band
       do icol = 1, ncol
         do ilay = 1 , nlay

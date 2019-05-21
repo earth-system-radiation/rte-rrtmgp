@@ -865,27 +865,4 @@ contains
     end do
 
   end subroutine extract_subset_absorption_tau
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! Validity checking
-  !
-  !-------------------------------------------------------------------------------------------------
-  function any_vals_less_than(nx, ny, nz, array, minVal) bind(C, name="any_vals_less_than")
-    integer,                         intent(in) :: nx, ny, nz
-    real(wp), dimension(nx, ny, nz), intent(in) :: array
-    real(wp),                        intent(in) :: minVal
-    logical(wl) :: any_vals_less_than
-
-    any_vals_less_than = any(array < minVal)
-  end function any_vals_less_than
-  ! ---------------------------------
-  function any_vals_outside(nx, ny, nz, array, minVal, maxVal) bind(C, name="any_vals_outside")
-    integer,                         intent(in) :: nx, ny, nz
-    real(wp), dimension(nx, ny, nz), intent(in) :: array
-    real(wp),                        intent(in) :: minVal, maxVal
-    logical(wl) :: any_vals_outside
-
-    any_vals_outside = any(array < minVal .or. array > maxVal)
-  end function any_vals_outside
-
 end module mo_optical_props_kernels

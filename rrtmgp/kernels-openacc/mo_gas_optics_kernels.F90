@@ -380,24 +380,24 @@ contains
                                       col_gas,fminor,jeta, &
                                       layer_limits,jtemp,  &
                                       tau) bind(C, name="gas_optical_depths_minor")
-    integer,                                     intent(in ) :: ncol,nlay,ngpt
-    integer,                                     intent(in ) :: ngas,nflav
-    integer,                                     intent(in ) :: ntemp,neta,nminor,nminork
-    integer,                                     intent(in ) :: idx_h2o, idx_tropo
-    integer,     dimension(2, ngpt),             intent(in ) :: gpt_flv
-    real(wp),    dimension(nminork,neta,ntemp),  intent(in ) :: kminor
-    integer,     dimension(2,nminor),            intent(in ) :: minor_limits_gpt
-    logical(wl), dimension(  nminor),            intent(in ) :: minor_scales_with_density
-    logical(wl), dimension(  nminor),            intent(in ) :: scale_by_complement
-    integer,     dimension(  nminor),            intent(in ) :: kminor_start
-    integer,     dimension(  nminor),            intent(in ) :: idx_minor, idx_minor_scaling
-    real(wp),    dimension(ncol,nlay),           intent(in ) :: play, tlay
-    real(wp),    dimension(ncol,nlay,0:ngas),    intent(in ) :: col_gas
-    real(wp),    dimension(2,2,nflav,ncol,nlay), intent(in ) :: fminor
-    integer,     dimension(2,  nflav,ncol,nlay), intent(in ) :: jeta
-    integer,     dimension(ncol, 2),             intent(in ) :: layer_limits
-    integer,     dimension(ncol,nlay),           intent(in ) :: jtemp
-    real(wp),    dimension(ngpt,nlay,ncol),      intent(out) :: tau
+    integer,                                     intent(in   ) :: ncol,nlay,ngpt
+    integer,                                     intent(in   ) :: ngas,nflav
+    integer,                                     intent(in   ) :: ntemp,neta,nminor,nminork
+    integer,                                     intent(in   ) :: idx_h2o, idx_tropo
+    integer,     dimension(2, ngpt),             intent(in   ) :: gpt_flv
+    real(wp),    dimension(nminork,neta,ntemp),  intent(in   ) :: kminor
+    integer,     dimension(2,nminor),            intent(in   ) :: minor_limits_gpt
+    logical(wl), dimension(  nminor),            intent(in   ) :: minor_scales_with_density
+    logical(wl), dimension(  nminor),            intent(in   ) :: scale_by_complement
+    integer,     dimension(  nminor),            intent(in   ) :: kminor_start
+    integer,     dimension(  nminor),            intent(in   ) :: idx_minor, idx_minor_scaling
+    real(wp),    dimension(ncol,nlay),           intent(in   ) :: play, tlay
+    real(wp),    dimension(ncol,nlay,0:ngas),    intent(in   ) :: col_gas
+    real(wp),    dimension(2,2,nflav,ncol,nlay), intent(in   ) :: fminor
+    integer,     dimension(2,  nflav,ncol,nlay), intent(in   ) :: jeta
+    integer,     dimension(ncol, 2),             intent(in   ) :: layer_limits
+    integer,     dimension(ncol,nlay),           intent(in   ) :: jtemp
+    real(wp),    dimension(ngpt,nlay,ncol),      intent(inout) :: tau
     ! -----------------
     ! local variables
     real(wp), parameter :: PaTohPa = 0.01

@@ -341,7 +341,7 @@ program rrtmgp_rfmip_sw
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
-  !$acc exit data delete(ooptical_props, ptical_props%tau, optical_props%ssa, optical_props%g)
+  !$acc exit data delete(optical_props, optical_props%tau, optical_props%ssa, optical_props%g)
   !!!$acc exit data delete(mu0,sfc_alb_spec,toa_flux,def_tsi)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)

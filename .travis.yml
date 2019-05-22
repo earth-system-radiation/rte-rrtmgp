@@ -8,6 +8,15 @@ matrix:
     - FC=pgfortran
     - FCFLAGS="-Mallocatable=03 -Mstandard"
     - TEST_PGI=yes
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-8
+          - gfortran-8
+          - libnetcdf-dev
+          - libnetcdf-c++4
   - compiler: gcc
     env:
     - FC=gfortran-9
@@ -32,18 +41,25 @@ matrix:
         packages:
           - gcc-8
           - gfortran-8
-cache:
-    directories:
-     - "$HOME/pgi/"
+# cache:
+#   timeout: 1000
+#   directories:
+#     - "$HOME/pgi/"
 before_install:
 # Install PGI Community edition if not present in cache
-- if [[ "${TEST_PGI}" == "yes" ]] && [[ ! -d "$HOME/bin/pgfortran" ]]; then
+- if [[ "${TEST_PGI}" == "yes" ]]; then
   wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh';
   chmod +x install-pgi.sh;
   ./install-pgi.sh --nvidia;
-  fi
-- if [[ "${TEST_PGI}" == "yes" ]]; then
   pgfortran --version;
+  fi
+# Install netcdf-fortran for PGI
+- if [[ "${TEST_PGI}" == "yes" ]]; then
+  git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.5;
+  cd netcdf-fortran;
+  FC=pgfortran ./configure --prefix=${HOME}/netcdff;
+  make;
+  make install;
   fi
 script:
 - cd build

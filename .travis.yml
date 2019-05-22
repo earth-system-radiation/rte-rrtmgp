@@ -22,7 +22,6 @@ matrix:
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     - TEST_PGI=no
     - NCHOME=/usr/
-    - NFHOME=/usr/
     addons:
       apt:
         sources:
@@ -31,14 +30,12 @@ matrix:
           - gcc-9
           - gfortran-9
           - libnetcdf-dev
-          - libnetcdff-dev
   - compiler: gcc
     env:
     - FC=gfortran-8
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     - TEST_PGI=no
     - NCHOME=/usr/
-    - NFHOME=/usr/
     addons:
       apt:
         sources:
@@ -47,7 +44,6 @@ matrix:
           - gcc-8
           - gfortran-8
           - libnetcdf-dev
-          - libnetcdff-dev
 # cache:
 #   timeout: 1000
 #   directories:
@@ -63,20 +59,18 @@ before_install:
   echo "append(LDLIB1=-lpthread);" >> .userrc;
   fi
 # Install netcdf-fortran for PGI
-- if [[ "${TEST_PGI}" == "yes" ]]; then
-  git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.5;
-  cd netcdf-fortran;
-  FC=pgfortran ./configure --prefix=${HOME}/netcdff;
-  make;
-  make install;
-  fi
+-  git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.5
+-  cd netcdf-fortran
+-  FC=$FC ./configure --prefix=${HOME}/netcdff
+-  make
+-  make install
 script:
 - cd build || exit 1
 - make
 - cd .. || exit 1
 # Build drivers
 - export RRTMGP_DIR=$PWD/build
-- echo $RRTMGP_DIR
+- export NFHOME=${HOME}/netcdff
 - cd examples/rfmip-clear-sky
 - make
 notifications:

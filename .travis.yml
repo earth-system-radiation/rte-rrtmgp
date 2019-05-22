@@ -52,8 +52,8 @@ before_install:
   chmod +x install-pgi.sh;
   ./install-pgi.sh --nvidia;
   pgfortran --version;
-  echo "switch -pthread is" > .userrc
-  echo "append(LDLIB1=-lpthread);" >> .userrc
+  echo "switch -pthread is" > .userrc;
+  echo "append(LDLIB1=-lpthread);" >> .userrc;
   fi
 # Install netcdf-fortran for PGI
 - if [[ "${TEST_PGI}" == "yes" ]]; then

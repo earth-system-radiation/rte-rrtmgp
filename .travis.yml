@@ -6,6 +6,8 @@ matrix:
   - compiler: gcc
     env:
     - FC=pgfortran
+    - FCFLAGS="-Mallocatable=03 -Mstandard"
+    - INSTALL_PGI=on
   - compiler: gcc
     env:
     - FC=gfortran-9
@@ -30,7 +32,7 @@ matrix:
           - gfortran-8
 before_install:
 - wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh'
-- ./install-pgi.sh --nvidia
+- sudo ./install-pgi.sh --nvidia
 - pgfortran --version
 script:
 - cd build

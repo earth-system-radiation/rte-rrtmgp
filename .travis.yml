@@ -32,18 +32,16 @@ matrix:
         packages:
           - gcc-8
           - gfortran-8
-cache:
-  timeout: 1000
-  directories:
-    - "$HOME/pgi/"
+# cache:
+#   timeout: 1000
+#   directories:
+#     - "$HOME/pgi/"
 before_install:
 # Install PGI Community edition if not present in cache
-- if [[ "${TEST_PGI}" == "yes" ]] && [[ ! -f "$HOME/bin/pgfortran" ]]; then
+- if [[ "${TEST_PGI}" == "yes" ]]; then
   wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh';
   chmod +x install-pgi.sh;
   ./install-pgi.sh --nvidia;
-  fi
-- if [[ "${TEST_PGI}" == "yes" ]]; then
   pgfortran --version;
   fi
 # Install netcdf-fortran for PGI

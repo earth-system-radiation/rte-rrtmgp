@@ -74,7 +74,9 @@ script:
 - cd build || exit 1
 - make
 - cd .. || exit 1
-- export RRTMGP_DIR=$PWD
+# Build drivers
+- export RRTMGP_DIR=$PWD/build
+- echo $RRTMGP_DIR
 - cd examples/rfmip-clear-sky
 - make
 notifications:

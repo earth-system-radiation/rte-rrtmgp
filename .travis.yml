@@ -1,3 +1,5 @@
+sudo: required
+dist: trusty
 language: cpp
 matrix:
   include:
@@ -11,6 +13,8 @@ matrix:
       apt:
         packages:
         - gfortran-9
+before_install:
+  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 762E3157
 script:
   - cd build
   - make

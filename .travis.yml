@@ -21,6 +21,7 @@ matrix:
     - FC=gfortran-9
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     - TEST_PGI=no
+    - NCHOME=/usr/
     addons:
       apt:
         sources:
@@ -35,6 +36,7 @@ matrix:
     - FC=gfortran-8
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     - TEST_PGI=no
+    - NCHOME=/usr/
     addons:
       apt:
         sources:

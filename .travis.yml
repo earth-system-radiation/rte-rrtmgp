@@ -38,7 +38,7 @@ cache:
     - "$HOME/pgi/"
 before_install:
 # Install PGI Community edition if not present in cache
-- if [[ "${TEST_PGI}" == "yes" ]] && [[ ! -d "$HOME/bin/pgfortran" ]]; then
+- if [[ "${TEST_PGI}" == "yes" ]] && [[ ! -f "$HOME/bin/pgfortran" ]]; then
   wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh';
   chmod +x install-pgi.sh;
   ./install-pgi.sh --nvidia;

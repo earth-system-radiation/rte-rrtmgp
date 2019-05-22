@@ -32,6 +32,7 @@ matrix:
           - gfortran-8
 before_install:
 - wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh'
+- chmod +x install-pgi.sh
 - sudo ./install-pgi.sh --nvidia
 - pgfortran --version
 script:

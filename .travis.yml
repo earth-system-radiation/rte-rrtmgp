@@ -46,6 +46,14 @@ before_install:
 - if [[ "${TEST_PGI}" == "yes" ]]; then
   pgfortran --version;
   fi
+# Install netcdf-fortran for PGI
+- if [[ "${TEST_PGI}" == "yes" ]]; then
+  git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.5;
+  cd netcdf-fortran;
+  ./configure --prefix=${HOME}/netcdff;
+  make;
+  make install;
+  fi
 script:
 - cd build
 - make

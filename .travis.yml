@@ -22,6 +22,7 @@ matrix:
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     - TEST_PGI=no
     - NCHOME=/usr/
+    - NFHOME=/usr/
     addons:
       apt:
         sources:
@@ -37,6 +38,7 @@ matrix:
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     - TEST_PGI=no
     - NCHOME=/usr/
+    - NFHOME=/usr/
     addons:
       apt:
         sources:
@@ -72,7 +74,7 @@ script:
 - cd build || exit 1
 - make
 - cd .. || exit 1
-- export RRTMGP_DIR=$PWD/build
+- export RRTMGP_DIR=$PWD
 - cd examples/rfmip-clear-sky
 - make
 notifications:

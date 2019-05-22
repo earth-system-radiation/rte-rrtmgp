@@ -33,8 +33,9 @@ matrix:
           - gcc-8
           - gfortran-8
 cache:
-    directories:
-     - "$HOME/pgi/"
+  timeout: 1000
+  directories:
+    - "$HOME/pgi/"
 before_install:
 # Install PGI Community edition if not present in cache
 - if [[ "${TEST_PGI}" == "yes" ]] && [[ ! -d "$HOME/bin/pgfortran" ]]; then

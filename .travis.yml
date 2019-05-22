@@ -5,14 +5,14 @@ matrix:
   include:
   - compiler: gcc
     env:
-    - FC=gfortran-8
+    - FC=gfortran-7
     - FCFLAGS=-ffree-line-length-none -m64 -std=f2003 -march=native
     addons:
       source:
       - ubuntu-toolchain-r-test
       apt:
         packages:
-        - gfortran-8
+        - gfortran-7
 script:
   - cd build
   - make

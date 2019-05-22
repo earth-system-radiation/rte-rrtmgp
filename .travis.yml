@@ -5,6 +5,9 @@ matrix:
   include:
   - compiler: gcc
     env:
+    - FC=pgfortran
+  - compiler: gcc
+    env:
     - FC=gfortran-9
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     addons:
@@ -26,7 +29,7 @@ matrix:
           - gcc-8
           - gfortran-8
 before_install:
-- wget -q -O /dev/stdout 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh'
+- wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh'
 - ./install-pgi.sh --nvidia
 - pgfortran --version
 script:

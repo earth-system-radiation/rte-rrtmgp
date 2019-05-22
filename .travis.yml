@@ -12,8 +12,8 @@ matrix:
       - ubuntu-toolchain-r-test
       apt:
         packages:
-        - gfortran-9
-before_install:
+        - gfortran-8
+before_install: # Workaround for buggy apt in travis
   - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 762E3157
 script:
   - cd build

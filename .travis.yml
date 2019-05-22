@@ -30,10 +30,13 @@ matrix:
         packages:
           - gcc-8
           - gfortran-8
+cache:
+    directories:
+     - "$HOME/pgi/"
 before_install:
-- wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh'
-- chmod +x install-pgi.sh
-- sudo ./install-pgi.sh --nvidia
+- if [ ! -d "$HOME/pgi" ]; wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh'
+- if [ ! -d "$HOME/pgi" ]; chmod +x install-pgi.sh
+- if [ ! -d "$HOME/pgi" ]; ./install-pgi.sh --nvidia
 - pgfortran --version
 script:
 - cd build

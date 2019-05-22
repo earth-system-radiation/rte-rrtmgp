@@ -1,8 +1,9 @@
 #
 # Here set variables RRTMGP_DIR, NCHOME, NFHOME, TIME_DIR (for GPTL)
+#   or have those variables set in the environment
 #
-include Makefile.libs
-include $(RRTMGP_DIR)/Makefile.conf
+-include Makefile.libs
+-include $(RRTMGP_DIR)/Makefile.conf
 #
 # RRTMGP library, module files
 #

@@ -16,7 +16,6 @@ matrix:
           - gcc-8
           - gfortran-8
           - libnetcdf-dev
-          - libnetcdf-c++4
   - compiler: gcc
     env:
     - FC=gfortran-9
@@ -29,6 +28,8 @@ matrix:
         packages:
           - gcc-9
           - gfortran-9
+          - libnetcdf-dev
+          - libnetcdff-dev
   - compiler: gcc
     env:
     - FC=gfortran-8
@@ -41,6 +42,8 @@ matrix:
         packages:
           - gcc-8
           - gfortran-8
+          - libnetcdf-dev
+          - libnetcdff-dev
 # cache:
 #   timeout: 1000
 #   directories:

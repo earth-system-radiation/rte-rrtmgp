@@ -67,7 +67,11 @@ before_install:
   make install;
   fi
 script:
-- cd build
+- cd build || exit 1
+- make
+- cd .. || exit 1
+- export RRTMGP_DIR=$PWD/build
+- cd examples/rfmip-clear-sky
 - make
 notifications:
   email:

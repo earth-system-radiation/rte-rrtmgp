@@ -1,11 +1,11 @@
 sudo: required
-dist: trusty
+dist: xenial
 language: cpp
 matrix:
   include:
   - compiler: gcc
     env:
-    - FC=gfortran-9
+    - FC=gfortran-8
     - FCFLAGS=-ffree-line-length-none -m64 -std=f2003 -march=native
     addons:
       source:
@@ -13,8 +13,6 @@ matrix:
       apt:
         packages:
         - gfortran-8
-before_install: # Workaround for buggy apt in travis
-  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 762E3157
 script:
   - cd build
   - make

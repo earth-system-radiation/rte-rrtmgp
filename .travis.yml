@@ -7,13 +7,24 @@ matrix:
     env:
     - FC=gfortran-9
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-9
-      - gfortran-9
+  addons:
+    apt:
+      sources:
+        - ubuntu-toolchain-r-test
+      packages:
+        - gcc-9
+        - gfortran-9
+- compiler: gcc
+  env:
+  - FC=gfortran-8
+  - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
+  addons:
+    apt:
+      sources:
+        - ubuntu-toolchain-r-test
+      packages:
+        - gcc-8
+        - gfortran-8
 script:
 - cd build
 - make

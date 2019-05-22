@@ -6,7 +6,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-9
-    - FCFLAGS=-ffree-line-length-none -m64 -std=f2003 -march=native
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
 addons:
   apt:
     sources:

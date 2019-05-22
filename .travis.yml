@@ -34,9 +34,11 @@ cache:
     directories:
      - "$HOME/pgi/"
 before_install:
-- if [ ! -d "$HOME/pgi" ]; wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh'; fi
-- if [ ! -d "$HOME/pgi" ]; chmod +x install-pgi.sh; fi
-- if [ ! -d "$HOME/pgi" ]; ./install-pgi.sh --nvidia; fi
+- if [ ! -d "$HOME/pgi" ]; then
+  wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh';
+  chmod +x install-pgi.sh;
+  ./install-pgi.sh --nvidia;
+  fi
 - pgfortran --version
 script:
 - cd build

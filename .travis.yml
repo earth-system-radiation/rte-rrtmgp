@@ -8,6 +8,15 @@ matrix:
     - FC=pgfortran
     - FCFLAGS="-Mallocatable=03 -Mstandard"
     - TEST_PGI=yes
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-8
+          - gfortran-8
+          - libnetcdf-dev
+          - libnetcdf-c++4
   - compiler: gcc
     env:
     - FC=gfortran-9

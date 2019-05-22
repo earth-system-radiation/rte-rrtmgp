@@ -5,9 +5,11 @@ matrix:
   include:
   - compiler: gcc
     env:
-    - FC=gfortran
+    - FC=gfortran-9
     - FCFLAGS=-ffree-line-length-none -m64 -std=f2003 -march=native
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y gcc-9 g++-9 gfortran-9
 script:
-- gcc --version
 - cd build
 - make

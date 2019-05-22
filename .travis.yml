@@ -65,6 +65,8 @@ before_install:
 - make
 - make install
 - cd .. || exit 1
+- pip install urllib3
+- pip install netcdf4
 script:
 - cd build || exit 1
 - make

@@ -25,6 +25,10 @@ matrix:
         packages:
           - gcc-8
           - gfortran-8
+before_install:
+- wget -q -O /dev/stdout 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh'
+- ./install-pgi.sh --nvidia
+- pgfortran --version
 script:
 - cd build
 - make

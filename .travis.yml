@@ -3,15 +3,16 @@ dist: xenial
 language: cpp
 matrix:
   include:
-  - compiler: gcc
+  - compiler: gcc # Using
     env:
     - FC=pgfortran
     - FCFLAGS="-Mallocatable=03 -Mstandard"
-    - INSTALL_PGI=on
+    - TEST_PGI=yes
   - compiler: gcc
     env:
     - FC=gfortran-9
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
+    - TEST_PGI=no
     addons:
       apt:
         sources:
@@ -23,6 +24,7 @@ matrix:
     env:
     - FC=gfortran-8
     - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
+    - TEST_PGI=no
     addons:
       apt:
         sources:
@@ -34,13 +36,15 @@ cache:
     directories:
      - "$HOME/pgi/"
 before_install:
-- if [ ! -d "$HOME/bin/pgfortran" ]; then
+# Install PGI Community edition if not present in cache
+- if [[ "${TEST_PGI}" == "yes" ]] && [[ ! -d "$HOME/bin/pgfortran" ]]; then
   wget -q 'https://raw.githubusercontent.com/nemequ/pgi-travis/master/install-pgi.sh';
   chmod +x install-pgi.sh;
   ./install-pgi.sh --nvidia;
   fi
-- which pgfortran
-- pgfortran --version
+- if [[ "${TEST_PGI}" == "yes" ]]; then
+  pgfortran --version;
+  fi
 script:
 - cd build
 - make

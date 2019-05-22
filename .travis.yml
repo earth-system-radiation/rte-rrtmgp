@@ -7,9 +7,13 @@ matrix:
     env:
     - FC=gfortran-9
     - FCFLAGS=-ffree-line-length-none -m64 -std=f2003 -march=native
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y gcc-9 g++-9 gfortran-9
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-9
+      - gfortran-9
 script:
 - cd build
 - make

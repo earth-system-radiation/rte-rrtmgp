@@ -74,6 +74,7 @@ script:
 - export NFHOME=${HOME}/netcdff
 - cd examples/rfmip-clear-sky
 - make
+- ./run-rfmip-examples.py
 notifications:
   email:
     on_success: never

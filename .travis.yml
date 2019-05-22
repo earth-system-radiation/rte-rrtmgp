@@ -6,9 +6,11 @@ matrix:
     - FC=gfortran-9
     - FCFLAGS=-ffree-line-length-none -m64 -std=f2003 -march=native
     addons:
+      source:
+      - ubuntu-toolchain-r-test
       apt:
         packages:
         - gfortran-9
 script:
   - cd build
-  - make 
+  - make

@@ -23,7 +23,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-9
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -DUSE_CBOOL"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:
@@ -37,7 +37,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-8
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -DUSE_CBOOL"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:

@@ -18,10 +18,6 @@ rfmip_dir       = os.path.join(rte_rrtmgp_dir, "examples", "rfmip-clear-sky")
 conds_file      = "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
 conds_url       = "http://aims3.llnl.gov/thredds/fileServer/user_pub_work/input4MIPs/CMIP6/RFMIP/UColorado/UColorado-RFMIP-1-2/" + \
                   "atmos/fx/multiple/none/v20190401/" + conds_file
-# This branch expect conditions file version 1.1; will need to update when the drivers move to v1.2 by removing the next 3 lines
-conds_file      = "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc"
-conds_url       = "http://aims3.llnl.gov/thredds/fileServer/user_pub_work/input4MIPs/CMIP6/RFMIP/UColorado/UColorado-RFMIP-1-1/" + \
-                  "atmos/fx/multiple/none/v20190204/" + conds_file
 templ_scr       = "generate-output-file-templates.py"
 templ_scr_url   = "https://raw.githubusercontent.com/RobertPincus/RFMIP-IRF-Scripts/master/" + templ_scr
 #

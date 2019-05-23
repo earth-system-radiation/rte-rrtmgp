@@ -1,10 +1,9 @@
 #!/bin/make
 
-# Load the following modules
+# Load the following modules to compile with PGI for CPU
 #
 #  module swap PrgEnv-cray PrgEnv-pgi
 #  module load cray-netcdf cray-hdf5
-#  module load craype-accel-nvidia35
 #  module unload cray-libsci_acc
 #
 #

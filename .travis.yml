@@ -100,6 +100,7 @@ script:
 - make
 # Run drivers
 - python3 ./run-rfmip-examples.py
+- python3 ./compare-to-reference.py
 - cd ../..
 # Build library - Open-acc kernels
 - export RTE_KERNELS="openacc"
@@ -111,6 +112,7 @@ script:
 - make || exit 1
 # Run drivers
 - python3 ./run-rfmip-examples.py
+- python3 ./compare-to-reference.py
 - cd ../..
 notifications:
   email:

@@ -72,6 +72,7 @@ before_install:
 - sudo apt-get install python3-pip
 - sudo pip3 install urllib3
 - sudo pip3 install netcdf4
+- sudo pip3 install xarray
 before_script:
 - cd examples/rfmip-clear-sky
 - python3 ./stage_files.py

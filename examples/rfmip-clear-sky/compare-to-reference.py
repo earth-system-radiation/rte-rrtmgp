@@ -17,12 +17,15 @@ ref = xr.open_mfdataset(os.path.join(ref_dir, "r??" + rrtmg_suffix))
 for v in ['rlu', 'rld', 'rsu', 'rsd']:
   if np.all(np.isnan(tst.variables[v].values)):
     raise Exception("All test values are missing. Were the tests run?")
+  if np.any(np.isnan(tst.variables[v].values)):
+    raise Exception("Some test values are missing. Now that is strange.")
+
   diff = abs((tst-ref).variables[v].values)
-  avg  = 0.5 * (tst+ref).variables[v].values
-  if np.any((diff > 0) & (avg > 0)):
-    frac_dif = np.where((avg > 0) & (diff > 0), diff/avg, 0)
-  else:
-    frac_dif = np.zeros(1)
+  avg  = 0.5*(tst+ref).variables[v].values
+  # Division raises a runtime warning when we divide by zero even if the
+  #   values in those locations will be ignored. 
+  with np.errstate(divide='ignore', invalid='ignore'):
+    frac_dif = np.where((avg > 2.*np.finfo(float).eps), diff/avg, 0)
 
   if diff.max() > 0:
     print('Variable %s differs (max abs difference: %e; max frac. difference(%): %e%%)'% \

@@ -75,6 +75,7 @@ script:
 # Build drivers
 - export RRTMGP_DIR=$PWD/build
 - export NFHOME=${HOME}/netcdff
+- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NFHOME/lib
 - cd examples/rfmip-clear-sky
 - make
 - python3 ./run-rfmip-examples.py

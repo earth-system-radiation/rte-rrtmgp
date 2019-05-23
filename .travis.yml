@@ -81,7 +81,7 @@ before_install:
 install:
 - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
 - source activate test
-- conda install --yes urllib3 netcdf4 xarray
+- conda install --yes urllib3 netcdf4 xarray dask
 
 before_script:
 - cd examples/rfmip-clear-sky

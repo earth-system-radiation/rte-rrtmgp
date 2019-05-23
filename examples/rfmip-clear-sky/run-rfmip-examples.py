@@ -9,6 +9,7 @@ import os, subprocess, glob
 #
 rte_rrtmgp_dir  = os.path.join("..", "..")
 rfmip_dir       = os.path.join(rte_rrtmgp_dir, "examples", "rfmip-clear-sky")
+conds_file      = "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc"
 
 rfmip_lw_exe_name = "rrtmgp_rfmip_lw"
 rfmip_sw_exe_name = "rrtmgp_rfmip_sw"

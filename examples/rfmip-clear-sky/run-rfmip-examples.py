@@ -37,7 +37,7 @@ urllib.request.urlretrieve(conds_url,     conds_file)
 print("Dowloading scripts for generating output templates")
 urllib.request.urlretrieve(templ_scr_url, templ_scr)
 #%run -i generate-output-file-templates.py --source_id RTE-RRTMGP-181204
-subprocess.run(["python", templ_scr, "--source_id", "RTE-RRTMGP-181204"])
+subprocess.run(["python3", templ_scr, "--source_id", "RTE-RRTMGP-181204"])
 
 #
 # Build and run the RFMIP example programs that computes fluxes from netCDF Garand atmosphere files

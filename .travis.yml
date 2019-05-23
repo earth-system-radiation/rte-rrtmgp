@@ -78,9 +78,6 @@ before_install:
 - export PATH=/home/travis/miniconda3/bin:$PATH
 - conda update --yes conda
 
-#- sudo apt-get install python3-pip
-#- sudo pip3 install urllib3
-#- sudo pip3 install netcdf4
 install:
 - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
 - source activate test

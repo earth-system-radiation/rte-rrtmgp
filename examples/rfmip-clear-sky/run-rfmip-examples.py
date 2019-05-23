@@ -8,6 +8,7 @@ import os, subprocess, glob
 # Run the RFMIP example programs that computes fluxes from netCDF Garand atmosphere files
 #
 rte_rrtmgp_dir  = os.path.join("..", "..")
+rfmip_dir       = os.path.join(rte_rrtmgp_dir, "examples", "rfmip-clear-sky")
 
 rfmip_lw_exe_name = "rrtmgp_rfmip_lw"
 rfmip_sw_exe_name = "rrtmgp_rfmip_sw"

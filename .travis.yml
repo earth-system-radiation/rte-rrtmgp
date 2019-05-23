@@ -76,15 +76,15 @@ before_script:
 - cd examples/rfmip-clear-sky
 - python3 ./stage_files.py
 - cd ../..
+- export RRTMGP_DIR=$PWD/build
+- export NFHOME=${HOME}/netcdff
+- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NFHOME/lib
 script:
 # Build library - default kernels
 - cd build || exit 1
 - make || exit 1
 - cd .. || exit 1
 # Build drivers
-- export RRTMGP_DIR=$PWD/build
-- export NFHOME=${HOME}/netcdff
-- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NFHOME/lib
 - cd examples/rfmip-clear-sky
 - make
 # Run drivers

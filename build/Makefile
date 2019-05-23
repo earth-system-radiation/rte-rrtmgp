@@ -16,9 +16,12 @@ VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
 # Compiler variables FC, FCFLAGS can be set in the environment or in Makefile.conf
 #
 -include Makefile.conf
-include Makefile.rules
 
 all: librte.a librrtmgp.a
+
+COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c
+%.o: %.F90
+	$(COMPILE) $<
 
 include $(RTE_DIR)/Make.depends
 include $(RRTMGP_DIR)/Make.depends

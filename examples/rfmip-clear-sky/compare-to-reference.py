@@ -28,7 +28,6 @@ for v in ['rlu', 'rld', 'rsu', 'rsd']:
     frac_diff = np.where((avg > 2.*np.finfo(float).eps), diff/avg, 0)
 
   if diff.max() > 0:
-    print('Variable %s differs (max abs difference: %e; max frac. difference(%): %e%%)'% \
-          (v, diff.max(), 100.0 * frac_diff.max()))
+    print('Variable %s differs (max abs difference: %e; max frac. difference: %e%%)'%(v, diff.max(), 100.0 * frac_diff.max()))
   else:
     print('Variable %s: No diffs'%(v))

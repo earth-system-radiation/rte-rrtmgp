@@ -30,7 +30,9 @@ module mo_rte_kind
   !
   ! Logical - for use with kernels
   !
-#ifdef __NEEDS_TO_GET_A FIX_IN_PGI
+  ! Note that c_boolians don't work with PGI compiler currently
+  !
+#ifdef USE_CBOOL
   integer, parameter :: wl = c_bool
 #else
   integer, parameter :: wl = kind(.true.)

@@ -73,6 +73,7 @@ before_install:
 - sudo pip3 install urllib3
 - sudo pip3 install netcdf4
 - sudo pip3 install xarray
+- sudo pip3 install dask
 before_script:
 - cd examples/rfmip-clear-sky
 - python3 ./stage_files.py

@@ -23,7 +23,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-9
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -DUSE_CBOOL"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:
@@ -37,7 +37,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-8
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -DUSE_CBOOL"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:
@@ -69,11 +69,22 @@ before_install:
 - make
 - make install
 - cd .. || exit 1
-- sudo apt-get install python3-pip
-- sudo pip3 install urllib3
-- sudo pip3 install netcdf4
-- sudo pip3 install xarray
-- sudo pip3 install dask
+
+# Install CONDA
+- wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+- chmod +x miniconda.sh
+- ./miniconda.sh -b
+- export PATH=/home/travis/miniconda/bin:$PATH
+- conda update --yes conda
+
+#- sudo apt-get install python3-pip
+#- sudo pip3 install urllib3
+#- sudo pip3 install netcdf4
+install:
+- conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
+- source activate test
+- conda install --yes urllib3 netcdf4 xarray
+
 before_script:
 - cd examples/rfmip-clear-sky
 - python3 ./stage_files.py
@@ -102,7 +113,6 @@ script:
 - make || exit 1
 # Run drivers
 - python3 ./run-rfmip-examples.py
-- python3 ./compare-to-reference.py
 - cd ../..
 notifications:
   email:

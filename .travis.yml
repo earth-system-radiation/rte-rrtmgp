@@ -68,9 +68,13 @@ before_install:
 - sudo apt-get install python3-pip
 - sudo pip3 install urllib3
 - sudo pip3 install netcdf4
+before_script:
+- cd examples/rfmip-clear-sky
+- python3 ./stage_files.py
+- cd ../..
 script:
 - cd build || exit 1
-- make
+- make || exit 1
 - cd .. || exit 1
 # Build drivers
 - export RRTMGP_DIR=$PWD/build
@@ -78,6 +82,7 @@ script:
 - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NFHOME/lib
 - cd examples/rfmip-clear-sky
 - make
+# Run drivers
 - python3 ./run-rfmip-examples.py
 notifications:
   email:

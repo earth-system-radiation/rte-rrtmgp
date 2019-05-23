@@ -1,6 +1,10 @@
 sudo: required
 dist: xenial
 language: cpp
+# Could run both sets of kernels in parallel but setup is the majority of the time
+#env:
+#  - RTE_KERNELS=""
+#  - RTE_KERNELS="openacc"
 matrix:
   include:
   - compiler: gcc # Using
@@ -73,6 +77,7 @@ before_script:
 - python3 ./stage_files.py
 - cd ../..
 script:
+# Build library - default kernels
 - cd build || exit 1
 - make || exit 1
 - cd .. || exit 1
@@ -84,6 +89,18 @@ script:
 - make
 # Run drivers
 - python3 ./run-rfmip-examples.py
+- cd ../..
+# Build library - Open-acc kernels
+- export RTE_KERNELS="openacc"
+- cd build
+- make clean
+- make || exit 1
+- cd ../examples/rfmip-clear-sky
+- make clean
+- make || exit 1
+# Run drivers
+- python3 ./run-rfmip-examples.py
+- cd ../..
 notifications:
   email:
     on_success: never

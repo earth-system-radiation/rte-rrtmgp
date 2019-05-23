@@ -23,9 +23,9 @@ for v in ['rlu', 'rld', 'rsu', 'rsd']:
   diff = abs((tst-ref).variables[v].values)
   avg  = 0.5*(tst+ref).variables[v].values
   # Division raises a runtime warning when we divide by zero even if the
-  #   values in those locations will be ignored. 
+  #   values in those locations will be ignored.
   with np.errstate(divide='ignore', invalid='ignore'):
-    frac_dif = np.where((avg > 2.*np.finfo(float).eps), diff/avg, 0)
+    frac_diff = np.where((avg > 2.*np.finfo(float).eps), diff/avg, 0)
 
   if diff.max() > 0:
     print('Variable %s differs (max abs difference: %e; max frac. difference(%): %e%%)'% \

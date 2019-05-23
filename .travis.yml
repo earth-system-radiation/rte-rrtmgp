@@ -65,8 +65,8 @@ before_install:
 - make
 - make install
 - cd .. || exit 1
-- pip install urllib3
-- pip install netcdf4
+- sudo pip3 install urllib3
+- sudo pip3 install netcdf4
 script:
 - cd build || exit 1
 - make
@@ -76,7 +76,7 @@ script:
 - export NFHOME=${HOME}/netcdff
 - cd examples/rfmip-clear-sky
 - make
-- ./run-rfmip-examples.py
+- python3 ./run-rfmip-examples.py
 notifications:
   email:
     on_success: never

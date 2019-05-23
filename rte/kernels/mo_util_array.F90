@@ -17,7 +17,6 @@ module mo_util_array
 ! Used only by Fortran classes so routines don't need C bindings and can use assumed-shape
 ! Currently only for 3D arrays; could extend through overloading to other ranks
 !
-!
   use mo_rte_kind,      only: wp
   implicit none
   private

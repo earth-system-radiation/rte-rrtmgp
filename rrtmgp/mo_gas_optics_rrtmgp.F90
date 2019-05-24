@@ -407,10 +407,12 @@ contains
                                                           ! index(4) : layer
     integer :: ngas, nflav, neta, npres, ntemp
     integer :: nminorlower, nminorklower,nminorupper, nminorkupper
+    logical :: use_rayl
     ! ----------------------------------------------------------
     !
     ! Error checking
     !
+    use_rayl = allocated(this%krayl)
     error_msg = ''
     ! Check for initialization
     if (.not. this%is_initialized()) then
@@ -495,7 +497,8 @@ contains
     !$acc enter data copyin(play, tlay, col_gas)
     !$acc enter data create(col_mix, fminor)
     !$acc enter data copyin(this)
-    !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
+    !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
+    !!$acc enter data copyin(this%krayl) if (use_rayl)
     !$acc enter data copyin(this%temp_ref)  ! this one causes problems
     !$acc enter data copyin(this%kminor_lower, this%kminor_upper)
     call zero_array(ngpt, nlay, ncol, tau)
@@ -566,7 +569,8 @@ contains
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
     !$acc exit data delete(tau, tau_rayleigh)
     !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
-    !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
+    !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
+    !!$acc exit data delete (this%krayl) if (use_rayl)
     !!!$acc exit data delete(this%temp_ref)  ! this one causes problems
     !!!$acc exit data delete(this%kminor_lower, this%kminor_upper)
   end function compute_gas_taus

@@ -1,8 +1,8 @@
 #!/bin/make
 RTE_DIR = ../rte
-RTE_KERNEL_DIR = ../rte/kernels
+RTE_KERNEL_DIR = ../rte/kernels-openacc
 RRTMGP_DIR = ../rrtmgp
-RRTMGP_KERNEL_DIR = ../rrtmgp/kernels
+RRTMGP_KERNEL_DIR = ../rrtmgp/kernels-openacc
 VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
 
 include Makefile.conf

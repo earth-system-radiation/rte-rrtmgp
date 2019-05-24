@@ -28,14 +28,46 @@ contains
     real(wp), dimension(:,:,:), intent(in) :: array
     real(wp),                   intent(in) :: minVal
 
-    any_vals_less_than = any(array < minVal)
+    real(wp) :: minValue
+    integer  :: i, j, k
+
+    ! This could be written far more compactly as
+    !       any_vals_less_than = any(array < minVal)
+    ! but an explicit loop also works on GPUs
+    minValue = minVal
+    !$acc parallel loop collapse(3) copyin(array) reduction(min:minValue)
+    do k = 1, size(array,3)
+      do j = 1, size(array,2)
+        do i = 1, size(array,1)
+          minValue = min(array(i,j,k), minValue)
+        end do
+      end do
+    end do
+    any_vals_less_than = (minValue < minVal)
   end function any_vals_less_than
   ! ---------------------------------
   logical function any_vals_outside(array, minVal, maxVal)
     real(wp), dimension(:,:,:), intent(in) :: array
     real(wp),                   intent(in) :: minVal, maxVal
 
-    any_vals_outside = any(array < minVal .or. array > maxVal)
+    real(wp) :: minValue, maxValue
+    integer  :: i, j, k
+
+    ! This could be written far more compactly as
+    !   any_vals_outside = any(array < minVal .or. array > maxVal)
+    ! but an explicit loop also works on GPUs
+    minValue = minVal
+    maxValue = maxVal
+    !$acc parallel loop collapse(3) copyin(array) reduction(min:minValue) reduction(max:maxValue)
+    do k = 1, size(array,3)
+      do j = 1, size(array,2)
+        do i = 1, size(array,1)
+          minValue = min(array(i,j,k), minValue)
+          maxValue = max(array(i,j,k), minValue)
+        end do
+      end do
+    end do
+    any_vals_outside = (minValue < minVal .or. maxValue > maxVal)
   end function any_vals_outside
 ! ---------------------------------
 end module mo_util_array

@@ -3,6 +3,7 @@
 # Load the following modules to compile with PGI for CPU
 #
 #  module swap PrgEnv-cray PrgEnv-pgi
+#  module swap pgi pgi/18.10.0
 #  module load cray-netcdf cray-hdf5
 #  module unload cray-libsci_acc
 #

@@ -498,7 +498,6 @@ contains
     !$acc enter data create(col_mix, fminor)
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
-    !!$acc enter data copyin(this%krayl) if (use_rayl)
     !$acc enter data copyin(this%temp_ref)  ! this one causes problems
     !$acc enter data copyin(this%kminor_lower, this%kminor_upper)
     call zero_array(ngpt, nlay, ncol, tau)
@@ -550,7 +549,7 @@ contains
             jeta,jtemp,jpress,                       &
             tau)
     if (allocated(this%krayl)) then
-      !$acc enter data attach(col_dry_wk)
+      !$acc enter data attach(col_dry_wk) copyin(this%krayl)
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
@@ -560,7 +559,7 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
-      !$acc exit data detach(col_dry_wk)
+      !$acc exit data detach(col_dry_wk) delete(this%krayl)
     end if
     if (error_msg /= '') return
 
@@ -570,7 +569,6 @@ contains
     !$acc exit data delete(tau, tau_rayleigh)
     !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
     !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
-    !!$acc exit data delete (this%krayl) if (use_rayl)
     !!!$acc exit data delete(this%temp_ref)  ! this one causes problems
     !!!$acc exit data delete(this%kminor_lower, this%kminor_upper)
   end function compute_gas_taus

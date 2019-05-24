@@ -1,14 +1,27 @@
-#!/bin/make
-RTE_DIR = ../rte
-RTE_KERNEL_DIR = ../rte/kernels-openacc
-RRTMGP_DIR = ../rrtmgp
-RRTMGP_KERNEL_DIR = ../rrtmgp/kernels-openacc
-VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
+#!/usr/bin/env make
 
-include Makefile.conf
-include Makefile.rules
+RTE_DIR = ../rte
+RRTMGP_DIR = ../rrtmgp
+#
+# Choose kernels depending on environment variable
+#
+ifeq ($(RTE_KERNELS), openacc)
+  RTE_KERNEL_DIR    = ../rte/kernels-openacc
+  RRTMGP_KERNEL_DIR = ../rrtmgp/kernels-openacc
+endif
+RTE_KERNEL_DIR += ../rte/kernels
+RRTMGP_KERNEL_DIR += ../rrtmgp/kernels
+VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
+#
+# Compiler variables FC, FCFLAGS can be set in the environment or in Makefile.conf
+#
+-include Makefile.conf
 
 all: librte.a librrtmgp.a
+
+COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c
+%.o: %.F90
+	$(COMPILE) $<
 
 include $(RTE_DIR)/Make.depends
 include $(RRTMGP_DIR)/Make.depends

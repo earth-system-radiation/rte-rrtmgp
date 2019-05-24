@@ -16,4 +16,4 @@ export FC = mpif90
 # answers against baselines, but will need to be fixed before running big
 # expensive jobs probably.
 #
-export FCFLAGS = -O0 -g -ta=nvidia,cc70,ptxinfo,managed -Minfo=accel
+export FCFLAGS = -O0 -g -ta=nvidia,cc70,ptxinfo -Minfo=accel

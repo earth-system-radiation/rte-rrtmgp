@@ -256,8 +256,8 @@ contains
       ! Not part of the RFMIP specification, but oxygen is included because it's a major
       !    gas in some bands in the SW
       !
-      names_in_kdist = ['co2   ', 'ch4   ', 'n2o   ', 'o2    ', 'cfc12  ', &
-                       'hfc134a']
+      names_in_kdist = ['co2    ', 'ch4    ', 'n2o    ', 'o2     ', 'cfc12  ', &
+                        'hfc134a']
       names_in_file =  ['carbon_dioxide', &
                         'methane       ', &
                         'nitrous_oxide ', &

@@ -437,6 +437,7 @@ contains
    ! Copy total cloud properties onto outputs
    !
    select type(optical_props)
+   type is (ty_optical_props_1scl)
      optical_props%tau(1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd) * &
                                       (1._wp - clouds_liq%ssa(1:ncol,1:nlay,1:nbnd))
    type is (ty_optical_props_2str)

@@ -34,3 +34,19 @@ print("Dowloading scripts for generating output templates")
 urllib.request.urlretrieve(templ_scr_url, templ_scr)
 #%run -i generate-output-file-templates.py --source_id RTE-RRTMGP-181204
 subprocess.run(["python3", templ_scr, "--source_id", "RTE-RRTMGP-181204"])
+
+#
+# Reference results
+#
+print("Downloading reference results")
+ref_dir = "./reference/"
+if not os.path.exists(ref_dir):
+    os.makedirs(ref_dir)
+urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/kbhl3JOSccGtR0m/download", \
+                           os.path.join(ref_dir, "rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
+urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/iFa28GFxRaNGKU1/download", \
+                           os.path.join(ref_dir, "rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
+urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/uCemCHlGxbGK0gJ/download", \
+                           os.path.join(ref_dir, "rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
+urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/l8ZG28j9ttZWD9r/download", \
+                           os.path.join(ref_dir, "rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))

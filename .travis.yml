@@ -62,6 +62,7 @@ before_install:
   echo "switch -pthread is" > .userrc;
   echo "append(LDLIB1=-lpthread);" >> .userrc;
   fi
+
 # Install netcdf-fortran for PGI
 - git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
 - cd netcdf-fortran
@@ -69,9 +70,19 @@ before_install:
 - make
 - make install
 - cd .. || exit 1
-- sudo apt-get install python3-pip
-- sudo pip3 install urllib3
-- sudo pip3 install netcdf4
+
+# Install CONDA
+- wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+- chmod +x miniconda.sh
+- ./miniconda.sh -b
+- export PATH=/home/travis/miniconda3/bin:$PATH
+- conda update --yes conda
+
+install:
+- conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
+- source activate test
+- conda install --yes urllib3 netcdf4 xarray dask
+
 before_script:
 - cd examples/rfmip-clear-sky
 - python3 ./stage_files.py
@@ -89,6 +100,7 @@ script:
 - make
 # Run drivers
 - python3 ./run-rfmip-examples.py
+- python3 ./compare-to-reference.py
 - cd ../..
 # Build library - Open-acc kernels
 - export RTE_KERNELS="openacc"
@@ -100,6 +112,7 @@ script:
 - make || exit 1
 # Run drivers
 - python3 ./run-rfmip-examples.py
+- python3 ./compare-to-reference.py
 - cd ../..
 notifications:
   email:

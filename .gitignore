@@ -13,3 +13,5 @@
 # Don't commit specific Makefile variants
 Makefile.libs
 Makefile.conf
+
+src/

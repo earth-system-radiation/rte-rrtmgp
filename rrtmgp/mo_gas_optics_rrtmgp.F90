@@ -23,6 +23,7 @@
 module mo_gas_optics_rrtmgp
   use mo_rte_kind,           only: wp, wl
   use mo_rrtmgp_constants,   only: avogad, m_dry, m_h2o, grav
+  use mo_util_array,         only: any_vals_less_than, any_vals_outside
   use mo_optical_props,      only: ty_optical_props
   use mo_source_functions,   only: ty_source_func_lw
   use mo_gas_optics_kernels, only: interpolation,                                                       &
@@ -406,10 +407,12 @@ contains
                                                           ! index(4) : layer
     integer :: ngas, nflav, neta, npres, ntemp
     integer :: nminorlower, nminorklower,nminorupper, nminorkupper
+    logical :: use_rayl
     ! ----------------------------------------------------------
     !
     ! Error checking
     !
+    use_rayl = allocated(this%krayl)
     error_msg = ''
     ! Check for initialization
     if (.not. this%is_initialized()) then
@@ -494,7 +497,7 @@ contains
     !$acc enter data copyin(play, tlay, col_gas)
     !$acc enter data create(col_mix, fminor)
     !$acc enter data copyin(this)
-    !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
+    !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
     !$acc enter data copyin(this%temp_ref)  ! this one causes problems
     !$acc enter data copyin(this%kminor_lower, this%kminor_upper)
     call zero_array(ngpt, nlay, ncol, tau)
@@ -546,7 +549,7 @@ contains
             jeta,jtemp,jpress,                       &
             tau)
     if (allocated(this%krayl)) then
-      !$acc enter data attach(col_dry_wk)
+      !$acc enter data attach(col_dry_wk) copyin(this%krayl)
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
@@ -556,7 +559,7 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
-      !$acc exit data detach(col_dry_wk)
+      !$acc exit data detach(col_dry_wk) delete(this%krayl)
     end if
     if (error_msg /= '') return
 
@@ -565,7 +568,7 @@ contains
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
     !$acc exit data delete(tau, tau_rayleigh)
     !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
-    !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor, this%krayl)
+    !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
     !!!$acc exit data delete(this%temp_ref)  ! this one causes problems
     !!!$acc exit data delete(this%kminor_lower, this%kminor_upper)
   end function compute_gas_taus

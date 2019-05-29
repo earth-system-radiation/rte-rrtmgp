@@ -210,7 +210,7 @@ contains
     integer :: icol, ilev, igpt
 
     !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn) async
-    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol) async
+    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol,flux_top) async
 
     ! ------------------------------------
     ! ------------------------------------
@@ -261,7 +261,7 @@ contains
     end do ! imu loop
 
     !$acc exit data copyout(flux_up,flux_dn) async
-    !$acc exit data delete(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol) async
+    !$acc exit data delete(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol,flux_top) async
 
     !$acc wait
   end subroutine lw_solver_noscat_GaussQuad

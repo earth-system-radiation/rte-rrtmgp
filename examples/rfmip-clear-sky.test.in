@@ -1,0 +1,8 @@
+#!@SHELL@
+@HAVE_NETCDF_FALSE@exit 77
+@HAVE_PYTHON_MODS_FALSE@exit 77
+cd rfmip-clear-sky
+@PYTHON@ @abs_srcdir@/rfmip-clear-sky/stage_files.py || exit 77
+@PYTHON@ @abs_srcdir@/rfmip-clear-sky/run-rfmip-examples.py || exit 1
+@PYTHON@ @abs_srcdir@/rfmip-clear-sky/compare-to-reference.py || exit 1
+

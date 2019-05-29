@@ -1,0 +1,2 @@
+SUBDIRS = rte rrtmgp examples
+

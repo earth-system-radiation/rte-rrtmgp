@@ -1,17 +1,37 @@
-# Module files
-*.mod
+# Autoreconf stage files
+/aclocal.m4
+/autom4te.cache
+/config
+/configure
+Makefile.in
 
-# Libraries
+# Configure stage files
+/config.log
+/config.status
+Makefile
+
+# Build stage files
 *.a
-
-# Object files
+*.i
+*.mod
 *.o
+.dirstamp
 
-# Intel vectorization reports
+# Test stage files
+/examples/rfmip-clear-sky.test
+/examples/rfmip-clear-sky/generate-output-file-templates.py
+/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+/examples/rfmip-clear-sky/reference
+/examples/rfmip-clear-sky/rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+/examples/rfmip-clear-sky/rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+/examples/rfmip-clear-sky/rrtmgp_rfmip_lw
+/examples/rfmip-clear-sky/rrtmgp_rfmip_sw
+/examples/rfmip-clear-sky/rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+/examples/rfmip-clear-sky/rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+/examples/rfmip-clear-sky/timing.*
+
+# Dist stage files
+/rte-rrtmgp-*.tar.gz
+
+# Other files
 *.optrpt
-
-# Don't commit specific Makefile variants
-Makefile.libs
-Makefile.conf
-
-src/

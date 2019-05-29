@@ -89,7 +89,7 @@ program rrtmgp_rfmip_sw
   !
   ! Local variables
   !
-  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
+  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc', &
                         kdist_file = 'coefficients_sw.nc'
   character(len=132) :: flxdn_file, flxup_file
   integer            :: nargs, ncol, nlay, nbnd, ngpt, nexp, nblocks, block_size, forcing_index
@@ -227,7 +227,7 @@ program rrtmgp_rfmip_sw
   ! Handle GPU data. Leave mu0, sfc_alb_spec, toa_flux, and def_tsi on CPU for
   ! now, and let compiler or CUDA runtime handle data movement because not
   ! everything is in kernels at the next level down yet.
-  !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
+  !!$acc enter data create(optical_props, optical_props%tau, optical_props%ssa, optical_props%g)
   !!!$acc enter data create(mu0,sfc_alb_spec,toa_flux,def_tsi)
   ! --------------------------------------------------
 #ifdef USE_TIMING
@@ -269,21 +269,21 @@ program rrtmgp_rfmip_sw
     ! What's the total solar irradiance assumed by RRTMGP?
     !  The first two loops could be more expressed more ompactly as def_tsi(1:block_size) = sum(toa_flux, dim=2)
     !
-    !$acc parallel loop
+    !!!$acc parallel loop
     do icol = 1, block_size
       def_tsi(icol) = toa_flux(icol, 1)
     end do
-    !$acc parallel loop collapse(2)
+    !!!$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, block_size
-        !$acc atomic update
+        !!$acc atomic update
         def_tsi(icol) = def_tsi(icol) + toa_flux(icol, igpt)
       end do
     end do
     !
     ! Normalize incoming solar flux to match RFMIP specification
     !
-    !$acc parallel loop collapse(2)
+    !!!$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, block_size
         toa_flux(icol,igpt) = toa_flux(icol,igpt) * total_solar_irradiance(icol,b)/def_tsi(icol)
@@ -292,7 +292,7 @@ program rrtmgp_rfmip_sw
     !
     ! Expand the spectrally-constant surface albedo to a per-band albedo for each column
     !
-    !$acc parallel loop collapse(2)
+    !!!$acc parallel loop collapse(2)
     do icol = 1, block_size
       do ibnd = 1, nbnd
         sfc_alb_spec(ibnd,icol) = surface_albedo(icol,b)
@@ -301,7 +301,7 @@ program rrtmgp_rfmip_sw
     !
     ! Cosine of the solar zenith angle
     !
-    !$acc parallel loop
+    !!!$acc parallel loop
     do icol = 1, block_size
       mu0(icol) = merge(cos(solar_zenith_angle(icol,b)*deg_to_rad), 1._wp, usecol(icol,b))
     end do
@@ -341,7 +341,7 @@ program rrtmgp_rfmip_sw
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
-  !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+  !!$acc exit data delete(optical_props, optical_props%tau, optical_props%ssa, optical_props%g)
   !!!$acc exit data delete(mu0,sfc_alb_spec,toa_flux,def_tsi)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)

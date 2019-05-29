@@ -1,10 +1,10 @@
 #!/bin/make
 
-# Load the following modules
+# Load the following modules to compile with PGI for CPU
 #
 #  module swap PrgEnv-cray PrgEnv-pgi
+#  module swap pgi pgi/18.10.0
 #  module load cray-netcdf cray-hdf5
-#  module load craype-accel-nvidia35
 #  module unload cray-libsci_acc
 #
 #
@@ -13,9 +13,7 @@ FC = ftn
 NCHOME =
 
 # Fortran compiler flags
-#FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mipa=fast,inline -acc -ta=tesla:6.5
-#FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mipa=fast,inline -ta=tesla
-#FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mipa=fast,inline -Mallocatable=03 -D__MAP_NLAY_NLON_NLAT__
+#FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mipa=fast,inline -Mallocatable=03
 FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk                   -Mallocatable=03
 
 # Fortran .mod files, e.g. -I<include dir> if you have headers in a nonstandard directory <include dir>

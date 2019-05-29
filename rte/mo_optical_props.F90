@@ -40,6 +40,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp
+  use mo_util_array,            only: any_vals_less_than, any_vals_outside
   use mo_optical_props_kernels, only: &
         increment_1scalar_by_1scalar, increment_1scalar_by_2stream, increment_1scalar_by_nstream, &
         increment_2stream_by_1scalar, increment_2stream_by_2stream, increment_2stream_by_nstream, &
@@ -48,7 +49,7 @@ module mo_optical_props
         inc_2stream_by_1scalar_bybnd, inc_2stream_by_2stream_bybnd, inc_2stream_by_nstream_bybnd, &
         inc_nstream_by_1scalar_bybnd, inc_nstream_by_2stream_bybnd, inc_nstream_by_nstream_bybnd, &
         delta_scale_2str_kernel, &
-        any_vals_less_than, any_vals_outside, extract_subset
+        extract_subset
   implicit none
   integer, parameter :: name_len = 32
   ! -------------------------------------------------------------------------------------------------
@@ -561,7 +562,7 @@ contains
       err_message = "validate: tau not allocated/initialized"
       return
     end if
-    if(any_vals_less_than(size(this%tau, 1), size(this%tau, 2), size(this%tau, 3), this%tau, 0._wp)) &
+    if(any_vals_less_than(this%tau, 0._wp)) &
       err_message = "validate: tau values out of range"
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
       err_message = trim(this%get_name()) // ': ' // trim(err_message)
@@ -589,11 +590,11 @@ contains
     !
     ! Valid values
     !
-    if(any_vals_less_than(varSizes(1), varSizes(2), varSizes(3), this%tau,  0._wp)) &
+    if(any_vals_less_than(this%tau,  0._wp)) &
       err_message = "validate: tau values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%ssa,  0._wp, 1._wp)) &
+    if(any_vals_outside  (this%ssa,  0._wp, 1._wp)) &
       err_message = "validate: ssa values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%g  , -1._wp, 1._wp)) &
+    if(any_vals_outside  (this%g  , -1._wp, 1._wp)) &
       err_message = "validate: g values out of range"
 
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
@@ -623,11 +624,11 @@ contains
     !
     ! Valid values
     !
-    if(any_vals_less_than(varSizes(1), varSizes(2), varSizes(3), this%tau,  0._wp)) &
+    if(any_vals_less_than(this%tau,  0._wp)) &
       err_message = "validate: tau values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%ssa,  0._wp, 1._wp)) &
+    if(any_vals_outside  (this%ssa,  0._wp, 1._wp)) &
       err_message = "validate: ssa values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%p(1,:,:,:),  &
+    if(any_vals_outside  (this%p(1,:,:,:),  &
                                                                            -1._wp, 1._wp)) &
       err_message = "validate: p(1,:,:,:)  = g values out of range"
 

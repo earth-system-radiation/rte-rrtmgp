@@ -93,7 +93,7 @@ program rrtmgp_rfmip_lw
   !
   ! Local variables
   !
-  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-1_none.nc', &
+  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc', &
                         kdist_file = 'coefficients_lw.nc'
   character(len=132) :: flxdn_file, flxup_file
   integer            :: nargs, ncol, nlay, nbnd, nexp, nblocks, block_size, forcing_index, physics_index, n_quad_angles = 1
@@ -225,10 +225,10 @@ program rrtmgp_rfmip_lw
   ! NOTE: these are causing problems right now, most likely due to a compiler
   ! bug related to the use of Fortran classes on the GPU.
   !
-  !!$acc enter data copyin(sfc_emis_spec)
-  !!$acc enter data copyin(optical_props%tau)
-  !!$acc enter data copyin(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
-  !!$acc enter data copyin(source%band2gpt, source%gpt2band, source%band_lims_wvn)
+  !!!$acc enter data create(sfc_emis_spec)
+  !!$acc enter data create(optical_props, optical_props%tau)
+  !!$acc enter data create(source, source%lay_source, source%lev_source_inc, source%lev_source_dec)
+  !!$acc enter data create(source%sfc_source, source%band2gpt, source%gpt2band, source%band_lims_wvn)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -251,7 +251,7 @@ program rrtmgp_rfmip_lw
     ! Expand the spectrally-constant surface emissivity to a per-band emissivity for each column
     !   (This is partly to show how to keep work on GPUs using OpenACC)
     !
-    !$acc parallel loop collapse(2)
+    !!$acc parallel loop collapse(2) copyin(sfc_emis)
     do icol = 1, block_size
       do ibnd = 1, nbnd
         sfc_emis_spec(ibnd,icol) = sfc_emis(icol,b)
@@ -299,11 +299,11 @@ program rrtmgp_rfmip_lw
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
-  !!$acc exit data delete(sfc_emis_spec)
-  !!$acc exit data delete(optical_props%tau)
+  !!!$acc exit data delete(sfc_emis_spec)
+  !!$acc exit data delete(optical_props%tau, optical_props)
   !!$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
-  !!$acc exit data delete(source%band2gpt, source%gpt2band, source%band_lims_wvn)
-  ! --------------------------------------------------
+  !!$acc exit data delete(source%band2gpt, source%gpt2band, source%band_lims_wvn, source)
+  ! --------------------------------------------------m
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rld', flux_dn)
 end program rrtmgp_rfmip_lw

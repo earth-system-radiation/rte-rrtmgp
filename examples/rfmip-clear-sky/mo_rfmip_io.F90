@@ -236,22 +236,32 @@ contains
           names_in_file(i) = conc_name(string_loc_in_array(names_in_file(i), chem_name))
       end do
     case (2)
-      num_gases = 5
+      num_gases = 6
       allocate(names_in_kdist(num_gases), names_in_file(num_gases))
-      names_in_kdist = ['co2  ', 'ch4  ', 'n2o  ', 'cfc12', 'cfc11']
+      !
+      ! Not part of the RFMIP specification, but oxygen is included because it's a major
+      !    gas in some bands in the SW
+      !
+      names_in_kdist = ['co2  ', 'ch4  ', 'n2o  ', 'o2   ', 'cfc12', 'cfc11']
       names_in_file =  ['carbon_dioxide', &
                         'methane       ', &
                         'nitrous_oxide ', &
+                        'oxygen        ', &
                         'cfc12         ', &
                         'cfc11eq       ']
     case (3)
-      num_gases = 5
+      num_gases = 6
       allocate(names_in_kdist(num_gases), names_in_file(num_gases))
-      names_in_kdist = ['co2   ', 'ch4   ', 'n2o   ', 'cfc12  ', &
-                       'hfc134a']
+      !
+      ! Not part of the RFMIP specification, but oxygen is included because it's a major
+      !    gas in some bands in the SW
+      !
+      names_in_kdist = ['co2    ', 'ch4    ', 'n2o    ', 'o2     ', 'cfc12  ', &
+                        'hfc134a']
       names_in_file =  ['carbon_dioxide', &
                         'methane       ', &
                         'nitrous_oxide ', &
+                        'oxygen        ', &
                         'cfc12eq       ', &
                         'hfc134aeq     ']
     case default

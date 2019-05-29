@@ -498,7 +498,7 @@ contains
     !$acc enter data create(col_mix, fminor)
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
-    !$acc enter data copyin(this%temp_ref)  ! this one causes problems
+    !$acc enter data copyin(this%temp_ref)
     !$acc enter data copyin(this%kminor_lower, this%kminor_upper)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
@@ -569,8 +569,9 @@ contains
     !$acc exit data delete(tau, tau_rayleigh)
     !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
     !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
-    !!!$acc exit data delete(this%temp_ref)  ! this one causes problems
-    !!!$acc exit data delete(this%kminor_lower, this%kminor_upper)
+    !$acc exit data delete(this%temp_ref)
+    !$acc exit data delete(this%kminor_lower, this%kminor_upper)
+    !$acc exit data copyout(this)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
@@ -1535,7 +1536,7 @@ contains
     ncol = size(tau, 3)
     nlay = size(tau, 2)
     ngpt = size(tau, 1)
-
+    !$acc enter data copyin(optical_props)
     if (.not. has_rayleigh) then
       ! index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
       !$acc enter data copyin(tau)
@@ -1579,6 +1580,7 @@ contains
       end select
       !$acc exit data delete(tau, tau_rayleigh)
     end if
+    !$acc exit data copyout(optical_props)
   end subroutine combine_and_reorder
 
   !--------------------------------------------------------------------------------------------------------------------

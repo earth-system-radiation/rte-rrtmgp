@@ -110,12 +110,6 @@ contains
     if(any(sfc_alb_dif < 0._wp .or. sfc_alb_dif > 1._wp)) &
       error_msg = "rte_sw: sfc_alb_dif out of bounds [0,1]"
 
-    if(len_trim(error_msg) > 0) return
-
-    !
-    ! Ensure values of tau, ssa, and g are reasonable
-    !
-    error_msg =  atmos%validate()
     if(len_trim(error_msg) > 0) then
       if(len_trim(atmos%get_name()) > 0) &
         error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
@@ -161,6 +155,8 @@ contains
         ! Direct beam only
         !
         !$acc enter data copyin(atmos, atmos%tau)
+        error_msg =  atmos%validate()
+        if(len_trim(error_msg) > 0) return
         call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               atmos%tau, mu0,                          &
                               gpt_flux_dir)
@@ -175,6 +171,8 @@ contains
         ! two-stream calculation with scattering
         !
         !$acc enter data copyin(atmos, atmos%tau, atmos%ssa, atmos%g)
+        error_msg =  atmos%validate()
+        if(len_trim(error_msg) > 0) return
         call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
                                atmos%tau, atmos%ssa, atmos%g, mu0,      &
                                sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
@@ -189,7 +187,11 @@ contains
         !
         error_msg = 'sw_solver(...ty_optical_props_nstr...) not yet implemented'
     end select
-    if (error_msg /= '') return
+    if(len_trim(error_msg) > 0) then
+      if(len_trim(atmos%get_name()) > 0) &
+        error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
+      return
+    end if
     !
     ! ...and reduce spectral fluxes to desired output quantities
     !

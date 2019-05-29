@@ -494,12 +494,10 @@ contains
     !
     !$acc enter data create(jtemp, jpress, jeta, tropo, fmajor)
     !$acc enter data create(tau, tau_rayleigh)
-    !$acc enter data copyin(play, tlay, col_gas)
     !$acc enter data create(col_mix, fminor)
+    !$acc enter data copyin(play, tlay, col_gas)
     !$acc enter data copyin(this)
-    !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
-    !$acc enter data copyin(this%temp_ref)
-    !$acc enter data copyin(this%kminor_lower, this%kminor_upper)
+    !$acc enter data copyin(this%gpoint_flavor)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
@@ -565,12 +563,11 @@ contains
 
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
-    !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
     !$acc exit data delete(tau, tau_rayleigh)
-    !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
-    !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
-    !$acc exit data delete(this%temp_ref)
-    !$acc exit data delete(this%kminor_lower, this%kminor_upper)
+    !$acc exit data delete(play, tlay, col_gas)
+    !$acc exit data delete(col_mix, fminor)
+    !$acc exit data delete(this%gpoint_flavor)
+    !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
     !$acc exit data copyout(this)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
@@ -586,20 +583,20 @@ contains
                   result(error_msg)
     ! inputs
     class(ty_gas_optics_rrtmgp),    intent(in ) :: this
-    integer,                               intent(in ) :: ncol, nlay, nbnd, ngpt
-    real(wp), dimension(ncol,nlay),        intent(in ) :: play   ! layer pressures [Pa, mb]
-    real(wp), dimension(ncol,nlay+1),      intent(in ) :: plev   ! level pressures [Pa, mb]
-    real(wp), dimension(ncol,nlay),        intent(in ) :: tlay   ! layer temperatures [K]
-    real(wp), dimension(ncol),             intent(in ) :: tsfc   ! surface skin temperatures [K]
+    integer,                               intent(in   ) :: ncol, nlay, nbnd, ngpt
+    real(wp), dimension(ncol,nlay),        intent(in   ) :: play   ! layer pressures [Pa, mb]
+    real(wp), dimension(ncol,nlay+1),      intent(in   ) :: plev   ! level pressures [Pa, mb]
+    real(wp), dimension(ncol,nlay),        intent(in   ) :: tlay   ! layer temperatures [K]
+    real(wp), dimension(ncol),             intent(in   ) :: tsfc   ! surface skin temperatures [K]
     ! Interplation coefficients
-    integer,     dimension(ncol,nlay),     intent(in ) :: jtemp, jpress
-    logical(wl), dimension(ncol,nlay),     intent(in ) :: tropo
+    integer,     dimension(ncol,nlay),     intent(in   ) :: jtemp, jpress
+    logical(wl), dimension(ncol,nlay),     intent(in   ) :: tropo
     real(wp),    dimension(2,2,2,get_nflav(this),ncol,nlay),  &
-                                           intent(in ) :: fmajor
+                                           intent(in   ) :: fmajor
     integer,     dimension(2,    get_nflav(this),ncol,nlay),  &
-                                           intent(in ) :: jeta
+                                           intent(in   ) :: jeta
     class(ty_source_func_lw    ),          intent(inout) :: sources
-    real(wp), dimension(ncol,nlay+1),      intent(in ), &
+    real(wp), dimension(ncol,nlay+1),      intent(in   ), &
                                       optional, target :: tlev          ! level temperatures [K]
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
@@ -645,6 +642,9 @@ contains
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
+    !!$acc enter data copyin(sources)
+    !!$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !!$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
@@ -656,6 +656,9 @@ contains
     call reorder123x321(lay_source_t, sources%lay_source)
     call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
     call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
+    !!$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
+    !!$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !!$acc exit data copyout(sources)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !

@@ -15,10 +15,15 @@ module mo_util_array
 !    checking values and sizes
 ! These are in a module so code can be written for both CPUs and GPUs
 ! Used only by Fortran classes so routines don't need C bindings and can use assumed-shape
-! Currently only for 3D arrays; could extend through overloading to other ranks
 !
   use mo_rte_kind,      only: wp
   implicit none
+  interface any_vals_less_than
+    module procedure any_vals_less_than_3D
+  end interface
+  interface any_vals_outside
+    module procedure any_vals_outside_3D
+  end interface
   interface zero_array
     module procedure zero_array_3D, zero_array_4D
   end interface
@@ -27,20 +32,56 @@ module mo_util_array
   public :: zero_array, any_vals_less_than, any_vals_outside
 contains
 !-------------------------------------------------------------------------------------------------
-  logical function any_vals_less_than(array, minVal)
+  logical function any_vals_less_than_3D(array, minVal)
     real(wp), dimension(:,:,:), intent(in) :: array
     real(wp),                   intent(in) :: minVal
 
-    any_vals_less_than = any(array < minVal)
-  end function any_vals_less_than
+#ifdef _OPENACC
+  ! Compact version using intrinsics below
+  ! but an explicit loop is the only current solution on GPUs
+  real(wp) :: minValue
+  integer  :: i, j, k
+
+  minValue = minVal
+  !$acc parallel loop collapse(3) copyin(array) reduction(min:minValue)
+  do k = 1, size(array,3)
+    do j = 1, size(array,2)
+      do i = 1, size(array,1)
+        minValue = min(array(i,j,k), minValue)
+      end do
+    end do
+  end do
+  any_vals_less_than_3D = (minValue < minVal)
+#else
+  any_vals_less_than_3D = any(array < minVal)
+#endif
+  end function any_vals_less_than_3D
   ! ---------------------------------
-  logical function any_vals_outside(array, minVal, maxVal)
+  logical function any_vals_outside_3D(array, minVal, maxVal)
     real(wp), dimension(:,:,:), intent(in) :: array
     real(wp),                   intent(in) :: minVal, maxVal
 
-    any_vals_outside = any(array < minVal .or. array > maxVal)
-  end function any_vals_outside
-! ---------------------------------
+#ifdef _OPENACC
+      ! Compact version using intrinsics below
+      ! but an explicit loop is the only current solution on GPUs
+    real(wp) :: minValue, maxValue
+    integer  :: i, j, k
+    minValue = minVal
+    maxValue = maxVal
+    !$acc parallel loop collapse(3) copyin(array) reduction(min:minValue) reduction(max:maxValue)
+    do k = 1, size(array,3)
+      do j = 1, size(array,2)
+        do i = 1, size(array,1)
+          minValue = min(array(i,j,k), minValue)
+          maxValue = max(array(i,j,k), minValue)
+        end do
+      end do
+    end do
+    any_vals_outside_3D = (minValue < minVal .or. maxValue > maxVal)
+#else
+    any_vals_outside_3D = any(array < minVal .or. array > maxVal)
+#endif
+  end function any_vals_outside_3D
 ! ----------------------------------------------------------
 subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
   integer, intent(in) :: ni, nj, nk

@@ -600,7 +600,7 @@ contains
                                       optional, target :: tlev          ! level temperatures [K]
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
-    integer                                      :: icol, ilay
+    integer                                      :: icol, ilay, igpt
     real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
     real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
@@ -642,9 +642,9 @@ contains
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
-    !!$acc enter data copyin(sources)
-    !!$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !!$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
+    !$acc enter data copyin(sources)
+    !$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
@@ -652,13 +652,18 @@ contains
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
                 sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
-    sources%sfc_source     = transpose(sfc_source_t)
+    !$acc parallel loop collapse(2)
+    do igpt = 1, ngpt
+      do icol = 1, ncol
+        sources%sfc_source(icol,igpt) = sfc_source_t(igpt,icol)
+      end do
+    end do
     call reorder123x321(lay_source_t, sources%lay_source)
     call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
     call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
-    !!$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
-    !!$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !!$acc exit data copyout(sources)
+    !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
+    !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$acc exit data copyout(sources)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !

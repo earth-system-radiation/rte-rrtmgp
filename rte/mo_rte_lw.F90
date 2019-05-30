@@ -174,9 +174,8 @@ contains
     !
     allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
     allocate(sfc_emis_gpt(ncol,         ngpt))
-    !$acc enter data copyin(optical_props, sources)
-    !$acc enter data copyin(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$acc enter data copyin(gauss_Ds, gauss_wts)
+    !!$acc enter data copyin(sources, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$acc enter data copyin(optical_props)
     !$acc enter data create(gpt_flux_dn, gpt_flux_up)
     !$acc enter data create(sfc_emis_gpt)
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
@@ -237,10 +236,10 @@ contains
     ! ...and reduce spectral fluxes to desired output quantities
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
-    !$acc exit data delete(sfc_emis_gpt, gauss_Ds, gauss_wts)
+    !$acc exit data delete(sfc_emis_gpt)
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
-    !$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$acc exit data delete(sources, optical_props)
+    !$acc exit data delete(optical_props)
+    !!$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source,sources)
   end function rte_lw
   !--------------------------------------------------------------------------------------------------------------------
   !

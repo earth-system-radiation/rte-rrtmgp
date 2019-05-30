@@ -19,8 +19,12 @@ module mo_util_array
 !
   use mo_rte_kind,      only: wp
   implicit none
+  interface zero_array
+    module procedure zero_array_3D, zero_array_4D
+  end interface
+
   private
-  public :: any_vals_less_than, any_vals_outside
+  public :: zero_array, any_vals_less_than, any_vals_outside
 contains
 !-------------------------------------------------------------------------------------------------
   logical function any_vals_less_than(array, minVal)
@@ -37,4 +41,39 @@ contains
     any_vals_outside = any(array < minVal .or. array > maxVal)
   end function any_vals_outside
 ! ---------------------------------
+! ----------------------------------------------------------
+subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
+  integer, intent(in) :: ni, nj, nk
+  real(wp), dimension(ni, nj, nk), intent(out) :: array
+  ! -----------------------
+  integer :: i,j,k
+  ! -----------------------
+  do k = 1, nk
+    do j = 1, nj
+      do i = 1, ni
+        array(i,j,k) = 0.0_wp
+      end do
+    end do
+  end do
+
+end subroutine zero_array_3D
+! ----------------------------------------------------------
+subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
+  integer, intent(in) :: ni, nj, nk, nl
+  real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
+  ! -----------------------
+  integer :: i,j,k,l
+  ! -----------------------
+  do l = 1, nl
+    do k = 1, nk
+      do j = 1, nj
+        do i = 1, ni
+          array(i,j,k,l) = 0.0_wp
+        end do
+      end do
+    end do
+  end do
+
+end subroutine zero_array_4D
+! ----------------------------------------------------------
 end module mo_util_array

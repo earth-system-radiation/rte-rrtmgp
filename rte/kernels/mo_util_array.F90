@@ -25,7 +25,7 @@ module mo_util_array
     module procedure any_vals_outside_1D, any_vals_outside_2D, any_vals_outside_3D
   end interface
   interface zero_array
-    module procedure zero_array_3D, zero_array_4D
+    module procedure zero_array_1D, zero_array_3D, zero_array_4D
   end interface
 
   private
@@ -116,7 +116,7 @@ end function any_vals_less_than_1D
     integer  :: i
     minValue = minVal
     maxValue = maxVal
-    !$acc parallel loop collapse(2) copyin(array) reduction(min:minValue) reduction(max:maxValue)
+    !$acc parallel loop copyin(array) reduction(min:minValue) reduction(max:maxValue)
     do i = 1, size(array,1)
       minValue = min(array(i), minValue)
       maxValue = max(array(i), maxValue)
@@ -179,38 +179,52 @@ end function any_vals_less_than_1D
   !-------------------------------------------------------------------------------------------------
   ! Initializing arrays to 0
   !-------------------------------------------------------------------------------------------------
-subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
-  integer, intent(in) :: ni, nj, nk
-  real(wp), dimension(ni, nj, nk), intent(out) :: array
-  ! -----------------------
-  integer :: i,j,k
-  ! -----------------------
-  do k = 1, nk
-    do j = 1, nj
-      do i = 1, ni
-        array(i,j,k) = 0.0_wp
-      end do
+  subroutine zero_array_1D(ni, array) bind(C, name="zero_array_1D")
+    integer,                 intent(in ) :: ni
+    real(wp), dimension(ni), intent(out) :: array
+    ! -----------------------
+    integer :: i
+    ! -----------------------
+    !$acc parallel loop copyout(array)
+    do i = 1, ni
+      array(i) = 0.0_wp
     end do
-  end do
-
-end subroutine zero_array_3D
-! ----------------------------------------------------------
-subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
-  integer, intent(in) :: ni, nj, nk, nl
-  real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
-  ! -----------------------
-  integer :: i,j,k,l
-  ! -----------------------
-  do l = 1, nl
+  end subroutine zero_array_1D
+  ! ----------------------------------------------------------
+  subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
+    integer,                         intent(in ) :: ni, nj, nk
+    real(wp), dimension(ni, nj, nk), intent(out) :: array
+    ! -----------------------
+    integer :: i,j,k
+    ! -----------------------
+    !$acc parallel loop collapse(3) copyout(array)
     do k = 1, nk
       do j = 1, nj
         do i = 1, ni
-          array(i,j,k,l) = 0.0_wp
+          array(i,j,k) = 0.0_wp
         end do
       end do
     end do
-  end do
 
-end subroutine zero_array_4D
+  end subroutine zero_array_3D
+  ! ----------------------------------------------------------
+  subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
+    integer,                             intent(in ) :: ni, nj, nk, nl
+    real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
+    ! -----------------------
+    integer :: i,j,k,l
+    ! -----------------------
+    !$acc parallel loop collapse(4) copyout(array)
+    do l = 1, nl
+      do k = 1, nk
+        do j = 1, nj
+          do i = 1, ni
+            array(i,j,k,l) = 0.0_wp
+          end do
+        end do
+      end do
+    end do
+
+  end subroutine zero_array_4D
 ! ----------------------------------------------------------
 end module mo_util_array

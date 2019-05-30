@@ -225,7 +225,7 @@ program rrtmgp_rfmip_lw
   ! NOTE: these are causing problems right now, most likely due to a compiler
   ! bug related to the use of Fortran classes on the GPU.
   !
-  !!$acc enter data create(sfc_emis_spec)
+  !$acc enter data create(sfc_emis_spec)
   !$acc enter data create(optical_props, optical_props%tau)
   !$acc enter data create(source, source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   ! --------------------------------------------------
@@ -250,7 +250,7 @@ program rrtmgp_rfmip_lw
     ! Expand the spectrally-constant surface emissivity to a per-band emissivity for each column
     !   (This is partly to show how to keep work on GPUs using OpenACC)
     !
-    !!$acc parallel loop collapse(2) copyin(sfc_emis)
+    !$acc parallel loop collapse(2) copyin(sfc_emis)
     do icol = 1, block_size
       do ibnd = 1, nbnd
         sfc_emis_spec(ibnd,icol) = sfc_emis(icol,b)
@@ -298,7 +298,7 @@ program rrtmgp_rfmip_lw
   ret = gptlpr(block_size)
   ret = gptlfinalize()
 #endif
-  !!!$acc exit data delete(sfc_emis_spec)
+  !$acc exit data delete(sfc_emis_spec)
   !$acc exit data delete(optical_props%tau, optical_props)
   !$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   !$acc exit data delete(source)

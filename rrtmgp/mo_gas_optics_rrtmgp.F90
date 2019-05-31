@@ -568,7 +568,6 @@ contains
     !$acc exit data delete(col_mix, fminor)
     !$acc exit data delete(this%gpoint_flavor)
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
-    !$acc exit data copyout(this)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !

@@ -18,6 +18,12 @@ module mo_source_functions
   use mo_rte_kind,      only: wp
   use mo_optical_props, only: ty_optical_props
   implicit none
+
+!! \section arg_table_mo_source_functions Argument Table
+!! | local_name        | standard_name     | long_name                                        | units | rank | type                  |    kind   | intent | optional |
+!! |-------------------|-------------------|--------------------------------------------------|-------|------|-----------------------|-----------|--------|----------|
+!! | ty_source_func_lw | ty_source_func_lw | Fortran DDT containing RRTMGP source functions   | DDT   |    0 | ty_source_func_lw     |           | none   | F        |
+!!
   ! -------------------------------------------------------------------------------------------------
   !
   ! Type for longwave sources: computed at layer center, at layer edges using

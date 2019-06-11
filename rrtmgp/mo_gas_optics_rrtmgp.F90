@@ -390,7 +390,7 @@ contains
     integer :: igas, idx_h2o ! index of some gases
     ! Number of molecules per cm^2
     real(wp), dimension(ncol,nlay), target  :: col_dry_arr
-    real(wp), dimension(:,:),       pointer :: col_dry_wk => NULL()
+    real(wp), dimension(:,:),       pointer :: col_dry_wk
     !
     ! Interpolation variables used in major gas but not elsewhere, so don't need exporting
     !
@@ -607,7 +607,7 @@ contains
     real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
-    real(wp), dimension(:,:),            pointer :: tlev_wk => NULL()
+    real(wp), dimension(:,:),            pointer :: tlev_wk
     ! ----------------------------------------------------------
     error_msg = ""
     !

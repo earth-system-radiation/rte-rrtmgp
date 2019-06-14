@@ -80,7 +80,7 @@ contains
                               allocatable :: optical_props_1lay
     type(ty_fluxes_1lev)                  :: fluxes_1lev
     type(ty_source_func_lw)               :: lw_sources_1lay
-    real(wp), dimension(size(play,1),k_dist%get_nband()) :: solar_src
+    real(wp), dimension(size(play,1),k_dist%get_ngpt()) :: solar_src
     ! ----------------------------------------------------------
     !
     ! Problem extent

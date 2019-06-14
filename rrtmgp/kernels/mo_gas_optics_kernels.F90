@@ -16,7 +16,6 @@
 
 module mo_gas_optics_kernels
   use mo_rte_kind,      only : wp, wl
-  use mo_util_string,   only : string_loc_in_array
   implicit none
 
   interface zero_array

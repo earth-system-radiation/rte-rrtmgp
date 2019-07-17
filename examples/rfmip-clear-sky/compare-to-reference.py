@@ -5,12 +5,31 @@
 import os
 import numpy as np
 import xarray as xr
+import urllib.request
 
 ref_dir  = "reference"
 tst_dir = "."
 
-rrtmg_suffix = "_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"
+#
+# Download reference results
+#
+print("Downloading reference results")
+ref_dir = "./reference/"
+if not os.path.exists(ref_dir):
+    os.makedirs(ref_dir)
+urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/kbhl3JOSccGtR0m/download", \
+                           os.path.join(ref_dir, "rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
+urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/iFa28GFxRaNGKU1/download", \
+                           os.path.join(ref_dir, "rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
+urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/uCemCHlGxbGK0gJ/download", \
+                           os.path.join(ref_dir, "rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
+urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/l8ZG28j9ttZWD9r/download", \
+                           os.path.join(ref_dir, "rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
 
+#
+# Comparing reference and test results 
+#
+rrtmg_suffix = "_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"
 tst = xr.open_mfdataset(os.path.join(tst_dir, "r??" + rrtmg_suffix))
 ref = xr.open_mfdataset(os.path.join(ref_dir, "r??" + rrtmg_suffix))
 

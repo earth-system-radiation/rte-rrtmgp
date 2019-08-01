@@ -450,7 +450,8 @@ contains
                 tau_minor = 0._wp
                 iflav = gpt_flv(idx_tropo,igpt) ! eta interpolation depends on flavor
                 minor_loc = minor_start + (igpt - gptS) ! add offset to starting point
-                kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
+                kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, &
+                                           jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
                 tau_minor = kminor_loc * scaling
                 !$acc atomic update
                 tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor

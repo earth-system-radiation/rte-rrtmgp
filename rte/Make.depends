@@ -44,7 +44,7 @@ mo_rte_lw.o: mo_rte_kind.o \
 	mo_rte_lw.F90
 
 mo_rte_sw.o: mo_rte_kind.o \
-  mo_util_array.o \ 
+  mo_util_array.o \
 	mo_optical_props.o  \
   mo_source_functions.o \
 	mo_fluxes.o \

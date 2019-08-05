@@ -35,6 +35,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
+  use mo_util_array,    only: any_vals_less_than, any_vals_outside
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_source_functions,   &
@@ -132,7 +133,7 @@ contains
     !
     if(any([size(sfc_emis,1), size(sfc_emis,2)] /= [nband, ncol])) &
       error_msg = "rte_lw: sfc_emis inconsistently sized"
-    if(any(sfc_emis < 0._wp .or. sfc_emis > 1._wp)) &
+    if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
       error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
     if(len_trim(error_msg) > 0) return
 
@@ -142,7 +143,7 @@ contains
     if(present(inc_flux)) then
       if(any([size(inc_flux,1), size(inc_flux,2)] /= [ncol, ngpt])) &
         error_msg = "rte_lw: inc_flux inconsistently sized"
-      if(any(inc_flux < 0._wp)) &
+      if(any_vals_less_than(inc_flux, 0._wp)) &
         error_msg = "rte_lw: inc_flux has values < 0"
     end if
     if(len_trim(error_msg) > 0) return
@@ -174,8 +175,8 @@ contains
     !
     allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
     allocate(sfc_emis_gpt(ncol,         ngpt))
-    !$acc enter data copyin(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$acc enter data copyin(gauss_Ds, gauss_wts)
+    !!$acc enter data copyin(sources, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$acc enter data copyin(optical_props)
     !$acc enter data create(gpt_flux_dn, gpt_flux_up)
     !$acc enter data create(sfc_emis_gpt)
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
@@ -202,6 +203,8 @@ contains
         ! No scattering two-stream calculation
         !
         !$acc enter data copyin(optical_props%tau)
+        error_msg =  optical_props%validate()
+        if(len_trim(error_msg) > 0) return
         call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
                               optical_props%tau,                                                  &
@@ -214,6 +217,8 @@ contains
         ! two-stream calculation with scattering
         !
         !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
+        error_msg =  optical_props%validate()
+        if(len_trim(error_msg) > 0) return
         call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
                                optical_props%tau, optical_props%ssa, optical_props%g,              &
                                sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
@@ -232,9 +237,10 @@ contains
     ! ...and reduce spectral fluxes to desired output quantities
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
-    !$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$acc exit data delete(sfc_emis_gpt, gauss_Ds, gauss_wts)
+    !$acc exit data delete(sfc_emis_gpt)
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
+    !$acc exit data delete(optical_props)
+    !!$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source,sources)
   end function rte_lw
   !--------------------------------------------------------------------------------------------------------------------
   !

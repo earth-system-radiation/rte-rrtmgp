@@ -23,12 +23,12 @@
 module mo_gas_optics_rrtmgp
   use mo_rte_kind,           only: wp, wl
   use mo_rrtmgp_constants,   only: avogad, m_dry, m_h2o, grav
-  use mo_util_array,         only: any_vals_less_than, any_vals_outside
+  use mo_util_array,         only: zero_array, any_vals_less_than, any_vals_outside
   use mo_optical_props,      only: ty_optical_props
   use mo_source_functions,   only: ty_source_func_lw
   use mo_gas_optics_kernels, only: interpolation,                                                       &
                                    compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source, &
-                                   combine_and_reorder_2str, combine_and_reorder_nstr, zero_array
+                                   combine_and_reorder_2str, combine_and_reorder_nstr
 
   use mo_util_string,        only: lower_case, string_in_array, string_loc_in_array
   use mo_gas_concentrations, only: ty_gas_concs
@@ -326,6 +326,7 @@ contains
     integer,     dimension(2,    get_nflav(this),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
+    integer :: igpt, icol
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)
@@ -352,8 +353,12 @@ contains
     !
     error_msg = check_extent(toa_src,     ncol,         ngpt, 'toa_src')
     if(error_msg  /= '') return
-    toa_src(:,:) = spread(this%solar_src(:), dim=1, ncopies=ncol)
-
+    !$acc parallel loop collapse(2)
+    do igpt = 1,ngpt
+       do icol = 1,ncol
+          toa_src(icol,igpt) = this%solar_src(igpt)
+       end do
+    end do
   end function gas_optics_ext
   !------------------------------------------------------------------------------------------
   !
@@ -494,12 +499,10 @@ contains
     !
     !$acc enter data create(jtemp, jpress, jeta, tropo, fmajor)
     !$acc enter data create(tau, tau_rayleigh)
-    !$acc enter data copyin(play, tlay, col_gas)
     !$acc enter data create(col_mix, fminor)
+    !$acc enter data copyin(play, tlay, col_gas)
     !$acc enter data copyin(this)
-    !$acc enter data copyin(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
-    !$acc enter data copyin(this%temp_ref)  ! this one causes problems
-    !$acc enter data copyin(this%kminor_lower, this%kminor_upper)
+    !$acc enter data copyin(this%gpoint_flavor)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
@@ -565,12 +568,11 @@ contains
 
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
-    !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
     !$acc exit data delete(tau, tau_rayleigh)
-    !$acc exit data delete(play, tlay, col_gas, col_mix, fminor)
-    !$acc exit data delete(this%flavor, this%press_ref_log, this%vmr_ref, this%gpoint_flavor)
-    !!!$acc exit data delete(this%temp_ref)  ! this one causes problems
-    !!!$acc exit data delete(this%kminor_lower, this%kminor_upper)
+    !$acc exit data delete(play, tlay, col_gas)
+    !$acc exit data delete(col_mix, fminor)
+    !$acc exit data delete(this%gpoint_flavor)
+    !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
@@ -585,24 +587,24 @@ contains
                   result(error_msg)
     ! inputs
     class(ty_gas_optics_rrtmgp),    intent(in ) :: this
-    integer,                               intent(in ) :: ncol, nlay, nbnd, ngpt
-    real(wp), dimension(ncol,nlay),        intent(in ) :: play   ! layer pressures [Pa, mb]
-    real(wp), dimension(ncol,nlay+1),      intent(in ) :: plev   ! level pressures [Pa, mb]
-    real(wp), dimension(ncol,nlay),        intent(in ) :: tlay   ! layer temperatures [K]
-    real(wp), dimension(ncol),             intent(in ) :: tsfc   ! surface skin temperatures [K]
+    integer,                               intent(in   ) :: ncol, nlay, nbnd, ngpt
+    real(wp), dimension(ncol,nlay),        intent(in   ) :: play   ! layer pressures [Pa, mb]
+    real(wp), dimension(ncol,nlay+1),      intent(in   ) :: plev   ! level pressures [Pa, mb]
+    real(wp), dimension(ncol,nlay),        intent(in   ) :: tlay   ! layer temperatures [K]
+    real(wp), dimension(ncol),             intent(in   ) :: tsfc   ! surface skin temperatures [K]
     ! Interplation coefficients
-    integer,     dimension(ncol,nlay),     intent(in ) :: jtemp, jpress
-    logical(wl), dimension(ncol,nlay),     intent(in ) :: tropo
+    integer,     dimension(ncol,nlay),     intent(in   ) :: jtemp, jpress
+    logical(wl), dimension(ncol,nlay),     intent(in   ) :: tropo
     real(wp),    dimension(2,2,2,get_nflav(this),ncol,nlay),  &
-                                           intent(in ) :: fmajor
+                                           intent(in   ) :: fmajor
     integer,     dimension(2,    get_nflav(this),ncol,nlay),  &
-                                           intent(in ) :: jeta
+                                           intent(in   ) :: jeta
     class(ty_source_func_lw    ),          intent(inout) :: sources
-    real(wp), dimension(ncol,nlay+1),      intent(in ), &
+    real(wp), dimension(ncol,nlay+1),      intent(in   ), &
                                       optional, target :: tlev          ! level temperatures [K]
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
-    integer                                      :: icol, ilay
+    integer                                      :: icol, ilay, igpt
     real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
     real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
@@ -644,6 +646,9 @@ contains
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
+    !$acc enter data copyin(sources)
+    !$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
@@ -651,10 +656,18 @@ contains
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
                 sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
-    sources%sfc_source     = transpose(sfc_source_t)
+    !$acc parallel loop collapse(2)
+    do igpt = 1, ngpt
+      do icol = 1, ncol
+        sources%sfc_source(icol,igpt) = sfc_source_t(igpt,icol)
+      end do
+    end do
     call reorder123x321(lay_source_t, sources%lay_source)
     call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
     call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
+    !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
+    !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$acc exit data copyout(sources)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1535,7 +1548,7 @@ contains
     ncol = size(tau, 3)
     nlay = size(tau, 2)
     ngpt = size(tau, 1)
-
+    !$acc enter data copyin(optical_props)
     if (.not. has_rayleigh) then
       ! index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
       !$acc enter data copyin(tau)
@@ -1579,6 +1592,7 @@ contains
       end select
       !$acc exit data delete(tau, tau_rayleigh)
     end if
+    !$acc exit data copyout(optical_props)
   end subroutine combine_and_reorder
 
   !--------------------------------------------------------------------------------------------------------------------

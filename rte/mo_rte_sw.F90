@@ -29,6 +29,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_sw
   use mo_rte_kind,      only: wp, wl
+  use mo_util_array,    only: any_vals_less_than, any_vals_outside
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_fluxes,        only: ty_fluxes
@@ -87,35 +88,29 @@ contains
     !
     if(     size(mu0, 1)                                /=  ncol        ) &
       error_msg = "rte_sw: mu0 inconsistently sized"
-    if(any(mu0 <= 0._wp .or. mu0 > 1)) &
+    if(any_vals_outside(mu0, 0._wp, 1._wp)) &
       error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
 
     if(any([size(inc_flux, 1),    size(inc_flux, 2)]    /= [ncol, ngpt])) &
       error_msg = "rte_sw: inc_flux inconsistently sized"
-    if(any(inc_flux <  0._wp)) &
+    if(any_vals_less_than(inc_flux, 0._wp)) &
       error_msg = "rte_sw: one or more inc_flux < 0"
     if(present(inc_flux_dif)) then
       if(any([size(inc_flux_dif, 1),    size(inc_flux_dif, 2)]    /= [ncol, ngpt])) &
         error_msg = "rte_sw: inc_flux_dif inconsistently sized"
-      if(any(inc_flux_dif <  0._wp)) &
+      if(any_vals_less_than(inc_flux_dif, 0._wp)) &
         error_msg = "rte_sw: one or more inc_flux_dif < 0"
     end if
 
     if(any([size(sfc_alb_dir, 1), size(sfc_alb_dir, 2)] /= [nband, ncol])) &
       error_msg = "rte_sw: sfc_alb_dir inconsistently sized"
-    if(any(sfc_alb_dir < 0._wp .or. sfc_alb_dir > 1._wp)) &
+    if(any_vals_outside(sfc_alb_dir,  0._wp, 1._wp)) &
       error_msg = "rte_sw: sfc_alb_dir out of bounds [0,1]"
     if(any([size(sfc_alb_dif, 1), size(sfc_alb_dif, 2)] /= [nband, ncol])) &
       error_msg = "rte_sw: sfc_alb_dif inconsistently sized"
-    if(any(sfc_alb_dif < 0._wp .or. sfc_alb_dif > 1._wp)) &
+    if(any_vals_outside(sfc_alb_dif,  0._wp, 1._wp)) &
       error_msg = "rte_sw: sfc_alb_dif out of bounds [0,1]"
 
-    if(len_trim(error_msg) > 0) return
-
-    !
-    ! Ensure values of tau, ssa, and g are reasonable
-    !
-    error_msg =  atmos%validate()
     if(len_trim(error_msg) > 0) then
       if(len_trim(atmos%get_name()) > 0) &
         error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
@@ -161,6 +156,8 @@ contains
         ! Direct beam only
         !
         !$acc enter data copyin(atmos, atmos%tau)
+        error_msg =  atmos%validate()
+        if(len_trim(error_msg) > 0) return
         call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               atmos%tau, mu0,                          &
                               gpt_flux_dir)
@@ -175,6 +172,8 @@ contains
         ! two-stream calculation with scattering
         !
         !$acc enter data copyin(atmos, atmos%tau, atmos%ssa, atmos%g)
+        error_msg =  atmos%validate()
+        if(len_trim(error_msg) > 0) return
         call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
                                atmos%tau, atmos%ssa, atmos%g, mu0,      &
                                sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
@@ -189,7 +188,11 @@ contains
         !
         error_msg = 'sw_solver(...ty_optical_props_nstr...) not yet implemented'
     end select
-    if (error_msg /= '') return
+    if(len_trim(error_msg) > 0) then
+      if(len_trim(atmos%get_name()) > 0) &
+        error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
+      return
+    end if
     !
     ! ...and reduce spectral fluxes to desired output quantities
     !

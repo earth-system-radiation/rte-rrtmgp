@@ -326,6 +326,7 @@ contains
     integer,     dimension(2,    get_nflav(this),size(play,dim=1), size(play,dim=2)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
+    integer :: igpt, icol
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)
@@ -352,8 +353,12 @@ contains
     !
     error_msg = check_extent(toa_src,     ncol,         ngpt, 'toa_src')
     if(error_msg  /= '') return
-    toa_src(:,:) = spread(this%solar_src(:), dim=1, ncopies=ncol)
-
+    !$acc parallel loop collapse(2)
+    do igpt = 1,ngpt
+       do icol = 1,ncol
+          toa_src(icol,igpt) = this%solar_src(igpt)
+       end do
+    end do
   end function gas_optics_ext
   !------------------------------------------------------------------------------------------
   !

@@ -229,8 +229,7 @@ program rrtmgp_rfmip_sw
   allocate(mu0(block_size), sfc_alb_spec(nbnd,block_size))
   call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
   !$acc enter data create(optical_props, optical_props%tau, optical_props%ssa, optical_props%g)
-  !!$acc enter data create (toa_flux)
-  !$acc enter data create (def_tsi)
+  !$acc enter data create (toa_flux, def_tsi)
   !$acc enter data create (sfc_alb_spec, mu0)
   ! --------------------------------------------------
 #ifdef USE_TIMING
@@ -348,8 +347,7 @@ program rrtmgp_rfmip_sw
 #endif
   !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g, optical_props)
   !$acc exit data delete(sfc_alb_spec, mu0)
-  !$acc exit data delete(def_tsi)
-  !!$acc exit data delete(toa_flux)
+  !$acc exit data delete(toa_flux, def_tsi)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rsd', flux_dn)

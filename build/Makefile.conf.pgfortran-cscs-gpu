@@ -3,7 +3,8 @@
 # Load the following modules
 #
 #  module swap PrgEnv-cray PrgEnv-pgi
-#  module load cray-netcdf cray-hdf5
+#  module swap pgi pgi/19.4.0
+#  module load cray-netcdf/4.6.3.0 cray-hdf5/1.10.5.0
 #  module load craype-accel-nvidia60
 #  module unload cray-libsci_acc
 #
@@ -14,7 +15,7 @@ NCHOME =
 
 # Fortran compiler flags
 #FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mipa=fast,inline -acc -ta=tesla:6.5
-FCFLAGS = -g -ta=tesla:cc60,cuda9.1 -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk                   -Mallocatable=03
+FCFLAGS = -g -ta=tesla:cc60,cuda9.2 -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mallocatable=03
 
 # Fortran .mod files, e.g. -I<include dir> if you have headers in a nonstandard directory <include dir>
 FCINCLUDE =

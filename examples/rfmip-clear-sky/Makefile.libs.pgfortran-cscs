@@ -1,8 +1,11 @@
-# Load the following modules
+# Load the following modules and set the library path
 #
-#  module swap PrgEnv-cray PrgEnv-pgi
-#  module load cray-netcdf cray-hdf5
-#  module unload cray-libsci_acc
+# module load cdt/19.06
+# module swap PrgEnv-cray PrgEnv-pgi
+# module load cray-netcdf cray-hdf5
+# module load craype-accel-nvidia60
+# module unload cray-libsci_acc
+# export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
 
 export FC = ftn
 export FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mipa=fast,inline -Mallocatable=03

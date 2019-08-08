@@ -17,10 +17,6 @@
 module mo_gas_optics_kernels
   use mo_rte_kind,      only: wp, wl
   implicit none
-
-  interface zero_array
-    module procedure zero_array_3D, zero_array_4D
-  end interface
 contains
   ! --------------------------------------------------------------------------------------
   ! Compute interpolation coefficients
@@ -454,7 +450,8 @@ contains
                 tau_minor = 0._wp
                 iflav = gpt_flv(idx_tropo,igpt) ! eta interpolation depends on flavor
                 minor_loc = minor_start + (igpt - gptS) ! add offset to starting point
-                kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
+                kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, &
+                                           jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
                 tau_minor = kminor_loc * scaling
                 !$acc atomic update
                 tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
@@ -553,7 +550,7 @@ contains
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
     ! -----------------
 
-    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,one)
+    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor,one)
     !$acc enter data create(sfc_src,lay_src,lev_src_inc,lev_src_dec)
     !$acc enter data create(pfrac,planck_function)
 
@@ -636,9 +633,9 @@ contains
       end do ! ilay
     end do ! icol
 
-    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,one)
-    !$acc exit data copyout(sfc_src,lay_src,lev_src_inc,lev_src_dec)
+    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor,one)
     !$acc exit data delete(pfrac,planck_function)
+    !$acc exit data copyout(sfc_src,lay_src,lev_src_inc,lev_src_dec)
 
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------
@@ -783,43 +780,5 @@ contains
       end do
     end do
   end subroutine combine_and_reorder_nstr
-  ! ----------------------------------------------------------
-  subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
-    integer, intent(in) :: ni, nj, nk
-    real(wp), dimension(ni, nj, nk), intent(out) :: array
-    ! -----------------------
-    integer :: i,j,k
-    ! -----------------------
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyout(array(:ni,:nj,:nk))
-    do k = 1, nk
-      do j = 1, nj
-        do i = 1, ni
-          array(i,j,k) = 0.0_wp
-        end do
-      end do
-    end do
-
-  end subroutine zero_array_3D
-  ! ----------------------------------------------------------
-  subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
-    integer, intent(in) :: ni, nj, nk, nl
-    real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
-    ! -----------------------
-    integer :: i,j,k,l
-    ! -----------------------
-    !$acc parallel loop collapse(4) &
-    !$acc&     copyout(array(:ni,:nj,:nk,:nl))
-    do l = 1, nl
-      do k = 1, nk
-        do j = 1, nj
-          do i = 1, ni
-            array(i,j,k,l) = 0.0_wp
-          end do
-        end do
-      end do
-    end do
-
-  end subroutine zero_array_4D
   ! ----------------------------------------------------------
 end module mo_gas_optics_kernels

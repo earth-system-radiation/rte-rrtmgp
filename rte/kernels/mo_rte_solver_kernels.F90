@@ -498,6 +498,9 @@ contains
     real(wp) :: RT_term(ncol)
     real(wp) :: exp_minusktau(ncol), exp_minus2ktau(ncol)
 
+    ! Minimum value is defined at 1e4 larger than epsilon.
+    real(wp), parameter :: k_min = 1.e4_wp * epsilon(1._wp)
+
     real(wp), parameter :: LW_diff_sec = 1.66  ! 1./cos(diffusivity angle)
     ! ---------------------------------
     do j = 1, nlay
@@ -518,7 +521,7 @@ contains
       !   of < 0.1% in Rdif down to tau = 10^-9
       k(1:ncol) = sqrt(max((gamma1(1:ncol,j) - gamma2(1:ncol,j)) * &
                            (gamma1(1:ncol,j) + gamma2(1:ncol,j)),  &
-                           1.e-12_wp))
+                           k_min))
       exp_minusktau(1:ncol) = exp(-tau(1:ncol,j)*k(1:ncol))
 
       !
@@ -654,6 +657,9 @@ contains
     ! -----------------------
     integer  :: i, j
 
+    ! Minimum value is defined at 1e4 larger than epsilon.
+    real(wp), parameter :: k_min = 1.e4_wp * epsilon(1._wp)
+
     ! Variables used in Meador and Weaver
     real(wp) :: gamma1(ncol), gamma2(ncol), gamma3(ncol), gamma4(ncol)
     real(wp) :: alpha1(ncol), alpha2(ncol), k(ncol)
@@ -686,7 +692,7 @@ contains
       !   of < 0.1% in Rdif down to tau = 10^-9
       k(1:ncol) = sqrt(max((gamma1(1:ncol) - gamma2(1:ncol)) * &
                            (gamma1(1:ncol) + gamma2(1:ncol)),  &
-                           1.e-12_wp))
+                           k_min))
       exp_minusktau(1:ncol) = exp(-tau(1:ncol,j)*k(1:ncol))
 
       !

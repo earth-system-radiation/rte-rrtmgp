@@ -353,12 +353,14 @@ contains
     !
     error_msg = check_extent(toa_src,     ncol,         ngpt, 'toa_src')
     if(error_msg  /= '') return
+    !$acc data copyin(this%solar_src)
     !$acc parallel loop collapse(2)
     do igpt = 1,ngpt
        do icol = 1,ncol
           toa_src(icol,igpt) = this%solar_src(igpt)
        end do
     end do
+    !$acc end data
   end function gas_optics_ext
   !------------------------------------------------------------------------------------------
   !
@@ -552,6 +554,7 @@ contains
             jeta,jtemp,jpress,                       &
             tau)
     if (allocated(this%krayl)) then
+      !$acc enter data copyin(col_dry, col_dry_arr)
       !$acc enter data attach(col_dry_wk) copyin(this%krayl)
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
@@ -562,7 +565,7 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
-      !$acc exit data detach(col_dry_wk) delete(this%krayl)
+      !$acc exit data detach(col_dry_wk) delete(this%krayl, col_dry, col_dry_arr)
     end if
     if (error_msg /= '') return
 

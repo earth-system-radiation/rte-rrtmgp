@@ -213,6 +213,12 @@ contains
 
     !$acc enter data create(itropo_lower, itropo_upper)
     !$acc enter data copyin(play, tlay, tropo, gpoint_flavor, jeta, jtemp, col_gas, fminor, tau)
+    !$acc enter data copyin(kmajor, kminor_lower, kminor_upper, kminor_start_lower, kminor_start_upper)
+    !$acc enter data copyin(minor_limits_gpt_lower, minor_limits_gpt_upper, minor_scales_with_density_lower)
+    !$acc enter data copyin(minor_scales_with_density_upper)
+    !$acc enter data copyin(idx_minor_lower, idx_minor_upper, idx_minor_scaling_lower, idx_minor_scaling_upper)
+    !$acc enter data copyin(scale_by_complement_lower, scale_by_complement_upper)
+    !$acc enter data copyin(col_mix, fmajor, jpress)
 
     ! ---------------------
     ! Layer limits of upper, lower atmospheres
@@ -292,6 +298,12 @@ contains
 
     !$acc exit data delete(itropo_lower,itropo_upper)
     !$acc exit data delete(play, tlay, tropo, gpoint_flavor, jeta, jtemp, col_gas, fminor)
+    !$acc exit data delete(kmajor, kminor_lower, kminor_upper, kminor_start_lower, kminor_start_upper)
+    !$acc exit data delete(minor_limits_gpt_lower, minor_limits_gpt_upper, minor_scales_with_density_lower)
+    !$acc exit data delete(minor_scales_with_density_upper)
+    !$acc exit data delete(idx_minor_lower, idx_minor_upper, idx_minor_scaling_lower, idx_minor_scaling_upper)
+    !$acc exit data delete(scale_by_complement_lower, scale_by_complement_upper)
+    !$acc exit data delete(col_mix, fmajor, jpress)
     !$acc exit data copyout(tau)
 
   end subroutine compute_tau_absorption

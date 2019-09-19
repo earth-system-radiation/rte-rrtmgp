@@ -106,15 +106,15 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
-    !$acc enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn) async
-    !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up) async
-    !$acc enter data attach(lev_source_up,lev_source_dn) async
+    !$acc enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn)
+    !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up)
+    !$acc enter data attach(lev_source_up,lev_source_dn)
 
     ! NOTE: This kernel produces small differences between GPU and CPU
     ! implementations on Ascent with PGI, we assume due to floating point
     ! differences in the exp() function. These differences are small in the
     ! RFMIP test case (10^-6).
-    !$acc parallel loop collapse(3) async
+    !$acc parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilev = 1, nlay
         do icol = 1, ncol
@@ -127,7 +127,7 @@ contains
       end do
     end do
 
-    !$acc parallel loop collapse(2) async
+    !$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
         !
@@ -160,7 +160,7 @@ contains
     !
     ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
     !
-    !$acc parallel loop collapse(3) async
+    !$acc parallel loop collapse(3)
     do igpt = 1, ngpt
       do ilev = 1, nlay+1
         do icol = 1, ncol
@@ -170,9 +170,9 @@ contains
       end do
     end do
 
-    !$acc exit data copyout(radn_dn,radn_up) async
-    !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo) async
-    !$acc exit data detach(lev_source_up,lev_source_dn) async
+    !$acc exit data copyout(radn_dn,radn_up)
+    !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo)
+    !$acc exit data detach(lev_source_up,lev_source_dn)
 
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------
@@ -209,12 +209,12 @@ contains
     integer :: imu, top_level
     integer :: icol, ilev, igpt
 
-    !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn) async
-    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol) async
+    !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn)
+    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol,flux_top)
 
     ! ------------------------------------
     ! ------------------------------------
-    !$acc  parallel loop collapse(2) async
+    !$acc  parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
         Ds_ncol(icol, igpt) = Ds(1)
@@ -229,7 +229,7 @@ contains
     ! For more than one angle use local arrays
     !
     top_level = MERGE(1, nlay+1, top_at_1)
-    !$acc parallel loop collapse(2) async
+    !$acc parallel loop collapse(2)
     do igpt = 1,ngpt
       do icol = 1,ncol
         flux_top(icol,igpt) = flux_dn(icol,top_level,igpt)
@@ -238,7 +238,7 @@ contains
     call apply_BC(ncol, nlay, ngpt, top_at_1, flux_top, radn_dn)
 
     do imu = 2, nmus
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           Ds_ncol(icol, igpt) = Ds(imu)
@@ -248,7 +248,7 @@ contains
                             top_at_1, Ds_ncol, weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn)
-      !$acc  parallel loop collapse(3) async
+      !$acc  parallel loop collapse(3)
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
           do icol = 1, ncol
@@ -260,10 +260,8 @@ contains
 
     end do ! imu loop
 
-    !$acc exit data copyout(flux_up,flux_dn) async
-    !$acc exit data delete(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol) async
-
-    !$acc wait
+    !$acc exit data copyout(flux_up,flux_dn)
+    !$acc exit data delete(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol,flux_top)
   end subroutine lw_solver_noscat_GaussQuad
   ! -------------------------------------------------------------------------------------------------
   !
@@ -494,7 +492,7 @@ contains
       real(wp), parameter :: tau_thresh = sqrt(epsilon(tau))
       ! ---------------------------------------------------------------
       ! ---------------------------------------------------------------
-      !$acc  parallel loop collapse(3) async
+      !$acc  parallel loop collapse(3)
       do igpt = 1, ngpt
         do ilay = 1, nlay
           do icol = 1, ncol
@@ -545,7 +543,7 @@ contains
       !
       ! Top of domain is index 1
       !
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Downward propagation
@@ -566,7 +564,7 @@ contains
       !
       ! Top of domain is index nlay+1
       !
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Downward propagation
@@ -1104,21 +1102,20 @@ contains
     ! --------------
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt)
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt)
         end do
       end do
     end if
-    !$acc wait
   end subroutine apply_BC_gpt
   ! ---------------------
   subroutine apply_BC_factor(ncol, nlay, ngpt, top_at_1, inc_flux, factor, flux_dn) bind (C, name="apply_BC_factor")
@@ -1134,21 +1131,20 @@ contains
 
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt) * factor(icol)
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt) * factor(icol)
         end do
       end do
     end if
-    !$acc wait
   end subroutine apply_BC_factor
   ! ---------------------
   subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="apply_BC_0")
@@ -1162,21 +1158,20 @@ contains
 
     !   Upper boundary condition
     if(top_at_1) then
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol,      1, igpt)  = 0._wp
         end do
       end do
     else
-      !$acc  parallel loop collapse(2) async
+      !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           flux_dn(icol, nlay+1, igpt)  = 0._wp
         end do
       end do
     end if
-    !$acc wait
   end subroutine apply_BC_0
 
 end module mo_rte_solver_kernels

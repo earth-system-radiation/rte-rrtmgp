@@ -30,9 +30,7 @@ module mo_cloud_optics
   ! -----------------------------------------------------------------------------------
 #if 0
 !! \section arg_table_mo_cloud_optics
-!! | local_name      | standard_name    | long_name                          | units | rank | type            |    kind   | intent | optional |
-!! |-----------------|------------------|------------------------------------|-------|------|-----------------|-----------|--------|----------|
-!! | ty_cloud_optics | ty_cloud_optics  | definition of type ty_cloud_optics | DDT   |    0 | ty_cloud_optics |           | none   | F        |
+!! \htmlinclude mo_cloud_optics.html
 !!
 #endif
   type, extends(ty_optical_props), public :: ty_cloud_optics

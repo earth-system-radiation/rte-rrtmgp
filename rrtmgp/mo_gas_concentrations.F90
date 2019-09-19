@@ -40,9 +40,7 @@ module mo_gas_concentrations
   end type conc_field
 
 !! \section arg_table_mo_gas_concentrations
-!! | local_name   | standard_name | long_name                       | units | rank | type         |    kind   | intent | optional |
-!! |--------------|---------------|---------------------------------|-------|------|--------------|-----------|--------|----------|
-!! | ty_gas_concs | ty_gas_concs  | definition of type ty_gas_concs | DDT   |    0 | ty_gas_concs |           | none   | F        |
+!! \htmlinclude mo_gas_concentrations.html
 !!
   type, public :: ty_gas_concs
     !

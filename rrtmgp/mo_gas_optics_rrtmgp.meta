@@ -1,0 +1,9 @@
+[ccpp-arg-table]
+  name = mo_gas_optics_rrtmgp
+  type = module
+[ty_gas_optics_rrtmgp]
+  standard_name = ty_gas_optics_rrtmgp
+  long_name = definition of type ty_gas_optics_rrtmgp
+  units = DDT
+  dimensions = ()
+  type = ty_gas_optics_rrtmgp

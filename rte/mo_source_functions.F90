@@ -20,9 +20,7 @@ module mo_source_functions
   implicit none
 
 !! \section arg_table_mo_source_functions Argument Table
-!! | local_name        | standard_name     | long_name                                        | units | rank | type                  |    kind   | intent | optional |
-!! |-------------------|-------------------|--------------------------------------------------|-------|------|-----------------------|-----------|--------|----------|
-!! | ty_source_func_lw | ty_source_func_lw | Fortran DDT containing RRTMGP source functions   | DDT   |    0 | ty_source_func_lw     |           | none   | F        |
+!! \htmlinclude mo_source_functions.html
 !!
   ! -------------------------------------------------------------------------------------------------
   !

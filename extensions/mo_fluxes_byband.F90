@@ -24,9 +24,7 @@ module mo_fluxes_byband
   implicit none
 
 !! \section arg_table_mo_fluxes_byband Argument Table
-!! | local_name       | standard_name    | long_name                               | units | rank | type             |    kind   | intent | optional |
-!! |------------------|------------------|-----------------------------------------|-------|------|----------- ------|-----------|--------|----------|
-!! | ty_fluxes_byband | ty_fluxes_byband | Fortran DDT containing RRTMGP 3D fluxes | DDT   |    0 | ty_fluxes_byband |           | none   | F        |
+!! \htmlinclude mo_fluxes.byband.html
 !!
   ! Output from radiation calculations
   !   Data components are pointers so results can be written directly into memory

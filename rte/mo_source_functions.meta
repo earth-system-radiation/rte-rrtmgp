@@ -1,0 +1,9 @@
+[ccpp-arg-table]
+  name = mo_source_functions
+  type = module
+[ty_source_func_lw]
+  standard_name = ty_source_func_lw
+  long_name = Fortran DDT containing RRTMGP source functions
+  units = DDT
+  dimensions = ()
+  type = ty_source_func_lw

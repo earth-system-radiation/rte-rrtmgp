@@ -1,0 +1,9 @@
+[ccpp-arg-table]
+  name = mo_cloud_optics
+  type = module
+[ty_cloud_optics]
+  standard_name = ty_cloud_optics
+  long_name = definition of type ty_cloud_optics
+  units = DDT
+  dimensions = ()
+  type = ty_cloud_optics

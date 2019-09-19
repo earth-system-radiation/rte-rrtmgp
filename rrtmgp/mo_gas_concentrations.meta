@@ -1,0 +1,9 @@
+[ccpp-arg-table]
+  name = mo_gas_concentrations
+  type = module
+[ty_gas_concs]
+  standard_name = ty_gas_concs
+  long_name = definition of type ty_gas_concs
+  units = DDT
+  dimensions = ()
+  type = ty_gas_concs

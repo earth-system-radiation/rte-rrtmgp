@@ -159,11 +159,7 @@ module mo_optical_props
   !
   ! -------------------------------------------------------------------------------------------------
 !! \section arg_table_mo_optical_props Argument Table
-!! | local_name            | standard_name         | long_name                                        | units | rank | type                  |    kind   | intent | optional |
-!! |-----------------------|-----------------------|--------------------------------------------------|-------|------|-----------------------|-----------|--------|----------|
-!! | ty_optical_props_1scl | ty_optical_props_1scl | Fortran DDT containing RRTMGP optical properties | DDT   |    0 | ty_optical_props_1scl |           | in     | F        |
-!! | ty_optical_props_2str | ty_optical_props_2str | Fortran DDT containing RRTMGP optical properties | DDT   |    0 | ty_optical_props_2str |           | in     | F        |
-!! | ty_optical_props_nstr | ty_optical_props_nstr | Fortran DDT containing RRTMGP optical properties | DDT   |    0 | ty_optical_props_nstr |           | in     | F        |
+!! \htmlinclude mo_optical_props.html
 !!
 
   type, extends(ty_optical_props_arry) :: ty_optical_props_1scl

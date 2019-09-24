@@ -750,11 +750,10 @@ contains
   !
   subroutine combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau_abs, tau_rayleigh, tau, ssa, p) &
       bind(C, name="combine_and_reorder_nstr")
-    integer, intent(in) :: ncol, nlay, ngpt, nmom
-    real(wp), dimension(ngpt,nlay,ncol), intent(in ) :: tau_abs, tau_rayleigh
-    real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau, ssa
-    real(wp), dimension(ncol,nlay,ngpt,nmom), &
-                                         intent(inout) :: p
+    integer,                                  intent(in   ) :: ncol, nlay, ngpt, nmom
+    real(wp), dimension(     ngpt,nlay,ncol), intent(in   ) :: tau_abs, tau_rayleigh
+    real(wp), dimension(     ncol,nlay,ngpt), intent(inout) :: tau, ssa
+    real(wp), dimension(nmom,ncol,nlay,ngpt), intent(inout) :: p
     ! -----------------------
     integer :: icol, ilay, igpt, imom
     real(wp) :: t

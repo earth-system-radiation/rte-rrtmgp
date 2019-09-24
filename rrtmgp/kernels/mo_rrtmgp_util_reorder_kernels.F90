@@ -13,7 +13,7 @@
 !
 ! Description: Kernels to permute arrays
 
-module mo_reorder_kernels
+module mo_rrtmgp_util_reorder_kernels
   use mo_rte_kind,      only: wp
   implicit none
 contains
@@ -58,4 +58,4 @@ contains
     end do
   end subroutine reorder_123x321_kernel
   ! ----------------------------------------------------------------------------
-end module mo_reorder_kernels
+end module mo_rrtmgp_util_reorder_kernels

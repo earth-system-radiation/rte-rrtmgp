@@ -31,7 +31,7 @@
 
 module mo_gas_concentrations
   use mo_rte_kind,    only: wp
-  use mo_util_string, only: lower_case
+  use mo_rrtmgp_util_string, only: lower_case
   implicit none
   integer, parameter :: GAS_NOT_IN_LIST = -1
 

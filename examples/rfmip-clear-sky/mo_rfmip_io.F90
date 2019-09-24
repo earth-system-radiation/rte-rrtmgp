@@ -26,7 +26,7 @@ module mo_rfmip_io
   use mo_rte_kind,   only: wp
   use mo_gas_concentrations, &
                         only: ty_gas_concs
-  use mo_util_string,   only: lower_case, string_in_array, string_loc_in_array
+  use mo_rrtmgp_util_string,   only: lower_case, string_in_array, string_loc_in_array
   use mo_simple_netcdf, only: read_field, write_field, get_dim_size
   use netcdf
   implicit none

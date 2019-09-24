@@ -48,7 +48,7 @@ program rrtmgp_rfmip_sw
   !
   ! Array utilities
   !
-  use mo_util_array,         only: zero_array
+  use mo_rte_util_array,         only: zero_array
   !
   ! Optical properties of the atmosphere as array of values
   !   In the longwave we include only absorption optical depth (_1scl)

@@ -722,15 +722,26 @@ contains
     real(wp), dimension(ngpt,nlay,ncol), intent(in   ) :: tau_abs, tau_rayleigh
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau, ssa, g ! inout because components are allocated
     ! -----------------------
-    integer  :: icol, ilay, igpt
+    integer  :: icol, ilay, igpt,  icol0, igpt0, icdiff, igdiff
     real(wp) :: t
+    integer, parameter :: tile = 32
     ! -----------------------
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(tau, ssa, g) &
-    !$acc&     copyin(tau_rayleigh,tau_abs)
-    do icol = 1, ncol
+    !$acc data copy(tau, ssa, g)                 &
+    !$acc      copyin(tau_rayleigh, tau_abs)
+
+    !$acc parallel default(none) vector_length(tile*tile)
+    !$acc loop gang collapse(3)
       do ilay = 1, nlay
-        do igpt = 1, ngpt
+      do icol0 = 1, ncol, tile
+        do igpt0 = 1, ngpt, tile
+
+          !$acc loop vector collapse(2)
+          do igdiff = 0, tile-1
+            do icdiff = 0, tile-1
+              icol = icol0 + icdiff
+              igpt = igpt0 + igdiff
+              if (icol > ncol .or. igpt > ngpt) cycle
+
            t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol)
            tau(icol,ilay,igpt) = t
            g  (icol,ilay,igpt) = 0._wp
@@ -739,9 +750,15 @@ contains
            else
              ssa(icol,ilay,igpt) = 0._wp
            end if
+
+            end do
+          end do
+
         end do
       end do
     end do
+    !$acc end parallel
+    !$acc end data
   end subroutine combine_and_reorder_2str
   ! ----------------------------------------------------------
   !

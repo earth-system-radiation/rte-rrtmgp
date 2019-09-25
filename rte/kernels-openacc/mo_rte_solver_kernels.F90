@@ -962,12 +962,12 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn
     ! ------------------
     integer :: icol, ilev, igpt
-    real(wp), dimension(nlay+1) :: albedo, &  ! reflectivity to diffuse radiation below this level
+    real(wp), dimension(ncol,nlay+1,ngpt) :: albedo, &  ! reflectivity to diffuse radiation below this level
                                               ! alpha in SH08
                                    src        ! source of diffuse upwelling radiation from emission or
                                               ! scattering of direct beam
                                               ! G in SH08
-    real(wp), dimension(nlay  ) :: denom      ! beta in SH08
+    real(wp), dimension(ncol,nlay  ,ngpt) :: denom      ! beta in SH08
     ! ------------------
     ! ---------------------------------
     !
@@ -977,113 +977,104 @@ contains
     !
     !$acc enter data copyin(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc, flux_dn)
     !$acc enter data create(flux_up, albedo, src, denom)
+    !, albedo, src, denom)
+
     if(top_at_1) then
-#ifdef __PGI
-      !$acc parallel loop
-#else
-      !$acc parallel loop collapse(2) private(albedo, src, denom)
-#endif
+      !$acc parallel loop gang vector collapse(2)
       do igpt = 1, ngpt
-#ifdef __PGI
-        !$acc loop private(albedo, src, denom)
-#endif
         do icol = 1, ncol
           ilev = nlay + 1
           ! Albedo of lowest level is the surface albedo...
-          albedo(ilev)  = albedo_sfc(icol,igpt)
+          albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt)
           ! ... and source of diffuse radiation is surface emission
-          src(ilev) = src_sfc(icol,igpt)
+          src(icol,ilev,igpt) = src_sfc(icol,igpt)
 
           !
           ! From bottom to top of atmosphere --
           !   compute albedo and source of upward radiation
           !
           do ilev = nlay, 1, -1
-            denom(ilev) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(ilev+1))                 ! Eq 10
-            albedo(ilev) = rdif(icol,ilev,igpt) + &
-                           tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(ilev+1) * denom(ilev) ! Equation 9
+            denom(icol,ilev,igpt) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev+1,igpt))    ! Eq 10
+            albedo(icol,ilev,igpt) = rdif(icol,ilev,igpt) + &
+                  tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev+1,igpt) * denom(icol,ilev,igpt) ! Equation 9
             !
             ! Equation 11 -- source is emitted upward radiation at top of layer plus
             !   radiation emitted at bottom of layer,
             !   transmitted through the layer and reflected from layers below (tdiff*src*albedo)
             !
-            src(ilev) =  src_up(icol, ilev, igpt) + &
-                           tdif(icol,ilev,igpt) * denom(ilev) *       &
-                             (src(ilev+1) + albedo(ilev+1)*src_dn(icol,ilev,igpt))
+            src(icol,ilev,igpt) =  src_up(icol, ilev, igpt) + &
+                           tdif(icol,ilev,igpt) * denom(icol,ilev,igpt) *       &
+                             (src(icol,ilev+1,igpt) + albedo(icol,ilev+1,igpt)*src_dn(icol,ilev,igpt))
           end do
 
           ! Eq 12, at the top of the domain upwelling diffuse is due to ...
           ilev = 1
-          flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(ilev) + & ! ... reflection of incident diffuse and
-                                    src(ilev)                                  ! emission from below
+          flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) + & ! ... reflection of incident diffuse and
+                                    src(icol,ilev,igpt)                                  ! emission from below
 
           !
           ! From the top of the atmosphere downward -- compute fluxes
           !
           do ilev = 2, nlay+1
             flux_dn(icol,ilev,igpt) = (tdif(icol,ilev-1,igpt)*flux_dn(icol,ilev-1,igpt) + &  ! Equation 13
-                               rdif(icol,ilev-1,igpt)*src(ilev) +       &
-                               src_dn(icol,ilev-1,igpt)) * denom(ilev-1)
-            flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(ilev) + & ! Equation 12
-                              src(ilev)
+                               rdif(icol,ilev-1,igpt)*src(icol,ilev,igpt) +       &
+                               src_dn(icol,ilev-1,igpt)) * denom(icol,ilev-1,igpt)
+            flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) + & ! Equation 12
+                              src(icol,ilev,igpt)
           end do
         end do
       end do
+      
     else
-#ifdef __PGI
-      !$acc parallel loop
-#else
-      !$acc parallel loop collapse(2) private(albedo, src, denom)
-#endif
+
+      !$acc parallel loop collapse(2)
       do igpt = 1, ngpt
-#ifdef __PGI
-        !$acc loop private(albedo, src, denom)
-#endif
         do icol = 1, ncol
           ilev = 1
           ! Albedo of lowest level is the surface albedo...
-          albedo(ilev)  = albedo_sfc(icol,igpt)
+          albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt)
           ! ... and source of diffuse radiation is surface emission
-          src(ilev) = src_sfc(icol,igpt)
+          src(icol,ilev,igpt) = src_sfc(icol,igpt)
 
           !
           ! From bottom to top of atmosphere --
           !   compute albedo and source of upward radiation
           !
           do ilev = 1, nlay
-            denom(ilev  ) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(ilev))                ! Eq 10
-            albedo(ilev+1) = rdif(icol,ilev,igpt) + &
-                               tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(ilev) * denom(ilev) ! Equation 9
+            denom(ilev  ) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt))                ! Eq 10
+            albedo(icol,ilev+1,igpt) = rdif(icol,ilev,igpt) + &
+                               tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev,igpt) * denom(icol,ilev,igpt) ! Equation 9
             !
             ! Equation 11 -- source is emitted upward radiation at top of layer plus
             !   radiation emitted at bottom of layer,
             !   transmitted through the layer and reflected from layers below (tdiff*src*albedo)
             !
-            src(ilev+1) =  src_up(icol, ilev, igpt) +  &
-                             tdif(icol,ilev,igpt) * denom(ilev) *       &
-                             (src(ilev) + albedo(ilev)*src_dn(icol,ilev,igpt))
+            src(icol,ilev+1,igpt) =  src_up(icol, ilev, igpt) +  &
+                             tdif(icol,ilev,igpt) * denom(icol,ilev,igpt) *       &
+                             (src(icol,ilev,igpt) + albedo(icol,ilev,igpt)*src_dn(icol,ilev,igpt))
           end do
 
           ! Eq 12, at the top of the domain upwelling diffuse is due to ...
           ilev = nlay+1
-          flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(ilev) + & ! ... reflection of incident diffuse and
-                            src(ilev)                          ! scattering by the direct beam below
+          flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) + & ! ... reflection of incident diffuse and
+                            src(icol,ilev,igpt)                          ! scattering by the direct beam below
 
           !
           ! From the top of the atmosphere downward -- compute fluxes
           !
           do ilev = nlay, 1, -1
             flux_dn(icol,ilev,igpt) = (tdif(icol,ilev,igpt)*flux_dn(icol,ilev+1,igpt) + &  ! Equation 13
-                               rdif(icol,ilev,igpt)*src(ilev) + &
-                               src_dn(icol, ilev, igpt)) * denom(ilev)
-            flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(ilev) + & ! Equation 12
-                              src(ilev)
+                               rdif(icol,ilev,igpt)*src(icol,ilev,igpt) + &
+                               src_dn(icol, ilev, igpt)) * denom(icol,ilev,igpt)
+            flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) + & ! Equation 12
+                              src(icol,ilev,igpt)
 
           end do
         end do
       end do
     end if
-    !$acc exit data delete(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc, albedo, src, denom)
+    !$acc exit data delete(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc)
+    ! , albedo, src, denom)
     !$acc exit data copyout(flux_up, flux_dn)
   end subroutine adding
   ! ---------------------------------------------------------------

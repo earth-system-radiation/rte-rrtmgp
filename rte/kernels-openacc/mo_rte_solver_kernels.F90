@@ -87,7 +87,10 @@ contains
     real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
     real(wp), parameter :: pi = acos(-1._wp)
-    integer             :: icol, ilev, igpt, top_level
+    integer             :: icol, ilev, igpt, top_level, ilay
+
+    real(wp)            :: fact
+    real(wp), parameter :: tau_thresh = sqrt(epsilon(tau_loc))
     ! ------------------------------------
 
 
@@ -110,23 +113,6 @@ contains
     !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up)
     !$acc enter data attach(lev_source_up,lev_source_dn)
 
-    ! NOTE: This kernel produces small differences between GPU and CPU
-    ! implementations on Ascent with PGI, we assume due to floating point
-    ! differences in the exp() function. These differences are small in the
-    ! RFMIP test case (10^-6).
-    !$acc parallel loop collapse(3)
-    do igpt = 1, ngpt
-      do ilev = 1, nlay
-        do icol = 1, ncol
-          !
-          ! Optical path and transmission, used in source function and transport calculations
-          !
-          tau_loc(icol,ilev,igpt) = tau(icol,ilev,igpt)*D(icol,igpt)
-          trans  (icol,ilev,igpt) = exp(-tau_loc(icol,ilev,igpt))
-        end do
-      end do
-    end do
-
     !$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
@@ -143,12 +129,37 @@ contains
       end do
     end do
 
+    ! NOTE: This kernel produces small differences between GPU and CPU
+    ! implementations on Ascent with PGI, we assume due to floating point
+    ! differences in the exp() function. These differences are small in the
+    ! RFMIP test case (10^-6).
+    !$acc parallel loop collapse(3)
+    do igpt = 1, ngpt
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          !
+          ! Optical path and transmission, used in source function and transport calculations
+          !
+          tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt)
+          trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt))
+          !
+          ! Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
+          !   is of order epsilon (smallest difference from 1. in working precision)
+          !   Thanks to Peter Blossey
+          !
+          fact = merge((1._wp - trans(icol,ilay,igpt))/tau_loc(icol,ilay,igpt) - trans(icol,ilay,igpt), &
+                       tau_loc(icol,ilay,igpt) * ( 0.5_wp - 1._wp/3._wp*tau_loc(icol,ilay,igpt) ),      &
+                       tau_loc(icol,ilay,igpt) > tau_thresh)
     !
-    ! Source function for diffuse radiation
+          ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
     !
-    call lw_source_noscat(ncol, nlay, ngpt, &
-                          lay_source, lev_source_up, lev_source_dn, &
-                          tau_loc, trans, source_dn, source_up)
+          source_dn(icol,ilay,igpt) = (1._wp - trans(icol,ilay,igpt)) * lev_source_dn(icol,ilay,igpt) + &
+                                  2._wp * fact * (lay_source(icol,ilay, igpt) - lev_source_dn(icol,ilay,igpt))
+          source_up(icol,ilay,igpt) = (1._wp - trans(icol,ilay,igpt)) * lev_source_up(icol,ilay,igpt) + &
+                                  2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_up(icol,ilay,igpt))
+        end do
+      end do
+    end do
 
     !
     ! Transport

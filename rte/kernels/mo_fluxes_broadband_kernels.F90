@@ -33,22 +33,21 @@ contains
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux
     real(wp), dimension(ncol, nlev),       intent(out) :: broadband_flux
 
-    integer :: icol, ilev, igpt
+    integer  :: icol, ilev, igpt
+    real(wp) :: my_bb_flux
 
     !$acc enter data copyin(spectral_flux) create(broadband_flux)
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop gang vector collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
-        broadband_flux(icol, ilev) =  spectral_flux(icol, ilev, 1)
-      end do
-    end do
-    !$acc parallel loop collapse(3)
-    do igpt = 2, ngpt
-      do ilev = 1, nlev
-        do icol = 1, ncol
-          !$acc atomic update
-          broadband_flux(icol, ilev) = broadband_flux(icol, ilev) + spectral_flux(icol, ilev, igpt)
+
+        my_bb_flux = 0.0_wp
+
+        do igpt = 1, ngpt
+          my_bb_flux = my_bb_flux + spectral_flux(icol, ilev, igpt)
         end do
+
+        broadband_flux(icol, ilev) = my_bb_flux
       end do
     end do
     !$acc exit data delete(spectral_flux) copyout(broadband_flux)

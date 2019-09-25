@@ -550,7 +550,7 @@ contains
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
     ! -----------------
 
-    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor,one)
+    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor)
     !$acc enter data create(sfc_src,lay_src,lev_src_inc,lev_src_dec)
     !$acc enter data create(pfrac,planck_function)
 
@@ -633,7 +633,7 @@ contains
       end do ! ilay
     end do ! icol
 
-    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor,one)
+    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor)
     !$acc exit data delete(pfrac,planck_function)
     !$acc exit data copyout(sfc_src,lay_src,lev_src_inc,lev_src_dec)
 

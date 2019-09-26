@@ -437,9 +437,9 @@ contains
                 ! NOTE: P needed in hPa to properly handle density scaling.
                 !
                 scaling = scaling * (PaTohPa * myplay/mytlay)
-                mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr))
 
                 if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
+                  mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr))
                   vmr_fact = 1._wp / mycol_gas_0
                   dry_fact = 1._wp / (1._wp + mycol_gas_h2o * vmr_fact)
                   ! scale by density of special gas

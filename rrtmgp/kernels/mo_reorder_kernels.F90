@@ -27,6 +27,15 @@ contains
     integer :: i1, i2, i3, i10, i30, i1diff, i3diff
     integer, parameter :: tile = 32
 
+    ! This kernel uses blocking to speed-up the transposition
+    ! We read the data block by block (three outer loops)
+    !  such that a block fits into fastest cache and the memory reads
+    !  are resolved in the cache. The writes are contiguous here, so
+    !  shouldn't be a problem.
+    !  Tile size of 32x32 is empirical: big enough to read from the whole
+    !  cache line, and small enough to fit into cache. Other numbers
+    !  may give slightly better performance on different hardware.
+    !
     !$acc parallel vector_length(tile*tile) &
     !$acc&     copyout(array_out) &
     !$acc&     copyin(array_in)
@@ -62,6 +71,8 @@ contains
     integer :: i1, i2, i3, i10, i30, i1diff, i3diff, idiff
     integer, parameter :: tile = 32
 
+    ! See the comment above
+    !
     !$acc parallel vector_length(tile*tile) &
     !$acc&     copyout(array_out) &
     !$acc&     copyin(array_in)

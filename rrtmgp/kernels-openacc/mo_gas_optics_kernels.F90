@@ -701,7 +701,7 @@ contains
     !$acc parallel loop collapse(3)
     do icol = 1, ncol, 2
       do ilay = 1, nlay
-    do igpt = 1, ngpt
+        do igpt = 1, ngpt
           lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  )
           lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  )
           if (icol <= ncol) then
@@ -808,6 +808,9 @@ contains
     !$acc data copy(tau, ssa, g)                 &
     !$acc      copyin(tau_rayleigh, tau_abs)
 
+    ! We are using blocking memory accesses here to improve performance
+    !  of the transpositions. See also comments in mo_reorder_kernels.F90
+    !
     !$acc parallel default(none) vector_length(tile*tile)
     !$acc loop gang collapse(3)
       do ilay = 1, nlay

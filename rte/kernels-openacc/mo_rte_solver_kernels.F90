@@ -1052,7 +1052,7 @@ contains
           !   compute albedo and source of upward radiation
           !
           do ilev = 1, nlay
-            denom(ilev  ) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt))                ! Eq 10
+            denom (icol,ilev  ,igpt) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt))                ! Eq 10
             albedo(icol,ilev+1,igpt) = rdif(icol,ilev,igpt) + &
                                tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev,igpt) * denom(icol,ilev,igpt) ! Equation 9
             !

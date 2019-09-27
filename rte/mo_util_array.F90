@@ -34,73 +34,46 @@ contains
   !-------------------------------------------------------------------------------------------------
   ! Values less than a floor
   !-------------------------------------------------------------------------------------------------
-  logical function any_vals_less_than_1D(array, minVal)
+  logical function any_vals_less_than_1D(array, check_value)
     real(wp), dimension(:), intent(in) :: array
-    real(wp),               intent(in) :: minVal
+    real(wp),               intent(in) :: check_value
 
-#ifdef _OPENACC
-    ! Compact version using intrinsics below
-    ! but an explicit loop is the only current solution on GPUs
     real(wp) :: minValue
-    integer  :: i
 
-    minValue = minVal
-    !$acc parallel loop copyin(array) reduction(min:minValue)
-    do i = 1, size(array,1)
-      minValue = min(array(i), minValue)
-    end do
-    any_vals_less_than_1D = (minValue < minVal)
-#else
-    any_vals_less_than_1D = any(array < minVal)
-#endif
-end function any_vals_less_than_1D
-  !-------------------------------------------------------------------------------------------------
-  logical function any_vals_less_than_2D(array, minVal)
+    !$acc kernels copyin(array)
+    minValue = minval(array)
+    !$acc end kernels
+
+    any_vals_less_than_1D = (minValue < check_value)
+
+  end function any_vals_less_than_1D
+!-------------------------------------------------------------------------------------------------
+  logical function any_vals_less_than_2D(array, check_value)
     real(wp), dimension(:,:), intent(in) :: array
-    real(wp),                 intent(in) :: minVal
+    real(wp),                 intent(in) :: check_value
 
-#ifdef _OPENACC
-    ! Compact version using intrinsics below
-    ! but an explicit loop is the only current solution on GPUs
     real(wp) :: minValue
-    integer  :: i, j
 
-    minValue = minVal
-    !$acc parallel loop collapse(2) copyin(array) reduction(min:minValue)
-    do j = 1, size(array,2)
-      do i = 1, size(array,1)
-        minValue = min(array(i,j), minValue)
-      end do
-    end do
-    any_vals_less_than_2D = (minValue < minVal)
-#else
-    any_vals_less_than_2D = any(array < minVal)
-#endif
+    !$acc kernels copyin(array)
+    minValue = minval(array)
+    !$acc end kernels
+
+    any_vals_less_than_2D = (minValue < check_value)
+
   end function any_vals_less_than_2D
 !-------------------------------------------------------------------------------------------------
-  logical function any_vals_less_than_3D(array, minVal)
+  logical function any_vals_less_than_3D(array, check_value)
     real(wp), dimension(:,:,:), intent(in) :: array
-    real(wp),                   intent(in) :: minVal
+    real(wp),                   intent(in) :: check_value
 
-#ifdef _OPENACC
-  ! Compact version using intrinsics below
-  ! but an explicit loop is the only current solution on GPUs
-  real(wp) :: minValue
-  integer  :: i, j, k
+    real(wp) :: minValue
 
-  minValue = minVal
-  !$acc parallel loop collapse(3) copyin(array) reduction(min:minValue)
-  do k = 1, size(array,3)
-    do j = 1, size(array,2)
-      do i = 1, size(array,1)
-        minValue = min(array(i,j,k), minValue)
-      end do
-    end do
-  end do
-  any_vals_less_than_3D = (minValue < minVal)
-#else
-  any_vals_less_than_3D = any(array < minVal)
-#endif
+    !$acc kernels copyin(array)
+    minValue = minval(array)
+    !$acc end kernels
+
+    any_vals_less_than_3D = (minValue < check_value)
+
   end function any_vals_less_than_3D
   !-------------------------------------------------------------------------------------------------
   ! Values outside a range
@@ -195,16 +168,9 @@ end function any_vals_less_than_1D
     integer,                         intent(in ) :: ni, nj, nk
     real(wp), dimension(ni, nj, nk), intent(out) :: array
     ! -----------------------
-    integer :: i,j,k
-    ! -----------------------
-    !$acc parallel loop collapse(3) copyout(array)
-    do k = 1, nk
-      do j = 1, nj
-        do i = 1, ni
-          array(i,j,k) = 0.0_wp
-        end do
-      end do
-    end do
+    !$acc kernels
+    array = 0.0_wp
+    !$acc end kernels
 
   end subroutine zero_array_3D
   ! ----------------------------------------------------------
@@ -212,18 +178,9 @@ end function any_vals_less_than_1D
     integer,                             intent(in ) :: ni, nj, nk, nl
     real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
     ! -----------------------
-    integer :: i,j,k,l
-    ! -----------------------
-    !$acc parallel loop collapse(4) copyout(array)
-    do l = 1, nl
-      do k = 1, nk
-        do j = 1, nj
-          do i = 1, ni
-            array(i,j,k,l) = 0.0_wp
-          end do
-        end do
-      end do
-    end do
+    !$acc kernels
+    array = 0.0_wp
+    !$acc end kernels
 
   end subroutine zero_array_4D
 ! ----------------------------------------------------------

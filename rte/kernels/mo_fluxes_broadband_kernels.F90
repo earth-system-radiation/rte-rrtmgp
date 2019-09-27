@@ -34,20 +34,20 @@ contains
     real(wp), dimension(ncol, nlev),       intent(out) :: broadband_flux
 
     integer  :: icol, ilev, igpt
-    real(wp) :: my_bb_flux
+    real(wp) :: bb_flux_s ! local scalar version
 
     !$acc enter data copyin(spectral_flux) create(broadband_flux)
     !$acc parallel loop gang vector collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
 
-        my_bb_flux = 0.0_wp
+        bb_flux_s = 0.0_wp
 
         do igpt = 1, ngpt
-          my_bb_flux = my_bb_flux + spectral_flux(icol, ilev, igpt)
+          bb_flux_s = bb_flux_s + spectral_flux(icol, ilev, igpt)
         end do
 
-        broadband_flux(icol, ilev) = my_bb_flux
+        broadband_flux(icol, ilev) = bb_flux_s
       end do
     end do
     !$acc exit data delete(spectral_flux) copyout(broadband_flux)

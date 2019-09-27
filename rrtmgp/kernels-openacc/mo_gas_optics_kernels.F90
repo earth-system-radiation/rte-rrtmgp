@@ -671,12 +671,15 @@ contains
     !
     ! Map to g-points
     !
+    ! Explicitly unroll a time-consuming loop here to increase instruction-level parallelism on a GPU
+    ! Helps to achieve higher bandwidth
+    !
     !$acc parallel loop collapse(3)
     do icol = 1, ncol, 2
       do ilay = 1, nlay
-    do igpt = 1, ngpt
+        do igpt = 1, ngpt
           lay_src(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,icol)
-          if (icol <= ncol) &
+          if (icol < ncol) &
           lay_src(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay,icol+1)
         end do
       end do ! ilay
@@ -698,13 +701,15 @@ contains
     !
     ! Map to g-points
     !
+    ! Same unrolling as mentioned before
+    !
     !$acc parallel loop collapse(3)
     do icol = 1, ncol, 2
       do ilay = 1, nlay
         do igpt = 1, ngpt
           lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  )
           lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  )
-          if (icol <= ncol) then
+          if (icol < ncol) then
           lev_src_dec(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay,  icol+1)
           lev_src_inc(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay+1,icol+1)
           end if

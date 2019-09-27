@@ -1012,7 +1012,6 @@ contains
     !
     !$acc enter data copyin(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc, flux_dn)
     !$acc enter data create(flux_up, albedo, src, denom)
-    !, albedo, src, denom)
 
     if(top_at_1) then
       !$acc parallel loop gang vector collapse(2)
@@ -1108,8 +1107,7 @@ contains
         end do
       end do
     end if
-    !$acc exit data delete(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc)
-    ! , albedo, src, denom)
+    !$acc exit data delete(albedo_sfc, rdif, tdif, src_dn, src_up, src_sfc, albedo, src, denom)
     !$acc exit data copyout(flux_up, flux_dn)
   end subroutine adding
   ! ---------------------------------------------------------------

@@ -143,10 +143,10 @@ contains
           tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt)
           trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt))
 
-          call lw_source_noscat_stencil(ncol, nlay, ngpt, icol, ilay, igpt,        &
-                                        lay_source, lev_source_up, lev_source_dn,  &
-                                        tau_loc, trans,                            &
-                                        source_dn, source_up)
+          call lw_source_noscat_stencil(lay_source   (icol,ilay,igpt),                                &
+                                        lev_source_up(icol,ilay,igpt), lev_source_dn(icol,ilay,igpt), &
+                                        tau_loc      (icol,ilay,igpt), trans        (icol,ilay,igpt), &
+                                        source_dn    (icol,ilay,igpt), source_up    (icol,ilay,igpt) )
         end do
       end do
     end do
@@ -432,7 +432,7 @@ contains
                                             intent(inout) :: flux_dn, flux_dir
     ! -------------------------------------------
     integer :: icol, ilay, igpt
-    real(wp), dimension(ncol,nlay,ngpt) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
+    real(wp), dimension(ncol,nlay,ngpt) :: Rdif, Tdif
     real(wp), dimension(ncol,nlay,ngpt) :: source_up, source_dn
     real(wp), dimension(ncol     ,ngpt) :: source_srf
     ! ------------------------------------
@@ -440,13 +440,11 @@ contains
     ! Cell properties: transmittance and reflectance for direct and diffuse radiation
     !
     !$acc enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_dn, flux_dir)
-    !$acc enter data create(Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up)
-    call sw_two_stream(ncol, nlay, ngpt, mu0, &
-                        tau , ssa , g   ,      &
-                        Rdif, Tdif, Rdir, Tdir, Tnoscat)
+    !$acc enter data create(Rdif, Tdif, source_up, source_dn, source_srf, flux_up)
     call sw_source_2str(ncol, nlay, ngpt, top_at_1,       &
-                        Rdir, Tdir, Tnoscat, sfc_alb_dir, &
-                        source_up, source_dn, source_srf, flux_dir)
+                        mu0, tau, ssa, g, sfc_alb_dir,    &
+                        source_up, source_dn, source_srf, &
+                        flux_dir, Rdif, Tdif)
     call adding(ncol, nlay, ngpt, top_at_1,   &
                 sfc_alb_dif, Rdif, Tdif,      &
                 source_dn, source_up, source_srf, flux_up, flux_dn)
@@ -462,7 +460,7 @@ contains
       end do
     end do
     !$acc exit data copyout(flux_up, flux_dn, flux_dir)
-    !$acc exit data delete (tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
+    !$acc exit data delete (tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, source_up, source_dn, source_srf)
 
   end subroutine sw_solver_2stream
 
@@ -477,41 +475,35 @@ contains
   ! This routine implements point-wise stencil, and has to be called in a loop
   !
   ! ---------------------------------------------------------------
-  subroutine lw_source_noscat_stencil(ncol, nlay, ngpt, icol, ilay, igpt,                   &
-                                      lay_source, lev_source_up, lev_source_dn, tau, trans, &
+  subroutine lw_source_noscat_stencil(lay_source, lev_source_up, lev_source_dn, tau, trans, &
                                       source_dn, source_up)
     !$acc routine seq
     !
-    integer,                               intent(in)   :: ncol, nlay, ngpt
-    integer,                               intent(in)   :: icol, ilay, igpt ! Working point coordinates
-    real(wp), dimension(ncol, nlay, ngpt), intent(in)   :: lay_source,    & ! Planck source at layer center
-                                                           lev_source_up, & ! Planck source at levels (layer edges),
-                                                           lev_source_dn, & !   increasing/decreasing layer index
-                                                           tau,           & ! Optical path (tau/mu)
-                                                           trans            ! Transmissivity (exp(-tau))
-    real(wp), dimension(ncol, nlay, ngpt), intent(inout):: source_dn, source_up
-                                                                  ! Source function at layer edges
-                                                                  ! Down at the bottom of the layer, up at the top
+    real(wp), intent(in)   :: lay_source,    & ! Planck source at layer center
+                              lev_source_up, & ! Planck source at levels (layer edges),
+                              lev_source_dn, & !   increasing/decreasing layer index
+                              tau,           & ! Optical path (tau/mu)
+                              trans            ! Transmissivity (exp(-tau))
+    real(wp), intent(out):: source_dn, source_up
+                                               ! Source function at layer edges
+                                               ! Down at the bottom of the layer, up at the top
     ! --------------------------------
     real(wp), parameter  :: tau_thresh = sqrt(epsilon(tau))
     real(wp)             :: fact
-
     ! ---------------------------------------------------------------
     !
     ! Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
     !   is of order epsilon (smallest difference from 1. in working precision)
     !   Thanks to Peter Blossey
     !
-    fact = merge((1._wp - trans(icol,ilay,igpt))/tau(icol,ilay,igpt) - trans(icol,ilay,igpt), &
-                          tau(icol,ilay,igpt) * ( 0.5_wp - 1._wp/3._wp*tau(icol,ilay,igpt) ), &
-                          tau(icol,ilay,igpt) > tau_thresh)
+    fact = merge( (1._wp - trans)/tau - trans,        &
+                  tau * ( 0.5_wp - 1._wp/3._wp*tau ), &
+                  tau > tau_thresh )
     !
     ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
     !
-    source_dn(icol,ilay,igpt) = (1._wp - trans(icol,ilay,igpt)) * lev_source_dn(icol,ilay,igpt) + &
-            2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_dn(icol,ilay,igpt))
-    source_up(icol,ilay,igpt) = (1._wp - trans(icol,ilay,igpt)) * lev_source_up(icol,ilay,igpt) + &
-            2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_up(icol,ilay,igpt))
+    source_dn = (1._wp - trans) * lev_source_dn + 2._wp * fact * (lay_source - lev_source_dn)
+    source_up = (1._wp - trans) * lev_source_up + 2._wp * fact * (lay_source - lev_source_up)
 
   end subroutine lw_source_noscat_stencil
   ! ---------------------------------------------------------------
@@ -537,10 +529,10 @@ contains
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
-          call lw_source_noscat_stencil(ncol, nlay, ngpt, icol, ilay, igpt,        &
-                                        lay_source, lev_source_up, lev_source_dn,  &
-                                        tau, trans,                                &
-                                        source_dn, source_up)
+          call lw_source_noscat_stencil(lay_source   (icol,ilay,igpt),                                &
+                                        lev_source_up(icol,ilay,igpt), lev_source_dn(icol,ilay,igpt), &
+                                        tau          (icol,ilay,igpt), trans        (icol,ilay,igpt), &
+                                        source_dn    (icol,ilay,igpt), source_up    (icol,ilay,igpt) )
         end do
       end do
     end do
@@ -803,149 +795,193 @@ contains
   ! Equations are developed in Meador and Weaver, 1980,
   !    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
   !
-    subroutine sw_two_stream(ncol, nlay, ngpt, mu0, tau, w0, g, &
-                                  Rdif, Tdif, Rdir, Tdir, Tnoscat) bind (C, name="sw_two_stream")
-      integer,                             intent(in)  :: ncol, nlay, ngpt
-      real(wp), dimension(ncol),           intent(in)  :: mu0
-      real(wp), dimension(ncol,nlay,ngpt), intent(in)  :: tau, w0, g
-      real(wp), dimension(ncol,nlay,ngpt), intent(out) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
+  ! This routine implements point-wise stencil, and has to be called in a loop
+  !
+  subroutine sw_two_stream_stencil(mu0, tau, w0, g, &
+                                   Rdif, Tdif, Rdir, Tdir, Tnoscat)
+    !$acc routine seq
 
-      ! -----------------------
-      integer  :: icol,ilay,igpt
+    real(wp), intent(in)  :: mu0
+    real(wp), intent(in)  :: tau, w0, g
+    real(wp), intent(out) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
 
-      ! Variables used in Meador and Weaver
-      real(wp) :: gamma1, gamma2, gamma3, gamma4
-      real(wp) :: alpha1, alpha2, k
+    ! Variables used in Meador and Weaver
+    real(wp) :: gamma1, gamma2, gamma3, gamma4
+    real(wp) :: alpha1, alpha2, k
 
-      ! Ancillary variables
-      real(wp) :: RT_term
-      real(wp) :: exp_minusktau, exp_minus2ktau
-      real(wp) :: k_mu, k_gamma3, k_gamma4
-      real(wp) :: mu0_inv(ncol)
-      ! ---------------------------------
-      ! ---------------------------------
-      !$acc enter data copyin (mu0, tau, w0, g)
-      !$acc enter data create(Rdif, Tdif, Rdir, Tdir, Tnoscat, mu0_inv)
+    ! Ancillary variables
+    real(wp) :: RT_term
+    real(wp) :: exp_minusktau, exp_minus2ktau
+    real(wp) :: k_mu, k_gamma3, k_gamma4
+    real(wp) :: mu0_inv
+    
+    mu0_inv = 1._wp/mu0
+    !
+    ! Zdunkowski Practical Improved Flux Method "PIFM"
+    !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
+    !
+    gamma1 = (8._wp - w0 * (5._wp + 3._wp * g)) * .25_wp
+    gamma2 =  3._wp *(w0 * (1._wp -         g)) * .25_wp
+    gamma3 = (2._wp - 3._wp * mu0        *  g ) * .25_wp
+    gamma4 =  1._wp - gamma3
 
-      !$acc parallel loop
-      do icol = 1, ncol
-        mu0_inv(icol) = 1._wp/mu0(icol)
-      enddo
+    alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
+    alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
+    ! Written to encourage vectorization of exponential, square root
+    ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
+    !   k = 0 for isotropic, conservative scattering; this lower limit on k
+    !   gives relative error with respect to conservative solution
+    !   of < 0.1% in Rdif down to tau = 10^-9
+    k = sqrt( max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp) )
+    exp_minusktau = exp(-tau*k)
+    !
+    ! Diffuse reflection and transmission
+    !
+    exp_minus2ktau = exp_minusktau * exp_minusktau
 
-      ! NOTE: this kernel appears to cause small (10^-6) differences between GPU
-      ! and CPU. This *might* be floating point differences in implementation of
-      ! the exp function.
-      !$acc  parallel loop collapse(3)
-      do igpt = 1, ngpt
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            ! Zdunkowski Practical Improved Flux Method "PIFM"
-            !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
-            !
-            gamma1= (8._wp - w0(icol,ilay,igpt) * (5._wp + 3._wp * g(icol,ilay,igpt))) * .25_wp
-            gamma2=  3._wp *(w0(icol,ilay,igpt) * (1._wp -         g(icol,ilay,igpt))) * .25_wp
-            gamma3= (2._wp - 3._wp * mu0(icol)  *                  g(icol,ilay,igpt) ) * .25_wp
-            gamma4=  1._wp - gamma3
+    ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
+    RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + &
+                       gamma1 * (1._wp - exp_minus2ktau) )
 
-            alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
-            alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
-            ! Written to encourage vectorization of exponential, square root
-            ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
-            !   k = 0 for isotropic, conservative scattering; this lower limit on k
-            !   gives relative error with respect to conservative solution
-            !   of < 0.1% in Rdif down to tau = 10^-9
-            k = sqrt(max((gamma1 - gamma2) * &
-                         (gamma1 + gamma2),  &
-                         1.e-12_wp))
-            exp_minusktau = exp(-tau(icol,ilay,igpt)*k)
-            !
-            ! Diffuse reflection and transmission
-            !
-            exp_minus2ktau = exp_minusktau * exp_minusktau
+    ! Equation 25
+    Rdif = RT_term * gamma2 * (1._wp - exp_minus2ktau)
 
-            ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
-            RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + &
-                               gamma1 * (1._wp - exp_minus2ktau) )
+    ! Equation 26
+    Tdif = RT_term * 2._wp * k * exp_minusktau
 
-            ! Equation 25
-            Rdif(icol,ilay,igpt) = RT_term * gamma2 * (1._wp - exp_minus2ktau)
+    !
+    ! Transmittance of direct, unscattered beam. Also used below
+    !
+    Tnoscat = exp(-tau*mu0_inv)
 
-            ! Equation 26
-            Tdif(icol,ilay,igpt) = RT_term * 2._wp * k * exp_minusktau
+    !
+    ! Direct reflect and transmission
+    !
+    k_mu     = k * mu0
+    k_gamma3 = k * gamma3
+    k_gamma4 = k * gamma4
 
-            !
-            ! Transmittance of direct, unscattered beam. Also used below
-            !
-            Tnoscat(icol,ilay,igpt) = exp(-tau(icol,ilay,igpt)*mu0_inv(icol))
+    !
+    ! Equation 14, multiplying top and bottom by exp(-k*tau)
+    !   and rearranging to avoid div by 0.
+    !
+    RT_term =  w0 * RT_term/merge(1._wp - k_mu*k_mu, &
+                                  epsilon(1._wp),    &
+                                  abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
 
-            !
-            ! Direct reflect and transmission
-            !
-            k_mu     = k * mu0(icol)
-            k_gamma3 = k * gamma3
-            k_gamma4 = k * gamma4
+    Rdir = RT_term  *                                            &
+        ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
+         (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
+         2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau  * Tnoscat)
 
-            !
-            ! Equation 14, multiplying top and bottom by exp(-k*tau)
-            !   and rearranging to avoid div by 0.
-            !
-            RT_term =  w0(icol,ilay,igpt) * RT_term/merge(1._wp - k_mu*k_mu, &
-                                                         epsilon(1._wp),    &
-                                                         abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
+    !
+    ! Equation 15, multiplying top and bottom by exp(-k*tau),
+    !   multiplying through by exp(-tau/mu0) to
+    !   prefer underflow to overflow
+    ! Omitting direct transmittance
+    !
+    Tdir = -RT_term * ((1._wp + k_mu) * (alpha1 + k_gamma4) * Tnoscat -                  &
+                       (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
+                       2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau )
 
-            Rdir(icol,ilay,igpt) = RT_term  *                                    &
-               ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
-                (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
-                2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau  * Tnoscat(icol,ilay,igpt))
+  end subroutine sw_two_stream_stencil
+  !
+  ! Driver function for sw_two_stream_stencil
+  !
+  subroutine sw_two_stream(ncol, nlay, ngpt, mu0, tau, w0, g, &
+    Rdif, Tdif, Rdir, Tdir, Tnoscat) bind (C, name="sw_two_stream")
+    integer,                             intent(in)  :: ncol, nlay, ngpt
+    real(wp), dimension(ncol),           intent(in)  :: mu0
+    real(wp), dimension(ncol,nlay,ngpt), intent(in)  :: tau, w0, g
+    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
 
-            !
-            ! Equation 15, multiplying top and bottom by exp(-k*tau),
-            !   multiplying through by exp(-tau/mu0) to
-            !   prefer underflow to overflow
-            ! Omitting direct transmittance
-            !
-            Tdir(icol,ilay,igpt) = &
-                     -RT_term * ((1._wp + k_mu) * (alpha1 + k_gamma4) * Tnoscat(icol,ilay,igpt) - &
-                                 (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat(icol,ilay,igpt) - &
-                                  2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau )
+    ! -----------------------
+    integer  :: icol,ilay,igpt
+    ! ---------------------------------
 
-          end do
+    !$acc enter data copyin (mu0, tau, w0, g)
+    !$acc enter data create(Rdif, Tdif, Rdir, Tdir, Tnoscat)
+
+    ! NOTE: this kernel appears to cause small (10^-6) differences between GPU
+    ! and CPU. This *might* be floating point differences in implementation of
+    ! the exp function.
+    !$acc  parallel loop collapse(3)
+    do igpt = 1, ngpt
+      do ilay = 1, nlay
+        do icol = 1, ncol
+        
+          call sw_two_stream_stencil(mu0(icol),                                                           &
+                                     tau (icol,ilay,igpt), w0  (icol,ilay,igpt), g      (icol,ilay,igpt), &
+                                     Rdif(icol,ilay,igpt), Tdif(icol,ilay,igpt),                          &
+                                     Rdir(icol,ilay,igpt), Tdir(icol,ilay,igpt), Tnoscat(icol,ilay,igpt)  )
+
         end do
       end do
-      !$acc exit data delete (mu0, tau, w0, g, mu0_inv)
-      !$acc exit data copyout(Rdif, Tdif, Rdir, Tdir, Tnoscat)
+    end do
+    !$acc exit data delete (mu0, tau, w0, g)
+    !$acc exit data copyout(Rdif, Tdif, Rdir, Tdir, Tnoscat)
 
-    end subroutine sw_two_stream
+  end subroutine sw_two_stream
   ! ---------------------------------------------------------------
   !
-  ! Direct beam source for diffuse radiation in layers and at surface;
-  !   report direct beam as a byproduct
+  ! Direct beam source for diffuse radiation in layers
   !
-  subroutine sw_source_2str(ncol, nlay, ngpt, top_at_1, Rdir, Tdir, Tnoscat, sfc_albedo, &
-                            source_up, source_dn, source_sfc, flux_dn_dir) bind(C, name="sw_source_2str")
+  subroutine sw_source_2str_stencil(Rdir, Tdir, Tnoscat, flux_dn_dir_in,  &
+                                    source_up, source_dn, flux_dn_dir_out)
+    !$acc routine seq
+    real(wp), intent(in ) :: Rdir, Tdir, Tnoscat ! Layer reflectance, transmittance for diffuse radiation
+    real(wp), intent(in ) :: flux_dn_dir_in      ! Flux at previous layer (+1 or -1 depending on processing direction)
+    real(wp), intent(out) :: source_dn, source_up
+    real(wp), intent(out) :: flux_dn_dir_out     ! Computed new direct beam flux
+
+    source_up       =    Rdir * flux_dn_dir_in
+    source_dn       =    Tdir * flux_dn_dir_in
+    flux_dn_dir_out = Tnoscat * flux_dn_dir_in
+
+  end subroutine sw_source_2str_stencil
+  !
+  ! Driver function to compute the direct beam source for diffuse radiation
+  !  in layers and at surface; report direct beam as a byproduct
+  !
+  subroutine sw_source_2str(ncol, nlay, ngpt, top_at_1,  &
+                            mu0, tau, w0, g, sfc_albedo, &
+                            source_up, source_dn, source_sfc, flux_dn_dir, Rdif, Tdif) bind(C, name="sw_source_2str")
     integer,                                 intent(in   ) :: ncol, nlay, ngpt
     logical(wl),                             intent(in   ) :: top_at_1
-    real(wp), dimension(ncol, nlay  , ngpt), intent(in   ) :: Rdir, Tdir, Tnoscat ! Layer reflectance, transmittance for diffuse radiation
+    real(wp), dimension(ncol),               intent(in   ) :: mu0
+    real(wp), dimension(ncol, nlay   ,ngpt), intent(in   ) :: tau, w0, g
     real(wp), dimension(ncol        , ngpt), intent(in   ) :: sfc_albedo          ! surface albedo for direct radiation
-    real(wp), dimension(ncol, nlay  , ngpt), intent(  out) :: source_dn, source_up
-    real(wp), dimension(ncol        , ngpt), intent(  out) :: source_sfc          ! Source function for upward radation at surface
+    real(wp), dimension(ncol, nlay  , ngpt), intent(out  ) :: source_dn, source_up
+    real(wp), dimension(ncol        , ngpt), intent(out  ) :: source_sfc          ! Source function for upward radation at surface
     real(wp), dimension(ncol, nlay+1, ngpt), intent(inout) :: flux_dn_dir ! Direct beam flux
-                                                                    ! intent(inout) because top layer includes incident flux
+                                                                          ! intent(inout) because top layer includes incident flux
+    real(wp), dimension(ncol, nlay  , ngpt), intent(out  ) :: Rdif, Tdif
 
-    integer :: icol, ilev, igpt
+    integer  :: icol, ilev, igpt
+    real(wp) :: Rdir, Tdir, Tnoscat
     ! ---------------------------------
     ! ---------------------------------
-    !$acc enter data copyin (Rdir, Tdir, Tnoscat, sfc_albedo, flux_dn_dir)
-    !$acc enter data create(source_dn, source_up, source_sfc)
+    !$acc data copyin(mu0, tau, w0, g, sfc_albedo),                   &
+    !$acc      copyout(Rdif, Tdif, source_dn, source_up, source_sfc), &
+    !$acc      copy(flux_dn_dir)
 
     if(top_at_1) then
       !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
           do ilev = 1, nlay
-            source_up(icol,ilev,igpt)     =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt)
-            source_dn(icol,ilev,igpt)     =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt)
-            flux_dn_dir(icol,ilev+1,igpt) = Tnoscat(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt)
+
+            call sw_two_stream_stencil(mu0(icol),                                                     &
+                                       tau (icol,ilev,igpt), w0  (icol,ilev,igpt), g(icol,ilev,igpt), &
+                                       Rdif(icol,ilev,igpt), Tdif(icol,ilev,igpt),                    &
+                                       Rdir, Tdir, Tnoscat  )
+
+            call sw_source_2str_stencil(Rdir, Tdir, Tnoscat,            &
+                                        flux_dn_dir(icol,ilev,  igpt),  &
+                                        source_up  (icol,ilev,  igpt),  &
+                                        source_dn  (icol,ilev,  igpt),  &
+                                        flux_dn_dir(icol,ilev+1,igpt)   )
+
             if(ilev == nlay) source_sfc(icol,igpt) = flux_dn_dir(icol,nlay+1,igpt)*sfc_albedo(icol,igpt)
           end do
         end do
@@ -957,17 +993,24 @@ contains
       do igpt = 1, ngpt
         do icol = 1, ncol
           do ilev = nlay, 1, -1
-            source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt)
-            source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt)
-            flux_dn_dir(icol,ilev,igpt) = Tnoscat(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt)
+            call sw_two_stream_stencil(mu0(icol),                                                     &
+                                       tau (icol,ilev,igpt), w0  (icol,ilev,igpt), g(icol,ilev,igpt), &
+                                       Rdif(icol,ilev,igpt), Tdif(icol,ilev,igpt),                    &
+                                       Rdir, Tdir, Tnoscat  )
+
+            call sw_source_2str_stencil(Rdir, Tdir, Tnoscat,            &
+                                        flux_dn_dir(icol,ilev+1,igpt),  &
+                                        source_up  (icol,ilev,  igpt),  &
+                                        source_dn  (icol,ilev,  igpt),  &
+                                        flux_dn_dir(icol,ilev,  igpt)   )
+
             if(ilev ==    1) source_sfc(icol,igpt) = flux_dn_dir(icol,    1,igpt)*sfc_albedo(icol,igpt)
           end do
         end do
       end do
     end if
-    !$acc exit data copyout(source_dn, source_up, source_sfc, flux_dn_dir)
-    !$acc exit data delete(Rdir, Tdir, Tnoscat, sfc_albedo)
-
+    
+    !$acc end data
   end subroutine sw_source_2str
 ! ---------------------------------------------------------------
 !

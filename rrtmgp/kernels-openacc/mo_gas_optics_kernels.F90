@@ -405,57 +405,63 @@ contains
 
     real(wp) :: myplay, mytlay, mycol_gas_h2o, mycol_gas_imnr, mycol_gas_0
     real(wp) :: myfminor(2,2)
-    integer  :: myjtemp, myjeta(2), gpt_diff, igpt0
+    integer  :: myjtemp, myjeta(2), max_gpt_diff, igpt0
     ! -----------------
 
     extent = size(scale_by_complement,dim=1)
 
-    gpt_diff = minor_limits_gpt(2,1) - minor_limits_gpt(1,1)
-    if ( all(minor_limits_gpt(2,:) - minor_limits_gpt(1,:) == gpt_diff) ) then
+    ! Find the largest number of g-points per band
+    max_gpt_diff = maxval( minor_limits_gpt(2,:) - minor_limits_gpt(1,:) )
 
-      !$acc parallel loop gang vector collapse(3)
-      do ilay = 1 , nlay
-        do icol = 1, ncol
-          do igpt0 = 0, gpt_diff
-            !
-            ! This check skips individual columns with no pressures in range
-            !
-            if ( layer_limits(icol,1) <= 0 .or. ilay < layer_limits(icol,1) .or. ilay > layer_limits(icol,2) ) cycle
+    !$acc parallel loop gang vector collapse(3)
+    do ilay = 1 , nlay
+      do icol = 1, ncol
+        do igpt0 = 0, max_gpt_diff
+          !
+          ! This check skips individual columns with no pressures in range
+          !
+          if ( layer_limits(icol,1) <= 0 .or. ilay < layer_limits(icol,1) .or. ilay > layer_limits(icol,2) ) cycle
 
-            myplay  = play (icol,ilay)
-            mytlay  = tlay (icol,ilay)
-            myjtemp = jtemp(icol,ilay)
-            mycol_gas_h2o = col_gas(icol,ilay,idx_h2o)
-            mycol_gas_0   = col_gas(icol,ilay,0)
+          myplay  = play (icol,ilay)
+          mytlay  = tlay (icol,ilay)
+          myjtemp = jtemp(icol,ilay)
+          mycol_gas_h2o = col_gas(icol,ilay,idx_h2o)
+          mycol_gas_0   = col_gas(icol,ilay,0)
 
-            do imnr = 1, extent
+          do imnr = 1, extent
 
-              scaling = col_gas(icol,ilay,idx_minor(imnr))
-              if (minor_scales_with_density(imnr)) then
-                !
-                ! NOTE: P needed in hPa to properly handle density scaling.
-                !
-                scaling = scaling * (PaTohPa * myplay/mytlay)
+            scaling = col_gas(icol,ilay,idx_minor(imnr))
+            if (minor_scales_with_density(imnr)) then
+              !
+              ! NOTE: P needed in hPa to properly handle density scaling.
+              !
+              scaling = scaling * (PaTohPa * myplay/mytlay)
 
-                if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
-                  mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr))
-                  vmr_fact = 1._wp / mycol_gas_0
-                  dry_fact = 1._wp / (1._wp + mycol_gas_h2o * vmr_fact)
-                  ! scale by density of special gas
-                  if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
-                    scaling = scaling * (1._wp - mycol_gas_imnr * vmr_fact * dry_fact)
-                  else
-                    scaling = scaling *          mycol_gas_imnr * vmr_fact * dry_fact
-                  endif
+              if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
+                mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr))
+                vmr_fact = 1._wp / mycol_gas_0
+                dry_fact = 1._wp / (1._wp + mycol_gas_h2o * vmr_fact)
+                ! scale by density of special gas
+                if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
+                  scaling = scaling * (1._wp - mycol_gas_imnr * vmr_fact * dry_fact)
+                else
+                  scaling = scaling *          mycol_gas_imnr * vmr_fact * dry_fact
                 endif
               endif
+            endif
 
-              !
-              ! Interpolation of absorption coefficient and calculation of optical depth
-              !
-              ! Which gpoint range does this minor gas affect?
-              gptS = minor_limits_gpt(1,imnr)
-              igpt = igpt0 + gptS
+            !
+            ! Interpolation of absorption coefficient and calculation of optical depth
+            !
+            ! Which gpoint range does this minor gas affect?
+            gptS = minor_limits_gpt(1,imnr)
+            gptE = minor_limits_gpt(2,imnr)
+            
+            ! Find the actual g-point to work on
+            igpt = igpt0 + gptS
+
+            ! Proceed only if the g-point is within the correct range
+            if (igpt <= gptE) then
               ! What is the starting point in the stored array of minor absorption coefficients?
               minor_start = kminor_start(imnr)
 
@@ -468,71 +474,13 @@ contains
 
               !$acc atomic update
               tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
-            enddo
+            endif
 
           enddo
-        enddo
-      enddo
 
-    else
-      
-    !$acc parallel loop collapse(3)
-    do imnr = 1, extent  ! loop over minor absorbers in each band
-      do icol = 1, ncol
-        do ilay = 1 , nlay
-          !
-          ! This check skips individual columns with no pressures in range
-          !
-          if(layer_limits(icol,1) > 0) then
-            if (ilay >= layer_limits(icol,1)  .and. ilay <= layer_limits(icol,2) ) then
-              !
-              ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
-              !
-              scaling = col_gas(icol,ilay,idx_minor(imnr))
-              !
-              ! Density scaling (e.g. for h2o continuum, collision-induced absorption)
-              !
-              if (minor_scales_with_density(imnr)) then
-                !
-                ! NOTE: P needed in hPa to properly handle density scaling.
-                !
-                scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
-                if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
-                  vmr_fact = 1._wp / col_gas(icol,ilay,0)
-                  dry_fact = 1._wp / (1._wp + col_gas(icol,ilay,idx_h2o) * vmr_fact)
-                  ! scale by density of special gas
-                  if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
-                    scaling = scaling * (1._wp - col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact)
-                  else
-                    scaling = scaling *          col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact
-                  endif
-                endif
-              endif
-              !
-              ! Interpolation of absorption coefficient and calculation of optical depth
-              !
-              ! Which gpoint range does this minor gas affect?
-              gptS = minor_limits_gpt(1,imnr)
-              gptE = minor_limits_gpt(2,imnr)
-              ! What is the starting point in the stored array of minor absorption coefficients?
-              minor_start = kminor_start(imnr)
-              do igpt = gptS,gptE
-                tau_minor = 0._wp
-                iflav = gpt_flv(idx_tropo,igpt) ! eta interpolation depends on flavor
-                minor_loc = minor_start + (igpt - gptS) ! add offset to starting point
-                kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, &
-                                           jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
-                tau_minor = kminor_loc * scaling
-                !$acc atomic update
-                tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
-              enddo
-            endif
-          endif
         enddo
       enddo
     enddo
-
-    endif
 
   end subroutine gas_optical_depths_minor
   ! ----------------------------------------------------------

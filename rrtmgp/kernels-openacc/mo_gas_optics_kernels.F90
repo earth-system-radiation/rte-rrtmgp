@@ -403,7 +403,6 @@ contains
     integer  :: gptS, gptE
     integer  :: minor_start, minor_loc, extent
 
-    real(wp),    dimension(ncol,nlay,ngpt) :: tau_t
     real(wp) :: myplay, mytlay, mycol_gas_h2o, mycol_gas_imnr, mycol_gas_0
     real(wp) :: myfminor(2,2)
     integer  :: myjtemp, myjeta(2), gpt_diff, igpt0

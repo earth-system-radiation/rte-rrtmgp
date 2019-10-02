@@ -9,8 +9,8 @@ ifeq ($(RTE_KERNELS), openacc)
   RTE_KERNEL_DIR    = ../rte/kernels-openacc
   RRTMGP_KERNEL_DIR = ../rrtmgp/kernels-openacc
 endif
-RTE_KERNEL_DIR += ../rte/kernels
-RRTMGP_KERNEL_DIR += ../rrtmgp/kernels
+RTE_KERNEL_DIR += ../rte/kernels-default
+RRTMGP_KERNEL_DIR += ../rrtmgp/kernels-default
 VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
 #
 # Compiler variables FC, FCFLAGS can be set in the environment or in Makefile.conf

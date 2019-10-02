@@ -127,6 +127,7 @@ module mo_gas_optics_rrtmgp
                                                                ! planck_frac(g-point, eta, pressure, temperature)
     real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (Planck temperatures,band)
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
+    real(wp), dimension(:,:),     allocatable :: optimal_single_angle_fit
     ! -----------------------------------------------------------------------------------
     ! Solar source function spectral mapping
     !   Allocated only when gas optics object is external-source
@@ -694,7 +695,8 @@ contains
                     scale_by_complement_upper,                      &
                     kminor_start_lower,                             &
                     kminor_start_upper,                             &
-                    totplnk, planck_frac, rayl_lower, rayl_upper) result(err_message)
+                    totplnk, planck_frac, rayl_lower, rayl_upper, &
+                    optimal_single_angle_fit) result(err_message)
     class(ty_gas_optics_rrtmgp),     intent(inout) :: this
     class(ty_gas_concs),                    intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*),   dimension(:),       intent(in   ) :: gas_names
@@ -710,6 +712,8 @@ contains
     real(wp),           dimension(:,:,:,:), intent(in   ) :: planck_frac
     real(wp),           dimension(:,:,:),   intent(in   ), &
                                               allocatable :: rayl_lower, rayl_upper
+    real(wp),           dimension(:,:),     intent(in   ), &
+                                              allocatable :: optimal_single_angle_fit
     character(len=*),   dimension(:),       intent(in   ) :: gas_minor,identifier_minor
     character(len=*),   dimension(:),       intent(in   ) :: minor_gases_lower, &
                                                              minor_gases_upper
@@ -749,6 +753,8 @@ contains
     !
     this%totplnk = totplnk
     this%planck_frac = planck_frac
+    this%optimal_single_angle_fit = optimal_single_angle_fit
+
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
     !   Planck grid and the Planck grid is equally spaced
@@ -1249,40 +1255,41 @@ contains
 
     !output
     character(len=128)   :: err_msg
-    real(wp), dimension(:,:), allocatable, intent(out) :: optimal_single_angles
+    real(wp), dimension(:,:), allocatable, &
+                                      intent(out)   :: optimal_single_angles
 
     ! Local variables
     !
-    integer  :: ncol, ngpt
-    integer  :: icol, igpt, ibnd
+    integer  :: ncol, ngpt, nbnd
+    integer  :: col, gpt, bnd
     real(wp) :: trans_total
 
-    real(wp), parameter, dimension(16) ::                        &
-            coeff_slope  =      [0.0_wp,       -0.35_wp,         0._wp,               0._wp, &  ! Diffusivity angle, not Gaussian angle
-                                 -0.10_wp,       0.15_wp,       0.20_wp,             0.10_wp, &
-                                 -0.40_wp,          0._wp,         0._wp,               0.05_wp, &
-                                 -0.10_wp,          0._wp,         0._wp,               0._wp]
-
-    real(wp), parameter, dimension(16) ::                        &
-            coeff_intercept  =    [1.9_wp,      1.85_wp,       1.65_wp,               1.70_wp, &  ! Diffusivity angle, not Gaussian angle
-                                 1.65_wp,        1.50_wp,       1.50_wp,             1.55_wp, &
-                                 1.90_wp,          1.60_wp,         1.60_wp,               1.55_wp, &
-                                 1.90_wp,          1.70_wp,         1.85_wp,               1.75_wp]
-
-    ncol  = optical_props%get_ncol()
-    ngpt  = optical_props%get_ngpt()
+    ncol = optical_props%get_ncol()
+    ngpt = optical_props%get_ngpt()
+    nbnd = optical_props%get_nband()
 
     if(allocated(optimal_single_angles)) deallocate(optimal_single_angles)
     allocate(optimal_single_angles(ncol,ngpt))
 
     err_msg=''
+    ! Check match in dimensions between tau and optimal_single_angle_fit
+    if (nbnd .ne. size(this%optimal_single_angle_fit,2)) then
+      err_msg='Size (band) of optimal_single_angle_fit not consistent with input optical properties'
+     return
+    end if
+    if (size(this%optimal_single_angle_fit,1) .ne. 2) then
+      err_msg='Number of coefficients in optimal_single_angle_fit not equal to linear fit'
+     return
+    end if
+
     if (err_msg /=  '') return
 
-    do icol = 1, ncol
-      do igpt = 1, ngpt
-        trans_total = exp(-sum(optical_props%tau(icol,:,igpt)))
-        ibnd = optical_props%gpt2band(igpt)
-        optimal_single_angles(icol,igpt) = coeff_slope(ibnd)*trans_total + coeff_intercept(ibnd)
+    do col = 1, ncol
+      do gpt = 1, ngpt
+        trans_total = exp(-sum(optical_props%tau(col,:,gpt)))
+        bnd = optical_props%gpt2band(gpt)
+        optimal_single_angles(col,gpt) = this%optimal_single_angle_fit(1,bnd)*trans_total + &
+          this%optimal_single_angle_fit(2,bnd)
       end do
     end do
 

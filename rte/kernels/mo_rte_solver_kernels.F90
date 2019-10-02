@@ -36,10 +36,9 @@ module mo_rte_solver_kernels
   end interface apply_BC
 
   public :: apply_BC, &
-            lw_solver_noscat, lw_solver_noscat_GaussQuad,  &
-            lw_solver_2stream,                                                    &
+            lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
             sw_solver_noscat,                             sw_solver_2stream
-
+            
   ! These routines don't really need to be visible but making them so is useful for testing.
   public :: lw_source_noscat, lw_combine_sources, &
             lw_source_2str, sw_source_2str, &
@@ -197,51 +196,6 @@ contains
       flux_dn(:,:,:) = flux_dn(:,:,:) + radn_dn(:,:,:)
     end do
   end subroutine lw_solver_noscat_GaussQuad
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! LW transport, no scattering, optimal single-angle quadrature
-  !   Users provide a set of weights and quadrature angles
-  !   Routine sums over single-angle solutions for each sets of angles/weights
-  !
-  ! ---------------------------------------------------------------
-!subroutine lw_solver_noscat_lw_Ds(ncol, nlay, ngpt, top_at_1, nmus, Ds_ncol, Ds_wt, &
-!                                 tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_up, flux_dn) &
-!                                 bind(C, name="lw_solver_noscat_lw_Ds")
-!  integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
-!  logical(wl),                           intent(in   ) :: top_at_1
-!  integer,                               intent(in   ) :: nmus         ! number of quadrature angles
-!  real(wp), dimension(ncol,       ngpt), intent(in   ) :: Ds_ncol      ! quadrature secants, weights
-!  real(wp),                              intent(in   ) :: Ds_wt        ! quadrature weights
-!  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
-!  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
-!  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
-!                                      ! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
-!                                      ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
-!  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
-!                                             ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
-!  real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
-!  real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
-!  real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up      ! Radiances [W/m2-str]
-!  real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn      ! Top level must contain incident flux boundary condition
-!  ! Local variables
-!  real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
-
-!  integer :: imu, top_level
-!  ! ------------------------------------
-!  !
-!  ! For the first angle output arrays store total flux
-!  !
-!  call lw_solver_noscat(ncol, nlay, ngpt, &
-!                        top_at_1, Ds_ncol, Ds_wt, tau, &
-!                        lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
-!                        flux_up, flux_dn)
-!  !
-!  ! For more than one angle use local arrays
-!  !
-!  !top_level = MERGE(1, nlay+1, top_at_1)
-!  !call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
-
-!end subroutine lw_solver_noscat_lw_Ds
   ! -------------------------------------------------------------------------------------------------
   !
   ! Longwave two-stream calculation:

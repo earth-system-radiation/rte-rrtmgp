@@ -153,6 +153,7 @@ module mo_gas_optics_rrtmgp
     procedure, public :: get_press_max
     procedure, public :: get_temp_min
     procedure, public :: get_temp_max
+    procedure, public :: compute_optimal_single_angles
     ! Internal procedures
     procedure, private :: load_int
     procedure, private :: load_ext
@@ -1075,8 +1076,8 @@ contains
   !
   function check_key_species_present(this, gas_desc) result(error_msg)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    class(ty_gas_concs),                intent(in) :: gas_desc
-    character(len=128)                             :: error_msg
+    class(ty_gas_concs),         intent(in) :: gas_desc
+    character(len=128)                      :: error_msg
 
     ! Local variables
     character(len=32), dimension(count(this%is_key(:)  )) :: key_gas_names
@@ -1234,6 +1235,58 @@ contains
     col_dry(:,:) = 10._wp*delta_plev(:,:)*avogad/(1000._wp*m_air(:,:)*100._wp*spread(g0(:),dim=2,ncopies=nlay))
     col_dry(:,:) = col_dry(:,:)/(1._wp+vmr_h2o(:,:))
   end function get_col_dry
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! JSD
+  !
+  function compute_optimal_single_angles(this, optical_props, &
+                                         optimal_single_angles) result(err_msg)
+
+    ! input
+    class(ty_gas_optics_rrtmgp), &
+                                      intent(in   ) :: this
+    class(ty_optical_props_arry),     intent(in   ) :: optical_props  ! Gas volume mixing ratios
+
+    !output
+    character(len=128)   :: err_msg
+    real(wp), dimension(:,:), allocatable, intent(out) :: optimal_single_angles
+
+    ! Local variables
+    !
+    integer  :: ncol, ngpt
+    integer  :: icol, igpt, ibnd
+    real(wp) :: trans_total
+
+    real(wp), parameter, dimension(16) ::                        &
+            coeff_slope  =      [0.0_wp,       -0.35_wp,         0._wp,               0._wp, &  ! Diffusivity angle, not Gaussian angle
+                                 -0.10_wp,       0.15_wp,       0.20_wp,             0.10_wp, &
+                                 -0.40_wp,          0._wp,         0._wp,               0.05_wp, &
+                                 -0.10_wp,          0._wp,         0._wp,               0._wp]
+
+    real(wp), parameter, dimension(16) ::                        &
+            coeff_intercept  =    [1.9_wp,      1.85_wp,       1.65_wp,               1.70_wp, &  ! Diffusivity angle, not Gaussian angle
+                                 1.65_wp,        1.50_wp,       1.50_wp,             1.55_wp, &
+                                 1.90_wp,          1.60_wp,         1.60_wp,               1.55_wp, &
+                                 1.90_wp,          1.70_wp,         1.85_wp,               1.75_wp]
+
+    ncol  = optical_props%get_ncol()
+    ngpt  = optical_props%get_ngpt()
+
+    if(allocated(optimal_single_angles)) deallocate(optimal_single_angles)
+    allocate(optimal_single_angles(ncol,ngpt))
+
+    err_msg=''
+    if (err_msg /=  '') return
+
+    do icol = 1, ncol
+      do igpt = 1, ngpt
+        trans_total = exp(-sum(optical_props%tau(icol,:,igpt)))
+        ibnd = optical_props%gpt2band(igpt)
+        optimal_single_angles(icol,igpt) = coeff_slope(ibnd)*trans_total + coeff_intercept(ibnd)
+      end do
+    end do
+
+  end function compute_optimal_single_angles
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Internal procedures

@@ -42,7 +42,7 @@ module mo_rte_lw
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes
   use mo_rte_solver_kernels, &
-                        only: apply_BC, lw_solver_noscat_GaussQuad, lw_solver_2stream
+                        only: apply_BC, lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream
   implicit none
   private
 
@@ -56,7 +56,8 @@ contains
   function rte_lw(optical_props, top_at_1, &
                   sources, sfc_emis,       &
                   fluxes,                  &
-                  inc_flux, n_gauss_angles) result(error_msg)
+                  inc_flux, n_gauss_angles, &
+                  lw_Ds) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
@@ -70,6 +71,8 @@ contains
               target, optional, intent(in   ) :: inc_flux    ! incident flux at domain top [W/m2] (ncol, ngpts)
     integer,          optional, intent(in   ) :: n_gauss_angles ! Number of angles used in Gaussian quadrature
                                                                 ! (no-scattering solution)
+    real(wp), dimension(:,:),   &
+                      optional, intent(in   ) :: lw_Ds
     character(len=128)                        :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
     !
@@ -77,9 +80,13 @@ contains
     !
     integer :: ncol, nlay, ngpt, nband
     integer :: n_quad_angs
+    integer :: iquad
     integer :: icol, iband, igpt
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
+
+    real(wp) :: lw_Ds_wt
+
     ! --------------------------------------------------
     !
     ! Weights and angle secants for first order (k=1) Gaussian quadrature.
@@ -89,7 +96,7 @@ contains
     integer,  parameter :: max_gauss_pts = 4
     real(wp), parameter,                         &
       dimension(max_gauss_pts, max_gauss_pts) :: &
-        gauss_Ds  = RESHAPE([1.66_wp,               0._wp,         0._wp,         0._wp, &  ! Diffusivity angle, not Gaussian angle
+        gauss_Ds = RESHAPE([1.66_wp,          0._wp,         0._wp,         0._wp, &  ! Diffusivity angle, not Gaussian angle
                              1.18350343_wp, 2.81649655_wp,         0._wp,         0._wp, &
                              1.09719858_wp, 1.69338507_wp, 4.70941630_wp,         0._wp, &
                              1.06056257_wp, 1.38282560_wp, 2.40148179_wp, 7.15513024_wp], &
@@ -120,7 +127,6 @@ contains
       error_msg = "rte_lw: no space allocated for fluxes"
       return
     end if
-
     !
     ! Source functions
     !
@@ -159,6 +165,7 @@ contains
         error_msg = "rte_lw: have to ask for at least one quadrature point for no-scattering calculation"
       n_quad_angs = n_gauss_angles
     end if
+
     !
     ! Ensure values of tau, ssa, and g are reasonable
     !
@@ -205,12 +212,37 @@ contains
         !$acc enter data copyin(optical_props%tau)
         error_msg =  optical_props%validate()
         if(len_trim(error_msg) > 0) return
-        call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                              n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
+        if (present(lw_Ds)) then
+          lw_Ds_wt = 0.5
+          call lw_solver_noscat(ncol, nlay, ngpt, &
+                                logical(top_at_1, wl), lw_Ds, lw_Ds_wt, &
+                                optical_props%tau, &
+                                sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                                sfc_emis_gpt, sources%sfc_source,  &
+                                gpt_flux_up, gpt_flux_dn)
+!                                lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+!                                flux_up, flux_dn)
+!          call lw_solver_noscat_lw_Ds(ncol, nlay, ngpt, logical(top_at_1, wl), &
+!                              n_quad_angs, lw_Ds, lw_Ds_wt, &
+!                              optical_props%tau,                                                  &
+!                              sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+!                              sfc_emis_gpt, sources%sfc_source,  &
+!                              gpt_flux_up, gpt_flux_dn)
+
+!    call lw_solver_noscat(ncol, nlay, ngpt, &
+!                          top_at_1, Ds_ncol, Ds_wt, tau, &
+!                          lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+!                          flux_up, flux_dn)
+
+
+        else
+          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                              n_quad_angs, gauss_Ds, gauss_wts(1:n_quad_angs,n_quad_angs), &
                               optical_props%tau,                                                  &
                               sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                               sfc_emis_gpt, sources%sfc_source,  &
                               gpt_flux_up, gpt_flux_dn)
+        end if
         !$acc exit data delete(optical_props%tau)
       class is (ty_optical_props_2str)
         !

@@ -19,7 +19,8 @@ module mo_util_array
   use mo_rte_kind,      only: wp, wl
   implicit none
   interface any_vals_less_than
-    module procedure any_vals_less_than_1D, any_vals_less_than_2D, any_vals_less_than_3D
+    module procedure any_vals_less_than_1D,        any_vals_less_than_2D,        any_vals_less_than_3D
+    module procedure any_vals_less_than_1D_masked, any_vals_less_than_2D_masked, any_vals_less_than_3D_masked
   end interface
   interface any_vals_outside
     module procedure any_vals_outside_1D,        any_vals_outside_2D,        any_vals_outside_3D
@@ -77,6 +78,53 @@ contains
 
   end function any_vals_less_than_3D
   !-------------------------------------------------------------------------------------------------
+  ! Masked versions
+  !-------------------------------------------------------------------------------------------------
+  logical function any_vals_less_than_1D_masked(array, mask, check_value)
+    real   (wp), dimension(:), intent(in) :: array
+    logical(wl), dimension(:), intent(in) :: mask
+    real   (wp),               intent(in) :: check_value
+
+    real(wp) :: minValue
+
+    !$acc kernels copyin(array)
+    minValue = minval(array, mask=mask)
+    !$acc end kernels
+
+    any_vals_less_than_1D_masked = (minValue < check_value)
+
+  end function any_vals_less_than_1D_masked
+  !-------------------------------------------------------------------------------------------------
+  logical function any_vals_less_than_2D_masked(array, mask, check_value)
+    real   (wp), dimension(:,:), intent(in) :: array
+    logical(wl), dimension(:,:), intent(in) :: mask
+    real   (wp),                 intent(in) :: check_value
+
+    real(wp) :: minValue
+
+    !$acc kernels copyin(array)
+    minValue = minval(array, mask=mask)
+    !$acc end kernels
+
+    any_vals_less_than_2D_masked = (minValue < check_value)
+
+  end function any_vals_less_than_2D_masked
+  !-------------------------------------------------------------------------------------------------
+  logical function any_vals_less_than_3D_masked(array, mask, check_value)
+    real   (wp), dimension(:,:,:), intent(in) :: array
+    logical(wl), dimension(:,:,:), intent(in) :: mask
+    real   (wp),                   intent(in) :: check_value
+
+    real(wp) :: minValue
+
+    !$acc kernels copyin(array)
+    minValue = minval(array, mask=mask)
+    !$acc end kernels
+
+    any_vals_less_than_3D_masked = (minValue < check_value)
+
+  end function any_vals_less_than_3D_masked
+  !-------------------------------------------------------------------------------------------------
   ! Values outside a range
   !-------------------------------------------------------------------------------------------------
   logical function any_vals_outside_1D(array, checkMin, checkMax)
@@ -126,7 +174,7 @@ contains
   logical function any_vals_outside_1D_masked(array, mask, checkMin, checkMax)
     real   (wp), dimension(:), intent(in) :: array
     logical(wl), dimension(:), intent(in) :: mask
-    real(wp),               intent(in) :: checkMin, checkMax
+    real(wp),                  intent(in) :: checkMin, checkMax
 
     real(wp) :: minValue, maxValue
 
@@ -141,7 +189,7 @@ contains
   logical function any_vals_outside_2D_masked(array, mask, checkMin, checkMax)
     real   (wp), dimension(:,:), intent(in) :: array
     logical(wl), dimension(:,:), intent(in) :: mask
-    real(wp),                 intent(in) :: checkMin, checkMax
+    real(wp),                    intent(in) :: checkMin, checkMax
 
     real(wp) :: minValue, maxValue
 
@@ -156,7 +204,7 @@ contains
   logical function any_vals_outside_3D_masked(array, mask, checkMin, checkMax)
     real   (wp), dimension(:,:,:), intent(in) :: array
     logical(wl), dimension(:,:,:), intent(in) :: mask
-    real(wp),                   intent(in) :: checkMin, checkMax
+    real(wp),                      intent(in) :: checkMin, checkMax
 
     real(wp) :: minValue, maxValue
 

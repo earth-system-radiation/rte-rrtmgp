@@ -20,7 +20,7 @@
 
 module mo_cloud_optics
   use mo_rte_kind,      only: wp
-  use mo_util_array,    only: any_vals_outside
+  use mo_util_array,    only: any_vals_less_than, any_vals_outside
   use mo_optical_props, only: ty_optical_props,      &
                               ty_optical_props_arry, &
                               ty_optical_props_1scl, &
@@ -387,13 +387,10 @@ contains
     !
     if(any_vals_outside(reliq, liqmsk, this%radliq_lwr, this%radliq_upr)) &
       error_msg = 'cloud optics: liquid effective radius is out of bounds'
-
     if(any_vals_outside(reice, icemsk, this%radice_lwr, this%radice_upr)) &
       error_msg = 'cloud optics: ice effective radius is out of bounds'
-
-    if(any((liqmsk .and.  clwp < 0._wp) .or. (icemsk .and.  ciwp < 0._wp))) &
+    if(any_vals_less_than(clwp, liqmsk, 0._wp) .or. any_vals_less_than(ciwp, icemsk, 0._wp)) &
       error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
-
     if(error_msg /= "") return
 
     ! ----------------------------------------

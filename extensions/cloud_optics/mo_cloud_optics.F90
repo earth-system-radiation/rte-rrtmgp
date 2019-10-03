@@ -20,6 +20,7 @@
 
 module mo_cloud_optics
   use mo_rte_kind,      only: wp
+  use mo_util_array,    only: any_vals_outside
   use mo_optical_props, only: ty_optical_props,      &
                               ty_optical_props_arry, &
                               ty_optical_props_1scl, &
@@ -156,6 +157,10 @@ contains
     this%lut_extice = lut_extice
     this%lut_ssaice = lut_ssaice
     this%lut_asyice = lut_asyice
+    !
+    ! Set default ice roughness - min values
+    !
+    error_msg = this%set_ice_roughness(1)
   end function load_lut
   ! ------------------------------------------------------------------------------
   !
@@ -272,6 +277,11 @@ contains
     this%pade_sizreg_extice = pade_sizreg_extice
     this%pade_sizreg_ssaice = pade_sizreg_ssaice
     this%pade_sizreg_asyice = pade_sizreg_asyice
+
+    !
+    ! Set default ice roughness - min values
+    !
+    error_msg = this%set_ice_roughness(1)
   end function load_pade
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -313,19 +323,16 @@ contains
   ! Compute single-scattering properties
   !
   function cloud_optics(this, &
-                        ncol, nlay, nbnd, nrghice,                &
                         liqmsk, icemsk, clwp, ciwp, reliq, reice, &
                         optical_props) result(error_msg)
     class(ty_cloud_optics), &
               intent(in   ) :: this
-    integer,  intent(in   ) :: ncol, nlay, nbnd
-    integer,  intent(in   ) :: nrghice              ! number of ice roughness categories
-    logical,  intent(in   ) :: liqmsk(ncol,nlay), & ! Cloud mask for liquid and ice clouds respectively
-                               icemsk(ncol,nlay)
-    real(wp), intent(in   ) :: ciwp  (ncol,nlay), &     ! cloud ice water path
-                               clwp  (ncol,nlay), &     ! cloud liquid water path
-                               reice (ncol,nlay), &      ! cloud ice particle effective size (microns)
-                               reliq (ncol,nlay)      ! cloud liquid particle effective radius (microns)
+    logical,  intent(in   ) :: liqmsk(:,:), & ! Cloud mask for liquid and ice clouds respectively
+                               icemsk(:,:)
+    real(wp), intent(in   ) :: clwp  (:,:), &     ! cloud ice water path
+                               ciwp  (:,:), &     ! cloud liquid water path
+                               reliq (:,:), &      ! cloud ice particle effective size (microns)
+                               reice (:,:)      ! cloud liquid particle effective radius (microns)
     class(ty_optical_props_arry), &
               intent(inout) :: optical_props
                                                ! Dimensions: (ncol,nlay,nbnd)
@@ -333,7 +340,8 @@ contains
     character(len=128)      :: error_msg
     ! ------- Local -------
     type(ty_optical_props_2str) :: clouds_liq, clouds_ice
-    integer  :: nsizereg, ibnd, imom
+    integer :: nsizereg, ibnd, imom
+    integer :: ncol, nlay, nbnd
     ! ----------------------------------------
     !
     ! Error checking
@@ -345,19 +353,42 @@ contains
       return
     end if
 
+    ncol = size(clwp,1)
+    nlay = size(clwp,2)
+    nbnd = this%get_nband()
+    !
+    ! Array sizes
+    !
+    if(size(liqmsk,1) /= ncol .or. size(liqmsk,2) /= nlay) &
+      error_msg = "cloud optics: liqmask has wrong extents"
+    if(size(icemsk,1) /= ncol .or. size(icemsk,2) /= nlay) &
+      error_msg = "cloud optics: icemsk has wrong extents"
+    if(size(ciwp,  1) /= ncol .or. size(ciwp,  2) /= nlay) &
+      error_msg = "cloud optics: ciwp has wrong extents"
+    if(size(reliq, 1) /= ncol .or. size(reliq, 2) /= nlay) &
+      error_msg = "cloud optics: reliq has wrong extents"
+    if(size(reice, 1) /= ncol .or. size(reice, 2) /= nlay) &
+      error_msg = "cloud optics: reice has wrong extents"
+    if(optical_props%get_ncol() /= ncol .or. optical_props%get_nlay() /= nlay) &
+      error_msg = "cloud optics: optical_props have wrong extents"
+    if(error_msg /= "") return
+
+    !
+    ! Spectral consistency
+    !
     if(.not. this%bands_are_equal(optical_props)) &
       error_msg = "cloud optics: optical properties don't have the same band structure"
-
     if(optical_props%get_nband() /= optical_props%get_ngpt() ) &
       error_msg = "cloud optics: optical properties must be requested by band not g-points"
+    if(error_msg /= "") return
 
-    if (this%icergh < 1 .or. this%icergh > this%get_num_ice_roughness_types()) &
-       error_msg = 'cloud optics: cloud ice surface roughness flag is out of bounds'
-
-    if(any(liqmsk .and. (reliq < this%radliq_lwr .or. reliq > this%radliq_upr))) &
+    !
+    ! Particle size, liquid/ice water paths
+    !
+    if(any_vals_outside(reliq, liqmsk, this%radliq_lwr, this%radliq_upr)) &
       error_msg = 'cloud optics: liquid effective radius is out of bounds'
 
-    if(any(icemsk .and. (reice < this%radice_lwr .or. reice > this%radice_upr))) &
+    if(any_vals_outside(reice, icemsk, this%radice_lwr, this%radice_upr)) &
       error_msg = 'cloud optics: ice effective radius is out of bounds'
 
     if(any((liqmsk .and.  clwp < 0._wp) .or. (icemsk .and.  ciwp < 0._wp))) &
@@ -466,8 +497,10 @@ contains
     character(len=128)                    :: error_msg
 
     error_msg = ""
-    if(icergh < 1) &
-      error_msg = "cloud_optics%set_ice_roughness(): must be > 0"
+    if(.not. allocated(this%pade_extice) .and. .not. allocated(this%lut_extice )) &
+      error_msg = "cloud_optics%set_ice_roughness(): can't set before initialization"
+    if (icergh < 1 .or. icergh > this%get_num_ice_roughness_types()) &
+       error_msg = 'cloud optics: cloud ice surface roughness flag is out of bounds'
     if(error_msg /= "") return
 
     this%icergh = icergh
@@ -556,8 +589,8 @@ contains
   !---------------------------------------------------------------------------
   function compute_from_pade(ncol, nlay, nbnd, mask, size, nsizes, size_bounds, m, n, pade_coeffs)
     integer,                        intent(in) :: ncol, nlay, nbnd, nsizes
-    logical,  dimension(ncol,nlay), intent(in) :: mask
-    real(wp), dimension(ncol,nlay), intent(in) :: size
+    logical,  dimension(:,:), intent(in) :: mask
+    real(wp), dimension(:,:), intent(in) :: size
     real(wp), dimension(nsizes+1),  intent(in) :: size_bounds
     integer,                        intent(in) :: m, n
     real(wp), dimension(nbnd,nsizes,0:m+n), &

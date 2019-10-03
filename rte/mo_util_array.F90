@@ -16,13 +16,14 @@ module mo_util_array
 ! These are in a module so code can be written for both CPUs and GPUs
 ! Used only by Fortran classes so routines don't need C bindings and can use assumed-shape
 !
-  use mo_rte_kind,      only: wp
+  use mo_rte_kind,      only: wp, wl
   implicit none
   interface any_vals_less_than
     module procedure any_vals_less_than_1D, any_vals_less_than_2D, any_vals_less_than_3D
   end interface
   interface any_vals_outside
-    module procedure any_vals_outside_1D, any_vals_outside_2D, any_vals_outside_3D
+    module procedure any_vals_outside_1D,        any_vals_outside_2D,        any_vals_outside_3D
+    module procedure any_vals_outside_1D_masked, any_vals_outside_2D_masked, any_vals_outside_3D_masked
   end interface
   interface zero_array
     module procedure zero_array_1D, zero_array_3D, zero_array_4D
@@ -119,6 +120,53 @@ contains
     any_vals_outside_3D = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_3D
+  ! ----------------------------------------------------------
+  ! Masked versions
+  ! ----------------------------------------------------------
+  logical function any_vals_outside_1D_masked(array, mask, checkMin, checkMax)
+    real   (wp), dimension(:), intent(in) :: array
+    logical(wl), dimension(:), intent(in) :: mask
+    real(wp),               intent(in) :: checkMin, checkMax
+
+    real(wp) :: minValue, maxValue
+
+    !$acc kernels copyin(array)
+    minValue = minval(array, mask=mask)
+    maxValue = maxval(array, mask=mask)
+    !$acc end kernels
+    any_vals_outside_1D_masked = minValue < checkMin .or. maxValue > checkMax
+
+  end function any_vals_outside_1D_masked
+! ----------------------------------------------------------
+  logical function any_vals_outside_2D_masked(array, mask, checkMin, checkMax)
+    real   (wp), dimension(:,:), intent(in) :: array
+    logical(wl), dimension(:,:), intent(in) :: mask
+    real(wp),                 intent(in) :: checkMin, checkMax
+
+    real(wp) :: minValue, maxValue
+
+    !$acc kernels copyin(array)
+    minValue = minval(array, mask=mask)
+    maxValue = maxval(array, mask=mask)
+    !$acc end kernels
+    any_vals_outside_2D_masked = minValue < checkMin .or. maxValue > checkMax
+
+  end function any_vals_outside_2D_masked
+! ----------------------------------------------------------
+  logical function any_vals_outside_3D_masked(array, mask, checkMin, checkMax)
+    real   (wp), dimension(:,:,:), intent(in) :: array
+    logical(wl), dimension(:,:,:), intent(in) :: mask
+    real(wp),                   intent(in) :: checkMin, checkMax
+
+    real(wp) :: minValue, maxValue
+
+    !$acc kernels copyin(array)
+    minValue = minval(array, mask=mask)
+    maxValue = maxval(array, mask=mask)
+    !$acc end kernels
+    any_vals_outside_3D_masked = minValue < checkMin .or. maxValue > checkMax
+
+  end function any_vals_outside_3D_masked
   !-------------------------------------------------------------------------------------------------
   ! Initializing arrays to 0
   !-------------------------------------------------------------------------------------------------

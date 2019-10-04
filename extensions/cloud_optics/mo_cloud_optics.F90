@@ -19,7 +19,7 @@
 ! -------------------------------------------------------------------------------------------------
 
 module mo_cloud_optics
-  use mo_rte_kind,      only: wp
+  use mo_rte_kind,      only: wp, wl
   use mo_util_array,    only: any_vals_less_than, any_vals_outside
   use mo_optical_props, only: ty_optical_props,      &
                               ty_optical_props_arry, &
@@ -323,15 +323,13 @@ contains
   ! Compute single-scattering properties
   !
   function cloud_optics(this, &
-                        liqmsk, icemsk, clwp, ciwp, reliq, reice, &
+                        clwp, ciwp, reliq, reice, &
                         optical_props) result(error_msg)
     class(ty_cloud_optics), &
               intent(in   ) :: this
-    logical,  intent(in   ) :: liqmsk(:,:), & ! Cloud mask for liquid and ice clouds respectively
-                               icemsk(:,:)
-    real(wp), intent(in   ) :: clwp  (:,:), &     ! cloud ice water path
-                               ciwp  (:,:), &     ! cloud liquid water path
-                               reliq (:,:), &      ! cloud ice particle effective size (microns)
+    real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud ice water path    (units?)
+                               ciwp  (:,:), &   ! cloud liquid water path (units?)
+                               reliq (:,:), &   ! cloud ice particle effective size (microns)
                                reice (:,:)      ! cloud liquid particle effective radius (microns)
     class(ty_optical_props_arry), &
               intent(inout) :: optical_props
@@ -339,9 +337,16 @@ contains
 
     character(len=128)      :: error_msg
     ! ------- Local -------
-    type(ty_optical_props_2str) :: clouds_liq, clouds_ice
-    integer :: nsizereg, ibnd, imom
-    integer :: ncol, nlay, nbnd
+    logical(wl), dimension(size(clwp,1), size(clwp,2)) :: liqmsk, icemsk
+    real(wp),    dimension(size(clwp,1), size(clwp,2), this%get_nband()) :: &
+                ltau, ltaussa, ltaussag, itau, itaussa, itaussag
+                ! Optical properties: tau, tau*ssa, tau*ssa*g
+                ! liquid and ice separately
+    integer  :: ncol, nlay, nbnd
+    integer  :: nsizereg
+    integer  :: icol, ilay, ibnd
+    ! scalars for total tau, tau*ssa
+    real(wp) :: tau, taussa
     ! ----------------------------------------
     !
     ! Error checking
@@ -382,6 +387,8 @@ contains
       error_msg = "cloud optics: optical properties must be requested by band not g-points"
     if(error_msg /= "") return
 
+    liqmsk = clwp > 0._wp
+    icemsk = ciwp > 0._wp
     !
     ! Particle size, liquid/ice water paths
     !
@@ -395,92 +402,103 @@ contains
 
     ! ----------------------------------------
     !
-    ! Compute cloud optical properties. Use lookup tables if available, Pade approximants if not.
+    ! The tables and Pade coefficients determing extinction coeffient, single-scattering albedo,
+    !   and asymmetry parameter g as a function of effective raduis
+    ! We compute the optical depth tau (=exintinction coeff * condensed water path)
+    !   and the products tau*ssa and tau*ssa*g for liquid and ice cloud separately.
+    ! These are used to determine the optical properties of ice and water cloud together.
+    ! We could compute the properties for liquid and ice separately and
+    !    use ty_optical_props_arry%increment but this involves substantially more division.
     !
-    error_msg = clouds_liq%alloc_2str(ncol,nlay, this)
-    if(error_msg /= "") return
-    error_msg = clouds_ice%alloc_2str(ncol,nlay, this)
     if (allocated(this%lut_extliq)) then
       !
       ! Liquid
       !
-      clouds_liq%tau = compute_from_table(ncol,nlay,nbnd,liqmsk,reliq,this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
-                                  this%lut_extliq)
-      clouds_liq%ssa = compute_from_table(ncol,nlay,nbnd,liqmsk,reliq,this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
-                                  this%lut_ssaliq)
-      clouds_liq%g   = compute_from_table(ncol,nlay,nbnd,liqmsk,reliq,this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
-                                  this%lut_asyliq  )
-      do ibnd = 1,nbnd
-        where(liqmsk) clouds_liq%tau(1:ncol,1:nlay,ibnd) = clouds_liq%tau(1:ncol,1:nlay,ibnd) * clwp(1:ncol,1:nlay)
-      end do
+      call compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq,               &
+                                  this%liq_nsteps,this%liq_step_size,this%radliq_lwr,  &
+                                  this%lut_extliq, this%lut_ssaliq, this%lut_asyliq,   &
+                                  ltau, ltaussa, ltaussag)
       !
       ! Ice
       !
-      clouds_ice%tau = compute_from_table(ncol,nlay,nbnd,icemsk,reice,this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
-                                  this%lut_extice(:,:,this%icergh))
-      clouds_ice%ssa = compute_from_table(ncol,nlay,nbnd,icemsk,reice,this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
-                                  this%lut_ssaice (:,:,this%icergh))
-      clouds_ice%g   = compute_from_table(ncol,nlay,nbnd,icemsk,reice,this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
-                                  this%lut_asyice  (:,:,this%icergh))
-      do ibnd = 1, nbnd
-        where(icemsk) clouds_ice%tau(1:ncol,1:nlay,ibnd) = clouds_ice%tau(1:ncol,1:nlay,ibnd) * ciwp(1:ncol,1:nlay)
-      end do
+      call compute_all_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, &
+                                  this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
+                                  this%lut_extice(:,:,this%icergh),      &
+                                  this%lut_ssaice(:,:,this%icergh),      &
+                                  this%lut_asyice(:,:,this%icergh),      &
+                                  itau, itaussa, itaussag)
     else
       !
       ! Cloud optical properties from Pade coefficient method
       !
-      ! This assumes that all the Pade treaments have the same number of size regimes
+      ! This line assumes that all the Pade treaments have the same number of size regimes
+      !
       nsizereg = size(this%pade_extliq,2)
       !
       ! Liquid
       !
-      clouds_liq%tau = compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_extliq,2,3,this%pade_extliq)
-      clouds_liq%ssa = 1._wp - max(0._wp,                                             &
-                       compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_ssaliq,2,2,this%pade_ssaliq) &
-                                  )
-      clouds_liq%g   = compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_asyliq,2,2,this%pade_asyliq)
+      ltau     = compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_extliq,2,3,this%pade_extliq)
       do ibnd = 1, nbnd
-        where(liqmsk) clouds_liq%tau(1:ncol,1:nlay,ibnd) = clouds_liq%tau(1:ncol,1:nlay,ibnd) * clwp(1:ncol,1:nlay)
+        where(liqmsk) ltau(1:ncol,1:nlay,ibnd) = ltau(1:ncol,1:nlay,ibnd) * clwp(1:ncol,1:nlay)
       end do
+      ltaussa  = ltau * (1._wp - &
+                 max(0._wp,compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_ssaliq,2,2,this%pade_ssaliq) &
+                     ))
+      ltaussag = ltaussa * &
+                 compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_asyliq,2,2,this%pade_asyliq)
       !
       ! Ice
       !
-      clouds_ice%tau = compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_extice,2,3, &
-                                         this%pade_extice(:,:,:,this%icergh))
-      clouds_ice%ssa = 1._wp - max(0._wp,                                                                  &
-                       compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_ssaice,2,2, &
-                                         this%pade_ssaice(:,:,:,this%icergh)))
-      clouds_ice%g   = compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_asyice,2,2, &
-                                         this%pade_asyice(:,:,:,this%icergh))
+      itau     = compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_extice, &
+                                   2,3,this%pade_extice(:,:,:,this%icergh))
       do ibnd = 1, nbnd
-        where(icemsk) clouds_ice%tau(1:ncol,1:nlay,ibnd) = clouds_ice%tau(1:ncol,1:nlay,ibnd) * ciwp(1:ncol,1:nlay)
+        where(icemsk) itau(1:ncol,1:nlay,ibnd) = itau(1:ncol,1:nlay,ibnd) * ciwp(1:ncol,1:nlay)
       end do
+      itaussa  = itau * (1._wp - &
+                 max(0._wp,compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_ssaice, &
+                                   2,2,this%pade_ssaice(:,:,:,this%icergh))                                &
+                     ))
+      itaussag = itaussa * &
+                 compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_asyice, &
+                                   2,2,this%pade_asyice(:,:,:,this%icergh))
     endif
 
     !
     ! Combine liquid and ice contributions into total cloud optical properties
+    !   See also the increment routines in mo_optical_props_kernels
     !
-   error_msg = clouds_ice%increment(clouds_liq)
-   !
-   ! Copy total cloud properties onto outputs
-   !
-   select type(optical_props)
-   type is (ty_optical_props_1scl)
-     optical_props%tau(1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd) * &
-                                      (1._wp - clouds_liq%ssa(1:ncol,1:nlay,1:nbnd))
-   type is (ty_optical_props_2str)
-     optical_props%tau(1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd)
-     optical_props%ssa(1:ncol,1:nlay,1:nbnd) = clouds_liq%ssa(1:ncol,1:nlay,1:nbnd)
-     optical_props%g  (1:ncol,1:nlay,1:nbnd) = clouds_liq%g  (1:ncol,1:nlay,1:nbnd)
-   type is (ty_optical_props_nstr)
-     optical_props%tau(  1:ncol,1:nlay,1:nbnd) = clouds_liq%tau(1:ncol,1:nlay,1:nbnd)
-     optical_props%ssa(  1:ncol,1:nlay,1:nbnd) = clouds_liq%ssa(1:ncol,1:nlay,1:nbnd)
-     optical_props%p  (1,1:ncol,1:nlay,1:nbnd) = clouds_liq%g  (1:ncol,1:nlay,1:nbnd)
-     do imom = 2, optical_props%get_nmom()
-       optical_props%p(imom,1:ncol,1:nlay,1:nbnd) = clouds_liq%g   (       1:ncol,1:nlay,1:nbnd) * &
-                                                    optical_props%p(imom-1,1:ncol,1:nlay,1:nbnd)
-     end do
-   end select
+    select type(optical_props)
+    type is (ty_optical_props_1scl)
+      do ibnd = 1, nbnd
+        do ilay = 1, nlay
+          do icol = 1,ncol
+            ! Absorption optical depth  = (1-ssa) * tau = tau - taussa
+            optical_props%tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) + &
+                                                (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd))
+          end do
+        end do
+      end do
+    type is (ty_optical_props_2str)
+      do ibnd = 1, nbnd
+        do ilay = 1, nlay
+          do icol = 1,ncol
+            tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd)
+            taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd)
+            optical_props%g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / &
+                                                       max(epsilon(tau), taussa)
+            optical_props%ssa(icol,ilay,ibnd) = taussa/max(epsilon(tau), tau)
+            optical_props%tau(icol,ilay,ibnd) = tau
+          end do
+        end do
+      end do
+    type is (ty_optical_props_nstr)
+      error_msg = "cloud optics: n-stream calculations not yet supported"
+!        optical_props%p  (1,1:ncol,1:nlay,1:nbnd) = clouds_liq%g  (1:ncol,1:nlay,1:nbnd)
+!        do imom = 2, optical_props%get_nmom()
+!          optical_props%p(imom,1:ncol,1:nlay,1:nbnd) = clouds_liq%g   (       1:ncol,1:nlay,1:nbnd) * &
+!                                                       optical_props%p(imom-1,1:ncol,1:nlay,1:nbnd)
+!        end do
+    end select
 
   end function cloud_optics
   !--------------------------------------------------------------------------------------------------------------------
@@ -580,6 +598,54 @@ contains
     end do
   end function compute_from_table
   !---------------------------------------------------------------------------
+  !
+  ! Linearly interpolate values from a lookup table with "nsteps" evenly-spaced
+  !   elements starting at "offset." The table's second dimension is band.
+  ! Returns 0 where the mask is false.
+  ! We could also try gather/scatter for efficiency
+  !
+  subroutine compute_all_from_table(ncol, nlay, nbnd, mask, lwp, re, &
+                                    nsteps, step_size, offset,       &
+                                    tau_table, ssa_table, asy_table, &
+                                    tau, taussa, taussag)
+    integer,                          intent(in) :: ncol, nlay, nbnd, nsteps
+    logical,  dimension(ncol,  nlay), intent(in) :: mask
+    real(wp), dimension(ncol,  nlay), intent(in) :: lwp, re
+    real(wp),                         intent(in) :: step_size, offset
+    real(wp), dimension(nsteps,nbnd), intent(in) :: tau_table, ssa_table, asy_table
+    real(wp), dimension(ncol,nlay,nbnd)          :: tau, taussa, taussag
+    ! ---------------------------
+    integer  :: icol, ilay, ibnd
+    integer  :: index
+    real(wp) :: fint
+    real(wp) :: t, ts, tsg  ! tau, tau*ssa, tau*ssa*g
+    ! ---------------------------
+    do ilay = 1,nlay
+      do icol = 1, ncol
+        if(mask(icol,ilay)) then
+          index = min(floor((re(icol,ilay) - offset)/step_size)+1, nsteps-1)
+          fint = (re(icol,ilay) - offset)/step_size - (index-1)
+          do ibnd = 1, nbnd
+            t   = lwp(icol,ilay) * &
+                  (tau_table(index,  ibnd) + fint * (tau_table(index+1,ibnd) - tau_table(index,ibnd)))
+            ts  = t              * &
+                  (ssa_table(index,  ibnd) + fint * (ssa_table(index+1,ibnd) - ssa_table(index,ibnd)))
+            taussag(icol,ilay,ibnd) =  &
+                  ts             * &
+                  (asy_table(index,  ibnd) + fint * (asy_table(index+1,ibnd) - asy_table(index,ibnd)))
+            taussa (icol,ilay,ibnd) = ts
+            tau    (icol,ilay,ibnd) = t
+          end do
+        else
+          do ibnd = 1, nbnd
+            tau    (icol,ilay,ibnd) = 0._wp
+            taussa (icol,ilay,ibnd) = 0._wp
+            taussag(icol,ilay,ibnd) = 0._wp
+          end do
+        end if
+      end do
+    end do
+  end subroutine compute_all_from_table
   !
   ! Pade functions
   !

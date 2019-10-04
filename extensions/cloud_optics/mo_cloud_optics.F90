@@ -393,6 +393,11 @@ contains
     if(optical_props%get_nband() /= optical_props%get_ngpt() ) &
       error_msg = "cloud optics: optical properties must be requested by band not g-points"
     if(error_msg /= "") return
+
+    !
+    ! Cloud masks; don't need value re values if there's no cloud
+    !
+    !$acc enter data create (liqmsk,icemsk)
     !$acc parallel loop gang vector collapse(2) copyin(clwp, ciwp) copyout(liqmsk,icemsk)
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -458,6 +463,7 @@ contains
                                  2, 2, this%pade_sizreg_asyice, this%pade_asyice, &
                                  itau, itaussa, itaussag)
     endif
+    !$acc exit data delete(liqmsk,icemsk)
 
     !
     ! Combine liquid and ice contributions into total cloud optical properties

@@ -27,6 +27,9 @@ module mo_cloud_optics
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
   implicit none
+  interface pade_eval
+    module procedure pade_eval_nbnd, pade_eval_1
+  end interface pade_eval
   private
   ! -----------------------------------------------------------------------------------
   type, extends(ty_optical_props), public :: ty_cloud_optics
@@ -201,6 +204,9 @@ contains
     ncoeff_ssa_g = size(pade_ssaliq,dim=3)
     nrghice      = size(pade_extice,dim=4)
     nbound       = size(pade_sizreg_extliq)
+    ! The number of size regimes is assumed in the Pade evaluations
+    if (nsizereg /= 3) &
+      error_msg = "cloud optics: code assumes exactly three size regimes for Pade approximants but data is otherwise"
     error_msg = this%init(band_lims_wvn, name="RRTMGP cloud optics")
     !
     ! Error checking
@@ -233,6 +239,7 @@ contains
     this%radliq_upr = pade_sizreg_extliq(nbound)
     this%radice_lwr = pade_sizreg_extice(1)
     this%radice_upr = pade_sizreg_extice(nbound)
+    if(error_msg /= "") return
 
     if(any([pade_sizreg_ssaliq(1), pade_sizreg_asyliq(1)] < this%radliq_lwr)) &
       error_msg = "cloud_optics%init(): one or more Pade size regimes have inconsistent lowest values"
@@ -435,37 +442,21 @@ contains
     else
       !
       ! Cloud optical properties from Pade coefficient method
-      !
-      ! This line assumes that all the Pade treaments have the same number of size regimes
+      !   Hard coded assumptions: order of approximants, three size regimes
       !
       nsizereg = size(this%pade_extliq,2)
-      !
-      ! Liquid
-      !
-      ltau     = compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_extliq,2,3,this%pade_extliq)
-      do ibnd = 1, nbnd
-        where(liqmsk) ltau(1:ncol,1:nlay,ibnd) = ltau(1:ncol,1:nlay,ibnd) * clwp(1:ncol,1:nlay)
-      end do
-      ltaussa  = ltau * (1._wp - &
-                 max(0._wp,compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_ssaliq,2,2,this%pade_ssaliq) &
-                     ))
-      ltaussag = ltaussa * &
-                 compute_from_pade(ncol,nlay,nbnd,liqmsk,reliq,nsizereg,this%pade_sizreg_asyliq,2,2,this%pade_asyliq)
-      !
-      ! Ice
-      !
-      itau     = compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_extice, &
-                                   2,3,this%pade_extice(:,:,:,this%icergh))
-      do ibnd = 1, nbnd
-        where(icemsk) itau(1:ncol,1:nlay,ibnd) = itau(1:ncol,1:nlay,ibnd) * ciwp(1:ncol,1:nlay)
-      end do
-      itaussa  = itau * (1._wp - &
-                 max(0._wp,compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_ssaice, &
-                                   2,2,this%pade_ssaice(:,:,:,this%icergh))                                &
-                     ))
-      itaussag = itaussa * &
-                 compute_from_pade(ncol,nlay,nbnd,icemsk,reice,nsizereg,this%pade_sizreg_asyice, &
-                                   2,2,this%pade_asyice(:,:,:,this%icergh))
+      call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
+                                 liqmsk, clwp, reliq,        &
+                                 2, 3, this%pade_sizreg_extliq, this%pade_extliq, &
+                                 2, 2, this%pade_sizreg_ssaliq, this%pade_ssaliq, &
+                                 2, 2, this%pade_sizreg_asyliq, this%pade_asyliq, &
+                                 ltau, ltaussa, ltaussag)
+      call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
+                                 icemsk, ciwp, reice,        &
+                                 2, 3, this%pade_sizreg_extice, this%pade_extice, &
+                                 2, 2, this%pade_sizreg_ssaice, this%pade_ssaice, &
+                                 2, 2, this%pade_sizreg_asyice, this%pade_asyice, &
+                                 itau, itaussa, itaussag)
     endif
 
     !
@@ -498,11 +489,6 @@ contains
       end do
     type is (ty_optical_props_nstr)
       error_msg = "cloud optics: n-stream calculations not yet supported"
-!        optical_props%p  (1,1:ncol,1:nlay,1:nbnd) = clouds_liq%g  (1:ncol,1:nlay,1:nbnd)
-!        do imom = 2, optical_props%get_nmom()
-!          optical_props%p(imom,1:ncol,1:nlay,1:nbnd) = clouds_liq%g   (       1:ncol,1:nlay,1:nbnd) * &
-!                                                       optical_props%p(imom-1,1:ncol,1:nlay,1:nbnd)
-!        end do
     end select
 
   end function cloud_optics
@@ -687,15 +673,76 @@ contains
 
   end function compute_from_pade
   !---------------------------------------------------------------------------
+  subroutine compute_all_from_pade(ncol, nlay, nbnd, nsizes, &
+                                   mask, lwp, re,            &
+                                   m_ext, n_ext, re_bounds_ext, coeffs_ext, &
+                                   m_ssa, n_ssa, re_bounds_ssa, coeffs_ssa, &
+                                   m_asy, n_asy, re_bounds_asy, coeffs_asy, &
+                                   tau, taussa, taussag)
+    integer,                        intent(in) :: ncol, nlay, nbnd, nsizes
+    logical(wl),  &
+              dimension(ncol,nlay), intent(in) :: mask
+    real(wp), dimension(ncol,nlay), intent(in) :: lwp, re
+    real(wp), dimension(nsizes+1),  intent(in) :: re_bounds_ext, re_bounds_ssa, re_bounds_asy
+    integer,                        intent(in) :: m_ext, n_ext
+    real(wp), dimension(nbnd,nsizes,0:m_ext+n_ext), &
+                                    intent(in) :: coeffs_ext
+    integer,                        intent(in) :: m_ssa, n_ssa
+    real(wp), dimension(nbnd,nsizes,0:m_ssa+n_ssa), &
+                                    intent(in) :: coeffs_ssa
+    integer,                        intent(in) :: m_asy, n_asy
+    real(wp), dimension(nbnd,nsizes,0:m_asy+n_asy), &
+                                    intent(in) :: coeffs_asy
+    real(wp), dimension(ncol,nlay,nbnd)          :: tau, taussa, taussag
+    ! ---------------------------
+    integer  :: icol, ilay, ibnd, irad
+    real(wp) :: t, ts
+
+    do ibnd = 1, nbnd
+      do ilay = 1,nlay
+        do icol = 1, ncol
+          if(mask(icol,ilay)) then
+            !
+            ! Finds index into size regime table
+            ! This works only if there are precisely three size regimes (four bounds) and it's
+            !   previously guaranteed that size_bounds(1) <= size <= size_bounds(4)
+            !
+            irad = min(floor((re(icol,ilay) - re_bounds_ext(2))/re_bounds_ext(3))+2, 3)
+            t   = lwp(icol,ilay) *     &
+                  pade_eval(ibnd, nbnd, nsizes, m_ext, n_ext, irad, re(icol,ilay), coeffs_ext)
+
+            irad = min(floor((re(icol,ilay) - re_bounds_ssa(2))/re_bounds_ssa(3))+2, 3)
+            ! Pade approximants for co-albedo can sometimes be negative
+            ts  = t              * (1._wp - max(0._wp, &
+                  pade_eval(ibnd, nbnd, nsizes, m_ssa, n_ssa, irad, re(icol,ilay), coeffs_ssa)))
+
+            irad = min(floor((re(icol,ilay) - re_bounds_asy(2))/re_bounds_asy(3))+2, 3)
+            taussag(icol,ilay,ibnd) =  &
+                  ts             *     &
+                  pade_eval(ibnd, nbnd, nsizes, m_asy, n_asy, irad, re(icol,ilay), coeffs_asy)
+
+            taussa (icol,ilay,ibnd) = ts
+            tau    (icol,ilay,ibnd) = t
+          else
+            tau    (icol,ilay,ibnd) = 0._wp
+            taussa (icol,ilay,ibnd) = 0._wp
+            taussag(icol,ilay,ibnd) = 0._wp
+          end if
+        end do
+      end do
+    end do
+
+  end subroutine compute_all_from_pade
+  !---------------------------------------------------------------------------
   !
   ! Evaluate Pade approximant of order [m/n]
   !
-  function pade_eval(nbnd, nrads, m, n, irad, re, pade_coeffs)
+  function pade_eval_nbnd(nbnd, nrads, m, n, irad, re, pade_coeffs)
     integer,                intent(in) :: nbnd, nrads, m, n, irad
     real(wp), dimension(nbnd, nrads, 0:m+n), &
                             intent(in) :: pade_coeffs
     real(wp),               intent(in) :: re
-    real(wp), dimension(nbnd)         :: pade_eval
+    real(wp), dimension(nbnd)          :: pade_eval_nbnd
 
     integer :: iband
     real(wp) :: numer, denom
@@ -714,7 +761,35 @@ contains
       end do
       numer = pade_coeffs(iband,irad,0)  +re*numer
 
-      pade_eval(iband) = numer/denom
+      pade_eval_nbnd(iband) = numer/denom
     end do
-  end function pade_eval
+  end function pade_eval_nbnd
+  !---------------------------------------------------------------------------
+  !
+  ! Evaluate Pade approximant of order [m/n]
+  !
+  function pade_eval_1(iband, nbnd, nrads, m, n, irad, re, pade_coeffs)
+    integer,                intent(in) :: iband, nbnd, nrads, m, n, irad
+    real(wp), dimension(nbnd, nrads, 0:m+n), &
+                            intent(in) :: pade_coeffs
+    real(wp),               intent(in) :: re
+    real(wp)                           :: pade_eval_1
+
+    real(wp) :: numer, denom
+    integer  :: i
+
+    denom = pade_coeffs(iband,irad,n+m)
+    do i = n-1+m, 1+m, -1
+      denom = pade_coeffs(iband,irad,i)+re*denom
+    end do
+    denom =  1._wp                     +re*denom
+
+    numer = pade_coeffs(iband,irad,m)
+    do i = m-1, 1, -1
+      numer = pade_coeffs(iband,irad,i)+re*numer
+    end do
+    numer = pade_coeffs(iband,irad,0)  +re*numer
+
+    pade_eval_1 = numer/denom
+  end function pade_eval_1
 end module mo_cloud_optics

@@ -386,9 +386,14 @@ contains
     if(optical_props%get_nband() /= optical_props%get_ngpt() ) &
       error_msg = "cloud optics: optical properties must be requested by band not g-points"
     if(error_msg /= "") return
+    !$acc parallel loop gang vector collapse(2) copyin(clwp, ciwp) copyout(liqmsk,icemsk)
+    do ilay = 1, nlay
+      do icol = 1, ncol
+        liqmsk(icol,ilay) = clwp(icol,ilay) > 0._wp
+        icemsk(icol,ilay) = ciwp(icol,ilay) > 0._wp
+      end do
+    end do
 
-    liqmsk = clwp > 0._wp
-    icemsk = ciwp > 0._wp
     !
     ! Particle size, liquid/ice water paths
     !
@@ -620,12 +625,13 @@ contains
     real(wp) :: fint
     real(wp) :: t, ts, tsg  ! tau, tau*ssa, tau*ssa*g
     ! ---------------------------
-    do ilay = 1,nlay
-      do icol = 1, ncol
-        if(mask(icol,ilay)) then
-          index = min(floor((re(icol,ilay) - offset)/step_size)+1, nsteps-1)
-          fint = (re(icol,ilay) - offset)/step_size - (index-1)
-          do ibnd = 1, nbnd
+    !$acc parallel loop gang vector collapse(3) copyin(lwp, re, mask, tau_table, ssa_table, asy_table) copyout(tau, taussa, taussag)
+    do ibnd = 1, nbnd
+      do ilay = 1,nlay
+        do icol = 1, ncol
+          if(mask(icol,ilay)) then
+            index = min(floor((re(icol,ilay) - offset)/step_size)+1, nsteps-1)
+            fint = (re(icol,ilay) - offset)/step_size - (index-1)
             t   = lwp(icol,ilay) * &
                   (tau_table(index,  ibnd) + fint * (tau_table(index+1,ibnd) - tau_table(index,ibnd)))
             ts  = t              * &
@@ -635,14 +641,12 @@ contains
                   (asy_table(index,  ibnd) + fint * (asy_table(index+1,ibnd) - asy_table(index,ibnd)))
             taussa (icol,ilay,ibnd) = ts
             tau    (icol,ilay,ibnd) = t
-          end do
-        else
-          do ibnd = 1, nbnd
+          else
             tau    (icol,ilay,ibnd) = 0._wp
             taussa (icol,ilay,ibnd) = 0._wp
             taussag(icol,ilay,ibnd) = 0._wp
-          end do
-        end if
+          end if
+        end do
       end do
     end do
   end subroutine compute_all_from_table

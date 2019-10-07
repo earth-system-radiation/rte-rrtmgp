@@ -359,6 +359,9 @@ contains
     ! Error checking
     !
     ! ----------------------------------------
+    !$acc enter data copyin(clwp, ciwp, reliq, reice)
+    !$acc enter data create(ltau, ltaussa, ltaussag, itau, itaussa, itaussag)
+    !$acc enter data create (liqmsk,icemsk)
     error_msg = ''
     if(.not.(allocated(this%lut_extliq) .or. allocated(this%pade_extliq))) then
       error_msg = 'cloud optics: no data has been initialized'
@@ -397,7 +400,6 @@ contains
     !
     ! Cloud masks; don't need value re values if there's no cloud
     !
-    !$acc enter data create (liqmsk,icemsk)
     !$acc parallel loop gang vector collapse(2) copyin(clwp, ciwp) copyout(liqmsk,icemsk)
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -471,6 +473,9 @@ contains
     !
     select type(optical_props)
     type is (ty_optical_props_1scl)
+      !$acc parallel loop gang vector collapse(3) &
+      !$acc& copyin(optical_props, ltau, itau, ltaussa, itaussa) &
+      !$acc& copyout(optical_props%tau)
       do ibnd = 1, nbnd
         do ilay = 1, nlay
           do icol = 1,ncol
@@ -481,6 +486,9 @@ contains
         end do
       end do
     type is (ty_optical_props_2str)
+      !$acc parallel loop gang vector collapse(3) &
+      !$acc& copyin(optical_props, ltau, itau, ltaussa, itaussa, ltaussag, itaussag) &
+      !$acc& copyout(optical_props%tau, optical_props%ssa, optical_props%g)
       do ibnd = 1, nbnd
         do ilay = 1, nlay
           do icol = 1,ncol
@@ -493,9 +501,13 @@ contains
           end do
         end do
       end do
+      !!$acc exit data copyout(optical_props%tau,optical_props%ssa,optical_props%g)
     type is (ty_optical_props_nstr)
       error_msg = "cloud optics: n-stream calculations not yet supported"
     end select
+    !$acc exit data delete (liqmsk,icemsk)
+    !$acc exit data delete(ltau, ltaussa, ltaussag, itau, itaussa, itaussag)
+    !$acc exit data delete(clwp, ciwp, reliq, reice)
 
   end function cloud_optics
   !--------------------------------------------------------------------------------------------------------------------

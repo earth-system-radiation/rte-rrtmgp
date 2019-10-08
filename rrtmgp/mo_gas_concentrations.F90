@@ -32,6 +32,7 @@
 module mo_gas_concentrations
   use mo_rte_kind,    only: wp
   use mo_util_string, only: lower_case
+  use mo_util_array,  only: any_vals_outside
   implicit none
   integer, parameter :: GAS_NOT_IN_LIST = -1
 
@@ -116,7 +117,7 @@ contains
     ! ---------
     error_msg = ''
 
-    if (any(w < 0._wp .or. w > 1._wp)) then
+    if (any_vals_outside(w, 0._wp, 1._wp)) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
     if(this%nlay > 0) then
@@ -151,7 +152,7 @@ contains
     ! ---------
     error_msg = ''
 
-    if (any(w < 0._wp .or. w > 1._wp)) then
+    if (any_vals_outside(w, 0._wp, 1._wp)) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
     if(this%ncol > 0 .and. size(w, 1) /= this%ncol) then

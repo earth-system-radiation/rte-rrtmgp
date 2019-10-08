@@ -179,7 +179,7 @@ contains
     temp2D(1:ncol_l,1:nexp_l) = spread(read_field(ncid, "surface_emissivity",  ncol_l), dim=2, ncopies=nexp_l)
     surface_emissivity  = reshape(temp2D, shape = [blocksize, nblocks])
 
-    temp2D(1:ncol_l,1:nexp_l) = spread(read_field(ncid, "surface_temperature", ncol_l), dim=2, ncopies=nexp_l)
+    temp2D(1:ncol_l,1:nexp_l) = read_field(ncid, "surface_temperature", ncol_l, nexp_l)
     surface_temperature = reshape(temp2D, shape = [blocksize, nblocks])
 
     ncid = nf90_close(ncid)

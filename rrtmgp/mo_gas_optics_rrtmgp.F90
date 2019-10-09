@@ -23,7 +23,7 @@
 module mo_gas_optics_rrtmgp
   use mo_rte_kind,           only: wp, wl
   use mo_rrtmgp_constants,   only: avogad, m_dry, m_h2o, grav
-  use mo_util_array,         only: zero_array, any_vals_less_than, any_vals_outside
+  use mo_util_array,         only: zero_array, any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props,      only: ty_optical_props
   use mo_source_functions,   only: ty_source_func_lw
   use mo_gas_optics_kernels, only: interpolation,                                                       &
@@ -173,14 +173,6 @@ module mo_gas_optics_rrtmgp
   !
   public :: get_col_dry ! Utility function, not type-bound
 
-  interface check_range
-    module procedure check_range_1D, check_range_2D, check_range_3D
-  end interface check_range
-
-  interface check_extent
-    module procedure check_extent_1D, check_extent_2D, check_extent_3D
-    module procedure check_extent_4D, check_extent_5D, check_extent_6D
-  end interface check_extent
 contains
   ! --------------------------------------------------------------------------------------
   !
@@ -265,14 +257,17 @@ contains
     ! External source -- check arrays sizes and values
     ! input data sizes and values
     !
-    error_msg = check_extent(tsfc, ncol, 'tsfc')
+    if(.not. extents_are(tsfc, ncol)) &
+      error_msg = "gas_optics(): array tsfc has wrong size"
+    if(any_vals_outside(tsfc, this%temp_ref_min,  this%temp_ref_max)) &
+      error_msg = "gas_optics(): array tsfc has values outside range"
     if(error_msg  /= '') return
-    error_msg = check_range(tsfc, this%temp_ref_min,  this%temp_ref_max,  'tsfc')
-    if(error_msg  /= '') return
+
     if(present(tlev)) then
-      error_msg = check_extent(tlev, ncol, nlay+1, 'tlev')
-      if(error_msg  /= '') return
-      error_msg = check_range(tlev, this%temp_ref_min, this%temp_ref_max, 'tlev')
+      if(.not. extents_are(tlev, ncol, nlay+1)) &
+        error_msg = "gas_optics(): array tlev has wrong size"
+      if(any_vals_outside(tlev, this%temp_ref_min, this%temp_ref_max)) &
+        error_msg = "gas_optics(): array tlev has values outside range"
       if(error_msg  /= '') return
     end if
 
@@ -351,8 +346,10 @@ contains
     !
     ! External source function is constant
     !
-    error_msg = check_extent(toa_src,     ncol,         ngpt, 'toa_src')
+    if(.not. extents_are(toa_src, ncol, ngpt)) &
+      error_msg = "gas_optics(): array toa_src has wrong size"
     if(error_msg  /= '') return
+
     !$acc parallel loop collapse(2)
     do igpt = 1,ngpt
        do icol = 1,ncol
@@ -433,22 +430,27 @@ contains
     !
     ! Check input data sizes and values
     !
-    error_msg = check_extent(play, ncol, nlay,   'play')
+    if(.not. extents_are(play, ncol, nlay  )) &
+      error_msg = "gas_optics(): array play has wrong size"
+    if(.not. extents_are(tlay, ncol, nlay  )) &
+      error_msg = "gas_optics(): array tlay has wrong size"
+    if(.not. extents_are(plev, ncol, nlay+1)) &
+      error_msg = "gas_optics(): array plev has wrong size"
     if(error_msg  /= '') return
-    error_msg = check_extent(plev, ncol, nlay+1, 'plev')
+
+    if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &
+      error_msg = "gas_optics(): array play has values outside range"
+    if(any_vals_outside(plev, this%press_ref_min,this%press_ref_max)) &
+      error_msg = "gas_optics(): array plev has values outside range"
+    if(any_vals_outside(tlay, this%temp_ref_min,  this%temp_ref_max)) &
+      error_msg = "gas_optics(): array tlay has values outside range"
     if(error_msg  /= '') return
-    error_msg = check_extent(tlay, ncol, nlay,   'tlay')
-    if(error_msg  /= '') return
-    error_msg = check_range(play, this%press_ref_min,this%press_ref_max, 'play')
-    if(error_msg  /= '') return
-    error_msg = check_range(plev, this%press_ref_min, this%press_ref_max, 'plev')
-    if(error_msg  /= '') return
-    error_msg = check_range(tlay, this%temp_ref_min,  this%temp_ref_max,  'tlay')
-    if(error_msg  /= '') return
+
     if(present(col_dry)) then
-      error_msg = check_extent(col_dry, ncol, nlay, 'col_dry')
-      if(error_msg  /= '') return
-      error_msg = check_range(col_dry, 0._wp, huge(col_dry), 'col_dry')
+      if(.not. extents_are(col_dry, ncol, nlay)) &
+        error_msg = "gas_optics(): array col_dry has wrong size"
+      if(any_vals_less_than(col_dry, 0._wp)) &
+        error_msg = "gas_optics(): array col_dry has values outside range"
       if(error_msg  /= '') return
     end if
 
@@ -1641,117 +1643,4 @@ contains
 
     get_nPlanckTemp = size(this%totplnk,dim=1) ! dimensions are Planck-temperature, band
   end function get_nPlanckTemp
-  !--------------------------------------------------------------------------------------------------------------------
-  ! Generic procedures for checking sizes, limits
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Extents
-  !
-  ! --------------------------------------------------------------------------------------
-  function check_extent_1d(array, n1, label)
-    real(wp), dimension(:          ), intent(in) :: array
-    integer,                          intent(in) :: n1
-    character(len=*),                 intent(in) :: label
-    character(len=128)                           :: check_extent_1d
-
-    check_extent_1d = ""
-    if(size(array,1) /= n1) &
-      check_extent_1d = trim(label) // ' has incorrect size.'
-  end function check_extent_1d
-  ! --------------------------------------------------------------------------------------
-  function check_extent_2d(array, n1, n2, label)
-    real(wp), dimension(:,:        ), intent(in) :: array
-    integer,                          intent(in) :: n1, n2
-    character(len=*),                 intent(in) :: label
-    character(len=128)                           :: check_extent_2d
-
-    check_extent_2d = ""
-    if(size(array,1) /= n1 .or. size(array,2) /= n2 ) &
-      check_extent_2d = trim(label) // ' has incorrect size.'
-  end function check_extent_2d
-  ! --------------------------------------------------------------------------------------
-  function check_extent_3d(array, n1, n2, n3, label)
-    real(wp), dimension(:,:,:      ), intent(in) :: array
-    integer,                          intent(in) :: n1, n2, n3
-    character(len=*),                 intent(in) :: label
-    character(len=128)                           :: check_extent_3d
-
-    check_extent_3d = ""
-    if(size(array,1) /= n1 .or. size(array,2) /= n2 .or. size(array,3) /= n3) &
-      check_extent_3d = trim(label) // ' has incorrect size.'
-  end function check_extent_3d
-  ! --------------------------------------------------------------------------------------
-  function check_extent_4d(array, n1, n2, n3, n4, label)
-    real(wp), dimension(:,:,:,:    ), intent(in) :: array
-    integer,                          intent(in) :: n1, n2, n3, n4
-    character(len=*),                 intent(in) :: label
-    character(len=128)                           :: check_extent_4d
-
-    check_extent_4d = ""
-    if(size(array,1) /= n1 .or. size(array,2) /= n2 .or. size(array,3) /= n3 .or. &
-       size(array,4) /= n4) &
-      check_extent_4d = trim(label) // ' has incorrect size.'
-  end function check_extent_4d
-  ! --------------------------------------------------------------------------------------
-  function check_extent_5d(array, n1, n2, n3, n4, n5, label)
-    real(wp), dimension(:,:,:,:,:  ), intent(in) :: array
-    integer,                          intent(in) :: n1, n2, n3, n4, n5
-    character(len=*),                 intent(in) :: label
-    character(len=128)                           :: check_extent_5d
-
-    check_extent_5d = ""
-    if(size(array,1) /= n1 .or. size(array,2) /= n2 .or. size(array,3) /= n3 .or. &
-       size(array,4) /= n4 .or. size(array,5) /= n5) &
-      check_extent_5d = trim(label) // ' has incorrect size.'
-  end function check_extent_5d
-  ! --------------------------------------------------------------------------------------
-  function check_extent_6d(array, n1, n2, n3, n4, n5, n6, label)
-    real(wp), dimension(:,:,:,:,:,:), intent(in) :: array
-    integer,                          intent(in) :: n1, n2, n3, n4, n5, n6
-    character(len=*),                 intent(in) :: label
-    character(len=128)                           :: check_extent_6d
-
-    check_extent_6d = ""
-    if(size(array,1) /= n1 .or. size(array,2) /= n2 .or. size(array,3) /= n3 .or. &
-       size(array,4) /= n4 .or. size(array,5) /= n5 .or. size(array,6) /= n6 ) &
-      check_extent_6d = trim(label) // ' has incorrect size.'
-  end function check_extent_6d
-  ! --------------------------------------------------------------------------------------
-  !
-  ! Values
-  !
-  ! --------------------------------------------------------------------------------------
-  function check_range_1D(val, minV, maxV, label)
-    real(wp), dimension(:),     intent(in) :: val
-    real(wp),                   intent(in) :: minV, maxV
-    character(len=*),           intent(in) :: label
-    character(len=128)                     :: check_range_1D
-
-    check_range_1D = ""
-    if(any(val < minV) .or. any(val > maxV)) &
-      check_range_1D = trim(label) // ' values out of range.'
-  end function check_range_1D
-  ! --------------------------------------------------------------------------------------
-  function check_range_2D(val, minV, maxV, label)
-    real(wp), dimension(:,:),   intent(in) :: val
-    real(wp),                   intent(in) :: minV, maxV
-    character(len=*),           intent(in) :: label
-    character(len=128)                     :: check_range_2D
-
-    check_range_2D = ""
-    if(any(val < minV) .or. any(val > maxV)) &
-      check_range_2D = trim(label) // ' values out of range.'
-  end function check_range_2D
-  ! --------------------------------------------------------------------------------------
-  function check_range_3D(val, minV, maxV, label)
-    real(wp), dimension(:,:,:), intent(in) :: val
-    real(wp),                   intent(in) :: minV, maxV
-    character(len=*),           intent(in) :: label
-    character(len=128)                     :: check_range_3D
-
-    check_range_3D = ""
-    if(any(val < minV) .or. any(val > maxV)) &
-      check_range_3D = trim(label) // ' values out of range.'
-  end function check_range_3D
-  !------------------------------------------------------------------------------------------
 end module mo_gas_optics_rrtmgp

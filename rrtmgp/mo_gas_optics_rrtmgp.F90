@@ -257,6 +257,7 @@ contains
     ! External source -- check arrays sizes and values
     ! input data sizes and values
     !
+    !$acc enter data copyin(tsfc,tlev)
     if(.not. extents_are(tsfc, ncol)) &
       error_msg = "gas_optics(): array tsfc has wrong size"
     if(any_vals_outside(tsfc, this%temp_ref_min,  this%temp_ref_max)) &
@@ -287,6 +288,7 @@ contains
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
                        tlev)
+    !$acc exit data delete(tsfc,tlev)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
@@ -346,6 +348,7 @@ contains
     !
     ! External source function is constant
     !
+    !$acc enter data create(toa_src)
     if(.not. extents_are(toa_src, ncol, ngpt)) &
       error_msg = "gas_optics(): array toa_src has wrong size"
     if(error_msg  /= '') return
@@ -356,6 +359,7 @@ contains
           toa_src(icol,igpt) = this%solar_src(igpt)
        end do
     end do
+    !$acc exit data copyout(toa_src)
   end function gas_optics_ext
   !------------------------------------------------------------------------------------------
   !
@@ -389,7 +393,6 @@ contains
     ! ----------------------------------------------------------
     ! Local variables
     real(wp), dimension(ngpt,nlay,ncol) :: tau, tau_rayleigh  ! absorption, Rayleigh scattering optical depths
-    integer :: igas, idx_h2o ! index of some gases
     ! Number of molecules per cm^2
     real(wp), dimension(ncol,nlay), target  :: col_dry_arr
     real(wp), dimension(:,:),       pointer :: col_dry_wk
@@ -408,6 +411,8 @@ contains
                                                           ! index(3) : flavor
                                                           ! index(4) : layer
     integer :: ngas, nflav, neta, npres, ntemp
+    integer :: icol, ilay, igas
+    integer :: idx_h2o ! index of water vapor
     integer :: nminorlower, nminorklower,nminorupper, nminorkupper
     logical :: use_rayl
     ! ----------------------------------------------------------
@@ -430,6 +435,7 @@ contains
     !
     ! Check input data sizes and values
     !
+    !$acc enter data copyin(play,tlay)
     if(.not. extents_are(play, ncol, nlay  )) &
       error_msg = "gas_optics(): array play has wrong size"
     if(.not. extents_are(tlay, ncol, nlay  )) &
@@ -491,9 +497,17 @@ contains
     !
     ! compute column gas amounts [molec/cm^2]
     !
-    col_gas(1:ncol,1:nlay,0) = col_dry_wk(1:ncol,1:nlay)
+    do ilay = 1, nlay
+      do icol = 1, ncol
+        col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
+      end do
+    end do
     do igas = 1, ngas
-      col_gas(1:ncol,1:nlay,igas) = vmr(1:ncol,1:nlay,igas) * col_dry_wk(1:ncol,1:nlay)
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay)
+        end do
+      end do
     end do
 
     !
@@ -502,7 +516,7 @@ contains
     !$acc enter data create(jtemp, jpress, jeta, tropo, fmajor)
     !$acc enter data create(tau, tau_rayleigh)
     !$acc enter data create(col_mix, fminor)
-    !$acc enter data copyin(play, tlay, col_gas)
+    !$acc enter data copyin(col_gas)
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%gpoint_flavor)
     call zero_array(ngpt, nlay, ncol, tau)
@@ -1218,6 +1232,7 @@ contains
     real(wp), dimension(size(tlay,dim=1),size(tlay,dim=2)) :: delta_plev ! (ncol,nlay)
     real(wp), dimension(size(tlay,dim=1),size(tlay,dim=2)) :: m_air ! average mass of air; (ncol,nlay)
     integer :: nlev, nlay
+    integer :: ilev, ilay
     ! ------------------------------------------------
     nlay = size(tlay, dim=2)
     nlev = size(plev, dim=2)

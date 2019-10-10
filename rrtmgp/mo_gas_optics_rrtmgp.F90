@@ -381,9 +381,9 @@ contains
     type(ty_gas_concs),               intent(in   ) :: gas_desc  ! Gas volume mixing ratios
     class(ty_optical_props_arry),     intent(inout) :: optical_props !inout because components are allocated
     ! Interpolation coefficients for use in internal source function
-    integer,     dimension(                       ncol, nlay), intent(  out) :: jtemp, jpress
+    integer,     dimension(                      ncol, nlay), intent(  out) :: jtemp, jpress
     integer,     dimension(2,    get_nflav(this),ncol, nlay), intent(  out) :: jeta
-    logical(wl), dimension(                       ncol, nlay), intent(  out) :: tropo
+    logical(wl), dimension(                      ncol, nlay), intent(  out) :: tropo
     real(wp),    dimension(2,2,2,get_nflav(this),ncol, nlay), intent(  out) :: fmajor
     character(len=128)                                         :: error_msg
 
@@ -435,7 +435,7 @@ contains
     !
     ! Check input data sizes and values
     !
-    !$acc enter data copyin(play,tlay)
+    !$acc enter data copyin(play,plev,tlay)
     if(.not. extents_are(play, ncol, nlay  )) &
       error_msg = "gas_optics(): array play has wrong size"
     if(.not. extents_are(tlay, ncol, nlay  )) &
@@ -491,7 +491,7 @@ contains
     if (present(col_dry)) then
       col_dry_wk => col_dry
     else
-      col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev, tlay) ! dry air column amounts computation
+      col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
       col_dry_wk => col_dry_arr
     end if
     !
@@ -584,9 +584,9 @@ contains
 
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
+    !$acc exit data delete(play, tlay, plev)
     !$acc exit data delete(tau, tau_rayleigh)
-    !$acc exit data delete(play, tlay, col_gas)
-    !$acc exit data delete(col_mix, fminor)
+    !$acc exit data delete(col_gas, col_mix, fminor)
     !$acc exit data delete(this%gpoint_flavor)
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
   end function compute_gas_taus
@@ -1214,42 +1214,51 @@ contains
   ! Utility function, provided for user convenience
   ! computes column amounts of dry air using hydrostatic equation
   !
-  function get_col_dry(vmr_h2o, plev, tlay, latitude) result(col_dry)
+  function get_col_dry(vmr_h2o, plev, latitude) result(col_dry)
     ! input
     real(wp), dimension(:,:), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air; (ncol,nlay)
     real(wp), dimension(:,:), intent(in) :: plev     ! Layer boundary pressures [Pa] (ncol,nlay+1)
-    real(wp), dimension(:,:), intent(in) :: tlay     ! Layer temperatures [K] (ncol,nlay)
     real(wp), dimension(:),   optional, &
                               intent(in) :: latitude ! Latitude [degrees] (ncol)
     ! output
-    real(wp), dimension(size(tlay,dim=1),size(tlay,dim=2)) :: col_dry ! Column dry amount (ncol,nlay)
+    real(wp), dimension(size(plev,dim=1),size(plev,dim=2)-1) :: col_dry ! Column dry amount (ncol,nlay)
     ! ------------------------------------------------
     ! first and second term of Helmert formula
     real(wp), parameter :: helmert1 = 9.80665_wp
     real(wp), parameter :: helmert2 = 0.02586_wp
     ! local variables
-    real(wp), dimension(size(tlay,dim=1)                 ) :: g0 ! (ncol)
-    real(wp), dimension(size(tlay,dim=1),size(tlay,dim=2)) :: delta_plev ! (ncol,nlay)
-    real(wp), dimension(size(tlay,dim=1),size(tlay,dim=2)) :: m_air ! average mass of air; (ncol,nlay)
-    integer :: nlev, nlay
-    integer :: ilev, ilay
+    real(wp), dimension(size(plev,dim=1)) :: g0 ! (ncol)
+    real(wp):: delta_plev, m_air, fact
+    integer :: ncol, nlev
+    integer :: icol, ilev ! nlay = nlev-1
     ! ------------------------------------------------
-    nlay = size(tlay, dim=2)
+    ncol = size(plev, dim=1)
     nlev = size(plev, dim=2)
-
+    !$acc enter data create(g0)
     if(present(latitude)) then
-      g0(:) = helmert1 - helmert2 * cos(2.0_wp * pi * latitude(:) / 180.0_wp) ! acceleration due to gravity [m/s^2]
+      ! A purely OpenACC implementation would probably compute g0 within the kernel below
+      !$acc parallel loop
+      do icol = 1, ncol
+        g0(icol) = helmert1 - helmert2 * cos(2.0_wp * pi * latitude(icol) / 180.0_wp) ! acceleration due to gravity [m/s^2]
+      end do
     else
-      g0(:) = grav
+      !$acc parallel loop
+      do icol = 1, ncol
+        g0(icol) = grav
+      end do
     end if
-    delta_plev(:,:) = abs(plev(:,1:nlev-1) - plev(:,2:nlev))
 
-    ! Get average mass of moist air per mole of moist air
-    m_air(:,:) = (m_dry+m_h2o*vmr_h2o(:,:))/(1.+vmr_h2o(:,:))
-
-    ! Hydrostatic equation
-    col_dry(:,:) = 10._wp*delta_plev(:,:)*avogad/(1000._wp*m_air(:,:)*100._wp*spread(g0(:),dim=2,ncopies=nlay))
-    col_dry(:,:) = col_dry(:,:)/(1._wp+vmr_h2o(:,:))
+    !$acc parallel loop gang vector collapse(2) copyin(plev,vmr_h2o) copyout(col_dry)
+    do ilev = 1, nlev-1
+      do icol = 1, ncol
+        delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1))
+        ! Get average mass of moist air per mole of moist air
+        fact = 1._wp / (1.+vmr_h2o(icol,ilev))
+        m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact
+        col_dry(icol,ilev) = 10._wp * delta_plev * avogad * fact/(1000._wp*m_air*100._wp*g0(icol))
+      end do
+    end do
+    !$acc exit data delete (g0)
   end function get_col_dry
   !--------------------------------------------------------------------------------------------------------------------
   !

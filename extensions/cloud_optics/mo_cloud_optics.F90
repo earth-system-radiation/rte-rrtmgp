@@ -20,7 +20,7 @@
 
 module mo_cloud_optics
   use mo_rte_kind,      only: wp, wl
-  use mo_util_array,    only: any_vals_less_than, any_vals_outside
+  use mo_util_array,    only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props,      &
                               ty_optical_props_arry, &
                               ty_optical_props_1scl, &
@@ -125,13 +125,13 @@ contains
       error_msg = "cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
     if(size(lut_extice, 2) /= nbnd) &
       error_msg = "cloud_optics%init(): array lut_extice has the wrong number of bands"
-    if(any([size(lut_ssaliq, 1), size(lut_ssaliq, 2)] /= [nsize_liq, nbnd])) &
+    if(.not. extents_are(lut_ssaliq, nsize_liq, nbnd)) &
       error_msg = "cloud_optics%init(): array lut_ssaliq isn't consistently sized"
-    if(any([size(lut_asyliq, 1), size(lut_asyliq, 2)] /= [nsize_liq, nbnd])) &
+    if(.not. extents_are(lut_asyliq, nsize_liq, nbnd)) &
       error_msg = "cloud_optics%init(): array lut_asyliq isn't consistently sized"
-    if(any([size(lut_ssaice, 1), size(lut_ssaice, 2), size(lut_ssaice, 3)] /= [nsize_ice, nbnd, nrghice])) &
+    if(.not. extents_are(lut_ssaice, nsize_ice, nbnd, nrghice)) &
       error_msg = "cloud_optics%init(): array lut_ssaice  isn't consistently sized"
-    if(any([size(lut_asyice, 1), size(lut_asyice, 2), size(lut_asyice, 3)] /= [nsize_ice, nbnd, nrghice])) &
+    if(.not. extents_are(lut_asyice, nsize_ice, nbnd, nrghice)) &
       error_msg = "cloud_optics%init(): array lut_asyice  isn't consistently sized"
     if(error_msg /= "") return
 
@@ -213,18 +213,15 @@ contains
     !
     if(nbnd /= this%get_nband()) &
       error_msg = "cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
-    if(any([size(pade_ssaliq, 1), size(pade_ssaliq, 2), size(pade_ssaliq, 3)] /= [nbnd, nsizereg, ncoeff_ssa_g])) &
+    if(.not. extents_are(pade_ssaliq, nbnd, nsizereg, ncoeff_ssa_g)) &
       error_msg = "cloud_optics%init(): array pade_ssaliq isn't consistently sized"
-    if(any([size(pade_asyliq, 1), size(pade_asyliq, 2), size(pade_asyliq, 3)] /= [nbnd, nsizereg, ncoeff_ssa_g])) &
+    if(.not. extents_are(pade_asyliq, nbnd, nsizereg, ncoeff_ssa_g)) &
       error_msg = "cloud_optics%init(): array pade_asyliq isn't consistently sized"
-    if(any([size(pade_extice, 1), size(pade_extice, 2), size(pade_extice, 3), size(pade_extice, 4)] /= &
-           [nbnd,                nsizereg,             ncoeff_ext,           nrghice]))               &
+    if(.not. extents_are(pade_extice, nbnd, nsizereg, ncoeff_ext, nrghice))               &
       error_msg = "cloud_optics%init(): array pade_extice isn't consistently sized"
-    if(any([size(pade_ssaice, 1), size(pade_ssaice, 2), size(pade_ssaice, 3), size(pade_ssaice, 4)] /= &
-           [nbnd,                nsizereg,             ncoeff_ssa_g,         nrghice]))               &
+    if(.not. extents_are(pade_ssaice, nbnd, nsizereg, ncoeff_ssa_g, nrghice))               &
       error_msg = "cloud_optics%init(): array pade_ssaice isn't consistently sized"
-    if(any([size(pade_asyice, 1), size(pade_asyice, 2), size(pade_asyice, 3), size(pade_asyice, 4)] /= &
-           [nbnd,                nsizereg,             ncoeff_ssa_g,         nrghice]))               &
+    if(.not. extents_are(pade_asyice, nbnd, nsizereg, ncoeff_ssa_g, nrghice))               &
       error_msg = "cloud_optics%init(): array pade_asyice isn't consistently sized"
     if(any([                          size(pade_sizreg_ssaliq), size(pade_sizreg_asyliq),               &
             size(pade_sizreg_extice), size(pade_sizreg_ssaice), size(pade_sizreg_asyice)] /= nbound))   &

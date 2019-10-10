@@ -32,6 +32,7 @@ module mo_util_array
   interface extents_are
     module procedure extents_are_1D, extents_are_2D, extents_are_3D
     module procedure extents_are_4D, extents_are_5D, extents_are_6D
+    module procedure extents_are_2d_int
   end interface extents_are
 
   private
@@ -286,6 +287,15 @@ contains
                       size(array,5) == n5 .and. &
                       size(array,6) == n6 )
   end function extents_are_6d
+  ! --------------------------------------------------------------------------------------
+  function extents_are_2d_int(array, n1, n2)
+    integer,  dimension(:,:        ), intent(in) :: array
+    integer,                          intent(in) :: n1, n2
+    logical(wp)                                  :: extents_are_2d_int
+
+    extents_are_2d_int = (size(array,1) == n1 .and. &
+                          size(array,2) == n2 )
+  end function extents_are_2d_int
   !-------------------------------------------------------------------------------------------------
   ! Initializing arrays to 0
   !-------------------------------------------------------------------------------------------------

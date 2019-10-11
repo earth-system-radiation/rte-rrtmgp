@@ -474,6 +474,7 @@ contains
     !
     ! Fill out the array of volume mixing ratios
     !
+    !$acc enter data create(vmr)
     do igas = 1, ngas
       !
       ! Get vmr if  gas is provided in ty_gas_concs
@@ -488,7 +489,7 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
-    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas) copyin(vmr)
+    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
     else

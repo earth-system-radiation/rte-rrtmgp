@@ -229,7 +229,7 @@ contains
     real(wp), dimension(:,:), intent(out) :: array
     character(len=128)                    :: error_msg
     ! ---------------------
-    integer :: igas
+    integer :: icol, ilay, igas
     ! ---------------------
     error_msg = ''
 
@@ -241,23 +241,39 @@ contains
     !
     ! Is the requested array the correct size?
     !
+    !$acc enter data create(array)
     if(this%ncol > 0 .and. this%ncol /= size(array,1)) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (ncol)'
-      array(:,:) = 0._wp
     end if
     if(this%nlay > 0 .and. this%nlay /= size(array,2)) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
-      array(:,:) = 0._wp
     end if
     if(error_msg /= "") return
 
+    !$acc enter data copyin(this%concs(igas)%conc)
     if(size(this%concs(igas)%conc, 1) > 1) then      ! Concentration stored as 2D
-      array(:,:) =        this%concs(igas)%conc(:,:)
+      !$acc parallel loop collapse(2)
+      do ilay = 1, size(array,2)
+        do icol = 1, size(array,1)
+          array(icol,ilay) = this%concs(igas)%conc(icol,ilay)
+        end do
+      end do
     else if(size(this%concs(igas)%conc, 2) > 1) then ! Concentration stored as 1D
-      array(:,:) = spread(this%concs(igas)%conc(1,:), dim=1, ncopies=max(this%ncol, size(array,1)))
-    else                                                   ! Concentration stored as scalar
-      array(:,:) =        this%concs(igas)%conc(1,1)
+      !$acc parallel loop collapse(2)
+      do ilay = 1, size(array,2)
+        do icol = 1, size(array,1)
+         array(icol, ilay) = this%concs(igas)%conc(1,ilay)
+        end do
+      end do
+    else                                             ! Concentration stored as scalar
+      !$acc parallel loop collapse(2)
+      do ilay = 1, size(array,2)
+        do icol = 1, size(array,1)
+          array(icol,ilay) = this%concs(igas)%conc(1,1)
+        end do
+      end do
     end if
+    !$acc exit data copyout(array)
 
   end function get_vmr_2d
   ! -------------------------------------------------------------------------------------

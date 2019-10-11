@@ -215,6 +215,7 @@ contains
     !
     ! Error checking
     !
+    !$acc enter data create(this)
     if(nbnd /= this%get_nband()) &
       error_msg = "cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
     if(.not. extents_are(pade_ssaliq, nbnd, nsizereg, ncoeff_ssa_g)) &
@@ -273,6 +274,11 @@ contains
     !
     ! Load data
     !
+    !$acc enter data create(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq)
+    !$acc enter data create(this%pade_extice, this%pade_ssaice, this%pade_asyice)
+    !$acc enter data create(this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq)
+    !$acc enter data create(this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)
+    !$acc kernels
     this%pade_extliq = pade_extliq
     this%pade_ssaliq = pade_ssaliq
     this%pade_asyliq = pade_asyliq
@@ -285,7 +291,7 @@ contains
     this%pade_sizreg_extice = pade_sizreg_extice
     this%pade_sizreg_ssaice = pade_sizreg_ssaice
     this%pade_sizreg_asyice = pade_sizreg_asyice
-
+    !$acc end kernels
     !
     ! Set default ice roughness - min values
     !

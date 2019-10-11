@@ -121,6 +121,7 @@ contains
     ! Error checking
     !   Can we check for consistency between table bounds and _fac?
     !
+    !$acc enter data create(this)
     if(nbnd /= this%get_nband()) &
       error_msg = "cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
     if(size(lut_extice, 2) /= nbnd) &
@@ -146,7 +147,8 @@ contains
              this%lut_extice(nsize_ice, nbnd, nrghice), &
              this%lut_ssaice(nsize_ice, nbnd, nrghice), &
              this%lut_asyice(nsize_ice, nbnd, nrghice))
-
+    !$acc enter data create(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq)
+    !$acc enter data create(this%lut_extice, this%lut_ssaice, this%lut_asyice)
     ! Load LUT constants
     this%radliq_lwr = radliq_lwr
     this%radliq_upr = radliq_upr
@@ -154,12 +156,14 @@ contains
     this%radice_upr = radice_upr
 
     ! Load LUT coefficients
+    !$acc kernels
     this%lut_extliq = lut_extliq
     this%lut_ssaliq = lut_ssaliq
     this%lut_asyliq = lut_asyliq
     this%lut_extice = lut_extice
     this%lut_ssaice = lut_ssaice
     this%lut_asyice = lut_asyice
+    !$acc end kernels
     !
     ! Set default ice roughness - min values
     !
@@ -198,7 +202,7 @@ contains
 ! ------- Definitions -------
 
     ! Pade coefficient dimensions
-    nbnd        = size(pade_extliq,dim=1)
+    nbnd         = size(pade_extliq,dim=1)
     nsizereg     = size(pade_extliq,dim=2)
     ncoeff_ext   = size(pade_extliq,dim=3)
     ncoeff_ssa_g = size(pade_ssaliq,dim=3)

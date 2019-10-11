@@ -488,7 +488,7 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
-    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
+    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas) copyin(vmr)
     if (present(col_dry)) then
       col_dry_wk => col_dry
     else
@@ -512,6 +512,7 @@ contains
         end do
       end do
     end do
+    !$acc exit data delete(vmr)
 
     !
     ! ---- calculate gas optical depths ----

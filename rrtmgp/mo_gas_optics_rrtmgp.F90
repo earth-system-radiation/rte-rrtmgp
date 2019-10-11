@@ -488,6 +488,7 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
+    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
     else
@@ -497,11 +498,13 @@ contains
     !
     ! compute column gas amounts [molec/cm^2]
     !
+    !$acc parallel loop gang vector collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
       end do
     end do
+    !$acc parallel loop gang vector collapse(3)
     do igas = 1, ngas
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -516,7 +519,6 @@ contains
     !$acc enter data create(jtemp, jpress, jeta, tropo, fmajor)
     !$acc enter data create(tau, tau_rayleigh)
     !$acc enter data create(col_mix, fminor)
-    !$acc enter data copyin(col_gas)
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%gpoint_flavor)
     call zero_array(ngpt, nlay, ncol, tau)
@@ -586,7 +588,7 @@ contains
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
     !$acc exit data delete(play, tlay, plev)
     !$acc exit data delete(tau, tau_rayleigh)
-    !$acc exit data delete(col_gas, col_mix, fminor)
+    !$acc exit data delete(col_dry_wk, col_dry_arr, col_gas, col_mix, fminor)
     !$acc exit data delete(this%gpoint_flavor)
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
   end function compute_gas_taus

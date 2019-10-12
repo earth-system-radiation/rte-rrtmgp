@@ -744,6 +744,7 @@ contains
                                                              kminor_start_upper
     character(len = 128) :: err_message
     ! ----
+    !$acc enter data create(this)
     err_message = init_abs_coeffs(this, &
                                   available_gases, &
                                   gas_names, key_species,    &
@@ -766,8 +767,13 @@ contains
                                   rayl_lower, rayl_upper)
     ! Planck function tables
     !
+    allocate(this%totplnk    (size(totplnk,    1), size(totplnk,   2)), &
+             this%planck_frac(size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)) )
+    !$acc enter data create(this%totplnk, this%planck_frac)
+    !$acc kernels
     this%totplnk = totplnk
     this%planck_frac = planck_frac
+    !$acc end kernels
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
     !   Planck grid and the Planck grid is equally spaced
@@ -834,6 +840,7 @@ contains
     real(wp), dimension(:,:,:), intent(in), allocatable :: rayl_lower, rayl_upper
     character(len = 128) err_message
     ! ----
+    !$acc enter data create(this)
     err_message = init_abs_coeffs(this, &
                                   available_gases, &
                                   gas_names, key_species,    &
@@ -857,8 +864,11 @@ contains
     !
     ! Solar source table init
     !
+    allocate(this%solar_src(size(solar_src)))
+    !$acc enter data create(this%solar_src)
+    !$acc kernels
     this%solar_src = solar_src
-
+    !$acc end kernels
   end function load_ext
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1001,9 +1011,15 @@ contains
                              this%kminor_start_upper)
 
     ! Arrays not reduced by the presence, or lack thereof, of a gas
+    !!$acc enter data copyin(this)
+    allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
+             this%kmajor(size(kmajor,1),size(kmajor,2),size(kmajor,3),size(kmajor,4)))
+    !!$acc enter data create(this%press_ref, this%temp_ref, this%kmajor)
+    !!$acc kernels
     this%press_ref = press_ref
     this%temp_ref  = temp_ref
     this%kmajor    = kmajor
+    !!$acc end kernels
 
     if(allocated(rayl_lower) .neqv. allocated(rayl_upper)) then
       err_message = "rayl_lower and rayl_upper must have the same allocation status"
@@ -1011,17 +1027,20 @@ contains
     end if
     if (allocated(rayl_lower)) then
       allocate(this%krayl(size(rayl_lower,dim=1),size(rayl_lower,dim=2),size(rayl_lower,dim=3),2))
+      !!$acc enter data create(this%krayl)
+      !!$acc kernels
       this%krayl(:,:,:,1) = rayl_lower
       this%krayl(:,:,:,2) = rayl_upper
+      !!$acc end kernels
     end if
 
     ! ---- post processing ----
-    ! Incoming coefficients file has units of Pa
-    this%press_ref(:) = this%press_ref(:)
-
     ! creates log reference pressure
     allocate(this%press_ref_log(size(this%press_ref)))
+    !!$acc enter data create(this%press_ref_log)
+    !!$acc kernels
     this%press_ref_log(:) = log(this%press_ref(:))
+    !!$acc end kernels
 
     ! log scale of reference pressure
     this%press_ref_trop_log = log(press_ref_trop)
@@ -1064,10 +1083,14 @@ contains
     !
     if (allocated(this%is_key)) deallocate(this%is_key) ! Shouldn't ever happen...
     allocate(this%is_key(this%get_ngas()))
+    !!$acc enter data create(this%is_key)
+    !!$acc kernels
     this%is_key(:) = .False.
+    !!$acc end kernels
+    !!$acc parallel loop gang vector collapse(2)
     do j = 1, size(this%flavor, 2)
-      do i = 1, size(this%flavor, 1) ! should be 2
-        if (this%flavor(i,j) /= 0) this%is_key(this%flavor(i,j)) = .true.
+      do i = 1, size(this%flavor, 1) ! extents should be 2
+        this%is_key(this%flavor(i,j)) = (this%flavor(i,j) /= 0)
       end do
     end do
 
@@ -1437,7 +1460,7 @@ contains
                            scale_by_complement_atm_red, &
                            kminor_start_atm_red)
 
-    class(ty_gas_concs),                intent(in   ) :: available_gases
+    class(ty_gas_concs),                intent(in) :: available_gases
     character(len=*), dimension(:),     intent(in) :: gas_names
     real(wp),         dimension(:,:,:), intent(in) :: kminor_atm
     character(len=*), dimension(:),     intent(in) :: gas_minor, &
@@ -1464,10 +1487,11 @@ contains
                                                 kminor_start_atm_red
 
     ! Local variables
-    integer :: i, j
+    integer :: i, j, ks
     integer :: idx_mnr, nm, tot_g, red_nm
     integer :: icnt, n_elim, ng
     logical, dimension(:), allocatable :: gas_is_present
+    integer, dimension(:), allocatable :: indexes
 
     nm = size(minor_gases_atm)
     tot_g=0
@@ -1481,27 +1505,40 @@ contains
     enddo
     red_nm = count(gas_is_present)
 
-    if ((red_nm .eq. nm)) then
-      kminor_atm_red = kminor_atm
-      minor_gases_atm_red = minor_gases_atm
-      minor_limits_gpt_atm_red = minor_limits_gpt_atm
-      minor_scales_with_density_atm_red = minor_scales_with_density_atm
-      scaling_gas_atm_red = scaling_gas_atm
-      scale_by_complement_atm_red = scale_by_complement_atm
-      kminor_start_atm_red = kminor_start_atm
-    else
-      minor_gases_atm_red= pack(minor_gases_atm, mask=gas_is_present)
-      minor_scales_with_density_atm_red = pack(minor_scales_with_density_atm, &
-        mask=gas_is_present)
-      scaling_gas_atm_red = pack(scaling_gas_atm, &
-        mask=gas_is_present)
-      scale_by_complement_atm_red = pack(scale_by_complement_atm, &
-        mask=gas_is_present)
-      kminor_start_atm_red = pack(kminor_start_atm, &
-        mask=gas_is_present)
+    allocate(minor_gases_atm_red              (red_nm),&
+             minor_scales_with_density_atm_red(red_nm), &
+             scaling_gas_atm_red              (red_nm), &
+             scale_by_complement_atm_red      (red_nm), &
+             kminor_start_atm_red             (red_nm))
+    allocate(minor_limits_gpt_atm_red(2, red_nm))
+    allocate(kminor_atm_red(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
+    !!$acc enter data create(minor_scales_with_density_atm_red, scale_by_complement_atm_red, &
+    !!$acc&                  kminor_start_atm_red, minor_limits_gpt_atm_red, kminor_atm_red)
 
-      allocate(minor_limits_gpt_atm_red(2, red_nm))
-      allocate(kminor_atm_red(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
+    if ((red_nm .eq. nm)) then
+      ! Character data not allowed in OpenACC regions?
+      minor_gases_atm_red         = minor_gases_atm
+      scaling_gas_atm_red         = scaling_gas_atm
+      !!$acc kernels
+      kminor_atm_red              = kminor_atm
+      minor_limits_gpt_atm_red    = minor_limits_gpt_atm
+      minor_scales_with_density_atm_red = minor_scales_with_density_atm
+      scale_by_complement_atm_red = scale_by_complement_atm
+      kminor_start_atm_red        = kminor_start_atm
+      !!$acc end kernels
+    else
+      allocate(indexes(red_nm))
+      ! Find the integer indexes for the gases that are present
+      indexes = pack([(i, i = 1, size(minor_gases_atm))], mask=gas_is_present)
+
+      minor_gases_atm_red  = minor_gases_atm        (indexes)
+      scaling_gas_atm_red  = scaling_gas_atm        (indexes)
+      !!$acc kernels
+      minor_scales_with_density_atm_red = &
+                             minor_scales_with_density_atm(indexes)
+      scale_by_complement_atm_red = &
+                             scale_by_complement_atm(indexes)
+      kminor_start_atm_red = kminor_start_atm       (indexes)
 
       icnt = 0
       n_elim = 0
@@ -1511,6 +1548,7 @@ contains
           icnt = icnt + 1
           minor_limits_gpt_atm_red(1:2,icnt) = minor_limits_gpt_atm(1:2,i)
           kminor_start_atm_red(icnt) = kminor_start_atm(i)-n_elim
+          ks = kminor_start_atm_red(icnt)
           do j = 1, ng
             kminor_atm_red(kminor_start_atm_red(icnt)+j-1,:,:) = &
               kminor_atm(kminor_start_atm(i)+j-1,:,:)
@@ -1519,7 +1557,9 @@ contains
           n_elim = n_elim + ng
         endif
       enddo
+      !!$acc end kernels
     endif
+    !!$acc enter data copyin(scaling_gas_atm_red,minor_gases_atm_red)
 
   end subroutine reduce_minor_arrays
 

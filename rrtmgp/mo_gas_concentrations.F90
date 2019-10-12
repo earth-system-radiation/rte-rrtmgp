@@ -87,7 +87,8 @@ contains
     integer :: igas
     ! ---------
     error_msg = ''
-    if (w < 0._wp .or. w > 1._wp) then
+    !$acc enter data copyin(this, w)
+  if (w < 0._wp .or. w > 1._wp) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
       return
     endif
@@ -100,10 +101,17 @@ contains
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
-    if (allocated(this%concs(igas)%conc)) deallocate(this%concs(igas)%conc)
+    if (allocated(this%concs(igas)%conc)) then
+      deallocate(this%concs(igas)%conc)
+      !$acc exit data delete(this%concs(igas)%conc)
+    end if
     allocate(this%concs(igas)%conc(1,1))
+    !$acc enter data create(this%concs(igas)%conc)
+    !$acc kernels
     this%concs(igas)%conc(:,:) = w
+    !$acc end kernels
     this%gas_name(igas) = trim(gas)
+    !$acc exit data delete(w)
   end function set_vmr_scalar
   ! -------------------------------------------------------------------------------------
   function set_vmr_1d(this, gas, w) result(error_msg)
@@ -117,6 +125,7 @@ contains
     ! ---------
     error_msg = ''
 
+    !$acc enter data copyin(this, w)
     if (any_vals_outside(w, 0._wp, 1._wp)) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
@@ -135,10 +144,17 @@ contains
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
-    if (allocated(this%concs(igas)%conc)) deallocate(this%concs(igas)%conc)
+    if (allocated(this%concs(igas)%conc)) then
+      deallocate(this%concs(igas)%conc)
+      !$acc exit data delete(this%concs(igas)%conc)
+    end if
     allocate(this%concs(igas)%conc(1,this%nlay))
+    !$acc enter data create(this%concs(igas)%conc)
+    !$acc kernels
     this%concs(igas)%conc(1,:) = w
+    !$acc end kernels
     this%gas_name(igas) = trim(gas)
+    !$acc exit data delete(w)
   end function set_vmr_1d
   ! --------------------
   function set_vmr_2d(this, gas, w) result(error_msg)
@@ -152,14 +168,17 @@ contains
     ! ---------
     error_msg = ''
 
+    !$acc enter data copyin(this, w)
     if (any_vals_outside(w, 0._wp, 1._wp)) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
+
     if(this%ncol > 0 .and. size(w, 1) /= this%ncol) then
       error_msg = 'ty_gas_concs%set_vmr: different dimension (ncol)'
     else
       this%ncol = size(w, 1)
     end if
+
     if(this%nlay > 0 .and. size(w, 2) /= this%nlay) then
       error_msg = 'ty_gas_concs%set_vmr: different dimension (nlay)'
     else
@@ -175,10 +194,17 @@ contains
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
-    if (allocated(this%concs(igas)%conc)) deallocate(this%concs(igas)%conc)
+    if (allocated(this%concs(igas)%conc)) then
+      deallocate(this%concs(igas)%conc)
+      !$acc exit data delete(this%concs(igas)%conc)
+    end if
     allocate(this%concs(igas)%conc(this%ncol,this%nlay))
+    !$acc enter data create(this%concs(igas)%conc)
+    !$acc kernels
     this%concs(igas)%conc(:,:) = w
+    !$acc end kernels
     this%gas_name(igas) = trim(gas)
+    !$acc exit data delete(w)
   end function set_vmr_2d
   ! -------------------------------------------------------------------------------------
   !
@@ -201,22 +227,26 @@ contains
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' not found'
-      array(:) = 0._wp
     else if(size(this%concs(igas)%conc, 1) > 1) then ! Are we requesting a single profile when many are present?
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' requesting single profile but many are available'
-      array(:) = 0._wp
     end if
+
     if(this%nlay > 0 .and. this%nlay /= size(array)) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
-      array(:) = 0._wp
     end if
     if(error_msg /= "") return
 
+    !$acc enter data copyin(this%concs(igas)%conc) create(array)
     if(size(this%concs(igas)%conc, 2) > 1) then
+      !$acc kernels
       array(:) = this%concs(igas)%conc(1,:)
+      !$acc end kernels
     else
+      !$acc kernels
       array(:) = this%concs(igas)%conc(1,1)
+      !$acc end kernels
     end if
+    !$acc exit data copyout(array)
 
   end function get_vmr_1d
   ! -------------------------------------------------------------------------------------
@@ -236,12 +266,10 @@ contains
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' not found'
-      array(:,:) = 0._wp
     end if
     !
     ! Is the requested array the correct size?
     !
-    !$acc enter data create(array)
     if(this%ncol > 0 .and. this%ncol /= size(array,1)) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (ncol)'
     end if
@@ -250,7 +278,7 @@ contains
     end if
     if(error_msg /= "") return
 
-    !$acc enter data copyin(this%concs(igas)%conc)
+    !$acc enter data copyin(this%concs(igas)%conc) create(array)
     if(size(this%concs(igas)%conc, 1) > 1) then      ! Concentration stored as 2D
       !$acc parallel loop collapse(2)
       do ilay = 1, size(array,2)
@@ -305,6 +333,7 @@ contains
     subset%ncol = merge(n, 0, this%ncol > 0)
     subset%gas_name(:)  = this%gas_name(:)
 
+    !$acc enter data copyin(this, subset)
     do i = 1, size(this%gas_name)
       !
       ! Preserve scalar/1D/2D representation in subset,
@@ -312,10 +341,15 @@ contains
       !
       allocate(subset%concs(i)%conc(min(max(subset%ncol,1), size(this%concs(i)%conc, 1)), &
                                     min(    subset%nlay,    size(this%concs(i)%conc, 2))))
+      !$acc enter data create(subset%concs(i)%conc)
       if(size(this%concs(i)%conc, 1) > 1) then      ! Concentration stored as 2D
+        !$acc kernels
         subset%concs(i)%conc(:,:) = this%concs(i)%conc(start:(start+n-1),:)
+        !$acc end kernels
       else
+        !$acc kernels
         subset%concs(i)%conc(:,:) = this%concs(i)%conc(:,:)
+        !$acc end kernels
       end if
     end do
 
@@ -335,7 +369,10 @@ contains
     if(allocated(this%gas_name)) deallocate(this%gas_name)
     if (allocated(this%concs)) then
       do i = 1, size(this%concs)
-        if(allocated(this%concs(i)%conc)) deallocate(this%concs(i)%conc)
+        if(allocated(this%concs(i)%conc)) then
+          deallocate(this%concs(i)%conc)
+          !$acc exit data delete(this%concs(i)%conc)
+        end if
       end do
       deallocate(this%concs)
     end if

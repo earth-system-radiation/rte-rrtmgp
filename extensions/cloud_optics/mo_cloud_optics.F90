@@ -115,7 +115,7 @@ contains
     !
     nsize_liq = size(lut_extliq,dim=1)
     nsize_ice = size(lut_extice,dim=1)
-    nbnd     = size(lut_extliq,dim=2)
+    nbnd      = size(lut_extliq,dim=2)
     nrghice   = size(lut_extice,dim=3)
     !
     ! Error checking
@@ -312,6 +312,12 @@ contains
 
     ! Lookup table cloud optics coefficients
     if(allocated(this%lut_extliq)) then
+
+      !$acc exit data delete(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq)  &
+      !$acc           delete(this%lut_extice, this%lut_ssaice, this%lut_asyice)  &
+      !$acc           delete(this)
+
+
       deallocate(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq, &
                  this%lut_extice, this%lut_ssaice, this%lut_asyice)
       this%liq_nsteps = 0
@@ -322,6 +328,13 @@ contains
 
     ! Pade cloud optics coefficients
     if(allocated(this%pade_extliq)) then
+
+      !$acc exit data delete(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq)                       &
+      !$acc           delete(this%pade_extice, this%pade_ssaice, this%pade_asyice)                       &
+      !$acc           delete(this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq)  &
+      !$acc           delete(this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)  &
+      !$acc           delete(this)
+
       deallocate(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq, &
                  this%pade_extice, this%pade_ssaice, this%pade_asyice, &
                  this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq, &
@@ -366,9 +379,7 @@ contains
     ! Error checking
     !
     ! ----------------------------------------
-    !$acc enter data copyin(clwp, ciwp, reliq, reice)
-    !$acc enter data create(ltau, ltaussa, ltaussag, itau, itaussa, itaussag)
-    !$acc enter data create (liqmsk,icemsk)
+
     error_msg = ''
     if(.not.(allocated(this%lut_extliq) .or. allocated(this%pade_extliq))) then
       error_msg = 'cloud optics: no data has been initialized'
@@ -404,10 +415,13 @@ contains
       error_msg = "cloud optics: optical properties must be requested by band not g-points"
     if(error_msg /= "") return
 
+    !$acc data copyin(clwp, ciwp, reliq, reice)                         &
+    !$acc      create(ltau, ltaussa, ltaussag, itau, itaussa, itaussag) &
+    !$acc      create(liqmsk,icemsk)
     !
     ! Cloud masks; don't need value re values if there's no cloud
     !
-    !$acc parallel loop gang vector collapse(2) copyin(clwp, ciwp) copyout(liqmsk,icemsk)
+    !$acc parallel loop gang vector default(none) collapse(2) 
     do ilay = 1, nlay
       do icol = 1, ncol
         liqmsk(icol,ilay) = clwp(icol,ilay) > 0._wp
@@ -424,98 +438,95 @@ contains
       error_msg = 'cloud optics: ice effective radius is out of bounds'
     if(any_vals_less_than(clwp, liqmsk, 0._wp) .or. any_vals_less_than(ciwp, icemsk, 0._wp)) &
       error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
-    if(error_msg /= "") return
-
-    ! ----------------------------------------
-    !
-    ! The tables and Pade coefficients determing extinction coeffient, single-scattering albedo,
-    !   and asymmetry parameter g as a function of effective raduis
-    ! We compute the optical depth tau (=exintinction coeff * condensed water path)
-    !   and the products tau*ssa and tau*ssa*g for liquid and ice cloud separately.
-    ! These are used to determine the optical properties of ice and water cloud together.
-    ! We could compute the properties for liquid and ice separately and
-    !    use ty_optical_props_arry%increment but this involves substantially more division.
-    !
-    if (allocated(this%lut_extliq)) then
+    if(error_msg == "") then
       !
-      ! Liquid
       !
-      call compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq,               &
-                                  this%liq_nsteps,this%liq_step_size,this%radliq_lwr,  &
-                                  this%lut_extliq, this%lut_ssaliq, this%lut_asyliq,   &
+      ! ----------------------------------------
+      !
+      ! The tables and Pade coefficients determing extinction coeffient, single-scattering albedo,
+      !   and asymmetry parameter g as a function of effective raduis
+      ! We compute the optical depth tau (=exintinction coeff * condensed water path)
+      !   and the products tau*ssa and tau*ssa*g for liquid and ice cloud separately.
+      ! These are used to determine the optical properties of ice and water cloud together.
+      ! We could compute the properties for liquid and ice separately and
+      !    use ty_optical_props_arry%increment but this involves substantially more division.
+      !
+      if (allocated(this%lut_extliq)) then
+        !
+        ! Liquid
+        !
+        call compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq,               &
+                                    this%liq_nsteps,this%liq_step_size,this%radliq_lwr,  &
+                                    this%lut_extliq, this%lut_ssaliq, this%lut_asyliq,   &
+                                    ltau, ltaussa, ltaussag)
+        !
+        ! Ice
+        !
+        call compute_all_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, &
+                                    this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
+                                    this%lut_extice(:,:,this%icergh),      &
+                                    this%lut_ssaice(:,:,this%icergh),      &
+                                    this%lut_asyice(:,:,this%icergh),      &
+                                    itau, itaussa, itaussag)
+      else
+        !
+        ! Cloud optical properties from Pade coefficient method
+        !   Hard coded assumptions: order of approximants, three size regimes
+        !
+        nsizereg = size(this%pade_extliq,2)
+        call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
+                                  liqmsk, clwp, reliq,        &
+                                  2, 3, this%pade_sizreg_extliq, this%pade_extliq, &
+                                  2, 2, this%pade_sizreg_ssaliq, this%pade_ssaliq, &
+                                  2, 2, this%pade_sizreg_asyliq, this%pade_asyliq, &
                                   ltau, ltaussa, ltaussag)
-      !
-      ! Ice
-      !
-      call compute_all_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, &
-                                  this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
-                                  this%lut_extice(:,:,this%icergh),      &
-                                  this%lut_ssaice(:,:,this%icergh),      &
-                                  this%lut_asyice(:,:,this%icergh),      &
+        call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
+                                  icemsk, ciwp, reice,        &
+                                  2, 3, this%pade_sizreg_extice, this%pade_extice, &
+                                  2, 2, this%pade_sizreg_ssaice, this%pade_ssaice, &
+                                  2, 2, this%pade_sizreg_asyice, this%pade_asyice, &
                                   itau, itaussa, itaussag)
-    else
-      !
-      ! Cloud optical properties from Pade coefficient method
-      !   Hard coded assumptions: order of approximants, three size regimes
-      !
-      nsizereg = size(this%pade_extliq,2)
-      call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
-                                 liqmsk, clwp, reliq,        &
-                                 2, 3, this%pade_sizreg_extliq, this%pade_extliq, &
-                                 2, 2, this%pade_sizreg_ssaliq, this%pade_ssaliq, &
-                                 2, 2, this%pade_sizreg_asyliq, this%pade_asyliq, &
-                                 ltau, ltaussa, ltaussag)
-      call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
-                                 icemsk, ciwp, reice,        &
-                                 2, 3, this%pade_sizreg_extice, this%pade_extice, &
-                                 2, 2, this%pade_sizreg_ssaice, this%pade_ssaice, &
-                                 2, 2, this%pade_sizreg_asyice, this%pade_asyice, &
-                                 itau, itaussa, itaussag)
-    endif
-    !$acc exit data delete(liqmsk,icemsk)
+      endif
 
-    !
-    ! Combine liquid and ice contributions into total cloud optical properties
-    !   See also the increment routines in mo_optical_props_kernels
-    !
-    select type(optical_props)
-    type is (ty_optical_props_1scl)
-      !$acc parallel loop gang vector collapse(3) &
-      !$acc& copyin(optical_props, ltau, itau, ltaussa, itaussa) &
-      !$acc& copyout(optical_props%tau)
-      do ibnd = 1, nbnd
-        do ilay = 1, nlay
-          do icol = 1,ncol
-            ! Absorption optical depth  = (1-ssa) * tau = tau - taussa
-            optical_props%tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) + &
-                                                (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd))
+      !
+      ! Combine liquid and ice contributions into total cloud optical properties
+      !   See also the increment routines in mo_optical_props_kernels
+      !
+      select type(optical_props)
+      type is (ty_optical_props_1scl)
+        !$acc parallel loop gang vector default(none) collapse(3) &
+        !$acc               copyin(optical_props) copyout(optical_props%tau)
+
+        do ibnd = 1, nbnd
+          do ilay = 1, nlay
+            do icol = 1,ncol
+              ! Absorption optical depth  = (1-ssa) * tau = tau - taussa
+              optical_props%tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) + &
+                                                  (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd))
+            end do
           end do
         end do
-      end do
-    type is (ty_optical_props_2str)
-      !$acc parallel loop gang vector collapse(3) &
-      !$acc& copyin(optical_props, ltau, itau, ltaussa, itaussa, ltaussag, itaussag) &
-      !$acc& copyout(optical_props%tau, optical_props%ssa, optical_props%g)
-      do ibnd = 1, nbnd
-        do ilay = 1, nlay
-          do icol = 1,ncol
-            tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd)
-            taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd)
-            optical_props%g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / &
-                                                       max(epsilon(tau), taussa)
-            optical_props%ssa(icol,ilay,ibnd) = taussa/max(epsilon(tau), tau)
-            optical_props%tau(icol,ilay,ibnd) = tau
+      type is (ty_optical_props_2str)
+        !$acc parallel loop gang vector default(none) collapse(3) &
+        !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
+        do ibnd = 1, nbnd
+          do ilay = 1, nlay
+            do icol = 1,ncol
+              tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd)
+              taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd)
+              optical_props%g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / &
+                                                        max(epsilon(tau), taussa)
+              optical_props%ssa(icol,ilay,ibnd) = taussa/max(epsilon(tau), tau)
+              optical_props%tau(icol,ilay,ibnd) = tau
+            end do
           end do
         end do
-      end do
-      !!$acc exit data copyout(optical_props%tau,optical_props%ssa,optical_props%g)
-    type is (ty_optical_props_nstr)
-      error_msg = "cloud optics: n-stream calculations not yet supported"
-    end select
-    !$acc exit data delete (liqmsk,icemsk)
-    !$acc exit data delete(ltau, ltaussa, ltaussag, itau, itaussa, itaussag)
-    !$acc exit data delete(clwp, ciwp, reliq, reice)
+      type is (ty_optical_props_nstr)
+        error_msg = "cloud optics: n-stream calculations not yet supported"
+      end select
 
+    end if ! error_msg == ""
+    !$acc end data
   end function cloud_optics
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -636,7 +647,7 @@ contains
     real(wp) :: fint
     real(wp) :: t, ts, tsg  ! tau, tau*ssa, tau*ssa*g
     ! ---------------------------
-    !$acc parallel loop gang vector collapse(3) copyin(lwp, re, mask, tau_table, ssa_table, asy_table) copyout(tau, taussa, taussag)
+    !$acc parallel loop gang vector default(present) collapse(3)
     do ibnd = 1, nbnd
       do ilay = 1,nlay
         do icol = 1, ncol
@@ -718,13 +729,14 @@ contains
     integer,                        intent(in) :: m_asy, n_asy
     real(wp), dimension(nbnd,nsizes,0:m_asy+n_asy), &
                                     intent(in) :: coeffs_asy
-    real(wp), dimension(ncol,nlay,nbnd)          :: tau, taussa, taussag
+    real(wp), dimension(ncol,nlay,nbnd)        :: tau, taussa, taussag
     ! ---------------------------
-    integer  :: icol, ilay, ibnd, irad
+    integer  :: icol, ilay, ibnd, irad, count
     real(wp) :: t, ts
 
+    !$acc parallel loop gang vector default(present) collapse(3)
     do ibnd = 1, nbnd
-      do ilay = 1,nlay
+      do ilay = 1, nlay
         do icol = 1, ncol
           if(mask(icol,ilay)) then
             !
@@ -794,6 +806,8 @@ contains
   ! Evaluate Pade approximant of order [m/n]
   !
   function pade_eval_1(iband, nbnd, nrads, m, n, irad, re, pade_coeffs)
+    !$acc routine seq
+    !
     integer,                intent(in) :: iband, nbnd, nrads, m, n, irad
     real(wp), dimension(nbnd, nrads, 0:m+n), &
                             intent(in) :: pade_coeffs

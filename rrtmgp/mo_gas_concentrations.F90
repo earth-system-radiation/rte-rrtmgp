@@ -37,7 +37,7 @@ module mo_gas_concentrations
   integer, parameter :: GAS_NOT_IN_LIST = -1
 
   type, private :: conc_field
-    real(wp), dimension(:,:), allocatable :: conc
+    real(wp), dimension(:,:), pointer :: conc
   end type conc_field
 
   type, public :: ty_gas_concs
@@ -59,6 +59,7 @@ module mo_gas_concentrations
       procedure, private :: get_vmr_1d
       procedure, private :: get_vmr_2d
       procedure, private :: get_subset_range
+      final :: del
       !
       ! public interface
       !
@@ -79,6 +80,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------
   function set_vmr_scalar(this, gas, w) result(error_msg)
+    ! In OpenACC context scalar w always assumed to be on the CPU 
     class(ty_gas_concs), intent(inout) :: this
     character(len=*),    intent(in   ) :: gas
     real(wp),            intent(in   ) :: w
@@ -87,8 +89,7 @@ contains
     integer :: igas
     ! ---------
     error_msg = ''
-    !$acc enter data copyin(this, w)
-  if (w < 0._wp .or. w > 1._wp) then
+    if (w < 0._wp .or. w > 1._wp) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
       return
     endif
@@ -101,20 +102,26 @@ contains
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
+    ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach
     if (allocated(this%concs(igas)%conc)) then
-      deallocate(this%concs(igas)%conc)
-      !$acc exit data delete(this%concs(igas)%conc)
+      if ( any(shape(this%concs(igas)%conc) /= [1, 1]) ) then
+        !$acc exit data delete(this%concs(igas)%conc)
+        deallocate(this%concs(igas)%conc)
+      end if
     end if
-    allocate(this%concs(igas)%conc(1,1))
-    !$acc enter data create(this%concs(igas)%conc)
+    if (.not. allocated(this%concs(igas)%conc)) then
+      allocate(this%concs(igas)%conc(1,1))
+      !$acc enter data create(this%concs(igas)%conc)
+    end if
+
     !$acc kernels
     this%concs(igas)%conc(:,:) = w
     !$acc end kernels
     this%gas_name(igas) = trim(gas)
-    !$acc exit data delete(w)
   end function set_vmr_scalar
   ! -------------------------------------------------------------------------------------
   function set_vmr_1d(this, gas, w) result(error_msg)
+    ! In OpenACC context w assumed to be either on the CPU or on the GPU
     class(ty_gas_concs), intent(inout) :: this
     character(len=*),    intent(in   ) :: gas
     real(wp), dimension(:), &
@@ -124,8 +131,7 @@ contains
     integer :: igas
     ! ---------
     error_msg = ''
-
-    !$acc enter data copyin(this, w)
+    
     if (any_vals_outside(w, 0._wp, 1._wp)) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
@@ -144,20 +150,28 @@ contains
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
+    ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach
     if (allocated(this%concs(igas)%conc)) then
-      deallocate(this%concs(igas)%conc)
-      !$acc exit data delete(this%concs(igas)%conc)
+      if ( any(shape(this%concs(igas)%conc) /= [1, this%nlay]) ) then
+        !$acc exit data delete(this%concs(igas)%conc)
+        deallocate(this%concs(igas)%conc)
+      end if
     end if
-    allocate(this%concs(igas)%conc(1,this%nlay))
-    !$acc enter data create(this%concs(igas)%conc)
-    !$acc kernels
+    if (.not. allocated(this%concs(igas)%conc)) then
+      allocate(this%concs(igas)%conc(1,this%nlay))
+      !$acc enter data create(this%concs(igas)%conc)
+    end if
+
+    !$acc kernels copyin(w)
     this%concs(igas)%conc(1,:) = w
     !$acc end kernels
+
     this%gas_name(igas) = trim(gas)
     !$acc exit data delete(w)
   end function set_vmr_1d
   ! --------------------
   function set_vmr_2d(this, gas, w) result(error_msg)
+    ! In OpenACC context w assumed to be either on the CPU or on the GPU
     class(ty_gas_concs), intent(inout) :: this
     character(len=*),    intent(in   ) :: gas
     real(wp), dimension(:,:),  &
@@ -168,7 +182,6 @@ contains
     ! ---------
     error_msg = ''
 
-    !$acc enter data copyin(this, w)
     if (any_vals_outside(w, 0._wp, 1._wp)) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
@@ -194,17 +207,23 @@ contains
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
+    ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach
     if (allocated(this%concs(igas)%conc)) then
-      deallocate(this%concs(igas)%conc)
-      !$acc exit data delete(this%concs(igas)%conc)
+      if ( any(shape(this%concs(igas)%conc) /= [this%ncol,this%nlay]) ) then
+        !$acc exit data delete(this%concs(igas)%conc)
+        deallocate(this%concs(igas)%conc)
+      end if
     end if
-    allocate(this%concs(igas)%conc(this%ncol,this%nlay))
-    !$acc enter data create(this%concs(igas)%conc)
-    !$acc kernels
-    this%concs(igas)%conc(:,:) = w
+    if (.not. allocated(this%concs(igas)%conc)) then
+      allocate(this%concs(igas)%conc(this%ncol,this%nlay))
+      !$acc enter data create(this%concs(igas)%conc)
+    end if
+    
+    !$acc kernels copyin(w)
+    this%concs(igas)%conc(:,:) = w(:,:)
     !$acc end kernels
+
     this%gas_name(igas) = trim(gas)
-    !$acc exit data delete(w)
   end function set_vmr_2d
   ! -------------------------------------------------------------------------------------
   !
@@ -236,17 +255,17 @@ contains
     end if
     if(error_msg /= "") return
 
-    !$acc enter data copyin(this%concs(igas)%conc) create(array)
+    !$acc data copyout (array) present(this)
     if(size(this%concs(igas)%conc, 2) > 1) then
-      !$acc kernels
+      !$acc kernels default(none)
       array(:) = this%concs(igas)%conc(1,:)
       !$acc end kernels
     else
-      !$acc kernels
+      !$acc kernels default(none)
       array(:) = this%concs(igas)%conc(1,1)
       !$acc end kernels
     end if
-    !$acc exit data copyout(array)
+    !$acc end data
 
   end function get_vmr_1d
   ! -------------------------------------------------------------------------------------
@@ -254,6 +273,8 @@ contains
   ! 2D array (col, lay)
   !
   function get_vmr_2d(this, gas, array) result(error_msg)
+    use openacc
+
     class(ty_gas_concs) :: this
     character(len=*),         intent(in ) :: gas
     real(wp), dimension(:,:), intent(out) :: array
@@ -278,30 +299,31 @@ contains
     end if
     if(error_msg /= "") return
 
-    !$acc enter data copyin(this%concs(igas)%conc) create(array)
+    !$acc data copyout (array) present(this, this%concs)
     if(size(this%concs(igas)%conc, 1) > 1) then      ! Concentration stored as 2D
-      !$acc parallel loop collapse(2)
+      !$acc parallel loop collapse(2) default(none)
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
+          !print *, (size(this%concs))
           array(icol,ilay) = this%concs(igas)%conc(icol,ilay)
         end do
       end do
     else if(size(this%concs(igas)%conc, 2) > 1) then ! Concentration stored as 1D
-      !$acc parallel loop collapse(2)
+      !$acc parallel loop collapse(2) default(none)
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
          array(icol, ilay) = this%concs(igas)%conc(1,ilay)
         end do
       end do
     else                                             ! Concentration stored as scalar
-      !$acc parallel loop collapse(2)
+      !$acc parallel loop collapse(2) default(none)
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
           array(icol,ilay) = this%concs(igas)%conc(1,1)
         end do
       end do
     end if
-    !$acc exit data copyout(array)
+    !$acc end data
 
   end function get_vmr_2d
   ! -------------------------------------------------------------------------------------
@@ -329,11 +351,11 @@ contains
     call subset%reset()
     allocate(subset%gas_name(size(this%gas_name)), &
              subset%concs   (size(this%concs))) ! These two arrays should be the same length
+    !$acc enter data create(subset, subset%concs)
     subset%nlay = this%nlay
     subset%ncol = merge(n, 0, this%ncol > 0)
     subset%gas_name(:)  = this%gas_name(:)
 
-    !$acc enter data copyin(this, subset)
     do i = 1, size(this%gas_name)
       !
       ! Preserve scalar/1D/2D representation in subset,
@@ -370,10 +392,11 @@ contains
     if (allocated(this%concs)) then
       do i = 1, size(this%concs)
         if(allocated(this%concs(i)%conc)) then
-          deallocate(this%concs(i)%conc)
           !$acc exit data delete(this%concs(i)%conc)
+          deallocate(this%concs(i)%conc)
         end if
       end do
+      !$acc exit data delete(this%concs)
       deallocate(this%concs)
     end if
   end subroutine reset
@@ -407,21 +430,48 @@ contains
   !   the gas isn't in the list already
   !
   subroutine increase_list_size(this)
+    use openacc
     class(ty_gas_concs), intent(inout) :: this
     ! -----------------
     character(len=32), dimension(:), allocatable :: new_names
     type(conc_field),  dimension(:), allocatable :: new_concs
+    integer :: sz
     ! -----------------
 
     if(allocated(this%gas_name)) then
-      allocate(new_names(size(this%gas_name)+1), new_concs(size(this%gas_name)+1))
-      new_names(1:size(this%gas_name)) = this%gas_name(:)
-      new_concs(1:size(this%gas_name)) = this%concs(:)
+      
+      sz = size(this%gas_name)
+
+      allocate(new_names(sz+1), new_concs(sz+1))
+      new_names(1:sz) = this%gas_name(1:sz)
+      new_concs(1:sz) = this%concs(1:sz)
+
+      ! Messy code to do proper OpenACC reallocation
+      !$acc data create(new_concs)
+
+      !$acc kernels default(present)
+      new_concs(1:sz) = this%concs(1:sz)
+      !$acc end kernels
+
+      !$acc exit data delete(this%concs)
+      deallocate(this%concs)
+      allocate(this%concs(sz+1))
+      !$acc enter data create(this%concs)
+      
+      !$acc kernels default(present)
+      this%concs(1:sz) = new_concs(1:sz)
+      !$acc end kernels
+      
+      !$acc end data
+
       call move_alloc(new_names, this%gas_name)
-      call move_alloc(new_concs, this%concs)
+      this%concs(1:sz) = new_concs(1:sz)
+      deallocate(new_concs)
+
     else
       allocate(this%gas_name(1))
       allocate(this%concs(1))
+      !$acc enter data copyin(this, this%concs)
     end if
   end subroutine increase_list_size
   ! -------------------------------------------------------------------------------------
@@ -429,9 +479,9 @@ contains
   ! find gas in list; GAS_NOT_IN_LIST if not found
   !
   function find_gas(this, gas)
-    character(len=*),   intent(in) :: gas
+    character(len=*),    intent(in) :: gas
     class(ty_gas_concs), intent(in) :: this
-    integer                        :: find_gas
+    integer                         :: find_gas
     ! -----------------
     integer :: igas
     ! -----------------
@@ -443,5 +493,11 @@ contains
       end if
     end do
   end function
+  ! -------------------------------------------------------------------------------------
+  subroutine del(this)
+    type(ty_gas_concs), intent(inout) :: this
+    call this%reset()
+    !$acc exit data delete(this)
+  end subroutine del
   ! -------------------------------------------------------------------------------------
 end module mo_gas_concentrations

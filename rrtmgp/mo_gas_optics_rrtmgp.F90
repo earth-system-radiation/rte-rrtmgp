@@ -1014,12 +1014,11 @@ contains
     !!$acc enter data copyin(this)
     allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
              this%kmajor(size(kmajor,1),size(kmajor,2),size(kmajor,3),size(kmajor,4)))
-    !!$acc enter data create(this%press_ref, this%temp_ref, this%kmajor)
-    !!$acc kernels
     this%press_ref = press_ref
     this%temp_ref  = temp_ref
     this%kmajor    = kmajor
-    !!$acc end kernels
+    !$acc enter data copyin(this%kmajor)
+
 
     if(allocated(rayl_lower) .neqv. allocated(rayl_upper)) then
       err_message = "rayl_lower and rayl_upper must have the same allocation status"
@@ -1037,10 +1036,9 @@ contains
     ! ---- post processing ----
     ! creates log reference pressure
     allocate(this%press_ref_log(size(this%press_ref)))
-    !!$acc enter data create(this%press_ref_log)
-    !!$acc kernels
     this%press_ref_log(:) = log(this%press_ref(:))
-    !!$acc end kernels
+    !$acc enter data copyin(this%press_ref_log)
+
 
     ! log scale of reference pressure
     this%press_ref_trop_log = log(press_ref_trop)
@@ -1560,6 +1558,8 @@ contains
       !!$acc end kernels
     endif
     !!$acc enter data copyin(scaling_gas_atm_red,minor_gases_atm_red)
+
+    !$acc enter data copyin(kminor_atm_red)
 
   end subroutine reduce_minor_arrays
 

@@ -121,7 +121,6 @@ contains
     ! Error checking
     !   Can we check for consistency between table bounds and _fac?
     !
-    !$acc enter data create(this)
     if(nbnd /= this%get_nband()) &
       error_msg = "cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
     if(size(lut_extice, 2) /= nbnd) &
@@ -147,8 +146,10 @@ contains
              this%lut_extice(nsize_ice, nbnd, nrghice), &
              this%lut_ssaice(nsize_ice, nbnd, nrghice), &
              this%lut_asyice(nsize_ice, nbnd, nrghice))
-    !$acc enter data create(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq)
-    !$acc enter data create(this%lut_extice, this%lut_ssaice, this%lut_asyice)
+
+    !$acc enter data create(this)                                               &
+    !$acc            create(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq)  &
+    !$acc            create(this%lut_extice, this%lut_ssaice, this%lut_asyice)
     ! Load LUT constants
     this%radliq_lwr = radliq_lwr
     this%radliq_upr = radliq_upr
@@ -215,7 +216,6 @@ contains
     !
     ! Error checking
     !
-    !$acc enter data create(this)
     if(nbnd /= this%get_nband()) &
       error_msg = "cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
     if(.not. extents_are(pade_ssaliq, nbnd, nsizereg, ncoeff_ssa_g)) &
@@ -271,13 +271,14 @@ contains
              this%pade_sizreg_extice(nbound), &
              this%pade_sizreg_ssaice(nbound), &
              this%pade_sizreg_asyice(nbound))
+    !$acc enter data create(this)                                                                       &
+    !$acc            create(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq)                       &
+    !$acc            create(this%pade_extice, this%pade_ssaice, this%pade_asyice)                       &
+    !$acc            create(this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq)  &
+    !$acc            create(this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)
     !
     ! Load data
     !
-    !$acc enter data create(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq)
-    !$acc enter data create(this%pade_extice, this%pade_ssaice, this%pade_asyice)
-    !$acc enter data create(this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq)
-    !$acc enter data create(this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)
     !$acc kernels
     this%pade_extliq = pade_extliq
     this%pade_ssaliq = pade_ssaliq

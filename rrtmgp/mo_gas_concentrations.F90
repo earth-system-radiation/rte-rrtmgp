@@ -37,7 +37,7 @@ module mo_gas_concentrations
   integer, parameter :: GAS_NOT_IN_LIST = -1
 
   type, private :: conc_field
-    real(wp), dimension(:,:), pointer :: conc
+    real(wp), dimension(:,:), pointer :: conc => NULL()
   end type conc_field
 
   type, public :: ty_gas_concs
@@ -103,13 +103,14 @@ contains
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
     ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach
-    if (allocated(this%concs(igas)%conc)) then
+    if (associated(this%concs(igas)%conc)) then
       if ( any(shape(this%concs(igas)%conc) /= [1, 1]) ) then
         !$acc exit data delete(this%concs(igas)%conc)
         deallocate(this%concs(igas)%conc)
+        nullify   (this%concs(igas)%conc)
       end if
     end if
-    if (.not. allocated(this%concs(igas)%conc)) then
+    if (.not. associated(this%concs(igas)%conc)) then
       allocate(this%concs(igas)%conc(1,1))
       !$acc enter data create(this%concs(igas)%conc)
     end if
@@ -151,13 +152,14 @@ contains
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
     ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach
-    if (allocated(this%concs(igas)%conc)) then
+    if (associated(this%concs(igas)%conc)) then
       if ( any(shape(this%concs(igas)%conc) /= [1, this%nlay]) ) then
         !$acc exit data delete(this%concs(igas)%conc)
         deallocate(this%concs(igas)%conc)
+        nullify   (this%concs(igas)%conc)
       end if
     end if
-    if (.not. allocated(this%concs(igas)%conc)) then
+    if (.not. associated(this%concs(igas)%conc)) then
       allocate(this%concs(igas)%conc(1,this%nlay))
       !$acc enter data create(this%concs(igas)%conc)
     end if
@@ -208,13 +210,14 @@ contains
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
     ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach
-    if (allocated(this%concs(igas)%conc)) then
+    if (associated(this%concs(igas)%conc)) then
       if ( any(shape(this%concs(igas)%conc) /= [this%ncol,this%nlay]) ) then
         !$acc exit data delete(this%concs(igas)%conc)
         deallocate(this%concs(igas)%conc)
+        nullify   (this%concs(igas)%conc)
       end if
     end if
-    if (.not. allocated(this%concs(igas)%conc)) then
+    if (.not. associated(this%concs(igas)%conc)) then
       allocate(this%concs(igas)%conc(this%ncol,this%nlay))
       !$acc enter data create(this%concs(igas)%conc)
     end if
@@ -391,9 +394,10 @@ contains
     if(allocated(this%gas_name)) deallocate(this%gas_name)
     if (allocated(this%concs)) then
       do i = 1, size(this%concs)
-        if(allocated(this%concs(i)%conc)) then
+        if(associated(this%concs(i)%conc)) then
           !$acc exit data delete(this%concs(i)%conc)
           deallocate(this%concs(i)%conc)
+          nullify(this%concs(i)%conc)
         end if
       end do
       !$acc exit data delete(this%concs)

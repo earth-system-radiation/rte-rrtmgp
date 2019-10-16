@@ -697,23 +697,19 @@ contains
                     kminor_start_upper,                             &
                     totplnk, planck_frac, rayl_lower, rayl_upper, &
                     optimal_single_angle_fit) result(err_message)
-    class(ty_gas_optics_rrtmgp),     intent(inout) :: this
+    class(ty_gas_optics_rrtmgp),            intent(inout) :: this
     class(ty_gas_concs),                    intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*),   dimension(:),       intent(in   ) :: gas_names
     integer,            dimension(:,:,:),   intent(in   ) :: key_species
     integer,            dimension(:,:),     intent(in   ) :: band2gpt
     real(wp),           dimension(:,:),     intent(in   ) :: band_lims_wavenum
     real(wp),           dimension(:),       intent(in   ) :: press_ref, temp_ref
-    real(wp),                               intent(in   ) :: press_ref_trop, temp_ref_p, temp_ref_t
+    real(wp),                               intent(in   ) :: press_ref_trop, &
+                                                             temp_ref_p, &
+                                                             temp_ref_t
     real(wp),           dimension(:,:,:),   intent(in   ) :: vmr_ref
     real(wp),           dimension(:,:,:,:), intent(in   ) :: kmajor
     real(wp),           dimension(:,:,:),   intent(in   ) :: kminor_lower, kminor_upper
-    real(wp),           dimension(:,:),     intent(in   ) :: totplnk
-    real(wp),           dimension(:,:,:,:), intent(in   ) :: planck_frac
-    real(wp),           dimension(:,:,:),   intent(in   ), &
-                                              allocatable :: rayl_lower, rayl_upper
-    real(wp),           dimension(:,:),     intent(in   ), &
-                                              allocatable :: optimal_single_angle_fit
     character(len=*),   dimension(:),       intent(in   ) :: gas_minor,identifier_minor
     character(len=*),   dimension(:),       intent(in   ) :: minor_gases_lower, &
                                                              minor_gases_upper
@@ -727,6 +723,12 @@ contains
                                                              scale_by_complement_upper
     integer,            dimension(:),       intent(in   ) :: kminor_start_lower,&
                                                              kminor_start_upper
+    real(wp),           dimension(:,:),     intent(in   ) :: totplnk
+    real(wp),           dimension(:,:,:,:), intent(in   ) :: planck_frac
+    real(wp),           dimension(:,:,:),   intent(in   ), &
+                                              allocatable :: rayl_lower, rayl_upper
+    real(wp),           dimension(:,:),     intent(in   ), &
+                                              optional    :: optimal_single_angle_fit
     character(len = 128) :: err_message
     ! ----
     err_message = init_abs_coeffs(this, &
@@ -753,7 +755,11 @@ contains
     !
     this%totplnk = totplnk
     this%planck_frac = planck_frac
-    this%optimal_single_angle_fit = optimal_single_angle_fit
+    if (present(optimal_single_angle_fit)) then
+      this%optimal_single_angle_fit = optimal_single_angle_fit
+    else
+      if(allocated(this%optimal_single_angle_fit)) deallocate(this%optimal_single_angle_fit )
+    end if
 
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the

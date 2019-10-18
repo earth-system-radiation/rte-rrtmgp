@@ -104,7 +104,8 @@ contains
     !
     call this%reset()
     allocate(this%gas_name(ngas), this%concs(ngas))
-    !$acc enter data create(this%concs)
+    !$acc enter data copyin(this)
+    !$acc enter data copyin(this%concs)
     
     this%gas_name(:) = gas_names(:)
   end function
@@ -152,7 +153,6 @@ contains
     !$acc kernels
     this%concs(igas)%conc(:,:) = w
     !$acc end kernels
-    this%gas_name(igas) = trim(gas)
   end function set_vmr_scalar
   ! -------------------------------------------------------------------------------------
   function set_vmr_1d(this, gas, w) result(error_msg)
@@ -202,7 +202,6 @@ contains
     this%concs(igas)%conc(1,:) = w
     !$acc end kernels
 
-    this%gas_name(igas) = trim(gas)
     !$acc exit data delete(w)
   end function set_vmr_1d
   ! -------------------------------------------------------------------------------------
@@ -243,7 +242,7 @@ contains
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
-    ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach    
+    ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach
     if (associated(this%concs(igas)%conc)) then
       if ( any(shape(this%concs(igas)%conc) /= [this%ncol,this%nlay]) ) then
         !$acc exit data delete(this%concs(igas)%conc)
@@ -259,8 +258,6 @@ contains
     !$acc kernels copyin(w)
     this%concs(igas)%conc(:,:) = w(:,:)
     !$acc end kernels
-
-    this%gas_name(igas) = trim(gas)
   end function set_vmr_2d
   ! -------------------------------------------------------------------------------------
   !

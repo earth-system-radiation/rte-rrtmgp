@@ -276,8 +276,6 @@ contains
   ! 2D array (col, lay)
   !
   function get_vmr_2d(this, gas, array) result(error_msg)
-    use openacc
-
     class(ty_gas_concs) :: this
     character(len=*),         intent(in ) :: gas
     real(wp), dimension(:,:), intent(out) :: array
@@ -434,7 +432,6 @@ contains
   !   the gas isn't in the list already
   !
   subroutine increase_list_size(this)
-    use openacc
     class(ty_gas_concs), intent(inout) :: this
     ! -----------------
     character(len=32), dimension(:), allocatable :: new_names

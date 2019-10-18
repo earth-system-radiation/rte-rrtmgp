@@ -90,7 +90,7 @@ contains
     ! loop over implemented combinations of major species
     ! PGI BUG WORKAROUND: if present(vmr_ref) isn't there, OpenACC runtime
     ! thinks it isn't present.
-    !$acc parallel loop gang vector collapse(4) private(igases) present(vmr_ref) 
+    !$acc parallel loop gang vector collapse(4) private(igases) present(vmr_ref)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! loop over implemented combinations of major species
@@ -456,7 +456,7 @@ contains
             ! Which gpoint range does this minor gas affect?
             gptS = minor_limits_gpt(1,imnr)
             gptE = minor_limits_gpt(2,imnr)
-            
+
             ! Find the actual g-point to work on
             igpt = igpt0 + gptS
 

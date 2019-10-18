@@ -1249,7 +1249,7 @@ contains
   end function get_col_dry
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! JSD
+  !
   !
   function compute_optimal_single_angles(this, optical_props, &
                                          optimal_single_angles) result(err_msg)
@@ -1261,8 +1261,7 @@ contains
 
     !output
     character(len=128)   :: err_msg
-    real(wp), dimension(:,:), allocatable, &
-                                      intent(out)   :: optimal_single_angles
+    real(wp), dimension(:,:), intent(inout)         :: optimal_single_angles
 
     ! Local variables
     !
@@ -1273,22 +1272,22 @@ contains
     ncol = optical_props%get_ncol()
     ngpt = optical_props%get_ngpt()
     nbnd = optical_props%get_nband()
+    
+    err_msg=""
 
-    if(allocated(optimal_single_angles)) deallocate(optimal_single_angles)
-    allocate(optimal_single_angles(ncol,ngpt))
-
-    err_msg=''
     ! Check match in dimensions between tau and optimal_single_angle_fit
-    if (nbnd .ne. size(this%optimal_single_angle_fit,2)) then
-      err_msg='Size (band) of optimal_single_angle_fit not consistent with input optical properties'
-     return
-    end if
-    if (size(this%optimal_single_angle_fit,1) .ne. 2) then
-      err_msg='Number of coefficients in optimal_single_angle_fit not equal to linear fit'
-     return
-    end if
+    if (nbnd .ne. size(this%optimal_single_angle_fit,2)) err_msg = &
+      "gas_optics%compute_optimal_single_angles: optimal_single_angle_fit different dimension (nbnd)"
+    if (size(this%optimal_single_angle_fit,1) .ne. 2) err_msg = &
+      "gas_optics%compute_optimal_single_angles: optimal_single_angle_fit different dimension for linear fit (2)"
 
-    if (err_msg /=  '') return
+    ! Check dimensions of incoming optimal_single_angles array
+    if(size(optimal_single_angles,1) /= ncol) err_msg = &
+      "gas_optics%compute_optimal_single_angles: optimal_single_angles different dimension (ncol)"
+    if(size(optimal_single_angles,2) /= ngpt) err_msg = &
+      "gas_optics%compute_optimal_single_angles: optimal_single_angles different dimension (ngpt)"
+
+    if (err_msg /=  "") return
 
     do col = 1, ncol
       do gpt = 1, ngpt

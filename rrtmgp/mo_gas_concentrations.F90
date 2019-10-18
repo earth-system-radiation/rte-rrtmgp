@@ -51,7 +51,6 @@ module mo_gas_concentrations
       !
       ! Procedures
       !
-      procedure, private :: increase_list_size
       procedure, private :: find_gas
       procedure, private :: set_vmr_scalar
       procedure, private :: set_vmr_1d
@@ -63,6 +62,7 @@ module mo_gas_concentrations
       !
       ! public interface
       !
+      procedure, public :: init
       procedure, public :: reset
       generic,   public :: set_vmr => set_vmr_scalar, &
                                       set_vmr_1d, &
@@ -75,12 +75,46 @@ module mo_gas_concentrations
   end type ty_gas_concs
 contains
   ! -------------------------------------------------------------------------------------
+  function init(this, gas_names) result(error_msg)
+    class(ty_gas_concs),            intent(inout) :: this
+    character(len=*), dimension(:), intent(in   ) :: gas_names
+    character(len=128)                            :: error_msg
+    ! ---------
+    integer :: i, j, ngas
+    ! ---------
+    error_msg = ''
+    ngas = size(gas_names)
+    !
+    ! Check for no duplicate gas names, no empty names
+    !
+    if(any(len_trim(gas_names) == 0)) &
+      error_msg = "ty_gas_concs%init(): must provide non-empty gas names"
+
+    do i = 1, ngas-1
+      do j = i+1, ngas
+        if (lower_case(trim(gas_names(i))) == lower_case(trim(gas_names(j)))) then
+          error_msg = "ty_gas_concs%init(): duplicate gas names aren't allowed"
+          exit
+        end if
+      end do
+    end do
+    if(error_msg /= "") return
+    !
+    ! Allocate fixed-size arrays
+    !
+    call this%reset()
+    allocate(this%gas_name(ngas), this%concs(ngas))
+    !$acc enter data create(this%concs)
+    
+    this%gas_name(:) = gas_names(:)
+  end function
+  ! -------------------------------------------------------------------------------------
   !
   ! Set concentrations --- scalar, 1D, 2D
   !
   ! -------------------------------------------------------------------------------------
   function set_vmr_scalar(this, gas, w) result(error_msg)
-    ! In OpenACC context scalar w always assumed to be on the CPU 
+    ! In OpenACC context scalar w always assumed to be on the CPU
     class(ty_gas_concs), intent(inout) :: this
     character(len=*),    intent(in   ) :: gas
     real(wp),            intent(in   ) :: w
@@ -90,14 +124,14 @@ contains
     ! ---------
     error_msg = ''
     if (w < 0._wp .or. w > 1._wp) then
-      error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
+      error_msg = 'ty_gas_concs%set_vmr(): concentrations should be >= 0, <= 1'
       return
     endif
 
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
-      call this%increase_list_size()
-      igas = size(this%gas_name)
+      error_msg = 'ty_gas_concs%set_vmr(): trying to set ' // trim(gas) // ' but name not provided at initialization'
+      return
     end if
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
@@ -132,7 +166,7 @@ contains
     integer :: igas
     ! ---------
     error_msg = ''
-    
+
     if (any_vals_outside(w, 0._wp, 1._wp)) then
       error_msg = 'ty_gas_concs%set_vmr: concentrations should be >= 0, <= 1'
     endif
@@ -145,8 +179,8 @@ contains
 
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
-      call this%increase_list_size()
-      igas = size(this%gas_name)
+      error_msg = 'ty_gas_concs%set_vmr(): trying to set ' // trim(gas) // ' but name not provided at initialization'
+      return
     end if
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
@@ -171,7 +205,7 @@ contains
     this%gas_name(igas) = trim(gas)
     !$acc exit data delete(w)
   end function set_vmr_1d
-  ! --------------------
+  ! -------------------------------------------------------------------------------------
   function set_vmr_2d(this, gas, w) result(error_msg)
     ! In OpenACC context w assumed to be either on the CPU or on the GPU
     class(ty_gas_concs), intent(inout) :: this
@@ -203,13 +237,13 @@ contains
 
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
-      call this%increase_list_size()
-      igas = size(this%gas_name)
+      error_msg = 'ty_gas_concs%set_vmr(): trying to set ' // trim(gas) // 'but name not provided at initialization'
+      return
     end if
     !
     ! Deallocate anything existing -- could be more efficient to test if it's already the correct size
     !
-    ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach
+    ! This cannot be made a function, because we need all the hierarchy for the correct OpenACC attach    
     if (associated(this%concs(igas)%conc)) then
       if ( any(shape(this%concs(igas)%conc) /= [this%ncol,this%nlay]) ) then
         !$acc exit data delete(this%concs(igas)%conc)
@@ -221,7 +255,7 @@ contains
       allocate(this%concs(igas)%conc(this%ncol,this%nlay))
       !$acc enter data create(this%concs(igas)%conc)
     end if
-    
+
     !$acc kernels copyin(w)
     this%concs(igas)%conc(:,:) = w(:,:)
     !$acc end kernels
@@ -249,6 +283,8 @@ contains
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' not found'
+    else if(.not. associated(this%concs(igas)%conc)) then
+      error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // " concentration hasn't been set"
     else if(size(this%concs(igas)%conc, 1) > 1) then ! Are we requesting a single profile when many are present?
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' requesting single profile but many are available'
     end if
@@ -288,6 +324,8 @@ contains
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' not found'
+    else if(.not. associated(this%concs(igas)%conc)) then
+      error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // " concentration hasn't been set"
     end if
     !
     ! Is the requested array the correct size?
@@ -426,55 +464,6 @@ contains
   !
   ! Private procedures
   !
-  ! -------------------------------------------------------------------------------------
-  !
-  ! This routine is called when adding a new concentration if the
-  !   the gas isn't in the list already
-  !
-  subroutine increase_list_size(this)
-    class(ty_gas_concs), intent(inout) :: this
-    ! -----------------
-    character(len=32), dimension(:), allocatable :: new_names
-    type(conc_field),  dimension(:), allocatable :: new_concs
-    integer :: sz
-    ! -----------------
-
-    if(allocated(this%gas_name)) then
-      
-      sz = size(this%gas_name)
-
-      allocate(new_names(sz+1), new_concs(sz+1))
-      new_names(1:sz) = this%gas_name(1:sz)
-      new_concs(1:sz) = this%concs(1:sz)
-
-      ! Messy code to do proper OpenACC reallocation
-      !$acc data create(new_concs)
-
-      !$acc kernels default(present)
-      new_concs(1:sz) = this%concs(1:sz)
-      !$acc end kernels
-
-      !$acc exit data delete(this%concs)
-      deallocate(this%concs)
-      allocate(this%concs(sz+1))
-      !$acc enter data create(this%concs)
-      
-      !$acc kernels default(present)
-      this%concs(1:sz) = new_concs(1:sz)
-      !$acc end kernels
-      
-      !$acc end data
-
-      call move_alloc(new_names, this%gas_name)
-      this%concs(1:sz) = new_concs(1:sz)
-      deallocate(new_concs)
-
-    else
-      allocate(this%gas_name(1))
-      allocate(this%concs(1))
-      !$acc enter data copyin(this, this%concs)
-    end if
-  end subroutine increase_list_size
   ! -------------------------------------------------------------------------------------
   !
   ! find gas in list; GAS_NOT_IN_LIST if not found

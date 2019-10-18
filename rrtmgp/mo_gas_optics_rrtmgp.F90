@@ -127,7 +127,7 @@ module mo_gas_optics_rrtmgp
                                                                ! planck_frac(g-point, eta, pressure, temperature)
     real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (Planck temperatures,band)
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
-    real(wp), dimension(:,:),     allocatable :: optimal_single_angle_fit
+    real(wp), dimension(:,:),     allocatable :: optimal_angle_fit
     ! -----------------------------------------------------------------------------------
     ! Solar source function spectral mapping
     !   Allocated only when gas optics object is external-source
@@ -154,7 +154,7 @@ module mo_gas_optics_rrtmgp
     procedure, public :: get_press_max
     procedure, public :: get_temp_min
     procedure, public :: get_temp_max
-    procedure, public :: compute_optimal_single_angles
+    procedure, public :: compute_optimal_angles
     ! Internal procedures
     procedure, private :: load_int
     procedure, private :: load_ext
@@ -696,7 +696,7 @@ contains
                     kminor_start_lower,                             &
                     kminor_start_upper,                             &
                     totplnk, planck_frac, rayl_lower, rayl_upper, &
-                    optimal_single_angle_fit) result(err_message)
+                    optimal_angle_fit) result(err_message)
     class(ty_gas_optics_rrtmgp),            intent(inout) :: this
     class(ty_gas_concs),                    intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*),   dimension(:),       intent(in   ) :: gas_names
@@ -728,7 +728,7 @@ contains
     real(wp),           dimension(:,:,:),   intent(in   ), &
                                               allocatable :: rayl_lower, rayl_upper
     real(wp),           dimension(:,:),     intent(in   ), &
-                                              optional    :: optimal_single_angle_fit
+                                              optional    :: optimal_angle_fit
     character(len = 128) :: err_message
     ! ----
     err_message = init_abs_coeffs(this, &
@@ -755,10 +755,10 @@ contains
     !
     this%totplnk = totplnk
     this%planck_frac = planck_frac
-    if (present(optimal_single_angle_fit)) then
-      this%optimal_single_angle_fit = optimal_single_angle_fit
+    if (present(optimal_angle_fit)) then
+      this%optimal_angle_fit = optimal_angle_fit
     else
-      if(allocated(this%optimal_single_angle_fit)) deallocate(this%optimal_single_angle_fit )
+      if(allocated(this%optimal_angle_fit)) deallocate(this%optimal_angle_fit )
     end if
 
     ! Temperature steps for Planck function interpolation
@@ -1251,8 +1251,8 @@ contains
   !
   !
   !
-  function compute_optimal_single_angles(this, optical_props, &
-                                         optimal_single_angles) result(err_msg)
+  function compute_optimal_angles(this, optical_props, &
+                                         optimal_angles) result(err_msg)
 
     ! input
     class(ty_gas_optics_rrtmgp), &
@@ -1261,7 +1261,7 @@ contains
 
     !output
     character(len=128)   :: err_msg
-    real(wp), dimension(:,:), intent(inout)         :: optimal_single_angles
+    real(wp), dimension(:,:), intent(inout)         :: optimal_angles
 
     ! Local variables
     !
@@ -1272,20 +1272,20 @@ contains
     ncol = optical_props%get_ncol()
     ngpt = optical_props%get_ngpt()
     nbnd = optical_props%get_nband()
-    
+
     err_msg=""
 
-    ! Check match in dimensions between tau and optimal_single_angle_fit
-    if (nbnd .ne. size(this%optimal_single_angle_fit,2)) err_msg = &
-      "gas_optics%compute_optimal_single_angles: optimal_single_angle_fit different dimension (nbnd)"
-    if (size(this%optimal_single_angle_fit,1) .ne. 2) err_msg = &
-      "gas_optics%compute_optimal_single_angles: optimal_single_angle_fit different dimension for linear fit (2)"
+    ! Check match in dimensions between tau and optimal_angle_fit
+    if (nbnd .ne. size(this%optimal_angle_fit,2)) err_msg = &
+      "gas_optics%compute_optimal_angles: optimal_angle_fit different dimension (nbnd)"
+    if (size(this%optimal_angle_fit,1) .ne. 2) err_msg = &
+      "gas_optics%compute_optimal_angles: optimal_angle_fit different dimension for linear fit (2)"
 
-    ! Check dimensions of incoming optimal_single_angles array
-    if(size(optimal_single_angles,1) /= ncol) err_msg = &
-      "gas_optics%compute_optimal_single_angles: optimal_single_angles different dimension (ncol)"
-    if(size(optimal_single_angles,2) /= ngpt) err_msg = &
-      "gas_optics%compute_optimal_single_angles: optimal_single_angles different dimension (ngpt)"
+    ! Check dimensions of incoming optimal_angles array
+    if(size(optimal_angles,1) /= ncol) err_msg = &
+      "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
+    if(size(optimal_angles,2) /= ngpt) err_msg = &
+      "gas_optics%compute_optimal_angles: optimal_angles different dimension (ngpt)"
 
     if (err_msg /=  "") return
 
@@ -1293,12 +1293,12 @@ contains
       do gpt = 1, ngpt
         trans_total = exp(-sum(optical_props%tau(col,:,gpt)))
         bnd = optical_props%gpt2band(gpt)
-        optimal_single_angles(col,gpt) = this%optimal_single_angle_fit(1,bnd)*trans_total + &
-          this%optimal_single_angle_fit(2,bnd)
+        optimal_angles(col,gpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
+          this%optimal_angle_fit(2,bnd)
       end do
     end do
 
-  end function compute_optimal_single_angles
+  end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Internal procedures

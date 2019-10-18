@@ -73,7 +73,7 @@ contains
     real(wp), dimension(:      ), allocatable :: solar_src
     real(wp), dimension(:,:    ), allocatable :: totplnk
     real(wp), dimension(:,:,:,:), allocatable :: planck_frac
-    real(wp), dimension(:,:)    , allocatable :: optimal_single_angle_fit
+    real(wp), dimension(:,:)    , allocatable :: optimal_angle_fit
 
     ! -----------------
     !
@@ -181,11 +181,11 @@ contains
       totplnk     = read_field(ncid, 'totplnk', ninternalSourcetemps, nbnds)
       planck_frac = read_field(ncid, 'plank_fraction', ngpts, nmixingfracs, npress+1, ntemps)
       !
-      ! If there's a optimal_single_angle_fit in the file, then call load with optional argument
+      ! If there's a optimal_angle_fit in the file, then call load with optional argument
       !
-      if (var_exists(ncid, 'optimal_single_angle_fit')) then
+      if (var_exists(ncid, 'optimal_angle_fit')) then
         nfit_coeffs = get_dim_size(ncid,'fit_coeffs')
-        optimal_single_angle_fit = read_field(ncid, 'optimal_single_angle_fit', nfit_coeffs, nbnds)
+        optimal_angle_fit = read_field(ncid, 'optimal_angle_fit', nfit_coeffs, nbnds)
         call stop_on_err(kdist%load(available_gases, &
                                   gas_names,   &
                                   key_species, &
@@ -210,7 +210,7 @@ contains
                                   kminor_start_upper, &
                                   totplnk, planck_frac,       &
                                   rayl_lower, rayl_upper, &
-                                  optimal_single_angle_fit))
+                                  optimal_angle_fit))
       else
         call stop_on_err(kdist%load(available_gases, &
                                   gas_names,   &

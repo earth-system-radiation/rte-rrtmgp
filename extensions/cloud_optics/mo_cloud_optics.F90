@@ -422,7 +422,7 @@ contains
     !
     ! Cloud masks; don't need value re values if there's no cloud
     !
-    !$acc parallel loop gang vector default(none) collapse(2) 
+    !$acc parallel loop gang vector default(none) collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         liqmsk(icol,ilay) = clwp(icol,ilay) > 0._wp
@@ -483,9 +483,9 @@ contains
                                   ltau, ltaussa, ltaussag)
         call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
                                   icemsk, ciwp, reice,        &
-                                  2, 3, this%pade_sizreg_extice, this%pade_extice, &
-                                  2, 2, this%pade_sizreg_ssaice, this%pade_ssaice, &
-                                  2, 2, this%pade_sizreg_asyice, this%pade_asyice, &
+                                  2, 3, this%pade_sizreg_extice, this%pade_extice(:,:,:,this%icergh), &
+                                  2, 2, this%pade_sizreg_ssaice, this%pade_ssaice(:,:,:,this%icergh), &
+                                  2, 2, this%pade_sizreg_asyice, this%pade_asyice(:,:,:,this%icergh), &
                                   itau, itaussa, itaussag)
       endif
 

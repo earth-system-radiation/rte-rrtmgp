@@ -1011,7 +1011,6 @@ contains
                              this%kminor_start_upper)
 
     ! Arrays not reduced by the presence, or lack thereof, of a gas
-    !!$acc enter data copyin(this)
     allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
              this%kmajor(size(kmajor,1),size(kmajor,2),size(kmajor,3),size(kmajor,4)))
     this%press_ref = press_ref
@@ -1026,11 +1025,8 @@ contains
     end if
     if (allocated(rayl_lower)) then
       allocate(this%krayl(size(rayl_lower,dim=1),size(rayl_lower,dim=2),size(rayl_lower,dim=3),2))
-      !!$acc enter data create(this%krayl)
-      !!$acc kernels
       this%krayl(:,:,:,1) = rayl_lower
       this%krayl(:,:,:,2) = rayl_upper
-      !!$acc end kernels
     end if
 
     ! ---- post processing ----
@@ -1081,11 +1077,7 @@ contains
     !
     if (allocated(this%is_key)) deallocate(this%is_key) ! Shouldn't ever happen...
     allocate(this%is_key(this%get_ngas()))
-    !!$acc enter data create(this%is_key)
-    !!$acc kernels
     this%is_key(:) = .False.
-    !!$acc end kernels
-    !!$acc parallel loop gang vector collapse(2)
     do j = 1, size(this%flavor, 2)
       do i = 1, size(this%flavor, 1) ! extents should be 2
         this%is_key(this%flavor(i,j)) = (this%flavor(i,j) /= 0)
@@ -1510,20 +1502,16 @@ contains
              kminor_start_atm_red             (red_nm))
     allocate(minor_limits_gpt_atm_red(2, red_nm))
     allocate(kminor_atm_red(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
-    !!$acc enter data create(minor_scales_with_density_atm_red, scale_by_complement_atm_red, &
-    !!$acc&                  kminor_start_atm_red, minor_limits_gpt_atm_red, kminor_atm_red)
 
     if ((red_nm .eq. nm)) then
       ! Character data not allowed in OpenACC regions?
       minor_gases_atm_red         = minor_gases_atm
       scaling_gas_atm_red         = scaling_gas_atm
-      !!$acc kernels
       kminor_atm_red              = kminor_atm
       minor_limits_gpt_atm_red    = minor_limits_gpt_atm
       minor_scales_with_density_atm_red = minor_scales_with_density_atm
       scale_by_complement_atm_red = scale_by_complement_atm
       kminor_start_atm_red        = kminor_start_atm
-      !!$acc end kernels
     else
       allocate(indexes(red_nm))
       ! Find the integer indexes for the gases that are present
@@ -1531,7 +1519,6 @@ contains
 
       minor_gases_atm_red  = minor_gases_atm        (indexes)
       scaling_gas_atm_red  = scaling_gas_atm        (indexes)
-      !!$acc kernels
       minor_scales_with_density_atm_red = &
                              minor_scales_with_density_atm(indexes)
       scale_by_complement_atm_red = &
@@ -1555,10 +1542,7 @@ contains
           n_elim = n_elim + ng
         endif
       enddo
-      !!$acc end kernels
     endif
-    !!$acc enter data copyin(scaling_gas_atm_red,minor_gases_atm_red)
-
     !$acc enter data copyin(kminor_atm_red)
 
   end subroutine reduce_minor_arrays

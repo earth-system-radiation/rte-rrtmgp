@@ -107,9 +107,9 @@ contains
     nlev  = get_dim_size(ncid, 'lev')
     call create_dim(ncid, "col_flx", ncol)
 
-    call create_var(ncid, "sw_flux_up",  ["col_flx",  "lev"], [ncol, nlev])
-    call create_var(ncid, "sw_flux_dn",  ["col_flx",  "lev"], [ncol, nlev])
-    call create_var(ncid, "sw_flux_dir", ["col_flx",  "lev"], [ncol, nlev])
+    call create_var(ncid, "sw_flux_up",  ["col_flx",  "lev    "], [ncol, nlev])
+    call create_var(ncid, "sw_flux_dn",  ["col_flx",  "lev    "], [ncol, nlev])
+    call create_var(ncid, "sw_flux_dir", ["col_flx",  "lev    "], [ncol, nlev])
 
     call stop_on_err(write_field(ncid, "sw_flux_up",  flux_up ))
     call stop_on_err(write_field(ncid, "sw_flux_dn",  flux_dn ))

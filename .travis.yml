@@ -84,26 +84,26 @@ install:
 - conda install --yes urllib3 netcdf4 xarray dask
 
 before_script:
-- cd examples/rfmip-clear-sky
-- python3 ./stage_files.py
-- cd ../..
 - export RRTMGP_DIR=$PWD/build
 - export NFHOME=${HOME}/netcdff
 - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NFHOME/lib
+- cd examples/rfmip-clear-sky
+- python3 ./stage_files.py
+- cd ../..
 script:
 # Build library - default kernels
 - cd build || exit 1
 - make || exit 1
 - cd .. || exit 1
 # Build and run RFMIP examples
-- cd ../examples/rfmip-clear-sky
+- cd examples/rfmip-clear-sky || exit 1
 - make clean
 - make || exit 1
 - python3 ./run-rfmip-examples.py
 - python3 ./compare-to-reference.py
 - cd ../..
 # Build and run all-sky example
-- cd ../examples/all-sky
+- cd examples/all-sky || exit 1
 - make clean
 - make || exit 1
 - python3 ./run-allsky-example.py
@@ -113,18 +113,19 @@ script:
 # Build library - Open-acc kernels
 #
 - export RTE_KERNELS="openacc"
-- cd build
+- cd build || exit 1
 - make clean
 - make || exit 1
+- cd .. || exit 1
 # Build and run RFMIP examples
-- cd ../examples/rfmip-clear-sky
+- cd examples/rfmip-clear-sky || exit 1
 - make clean
 - make || exit 1
 - python3 ./run-rfmip-examples.py
 - python3 ./compare-to-reference.py
 - cd ../..
 # Build and run all-sky example
-- cd ../examples/all-sky
+- cd examples/all-sky || exit 1
 - make clean
 - make || exit 1
 - python3 ./run-allsky-example.py

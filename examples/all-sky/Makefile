@@ -20,12 +20,10 @@ FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
-VPATH = ./:$(RRTMGP_BUILD):$(RRTMGP_ROOT)/extensions/:$(RRTMGP_ROOT)/extensions/cloud_optics:$(RRTMGP_ROOT)/examples
+VPATH = ../:$(RRTMGP_ROOT)/extensions/cloud_optics
 
 # Compilation rules
 %.o: %.F90
-	$(FC) $(FCFLAGS) $(FCINCLUDE) -c $<
-%.o: %.f90
 	$(FC) $(FCFLAGS) $(FCINCLUDE) -c $<
 %: %.o
 	$(FC) $(FCFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS)

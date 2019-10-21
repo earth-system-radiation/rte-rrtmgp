@@ -228,7 +228,7 @@ contains
   function extents_are_1d(array, n1)
     real(wp), dimension(:          ), intent(in) :: array
     integer,                          intent(in) :: n1
-    logical(wp)                                  :: extents_are_1d
+    logical(wl)                                  :: extents_are_1d
 
     extents_are_1d = (size(array,1) == n1)
   end function extents_are_1d
@@ -236,7 +236,7 @@ contains
   function extents_are_2d(array, n1, n2)
     real(wp), dimension(:,:        ), intent(in) :: array
     integer,                          intent(in) :: n1, n2
-    logical(wp)                                  :: extents_are_2d
+    logical(wl)                                  :: extents_are_2d
 
     extents_are_2d = (size(array,1) == n1 .and. &
                       size(array,2) == n2 )
@@ -245,7 +245,7 @@ contains
   function extents_are_3d(array, n1, n2, n3)
     real(wp), dimension(:,:,:      ), intent(in) :: array
     integer,                          intent(in) :: n1, n2, n3
-    logical(wp)                                  :: extents_are_3d
+    logical(wl)                                  :: extents_are_3d
 
     extents_are_3d = (size(array,1) == n1 .and. &
                       size(array,2) == n2 .and. &
@@ -255,7 +255,7 @@ contains
   function extents_are_4d(array, n1, n2, n3, n4)
     real(wp), dimension(:,:,:,:    ), intent(in) :: array
     integer,                          intent(in) :: n1, n2, n3, n4
-    logical(wp)                                  :: extents_are_4d
+    logical(wl)                                  :: extents_are_4d
 
     extents_are_4d = (size(array,1) == n1 .and. &
                       size(array,2) == n2 .and. &
@@ -266,7 +266,7 @@ contains
   function extents_are_5d(array, n1, n2, n3, n4, n5)
     real(wp), dimension(:,:,:,:,:  ), intent(in) :: array
     integer,                          intent(in) :: n1, n2, n3, n4, n5
-    logical(wp)                                  :: extents_are_5d
+    logical(wl)                                  :: extents_are_5d
 
     extents_are_5d = (size(array,1) == n1 .and. &
                       size(array,2) == n2 .and. &
@@ -278,7 +278,7 @@ contains
   function extents_are_6d(array, n1, n2, n3, n4, n5, n6)
     real(wp), dimension(:,:,:,:,:,:), intent(in) :: array
     integer,                          intent(in) :: n1, n2, n3, n4, n5, n6
-    logical(wp)                                  :: extents_are_6d
+    logical(wl)                                  :: extents_are_6d
 
     extents_are_6d = (size(array,1) == n1 .and. &
                       size(array,2) == n2 .and. &
@@ -291,7 +291,7 @@ contains
   function extents_are_2d_int(array, n1, n2)
     integer,  dimension(:,:        ), intent(in) :: array
     integer,                          intent(in) :: n1, n2
-    logical(wp)                                  :: extents_are_2d_int
+    logical(wl)                                  :: extents_are_2d_int
 
     extents_are_2d_int = (size(array,1) == n1 .and. &
                           size(array,2) == n2 )

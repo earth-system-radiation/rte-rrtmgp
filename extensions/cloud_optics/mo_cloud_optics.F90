@@ -596,52 +596,16 @@ contains
   ! Returns 0 where the mask is false.
   ! We could also try gather/scatter for efficiency
   !
-  function compute_from_table(ncol, nlay, nbnd, mask, size, nsteps, step_size, offset, table)
-    integer,                          intent(in) :: ncol, nlay, nbnd, nsteps
-    logical,  dimension(ncol,  nlay), intent(in) :: mask
-    real(wp), dimension(ncol,  nlay), intent(in) :: size
-    real(wp),                         intent(in) :: step_size, offset
-    real(wp), dimension(nsteps,nbnd), intent(in) :: table
-    real(wp), dimension(ncol,nlay,nbnd)          :: compute_from_table
-    ! ---------------------------
-    integer  :: icol, ilay, ibnd
-    integer  :: index
-    real(wp) :: fint
-    ! ---------------------------
-    do ilay = 1,nlay
-      do icol = 1, ncol
-        if(mask(icol,ilay)) then
-          index = min(floor((size(icol,ilay) - offset)/step_size)+1, nsteps-1)
-          fint = (size(icol,ilay) - offset)/step_size - (index-1)
-          do ibnd = 1, nbnd
-            compute_from_table(icol,ilay,ibnd) = table(index,  ibnd) + &
-                                         fint * (table(index+1,ibnd) - table(index,ibnd))
-          end do
-        else
-          do ibnd = 1, nbnd
-            compute_from_table(icol,ilay,ibnd) = 0._wp
-          end do
-        end if
-      end do
-    end do
-  end function compute_from_table
-  !---------------------------------------------------------------------------
-  !
-  ! Linearly interpolate values from a lookup table with "nsteps" evenly-spaced
-  !   elements starting at "offset." The table's second dimension is band.
-  ! Returns 0 where the mask is false.
-  ! We could also try gather/scatter for efficiency
-  !
   subroutine compute_all_from_table(ncol, nlay, nbnd, mask, lwp, re, &
                                     nsteps, step_size, offset,       &
                                     tau_table, ssa_table, asy_table, &
                                     tau, taussa, taussag)
-    integer,                          intent(in) :: ncol, nlay, nbnd, nsteps
-    logical,  dimension(ncol,  nlay), intent(in) :: mask
-    real(wp), dimension(ncol,  nlay), intent(in) :: lwp, re
-    real(wp),                         intent(in) :: step_size, offset
-    real(wp), dimension(nsteps,nbnd), intent(in) :: tau_table, ssa_table, asy_table
-    real(wp), dimension(ncol,nlay,nbnd)          :: tau, taussa, taussag
+    integer,                                intent(in) :: ncol, nlay, nbnd, nsteps
+    logical(wl), dimension(ncol,nlay),      intent(in) :: mask
+    real(wp),    dimension(ncol,nlay),      intent(in) :: lwp, re
+    real(wp),                               intent(in) :: step_size, offset
+    real(wp),    dimension(nsteps,   nbnd), intent(in) :: tau_table, ssa_table, asy_table
+    real(wp),    dimension(ncol,nlay,nbnd)             :: tau, taussa, taussag
     ! ---------------------------
     integer  :: icol, ilay, ibnd
     integer  :: index
@@ -676,39 +640,6 @@ contains
   !
   ! Pade functions
   !
-  !---------------------------------------------------------------------------
-  function compute_from_pade(ncol, nlay, nbnd, mask, size, nsizes, size_bounds, m, n, pade_coeffs)
-    integer,                        intent(in) :: ncol, nlay, nbnd, nsizes
-    logical,  dimension(:,:), intent(in) :: mask
-    real(wp), dimension(:,:), intent(in) :: size
-    real(wp), dimension(nsizes+1),  intent(in) :: size_bounds
-    integer,                        intent(in) :: m, n
-    real(wp), dimension(nbnd,nsizes,0:m+n), &
-                                    intent(in) :: pade_coeffs
-    real(wp), dimension(ncol,nlay,nbnd)        :: compute_from_pade
-    ! ---------------------------
-    integer  :: icol, ilay, ibnd, irad
-
-    do ilay = 1,nlay
-      do icol = 1, ncol
-        if(mask(icol,ilay)) then
-          !
-          ! Finds index into size regime table
-          ! This works only if there are precisely three size regimes (four bounds) and it's
-          !   previously guaranteed that size_bounds(1) <= size <= size_bounds(4)
-          !
-          irad = min(floor((size(icol,ilay) - size_bounds(2))/size_bounds(3))+2, 3)
-          compute_from_pade(icol,ilay,1:nbnd) = &
-               pade_eval(nbnd, nsizes, m, n, irad, size(icol,ilay), pade_coeffs)
-        else
-          do ibnd = 1, nbnd
-            compute_from_pade(icol,ilay,ibnd) = 0._wp
-          end do
-        end if
-      end do
-    end do
-
-  end function compute_from_pade
   !---------------------------------------------------------------------------
   subroutine compute_all_from_pade(ncol, nlay, nbnd, nsizes, &
                                    mask, lwp, re,            &

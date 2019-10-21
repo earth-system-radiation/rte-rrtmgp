@@ -164,6 +164,8 @@ contains
     real(wp), dimension(:,:,:), intent(in) :: array
     real(wp),                   intent(in) :: checkMin, checkMax
 
+      ! Compact version using intrinsics below
+      ! but an explicit loop is the only current solution on GPUs
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
@@ -303,19 +305,28 @@ contains
     integer,                 intent(in ) :: ni
     real(wp), dimension(ni), intent(out) :: array
     ! -----------------------
-    !$acc kernels
-    array = 0.0_wp
-    !$acc end kernels
-
+    integer :: i
+    ! -----------------------
+    !$acc parallel loop copyout(array)
+    do i = 1, ni
+      array(i) = 0.0_wp
+    end do
   end subroutine zero_array_1D
   ! ----------------------------------------------------------
   subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
     integer,                         intent(in ) :: ni, nj, nk
     real(wp), dimension(ni, nj, nk), intent(out) :: array
     ! -----------------------
-    !$acc kernels
-    array = 0.0_wp
-    !$acc end kernels
+    integer :: i,j,k
+    ! -----------------------
+    !$acc parallel loop collapse(3) copyout(array)
+    do k = 1, nk
+      do j = 1, nj
+        do i = 1, ni
+          array(i,j,k) = 0.0_wp
+        end do
+      end do
+    end do
 
   end subroutine zero_array_3D
   ! ----------------------------------------------------------
@@ -323,9 +334,18 @@ contains
     integer,                             intent(in ) :: ni, nj, nk, nl
     real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
     ! -----------------------
-    !$acc kernels
-    array = 0.0_wp
-    !$acc end kernels
+    integer :: i,j,k,l
+    ! -----------------------
+    !$acc parallel loop collapse(4) copyout(array)
+    do l = 1, nl
+      do k = 1, nk
+        do j = 1, nj
+          do i = 1, ni
+            array(i,j,k,l) = 0.0_wp
+          end do
+        end do
+      end do
+    end do
 
   end subroutine zero_array_4D
 

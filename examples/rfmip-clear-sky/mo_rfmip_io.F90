@@ -332,6 +332,17 @@ contains
       call stop_on_err("read_and_block_lw_bc: number of columns doesn't fit evenly into blocks.")
     nblocks = (ncol_l*nexp_l)/blocksize
     allocate(gas_conc_array(nblocks))
+    !
+    ! gas_names contains 'no2' which isn't available in the RFMIP files. We should remove it
+    !   here but that's kinda hard, so we set its concentration to 0 below.
+    !
+    do b = 1, nblocks
+      call stop_on_err(gas_conc_array(b)%init(gas_names))
+    end do
+    !
+    ! Which gases are known to the k-distribution and available in the files?
+    !
+
     ! Experiment index for each colum
     exp_num = reshape(spread([(b, b = 1, nexp_l)], 1, ncopies = ncol_l), shape = [blocksize, nblocks], order=[1,2])
 
@@ -375,6 +386,14 @@ contains
           spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
         end if
       end do
+      !
+      ! NO2 is the one gas known to the k-distribution that isn't provided by RFMIP
+      !   It would be better to remove it from
+      !
+      do b = 1, nblocks
+        call stop_on_err(gas_conc_array(b)%set_vmr('no2', 0._wp))
+      end do
+
 
     end do
     ncid = nf90_close(ncid)

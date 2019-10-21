@@ -35,7 +35,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
-  use mo_util_array,    only: any_vals_less_than, any_vals_outside
+  use mo_util_array,    only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_source_functions,   &
@@ -131,7 +131,7 @@ contains
     !
     ! Surface emissivity
     !
-    if(any([size(sfc_emis,1), size(sfc_emis,2)] /= [nband, ncol])) &
+    if(.not. extents_are(sfc_emis, nband, ncol)) &
       error_msg = "rte_lw: sfc_emis inconsistently sized"
     if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
       error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
@@ -141,7 +141,7 @@ contains
     ! Incident flux, if present
     !
     if(present(inc_flux)) then
-      if(any([size(inc_flux,1), size(inc_flux,2)] /= [ncol, ngpt])) &
+      if(.not. extents_are(inc_flux, ncol, ngpt)) &
         error_msg = "rte_lw: inc_flux inconsistently sized"
       if(any_vals_less_than(inc_flux, 0._wp)) &
         error_msg = "rte_lw: inc_flux has values < 0"

@@ -95,23 +95,39 @@ script:
 - cd build || exit 1
 - make || exit 1
 - cd .. || exit 1
-# Build drivers
-- cd examples/rfmip-clear-sky
-- make
-# Run drivers
+# Build and run RFMIP examples
+- cd ../examples/rfmip-clear-sky
+- make clean
+- make || exit 1
 - python3 ./run-rfmip-examples.py
 - python3 ./compare-to-reference.py
 - cd ../..
+# Build and run all-sky example
+- cd ../examples/all-sky
+- make clean
+- make || exit 1
+- python3 ./run-allsky-example.py
+- python3 ./compare-to-reference.py
+- cd ../..
+#
 # Build library - Open-acc kernels
+#
 - export RTE_KERNELS="openacc"
 - cd build
 - make clean
 - make || exit 1
+# Build and run RFMIP examples
 - cd ../examples/rfmip-clear-sky
 - make clean
 - make || exit 1
-# Run drivers
 - python3 ./run-rfmip-examples.py
+- python3 ./compare-to-reference.py
+- cd ../..
+# Build and run all-sky example
+- cd ../examples/all-sky
+- make clean
+- make || exit 1
+- python3 ./run-allsky-example.py
 - python3 ./compare-to-reference.py
 - cd ../..
 notifications:

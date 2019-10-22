@@ -3,6 +3,7 @@
 # This script compares RFMIP results from RTE+RRTMGP against a benchmark
 #
 import os
+import sys
 import numpy as np
 import xarray as xr
 import argparse

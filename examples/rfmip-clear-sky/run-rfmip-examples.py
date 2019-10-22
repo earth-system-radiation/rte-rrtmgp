@@ -9,7 +9,7 @@ import argparse
 # Run the RFMIP example programs that computes fluxes from netCDF Garand atmosphere files
 #
 rte_rrtmgp_dir  = os.path.join("..", "..")
-rfmip_dir       = os.path.join(rte_rrtmgp_dir, "examples", "rfmip-clear-sky")
+rfmip_dir       = "."
 # Code should be run in the rfmip_dir directory
 
 conds_file      = "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"

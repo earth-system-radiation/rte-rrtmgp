@@ -7,7 +7,7 @@ import argparse
 
 rte_rrtmgp_dir   = os.path.join("..", "..")
 # This files lives in $RRTMGP_DIR/examples/all-sky/
-all_sky_dir      = os.path.join(rte_rrtmgp_dir, "examples", "all-sky")
+all_sky_dir      = "."
 # Code should be run in the all_sky_dir directory
 
 lw_gas_coeffs_file   = os.path.join(rte_rrtmgp_dir, "rrtmgp", "data", "rrtmgp-data-lw-g256-2018-12-04.nc")

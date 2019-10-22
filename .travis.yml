@@ -101,7 +101,7 @@ script:
 - make clean
 - make || exit 1
 - python3 ./run-rfmip-examples.py
-- python3 ./compare-to-reference.py
+- python3 ./compare-to-reference.py --fail=1.e-4
 - cd ../..
 # Build and run all-sky example
 - cd examples/all-sky || exit 1
@@ -123,7 +123,7 @@ script:
 - make clean
 - make || exit 1
 - python3 ./run-rfmip-examples.py
-- python3 ./compare-to-reference.py
+- python3 ./compare-to-reference.py --fail=1.e-4
 - cd ../..
 # Build and run all-sky example
 - cd examples/all-sky || exit 1

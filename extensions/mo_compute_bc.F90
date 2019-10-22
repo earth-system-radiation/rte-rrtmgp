@@ -20,7 +20,7 @@ module mo_compute_bc
   ! The boundary condition is on diffuse flux in the LW and direct flux in the SW
   ! -------------------------------------------------------------------------------------------------
   use mo_rte_kind,           only: wp, wl
-  use mo_util_array,         only: extents_are
+  use mo_rte_util_array,     only: extents_are
   use mo_source_functions,   only: ty_source_func_lw
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props, ty_optical_props_arry, &

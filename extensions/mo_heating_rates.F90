@@ -13,7 +13,7 @@
 
 module mo_heating_rates
   use mo_rte_kind,         only: wp, wl
-  use mo_util_array,       only: extents_are
+  use mo_rte_util_array,   only: extents_are
   use mo_rrtmgp_constants, only: cp_dry, grav ! Only needed for heating rate calculation
   implicit none
   private

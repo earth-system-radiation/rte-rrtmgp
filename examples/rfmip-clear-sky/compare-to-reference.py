@@ -45,6 +45,7 @@ if __name__ == '__main__':
     tst = xr.open_mfdataset(os.path.join(     tst_dir, "r??" + rrtmg_suffix))
     ref = xr.open_mfdataset(os.path.join(args.ref_dir, "r??" + rrtmg_suffix))
 
+    failed = False
     for v in vars:
       if np.all(np.isnan(tst.variables[v].values)):
         raise Exception(var + ": all test values are missing. Were the tests run?")

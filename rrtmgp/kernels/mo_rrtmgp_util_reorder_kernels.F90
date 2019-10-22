@@ -50,7 +50,7 @@ contains
               i1 = i10 + i1diff
               i3 = i30 + i3diff
               if (i1 > d1 .or. i3 > d3) cycle
-              
+
               array_out(i3,i1,i2) = array_in(i1,i2,i3)
             end do
           end do
@@ -62,7 +62,7 @@ contains
 
   end subroutine reorder_123x312_kernel
   ! ----------------------------------------------------------------------------
-  subroutine reorder_123x321_kernel(d1, d2, d3, array_in, array_out) & 
+  subroutine reorder_123x321_kernel(d1, d2, d3, array_in, array_out) &
       bind(C, name="reorder_123x321_kernel")
     integer,                         intent( in) :: d1, d2, d3
     real(wp), dimension(d1, d2, d3), intent( in) :: array_in
@@ -76,7 +76,7 @@ contains
     !$acc parallel vector_length(tile*tile) &
     !$acc&     copyout(array_out) &
     !$acc&     copyin(array_in)
-    !$acc loop gang collapse(3) 
+    !$acc loop gang collapse(3)
     ! private(cache(:,:))
     do i2 = 1, d2
       do i10 = 1, d1, tile
@@ -88,11 +88,11 @@ contains
               i1 = i10 + i1diff
               i3 = i30 + i3diff
               if (i1 > d1 .or. i3 > d3) cycle
-              
+
               array_out(i3,i2,i1) = array_in(i1,i2,i3)
             end do
           end do
-          
+
         end do
       end do
     end do

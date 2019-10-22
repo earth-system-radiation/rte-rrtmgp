@@ -12,7 +12,8 @@
 ! Description:  Heating rate calculation
 
 module mo_heating_rates
-  use mo_rte_kind,      only: wp, wl
+  use mo_rte_kind,         only: wp, wl
+  use mo_rte_util_array,   only: extents_are
   use mo_rrtmgp_constants, only: cp_dry, grav ! Only needed for heating rate calculation
   implicit none
   private
@@ -33,11 +34,11 @@ contains
     ncol = size(flux_up, 1)
     nlay = size(flux_up, 2) - 1
 
-    if(any([size(flux_dn, 1), size(flux_dn, 2)] /= [ncol, nlay+1])) &
+    if(.not. extents_are(flux_dn,      ncol, nlay+1)) &
       error_msg = "heating_rate: flux_dn array inconsistently sized."
-    if(any([size(plev,    1), size(plev,     2)] /= [ncol, nlay+1])) &
+    if(.not. extents_are(plev,         ncol, nlay+1)) &
       error_msg = "heating_rate: plev array inconsistently sized."
-    if(any([size(heating_rate, 1), size(heating_rate, 2)] /= [ncol, nlay])) &
+    if(.not. extents_are(heating_rate, ncol, nlay)) &
       error_msg = "heating_rate: heating_rate array inconsistently sized."
     if(error_msg /= "") return
 

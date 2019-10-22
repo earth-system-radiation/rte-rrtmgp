@@ -996,7 +996,7 @@ contains
     ! These arrays could be private per thread in OpenACC, with 1 dimension of size nlay (or nlay+1)
     ! However, current PGI (19.4) has a bug preventing it from properly handling such private arrays.
     ! So we explicitly create the temporary arrays of size nlay(+1) per each of the ncol*ngpt elements
-    ! 
+    !
     real(wp), dimension(ncol,nlay+1,ngpt) :: albedo, &  ! reflectivity to diffuse radiation below this level
                                               ! alpha in SH08
                                    src        ! source of diffuse upwelling radiation from emission or
@@ -1058,7 +1058,7 @@ contains
           end do
         end do
       end do
-      
+
     else
 
       !$acc parallel loop collapse(2)

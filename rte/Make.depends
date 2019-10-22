@@ -29,7 +29,7 @@ mo_source_functions.o:      mo_rte_kind.o mo_optical_props.o mo_source_functions
 # Flux reduction
 #
 mo_fluxes_broadband_kernels.o : mo_rte_kind.o mo_fluxes_broadband_kernels.F90
-mo_fluxes.o:                    mo_rte_kind.o mo_fluxes_broadband_kernels.o   mo_optical_props.o mo_fluxes.F90
+mo_fluxes.o:                    mo_rte_kind.o mo_fluxes_broadband_kernels.o mo_optical_props.o mo_rte_util_array.o mo_fluxes.F90
 #
 # Radiative transfer
 #

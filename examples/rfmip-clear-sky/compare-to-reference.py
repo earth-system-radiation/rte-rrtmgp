@@ -43,8 +43,8 @@ if __name__ == '__main__':
                                    os.path.join(args.ref_dir, "rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
 
 
-    tst = xr.open_mfdataset(os.path.join(     tst_dir, "r??" + rrtmg_suffix))
-    ref = xr.open_mfdataset(os.path.join(args.ref_dir, "r??" + rrtmg_suffix))
+    tst = xr.open_mfdataset(os.path.join(     tst_dir, "r??" + rrtmg_suffix), combine='by_coords')
+    ref = xr.open_mfdataset(os.path.join(args.ref_dir, "r??" + rrtmg_suffix), combine='by_coords')
 
     failed = False
     for v in vars:

@@ -10,7 +10,7 @@ matrix:
   - compiler: gcc # Using
     env:
     - FC=pgfortran
-    - FCFLAGS="-Mallocatable=03 -Mstandard"
+    - FCFLAGS="-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
     - TEST_PGI=yes
     addons:
       apt:
@@ -23,7 +23,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-9
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -DUSE_CBOOL"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:
@@ -37,7 +37,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-8
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -DUSE_CBOOL"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:

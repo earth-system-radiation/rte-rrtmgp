@@ -1080,7 +1080,7 @@ contains
     this%is_key(:) = .False.
     do j = 1, size(this%flavor, 2)
       do i = 1, size(this%flavor, 1) ! extents should be 2
-        this%is_key(this%flavor(i,j)) = (this%flavor(i,j) /= 0)
+        if (this%flavor(i,j) /= 0) this%is_key(this%flavor(i,j)) = .true.
       end do
     end do
 

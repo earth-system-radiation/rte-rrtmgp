@@ -1,0 +1,68 @@
+jobs:
+- job: build_daint
+
+  workspace:
+    clean: all
+
+  steps:
+
+  - script: |
+      set -e
+      # This module will unload some of the build modules, so load the files separately
+      module load cray-python/3.6.5.3 netcdf-python
+      cd examples/rfmip-clear-sky
+      python ./stage_files.py
+    displayName: 'Stage files'
+
+  - script: |
+      set -e
+      echo "Initial environment:"
+      module list
+
+      export PATH=$CRAY_BINUTILS_BIN:$PATH
+      module swap PrgEnv-cray PrgEnv-pgi
+      module load cdt/19.08
+      module unload pgi
+      module load PGI/19.9.0
+      module load cray-netcdf cray-hdf5 cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
+      module load cray-python/3.6.5.3
+      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+
+      echo "*********************************************"
+      echo "Building environment:"
+      module list
+
+      export RTE_KERNELS="openacc"
+      export RRTMGP_ROOT=$PWD
+      export RRTMGP_DIR=$PWD/build
+
+      export FC=ftn
+      export FCFLAGS="-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -Mpreprocess -gopt -Minline,reshape,maxsize:40"
+
+      make -C build/ -j 10
+      make -C examples/all-sky -j 10
+      make -C examples/rfmip-clear-sky -j 10
+
+      cd examples/rfmip-clear-sky
+      srun -C gpu -A g33 -p cscsci python ./run-rfmip-examples.py
+      cd ../..
+
+      cd examples/all-sky
+      srun -C gpu -A g33 -p cscsci python ./run-allsky-example.py
+    displayName: 'Make & run'
+
+  - script: |
+      set -e
+
+      # This module will unload some of the build modules, so do the checks separately
+      module load cray-python/3.6.5.3 netcdf-python
+
+      cd examples/rfmip-clear-sky
+      python ./compare-to-reference.py --fail=1.e-4
+      cd ../..
+
+      cd examples/all-sky
+      python ./compare-to-reference.py
+    displayName: 'Check results'
+
+  pool: CSCS

@@ -43,7 +43,6 @@ jobs:
       export RRTMGP_DIR=$PWD/build
 
       export FC=ftn
-      echo $FCFLAGS
 
       make -C build/ -j 8
       make -C examples/all-sky -j 8
@@ -61,8 +60,16 @@ jobs:
     displayName: 'Stage files'
 
   - script: |
+      export PATH=$CRAY_BINUTILS_BIN:$PATH
       module load daint-gpu
-      module load cray-python/3.6.5.3
+      module load cdt/19.08
+      module swap PrgEnv-cray PrgEnv-pgi
+      module load cray-netcdf cray-hdf5
+      module unload cray-libsci_acc
+      module swap pgi $(compiler_module)
+      module load $(accel_module)
+      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+
       cd examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd ../..

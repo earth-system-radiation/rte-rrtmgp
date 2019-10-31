@@ -1,5 +1,10 @@
 jobs:
 - job: build_daint
+  pool: CSCS
+  strategy:
+    matrix:
+      pgi19_9:
+        compiler_module: "PGI/19.9.0"
 
   workspace:
     clean: all
@@ -25,7 +30,7 @@ jobs:
       module swap PrgEnv-cray PrgEnv-pgi
       module load cdt/19.08
       module unload pgi
-      module load PGI/19.9.0
+      module load $(compiler_module)
       module load cray-netcdf cray-hdf5 cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
       module load cray-python/3.6.5.3
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
@@ -44,14 +49,16 @@ jobs:
       make -C build/ -j 8
       make -C examples/all-sky -j 8
       make -C examples/rfmip-clear-sky -j 8
+    displayName: 'Make'
 
+  - script: |
       cd examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py
       cd ../..
 
       cd examples/all-sky
       srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
-    displayName: 'Make & run'
+    displayName: 'Run'
 
   - script: |
       set -e
@@ -67,5 +74,3 @@ jobs:
       cd examples/all-sky
       python ./compare-to-reference.py
     displayName: 'Check results'
-
-  pool: CSCS

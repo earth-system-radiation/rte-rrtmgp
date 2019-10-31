@@ -6,12 +6,12 @@ jobs:
       pgi19_9:
         compiler_module: PGI/19.9.0
         accel_module: cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
-        fc_flags: "-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+        FCFLAGS: "-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
       pgi_default:
         compiler_module: pgi
         accel_module: craype-accel-nvidia60
         # Generic accelerator flag
-        fc_flags: "-O3 -acc                   -Minfo -Mallocatable=03 -gopt"
+        FCFLAGS: "-O3 -acc                   -Minfo -Mallocatable=03 -gopt"
     maxParallel: 2
 
   workspace:
@@ -43,7 +43,7 @@ jobs:
       export RRTMGP_DIR=$PWD/build
 
       export FC=ftn
-      export FCFLAGS=\"$(fc_flags)\"
+      echo $FCFLAGS
 
       make -C build/ -j 8
       make -C examples/all-sky -j 8

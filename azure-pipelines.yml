@@ -7,11 +7,13 @@ jobs:
         compiler_module: PGI/19.9.0
         accel_module: cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
         FCFLAGS: "-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+        RTE_KERNELS: openacc
       pgi_default_gpu:
         compiler_module: pgi
         accel_module: craype-accel-nvidia60
         # Generic accelerator flag
         FCFLAGS: "-O3 -acc                   -Minfo -Mallocatable=03 -gopt"
+        RTE_KERNELS: openacc
       pgi_19_9_cpu:
         compiler_module: PGI/19.9.0
         accel_module:
@@ -48,7 +50,6 @@ jobs:
       echo "Building environment:"
       module list
 
-      export RTE_KERNELS="openacc"
       export RRTMGP_ROOT=$PWD
       export RRTMGP_DIR=$PWD/build
 

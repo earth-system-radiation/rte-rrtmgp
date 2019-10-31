@@ -1,7 +1,3 @@
-trigger:
-- master
-- develop
-
 jobs:
 - job: build_daint
 
@@ -43,16 +39,16 @@ jobs:
       export FC=ftn
       export FCFLAGS="-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -Mpreprocess -gopt -Minline,reshape,maxsize:40"
 
-      make -C build/ -j 10
-      make -C examples/all-sky -j 10
-      make -C examples/rfmip-clear-sky -j 10
+      make -C build/ -j 8
+      make -C examples/all-sky -j 8
+      make -C examples/rfmip-clear-sky -j 8
 
       cd examples/rfmip-clear-sky
-      srun -C gpu -A g33 -p cscsci python ./run-rfmip-examples.py
+      srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py
       cd ../..
 
       cd examples/all-sky
-      srun -C gpu -A g33 -p cscsci python ./run-allsky-example.py
+      srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
     displayName: 'Make & run'
 
   - script: |

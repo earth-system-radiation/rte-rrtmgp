@@ -5,20 +5,15 @@ jobs:
     matrix:
       pgi19_9:
         compiler_module: "PGI/19.9.0"
+        accel_module: "cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8"
+      pgi19_4:
+        compiler_module: "pgi/19.4.0"
+        accel_module: "craype-accel-nvidia60"
 
   workspace:
     clean: all
 
   steps:
-
-  - script: |
-      set -e
-      # This module will unload some of the build modules, so load the files separately
-      module load daint-gpu
-      module load cray-python/3.6.5.3 netcdf-python
-      cd examples/rfmip-clear-sky
-      python ./stage_files.py
-    displayName: 'Stage files'
 
   - script: |
       set -e
@@ -31,8 +26,8 @@ jobs:
       module load cdt/19.08
       module unload pgi
       module load $(compiler_module)
-      module load cray-netcdf cray-hdf5 cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
-      module load cray-python/3.6.5.3
+      module load cray-netcdf cray-hdf5
+      module load cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
 
       echo "*********************************************"
@@ -52,8 +47,20 @@ jobs:
     displayName: 'Make'
 
   - script: |
+      set -e
+      # This module will unload some of the build modules, so load the files separately
+      module load daint-gpu
+      module load cray-python/3.6.5.3 netcdf-python
+
       cd examples/rfmip-clear-sky
-      srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py
+      python ./stage_files.py
+    displayName: 'Stage files'
+
+  - script: |
+      module load daint-gpu
+      module load cray-python/3.6.5.3
+      cd examples/rfmip-clear-sky
+      srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd ../..
 
       cd examples/all-sky

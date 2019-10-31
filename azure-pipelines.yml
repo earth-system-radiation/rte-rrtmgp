@@ -4,11 +4,15 @@ jobs:
   strategy:
     matrix:
       pgi19_9:
-        compiler_module: "PGI/19.9.0"
-        accel_module: "cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8"
-      pgi19_4:
-        compiler_module: "pgi/19.4.0"
-        accel_module: "craype-accel-nvidia60"
+        compiler_module: PGI/19.9.0
+        accel_module: cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
+        fc_flags: "-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+      pgi_default:
+        compiler_module: pgi
+        accel_module: craype-accel-nvidia60
+        # Generic accelerator flag
+        fc_flags: "-O3 -acc                   -Minfo -Mallocatable=03 -gopt"
+      maxParallel: 2
 
   workspace:
     clean: all
@@ -22,12 +26,12 @@ jobs:
 
       export PATH=$CRAY_BINUTILS_BIN:$PATH
       module load daint-gpu
-      module swap PrgEnv-cray PrgEnv-pgi
       module load cdt/19.08
-      module unload pgi
-      module load $(compiler_module)
+      module swap PrgEnv-cray PrgEnv-pgi
       module load cray-netcdf cray-hdf5
-      module load cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
+      module unload cray-libsci_acc
+      module swap pgi $(compiler_module)
+      module load $(accel_module)
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
 
       echo "*********************************************"
@@ -39,7 +43,7 @@ jobs:
       export RRTMGP_DIR=$PWD/build
 
       export FC=ftn
-      export FCFLAGS="-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -Mpreprocess -gopt -Minline,reshape,maxsize:40"
+      export FCFLAGS=$(fc_flags)
 
       make -C build/ -j 8
       make -C examples/all-sky -j 8
@@ -58,7 +62,7 @@ jobs:
 
   - script: |
       module load daint-gpu
-      module load cray-python/3.6.5.3
+      module load cray-python/3.6.5.3 
       cd examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd ../..

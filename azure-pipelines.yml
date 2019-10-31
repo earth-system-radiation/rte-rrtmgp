@@ -43,7 +43,7 @@ jobs:
       export RRTMGP_DIR=$PWD/build
 
       export FC=ftn
-      export FCFLAGS=$(fc_flags)
+      export FCFLAGS=\"$(fc_flags)\"
 
       make -C build/ -j 8
       make -C examples/all-sky -j 8

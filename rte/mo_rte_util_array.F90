@@ -9,7 +9,7 @@
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
-module mo_util_array
+module mo_rte_util_array
 !
 ! This module provide utilites for sanitizing input arrays:
 !    checking values and sizes
@@ -349,4 +349,4 @@ contains
 
   end subroutine zero_array_4D
 
-end module mo_util_array
+end module mo_rte_util_array

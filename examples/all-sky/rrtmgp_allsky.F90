@@ -251,7 +251,7 @@ program rte_rrtmgp_clouds
     mu0 = .86_wp
     !$acc end kernels
   else
-    ! lw_sorces is threadprivate    
+    ! lw_sorces is threadprivate
     !$omp parallel
     call stop_on_err(lw_sources%alloc(ncol, nlay, k_dist))
     !$omp end parallel
@@ -284,14 +284,18 @@ program rte_rrtmgp_clouds
            rel(ncol,nlay), rei(ncol,nlay), cloud_mask(ncol,nlay))
   !$acc enter data create(cloud_mask, lwp, iwp, rel, rei)
 
-  ! Restrict clouds to troposphere (< 100 hPa = 100*100 Pa)
-  !   and not very close to the ground
+  ! Restrict clouds to troposphere (> 100 hPa = 100*100 Pa)
+  !   and not very close to the ground (< 900 hPa), and
+  !   put them in 2/3 of the columns since that's roughly the
+  !   total cloudiness of earth
   rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
   rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
   !$acc parallel loop collapse(2) copyin(t_lay) copyout(lwp, iwp, rel, rei)
   do ilay=1,nlay
     do icol=1,ncol
-      cloud_mask(icol,ilay) = p_lay(icol,ilay) < 100._wp * 100._wp .and. p_lay(icol,ilay) > 900._wp
+      cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp .and. &
+                              p_lay(icol,ilay) < 900._wp * 100._wp .and. &
+                              mod(icol, 3) /= 0
       !
       ! Ice and liquid will overlap in a few layers
       !

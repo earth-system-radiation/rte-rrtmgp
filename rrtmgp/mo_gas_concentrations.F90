@@ -30,9 +30,9 @@
 ! -------------------------------------------------------------------------------------------------
 
 module mo_gas_concentrations
-  use mo_rte_kind,    only: wp
-  use mo_util_string, only: lower_case
-  use mo_util_array,  only: any_vals_outside
+  use mo_rte_kind,           only: wp
+  use mo_rrtmgp_util_string, only: lower_case
+  use mo_rte_util_array,     only: any_vals_outside
   implicit none
   integer, parameter :: GAS_NOT_IN_LIST = -1
 
@@ -106,7 +106,7 @@ contains
     allocate(this%gas_name(ngas), this%concs(ngas))
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%concs)
-    
+
     this%gas_name(:) = gas_names(:)
   end function
   ! -------------------------------------------------------------------------------------

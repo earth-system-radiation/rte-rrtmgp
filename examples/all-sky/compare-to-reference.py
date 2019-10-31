@@ -31,8 +31,7 @@ if __name__ == '__main__':
     # If a version of the file exists in the reference directory, no need to download (can be over-ridden)
     if (args.download_reference or not os.path.exists(ref_file)):
         os.makedirs(args.ref_dir, exist_ok=True)
-        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/OjbNzRTlXUk0G5w/download", ref_file)
-
+        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/wgCL7imbA0QRCEf/download", ref_file)
     tst = xr.open_dataset(tst_file)
     ref = xr.open_dataset(ref_file)
 

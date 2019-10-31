@@ -761,7 +761,7 @@ contains
     !$acc      copyin(tau_rayleigh, tau_abs)
 
     ! We are using blocking memory accesses here to improve performance
-    !  of the transpositions. See also comments in mo_reorder_kernels.F90
+    !  of the transpositions. See also comments in mo_rrtmgp_util_reorder_kernels.F90
     !
     !$acc parallel default(none) vector_length(tile*tile)
     !$acc loop gang collapse(3)

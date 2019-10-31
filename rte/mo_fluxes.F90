@@ -17,11 +17,11 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_fluxes
-  use mo_rte_kind,      only: wp
-  use mo_util_array,    only: extents_are
-  use mo_optical_props, only: ty_optical_props
+  use mo_rte_kind,       only: wp
+  use mo_rte_util_array, only: extents_are
+  use mo_optical_props,  only: ty_optical_props
   use mo_fluxes_broadband_kernels, &
-                        only: sum_broadband, net_broadband
+                         only: sum_broadband, net_broadband
   implicit none
   private
   ! -----------------------------------------------------------------------------------------------

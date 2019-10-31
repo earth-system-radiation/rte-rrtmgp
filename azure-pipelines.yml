@@ -62,6 +62,7 @@ jobs:
   - script: |
       export PATH=$CRAY_BINUTILS_BIN:$PATH
       module load daint-gpu
+      module load cray-python/3.6.5.3 netcdf-python
       module load cdt/19.08
       module swap PrgEnv-cray PrgEnv-pgi
       module load cray-netcdf cray-hdf5

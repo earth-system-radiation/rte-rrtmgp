@@ -10,6 +10,7 @@ jobs:
       set -e
       # This module will unload some of the build modules, so load the files separately
       module load cray-python/3.6.5.3 netcdf-python
+      source venv-3.6/bin/activate
       cd examples/rfmip-clear-sky
       python ./stage_files.py
     displayName: 'Stage files'
@@ -20,6 +21,7 @@ jobs:
       module list
 
       export PATH=$CRAY_BINUTILS_BIN:$PATH
+      module load daint-gpu
       module swap PrgEnv-cray PrgEnv-pgi
       module load cdt/19.08
       module unload pgi

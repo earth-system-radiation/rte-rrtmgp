@@ -9,8 +9,8 @@ jobs:
   - script: |
       set -e
       # This module will unload some of the build modules, so load the files separately
+      module load daint-gpu
       module load cray-python/3.6.5.3 netcdf-python
-      source venv-3.6/bin/activate
       cd examples/rfmip-clear-sky
       python ./stage_files.py
     displayName: 'Stage files'
@@ -56,6 +56,7 @@ jobs:
   - script: |
       set -e
 
+      module load daint-gpu
       # This module will unload some of the build modules, so do the checks separately
       module load cray-python/3.6.5.3 netcdf-python
 

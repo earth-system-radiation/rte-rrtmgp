@@ -12,7 +12,7 @@ jobs:
         accel_module: craype-accel-nvidia60
         # Generic accelerator flag
         fc_flags: "-O3 -acc                   -Minfo -Mallocatable=03 -gopt"
-      maxParallel: 2
+    maxParallel: 2
 
   workspace:
     clean: all
@@ -62,7 +62,7 @@ jobs:
 
   - script: |
       module load daint-gpu
-      module load cray-python/3.6.5.3 
+      module load cray-python/3.6.5.3
       cd examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd ../..

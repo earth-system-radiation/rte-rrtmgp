@@ -68,6 +68,25 @@ jobs:
       make -C examples/all-sky -j 8
       make -C examples/rfmip-clear-sky -j 8
 
+    displayName: 'Make'
+
+  - script: |
+      set -e
+      echo "Initial environment:"
+      module list
+
+      export PATH=$CRAY_BINUTILS_BIN:$PATH
+      module load daint-gpu
+      module swap PrgEnv-cray PrgEnv-pgi
+      module load cdt/19.08
+      module load cray-netcdf cray-hdf5
+      module swap pgi $(compiler_module)
+      module load $(accel_module)
+      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+
+      echo "*********************************************"
+      echo "Building environment:"
+      module list
       module load cray-python/3.6.5.3 netcdf-python
       cd examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
@@ -75,7 +94,7 @@ jobs:
 
       cd examples/all-sky
       srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
-    displayName: 'Make & Run'
+    displayName: 'Run'
 
   - script: |
       set -e

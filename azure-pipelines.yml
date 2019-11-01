@@ -68,6 +68,7 @@ jobs:
       make -C examples/all-sky -j 8
       make -C examples/rfmip-clear-sky -j 8
 
+      module load cray-python/3.6.5.3 netcdf-python
       cd examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd ../..

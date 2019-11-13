@@ -5,8 +5,8 @@ jobs:
     matrix:
       pgi_19_9_gpu:
         compiler_module: PGI/19.9.0
-        accel_module: cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
-        FCFLAGS: "-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+        accel_module: cudatoolkit
+        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
         RTE_KERNELS: openacc
       pgi_default_gpu:
         compiler_module: pgi
@@ -30,12 +30,31 @@ jobs:
     clean: all
 
   steps:
+  
+  - script: |
+      set -e
+      
+      cat <<EOF
+      export PATH=$CRAY_BINUTILS_BIN:$PATH \
+      module load daint-gpu
+      module swap PrgEnv-cray PrgEnv-pgi
+      module load cray-netcdf cray-hdf5
+      module swap pgi $(compiler_module)
+      module load $(accel_module)
+      module load cray-python/3.6.5.7
+      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+      
+      echo "Environment:"
+      module list
+      EOF > modules
+      
+    displayName: 'Create module environment'
 
   - script: |
       set -e
+      source modules
       # This module will unload some of the build modules, so load the files separately
-      module load daint-gpu
-      module load cray-python/3.6.5.3 netcdf-python
+      module load netcdf-python
 
       cd examples/rfmip-clear-sky
       python ./stage_files.py
@@ -43,26 +62,10 @@ jobs:
 
   - script: |
       set -e
-      echo "Initial environment:"
-      module list
-
-      # Have to ensure that build and execution modules are precisely the same
-      export PATH=$CRAY_BINUTILS_BIN:$PATH
-      module load daint-gpu
-      module swap PrgEnv-cray PrgEnv-pgi
-      module load cdt/19.08
-      module load cray-netcdf cray-hdf5
-      module swap pgi $(compiler_module)
-      module load $(accel_module)
-      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
-
-      echo "*********************************************"
-      echo "Building environment:"
-      module list
+      source modules
 
       export RRTMGP_ROOT=$PWD
       export RRTMGP_DIR=$PWD/build
-
       export FC=ftn
 
       make -C build/ -j 8
@@ -73,22 +76,8 @@ jobs:
 
   - script: |
       set -e
-      echo "Initial environment:"
-      module list
+      source modules
 
-      # Have to ensure that build and execution modules are precisely the same
-      export PATH=$CRAY_BINUTILS_BIN:$PATH
-      module load daint-gpu
-      module swap PrgEnv-cray PrgEnv-pgi
-      module load cdt/19.08
-      module load cray-netcdf cray-hdf5
-      module swap pgi $(compiler_module)
-      module load $(accel_module)
-      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
-      echo "*********************************************"
-      echo "Execution environment:"
-      module list
-      module load cray-python/3.6.5.3 netcdf-python
       cd examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd ../..
@@ -99,10 +88,9 @@ jobs:
 
   - script: |
       set -e
-
-      module load daint-gpu
+      source modules
       # This module will unload some of the build modules, so do the checks separately
-      module load cray-python/3.6.5.3 netcdf-python
+      module load netcdf-python
 
       cd examples/rfmip-clear-sky
       python ./compare-to-reference.py --fail=1.e-4

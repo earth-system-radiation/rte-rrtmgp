@@ -34,8 +34,8 @@ jobs:
   - script: |
       set -e
       
-      cat <<EOF
-      export PATH=$CRAY_BINUTILS_BIN:$PATH \
+      echo "
+      export PATH=$CRAY_BINUTILS_BIN:$PATH
       module load daint-gpu
       module swap PrgEnv-cray PrgEnv-pgi
       module load cray-netcdf cray-hdf5
@@ -44,9 +44,9 @@ jobs:
       module load cray-python/3.6.5.7
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
       
-      echo "Environment:"
+      echo Environment:
       module list
-      EOF > modules
+      " > modules
       
     displayName: 'Create module environment'
 

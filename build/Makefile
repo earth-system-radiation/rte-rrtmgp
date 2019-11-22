@@ -6,8 +6,11 @@ RRTMGP_DIR = ../rrtmgp
 # Choose kernels depending on environment variable
 #
 ifeq ($(RTE_KERNELS), openacc)
-  RTE_KERNEL_DIR    = ../rte/kernels-openacc
-  RRTMGP_KERNEL_DIR = ../rrtmgp/kernels-openacc
+  RTE_KERNEL_DIR    = ../rte/kernels/openacc
+  RRTMGP_KERNEL_DIR = ../rrtmgp/kernels/openacc
+else
+  RTE_KERNEL_DIR    = ../rte/kernels/default
+  RRTMGP_KERNEL_DIR = ../rrtmgp/kernels/default
 endif
 RTE_KERNEL_DIR += ../rte/kernels
 RRTMGP_KERNEL_DIR += ../rrtmgp/kernels

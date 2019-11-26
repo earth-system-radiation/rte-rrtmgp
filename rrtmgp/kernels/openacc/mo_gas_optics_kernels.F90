@@ -217,6 +217,8 @@ contains
     ! ---------------------
     ! Layer limits of upper, lower atmospheres
     ! ---------------------
+
+    !$acc update if_present host(play(1,1), play(1,nlay))
     top_at_1 = play(1,1) < play(1, nlay)
     if(top_at_1) then
       !$acc parallel loop
@@ -462,7 +464,7 @@ contains
 
             ! Proceed only if the g-point is within the correct range
             if (igpt <= gptE) then
-              ! What is the starting point in the stored array of minor absorption coefficients?
+              ! What if the starting point in the stored array of minor absorption coefficients?
               minor_start = kminor_start(imnr)
 
               tau_minor = 0._wp
@@ -477,7 +479,7 @@ contains
             endif
 
           enddo
-
+          
         enddo
       enddo
     enddo
@@ -635,7 +637,7 @@ contains
     ! compute level source irradiances for each g-point, one each for upward and downward paths
     !$acc parallel loop
     do icol = 1, ncol
-      call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,       1,icol))
+      call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,   1,icol))
     end do
 
     !$acc parallel loop collapse(2)

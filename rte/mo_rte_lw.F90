@@ -38,11 +38,13 @@ module mo_rte_lw
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
+  use mo_optical_props_add, only: ty_optical_props_1rescl
   use mo_source_functions,   &
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes
   use mo_rte_solver_kernels, &
                         only: apply_BC, lw_solver_noscat_GaussQuad, lw_solver_2stream
+  use mo_rte_solver_kernels_add,  only: lw_solver_1rescl_GaussQuad
   implicit none
   private
 
@@ -212,6 +214,19 @@ contains
                               sfc_emis_gpt, sources%sfc_source,  &
                               gpt_flux_up, gpt_flux_dn)
         !$acc exit data delete(optical_props%tau)
+      class is (ty_optical_props_1rescl)
+        !
+        ! TANG approximation with IP modification calculation (includes scattering effect)
+        !
+        !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
+        call lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                               n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
+                               optical_props%tau, optical_props%scaling,              &
+                               sources%lay_source, sources%lev_source_inc, &
+                               sources%lev_source_dec, &
+                               sfc_emis_gpt, sources%sfc_source,&
+                               gpt_flux_up, gpt_flux_dn)
+        !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
       class is (ty_optical_props_2str)
         !
         ! two-stream calculation with scattering

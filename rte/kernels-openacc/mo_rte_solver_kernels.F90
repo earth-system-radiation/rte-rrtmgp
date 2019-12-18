@@ -1237,7 +1237,8 @@ contains
     real(wp)            :: fact
     real(wp), parameter :: tau_thresh = sqrt(epsilon(tau))
     integer             :: icol
-    real(wp), dimension(ncol     ) :: sfcSource
+    real(wp), dimension(ncol     )      :: sfcSource
+    real(wp), dimension(ncol,nlay,ngpt) :: An, Cn
     ! ------------------------------------
 
     ! Which way is up?
@@ -1255,7 +1256,9 @@ contains
     end if
 
     !$acc enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn)
+    !$acc enter data copyin(scaling)
     !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up)
+    !$acc enter data create(sfcSource, An, Cn)
     !$acc enter data attach(lev_source_up,lev_source_dn)
 
     ! NOTE: This kernel produces small differences between GPU and CPU
@@ -1271,6 +1274,8 @@ contains
           !
           tau_loc(icol,ilev,igpt) = tau(icol,ilev,igpt)*D(icol,igpt)
           trans  (icol,ilev,igpt) = exp(-tau_loc(icol,ilev,igpt))
+          Cn(icol,ilev,igpt) = 0.4_wp*scaling(icol,ilev,igpt)
+          An(icol,ilev,igpt) = (1._wp-trans(icol,ilev,igpt)*trans(icol,ilev,igpt))
         end do
       end do
     end do
@@ -1302,15 +1307,29 @@ contains
     !
     ! Transport
     !
-    call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1,  &
-                             tau_loc, scaling, trans, &
-                             sfc_albedo, source_dn, source_up, source_sfc, &
+    call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
+                             tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up, radn_dn)
+    !
+    ! Correction
+    !
+
+    call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1,  &
+                             tau_loc, trans, &
+                             sfc_albedo, source_dn, source_up, source_sfc, &
+                             radn_up, radn_dn, An, Cn)
 
       ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
       !
       ! radn_dn(:,:,igpt) = 2._wp * pi * weight * radn_dn(:,:,igpt)
       ! radn_up(:,:,igpt) = 2._wp * pi * weight * radn_up(:,:,igpt)
+
+    !$acc exit data copyout(radn_dn,radn_up)
+    !$acc exit data delete(sfcSource, An, Cn)
+    !$acc exit data delete(scaling)
+    !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo)
+    !$acc exit data detach(lev_source_up,lev_source_dn)
+
   end subroutine lw_solver_1rescl
   ! -------------------------------------------------------------------------------------------------
   !
@@ -1345,7 +1364,7 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
     real(wp), dimension(ncol,       ngpt) :: Ds_ncol
 
-    integer :: imu, top_level
+    integer :: imu, top_level,icol,ilev,igpt
     real    :: weight
     ! ------------------------------------
     !
@@ -1360,9 +1379,15 @@ contains
                           top_at_1, Ds_ncol, weights(1), tau, scaling, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           flux_up, flux_dn)
-
-    flux_up = flux_up * weight
-    flux_dn = flux_dn * weight
+    !$acc  parallel loop collapse(3)
+    do igpt = 1, ngpt
+      do ilev = 1, nlay+1
+        do icol = 1, ncol
+          flux_up(icol,ilev,igpt) = weight*flux_up(icol,ilev,igpt)
+          flux_dn(icol,ilev,igpt) = weight*flux_dn(icol,ilev,igpt)
+        enddo
+      enddo
+    enddo
 
     do imu = 2, nmus
       Ds_ncol(:,:) = Ds(imu)
@@ -1373,8 +1398,16 @@ contains
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn)
 
-      flux_up(:,:,:) = flux_up(:,:,:) + weight*radn_up(:,:,:)
-      flux_dn(:,:,:) = flux_dn(:,:,:) + weight*radn_dn(:,:,:)
+      !$acc  parallel loop collapse(3)
+      do igpt = 1, ngpt
+        do ilev = 1, nlay+1
+          do icol = 1, ncol
+            flux_up(icol,ilev,igpt) = flux_up(icol,ilev,igpt) + weight*radn_up(icol,ilev,igpt)
+            flux_dn(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) + weight*radn_dn(icol,ilev,igpt)
+          enddo
+        enddo
+      enddo
+
     end do
   end subroutine lw_solver_1rescl_GaussQuad
 
@@ -1384,19 +1417,19 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
-                                 tau, scaling, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                                 radn_up, radn_dn) bind(C, name="lw_transport_1rescl")
+                                 tau, trans, sfc_albedo, source_dn, source_up, source_sfc, &
+                                 radn_up, radn_dn, An, Cn) bind(C, name="lw_transport_1rescl")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: tau, &     ! Absorption optical thickness, pre-divided by mu []
                                                        trans      ! transmissivity = exp(-tau)
-    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: scaling        ! single scattering
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_albedo ! Surface albedo
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_dn, &
                                                        source_up  ! Diffuse radiation emitted by the layer
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: source_sfc ! Surface source function [W/m2]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_up    ! Radiances [W/m2-str]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn    !Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: An, Cn     
     ! Local variables
     integer :: ilev, icol, igpt
     ! ---------------------------------------------------
@@ -1410,24 +1443,13 @@ contains
       do igpt = 1, ngpt
         do icol = 1, ncol
 
-          do ilev = 1, nlay
-            radn_dn(icol,ilev+1,igpt) = trans(icol,ilev,igpt)*radn_dn(icol,ilev,igpt) + source_dn(icol,ilev,igpt)
-          end do
-
-          ! Surface reflection and emission
-          radn_up(icol,nlay+1,igpt) = radn_dn(icol,nlay+1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt)
-
           ! 1st Upward propagation
           do ilev = nlay, 1, -1
             radn_up(icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_up(icol,ilev+1,igpt) + source_up(icol,ilev,igpt)
 
-            if ( scaling(icol,ilev,igpt) > 1e-6 )  then
-          !  
-          ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
-          ! explanation of factor 0.4 note A of Table
-          !
-              adjustmentFactor = 0.4_wp*scaling(icol,ilev,igpt)*&
-                     ( radn_dn(icol,ilev,igpt)*(1.-trans(icol,ilev,igpt)*trans(icol,ilev,igpt) ) - &
+            if ( Cn(icol,ilev,igpt) > 1e-6 )  then
+              adjustmentFactor = Cn(icol,ilev,igpt)*&
+                     ( An(icol,ilev,igpt)*radn_dn(icol,ilev,igpt) - &
                        source_dn(icol,ilev,igpt)  *trans(icol,ilev,igpt ) - &
                        source_up(icol,ilev,igpt))
               radn_up(icol,ilev,igpt) = radn_up(icol,ilev,igpt) + adjustmentFactor
@@ -1436,13 +1458,9 @@ contains
           ! 2nd Downward propagation
           do ilev = 1, nlay
             radn_dn(icol,ilev+1,igpt) = trans(icol,ilev,igpt)*radn_dn(icol,ilev,igpt) + source_dn(icol,ilev,igpt)
-            if ( scaling(icol,ilev,igpt) > 1e-6 )  then
-          !  
-          ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
-          ! explanation of factor 0.4 note A of Table
-          !
-                adjustmentFactor = 0.4_wp*scaling(icol,ilev,igpt)*( &
-                    radn_up(icol,ilev,igpt)*(1. -trans(icol,ilev,igpt)*trans(icol,ilev,igpt))  - &
+            if ( Cn(icol,ilev,igpt) > 1e-6 )  then
+                adjustmentFactor = Cn(icol,ilev,igpt)*( &
+                    An(icol,ilev,igpt)*radn_up(icol,ilev,igpt) - &
                     source_up(icol,ilev,igpt)*trans(icol,ilev,igpt) - &
                     source_dn(icol,ilev,igpt) )
                 radn_dn(icol,ilev+1,igpt) = radn_dn(icol,ilev+1,igpt) + adjustmentFactor
@@ -1451,35 +1469,15 @@ contains
         enddo
       enddo
     else
-      !
-      ! Top of domain is index nlay+1
-      !
-      ! Downward propagation
-      !
-      ! --------- N+1
-      !                   layer N
-      ! ----------N
-      !
-      !
       !$acc  parallel loop collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
-          do ilev = nlay, 1, -1
-            radn_dn(icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt)
-          end do
-
-          ! Surface reflection and emission
-          radn_up(icol,1,igpt) = radn_dn(icol,1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt)
           ! Upward propagation
           do ilev = 1, nlay
             radn_up(icol,ilev+1,igpt) =  trans(icol,ilev,igpt) * radn_up(icol,ilev,igpt) +  source_up(icol,ilev,igpt)
-            if ( scaling(icol,ilev,igpt) > 1e-6 )  then
-          !  
-          ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
-          ! explanation of factor 0.4 note A of Table
-          !
-               adjustmentFactor = 0.4_wp*scaling(icol,ilev,igpt)*&
-                      ( radn_dn(icol,ilev+1,igpt)*(1.-trans(icol,ilev,igpt)*trans(icol,ilev,igpt) ) - &
+            if ( Cn(icol,ilev,igpt) > 1e-6 )  then
+               adjustmentFactor = Cn(icol,ilev,igpt)*&
+                      ( An(icol,ilev,igpt)*radn_dn(icol,ilev+1,igpt) - &
                         source_dn(icol,ilev,igpt) *trans(icol,ilev ,igpt) - &
                         source_up(icol,ilev,igpt))
                radn_up(icol,ilev+1,igpt) = radn_up(icol,ilev+1,igpt) + adjustmentFactor
@@ -1489,13 +1487,9 @@ contains
           ! 2st Downward propagation
           do ilev = nlay, 1, -1
             radn_dn(icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt)
-             if ( scaling(icol,ilev,igpt) > 1e-6 )  then
-          !  
-          ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
-          ! explanation of factor 0.4 note A of Table
-          !
-                adjustmentFactor = 0.4_wp*scaling(icol,ilev,igpt)*( &
-                        radn_up(icol,ilev,igpt)*(1.-trans(icol,ilev,igpt)*trans(icol,ilev,igpt))  - &
+             if ( Cn(icol,ilev,igpt) > 1e-6 )  then
+                adjustmentFactor = Cn(icol,ilev,igpt)*( &
+                        An(icol,ilev,igpt)*radn_up(icol,ilev,igpt) - &
                         source_up(icol,ilev,igpt)*trans(icol,ilev ,igpt ) - &
                         source_dn(icol,ilev,igpt) )
                 radn_dn(icol,ilev,igpt) = radn_dn(icol,ilev,igpt) + adjustmentFactor

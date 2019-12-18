@@ -951,17 +951,17 @@ pure subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="a
 end subroutine apply_BC_0
 !---------------------------------------------------------------------------------
 !
-! Tang
+! 1rescl
 !
 ! ---------------------------------------------------------------
 subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                             &
-                            tau, ssa, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                            tau, scaling, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn) bind(C, name="lw_solver_1rescl")
   integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
   logical(wl),                           intent(in   ) :: top_at_1
   real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
   real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
-  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: ssa          ! single scattering albedo []
+  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: scaling          ! single scattering albedo []
   real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
   ! Planck source at layer edge for radiation in increasing/decreasing ilay direction
   ! lev_source_dec applies the mapping in layer i to the Planck function at layer i
@@ -978,6 +978,7 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
                                       trans       ! transmissivity  = exp(-tau)
   real(wp), dimension(ncol,nlay) :: source_dn, source_up
   real(wp), dimension(ncol     ) :: source_sfc, sfc_albedo
+  real(wp), dimension(ncol,nlay) :: An, Cn
 
   real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
@@ -1008,6 +1009,12 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
     do ilev = 1, nlay
       tau_loc(:,ilev) = tau(:,ilev,igpt)*D(:,igpt)
       trans  (:,ilev) = exp(-tau_loc(:,ilev))
+      !  
+      ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
+      ! explanation of factor 0.4 note A of Table
+      !
+      Cn(:,ilev) = 0.4_wp*scaling(:,ilev,igpt)
+      An(:,ilev) = (1._wp-trans(:,ilev)*trans(:,ilev))
     end do
 
     ! Source function for diffuse radiation
@@ -1028,10 +1035,9 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
                              tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up(:,:,igpt), radn_dn(:,:,igpt))
 
-    call lw_transport_1rescl(ncol, nlay, top_at_1,  &
-                             ssa(:,:,igpt), trans, &
+    call lw_transport_1rescl(ncol, nlay, top_at_1, trans, &
                              sfc_albedo, source_dn, source_up, source_sfc, &
-                             radn_up(:,:,igpt), radn_dn(:,:,igpt))
+                             radn_up(:,:,igpt), radn_dn(:,:,igpt), An, Cn)
 
   end do  ! g point loop
 end subroutine lw_solver_1rescl
@@ -1044,16 +1050,16 @@ end subroutine lw_solver_1rescl
 ! ---------------------------------------------------------------
 
 subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
-                                 tau, ssa, lay_source, lev_source_inc, lev_source_dec, &
+                                 tau, scaling, lay_source, lev_source_inc, lev_source_dec, &
                                  sfc_emis, sfc_src,&
-                                flux_up, flux_dn) &
+                                 flux_up, flux_dn) &
                                  bind(C, name="lw_solver_1rescl_GaussQuad")
   integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
   logical(wl),                           intent(in   ) :: top_at_1
   integer,                               intent(in   ) :: nmus         ! number of quadrature angles
   real(wp), dimension(nmus),             intent(in   ) :: Ds, weights  ! quadrature secants, weights
   real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
-  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: ssa          ! single scattering albedo []
+  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: scaling          ! single scattering albedo []
   real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
   real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source_inc
                                       ! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
@@ -1080,7 +1086,7 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   radn_dn(1:ncol, top_level, 1:ngpt)  = flux_dn(1:ncol, top_level, 1:ngpt) / weight
 
   call lw_solver_1rescl(ncol, nlay, ngpt, &
-                        top_at_1, Ds_ncol, tau, ssa, &
+                        top_at_1, Ds_ncol, tau, scaling, &
                         lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                         flux_up, flux_dn)
 
@@ -1092,7 +1098,7 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
     weight = 2._wp*pi*weights(imu)
     radn_dn(1:ncol, top_level, 1:ngpt)  = flux_dn(1:ncol, top_level, 1:ngpt) / weight
     call lw_solver_1rescl(ncol, nlay, ngpt, &
-                          top_at_1, Ds_ncol, tau, ssa, &
+                          top_at_1, Ds_ncol, tau, scaling, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           radn_up, radn_dn)
 
@@ -1116,18 +1122,18 @@ end subroutine lw_solver_1rescl_GaussQuad
 ! 
 ! -------------------------------------------------------------------------------------------------
 subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
-                               ssa, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                               radn_up, radn_dn) bind(C, name="lw_transport_1rescl")
+                               trans, sfc_albedo, source_dn, source_up, source_sfc, &
+                               radn_up, radn_dn, An, Cn) bind(C, name="lw_transport_1rescl")
   integer,                          intent(in   ) :: ncol, nlay ! Number of columns, layers, g-points
   logical(wl),                      intent(in   ) :: top_at_1   !
   real(wp), dimension(ncol,nlay  ), intent(in   ) :: trans      ! transmissivity = exp(-tau)
-  real(wp), dimension(ncol,nlay  ), intent(in   ) :: ssa        ! single scattering
   real(wp), dimension(ncol       ), intent(in   ) :: sfc_albedo ! Surface albedo
   real(wp), dimension(ncol,nlay  ), intent(in   ) :: source_dn, &
                                                      source_up  ! Diffuse radiation emitted by the layer
   real(wp), dimension(ncol       ), intent(in   ) :: source_sfc ! Surface source function [W/m2]
   real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_up    ! Radiances [W/m2-str]
   real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_dn    !Top level must contain incident flux boundary condition
+  real(wp), dimension(ncol,nlay),   intent(in   ) :: An, Cn
   ! Local variables
   integer :: ilev, icol
   ! ---------------------------------------------------
@@ -1137,28 +1143,13 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     !
     ! Top of domain is index 1
     !
-    ! Downward propagation
-    ! do ilev = 1, nlay
-    !   radn_dn(:,ilev+1) = trans(:,ilev)  *radn_dn(:,ilev)  + source_dn(:,ilev)
-    ! end do
-
-    ! Surface reflection and emission
-    ! radn_up(:,nlay+1) = radn_dn(:,nlay+1)*sfc_albedo(:) + source_sfc(:)
-
     ! 1st Upward propagation
     do ilev = nlay, 1, -1
       radn_up(:,ilev) = trans(:,ilev  )*radn_up(:,ilev+1) + source_up(:,ilev)
       do icol=1,ncol
-         if ( ssa(icol,ilev) > 1e-6 )  then
-        !  
-        ! here ssa is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
-        ! explanation of factor 0.4 note A of Table
-        !
-
-            adjustmentFactor = 0.4_wp*ssa(icol,ilev)*&
-                   ( radn_dn(icol,ilev)*(1.-trans(icol,ilev)*trans(icol,ilev)) - &
-                     source_dn(icol,ilev) *trans(icol,ilev) - &
-                     source_up(icol,ilev))
+         if ( Cn(icol,ilev) > 1e-6 )  then
+            adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev) - &
+                     trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
             radn_up(icol,ilev) = radn_up(icol,ilev) + adjustmentFactor
           endif  
         enddo  
@@ -1167,17 +1158,11 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     do ilev = 1, nlay
       radn_dn(:,ilev+1) = trans(:,ilev)*radn_dn(:,ilev) + source_dn(:,ilev)
       do icol=1,ncol
-        if ( ssa(icol,ilev) > 1e-6 )  then
-        !  
-        ! here ssa is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
-        ! explanation of factor 0.4 note A of Table
-        !
+        if ( Cn(icol,ilev) > 1e-6 )  then
+            adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
+                     trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
 
-            adjustmentFactor = 0.4_wp*ssa(icol,ilev)*( &
-                radn_up(icol,ilev)*(1.-trans(icol,ilev)*trans(icol,ilev))  - &
-                source_up(icol,ilev)*trans(icol,ilev) - &
-                source_dn(icol,ilev) )
-              radn_dn(:,ilev+1) = radn_dn(:,ilev+1) + adjustmentFactor
+            radn_dn(:,ilev+1) = radn_dn(:,ilev+1) + adjustmentFactor
         endif  
       enddo  
     end do
@@ -1185,32 +1170,13 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     !
     ! Top of domain is index nlay+1
     !
-    ! Downward propagation
-    !
-    ! --------- N+1
-    !                   layer N
-    ! ----------N
-    !
-    !
-    ! do ilev = nlay, 1, -1
-    !   radn_dn(:,ilev) = trans(:,ilev  )*radn_dn(:,ilev+1) + source_dn(:,ilev)
-    ! end do
-
-    ! Surface reflection and emission
-    ! radn_up(:,     1) = radn_dn(:,     1)*sfc_albedo(:) + source_sfc(:)
     ! Upward propagation
     do ilev = 1, nlay
       radn_up(:,ilev+1) =  trans(:,ilev) * radn_up(:,ilev) +  source_up(:,ilev)
       do icol=1,ncol
-         if ( ssa(icol,ilev) > 1e-6 )  then
-        !  
-        ! here ssa is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
-        ! explanation of factor 0.4 note A of Table
-        !
-            adjustmentFactor = 0.4_wp*ssa(icol,ilev)*&
-                   ( radn_dn(icol,ilev+1)*(1.-trans(icol,ilev)*trans(icol,ilev)) - &
-                     source_dn(icol,ilev) *trans(icol,ilev) - &
-                     source_up(icol,ilev))
+         if ( Cn(icol,ilev) > 1e-6 )  then
+            adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev+1) - &
+                     trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
             radn_up(icol,ilev+1) = radn_up(icol,ilev+1) + adjustmentFactor
         endif  
       enddo  
@@ -1220,15 +1186,9 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     do ilev = nlay, 1, -1
       radn_dn(:,ilev) = trans(:,ilev  )*radn_dn(:,ilev+1) + source_dn(:,ilev)
       do icol=1,ncol
-         if ( ssa(icol,ilev) > 1e-6 )  then
-        !  
-        ! here ssa is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
-        ! explanation of factor 0.4 note A of Table
-        !
-                   adjustmentFactor = 0.4_wp*ssa(icol,ilev)*( &
-                    radn_up(icol,ilev)*(1.-trans(icol,ilev)*trans(icol,ilev))  - &
-                    source_up(icol,ilev)*trans(icol,ilev) - &
-                    source_dn(icol,ilev) )
+         if ( Cn(icol,ilev) > 1e-6 )  then
+            adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
+                     trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
             radn_dn(icol,ilev) = radn_dn(icol,ilev) + adjustmentFactor
         endif  
       enddo  

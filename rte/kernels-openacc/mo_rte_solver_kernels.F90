@@ -1400,7 +1400,7 @@ contains
     ! Local variables
     integer :: ilev, icol, igpt
     ! ---------------------------------------------------
-    real(wp) :: xx
+    real(wp) :: adjustmentFactor
     if(top_at_1) then
       !
       ! Top of domain is index 1
@@ -1411,7 +1411,7 @@ contains
         do icol = 1, ncol
 
           do ilev = 1, nlay
-            radn_dn(icol,ilev+1,igpt) = trans(icol,ilev,igpt)  *radn_dn(icol,ilev,igpt)  + source_dn(icol,ilev,igpt)
+            radn_dn(icol,ilev+1,igpt) = trans(icol,ilev,igpt)*radn_dn(icol,ilev,igpt) + source_dn(icol,ilev,igpt)
           end do
 
           ! Surface reflection and emission
@@ -1426,10 +1426,11 @@ contains
           ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
           ! explanation of factor 0.4 note A of Table
           !
-              xx = 0.4_wp*scaling(icol,ilev,igpt)*&
-                     ( radn_dn(icol,ilev,igpt)*(1.-trans(icol,ilev,igpt)**2 ) - &
+              adjustmentFactor = 0.4_wp*scaling(icol,ilev,igpt)*&
+                     ( radn_dn(icol,ilev,igpt)*(1.-trans(icol,ilev,igpt)*trans(icol,ilev,igpt) ) - &
                        source_dn(icol,ilev,igpt)  *trans(icol,ilev,igpt ) - &
                        source_up(icol,ilev,igpt))
+              radn_up(icol,ilev,igpt) = radn_up(icol,ilev,igpt) + adjustmentFactor
             endif  
           enddo  
           ! 2nd Downward propagation
@@ -1440,11 +1441,11 @@ contains
           ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
           ! explanation of factor 0.4 note A of Table
           !
-                xx = 0.4_wp*scaling(icol,ilev,igpt)*( &
-                    radn_up(icol,ilev,igpt)*(1. -trans(icol,ilev,igpt)**2)  - &
+                adjustmentFactor = 0.4_wp*scaling(icol,ilev,igpt)*( &
+                    radn_up(icol,ilev,igpt)*(1. -trans(icol,ilev,igpt)*trans(icol,ilev,igpt))  - &
                     source_up(icol,ilev,igpt)*trans(icol,ilev,igpt) - &
                     source_dn(icol,ilev,igpt) )
-                  radn_dn(icol,ilev+1,igpt) = radn_dn(icol,ilev+1,igpt) + xx
+                radn_dn(icol,ilev+1,igpt) = radn_dn(icol,ilev+1,igpt) + adjustmentFactor
             endif  
           enddo  
         enddo
@@ -1477,11 +1478,11 @@ contains
           ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
           ! explanation of factor 0.4 note A of Table
           !
-               xx = 0.4_wp*scaling(icol,ilev,igpt)*&
-                      ( radn_dn(icol,ilev+1,igpt)*(1.-trans(icol,ilev,igpt)**2 ) - &
+               adjustmentFactor = 0.4_wp*scaling(icol,ilev,igpt)*&
+                      ( radn_dn(icol,ilev+1,igpt)*(1.-trans(icol,ilev,igpt)*trans(icol,ilev,igpt) ) - &
                         source_dn(icol,ilev,igpt) *trans(icol,ilev ,igpt) - &
                         source_up(icol,ilev,igpt))
-               radn_up(icol,ilev+1,igpt) = radn_up(icol,ilev+1,igpt) + xx
+               radn_up(icol,ilev+1,igpt) = radn_up(icol,ilev+1,igpt) + adjustmentFactor
            endif  
           end do
 
@@ -1493,11 +1494,11 @@ contains
           ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
           ! explanation of factor 0.4 note A of Table
           !
-                       xx = 0.4_wp*scaling(icol,ilev,igpt)*( &
-                        radn_up(icol,ilev,igpt)*(1.-trans(icol,ilev,igpt)**2)  - &
+                adjustmentFactor = 0.4_wp*scaling(icol,ilev,igpt)*( &
+                        radn_up(icol,ilev,igpt)*(1.-trans(icol,ilev,igpt)*trans(icol,ilev,igpt))  - &
                         source_up(icol,ilev,igpt)*trans(icol,ilev ,igpt ) - &
                         source_dn(icol,ilev,igpt) )
-                radn_dn(icol,ilev,igpt) = radn_dn(icol,ilev,igpt) + xx
+                radn_dn(icol,ilev,igpt) = radn_dn(icol,ilev,igpt) + adjustmentFactor
             endif  
           end do
         enddo

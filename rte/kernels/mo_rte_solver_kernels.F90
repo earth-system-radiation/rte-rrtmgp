@@ -1132,7 +1132,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
   integer :: ilev, icol
   ! ---------------------------------------------------
   ! real(wp), dimension(ncol,nlay+1)                :: i_up    ! Radiances [W/m2-str]
-  real(wp) :: xx
+  real(wp) :: adjustmentFactor
   if(top_at_1) then
     !
     ! Top of domain is index 1
@@ -1155,11 +1155,11 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
         ! explanation of factor 0.4 note A of Table
         !
 
-            xx = 0.4_wp*ssa(icol,ilev)*&
-                   ( radn_dn(icol,ilev)*(1.-trans(icol,ilev )**2 ) - &
-                     source_dn(icol,ilev) *trans(icol,ilev  ) - &
+            adjustmentFactor = 0.4_wp*ssa(icol,ilev)*&
+                   ( radn_dn(icol,ilev)*(1.-trans(icol,ilev)*trans(icol,ilev)) - &
+                     source_dn(icol,ilev) *trans(icol,ilev) - &
                      source_up(icol,ilev))
-            radn_up(icol,ilev) = radn_up(icol,ilev) + xx
+            radn_up(icol,ilev) = radn_up(icol,ilev) + adjustmentFactor
           endif  
         enddo  
     end do
@@ -1173,11 +1173,11 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
         ! explanation of factor 0.4 note A of Table
         !
 
-            xx = 0.4_wp*ssa(icol,ilev)*( &
-                radn_up(icol,ilev)*(1.-trans(icol,ilev  )**2)  - &
-                source_up(icol,ilev)*trans(icol,ilev  ) - &
+            adjustmentFactor = 0.4_wp*ssa(icol,ilev)*( &
+                radn_up(icol,ilev)*(1.-trans(icol,ilev)*trans(icol,ilev))  - &
+                source_up(icol,ilev)*trans(icol,ilev) - &
                 source_dn(icol,ilev) )
-              radn_dn(:,ilev+1) = radn_dn(:,ilev+1) + xx
+              radn_dn(:,ilev+1) = radn_dn(:,ilev+1) + adjustmentFactor
         endif  
       enddo  
     end do
@@ -1207,11 +1207,11 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
         ! here ssa is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
         ! explanation of factor 0.4 note A of Table
         !
-            xx = 0.4_wp*ssa(icol,ilev)*&
-                   ( radn_dn(icol,ilev+1)*(1.-trans(icol,ilev )**2 ) - &
-                     source_dn(icol,ilev) *trans(icol,ilev  ) - &
+            adjustmentFactor = 0.4_wp*ssa(icol,ilev)*&
+                   ( radn_dn(icol,ilev+1)*(1.-trans(icol,ilev)*trans(icol,ilev)) - &
+                     source_dn(icol,ilev) *trans(icol,ilev) - &
                      source_up(icol,ilev))
-            radn_up(icol,ilev+1) = radn_up(icol,ilev+1) + xx
+            radn_up(icol,ilev+1) = radn_up(icol,ilev+1) + adjustmentFactor
         endif  
       enddo  
     end do
@@ -1225,11 +1225,11 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
         ! here ssa is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
         ! explanation of factor 0.4 note A of Table
         !
-                   xx = 0.4_wp*ssa(icol,ilev)*( &
-                    radn_up(icol,ilev)*(1.-trans(icol,ilev  )**2)  - &
-                    source_up(icol,ilev)*trans(icol,ilev  ) - &
+                   adjustmentFactor = 0.4_wp*ssa(icol,ilev)*( &
+                    radn_up(icol,ilev)*(1.-trans(icol,ilev)*trans(icol,ilev))  - &
+                    source_up(icol,ilev)*trans(icol,ilev) - &
                     source_dn(icol,ilev) )
-            radn_dn(icol,ilev) = radn_dn(icol,ilev) + xx
+            radn_dn(icol,ilev) = radn_dn(icol,ilev) + adjustmentFactor
         endif  
       enddo  
     end do

@@ -400,7 +400,7 @@ contains
     allocate(this%ssa(ncol,nlay,this%get_ngpt()), this%p(nmom,ncol,nlay,this%get_ngpt()))
   end function alloc_only_nstr
 
-  ! --- Tang ------------------------------------------------------------------------
+  ! --- 1rescl ------------------------------------------------------------------------
   function alloc_only_1rescl(this, ncol, nlay) result(err_message)
     class(ty_optical_props_1rescl) :: this
     integer,          intent(in) :: ncol, nlay
@@ -473,7 +473,7 @@ contains
     if(err_message /= "") return
     err_message = this%alloc_nstr(nmom, ncol, nlay)
   end function init_and_alloc_nstr
-  ! --- Tang ------------------------------------------------------------------------
+  ! --- 1rescl ------------------------------------------------------------------------
   function init_and_alloc_1rescl(this, ncol, nlay, band_lims_wvn, band_lims_gpt, name) result(err_message)
     class(ty_optical_props_1rescl)             :: this
     integer,                      intent(in) :: ncol, nlay
@@ -537,7 +537,7 @@ contains
     if(err_message /= "") return
     err_message = this%alloc_nstr(nmom, ncol, nlay)
   end function copy_and_alloc_nstr
-  ! --- Tang ------------------------------------------------------------------------
+  ! --- 1rescl ------------------------------------------------------------------------
   function copy_and_alloc_1rescl(this, ncol, nlay, spectral_desc, name) result(err_message)
     class(ty_optical_props_1rescl)           :: this
     integer,                      intent(in) :: ncol, nlay
@@ -889,7 +889,7 @@ contains
         call extract_subset(nmom, ncol, nlay, ngpt, full%p  , start, start+n-1, subset%p  )
     end select
   end function subset_nstr_range
-  ! --- Tang ------------------------------------------------------------------------
+  ! --- 1rescl ------------------------------------------------------------------------
   function subset_1rescl_range(full, start, n, subset) result(err_message)
     use mo_optical_props_kernels, only: extract_subset
     class(ty_optical_props_1rescl), intent(inout) :: full
@@ -1342,12 +1342,12 @@ contains
     err_message = this%alloc_1rescl(ncol, nlay, dat_2str, dat_2str%get_name())
     if ( err_message /= '' ) return
 
-    call scalingTang(ncol, nlay, ngpt, this%tau, this%scaling, dat_2str%tau, dat_2str%ssa, dat_2str%g)
+    call scaling_1rescl(ncol, nlay, ngpt, this%tau, this%scaling, dat_2str%tau, dat_2str%ssa, dat_2str%g)
 
   end function create_1rescl_from_2str  
   
   ! can be moved to proper kernel
-  pure subroutine scalingTang(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+  pure subroutine scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
     integer ,                              intent(in)    :: ncol
     integer ,                              intent(in)    :: nlay
     integer ,                              intent(in)    :: ngpt
@@ -1359,7 +1359,7 @@ contains
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: scaling
 
     integer  :: icol, ilay, igpt
-    real(wp) :: xx, ssal, yy
+    real(wp) :: wb, ssal, scaleTau
     !$acc enter data copyin(tau, ssa, g)
     !$acc enter data create(tauLoc, scaling)
 
@@ -1368,15 +1368,15 @@ contains
       do ilay=1,nlay
         do icol=1,ncol
           ssal = ssa(icol, ilay, igpt)
-          xx = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
-          yy = (1._wp - ssal + xx )
+          wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
+          scaleTau = (1._wp - ssal + wb )
           ! Eq.15 of the paper
-          tauLoc(icol, ilay, igpt) = yy * tau(icol, ilay, igpt)
+          tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt)
           ! 
           ! here ssa is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
           ! actually it is in line of parameter rescaling defined in Eq.7
-          if (yy > epsilon(1._wp)) then
-            scaling(icol, ilay, igpt) = xx / yy
+          if (scaleTau > epsilon(1._wp)) then
+            scaling(icol, ilay, igpt) = wb / scaleTau
           else
             scaling(icol, ilay, igpt) = 1._wp
           endif
@@ -1385,5 +1385,5 @@ contains
     enddo
     !$acc exit data copyout(tauLoc, scaling)
     !$acc exit data delete(tau, ssa, g)
-  end subroutine scalingTang
+  end subroutine scaling_1rescl
 end module mo_optical_props

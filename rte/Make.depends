@@ -21,6 +21,7 @@ mo_rte_util_array.o: mo_rte_util_array.F90 mo_rte_kind.o
 #
 mo_optical_props_kernels.o: mo_rte_kind.o mo_optical_props_kernels.F90
 mo_optical_props.o:         mo_rte_kind.o mo_rte_util_array.o mo_optical_props_kernels.o   mo_optical_props.F90
+mo_optical_props_add.o:     mo_optical_props.o
 #
 # Source functions
 #
@@ -34,6 +35,7 @@ mo_fluxes.o:                    mo_rte_kind.o mo_fluxes_broadband_kernels.o mo_o
 # Radiative transfer
 #
 mo_rte_solver_kernels.o:        mo_rte_kind.o mo_rte_solver_kernels.F90
+mo_rte_solver_kernels_add.o:    mo_rte_kind.o mo_rte_solver_kernels.F90
 
 mo_rte_lw.o: mo_rte_kind.o \
   mo_rte_util_array.o \

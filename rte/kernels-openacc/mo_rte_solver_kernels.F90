@@ -1366,6 +1366,10 @@ contains
 
     integer :: imu, top_level,icol,ilev,igpt
     real    :: weight
+
+    !$acc enter data copyin(Ds,weights,tau,scaling,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn)
+    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol)
+
     ! ------------------------------------
     !
     ! For the first angle output arrays store total flux
@@ -1409,6 +1413,8 @@ contains
       enddo
 
     end do
+   !$acc exit data copyout(flux_up,flux_dn)
+   !$acc exit data delete(Ds,weights,tau,scaling,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol)
   end subroutine lw_solver_1rescl_GaussQuad
 
     ! -------------------------------------------------------------------------------------------------

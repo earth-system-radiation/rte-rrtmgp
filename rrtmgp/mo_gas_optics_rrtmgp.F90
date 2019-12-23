@@ -489,13 +489,13 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
-    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
     else
       col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
       col_dry_wk => col_dry_arr
     end if
+    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     !
     ! compute column gas amounts [molec/cm^2]
     !

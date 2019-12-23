@@ -37,8 +37,7 @@ module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
-                              ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr,&
-                              ty_optical_props_1rescl
+                              ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_source_functions,   &
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes
@@ -58,7 +57,7 @@ contains
   function rte_lw(optical_props, top_at_1, &
                   sources, sfc_emis,       &
                   fluxes,                  &
-                  inc_flux, n_gauss_angles) result(error_msg)
+                  inc_flux, n_gauss_angles, type2stream) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
@@ -72,11 +71,15 @@ contains
               target, optional, intent(in   ) :: inc_flux    ! incident flux at domain top [W/m2] (ncol, ngpts)
     integer,          optional, intent(in   ) :: n_gauss_angles ! Number of angles used in Gaussian quadrature
                                                                 ! (no-scattering solution)
+    integer,          optional, intent(in   ) :: type2stream    ! Parameters that defines what RTE is invoked if class of optical_props is ty_optical_props_2str 
+                                                                ! if NOT present or  type2stream = 0 - Tang processing chain
+                                                                ! if present and  type2stream = 1 - 2-stream processing chain
     character(len=128)                        :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
     !
     ! Local variables
     !
+    integer :: type2streamLoc
     integer :: ncol, nlay, ngpt, nband
     integer :: n_quad_angs
     integer :: icol, iband, igpt
@@ -161,6 +164,11 @@ contains
         error_msg = "rte_lw: have to ask for at least one quadrature point for no-scattering calculation"
       n_quad_angs = n_gauss_angles
     end if
+    if (present(type2stream)) then
+      type2streamLoc=type2stream
+    else
+      type2streamLoc=0
+    endif
     !
     ! Ensure values of tau, ssa, and g are reasonable
     !
@@ -214,21 +222,22 @@ contains
                               sfc_emis_gpt, sources%sfc_source,  &
                               gpt_flux_up, gpt_flux_dn)
         !$acc exit data delete(optical_props%tau)
-      class is (ty_optical_props_1rescl)
-        !
-        ! TANG approximation with IP modification calculation (includes scattering effect)
-        !
-        !$acc enter data copyin(optical_props%tau, optical_props%scaling)
-        call lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                               n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), &
-                               gauss_wts(1:n_quad_angs,n_quad_angs), &
-                               optical_props%tau, optical_props%scaling,              &
-                               sources%lay_source, sources%lev_source_inc, &
-                               sources%lev_source_dec, &
-                               sfc_emis_gpt, sources%sfc_source,&
-                               gpt_flux_up, gpt_flux_dn)
-        !$acc exit data delete(optical_props%tau, optical_props%scaling)
       class is (ty_optical_props_2str)
+        if (type2streamLoc==0) then
+          !
+          ! TANG approximation with IP modification calculation (includes scattering effect)
+          !
+          !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
+          call lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                 n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), &
+                                 gauss_wts(1:n_quad_angs,n_quad_angs), &
+                                 optical_props%tau, optical_props%ssa, optical_props%g, &
+                                 sources%lay_source, sources%lev_source_inc, &
+                                 sources%lev_source_dec, &
+                                 sfc_emis_gpt, sources%sfc_source,&
+                                 gpt_flux_up, gpt_flux_dn)
+          !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+        elseif (type2streamLoc==1) then
         !
         ! two-stream calculation with scattering
         !
@@ -241,6 +250,9 @@ contains
                                sfc_emis_gpt, sources%sfc_source,       &
                                gpt_flux_up, gpt_flux_dn)
         !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+        else
+           write(error_msg, "('lw_solver(...ty_optical_props_2str...) processing type canbe (0,1). entered: ', I2)") type2stream 
+        endif
       class is (ty_optical_props_nstr)
         !
         ! n-stream calculation

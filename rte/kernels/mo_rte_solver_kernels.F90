@@ -1050,7 +1050,7 @@ end subroutine lw_solver_1rescl
 ! ---------------------------------------------------------------
 
 subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
-                                 tau, scaling, lay_source, lev_source_inc, lev_source_dec, &
+                                 tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, &
                                  sfc_emis, sfc_src,&
                                  flux_up, flux_dn) &
                                  bind(C, name="lw_solver_1rescl_GaussQuad")
@@ -1058,8 +1058,9 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   logical(wl),                           intent(in   ) :: top_at_1
   integer,                               intent(in   ) :: nmus         ! number of quadrature angles
   real(wp), dimension(nmus),             intent(in   ) :: Ds, weights  ! quadrature secants, weights
-  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
-  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: scaling          ! single scattering albedo []
+  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau  ! Optical thickness,
+  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: ssa  ! single-scattering albedo,
+  real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: g       ! asymmetry parameter []
   real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
   real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source_inc
                                       ! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
@@ -1074,8 +1075,13 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
   real(wp), dimension(ncol,       ngpt) :: Ds_ncol
 
+  real(wp), dimension(ncol,nlay,  ngpt) :: tauLoc           ! rescaled Tau
+  real(wp), dimension(ncol,nlay,  ngpt) :: scaling          ! scaling
+
   integer :: imu, top_level
   real    :: weight
+  ! Tang rescaling
+  call scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g) 	
   ! ------------------------------------
   !
   ! For the first angle output arrays store total flux
@@ -1086,7 +1092,7 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   radn_dn(1:ncol, top_level, 1:ngpt)  = flux_dn(1:ncol, top_level, 1:ngpt) / weight
 
   call lw_solver_1rescl(ncol, nlay, ngpt, &
-                        top_at_1, Ds_ncol, tau, scaling, &
+                        top_at_1, Ds_ncol, tauLoc, scaling, &
                         lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                         flux_up, flux_dn)
 
@@ -1098,14 +1104,53 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
     weight = 2._wp*pi*weights(imu)
     radn_dn(1:ncol, top_level, 1:ngpt)  = flux_dn(1:ncol, top_level, 1:ngpt) / weight
     call lw_solver_1rescl(ncol, nlay, ngpt, &
-                          top_at_1, Ds_ncol, tau, scaling, &
+                          top_at_1, Ds_ncol, tauLoc, scaling, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           radn_up, radn_dn)
 
     flux_up(:,:,:) = flux_up(:,:,:) + weight*radn_up(:,:,:)
     flux_dn(:,:,:) = flux_dn(:,:,:) + weight*radn_dn(:,:,:)
   end do
-end subroutine lw_solver_1rescl_GaussQuad
+  end subroutine lw_solver_1rescl_GaussQuad
+
+  pure subroutine scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+    integer ,                              intent(in)    :: ncol
+    integer ,                              intent(in)    :: nlay
+    integer ,                              intent(in)    :: ngpt
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: tau
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: ssa
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: g
+
+    real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: tauLoc
+    real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: scaling
+
+    integer  :: icol, ilay, igpt
+    real(wp) :: wb, ssal, scaleTau
+    !$acc enter data copyin(tau, ssa, g)
+    !$acc enter data create(tauLoc, scaling)
+    !$acc parallel loop collapse(3)
+    do igpt=1,ngpt
+      do ilay=1,nlay
+        do icol=1,ncol
+          ssal = ssa(icol, ilay, igpt)
+          wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
+          scaleTau = (1._wp - ssal + wb )
+          ! Eq.15 of the paper
+          tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt)
+          ! 
+          ! here ssa is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
+          ! actually it is in line of parameter rescaling defined in Eq.7
+          if (scaleTau > epsilon(1._wp)) then
+            scaling(icol, ilay, igpt) = wb / scaleTau
+          else
+            scaling(icol, ilay, igpt) = 1._wp
+          endif
+        enddo
+      enddo
+    enddo
+    !$acc exit data copyout(tauLoc, scaling)
+    !$acc exit data delete(tau, ssa, g)
+  end subroutine scaling_1rescl
 
 ! -------------------------------------------------------------------------------------------------
 !

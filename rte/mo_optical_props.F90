@@ -170,15 +170,6 @@ module mo_optical_props
     generic,   public  :: alloc_1scl => alloc_only_1scl, init_and_alloc_1scl, copy_and_alloc_1scl
   end type
 
-  ! -------------------------------------------------------------------------------------------------
-  ! added to 2 stream 
-  ! Implemented based on the paper
-  ! Tang G, P Yang, GW Kattawar, X Huang, EJ Mlawer, BA Baum, MD King, 2018: Improvement of 
-  ! the Simulation of Cloud Longwave Scattering in Broadband Radiative Transfer Models, 
-  ! Journal of the Atmospheric Sciences 75 (7), 2217-2233
-  ! https://doi.org/10.1175/JAS-D-18-0014.1
-  !
-
   ! --- 2 stream ------------------------------------------------------------------------
   type, extends(ty_optical_props_arry) :: ty_optical_props_2str
     real(wp), dimension(:,:,:), allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
@@ -187,6 +178,7 @@ module mo_optical_props
     procedure, public  :: validate => validate_2stream
     procedure, public  :: get_subset => subset_2str_range
     procedure, public  :: delta_scale => delta_scale_2str
+
     procedure, private :: alloc_only_2str
     procedure, private :: init_and_alloc_2str
     procedure, private :: copy_and_alloc_2str
@@ -208,7 +200,7 @@ module mo_optical_props
     procedure, private :: copy_and_alloc_nstr
     generic,   public  :: alloc_nstr => alloc_only_nstr, init_and_alloc_nstr, copy_and_alloc_nstr
   end type
-
+  ! -------------------------------------------------------------------------------------------------
 contains
   ! -------------------------------------------------------------------------------------------------
   !
@@ -388,7 +380,6 @@ contains
     if(allocated(this%p  )) deallocate(this%p  )
     allocate(this%ssa(ncol,nlay,this%get_ngpt()), this%p(nmom,ncol,nlay,this%get_ngpt()))
   end function alloc_only_nstr
-
   ! ------------------------------------------------------------------------------------------
   !
   ! Combined allocation/initialization routines
@@ -491,7 +482,6 @@ contains
     if(err_message /= "") return
     err_message = this%alloc_nstr(nmom, ncol, nlay)
   end function copy_and_alloc_nstr
-
   ! ------------------------------------------------------------------------------------------
   !
   !  Routines for array classes: delta-scaling, validation (ensuring all values can be used )
@@ -804,6 +794,7 @@ contains
         call extract_subset(nmom, ncol, nlay, ngpt, full%p  , start, start+n-1, subset%p  )
     end select
   end function subset_nstr_range
+
   ! ------------------------------------------------------------------------------------------
   !
   !  Routines for array classes: incrementing
@@ -1176,4 +1167,6 @@ contains
 
       get_name = trim(this%name)
   end function get_name
+  ! ------------------------------------------------------------------------------------------
+
 end module mo_optical_props

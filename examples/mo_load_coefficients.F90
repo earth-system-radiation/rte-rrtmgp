@@ -70,7 +70,8 @@ contains
     real(wp), dimension(:,:,:),       allocatable :: kminor_lower,                    kminor_upper
 
     real(wp), dimension(:,:,:  ), allocatable :: rayl_lower, rayl_upper
-    real(wp), dimension(:      ), allocatable :: solar_src
+    real(wp), dimension(:      ), allocatable :: solar_quiet, solar_facular, solar_sunspot
+    real(wp)                                  :: tsi_default, mg_default, sb_default
     real(wp), dimension(:,:    ), allocatable :: totplnk
     real(wp), dimension(:,:,:,:), allocatable :: planck_frac
     ! -----------------
@@ -205,7 +206,12 @@ contains
       !
       ! Solar source doesn't have an dependencies yet
       !
-      solar_src = read_field(ncid, 'solar_source', ngpts)
+      solar_quiet   = read_field(ncid, 'solar_source_quiet', ngpts)
+      solar_facular = read_field(ncid, 'solar_source_facular', ngpts)
+      solar_sunspot = read_field(ncid, 'solar_source_sunspot', ngpts)
+      tsi_default   = read_field(ncid, 'tsi_default')
+      mg_default    = read_field(ncid, 'mg_default')
+      sb_default    = read_field(ncid, 'sb_default')
       call stop_on_err(kdist%load(available_gases, &
                                   gas_names,   &
                                   key_species, &
@@ -228,7 +234,8 @@ contains
                                   scale_by_complement_upper, &
                                   kminor_start_lower, &
                                   kminor_start_upper, &
-                                  solar_src, &
+                                  solar_quiet, solar_facular, solar_sunspot, &
+                                  tsi_default, mg_default, sb_default, &
                                   rayl_lower, rayl_upper))
     end if
     ! --------------------------------------------------

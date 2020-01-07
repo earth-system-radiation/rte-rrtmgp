@@ -972,6 +972,7 @@ contains
                                   kminor_start_lower, &
                                   kminor_start_upper, &
                                   rayl_lower, rayl_upper)
+    if(err_message /= "") return
     !
     ! Spectral solar irradiance terms init
     !

@@ -949,11 +949,22 @@ pure subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="a
     flux_dn(1:ncol, nlay+1, 1:ngpt)  = 0._wp
   end if
 end subroutine apply_BC_0
-!---------------------------------------------------------------------------------
+! -------------------------------------------------------------------------------------------------
 !
-! 1rescl
+! Similar to Longwave no-scattering (lw_solver_noscat)
+!   a) relies on rescaling of the optical parameters based on asymetry factor and single scattering albedo
+!       scaling can be computed  by scaling_1rescl
+!   b) adds adustment term based on cloud properties (lw_transport_1rescl)
+!      adustment terms is computed based on solution of the Tang equations
+!      for "linear-in-tau" internal source (not in the paper)
+!       
+!   Attention:
+!      use must prceompute scaling before colling the function
 !
-! ---------------------------------------------------------------
+!   Implemented based on the paper
+!   Tang G, et al, 2018: https://doi.org/10.1175/JAS-D-18-0014.1
+! 
+! -------------------------------------------------------------------------------------------------
 subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                             &
                             tau, scaling, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn) bind(C, name="lw_solver_1rescl")
@@ -1031,10 +1042,12 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
     !
     ! Transport
     !
+    !  compute no-scattering fluxes 
     call lw_transport_noscat(ncol, nlay, top_at_1,  &
                              tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up(:,:,igpt), radn_dn(:,:,igpt))
 
+    !  make adjustment 
     call lw_transport_1rescl(ncol, nlay, top_at_1, trans, &
                              sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up(:,:,igpt), radn_dn(:,:,igpt), An, Cn)
@@ -1043,12 +1056,12 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
 end subroutine lw_solver_1rescl
 ! -------------------------------------------------------------------------------------------------
 !
-! LW transport, no scattering, multi-angle quadrature
-!   Users provide a set of weights and quadrature angles
-!   Routine sums over single-angle solutions for each sets of angles/weights
-!
+!  Similar to lw_solver_noscat_GaussQuad.
+!    It is main solver to use the Tang approximation for fluxes
+!    In addition to the no scattering input parameters the user must provide 
+!    scattering related properties (ssa and g) that the solver uses to compute scaling 
+!     
 ! ---------------------------------------------------------------
-
 subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
                                  tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, &
                                  sfc_emis, sfc_src,&
@@ -1080,8 +1093,14 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
 
   integer :: imu, top_level
   real    :: weight
+  real(wp), parameter                   :: tresh=1.0_wp - 1e-6_wp
+
   ! Tang rescaling
-  call scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g) 	
+  if (any(ssa*g >= tresh)) then
+    call scaling_1rescl_safe(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+  else
+    call scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+  endif
   ! ------------------------------------
   !
   ! For the first angle output arrays store total flux
@@ -1112,7 +1131,12 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
     flux_dn(:,:,:) = flux_dn(:,:,:) + weight*radn_dn(:,:,:)
   end do
   end subroutine lw_solver_1rescl_GaussQuad
-
+! -------------------------------------------------------------------------------------------------
+!
+!  Computes Tang scaling of layer optical thickness and scaling parameter
+!    unsafe if ssa*g =1.
+!     
+! ---------------------------------------------------------------
   pure subroutine scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
     integer ,                              intent(in)    :: ncol
     integer ,                              intent(in)    :: nlay
@@ -1126,45 +1150,69 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
 
     integer  :: icol, ilay, igpt
     real(wp) :: wb, ssal, scaleTau
-    !$acc enter data copyin(tau, ssa, g)
-    !$acc enter data create(tauLoc, scaling)
-    !$acc parallel loop collapse(3)
     do igpt=1,ngpt
       do ilay=1,nlay
         do icol=1,ncol
           ssal = ssa(icol, ilay, igpt)
           wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
-          scaleTau = (1._wp - ssal + wb )
-          ! Eq.15 of the paper
-          tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt)
+          scaleTau = (1._wp - ssal + wb )                               
+          tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt)   ! Eq.15 of the paper
           ! 
-          ! here ssa is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
+          ! here scaling is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
           ! actually it is in line of parameter rescaling defined in Eq.7
-          if (scaleTau > epsilon(1._wp)) then
+          ! potentialy if g=ssa=1  then  wb/scaleTau = NaN
+          ! it should not happen
+          scaling(icol, ilay, igpt) = wb / scaleTau
+        enddo
+      enddo
+    enddo
+  end subroutine scaling_1rescl
+! -------------------------------------------------------------------------------------------------
+!
+!  Computes Tang scaling of layer optical thickness and scaling parameter
+!    safe implementation
+!     
+! ---------------------------------------------------------------
+  pure subroutine scaling_1rescl_safe(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+    integer ,                              intent(in)    :: ncol
+    integer ,                              intent(in)    :: nlay
+    integer ,                              intent(in)    :: ngpt
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: tau
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: ssa
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: g
+
+    real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: tauLoc
+    real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: scaling
+
+    integer  :: icol, ilay, igpt
+    real(wp) :: wb, ssal, scaleTau
+    do igpt=1,ngpt
+      do ilay=1,nlay
+        do icol=1,ncol
+          ssal = ssa(icol, ilay, igpt)
+          wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
+          scaleTau = (1._wp - ssal + wb )                               
+          tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt)   ! Eq.15 of the paper
+          ! 
+          ! here scaling is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
+          ! actually it is in line of parameter rescaling defined in Eq.7
+          if (scaleTau < 1e-6_wp) then
+            scaling(icol, ilay, igpt) = 1.0_wp
+          else  
             scaling(icol, ilay, igpt) = wb / scaleTau
-          else
-            scaling(icol, ilay, igpt) = 1._wp
           endif
         enddo
       enddo
     enddo
-    !$acc exit data copyout(tauLoc, scaling)
-    !$acc exit data delete(tau, ssa, g)
-  end subroutine scaling_1rescl
-
+  end subroutine scaling_1rescl_safe
 ! -------------------------------------------------------------------------------------------------
 !
-! Longwave no-scattering + a single itergation transport
+! Similar to Longwave no-scattering tarnsport  (lw_transport_noscat)
+!   a) adds adjustment factor based on cloud properties
 !
-! 
-! Implemented based on the paper
-! Tang G, P Yang, GW Kattawar, X Huang, EJ Mlawer, BA Baum, MD King, 2018: Improvement of 
-! the Simulation of Cloud Longwave Scattering in Broadband Radiative Transfer Models, 
-! Journal of the Atmospheric Sciences 75 (7), 2217-2233
-! https://doi.org/10.1175/JAS-D-18-0014.1
-! adustment terms is computed based on solution of the Tang equations
-! for "linear-in-tau" internal source
-! 
+!   implementation notice:
+!       the adjustmentFactor computation can be skipped where Cn <= epsilon
+!
 ! -------------------------------------------------------------------------------------------------
 subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
                                trans, sfc_albedo, source_dn, source_up, source_sfc, &
@@ -1182,7 +1230,6 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
   ! Local variables
   integer :: ilev, icol
   ! ---------------------------------------------------
-  ! real(wp), dimension(ncol,nlay+1)                :: i_up    ! Radiances [W/m2-str]
   real(wp) :: adjustmentFactor
   if(top_at_1) then
     !
@@ -1192,23 +1239,19 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     do ilev = nlay, 1, -1
       radn_up(:,ilev) = trans(:,ilev  )*radn_up(:,ilev+1) + source_up(:,ilev)
       do icol=1,ncol
-         if ( Cn(icol,ilev) > 1e-6 )  then
-            adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev) - &
-                     trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
-            radn_up(icol,ilev) = radn_up(icol,ilev) + adjustmentFactor
-          endif  
+          adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev) - &
+                   trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
+          radn_up(icol,ilev) = radn_up(icol,ilev) + adjustmentFactor
         enddo  
     end do
     ! 2nd Downward propagation
     do ilev = 1, nlay
       radn_dn(:,ilev+1) = trans(:,ilev)*radn_dn(:,ilev) + source_dn(:,ilev)
       do icol=1,ncol
-        if ( Cn(icol,ilev) > 1e-6 )  then
-            adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
-                     trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
+          adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
+                   trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
 
-            radn_dn(:,ilev+1) = radn_dn(:,ilev+1) + adjustmentFactor
-        endif  
+          radn_dn(:,ilev+1) = radn_dn(:,ilev+1) + adjustmentFactor
       enddo  
     end do
   else
@@ -1219,11 +1262,9 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     do ilev = 1, nlay
       radn_up(:,ilev+1) =  trans(:,ilev) * radn_up(:,ilev) +  source_up(:,ilev)
       do icol=1,ncol
-         if ( Cn(icol,ilev) > 1e-6 )  then
-            adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev+1) - &
-                     trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
-            radn_up(icol,ilev+1) = radn_up(icol,ilev+1) + adjustmentFactor
-        endif  
+          adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev+1) - &
+                   trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
+          radn_up(icol,ilev+1) = radn_up(icol,ilev+1) + adjustmentFactor
       enddo  
     end do
 
@@ -1231,11 +1272,9 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     do ilev = nlay, 1, -1
       radn_dn(:,ilev) = trans(:,ilev  )*radn_dn(:,ilev+1) + source_dn(:,ilev)
       do icol=1,ncol
-         if ( Cn(icol,ilev) > 1e-6 )  then
-            adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
-                     trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
-            radn_dn(icol,ilev) = radn_dn(icol,ilev) + adjustmentFactor
-        endif  
+          adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
+                   trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
+          radn_dn(icol,ilev) = radn_dn(icol,ilev) + adjustmentFactor
       enddo  
     end do
   end if

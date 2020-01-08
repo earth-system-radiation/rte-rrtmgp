@@ -1,0 +1,89 @@
+jobs:
+- job: build_daint
+  pool: CSCS
+  strategy:
+    matrix:
+      pgi_19_9_gpu:
+        compiler_module: PGI/19.9.0
+        accel_module: cudatoolkit
+        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+        RTE_KERNELS: openacc
+      pgi_default_gpu:
+        compiler_module: pgi
+        accel_module: craype-accel-nvidia60
+        # Generic accelerator flag
+        FCFLAGS: "-O3 -acc                   -Minfo -Mallocatable=03 -gopt"
+        RTE_KERNELS: openacc
+      pgi_19_9_cpu:
+        compiler_module: PGI/19.9.0
+        accel_module:
+        # Error checking flags
+        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+      pgi_default_cpu:
+        compiler_module: pgi
+        accel_module:
+        # Error checking flags
+        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+    maxParallel: 2
+
+  workspace:
+    clean: all
+
+  steps:
+  
+  - script: |
+      set -e
+      
+      echo "
+      export PATH=$CRAY_BINUTILS_BIN:$PATH
+      module load daint-gpu
+      module swap PrgEnv-cray PrgEnv-pgi
+      module load cray-netcdf cray-hdf5
+      module swap pgi $(compiler_module)
+      module load $(accel_module)
+      module load cray-python/3.6.5.7
+      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+      
+      echo Environment:
+      module list
+      " > modules
+      
+    displayName: 'Create module environment'
+  - script: |
+      set -e
+      source modules
+      # This module will unload some of the build modules, so load the files separately
+      module load netcdf-python
+      cd examples/rfmip-clear-sky
+      python ./stage_files.py
+    displayName: 'Stage files'
+  - script: |
+      set -e
+      source modules
+      export RRTMGP_ROOT=$PWD
+      export RRTMGP_DIR=$PWD/build
+      export FC=ftn
+      make -C build/ -j 8
+      make -C examples/all-sky -j 8
+      make -C examples/rfmip-clear-sky -j 8
+    displayName: 'Make'
+  - script: |
+      set -e
+      source modules
+      cd examples/rfmip-clear-sky
+      srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
+      cd ../..
+      cd examples/all-sky
+      srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
+    displayName: 'Run'
+  - script: |
+      set -e
+      source modules
+      # This module will unload some of the build modules, so do the checks separately
+      module load netcdf-python
+      cd examples/rfmip-clear-sky
+      python ./compare-to-reference.py --fail=1.e-4
+      cd ../..
+      cd examples/all-sky
+      python ./compare-to-reference.py
+    displayName: 'Check results'

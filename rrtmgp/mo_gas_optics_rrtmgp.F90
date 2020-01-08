@@ -780,8 +780,12 @@ contains
     !$acc kernels
     this%totplnk = totplnk
     this%planck_frac = planck_frac
+    !$acc end kernels
     if (present(optimal_angle_fit)) then
+      !$acc enter data create(this%optimal_angle_fit)
+      !$acc kernels
       this%optimal_angle_fit = optimal_angle_fit
+      !$acc end kernels
     else
       if(allocated(this%optimal_angle_fit)) deallocate(this%optimal_angle_fit )
     end if
@@ -1291,54 +1295,61 @@ contains
   end function get_col_dry
   !--------------------------------------------------------------------------------------------------------------------
   !
+  ! Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
   !
-  !
-  function compute_optimal_angles(this, optical_props, &
-                                         optimal_angles) result(err_msg)
-
+  function compute_optimal_angles(this, optical_props, optimal_angles) result(err_msg)
     ! input
-    class(ty_gas_optics_rrtmgp), &
-                                      intent(in   ) :: this
-    class(ty_optical_props_arry),     intent(in   ) :: optical_props  ! Gas volume mixing ratios
-
-    !output
-    character(len=128)   :: err_msg
-    real(wp), dimension(:,:), intent(inout)         :: optimal_angles
-
-    ! Local variables
-    !
-    integer  :: ncol, ngpt, nbnd
-    integer  :: col, gpt, bnd
-    real(wp) :: trans_total
-
+    class(ty_gas_optics_rrtmgp),  intent(in   ) :: this
+    class(ty_optical_props_arry), intent(in   ) :: optical_props
+    real(wp), dimension(:,:),     intent(  out)  :: optimal_angles
+    character(len=128)                           :: err_msg
+    !----------------------------
+    integer  :: ncol, nlay, ngpt, nbnd
+    integer  :: icol, ilay, igpt, bnd
+    real(wp) :: t, trans_total(optical_props%get_ncol(), optical_props%get_ngpt())
+    !----------------------------
     ncol = optical_props%get_ncol()
+    nlay = optical_props%get_nlay()
     ngpt = optical_props%get_ngpt()
     nbnd = optical_props%get_nband()
 
     err_msg=""
-
-    ! Check match in dimensions between tau and optimal_angle_fit
-    if (nbnd .ne. size(this%optimal_angle_fit,2)) err_msg = &
-      "gas_optics%compute_optimal_angles: optimal_angle_fit different dimension (nbnd)"
-    if (size(this%optimal_angle_fit,1) .ne. 2) err_msg = &
-      "gas_optics%compute_optimal_angles: optimal_angle_fit different dimension for linear fit (2)"
-
-    ! Check dimensions of incoming optimal_angles array
-    if(size(optimal_angles,1) /= ncol) err_msg = &
-      "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
-    if(size(optimal_angles,2) /= ngpt) err_msg = &
-      "gas_optics%compute_optimal_angles: optimal_angles different dimension (ngpt)"
-
+    if(.not. extents_are(this%optimal_angle_fit, 2, nbnd)) &
+      err_msg = "gas_optics%compute_optimal_angles: optimal_angle_fit has wrong dimensions (2, nbnd)"
+    if(.not. extents_are(this%optimal_angle_fit, ncol, ngpt)) &
+      err_msg = "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
     if (err_msg /=  "") return
 
-    do col = 1, ncol
-      do gpt = 1, ngpt
-        trans_total = exp(-sum(optical_props%tau(col,:,gpt)))
-        bnd = optical_props%gpt2band(gpt)
-        optimal_angles(col,gpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
-          this%optimal_angle_fit(2,bnd)
+    !
+    ! column transmissivity
+    !
+    !$acc enter data create(trans_total)
+    !$acc parallel loop gang vector collapse(2)
+    do icol = 1, ncol
+      do igpt = 1, ngpt
+        !
+        ! Column transmissivity
+        !
+        t = 0._wp
+        do ilay = 1, nlay
+          t = t + optical_props%tau(icol,ilay,igpt)
+        end do
+        trans_total(icol,igpt) = exp(-t)
       end do
     end do
+
+    !$acc parallel loop gang vector collapse(2)
+    do icol = 1, ncol
+      do igpt = 1, ngpt
+        !
+        ! Optimal transport angle is a linear fit to column transmissivity
+        !
+        bnd = optical_props%gpt2band(igpt)
+        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total(ilay,igpt) + &
+                                  this%optimal_angle_fit(2,bnd)
+      end do
+    end do
+    !$acc exit data delete(trans_total)
 
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------

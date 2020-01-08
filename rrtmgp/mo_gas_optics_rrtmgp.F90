@@ -772,6 +772,7 @@ contains
                                   kminor_start_lower, &
                                   kminor_start_upper, &
                                   rayl_lower, rayl_upper)
+    !
     ! Planck function tables
     !
     allocate(this%totplnk    (size(totplnk,    1), size(totplnk,   2)), &
@@ -781,6 +782,9 @@ contains
     this%totplnk = totplnk
     this%planck_frac = planck_frac
     !$acc end kernels
+    !
+    ! Optimal angle fit coefficients
+    !
     if (present(optimal_angle_fit)) then
       !$acc enter data create(this%optimal_angle_fit)
       !$acc kernels
@@ -1314,9 +1318,9 @@ contains
     nbnd = optical_props%get_nband()
 
     err_msg=""
-    if(.not. extents_are(this%optimal_angle_fit, 2, nbnd)) &
-      err_msg = "gas_optics%compute_optimal_angles: optimal_angle_fit has wrong dimensions (2, nbnd)"
-    if(.not. extents_are(this%optimal_angle_fit, ncol, ngpt)) &
+    if(.not. this%gpoints_are_equal(optical_props)) &
+      err_msg = "gas_optics%compute_optimal_angles: optical_props has different spectral discretization than gas_optics"
+    if(.not. extents_are(optimal_angles, ncol, ngpt)) &
       err_msg = "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
     if (err_msg /=  "") return
 

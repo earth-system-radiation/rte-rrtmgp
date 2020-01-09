@@ -1090,6 +1090,7 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
 
   real(wp), dimension(ncol,nlay,  ngpt) :: tauLoc           ! rescaled Tau
   real(wp), dimension(ncol,nlay,  ngpt) :: scaling          ! scaling
+  real(wp), dimension(ncol,ngpt)        :: fluxTOA          ! downward flux at TOA
 
   integer :: imu, top_level
   real    :: weight
@@ -1106,9 +1107,13 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   ! For the first angle output arrays store total flux
   !
   top_level = MERGE(1, nlay+1, top_at_1)
+  fluxTOA = flux_dn(1:ncol, top_level, 1:ngpt)
   Ds_ncol(:,:) = Ds(1)
   weight = 2._wp*pi*weights(1)
-  radn_dn(1:ncol, top_level, 1:ngpt)  = flux_dn(1:ncol, top_level, 1:ngpt) / weight
+  ! Transport is for intensity
+  !   convert flux at top of domain to intensity assuming azimuthal isotropy
+  !
+  radn_dn(1:ncol, top_level, 1:ngpt)  = fluxTOA(1:ncol, 1:ngpt) / weight
 
   call lw_solver_1rescl(ncol, nlay, ngpt, &
                         top_at_1, Ds_ncol, tauLoc, scaling, &
@@ -1121,7 +1126,10 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   do imu = 2, nmus
     Ds_ncol(:,:) = Ds(imu)
     weight = 2._wp*pi*weights(imu)
-    radn_dn(1:ncol, top_level, 1:ngpt)  = flux_dn(1:ncol, top_level, 1:ngpt) / weight
+    ! Transport is for intensity
+    !   convert flux at top of domain to intensity assuming azimuthal isotropy
+    !
+    radn_dn(1:ncol, top_level, 1:ngpt)  = fluxTOA(1:ncol, 1:ngpt) / weight
     call lw_solver_1rescl(ncol, nlay, ngpt, &
                           top_at_1, Ds_ncol, tauLoc, scaling, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &

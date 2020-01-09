@@ -1214,13 +1214,12 @@ contains
 !   Tang G, et al, 2018: https://doi.org/10.1175/JAS-D-18-0014.1
 ! 
 ! -------------------------------------------------------------------------------------------------
-  subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D, weight,                             &
+  subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                             &
                               tau, scaling, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                               radn_up, radn_dn) bind(C, name="lw_solver_1rescl")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
-    real(wp),                              intent(in   ) :: weight       ! quadrature weight
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: scaling          ! single scattering albedo []
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
@@ -1297,12 +1296,7 @@ contains
     do igpt = 1, ngpt
       do icol = 1, ncol
       !
-      ! Transport is for intensity
-      !   convert flux at top of domain to intensity assuming azimuthal isotropy
-      !
-        radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2._wp * pi * weight)
-      !
-        ! Surface albedo, surface source function
+      ! Surface albedo, surface source function
       !
         sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt)
         source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt)
@@ -1329,11 +1323,6 @@ contains
                              tau_loc, trans, &
                              sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up, radn_dn, An, Cn)
-
-      ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
-      !
-      ! radn_dn(:,:,igpt) = 2._wp * pi * weight * radn_dn(:,:,igpt)
-      ! radn_up(:,:,igpt) = 2._wp * pi * weight * radn_up(:,:,igpt)
 
     !$acc exit data copyout(radn_dn,radn_up)
     !$acc exit data delete(sfcSource, An, Cn)
@@ -1379,6 +1368,7 @@ contains
     integer :: imu, top_level,icol,ilev,igpt
     real    :: weight
 
+    real(wp), dimension(ncol,ngpt)        :: fluxTOA          ! downward flux at TOA
     real(wp), dimension(ncol,nlay,  ngpt) :: tauLoc           ! rescaled Tau
     real(wp), dimension(ncol,nlay,  ngpt) :: scaling          ! scaling
     real(wp), parameter                   :: tresh=1.0_wp - 1e-6_wp
@@ -1399,12 +1389,18 @@ contains
     ! For the first angle output arrays store total flux
     !
     top_level = MERGE(1, nlay+1, top_at_1)
+    ! store TOA flux
+    fluxTOA = flux_dn(1:ncol, top_level, 1:ngpt)
+
     Ds_ncol(:,:) = Ds(1)
     weight = 2._wp*pi*weights(1)
-    radn_dn(1:ncol, top_level, 1:ngpt)  = flux_dn(1:ncol, top_level, 1:ngpt) / weight
+    ! Transport is for intensity
+    !   convert flux at top of domain to intensity assuming azimuthal isotropy
+    !
+    radn_dn(1:ncol, top_level, 1:ngpt)  = fluxTOA(1:ncol, 1:ngpt) / weight
 
     call lw_solver_1rescl(ncol, nlay, ngpt, &
-                          top_at_1, Ds_ncol, weights(1), tau, scaling, &
+                          top_at_1, Ds_ncol, tauLoc, scaling, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           flux_up, flux_dn)
     !$acc  parallel loop collapse(3)
@@ -1420,9 +1416,9 @@ contains
     do imu = 2, nmus
       Ds_ncol(:,:) = Ds(imu)
       weight = 2._wp*pi*weights(imu)
-      radn_dn(1:ncol, top_level, 1:ngpt)  = flux_dn(1:ncol, top_level, 1:ngpt) / weight
+      radn_dn(1:ncol, top_level, 1:ngpt)  = fluxTOA(1:ncol, 1:ngpt) / weight
       call lw_solver_1rescl(ncol, nlay, ngpt, &
-                            top_at_1, Ds_ncol, weights(imu), tau, scaling, &
+                            top_at_1, Ds_ncol, tauLoc, scaling, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn)
 

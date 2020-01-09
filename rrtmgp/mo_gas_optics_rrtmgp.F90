@@ -129,10 +129,11 @@ module mo_gas_optics_rrtmgp
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
     ! -----------------------------------------------------------------------------------
     ! Solar source function spectral mapping with solar variability capability
-    !   Allocated only when gas optics object is external-source
+    !   Allocated  when gas optics object is external-source
     !   n-solar-terms: quiet sun, facular brightening and sunspot dimming components
+    !   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
     !
-    real(wp), dimension(:), allocatable :: solar_source         ! incoming solar irradiance (g-point)
+    real(wp), dimension(:), allocatable :: solar_source         ! incoming solar irradiance, computed from other three terms (g-point)
     real(wp), dimension(:), allocatable :: solar_source_quiet   ! incoming solar irradiance, quiet sun term (g-point)
     real(wp), dimension(:), allocatable :: solar_source_facular ! incoming solar irradiance, facular term (g-point)
     real(wp), dimension(:), allocatable :: solar_source_sunspot ! incoming solar irradiance, sunspot term (g-point)
@@ -604,56 +605,36 @@ contains
   !------------------------------------------------------------------------------------------
   !
   ! Compute the spectral solar source function adjusted to account for solar variability
+  !   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
   ! as specified by the facular brightening (mg_index) and sunspot dimming (sb_index)
   ! indices provided as input.
   !
-  ! The user must either provide the NRLSSI2 facular and sunspot indices directly,
-  ! or must first call the extension function solar_var_ind_interp to derive the
-  ! indices by interpolation from the mean solar cycle values by specifying a
-  ! specific solar cycle fraction.
-  !
-  ! The user may also optionally provide to this function an alternate value of the
-  ! total solar irradiance (tsi) to replace the default value of 1360.858 Wm-2.
+  ! Users provide the NRLSSI2 facular ("Bremen") index and sunspot ("SPOT67") index.
+  !   Changing either of these indicies will change the total solar irradiance (TSI)
+  !   Code in extensions/mo_solar_variability may be used to compute the value of these
+  !   indices through an average solar cycle
+  ! Users may also specify the TSI, either alone or in conjunction with the facular and sunspot indices
   !
   !------------------------------------------------------------------------------------------
   function set_solar_variability(this,                      &
                                  mg_index, sb_index, tsi)   &
                                  result(error_msg)
     !
-    ! Updates the spectral distribution and/or integrated value of the solar source
-    ! function to represent solar variability
+    ! Updates the spectral distribution and, optionally,
+    !   the integrated value of the solar source function
+    !   Modifying either index will change the total solar irradiance
     !
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
     !
-    real(wp), intent(in) :: mg_index, &   ! user-defined facular brightening index for
-                                          ! solar variability (NRLSSI2 facular "Bremen" index)
-                            sb_index      ! user-defined sunspot dimming index for
-                                          ! solar variability (NRLSSI2 sunspot "SPOT67" index)
-                                          ! These variables allow the user to specify the facular
-                                          ! and sunspot indices either directly or interpolated
-                                          ! from the mean solar cycle to s specific solar cycle
-                                          ! fraction which the user obtained by previously
-                                          ! calling the extension function solar_var_ind_interp
-    real(wp), optional, intent(in) :: tsi ! user-specified total solar irradiance; can be an
-                                          ! instantaneous TSI or a time-averaged solar constant;
-                                          ! if provided, tsi will be used to scale the
-                                          ! solar_source derived from the required indices
-
-    character(len=128)   :: error_msg
-
+    real(wp),           intent(in) :: mg_index, & ! facular brightening index (NRLSSI2 facular "Bremen" index)
+                                      sb_index    ! sunspot dimming index     (NRLSSI2 sunspot "SPOT67" index)
+    real(wp), optional, intent(in) :: tsi         ! total solar irradiance
+    character(len=128)             :: error_msg
     ! ----------------------------------------------------------
-    ! Local
-    !
-    integer :: ngpt
-
-    ! ----------------------------------------------------------
-    ! Parameters
-    !
+    integer :: igpt
     real(wp), parameter :: a_offset = 0.1495954_wp
     real(wp), parameter :: b_offset = 0.00066696_wp
-    !
     ! ----------------------------------------------------------
-    !
     error_msg = ""
     if(mg_index < 0._wp) error_msg = 'mg_index out of range'
     if(sb_index < 0._wp) error_msg = 'sb_index out of range'
@@ -661,11 +642,12 @@ contains
     !
     ! Calculate solar source function for provided facular and sunspot indices
     !
-    !$acc kernels
-    this%solar_source(:) = this%solar_source_quiet(:) + &
-                           (mg_index - a_offset) * this%solar_source_facular(:) + &
-                           (sb_index - b_offset) * this%solar_source_sunspot(:)
-    !$acc end kernels
+    !$acc parallel loop
+    do igpt = 1, size(this%solar_source_quiet)
+      this%solar_source(igpt) = this%solar_source_quiet(igpt) + &
+                                (mg_index - a_offset) * this%solar_source_facular(igpt) + &
+                                (sb_index - b_offset) * this%solar_source_sunspot(igpt)
+    end do
     !
     ! Scale solar source to input TSI value
     !
@@ -686,15 +668,15 @@ contains
     error_msg = ""
     if(tsi < 0._wp) then
       error_msg = 'tsi out of range'
-      return
+    else
+      !
+      ! Scale the solar source function to the input tsi
+      !
+      !$acc kernels
+      norm = 1._wp/sum(this%solar_source(:))
+      this%solar_source(:) = this%solar_source(:) * tsi * norm
+      !$acc kernels
     end if
-    !
-    ! Scale the solar source function to the input tsi
-    !
-    !$acc kernels
-    norm = 1._wp/sum(this%solar_source(:))
-    this%solar_source(:) = this%solar_source(:) * tsi * norm
-    !$acc kernels
 
   end function set_tsi
   !------------------------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2019,  Atmospheric and Environmental Research and
+! Copyright 2015-2020,  Atmospheric and Environmental Research and
 ! Regents of the University of Colorado.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
@@ -31,7 +31,7 @@ module mo_solar_variability
       ! Public procedures
       !
       procedure, public :: solar_var_ind_interp
-      procedure, public :: load_avgcyc
+      procedure, public :: load
       procedure, public :: finalize
       !
   end type ty_solar_var
@@ -42,8 +42,7 @@ contains
   ! Routine to load mean facular and sunspot index tables
   !
   ! ------------------------------------------------------------------------------
-  function load_avgcyc(this, avgcyc_ind) result(error_msg)
-
+  function load(this, avgcyc_ind) result(error_msg)
     class(ty_solar_var),      intent(inout) :: this
     ! Lookup table of mean solar cycle facular brightening and sunspot dimming indices
     real(wp), dimension(:,:), intent(in   ) :: avgcyc_ind
@@ -67,7 +66,7 @@ contains
     ! Load LUT index array
     this%avgcyc_ind = avgcyc_ind
 
-  end function load_avgcyc
+  end function load
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Finalize
@@ -128,12 +127,12 @@ contains
     ! Interpolate solar variability indices to requested solar cycle fraction,
     ! and derive final facular and sunspot indices
     !
-    ! nsolfrac is the length of the time dimension of the interpolation tables 
+    ! nsolfrac is the length of the time dimension of the interpolation tables
     ! of facular and sunspot indices over the mean solar cycle (this%avgcyc_ind).
-    ! The end-points of avgcyc_ind represent the indices at solcycfrac values of 
-    ! 0 (first day of the first year) and 1 (last day of the 11th year), while 
-    ! the intervening values of avgcyc_ind represent the indices at the center 
-    ! of each month over the mean 11-year solar cycle. 
+    ! The end-points of avgcyc_ind represent the indices at solcycfrac values of
+    ! 0 (first day of the first year) and 1 (last day of the 11th year), while
+    ! the intervening values of avgcyc_ind represent the indices at the center
+    ! of each month over the mean 11-year solar cycle.
     if (allocated (this%avgcyc_ind)) then
        nsolfrac = size(this%avgcyc_ind,2)
     ! Define indices for the lowest allowable value of solcycfrac
@@ -148,7 +147,7 @@ contains
        else
           intrvl_len = 1._wp / (nsolfrac-2)
           intrvl_len_hf = 0.5_wp * intrvl_len
-    ! Define interpolation fractions for the first interval, which represents 
+    ! Define interpolation fractions for the first interval, which represents
     ! the first half of the first month of the first year of the mean 11-year
     ! solar cycle
           if (solcycfrac .le. intrvl_len_hf) then
@@ -156,14 +155,14 @@ contains
              fraclo = 0._wp
              frachi = intrvl_len_hf
           endif
-    ! Define interpolation fractions for the intervening intervals, which represent 
+    ! Define interpolation fractions for the intervening intervals, which represent
     ! the center point of each month in each year of the mean 11-year solar cycle
           if (solcycfrac .gt. intrvl_len_hf .and. solcycfrac .lt. 1._wp-intrvl_len_hf) then
              sfid = floor((solcycfrac-intrvl_len_hf) * (nsolfrac-2)) + 2
              fraclo = (sfid-2) * intrvl_len + intrvl_len_hf
              frachi = fraclo + intrvl_len
           endif
-    ! Define interpolation fractions for the last interval, which represents 
+    ! Define interpolation fractions for the last interval, which represents
     ! the last half of the last month of the last year of the mean 11-year
     ! solar cycle
           if (solcycfrac .ge. 1._wp-intrvl_len_hf) then

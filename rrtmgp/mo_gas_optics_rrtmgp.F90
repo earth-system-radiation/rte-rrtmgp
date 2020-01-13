@@ -488,8 +488,8 @@ contains
     !
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
-    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
+    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
     else

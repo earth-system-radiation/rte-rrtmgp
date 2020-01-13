@@ -957,13 +957,13 @@ end subroutine apply_BC_0
 !   b) adds adustment term based on cloud properties (lw_transport_1rescl)
 !      adustment terms is computed based on solution of the Tang equations
 !      for "linear-in-tau" internal source (not in the paper)
-!       
+!
 !   Attention:
 !      use must prceompute scaling before colling the function
 !
 !   Implemented based on the paper
 !   Tang G, et al, 2018: https://doi.org/10.1175/JAS-D-18-0014.1
-! 
+!
 ! -------------------------------------------------------------------------------------------------
 subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                             &
                             tau, scaling, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
@@ -1020,8 +1020,8 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
     do ilev = 1, nlay
       tau_loc(:,ilev) = tau(:,ilev,igpt)*D(:,igpt)
       trans  (:,ilev) = exp(-tau_loc(:,ilev))
-      !  
-      ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
+      !
+      ! here scaling is used to store parameter wb/(1-w(1-b)) of Eq.21 of the Tang's paper
       ! explanation of factor 0.4 note A of Table
       !
       Cn(:,ilev) = 0.4_wp*scaling(:,ilev,igpt)
@@ -1042,12 +1042,12 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
     !
     ! Transport
     !
-    !  compute no-scattering fluxes 
+    !  compute no-scattering fluxes
     call lw_transport_noscat(ncol, nlay, top_at_1,  &
                              tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up(:,:,igpt), radn_dn(:,:,igpt))
 
-    !  make adjustment 
+    !  make adjustment
     call lw_transport_1rescl(ncol, nlay, top_at_1, trans, &
                              sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up(:,:,igpt), radn_dn(:,:,igpt), An, Cn)
@@ -1057,10 +1057,10 @@ end subroutine lw_solver_1rescl
 ! -------------------------------------------------------------------------------------------------
 !
 !  Similar to lw_solver_noscat_GaussQuad.
-!    It is main solver to use the Tang approximation for fluxes
-!    In addition to the no scattering input parameters the user must provide 
-!    scattering related properties (ssa and g) that the solver uses to compute scaling 
-!     
+!    It is main solver to use the rescaled-for-scattering approximation for fluxes
+!    In addition to the no scattering input parameters the user must provide
+!    scattering related properties (ssa and g) that the solver uses to compute scaling
+!
 ! ---------------------------------------------------------------
 subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
                                  tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, &
@@ -1141,9 +1141,9 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   end subroutine lw_solver_1rescl_GaussQuad
 ! -------------------------------------------------------------------------------------------------
 !
-!  Computes Tang scaling of layer optical thickness and scaling parameter
+!  Computes re-scaled layer optical thickness and scaling parameter
 !    unsafe if ssa*g =1.
-!     
+!
 ! ---------------------------------------------------------------
   pure subroutine scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
     integer ,                              intent(in)    :: ncol
@@ -1163,10 +1163,10 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
         do icol=1,ncol
           ssal = ssa(icol, ilay, igpt)
           wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
-          scaleTau = (1._wp - ssal + wb )                               
+          scaleTau = (1._wp - ssal + wb )
           tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt)   ! Eq.15 of the paper
-          ! 
-          ! here scaling is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
+          !
+          ! here scaling is used to store parameter wb/(1-w(1-b)) of Eq.21 of the Tang paper
           ! actually it is in line of parameter rescaling defined in Eq.7
           ! potentialy if g=ssa=1  then  wb/scaleTau = NaN
           ! it should not happen
@@ -1177,9 +1177,9 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   end subroutine scaling_1rescl
 ! -------------------------------------------------------------------------------------------------
 !
-!  Computes Tang scaling of layer optical thickness and scaling parameter
+!  Computes re-scaled layer optical thickness and scaling parameter
 !    safe implementation
-!     
+!
 ! ---------------------------------------------------------------
   pure subroutine scaling_1rescl_safe(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
     integer ,                              intent(in)    :: ncol
@@ -1199,14 +1199,14 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
         do icol=1,ncol
           ssal = ssa(icol, ilay, igpt)
           wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
-          scaleTau = (1._wp - ssal + wb )                               
+          scaleTau = (1._wp - ssal + wb )
           tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt)   ! Eq.15 of the paper
-          ! 
-          ! here scaling is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
+          !
+          ! here scaling is used to store parameter wb/(1-w(1-b)) of Eq.21 of the Tang paper
           ! actually it is in line of parameter rescaling defined in Eq.7
           if (scaleTau < 1e-6_wp) then
             scaling(icol, ilay, igpt) = 1.0_wp
-          else  
+          else
             scaling(icol, ilay, igpt) = wb / scaleTau
           endif
         enddo
@@ -1250,7 +1250,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
           adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev) - &
                    trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
           radn_up(icol,ilev) = radn_up(icol,ilev) + adjustmentFactor
-        enddo  
+        enddo
     end do
     ! 2nd Downward propagation
     do ilev = 1, nlay
@@ -1260,7 +1260,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
                    trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
 
           radn_dn(:,ilev+1) = radn_dn(:,ilev+1) + adjustmentFactor
-      enddo  
+      enddo
     end do
   else
     !
@@ -1273,7 +1273,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
           adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev+1) - &
                    trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
           radn_up(icol,ilev+1) = radn_up(icol,ilev+1) + adjustmentFactor
-      enddo  
+      enddo
     end do
 
     ! 2st Downward propagation
@@ -1283,7 +1283,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
           adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
                    trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
           radn_dn(icol,ilev) = radn_dn(icol,ilev) + adjustmentFactor
-      enddo  
+      enddo
     end do
   end if
 end subroutine lw_transport_1rescl

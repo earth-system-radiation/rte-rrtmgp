@@ -30,7 +30,6 @@ jobs:
     clean: all
 
   steps:
-  
   - script: |
       set -e
       

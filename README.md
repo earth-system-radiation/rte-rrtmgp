@@ -8,6 +8,8 @@ RTE computes fluxes given spectrally-resolved optical descriptions and source fu
 
 Example programs and documenation are evolving - please see examples/ in the repo and Wiki on the project's Github page. Suggestions are welcome. Meanwhile for questions please contact Robert Pincus and Eli Mlawer at rrtmgp@aer.com.
 
+In the most recent revision, the default method for solution for longwave problems that include scattering has been changed from 2-stream methods to a re-scaled and refined no-scattering calculation following [Tang et al. 2018](https://doi.org/10.1175/JAS-D-18-0014.1).
+
 ## Building the libraries.
 
 1. `cd build`
@@ -17,4 +19,4 @@ Example programs and documenation are evolving - please see examples/ in the rep
 
 ## Examples
 
-Two examples are provided, one for clear skies and one including clouds. See the README file and codes in each directory for further information. 
+Two examples are provided, one for clear skies and one including clouds. See the README file and codes in each directory for further information.

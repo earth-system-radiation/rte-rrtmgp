@@ -675,7 +675,7 @@ contains
       !$acc kernels
       norm = 1._wp/sum(this%solar_source(:))
       this%solar_source(:) = this%solar_source(:) * tsi * norm
-      !$acc kernels
+      !$acc end kernels
     end if
 
   end function set_tsi

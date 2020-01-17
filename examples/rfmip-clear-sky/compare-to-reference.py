@@ -33,13 +33,13 @@ if __name__ == '__main__':
     if not all([os.path.exists(os.path.join(args.ref_dir, v + rrtmg_suffix)) for v in vars]) or args.download_reference:
         print("Dowloading reference data")
         os.makedirs(args.ref_dir, exist_ok=True)
-        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/kbhl3JOSccGtR0m/download", \
+        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/X0PwaNw8JCwUv5n/download", \
                                    os.path.join(args.ref_dir, "rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
-        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/5DbhryVSfztioPG/download", \
+        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/1QdotG62rmeGnMw/download", \
                                    os.path.join(args.ref_dir, "rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
-        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/uCemCHlGxbGK0gJ/download", \
+        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/wUjyuUHBRCSOUdB/download", \
                                    os.path.join(args.ref_dir, "rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
-        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/l8ZG28j9ttZWD9r/download", \
+        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/VeZuvTeO17LzCZN/download", \
                                    os.path.join(args.ref_dir, "rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"))
 
 

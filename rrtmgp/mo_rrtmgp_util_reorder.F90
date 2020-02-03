@@ -14,9 +14,10 @@
 !   Routines are just the front end to kernels
 !
 ! -------------------------------------------------------------------------------------------------
-module mo_util_reorder
+module mo_rrtmgp_util_reorder
   use mo_rte_kind, only: wp
-  use mo_reorder_kernels, only: reorder_123x312_kernel, reorder_123x321_kernel
+  use mo_rrtmgp_util_reorder_kernels, &
+                   only: reorder_123x312_kernel, reorder_123x321_kernel
   implicit none
   private
   public :: reorder123x312, reorder123x321

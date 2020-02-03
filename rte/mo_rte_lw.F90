@@ -35,7 +35,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
-  use mo_util_array,    only: any_vals_less_than, any_vals_outside
+  use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_source_functions,   &
@@ -135,7 +135,7 @@ contains
     !
     ! Surface emissivity
     !
-    if(any([size(sfc_emis,1), size(sfc_emis,2)] /= [nband, ncol])) &
+    if(.not. extents_are(sfc_emis, nband, ncol)) &
       error_msg = "rte_lw: sfc_emis inconsistently sized"
     if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
       error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
@@ -145,7 +145,7 @@ contains
     ! Incident flux, if present
     !
     if(present(inc_flux)) then
-      if(any([size(inc_flux,1), size(inc_flux,2)] /= [ncol, ngpt])) &
+      if(.not. extents_are(inc_flux, ncol, ngpt)) &
         error_msg = "rte_lw: inc_flux inconsistently sized"
       if(any_vals_less_than(inc_flux, 0._wp)) &
         error_msg = "rte_lw: inc_flux has values < 0"
@@ -163,6 +163,7 @@ contains
         error_msg = "rte_lw: have to ask for at least one quadrature point for no-scattering calculation"
       n_quad_angs = n_gauss_angles
     end if
+    if(len_trim(error_msg) > 0) return
 
     !
     ! Ensure values of tau, ssa, and g are reasonable
@@ -173,6 +174,18 @@ contains
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
       return
     end if
+
+    !
+    ! Check extents and values of transport angle secants if supplied
+    !
+    if (present(lw_Ds)) then
+      if(.not. extents_are(lw_Ds, ncol, ngpt)) &
+        error_msg = "rte_lw: lw_Ds inconsistently sized"
+      if(.not. any_vals_less_than(lw_Ds, 0._wp)) &
+        error_msg = "rte_lw: one pr more values of lw_Ds < 0."
+      if(len_trim(error_msg) > 0) return
+    end if
+
 
     ! ------------------------------------------------------------------------------------
     !
@@ -210,10 +223,10 @@ contains
         !$acc enter data copyin(optical_props%tau)
         error_msg =  optical_props%validate()
         if(len_trim(error_msg) > 0) return
+
         if (present(lw_Ds)) then
-          lw_Ds_wt = gauss_wts(1,1)
           call lw_solver_noscat(ncol, nlay, ngpt, &
-                                logical(top_at_1, wl), lw_Ds, lw_Ds_wt, &
+                                logical(top_at_1, wl), lw_Ds, gauss_wts(1,1), &
                                 optical_props%tau, &
                                 sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                                 sfc_emis_gpt, sources%sfc_source,  &

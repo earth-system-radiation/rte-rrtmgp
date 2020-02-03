@@ -38,7 +38,7 @@ module mo_rte_solver_kernels
   public :: apply_BC, &
             lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
             sw_solver_noscat,                             sw_solver_2stream
-            
+
   ! These routines don't really need to be visible but making them so is useful for testing.
   public :: lw_source_noscat, lw_combine_sources, &
             lw_source_2str, sw_source_2str, &

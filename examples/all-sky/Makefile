@@ -40,7 +40,10 @@ ADDITIONS += mo_garand_atmos_io.o
 #
 all: rrtmgp_allsky
 
-rrtmgp_allsky: $(ADDITIONS) rrtmgp_allsky.o
+rrtmgp_allsky: rrtmgp_allsky.o lib_rte_rrtmgp_allsky.a
+
+lib_rte_rrtmgp_allsky.a: $(ADDITIONS)
+	ar -rvs $@ $^
 
 rrtmgp_allsky.o: $(ADDITIONS) rrtmgp_allsky.F90
 

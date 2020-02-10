@@ -15,7 +15,7 @@ NCHOME =
 
 # Fortran compiler flags
 #FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mipa=fast,inline -Mallocatable=03
-FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk                   -Mallocatable=03  -Mpreprocess
+FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk                   -Mallocatable=03
 
 # Fortran .mod files, e.g. -I<include dir> if you have headers in a nonstandard directory <include dir>
 FCINCLUDE =

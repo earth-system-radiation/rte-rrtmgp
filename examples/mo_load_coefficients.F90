@@ -120,7 +120,6 @@ contains
                       = get_dim_size(ncid,'temperature_Planck')
     ncontributors_lower = get_dim_size(ncid,'contributors_lower')
     ncontributors_upper = get_dim_size(ncid,'contributors_upper')
-    nfit_coeffs         = get_dim_size(ncid,'fit_coeffs') ! Will be 0 for SW
     ! -----------------
     !
     ! Read the many arrays
@@ -181,8 +180,13 @@ contains
       !
       totplnk     = read_field(ncid, 'totplnk', ninternalSourcetemps, nbnds)
       planck_frac = read_field(ncid, 'plank_fraction', ngpts, nmixingfracs, npress+1, ntemps)
-      optimal_angle_fit = read_field(ncid, 'optimal_angle_fit', nfit_coeffs, nbnds)
-      call stop_on_err(kdist%load(available_gases, &
+      !
+      ! If there's a optimal_angle_fit in the file, then call load with optional argument
+      !
+      if (var_exists(ncid, 'optimal_angle_fit')) then
+        nfit_coeffs = get_dim_size(ncid,'fit_coeffs')
+        optimal_angle_fit = read_field(ncid, 'optimal_angle_fit', nfit_coeffs, nbnds)
+        call stop_on_err(kdist%load(available_gases, &
                                   gas_names,   &
                                   key_species, &
                                   band2gpt,    &
@@ -207,6 +211,32 @@ contains
                                   totplnk, planck_frac,       &
                                   rayl_lower, rayl_upper, &
                                   optimal_angle_fit))
+      else
+        call stop_on_err(kdist%load(available_gases, &
+                                  gas_names,   &
+                                  key_species, &
+                                  band2gpt,    &
+                                  band_lims,   &
+                                  press_ref,   &
+                                  press_ref_trop, &
+                                  temp_ref,    &
+                                  temp_ref_p, temp_ref_t,     &
+                                  vmr_ref, kmajor,            &
+                                  kminor_lower, kminor_upper, &
+                                  gas_minor,identifier_minor, &
+                                  minor_gases_lower, minor_gases_upper, &
+                                  minor_limits_gpt_lower, &
+                                  minor_limits_gpt_upper, &
+                                  minor_scales_with_density_lower, &
+                                  minor_scales_with_density_upper, &
+                                  scaling_gas_lower, scaling_gas_upper, &
+                                  scale_by_complement_lower, &
+                                  scale_by_complement_upper, &
+                                  kminor_start_lower, &
+                                  kminor_start_upper, &
+                                  totplnk, planck_frac,       &
+                                  rayl_lower, rayl_upper))
+      end if
     else
       !
       ! Solar source doesn't have an dependencies yet

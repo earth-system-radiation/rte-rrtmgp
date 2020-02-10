@@ -23,18 +23,18 @@
 module mo_gas_optics_rrtmgp
   use mo_rte_kind,           only: wp, wl
   use mo_rrtmgp_constants,   only: avogad, m_dry, m_h2o, grav
-  use mo_rte_util_array,     only: zero_array, any_vals_less_than, any_vals_outside, extents_are
+  use mo_util_array,         only: zero_array, any_vals_less_than, any_vals_outside
   use mo_optical_props,      only: ty_optical_props
   use mo_source_functions,   only: ty_source_func_lw
   use mo_gas_optics_kernels, only: interpolation,                                                       &
                                    compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source, &
                                    combine_and_reorder_2str, combine_and_reorder_nstr
 
-  use mo_rrtmgp_util_string, only: lower_case, string_in_array, string_loc_in_array
+  use mo_util_string,        only: lower_case, string_in_array, string_loc_in_array
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
-  use mo_rrtmgp_util_reorder
+  use mo_util_reorder
   implicit none
   private
   real(wp), parameter :: pi = acos(-1._wp)
@@ -175,6 +175,14 @@ module mo_gas_optics_rrtmgp
   !
   public :: get_col_dry ! Utility function, not type-bound
 
+  interface check_range
+    module procedure check_range_1D, check_range_2D, check_range_3D
+  end interface check_range
+
+  interface check_extent
+    module procedure check_extent_1D, check_extent_2D, check_extent_3D
+    module procedure check_extent_4D, check_extent_5D, check_extent_6D
+  end interface check_extent
 contains
   ! --------------------------------------------------------------------------------------
   !
@@ -259,18 +267,14 @@ contains
     ! External source -- check arrays sizes and values
     ! input data sizes and values
     !
-    !$acc enter data copyin(tsfc,tlev)
-    if(.not. extents_are(tsfc, ncol)) &
-      error_msg = "gas_optics(): array tsfc has wrong size"
-    if(any_vals_outside(tsfc, this%temp_ref_min,  this%temp_ref_max)) &
-      error_msg = "gas_optics(): array tsfc has values outside range"
+    error_msg = check_extent(tsfc, ncol, 'tsfc')
     if(error_msg  /= '') return
-
+    error_msg = check_range(tsfc, this%temp_ref_min,  this%temp_ref_max,  'tsfc')
+    if(error_msg  /= '') return
     if(present(tlev)) then
-      if(.not. extents_are(tlev, ncol, nlay+1)) &
-        error_msg = "gas_optics(): array tlev has wrong size"
-      if(any_vals_outside(tlev, this%temp_ref_min, this%temp_ref_max)) &
-        error_msg = "gas_optics(): array tlev has values outside range"
+      error_msg = check_extent(tlev, ncol, nlay+1, 'tlev')
+      if(error_msg  /= '') return
+      error_msg = check_range(tlev, this%temp_ref_min, this%temp_ref_max, 'tlev')
       if(error_msg  /= '') return
     end if
 
@@ -290,7 +294,6 @@ contains
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
                        tlev)
-    !$acc exit data delete(tsfc,tlev)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
@@ -350,18 +353,14 @@ contains
     !
     ! External source function is constant
     !
-    !$acc enter data create(toa_src)
-    if(.not. extents_are(toa_src, ncol, ngpt)) &
-      error_msg = "gas_optics(): array toa_src has wrong size"
+    error_msg = check_extent(toa_src,     ncol,         ngpt, 'toa_src')
     if(error_msg  /= '') return
-
     !$acc parallel loop collapse(2)
     do igpt = 1,ngpt
        do icol = 1,ncol
           toa_src(icol,igpt) = this%solar_src(igpt)
        end do
     end do
-    !$acc exit data copyout(toa_src)
   end function gas_optics_ext
   !------------------------------------------------------------------------------------------
   !
@@ -383,9 +382,9 @@ contains
     type(ty_gas_concs),               intent(in   ) :: gas_desc  ! Gas volume mixing ratios
     class(ty_optical_props_arry),     intent(inout) :: optical_props !inout because components are allocated
     ! Interpolation coefficients for use in internal source function
-    integer,     dimension(                      ncol, nlay), intent(  out) :: jtemp, jpress
+    integer,     dimension(                       ncol, nlay), intent(  out) :: jtemp, jpress
     integer,     dimension(2,    get_nflav(this),ncol, nlay), intent(  out) :: jeta
-    logical(wl), dimension(                      ncol, nlay), intent(  out) :: tropo
+    logical(wl), dimension(                       ncol, nlay), intent(  out) :: tropo
     real(wp),    dimension(2,2,2,get_nflav(this),ncol, nlay), intent(  out) :: fmajor
     character(len=128)                                         :: error_msg
 
@@ -395,6 +394,7 @@ contains
     ! ----------------------------------------------------------
     ! Local variables
     real(wp), dimension(ngpt,nlay,ncol) :: tau, tau_rayleigh  ! absorption, Rayleigh scattering optical depths
+    integer :: igas, idx_h2o ! index of some gases
     ! Number of molecules per cm^2
     real(wp), dimension(ncol,nlay), target  :: col_dry_arr
     real(wp), dimension(:,:),       pointer :: col_dry_wk
@@ -413,8 +413,6 @@ contains
                                                           ! index(3) : flavor
                                                           ! index(4) : layer
     integer :: ngas, nflav, neta, npres, ntemp
-    integer :: icol, ilay, igas
-    integer :: idx_h2o ! index of water vapor
     integer :: nminorlower, nminorklower,nminorupper, nminorkupper
     logical :: use_rayl
     ! ----------------------------------------------------------
@@ -437,28 +435,22 @@ contains
     !
     ! Check input data sizes and values
     !
-    !$acc enter data copyin(play,plev,tlay)
-    if(.not. extents_are(play, ncol, nlay  )) &
-      error_msg = "gas_optics(): array play has wrong size"
-    if(.not. extents_are(tlay, ncol, nlay  )) &
-      error_msg = "gas_optics(): array tlay has wrong size"
-    if(.not. extents_are(plev, ncol, nlay+1)) &
-      error_msg = "gas_optics(): array plev has wrong size"
+    error_msg = check_extent(play, ncol, nlay,   'play')
     if(error_msg  /= '') return
-
-    if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &
-      error_msg = "gas_optics(): array play has values outside range"
-    if(any_vals_outside(plev, this%press_ref_min,this%press_ref_max)) &
-      error_msg = "gas_optics(): array plev has values outside range"
-    if(any_vals_outside(tlay, this%temp_ref_min,  this%temp_ref_max)) &
-      error_msg = "gas_optics(): array tlay has values outside range"
+    error_msg = check_extent(plev, ncol, nlay+1, 'plev')
     if(error_msg  /= '') return
-
+    error_msg = check_extent(tlay, ncol, nlay,   'tlay')
+    if(error_msg  /= '') return
+    error_msg = check_range(play, this%press_ref_min,this%press_ref_max, 'play')
+    if(error_msg  /= '') return
+    error_msg = check_range(plev, this%press_ref_min, this%press_ref_max, 'plev')
+    if(error_msg  /= '') return
+    error_msg = check_range(tlay, this%temp_ref_min,  this%temp_ref_max,  'tlay')
+    if(error_msg  /= '') return
     if(present(col_dry)) then
-      if(.not. extents_are(col_dry, ncol, nlay)) &
-        error_msg = "gas_optics(): array col_dry has wrong size"
-      if(any_vals_less_than(col_dry, 0._wp)) &
-        error_msg = "gas_optics(): array col_dry has values outside range"
+      error_msg = check_extent(col_dry, ncol, nlay, 'col_dry')
+      if(error_msg  /= '') return
+      error_msg = check_range(col_dry, 0._wp, huge(col_dry), 'col_dry')
       if(error_msg  /= '') return
     end if
 
@@ -476,7 +468,6 @@ contains
     !
     ! Fill out the array of volume mixing ratios
     !
-    !$acc enter data create(vmr)
     do igas = 1, ngas
       !
       ! Get vmr if  gas is provided in ty_gas_concs
@@ -491,31 +482,19 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
-    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
     else
-      col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
+      col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev, tlay) ! dry air column amounts computation
       col_dry_wk => col_dry_arr
     end if
     !
     ! compute column gas amounts [molec/cm^2]
     !
-    !$acc parallel loop gang vector collapse(2)
-    do ilay = 1, nlay
-      do icol = 1, ncol
-        col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
-      end do
-    end do
-    !$acc parallel loop gang vector collapse(3)
+    col_gas(1:ncol,1:nlay,0) = col_dry_wk(1:ncol,1:nlay)
     do igas = 1, ngas
-      do ilay = 1, nlay
-        do icol = 1, ncol
-          col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay)
-        end do
-      end do
+      col_gas(1:ncol,1:nlay,igas) = vmr(1:ncol,1:nlay,igas) * col_dry_wk(1:ncol,1:nlay)
     end do
-    !$acc exit data delete(vmr)
 
     !
     ! ---- calculate gas optical depths ----
@@ -523,6 +502,7 @@ contains
     !$acc enter data create(jtemp, jpress, jeta, tropo, fmajor)
     !$acc enter data create(tau, tau_rayleigh)
     !$acc enter data create(col_mix, fminor)
+    !$acc enter data copyin(play, tlay, col_gas)
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%gpoint_flavor)
     call zero_array(ngpt, nlay, ncol, tau)
@@ -590,9 +570,9 @@ contains
 
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
-    !$acc exit data delete(play, tlay, plev)
     !$acc exit data delete(tau, tau_rayleigh)
-    !$acc exit data delete(col_dry_wk, col_dry_arr, col_gas, col_mix, fminor)
+    !$acc exit data delete(play, tlay, col_gas)
+    !$acc exit data delete(col_mix, fminor)
     !$acc exit data delete(this%gpoint_flavor)
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
   end function compute_gas_taus
@@ -751,7 +731,6 @@ contains
                                               optional    :: optimal_angle_fit
     character(len = 128) :: err_message
     ! ----
-    !$acc enter data create(this)
     err_message = init_abs_coeffs(this, &
                                   available_gases, &
                                   gas_names, key_species,    &
@@ -772,24 +751,12 @@ contains
                                   kminor_start_lower, &
                                   kminor_start_upper, &
                                   rayl_lower, rayl_upper)
-    !
     ! Planck function tables
     !
-    allocate(this%totplnk    (size(totplnk,    1), size(totplnk,   2)), &
-             this%planck_frac(size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)) )
-    !$acc enter data create(this%totplnk, this%planck_frac)
-    !$acc kernels
     this%totplnk = totplnk
     this%planck_frac = planck_frac
-    !$acc end kernels
-    !
-    ! Optimal angle fit coefficients
-    !
     if (present(optimal_angle_fit)) then
-      !$acc enter data create(this%optimal_angle_fit)
-      !$acc kernels
       this%optimal_angle_fit = optimal_angle_fit
-      !$acc end kernels
     else
       if(allocated(this%optimal_angle_fit)) deallocate(this%optimal_angle_fit )
     end if
@@ -860,7 +827,6 @@ contains
     real(wp), dimension(:,:,:), intent(in), allocatable :: rayl_lower, rayl_upper
     character(len = 128) err_message
     ! ----
-    !$acc enter data create(this)
     err_message = init_abs_coeffs(this, &
                                   available_gases, &
                                   gas_names, key_species,    &
@@ -884,11 +850,8 @@ contains
     !
     ! Solar source table init
     !
-    allocate(this%solar_src(size(solar_src)))
-    !$acc enter data create(this%solar_src)
-    !$acc kernels
     this%solar_src = solar_src
-    !$acc end kernels
+
   end function load_ext
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1031,13 +994,9 @@ contains
                              this%kminor_start_upper)
 
     ! Arrays not reduced by the presence, or lack thereof, of a gas
-    allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
-             this%kmajor(size(kmajor,1),size(kmajor,2),size(kmajor,3),size(kmajor,4)))
     this%press_ref = press_ref
     this%temp_ref  = temp_ref
     this%kmajor    = kmajor
-    !$acc enter data copyin(this%kmajor)
-
 
     if(allocated(rayl_lower) .neqv. allocated(rayl_upper)) then
       err_message = "rayl_lower and rayl_upper must have the same allocation status"
@@ -1050,11 +1009,12 @@ contains
     end if
 
     ! ---- post processing ----
+    ! Incoming coefficients file has units of Pa
+    this%press_ref(:) = this%press_ref(:)
+
     ! creates log reference pressure
     allocate(this%press_ref_log(size(this%press_ref)))
     this%press_ref_log(:) = log(this%press_ref(:))
-    !$acc enter data copyin(this%press_ref_log)
-
 
     ! log scale of reference pressure
     this%press_ref_trop_log = log(press_ref_trop)
@@ -1099,7 +1059,7 @@ contains
     allocate(this%is_key(this%get_ngas()))
     this%is_key(:) = .False.
     do j = 1, size(this%flavor, 2)
-      do i = 1, size(this%flavor, 1) ! extents should be 2
+      do i = 1, size(this%flavor, 1) ! should be 2
         if (this%flavor(i,j) /= 0) this%is_key(this%flavor(i,j)) = .true.
       end do
     end do
@@ -1251,109 +1211,92 @@ contains
   ! Utility function, provided for user convenience
   ! computes column amounts of dry air using hydrostatic equation
   !
-  function get_col_dry(vmr_h2o, plev, latitude) result(col_dry)
+  function get_col_dry(vmr_h2o, plev, tlay, latitude) result(col_dry)
     ! input
     real(wp), dimension(:,:), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air; (ncol,nlay)
     real(wp), dimension(:,:), intent(in) :: plev     ! Layer boundary pressures [Pa] (ncol,nlay+1)
+    real(wp), dimension(:,:), intent(in) :: tlay     ! Layer temperatures [K] (ncol,nlay)
     real(wp), dimension(:),   optional, &
                               intent(in) :: latitude ! Latitude [degrees] (ncol)
     ! output
-    real(wp), dimension(size(plev,dim=1),size(plev,dim=2)-1) :: col_dry ! Column dry amount (ncol,nlay)
+    real(wp), dimension(size(tlay,dim=1),size(tlay,dim=2)) :: col_dry ! Column dry amount (ncol,nlay)
     ! ------------------------------------------------
     ! first and second term of Helmert formula
     real(wp), parameter :: helmert1 = 9.80665_wp
     real(wp), parameter :: helmert2 = 0.02586_wp
     ! local variables
-    real(wp), dimension(size(plev,dim=1)) :: g0 ! (ncol)
-    real(wp):: delta_plev, m_air, fact
-    integer :: ncol, nlev
-    integer :: icol, ilev ! nlay = nlev-1
+    real(wp), dimension(size(tlay,dim=1)                 ) :: g0 ! (ncol)
+    real(wp), dimension(size(tlay,dim=1),size(tlay,dim=2)) :: delta_plev ! (ncol,nlay)
+    real(wp), dimension(size(tlay,dim=1),size(tlay,dim=2)) :: m_air ! average mass of air; (ncol,nlay)
+    integer :: nlev, nlay
     ! ------------------------------------------------
-    ncol = size(plev, dim=1)
+    nlay = size(tlay, dim=2)
     nlev = size(plev, dim=2)
-    !$acc enter data create(g0)
-    if(present(latitude)) then
-      ! A purely OpenACC implementation would probably compute g0 within the kernel below
-      !$acc parallel loop
-      do icol = 1, ncol
-        g0(icol) = helmert1 - helmert2 * cos(2.0_wp * pi * latitude(icol) / 180.0_wp) ! acceleration due to gravity [m/s^2]
-      end do
-    else
-      !$acc parallel loop
-      do icol = 1, ncol
-        g0(icol) = grav
-      end do
-    end if
 
-    !$acc parallel loop gang vector collapse(2) copyin(plev,vmr_h2o) copyout(col_dry)
-    do ilev = 1, nlev-1
-      do icol = 1, ncol
-        delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1))
-        ! Get average mass of moist air per mole of moist air
-        fact = 1._wp / (1.+vmr_h2o(icol,ilev))
-        m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact
-        col_dry(icol,ilev) = 10._wp * delta_plev * avogad * fact/(1000._wp*m_air*100._wp*g0(icol))
-      end do
-    end do
-    !$acc exit data delete (g0)
+    if(present(latitude)) then
+      g0(:) = helmert1 - helmert2 * cos(2.0_wp * pi * latitude(:) / 180.0_wp) ! acceleration due to gravity [m/s^2]
+    else
+      g0(:) = grav
+    end if
+    delta_plev(:,:) = abs(plev(:,1:nlev-1) - plev(:,2:nlev))
+
+    ! Get average mass of moist air per mole of moist air
+    m_air(:,:) = (m_dry+m_h2o*vmr_h2o(:,:))/(1.+vmr_h2o(:,:))
+
+    ! Hydrostatic equation
+    col_dry(:,:) = 10._wp*delta_plev(:,:)*avogad/(1000._wp*m_air(:,:)*100._wp*spread(g0(:),dim=2,ncopies=nlay))
+    col_dry(:,:) = col_dry(:,:)/(1._wp+vmr_h2o(:,:))
   end function get_col_dry
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
   !
-  function compute_optimal_angles(this, optical_props, optimal_angles) result(err_msg)
+  !
+  function compute_optimal_angles(this, optical_props, &
+                                         optimal_angles) result(err_msg)
+
     ! input
-    class(ty_gas_optics_rrtmgp),  intent(in   ) :: this
-    class(ty_optical_props_arry), intent(in   ) :: optical_props
-    real(wp), dimension(:,:),     intent(  out)  :: optimal_angles
-    character(len=128)                           :: err_msg
-    !----------------------------
-    integer  :: ncol, nlay, ngpt, nbnd
-    integer  :: icol, ilay, igpt, bnd
-    real(wp) :: t, trans_total(optical_props%get_ncol(), optical_props%get_ngpt())
-    !----------------------------
+    class(ty_gas_optics_rrtmgp), &
+                                      intent(in   ) :: this
+    class(ty_optical_props_arry),     intent(in   ) :: optical_props  ! Gas volume mixing ratios
+
+    !output
+    character(len=128)   :: err_msg
+    real(wp), dimension(:,:), intent(inout)         :: optimal_angles
+
+    ! Local variables
+    !
+    integer  :: ncol, ngpt, nbnd
+    integer  :: col, gpt, bnd
+    real(wp) :: trans_total
+
     ncol = optical_props%get_ncol()
-    nlay = optical_props%get_nlay()
     ngpt = optical_props%get_ngpt()
     nbnd = optical_props%get_nband()
 
     err_msg=""
-    if(.not. this%gpoints_are_equal(optical_props)) &
-      err_msg = "gas_optics%compute_optimal_angles: optical_props has different spectral discretization than gas_optics"
-    if(.not. extents_are(optimal_angles, ncol, ngpt)) &
-      err_msg = "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
+
+    ! Check match in dimensions between tau and optimal_angle_fit
+    if (nbnd .ne. size(this%optimal_angle_fit,2)) err_msg = &
+      "gas_optics%compute_optimal_angles: optimal_angle_fit different dimension (nbnd)"
+    if (size(this%optimal_angle_fit,1) .ne. 2) err_msg = &
+      "gas_optics%compute_optimal_angles: optimal_angle_fit different dimension for linear fit (2)"
+
+    ! Check dimensions of incoming optimal_angles array
+    if(size(optimal_angles,1) /= ncol) err_msg = &
+      "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
+    if(size(optimal_angles,2) /= ngpt) err_msg = &
+      "gas_optics%compute_optimal_angles: optimal_angles different dimension (ngpt)"
+
     if (err_msg /=  "") return
 
-    !
-    ! column transmissivity
-    !
-    !$acc enter data create(trans_total)
-    !$acc parallel loop gang vector collapse(2)
-    do icol = 1, ncol
-      do igpt = 1, ngpt
-        !
-        ! Column transmissivity
-        !
-        t = 0._wp
-        do ilay = 1, nlay
-          t = t + optical_props%tau(icol,ilay,igpt)
-        end do
-        trans_total(icol,igpt) = exp(-t)
+    do col = 1, ncol
+      do gpt = 1, ngpt
+        trans_total = exp(-sum(optical_props%tau(col,:,gpt)))
+        bnd = optical_props%gpt2band(gpt)
+        optimal_angles(col,gpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
+          this%optimal_angle_fit(2,bnd)
       end do
     end do
-
-    !$acc parallel loop gang vector collapse(2)
-    do icol = 1, ncol
-      do igpt = 1, ngpt
-        !
-        ! Optimal transport angle is a linear fit to column transmissivity
-        !
-        bnd = optical_props%gpt2band(igpt)
-        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total(ilay,igpt) + &
-                                  this%optimal_angle_fit(2,bnd)
-      end do
-    end do
-    !$acc exit data delete(trans_total)
 
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
@@ -1529,7 +1472,7 @@ contains
                            scale_by_complement_atm_red, &
                            kminor_start_atm_red)
 
-    class(ty_gas_concs),                intent(in) :: available_gases
+    class(ty_gas_concs),                intent(in   ) :: available_gases
     character(len=*), dimension(:),     intent(in) :: gas_names
     real(wp),         dimension(:,:,:), intent(in) :: kminor_atm
     character(len=*), dimension(:),     intent(in) :: gas_minor, &
@@ -1556,11 +1499,10 @@ contains
                                                 kminor_start_atm_red
 
     ! Local variables
-    integer :: i, j, ks
+    integer :: i, j
     integer :: idx_mnr, nm, tot_g, red_nm
     integer :: icnt, n_elim, ng
     logical, dimension(:), allocatable :: gas_is_present
-    integer, dimension(:), allocatable :: indexes
 
     nm = size(minor_gases_atm)
     tot_g=0
@@ -1574,35 +1516,27 @@ contains
     enddo
     red_nm = count(gas_is_present)
 
-    allocate(minor_gases_atm_red              (red_nm),&
-             minor_scales_with_density_atm_red(red_nm), &
-             scaling_gas_atm_red              (red_nm), &
-             scale_by_complement_atm_red      (red_nm), &
-             kminor_start_atm_red             (red_nm))
-    allocate(minor_limits_gpt_atm_red(2, red_nm))
-    allocate(kminor_atm_red(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
-
     if ((red_nm .eq. nm)) then
-      ! Character data not allowed in OpenACC regions?
-      minor_gases_atm_red         = minor_gases_atm
-      scaling_gas_atm_red         = scaling_gas_atm
-      kminor_atm_red              = kminor_atm
-      minor_limits_gpt_atm_red    = minor_limits_gpt_atm
+      kminor_atm_red = kminor_atm
+      minor_gases_atm_red = minor_gases_atm
+      minor_limits_gpt_atm_red = minor_limits_gpt_atm
       minor_scales_with_density_atm_red = minor_scales_with_density_atm
+      scaling_gas_atm_red = scaling_gas_atm
       scale_by_complement_atm_red = scale_by_complement_atm
-      kminor_start_atm_red        = kminor_start_atm
+      kminor_start_atm_red = kminor_start_atm
     else
-      allocate(indexes(red_nm))
-      ! Find the integer indexes for the gases that are present
-      indexes = pack([(i, i = 1, size(minor_gases_atm))], mask=gas_is_present)
+      minor_gases_atm_red= pack(minor_gases_atm, mask=gas_is_present)
+      minor_scales_with_density_atm_red = pack(minor_scales_with_density_atm, &
+        mask=gas_is_present)
+      scaling_gas_atm_red = pack(scaling_gas_atm, &
+        mask=gas_is_present)
+      scale_by_complement_atm_red = pack(scale_by_complement_atm, &
+        mask=gas_is_present)
+      kminor_start_atm_red = pack(kminor_start_atm, &
+        mask=gas_is_present)
 
-      minor_gases_atm_red  = minor_gases_atm        (indexes)
-      scaling_gas_atm_red  = scaling_gas_atm        (indexes)
-      minor_scales_with_density_atm_red = &
-                             minor_scales_with_density_atm(indexes)
-      scale_by_complement_atm_red = &
-                             scale_by_complement_atm(indexes)
-      kminor_start_atm_red = kminor_start_atm       (indexes)
+      allocate(minor_limits_gpt_atm_red(2, red_nm))
+      allocate(kminor_atm_red(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
 
       icnt = 0
       n_elim = 0
@@ -1612,7 +1546,6 @@ contains
           icnt = icnt + 1
           minor_limits_gpt_atm_red(1:2,icnt) = minor_limits_gpt_atm(1:2,i)
           kminor_start_atm_red(icnt) = kminor_start_atm(i)-n_elim
-          ks = kminor_start_atm_red(icnt)
           do j = 1, ng
             kminor_atm_red(kminor_start_atm_red(icnt)+j-1,:,:) = &
               kminor_atm(kminor_start_atm(i)+j-1,:,:)
@@ -1622,7 +1555,6 @@ contains
         endif
       enddo
     endif
-    !$acc enter data copyin(kminor_atm_red)
 
   end subroutine reduce_minor_arrays
 
@@ -1774,4 +1706,117 @@ contains
 
     get_nPlanckTemp = size(this%totplnk,dim=1) ! dimensions are Planck-temperature, band
   end function get_nPlanckTemp
+  !--------------------------------------------------------------------------------------------------------------------
+  ! Generic procedures for checking sizes, limits
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Extents
+  !
+  ! --------------------------------------------------------------------------------------
+  function check_extent_1d(array, n1, label)
+    real(wp), dimension(:          ), intent(in) :: array
+    integer,                          intent(in) :: n1
+    character(len=*),                 intent(in) :: label
+    character(len=128)                           :: check_extent_1d
+
+    check_extent_1d = ""
+    if(size(array,1) /= n1) &
+      check_extent_1d = trim(label) // ' has incorrect size.'
+  end function check_extent_1d
+  ! --------------------------------------------------------------------------------------
+  function check_extent_2d(array, n1, n2, label)
+    real(wp), dimension(:,:        ), intent(in) :: array
+    integer,                          intent(in) :: n1, n2
+    character(len=*),                 intent(in) :: label
+    character(len=128)                           :: check_extent_2d
+
+    check_extent_2d = ""
+    if(size(array,1) /= n1 .or. size(array,2) /= n2 ) &
+      check_extent_2d = trim(label) // ' has incorrect size.'
+  end function check_extent_2d
+  ! --------------------------------------------------------------------------------------
+  function check_extent_3d(array, n1, n2, n3, label)
+    real(wp), dimension(:,:,:      ), intent(in) :: array
+    integer,                          intent(in) :: n1, n2, n3
+    character(len=*),                 intent(in) :: label
+    character(len=128)                           :: check_extent_3d
+
+    check_extent_3d = ""
+    if(size(array,1) /= n1 .or. size(array,2) /= n2 .or. size(array,3) /= n3) &
+      check_extent_3d = trim(label) // ' has incorrect size.'
+  end function check_extent_3d
+  ! --------------------------------------------------------------------------------------
+  function check_extent_4d(array, n1, n2, n3, n4, label)
+    real(wp), dimension(:,:,:,:    ), intent(in) :: array
+    integer,                          intent(in) :: n1, n2, n3, n4
+    character(len=*),                 intent(in) :: label
+    character(len=128)                           :: check_extent_4d
+
+    check_extent_4d = ""
+    if(size(array,1) /= n1 .or. size(array,2) /= n2 .or. size(array,3) /= n3 .or. &
+       size(array,4) /= n4) &
+      check_extent_4d = trim(label) // ' has incorrect size.'
+  end function check_extent_4d
+  ! --------------------------------------------------------------------------------------
+  function check_extent_5d(array, n1, n2, n3, n4, n5, label)
+    real(wp), dimension(:,:,:,:,:  ), intent(in) :: array
+    integer,                          intent(in) :: n1, n2, n3, n4, n5
+    character(len=*),                 intent(in) :: label
+    character(len=128)                           :: check_extent_5d
+
+    check_extent_5d = ""
+    if(size(array,1) /= n1 .or. size(array,2) /= n2 .or. size(array,3) /= n3 .or. &
+       size(array,4) /= n4 .or. size(array,5) /= n5) &
+      check_extent_5d = trim(label) // ' has incorrect size.'
+  end function check_extent_5d
+  ! --------------------------------------------------------------------------------------
+  function check_extent_6d(array, n1, n2, n3, n4, n5, n6, label)
+    real(wp), dimension(:,:,:,:,:,:), intent(in) :: array
+    integer,                          intent(in) :: n1, n2, n3, n4, n5, n6
+    character(len=*),                 intent(in) :: label
+    character(len=128)                           :: check_extent_6d
+
+    check_extent_6d = ""
+    if(size(array,1) /= n1 .or. size(array,2) /= n2 .or. size(array,3) /= n3 .or. &
+       size(array,4) /= n4 .or. size(array,5) /= n5 .or. size(array,6) /= n6 ) &
+      check_extent_6d = trim(label) // ' has incorrect size.'
+  end function check_extent_6d
+  ! --------------------------------------------------------------------------------------
+  !
+  ! Values
+  !
+  ! --------------------------------------------------------------------------------------
+  function check_range_1D(val, minV, maxV, label)
+    real(wp), dimension(:),     intent(in) :: val
+    real(wp),                   intent(in) :: minV, maxV
+    character(len=*),           intent(in) :: label
+    character(len=128)                     :: check_range_1D
+
+    check_range_1D = ""
+    if(any(val < minV) .or. any(val > maxV)) &
+      check_range_1D = trim(label) // ' values out of range.'
+  end function check_range_1D
+  ! --------------------------------------------------------------------------------------
+  function check_range_2D(val, minV, maxV, label)
+    real(wp), dimension(:,:),   intent(in) :: val
+    real(wp),                   intent(in) :: minV, maxV
+    character(len=*),           intent(in) :: label
+    character(len=128)                     :: check_range_2D
+
+    check_range_2D = ""
+    if(any(val < minV) .or. any(val > maxV)) &
+      check_range_2D = trim(label) // ' values out of range.'
+  end function check_range_2D
+  ! --------------------------------------------------------------------------------------
+  function check_range_3D(val, minV, maxV, label)
+    real(wp), dimension(:,:,:), intent(in) :: val
+    real(wp),                   intent(in) :: minV, maxV
+    character(len=*),           intent(in) :: label
+    character(len=128)                     :: check_range_3D
+
+    check_range_3D = ""
+    if(any(val < minV) .or. any(val > maxV)) &
+      check_range_3D = trim(label) // ' values out of range.'
+  end function check_range_3D
+  !------------------------------------------------------------------------------------------
 end module mo_gas_optics_rrtmgp

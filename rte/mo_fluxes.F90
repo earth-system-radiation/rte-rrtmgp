@@ -17,11 +17,10 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_fluxes
-  use mo_rte_kind,       only: wp
-  use mo_rte_util_array, only: extents_are
-  use mo_optical_props,  only: ty_optical_props
+  use mo_rte_kind,      only: wp
+  use mo_optical_props, only: ty_optical_props
   use mo_fluxes_broadband_kernels, &
-                         only: sum_broadband, net_broadband
+                        only: sum_broadband, net_broadband
   implicit none
   private
   ! -----------------------------------------------------------------------------------------------
@@ -114,12 +113,16 @@ contains
     ! Check array sizes
     !  Input arrays
     !
-    if(.not. extents_are(gpt_flux_dn, ncol, nlev, ngpt)) then
+    if(any([size(gpt_flux_dn, 1) /= ncol, &
+            size(gpt_flux_dn, 2) /= nlev, &
+            size(gpt_flux_dn, 3) /= ngpt])) then
       error_msg = "reduce: gpt_flux_dn array incorrectly sized"
       return
     end if
     if(present(gpt_flux_dn_dir)) then
-      if(.not. extents_are(gpt_flux_dn_dir, ncol, nlev, ngpt)) then
+    if(any([size(gpt_flux_dn_dir, 1) /= ncol, &
+            size(gpt_flux_dn_dir, 2) /= nlev, &
+            size(gpt_flux_dn_dir, 3) /= ngpt])) then
         error_msg = "reduce: gpt_flux_dn_dir array incorrectly sized"
         return
       end if
@@ -128,25 +131,25 @@ contains
     ! Output arrays
     !
     if(associated(this%flux_up)) then
-      if(.not. extents_are(this%flux_up, ncol, nlev)) then
+      if(any([size(this%flux_up, 1), size(this%flux_up, 2)] /= [ncol,nlev])) then
         error_msg = 'reduce: flux_up array incorrectly sized'
         return
       end if
     end if
     if(associated(this%flux_dn)) then
-      if(.not. extents_are(this%flux_dn, ncol, nlev)) then
+      if(any([size(this%flux_dn, 1), size(this%flux_dn, 2)] /= [ncol,nlev])) then
         error_msg = 'reduce: flux_dn array incorrectly sized'
         return
       end if
     end if
     if(associated(this%flux_net)) then
-      if(.not. extents_are(this%flux_net, ncol, nlev)) then
+      if(any([size(this%flux_net, 1), size(this%flux_net, 2)] /= [ncol,nlev])) then
         error_msg = 'reduce: flux_net array incorrectly sized'
         return
       end if
     end if
     if(associated(this%flux_dn_dir)) then
-      if(.not. extents_are(this%flux_dn_dir, ncol, nlev)) then
+      if(any([size(this%flux_dn_dir, 1), size(this%flux_dn_dir, 2)] /= [ncol,nlev])) then
         error_msg = 'reduce: flux_dn_dir array incorrectly sized'
         return
       end if

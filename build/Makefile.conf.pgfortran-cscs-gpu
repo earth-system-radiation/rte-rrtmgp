@@ -15,7 +15,7 @@ NCHOME =
 
 # Fortran compiler flags
 #FCFLAGS = -g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mipa=fast,inline -acc -ta=tesla:6.5
-FCFLAGS = -g -ta=tesla:cc60,cuda9.2 -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mallocatable=03 -Mpreprocess
+FCFLAGS = -g -ta=tesla:cc60,cuda9.2 -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mallocatable=03
 
 # Fortran .mod files, e.g. -I<include dir> if you have headers in a nonstandard directory <include dir>
 FCINCLUDE =

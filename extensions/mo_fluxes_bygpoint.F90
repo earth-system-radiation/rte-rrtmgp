@@ -16,7 +16,6 @@
 !
 module mo_fluxes_bygpoint
   use mo_rte_kind,      only: wp
-  use mo_rte_util_array,only: extents_are
   use mo_fluxes,        only: ty_fluxes
   use mo_optical_props, only: ty_optical_props
   implicit none
@@ -36,7 +35,7 @@ module mo_fluxes_bygpoint
 contains
   ! --------------------------------------------------------------------------------------
   function reduce_bygpoint(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
-    class(ty_fluxes_bygpoint),         intent(inout) :: this
+    class(ty_fluxes_bygpoint),           intent(inout) :: this
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_up ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_dn ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
@@ -53,28 +52,36 @@ contains
     ngpt = size(gpt_flux_up, DIM=3)
 
     if(associated(this%gpt_flux_up)) then
-      if(.not. extents_are(this%gpt_flux_up, ncol, nlev, ngpt)) then
+      if(any([size(this%gpt_flux_up, 1) /= ncol,  &
+              size(this%gpt_flux_up, 2) /= nlev,  &
+              size(this%gpt_flux_up, 3) /= ngpt])) then
         error_msg = "reduce: gpt_flux_up array incorrectly sized (can't compute net flux either)"
       else
         this%gpt_flux_up(:,:,:) = gpt_flux_up(:,:,:)
       end if
     end if
     if(associated(this%gpt_flux_dn)) then
-      if(.not. extents_are(this%gpt_flux_dn, ncol, nlev, ngpt)) then
+      if(any([size(this%gpt_flux_dn, 1) /= ncol,  &
+              size(this%gpt_flux_dn, 2) /= nlev,  &
+              size(this%gpt_flux_dn, 3) /= ngpt])) then
         error_msg = "reduce: gpt_flux_dn array incorrectly sized (can't compute net flux either)"
       else
         this%gpt_flux_dn(:,:,:) = gpt_flux_dn(:,:,:)
       end if
     end if
     if(associated(this%gpt_flux_net)) then
-      if(.not. extents_are(this%gpt_flux_net, ncol, nlev, ngpt)) then
+      if(any([size(this%gpt_flux_net, 1) /= ncol,  &
+              size(this%gpt_flux_net, 2) /= nlev,  &
+              size(this%gpt_flux_net, 3) /= ngpt])) then
         error_msg = "reduce: gpt_flux_net array incorrectly sized (can't compute net flux either)"
       else
         this%gpt_flux_net(:,:,:) = gpt_flux_dn(:,:,:) - gpt_flux_up(:,:,:)
       end if
     end if
     if(associated(this%gpt_flux_dn_dir)) then
-      if(.not. extents_are(this%gpt_flux_dn_dir, ncol, nlev, ngpt)) then
+      if(any([size(this%gpt_flux_dn_dir, 1) /= ncol,  &
+              size(this%gpt_flux_dn_dir, 2) /= nlev,  &
+              size(this%gpt_flux_dn_dir, 3) /= ngpt])) then
         error_msg = "reduce: gpt_flux_dn_dir array incorrectly sized (can't compute net flux either)"
       else if(present(gpt_flux_dn_dir)) then
         this%gpt_flux_dn_dir(:,:,:) = gpt_flux_dn_dir(:,:,:)

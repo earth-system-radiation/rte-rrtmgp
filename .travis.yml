@@ -10,7 +10,7 @@ matrix:
   - compiler: gcc # Using
     env:
     - FC=pgfortran
-    - FCFLAGS="-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+    - FCFLAGS="-Mallocatable=03 -Mstandard"
     - TEST_PGI=yes
     addons:
       apt:
@@ -23,7 +23,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-9
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -DUSE_CBOOL"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:
@@ -37,7 +37,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-8
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -DUSE_CBOOL"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:
@@ -79,58 +79,39 @@ before_install:
 - conda update --yes conda
 
 install:
-# conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
-- conda create --yes -n test python=3.7
+- conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
 - source activate test
 - conda install --yes urllib3 netcdf4 xarray dask
 
 before_script:
-- export RRTMGP_ROOT=$PWD
-- export RRTMGP_DIR=$PWD/build
-- export NFHOME=${HOME}/netcdff
-- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NFHOME/lib
 - cd examples/rfmip-clear-sky
 - python3 ./stage_files.py
 - cd ../..
+- export RRTMGP_DIR=$PWD/build
+- export NFHOME=${HOME}/netcdff
+- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NFHOME/lib
 script:
 # Build library - default kernels
 - cd build || exit 1
 - make || exit 1
 - cd .. || exit 1
-# Build and run RFMIP examples
-- cd examples/rfmip-clear-sky || exit 1
-- make clean
-- make || exit 1
+# Build drivers
+- cd examples/rfmip-clear-sky
+- make
+# Run drivers
 - python3 ./run-rfmip-examples.py
-- python3 ./compare-to-reference.py --fail=1.e-4
-- cd ../..
-# Build and run all-sky example
-- cd examples/all-sky || exit 1
-- make clean
-- make || exit 1
-- python3 ./run-allsky-example.py
 - python3 ./compare-to-reference.py
 - cd ../..
-#
 # Build library - Open-acc kernels
-#
 - export RTE_KERNELS="openacc"
-- cd build || exit 1
+- cd build
 - make clean
 - make || exit 1
-- cd .. || exit 1
-# Build and run RFMIP examples
-- cd examples/rfmip-clear-sky || exit 1
+- cd ../examples/rfmip-clear-sky
 - make clean
 - make || exit 1
+# Run drivers
 - python3 ./run-rfmip-examples.py
-- python3 ./compare-to-reference.py --fail=1.e-4
-- cd ../..
-# Build and run all-sky example
-- cd examples/all-sky || exit 1
-- make clean
-- make || exit 1
-- python3 ./run-allsky-example.py
 - python3 ./compare-to-reference.py
 - cd ../..
 notifications:

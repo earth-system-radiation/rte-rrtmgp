@@ -8,5 +8,5 @@ export FC = ftn
 #
 # Debugging
 #
-export FCFLAGS  = -g -Mallocatable=03 -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mpreprocess
+export FCFLAGS  = -g -Mallocatable=03 -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk
 export F77FLAGS = $(FCFLAGS)

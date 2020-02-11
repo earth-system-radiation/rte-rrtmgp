@@ -35,14 +35,15 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
-  use mo_util_array,    only: any_vals_less_than, any_vals_outside
+  use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_source_functions,   &
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes
   use mo_rte_solver_kernels, &
-                        only: apply_BC, lw_solver_noscat_GaussQuad, lw_solver_2stream
+                        only: apply_BC, lw_solver_noscat_GaussQuad, lw_solver_2stream,&
+                              lw_solver_1rescl_GaussQuad
   implicit none
   private
 
@@ -56,7 +57,7 @@ contains
   function rte_lw(optical_props, top_at_1, &
                   sources, sfc_emis,       &
                   fluxes,                  &
-                  inc_flux, n_gauss_angles) result(error_msg)
+                  inc_flux, n_gauss_angles, use_2stream) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
@@ -67,10 +68,12 @@ contains
     class(ty_fluxes),             intent(inout) :: fluxes      ! Array of ty_fluxes. Default computes broadband fluxes at all levels
                                                                !   if output arrays are defined. Can be extended per user desires.
     real(wp), dimension(:,:),   &
-              target, optional, intent(in   ) :: inc_flux    ! incident flux at domain top [W/m2] (ncol, ngpts)
-    integer,          optional, intent(in   ) :: n_gauss_angles ! Number of angles used in Gaussian quadrature
-                                                                ! (no-scattering solution)
-    character(len=128)                        :: error_msg   ! If empty, calculation was successful
+                target, optional, intent(in   ) :: inc_flux       ! incident flux at domain top [W/m2] (ncol, ngpts)
+    integer,            optional, intent(in   ) :: n_gauss_angles ! Number of angles used in Gaussian quadrature
+                                                                  ! (no-scattering solution)
+    logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
+                                                                  ! Default is to use re-scaled longwave transport
+    character(len=128)                          :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
     !
     ! Local variables
@@ -80,6 +83,7 @@ contains
     integer :: icol, iband, igpt
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
+    logical :: using_2stream
     ! --------------------------------------------------
     !
     ! Weights and angle secants for first order (k=1) Gaussian quadrature.
@@ -131,7 +135,7 @@ contains
     !
     ! Surface emissivity
     !
-    if(any([size(sfc_emis,1), size(sfc_emis,2)] /= [nband, ncol])) &
+    if(.not. extents_are(sfc_emis, nband, ncol)) &
       error_msg = "rte_lw: sfc_emis inconsistently sized"
     if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
       error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
@@ -141,7 +145,7 @@ contains
     ! Incident flux, if present
     !
     if(present(inc_flux)) then
-      if(any([size(inc_flux,1), size(inc_flux,2)] /= [ncol, ngpt])) &
+      if(.not. extents_are(inc_flux, ncol, ngpt)) &
         error_msg = "rte_lw: inc_flux inconsistently sized"
       if(any_vals_less_than(inc_flux, 0._wp)) &
         error_msg = "rte_lw: inc_flux has values < 0"
@@ -159,6 +163,11 @@ contains
         error_msg = "rte_lw: have to ask for at least one quadrature point for no-scattering calculation"
       n_quad_angs = n_gauss_angles
     end if
+    !
+    ! Optionally - use 2-stream methods when low-order scattering properties are provided?
+    !
+    using_2stream = .false.
+    if(present(use_2stream)) using_2stream = use_2stream
     !
     ! Ensure values of tau, ssa, and g are reasonable
     !
@@ -213,18 +222,34 @@ contains
                               gpt_flux_up, gpt_flux_dn)
         !$acc exit data delete(optical_props%tau)
       class is (ty_optical_props_2str)
-        !
-        ! two-stream calculation with scattering
-        !
-        !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
-        error_msg =  optical_props%validate()
-        if(len_trim(error_msg) > 0) return
-        call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                               optical_props%tau, optical_props%ssa, optical_props%g,              &
-                               sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
-                               sfc_emis_gpt, sources%sfc_source,       &
-                               gpt_flux_up, gpt_flux_dn)
-        !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+        if (using_2stream) then
+          !
+          ! two-stream calculation with scattering
+          !
+          !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
+          error_msg =  optical_props%validate()
+          if(len_trim(error_msg) > 0) return
+          call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                 optical_props%tau, optical_props%ssa, optical_props%g,              &
+                                 sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                                 sfc_emis_gpt, sources%sfc_source,       &
+                                 gpt_flux_up, gpt_flux_dn)
+          !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+        else
+          !
+          ! Re-scaled solution to account for scattering
+          !
+          !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
+          call lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                 n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), &
+                                 gauss_wts(1:n_quad_angs,n_quad_angs), &
+                                 optical_props%tau, optical_props%ssa, optical_props%g, &
+                                 sources%lay_source, sources%lev_source_inc, &
+                                 sources%lev_source_dec, &
+                                 sfc_emis_gpt, sources%sfc_source,&
+                                 gpt_flux_up, gpt_flux_dn)
+          !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+        endif
       class is (ty_optical_props_nstr)
         !
         ! n-stream calculation

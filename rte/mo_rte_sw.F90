@@ -29,7 +29,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_sw
   use mo_rte_kind,      only: wp, wl
-  use mo_util_array,    only: any_vals_less_than, any_vals_outside
+  use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_fluxes,        only: ty_fluxes
@@ -86,27 +86,27 @@ contains
     !
     ! Sizes and values of input arrays
     !
-    if(     size(mu0, 1)                                /=  ncol        ) &
+    if(.not. extents_are(mu0, ncol)) &
       error_msg = "rte_sw: mu0 inconsistently sized"
     if(any_vals_outside(mu0, 0._wp, 1._wp)) &
       error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
 
-    if(any([size(inc_flux, 1),    size(inc_flux, 2)]    /= [ncol, ngpt])) &
+    if(.not. extents_are(inc_flux, ncol, ngpt)) &
       error_msg = "rte_sw: inc_flux inconsistently sized"
     if(any_vals_less_than(inc_flux, 0._wp)) &
       error_msg = "rte_sw: one or more inc_flux < 0"
     if(present(inc_flux_dif)) then
-      if(any([size(inc_flux_dif, 1),    size(inc_flux_dif, 2)]    /= [ncol, ngpt])) &
+      if(.not. extents_are(inc_flux_dif, ncol, ngpt)) &
         error_msg = "rte_sw: inc_flux_dif inconsistently sized"
       if(any_vals_less_than(inc_flux_dif, 0._wp)) &
         error_msg = "rte_sw: one or more inc_flux_dif < 0"
     end if
 
-    if(any([size(sfc_alb_dir, 1), size(sfc_alb_dir, 2)] /= [nband, ncol])) &
+    if(.not. extents_are(sfc_alb_dir, nband, ncol)) &
       error_msg = "rte_sw: sfc_alb_dir inconsistently sized"
     if(any_vals_outside(sfc_alb_dir,  0._wp, 1._wp)) &
       error_msg = "rte_sw: sfc_alb_dir out of bounds [0,1]"
-    if(any([size(sfc_alb_dif, 1), size(sfc_alb_dif, 2)] /= [nband, ncol])) &
+    if(.not. extents_are(sfc_alb_dif, nband, ncol)) &
       error_msg = "rte_sw: sfc_alb_dif inconsistently sized"
     if(any_vals_outside(sfc_alb_dif,  0._wp, 1._wp)) &
       error_msg = "rte_sw: sfc_alb_dif out of bounds [0,1]"

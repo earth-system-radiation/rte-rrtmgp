@@ -79,8 +79,8 @@ before_install:
 - conda update --yes conda
 
 install:
-# conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
-- conda create --yes -n test python=3.7
+conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
+# conda create --yes -n test python=3.7
 - source activate test
 - conda install --yes urllib3 netcdf4 xarray dask
 

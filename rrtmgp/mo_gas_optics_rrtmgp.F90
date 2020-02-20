@@ -185,7 +185,7 @@ contains
   pure function get_ngas(this)
     ! return the number of gases registered in the spectral configuration
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    integer                                        :: get_ngas
+    integer                                 :: get_ngas
 
     get_ngas = size(this%gas_names)
   end function get_ngas
@@ -442,6 +442,10 @@ contains
       error_msg = "gas_optics(): array tlay has wrong size"
     if(.not. extents_are(plev, ncol, nlay+1)) &
       error_msg = "gas_optics(): array plev has wrong size"
+    if(optical_props%get_ncol() /= ncol .or. &
+       optical_props%get_nlay() /= nlay .or. &
+       optical_props%get_ngpt() /= ngpt)     &
+      error_msg = "gas_optics(): optical properties have the wrong extents"
     if(error_msg  /= '') return
 
     if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &

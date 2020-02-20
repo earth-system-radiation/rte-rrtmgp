@@ -41,8 +41,6 @@ if __name__ == '__main__':
         print("Dowloading reference data")
         os.makedirs(args.ref_dir, exist_ok=True)
         for v in vars:
-            print(construct_esgf_file(v))
-            print(os.path.join(args.ref_dir, v+rrtmgp_suffix))
             urllib.request.urlretrieve(construct_esgf_file(v), os.path.join(args.ref_dir, v+rrtmgp_suffix))
 
     tst = xr.open_mfdataset(os.path.join(     tst_dir, "r??" + rrtmgp_suffix), combine='by_coords')

@@ -81,8 +81,8 @@ jobs:
       # This module will unload some of the build modules, so do the checks separately
       module load netcdf-python
       cd examples/rfmip-clear-sky
-      python ./compare-to-reference.py --download --fail=2.e-4
+      python ./compare-to-reference.py --fail=7.e-4
       cd ../..
       cd examples/all-sky
-      python ./compare-to-reference.py --download
+      python ./compare-to-reference.py
     displayName: 'Check results'

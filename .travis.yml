@@ -64,6 +64,7 @@ before_install:
   fi
 
 # Install netcdf-fortran for PGI
+# git clone https://github.com/Unidata/netcdf-fortran.git
 - git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
 - cd netcdf-fortran
 - FC=$FC ./configure --prefix=${HOME}/netcdff
@@ -79,10 +80,10 @@ before_install:
 - conda update --yes conda
 
 install:
-conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
-# conda create --yes -n test python=3.7
+# conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
+- conda create --yes -n test python=3.7
 - source activate test
-- conda install --yes urllib3 netcdf4 xarray dask
+- conda install --yes urllib3 netcdf4 xarray dask scipy
 
 before_script:
 - export RRTMGP_ROOT=$PWD
@@ -102,7 +103,7 @@ script:
 - make clean
 - make || exit 1
 - python3 ./run-rfmip-examples.py
-- python3 ./compare-to-reference.py --fail=1.e-4
+- python3 ./compare-to-reference.py --fail=7.e-4
 - cd ../..
 # Build and run all-sky example
 - cd examples/all-sky || exit 1
@@ -124,7 +125,7 @@ script:
 - make clean
 - make || exit 1
 - python3 ./run-rfmip-examples.py
-- python3 ./compare-to-reference.py --fail=1.e-4
+- python3 ./compare-to-reference.py --fail=7.e-4
 - cd ../..
 # Build and run all-sky example
 - cd examples/all-sky || exit 1

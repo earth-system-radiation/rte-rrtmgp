@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # If a version of the file exists in the reference directory, no need to download (can be over-ridden)
     if (args.download_reference or not os.path.exists(ref_file)):
         os.makedirs(args.ref_dir, exist_ok=True)
-        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/wgCL7imbA0QRCEf/download", ref_file)
+        urllib.request.urlretrieve("https://owncloud.gwdg.de/index.php/s/OjbNzRTlXUk0G5w/download", ref_file)
     tst = xr.open_dataset(tst_file)
     ref = xr.open_dataset(ref_file)
 
@@ -42,8 +42,10 @@ if __name__ == '__main__':
         if np.any(np.isnan(tst.variables[v].values)):
             raise Exception("Some test values are missing. Now that is strange.")
 
-        diff = abs((tst-ref).variables[v].values)
-        avg  = 0.5*(tst+ref).variables[v].values
+        # express as (tst-ref).variables[v].values when replacing reference file
+        #   to have same number of columns
+        diff = abs((tst.variables[v]-ref.variables[v]).values)
+        avg  = 0.5*(tst.variables[v]+ref.variables[v]).values
         # Division raises a runtime warning when we divide by zero even if the
         #   values in those locations will be ignored.
         with np.errstate(divide='ignore', invalid='ignore'):

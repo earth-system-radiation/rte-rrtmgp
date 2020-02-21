@@ -2,7 +2,10 @@
 #
 # This script runs runs the RTE+RRTMGP all-sky examples
 #
-import os, subprocess, glob
+import os
+import shutil
+import subprocess
+import glob
 import argparse
 
 rte_rrtmgp_dir   = os.path.join("..", "..")
@@ -18,7 +21,9 @@ sw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "extensions", "cloud_optics"
 
 # In the local directory
 all_sky_exe_name = os.path.join(all_sky_dir, "rrtmgp_allsky")
+input_file       = os.path.join(all_sky_dir, "garand-atmos-1.nc")
 atmos_file       = os.path.join(all_sky_dir, "rrtmgp-allsky.nc")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Runs all-sky examples, resetting output.")
@@ -38,7 +43,7 @@ if __name__ == '__main__':
 
     os.chdir(all_sky_dir)
     # Remove cloudy-sky fluxes from the file containing the atmospheric profiles
-    subprocess.run(["git", "checkout", atmos_file])
+    shutil.copyfile(input_file, atmos_file)
     subprocess.run([all_sky_exe_name, atmos_file, lw_gas_coeffs_file, lw_clouds_coeff_file, ncol_str, nloops_str])
     subprocess.run([all_sky_exe_name, atmos_file, sw_gas_coeffs_file, sw_clouds_coeff_file, ncol_str, nloops_str])
 

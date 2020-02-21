@@ -64,6 +64,7 @@ before_install:
   fi
 
 # Install netcdf-fortran for PGI
+# git clone https://github.com/Unidata/netcdf-fortran.git
 - git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
 - cd netcdf-fortran
 - FC=$FC ./configure --prefix=${HOME}/netcdff
@@ -79,10 +80,10 @@ before_install:
 - conda update --yes conda
 
 install:
-conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
-# conda create --yes -n test python=3.7
+# conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
+- conda create --yes -n test python=3.7
 - source activate test
-- conda install --yes urllib3 netcdf4 xarray dask
+- conda install --yes urllib3 netcdf4 xarray dask scipy
 
 before_script:
 - export RRTMGP_ROOT=$PWD

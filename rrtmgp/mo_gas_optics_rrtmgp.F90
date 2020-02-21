@@ -128,10 +128,16 @@ module mo_gas_optics_rrtmgp
     real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (Planck temperatures,band)
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
     ! -----------------------------------------------------------------------------------
-    ! Solar source function spectral mapping
-    !   Allocated only when gas optics object is external-source
+    ! Solar source function spectral mapping with solar variability capability
+    !   Allocated  when gas optics object is external-source
+    !   n-solar-terms: quiet sun, facular brightening and sunspot dimming components
+    !   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
     !
-    real(wp), dimension(:), allocatable :: solar_src ! incoming solar irradiance(g-point)
+    real(wp), dimension(:), allocatable :: solar_source         ! incoming solar irradiance, computed from other three terms (g-point)
+    real(wp), dimension(:), allocatable :: solar_source_quiet   ! incoming solar irradiance, quiet sun term (g-point)
+    real(wp), dimension(:), allocatable :: solar_source_facular ! incoming solar irradiance, facular term (g-point)
+    real(wp), dimension(:), allocatable :: solar_source_sunspot ! incoming solar irradiance, sunspot term (g-point)
+
     !
     ! -----------------------------------------------------------------------------------
     ! Ancillary
@@ -153,6 +159,8 @@ module mo_gas_optics_rrtmgp
     procedure, public :: get_press_max
     procedure, public :: get_temp_min
     procedure, public :: get_temp_max
+    procedure, public :: set_solar_variability
+    procedure, public :: set_tsi
     ! Internal procedures
     procedure, private :: load_int
     procedure, private :: load_ext
@@ -356,7 +364,7 @@ contains
     !$acc parallel loop collapse(2)
     do igpt = 1,ngpt
        do icol = 1,ncol
-          toa_src(icol,igpt) = this%solar_src(igpt)
+          toa_src(icol,igpt) = this%solar_source(igpt)
        end do
     end do
     !$acc exit data copyout(toa_src)
@@ -600,6 +608,83 @@ contains
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
+  ! Compute the spectral solar source function adjusted to account for solar variability
+  !   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
+  ! as specified by the facular brightening (mg_index) and sunspot dimming (sb_index)
+  ! indices provided as input.
+  !
+  ! Users provide the NRLSSI2 facular ("Bremen") index and sunspot ("SPOT67") index.
+  !   Changing either of these indicies will change the total solar irradiance (TSI)
+  !   Code in extensions/mo_solar_variability may be used to compute the value of these
+  !   indices through an average solar cycle
+  ! Users may also specify the TSI, either alone or in conjunction with the facular and sunspot indices
+  !
+  !------------------------------------------------------------------------------------------
+  function set_solar_variability(this,                      &
+                                 mg_index, sb_index, tsi)   &
+                                 result(error_msg)
+    !
+    ! Updates the spectral distribution and, optionally,
+    !   the integrated value of the solar source function
+    !   Modifying either index will change the total solar irradiance
+    !
+    class(ty_gas_optics_rrtmgp), intent(inout) :: this
+    !
+    real(wp),           intent(in) :: mg_index, & ! facular brightening index (NRLSSI2 facular "Bremen" index)
+                                      sb_index    ! sunspot dimming index     (NRLSSI2 sunspot "SPOT67" index)
+    real(wp), optional, intent(in) :: tsi         ! total solar irradiance
+    character(len=128)             :: error_msg
+    ! ----------------------------------------------------------
+    integer :: igpt
+    real(wp), parameter :: a_offset = 0.1495954_wp
+    real(wp), parameter :: b_offset = 0.00066696_wp
+    ! ----------------------------------------------------------
+    error_msg = ""
+    if(mg_index < 0._wp) error_msg = 'mg_index out of range'
+    if(sb_index < 0._wp) error_msg = 'sb_index out of range'
+    if(error_msg /= "") return
+    !
+    ! Calculate solar source function for provided facular and sunspot indices
+    !
+    !$acc parallel loop
+    do igpt = 1, size(this%solar_source_quiet)
+      this%solar_source(igpt) = this%solar_source_quiet(igpt) + &
+                                (mg_index - a_offset) * this%solar_source_facular(igpt) + &
+                                (sb_index - b_offset) * this%solar_source_sunspot(igpt)
+    end do
+    !
+    ! Scale solar source to input TSI value
+    !
+    if (present(tsi)) error_msg = this%set_tsi(tsi)
+
+  end function set_solar_variability
+  !------------------------------------------------------------------------------------------
+  function set_tsi(this, tsi) result(error_msg)
+    !
+    ! Scale the solar source function without changing the spectral distribution
+    !
+    class(ty_gas_optics_rrtmgp), intent(inout) :: this
+    real(wp),                    intent(in   ) :: tsi ! user-specified total solar irradiance;
+    character(len=128)                         :: error_msg
+
+    real(wp) :: norm
+    ! ----------------------------------------------------------
+    error_msg = ""
+    if(tsi < 0._wp) then
+      error_msg = 'tsi out of range'
+    else
+      !
+      ! Scale the solar source function to the input tsi
+      !
+      !$acc kernels
+      norm = 1._wp/sum(this%solar_source(:))
+      this%solar_source(:) = this%solar_source(:) * tsi * norm
+      !$acc end kernels
+    end if
+
+  end function set_tsi
+  !------------------------------------------------------------------------------------------
+  !
   ! Compute Planck source functions at layer centers and levels
   !
   function source(this,                               &
@@ -805,9 +890,11 @@ contains
                     scale_by_complement_upper, &
                     kminor_start_lower, &
                     kminor_start_upper, &
-                    solar_src, rayl_lower, rayl_upper)  result(err_message)
+                    solar_quiet, solar_facular, solar_sunspot, &
+                    tsi_default, mg_default, sb_default, &
+                    rayl_lower, rayl_upper)  result(err_message)
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
-    class(ty_gas_concs),                intent(in   ) :: available_gases ! Which gases does the host model have available?
+    class(ty_gas_concs),         intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*), &
               dimension(:),       intent(in) :: gas_names
     integer,  dimension(:,:,:),   intent(in) :: key_species
@@ -827,22 +914,28 @@ contains
     integer,  dimension(:,:),     intent(in) :: &
                                                 minor_limits_gpt_lower, &
                                                 minor_limits_gpt_upper
-    logical(wl), dimension(:),    intent(in) :: &
+    logical(wl),    dimension(:), intent(in) :: &
                                                 minor_scales_with_density_lower, &
                                                 minor_scales_with_density_upper
-    character(len=*),   dimension(:),intent(in) :: &
+    character(len=*),dimension(:),intent(in) :: &
                                                 scaling_gas_lower, &
                                                 scaling_gas_upper
-    logical(wl), dimension(:),    intent(in) :: &
+    logical(wl),    dimension(:), intent(in) :: &
                                                 scale_by_complement_lower, &
                                                 scale_by_complement_upper
-    integer,  dimension(:),       intent(in) :: &
+    integer,        dimension(:), intent(in) :: &
                                                 kminor_start_lower, &
                                                 kminor_start_upper
-    real(wp), dimension(:),       intent(in), allocatable :: solar_src
-                                                            ! allocatable status to change when solar source is present in file
-    real(wp), dimension(:,:,:), intent(in), allocatable :: rayl_lower, rayl_upper
+    real(wp),       dimension(:), intent(in) :: solar_quiet, &
+                                                solar_facular, &
+                                                solar_sunspot
+    real(wp),                     intent(in) :: tsi_default, &
+                                                mg_default, sb_default
+    real(wp), dimension(:,:,:),   intent(in), &
+                                 allocatable :: rayl_lower, rayl_upper
     character(len = 128) err_message
+
+    integer :: ngpt
     ! ----
     !$acc enter data create(this)
     err_message = init_abs_coeffs(this, &
@@ -865,14 +958,20 @@ contains
                                   kminor_start_lower, &
                                   kminor_start_upper, &
                                   rayl_lower, rayl_upper)
+    if(err_message /= "") return
     !
-    ! Solar source table init
+    ! Spectral solar irradiance terms init
     !
-    allocate(this%solar_src(size(solar_src)))
-    !$acc enter data create(this%solar_src)
+    ngpt = size(solar_quiet)
+    allocate(this%solar_source_quiet(ngpt), this%solar_source_facular(ngpt), &
+             this%solar_source_sunspot(ngpt), this%solar_source(ngpt))
+    !$acc enter data create(this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
     !$acc kernels
-    this%solar_src = solar_src
+    this%solar_source_quiet   = solar_quiet
+    this%solar_source_facular = solar_facular
+    this%solar_source_sunspot = solar_sunspot
     !$acc end kernels
+    err_message = this%set_solar_variability(mg_default, sb_default)
   end function load_ext
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1174,7 +1273,7 @@ contains
   pure function source_is_external(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
     logical                          :: source_is_external
-    source_is_external = allocated(this%solar_src)
+    source_is_external = allocated(this%solar_source)
   end function source_is_external
 
   !--------------------------------------------------------------------------------------------------------------------

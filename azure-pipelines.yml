@@ -30,7 +30,6 @@ jobs:
     clean: all
 
   steps:
-
   - script: |
       set -e
 
@@ -85,5 +84,5 @@ jobs:
       python ./compare-to-reference.py --download --fail=1.e-4
       cd ../..
       cd examples/all-sky
-      python ./compare-to-reference.py --download 
+      python ./compare-to-reference.py --download
     displayName: 'Check results'

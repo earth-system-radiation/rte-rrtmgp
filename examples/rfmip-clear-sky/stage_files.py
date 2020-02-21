@@ -2,13 +2,11 @@
 #
 # This script downloads and creates files needed for the RFMIP off-line test cases
 #
-import os, subprocess, glob
-from shutil import copy2
+import os
+import subprocess
+import glob
 import urllib.request
-# Will be needed by scripts to generate output file templates
-from netCDF4 import Dataset
-import time, uuid, argparse
-import json
+# This script invokes templ_scr_url, which uses Python modules time, uuid, argparse, netCDF4
 
 #
 # Download and/or create input files and output template files

@@ -42,8 +42,10 @@ if __name__ == '__main__':
         if np.any(np.isnan(tst.variables[v].values)):
             raise Exception("Some test values are missing. Now that is strange.")
 
-        diff = abs((tst-ref).variables[v].values)
-        avg  = 0.5*(tst+ref).variables[v].values
+        # express as (tst-ref).variables[v].values when replacing reference file
+        #   to have same number of columns
+        diff = abs((tst.variables[v]-ref.variables[v]).values)
+        avg  = 0.5*(tst.variables[v]+ref.variables[v]).values
         # Division raises a runtime warning when we divide by zero even if the
         #   values in those locations will be ignored.
         with np.errstate(divide='ignore', invalid='ignore'):

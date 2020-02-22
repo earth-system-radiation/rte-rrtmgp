@@ -71,6 +71,7 @@ jobs:
       make -C build/ -j 8
       make -C examples/all-sky clean
       make -C examples/all-sky -j 8
+      make -C examples/rfmip-clear-sky clean
       make -C examples/rfmip-clear-sky -j 8
     displayName: 'Make'
   - script: |

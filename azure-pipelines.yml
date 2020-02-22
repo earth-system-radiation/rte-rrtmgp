@@ -6,18 +6,18 @@ jobs:
       pgi_19_10_gpu:
         compiler_module: PGI/19.10
         accel_module: cudatoolkit
-        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
         RTE_KERNELS: openacc
       pgi_19_9_gpu:
         compiler_module: PGI/19.9
         accel_module: cudatoolkit
-        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Minfo -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
         RTE_KERNELS: openacc
       pgi_default_gpu:
         compiler_module: pgi
         accel_module: craype-accel-nvidia60
         # Generic accelerator flag
-        FCFLAGS: "-O3 -acc                   -Minfo -Mallocatable=03 -gopt"
+        FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
         RTE_KERNELS: openacc
       pgi_19_10_cpu:
         compiler_module: PGI/19.10
@@ -74,7 +74,9 @@ jobs:
       export FC=ftn
       make -C build/ clean
       make -C build/ -j 8
+      make -C examples/all-sky clean
       make -C examples/all-sky -j 8
+      make -C examples/rfmip-clear-sky clean
       make -C examples/rfmip-clear-sky -j 8
     displayName: 'Make'
   - script: |

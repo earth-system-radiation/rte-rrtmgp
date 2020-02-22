@@ -72,7 +72,7 @@ jobs:
       export RRTMGP_ROOT=$PWD
       export RRTMGP_DIR=$PWD/build
       export FC=ftn
-      make -C clean
+      make -C build/ clean
       make -C build/ -j 8
       make -C examples/all-sky -j 8
       make -C examples/rfmip-clear-sky -j 8

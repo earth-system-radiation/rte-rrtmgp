@@ -75,7 +75,7 @@ contains
     logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
                                                                   ! Default is to use re-scaled longwave transport
     type(ty_source_func_lw), optional, intent(in   ) :: sourcesJac
-    class(ty_fluxes),        optional, intent(inout) :: fluxesJac   !  Array of perturbed ty_fluxes. 
+    class(ty_fluxes),        optional, intent(inout) :: fluxesJac   !  Array of perturbed ty_fluxes.
 
     character(len=128)                          :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
@@ -129,7 +129,7 @@ contains
       error_msg = "rte_lw: no space allocated for fluxes"
       return
     end if
-    if(xor(present(sourcesJac), present(fluxesJac) ) ) then
+    if(present(sourcesJac) .neqv. present(fluxesJac)) then
       error_msg = "rte_lw: sourcesJac and fluxesJac must be present at the same time"
       return
     end if
@@ -244,7 +244,7 @@ contains
                               gpt_flux_up, gpt_flux_dn, &
                               sourcesJac%sfc_source, gpt_flux_upJac)
         else
-         ! here we have to feed with a fake Jacobian 
+         ! here we have to feed with a fake Jacobian
           call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
                               optical_props%tau,                                                  &
@@ -253,7 +253,7 @@ contains
                               gpt_flux_up, gpt_flux_dn, &
                               sources%sfc_source, gpt_flux_upJac)
 
-       endif   
+       endif
        !$acc exit data delete(optical_props%tau)
 
       class is (ty_optical_props_2str)
@@ -298,7 +298,7 @@ contains
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
     if (error_msg /= '') return
-    
+
     if (present(fluxesJac)) then
       gpt_flux_dn=0.
       error_msg = fluxesJac%reduce(gpt_flux_upJac, gpt_flux_dn, optical_props, top_at_1)

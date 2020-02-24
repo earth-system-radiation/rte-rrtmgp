@@ -127,6 +127,7 @@ module mo_gas_optics_rrtmgp
                                                                ! planck_frac(g-point, eta, pressure, temperature)
     real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (Planck temperatures,band)
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
+    real(wp), dimension(:,:),     allocatable :: optimal_angle_fit
     ! -----------------------------------------------------------------------------------
     ! Solar source function spectral mapping with solar variability capability
     !   Allocated  when gas optics object is external-source
@@ -159,6 +160,7 @@ module mo_gas_optics_rrtmgp
     procedure, public :: get_press_max
     procedure, public :: get_temp_min
     procedure, public :: get_temp_max
+    procedure, public :: compute_optimal_angles
     procedure, public :: set_solar_variability
     procedure, public :: set_tsi
     ! Internal procedures
@@ -802,7 +804,9 @@ contains
                     scale_by_complement_upper,                      &
                     kminor_start_lower,                             &
                     kminor_start_upper,                             &
-                    totplnk, planck_frac, rayl_lower, rayl_upper) result(err_message)
+                    totplnk, planck_frac,                           &
+                    rayl_lower, rayl_upper,                         &
+                    optimal_angle_fit) result(err_message)
     class(ty_gas_optics_rrtmgp),     intent(inout) :: this
     class(ty_gas_concs),                    intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*),   dimension(:),       intent(in   ) :: gas_names
@@ -818,6 +822,8 @@ contains
     real(wp),           dimension(:,:,:,:), intent(in   ) :: planck_frac
     real(wp),           dimension(:,:,:),   intent(in   ), &
                                               allocatable :: rayl_lower, rayl_upper
+    real(wp),           dimension(:,:),     intent(in   ), &
+                                              optional    :: optimal_angle_fit
     character(len=*),   dimension(:),       intent(in   ) :: gas_minor,identifier_minor
     character(len=*),   dimension(:),       intent(in   ) :: minor_gases_lower, &
                                                              minor_gases_upper
@@ -863,6 +869,19 @@ contains
     this%totplnk = totplnk
     this%planck_frac = planck_frac
     !$acc end kernels
+
+    !
+    ! Optimal angle fit coefficients
+    !
+    if (present(optimal_angle_fit)) then
+      !$acc enter data create(this%optimal_angle_fit)
+      !$acc kernels
+      this%optimal_angle_fit = optimal_angle_fit
+      !$acc end kernels
+    else
+      if(allocated(this%optimal_angle_fit)) deallocate(this%optimal_angle_fit )
+    end if
+
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
     !   Planck grid and the Planck grid is equally spaced
@@ -1380,6 +1399,64 @@ contains
     end do
     !$acc exit data delete (g0)
   end function get_col_dry
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
+  !
+  function compute_optimal_angles(this, optical_props, optimal_angles) result(err_msg)
+    ! input
+    class(ty_gas_optics_rrtmgp),  intent(in   ) :: this
+    class(ty_optical_props_arry), intent(in   ) :: optical_props
+    real(wp), dimension(:,:),     intent(  out)  :: optimal_angles
+    character(len=128)                           :: err_msg
+    !----------------------------
+    integer  :: ncol, nlay, ngpt, nbnd
+    integer  :: icol, ilay, igpt, bnd
+    real(wp) :: t, trans_total(optical_props%get_ncol(), optical_props%get_ngpt())
+    !----------------------------
+    ncol = optical_props%get_ncol()
+    nlay = optical_props%get_nlay()
+    ngpt = optical_props%get_ngpt()
+    nbnd = optical_props%get_nband()
+
+    err_msg=""
+    if(.not. this%gpoints_are_equal(optical_props)) &
+      err_msg = "gas_optics%compute_optimal_angles: optical_props has different spectral discretization than gas_optics"
+    if(.not. extents_are(optimal_angles, ncol, ngpt)) &
+      err_msg = "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
+    if (err_msg /=  "") return
+
+    !
+    ! column transmissivity
+    !
+    !$acc enter data create(trans_total)
+    !$acc parallel loop gang vector collapse(2)
+    do icol = 1, ncol
+      do igpt = 1, ngpt
+        !
+        ! Column transmissivity
+        !
+        t = 0._wp
+        do ilay = 1, nlay
+          t = t + optical_props%tau(icol,ilay,igpt)
+        end do
+        trans_total(icol,igpt) = exp(-t)
+      end do
+    end do
+
+    !$acc parallel loop gang vector collapse(2)
+    do icol = 1, ncol
+      do igpt = 1, ngpt
+        !
+        ! Optimal transport angle is a linear fit to column transmissivity
+        !
+        bnd = optical_props%gpt2band(igpt)
+        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total(ilay,igpt) + &
+                                  this%optimal_angle_fit(2,bnd)
+      end do
+    end do
+    !$acc exit data delete(trans_total)
+  end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Internal procedures

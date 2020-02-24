@@ -74,6 +74,8 @@ contains
     real(wp)                                  :: tsi_default, mg_default, sb_default
     real(wp), dimension(:,:    ), allocatable :: totplnk
     real(wp), dimension(:,:,:,:), allocatable :: planck_frac
+    real(wp), dimension(:,:)    , allocatable :: optimal_angle_fit
+
     ! -----------------
     !
     ! Book-keeping variables
@@ -93,7 +95,8 @@ contains
                nminor_absorber_intervals_upper, &
                ncontributors_lower, &
                ncontributors_upper, &
-               ninternalSourcetemps
+               ninternalSourcetemps, &
+               nfit_coeffs
     ! --------------------------------------------------
     !
     ! How big are the various arrays?
@@ -118,6 +121,8 @@ contains
                       = get_dim_size(ncid,'temperature_Planck')
     ncontributors_lower = get_dim_size(ncid,'contributors_lower')
     ncontributors_upper = get_dim_size(ncid,'contributors_upper')
+    nfit_coeffs         = get_dim_size(ncid,'fit_coeffs') ! Will be 0 for SW
+
     ! -----------------
     !
     ! Read the many arrays
@@ -178,6 +183,7 @@ contains
       !
       totplnk     = read_field(ncid, 'totplnk', ninternalSourcetemps, nbnds)
       planck_frac = read_field(ncid, 'plank_fraction', ngpts, nmixingfracs, npress+1, ntemps)
+      optimal_angle_fit = read_field(ncid, 'optimal_angle_fit', nfit_coeffs, nbnds)
       call stop_on_err(kdist%load(available_gases, &
                                   gas_names,   &
                                   key_species, &
@@ -201,7 +207,8 @@ contains
                                   kminor_start_lower, &
                                   kminor_start_upper, &
                                   totplnk, planck_frac,       &
-                                  rayl_lower, rayl_upper))
+                                  rayl_lower, rayl_upper, &
+                                  optimal_angle_fit))
     else
       !
       ! Solar source doesn't have an dependencies yet

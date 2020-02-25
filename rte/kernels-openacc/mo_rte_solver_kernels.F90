@@ -1264,8 +1264,9 @@ contains
     ! Local variables, WITH g-point dependency
     real(wp), dimension(ncol,nlay,ngpt) :: tau_loc, &  ! path length (tau/mu)
                                              trans       ! transmissivity  = exp(-tau)
-    real(wp), dimension(ncol,nlay,ngpt) :: source_dn, source_up, dummy
+    real(wp), dimension(ncol,nlay,ngpt) :: source_dn, source_up
     real(wp), dimension(ncol,     ngpt) :: source_sfc, sfc_albedo
+    real(wp), dimension(ncol,nlay+1,ngpt) :: dummy
 
     real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 

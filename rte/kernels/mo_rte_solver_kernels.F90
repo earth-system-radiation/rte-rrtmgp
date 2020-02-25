@@ -1014,7 +1014,7 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
   real(wp), dimension(ncol,nlay) :: source_dn, source_up
   real(wp), dimension(ncol     ) :: source_sfc, sfc_albedo
   real(wp), dimension(ncol,nlay) :: An, Cn
-  real(wp), dimension(ncol,nlay) :: dummy
+  real(wp), dimension(ncol,nlay+1) :: dummy
 
   real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
@@ -1068,11 +1068,13 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
     ! Transport
     !
     !  compute no-scattering fluxes
+    ! print *,'lw_solver_1rescl:: lw_transport_noscat'
     call lw_transport_noscat(ncol, nlay, top_at_1,  &
                              tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up(:,:,igpt), radn_dn(:,:,igpt), &
                              source_sfc, dummy)
 
+    ! print *,'lw_solver_1rescl:: lw_transport_noscat DONE'
     !  make adjustment
     call lw_transport_1rescl(ncol, nlay, top_at_1, trans, &
                              sfc_albedo, source_dn, source_up, source_sfc, &
@@ -1140,22 +1142,25 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   !   convert flux at top of domain to intensity assuming azimuthal isotropy
   !
   radn_dn(1:ncol, top_level, 1:ngpt)  = fluxTOA(1:ncol, 1:ngpt) / weight
-
+  print *, 'lw_solver_1rescl_GaussQuad:: lw_solver_1rescl imu=1'
   call lw_solver_1rescl(ncol, nlay, ngpt, &
                         top_at_1, Ds_ncol, tauLoc, scaling, &
                         lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                         flux_up, flux_dn)
 
+  print *, 'lw_solver_1rescl_GaussQuad:: lw_solver_1rescl imu=1 DONE'
   flux_up = flux_up * weight
   flux_dn = flux_dn * weight
 
   do imu = 2, nmus
+    print *, 'lw_solver_1rescl_GaussQuad:: imu=', imu
     Ds_ncol(:,:) = Ds(imu)
     weight = 2._wp*pi*weights(imu)
     ! Transport is for intensity
     !   convert flux at top of domain to intensity assuming azimuthal isotropy
     !
     radn_dn(1:ncol, top_level, 1:ngpt)  = fluxTOA(1:ncol, 1:ngpt) / weight
+    print *, 'lw_solver_1rescl_GaussQuad:: lw_solver_1rescl imu=', imu
     call lw_solver_1rescl(ncol, nlay, ngpt, &
                           top_at_1, Ds_ncol, tauLoc, scaling, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &

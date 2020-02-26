@@ -503,6 +503,7 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
+    col_dry_wk => col_dry_arr
     !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
@@ -1081,10 +1082,6 @@ contains
     !   by the host model
     !
     ngas = count(gas_is_present)
-    !
-    ! Initialize the gas optics object, keeping only those gases known to the
-    !   gas optics and also present in the host model
-    !
     this%gas_names = pack(gas_names,mask=gas_is_present)
 
     allocate(vmr_ref_red(size(vmr_ref,dim=1),0:ngas, &

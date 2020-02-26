@@ -1410,7 +1410,7 @@ contains
     real(wp), dimension(:,:),     intent(  out)  :: optimal_angles
     character(len=128)                           :: err_msg
     !----------------------------
-    integer  :: ncol, nlay, ngpt, nbnd
+    integer  :: ncol, nlay, ngpt
     integer  :: icol, ilay, igpt, bnd
     real(wp) :: t, trans_total(optical_props%get_ncol(), optical_props%get_ngpt())
     !----------------------------

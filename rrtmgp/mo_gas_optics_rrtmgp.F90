@@ -1417,7 +1417,6 @@ contains
     ncol = optical_props%get_ncol()
     nlay = optical_props%get_nlay()
     ngpt = optical_props%get_ngpt()
-    nbnd = optical_props%get_nband()
 
     err_msg=""
     if(.not. this%gpoints_are_equal(optical_props)) &

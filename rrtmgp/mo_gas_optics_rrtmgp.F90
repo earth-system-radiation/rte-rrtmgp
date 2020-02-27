@@ -127,7 +127,11 @@ module mo_gas_optics_rrtmgp
                                                                ! planck_frac(g-point, eta, pressure, temperature)
     real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (Planck temperatures,band)
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
-    real(wp), dimension(:,:),     allocatable :: optimal_angle_fit
+    real(wp), dimension(:,:),     allocatable :: optimal_angle_fit ! coefficients of linear function
+                                                                   ! of vertical path clear-sky transmittance that is used to
+                                                                   ! determine the secant of single angle used for the
+                                                                   ! no-scattering calculation, 
+                                                                   ! optimal_angle_fit(coefficient, band)
     ! -----------------------------------------------------------------------------------
     ! Solar source function spectral mapping with solar variability capability
     !   Allocated  when gas optics object is external-source

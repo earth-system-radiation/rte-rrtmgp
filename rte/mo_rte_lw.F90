@@ -188,7 +188,7 @@ contains
     if (present(lw_Ds)) then
       if(.not. extents_are(lw_Ds, ncol, ngpt)) &
         error_msg = "rte_lw: lw_Ds inconsistently sized"
-      if(.not. any_vals_less_than(lw_Ds, 0._wp)) &
+      if(any_vals_less_than(lw_Ds, 0._wp)) &
         error_msg = "rte_lw: one pr more values of lw_Ds < 0."
       if(len_trim(error_msg) > 0) return
     end if

@@ -130,7 +130,7 @@ module mo_gas_optics_rrtmgp
     real(wp), dimension(:,:),     allocatable :: optimal_angle_fit ! coefficients of linear function
                                                                    ! of vertical path clear-sky transmittance that is used to
                                                                    ! determine the secant of single angle used for the
-                                                                   ! no-scattering calculation, 
+                                                                   ! no-scattering calculation,
                                                                    ! optimal_angle_fit(coefficient, band)
     ! -----------------------------------------------------------------------------------
     ! Solar source function spectral mapping with solar variability capability
@@ -826,8 +826,7 @@ contains
     real(wp),           dimension(:,:,:,:), intent(in   ) :: planck_frac
     real(wp),           dimension(:,:,:),   intent(in   ), &
                                               allocatable :: rayl_lower, rayl_upper
-    real(wp),           dimension(:,:),     intent(in   ), &
-                                              optional    :: optimal_angle_fit
+    real(wp),           dimension(:,:),     intent(in   ) :: optimal_angle_fit
     character(len=*),   dimension(:),       intent(in   ) :: gas_minor,identifier_minor
     character(len=*),   dimension(:),       intent(in   ) :: minor_gases_lower, &
                                                              minor_gases_upper
@@ -866,25 +865,15 @@ contains
                                   rayl_lower, rayl_upper)
     ! Planck function tables
     !
-    allocate(this%totplnk    (size(totplnk,    1), size(totplnk,   2)), &
-             this%planck_frac(size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)) )
+    allocate(this%totplnk          (size(totplnk,    1), size(totplnk,   2)), &
+             this%planck_frac      (size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)), &
+             this%optimal_angle_fit(size(optimal_angle_fit,    1), size(optimal_angle_fit,   2)))
     !$acc enter data create(this%totplnk, this%planck_frac)
     !$acc kernels
     this%totplnk = totplnk
     this%planck_frac = planck_frac
+    this%optimal_angle_fit = optimal_angle_fit
     !$acc end kernels
-
-    !
-    ! Optimal angle fit coefficients
-    !
-    if (present(optimal_angle_fit)) then
-      !$acc enter data create(this%optimal_angle_fit)
-      !$acc kernels
-      this%optimal_angle_fit = optimal_angle_fit
-      !$acc end kernels
-    else
-      if(allocated(this%optimal_angle_fit)) deallocate(this%optimal_angle_fit )
-    end if
 
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
@@ -1416,7 +1405,7 @@ contains
     !----------------------------
     integer  :: ncol, nlay, ngpt
     integer  :: icol, ilay, igpt, bnd
-    real(wp) :: t, trans_total(optical_props%get_ncol(), optical_props%get_ngpt())
+    real(wp) :: t, trans_total
     !----------------------------
     ncol = optical_props%get_ncol()
     nlay = optical_props%get_nlay()
@@ -1440,24 +1429,21 @@ contains
         ! Column transmissivity
         !
         t = 0._wp
+        trans_total = 0._wp
         do ilay = 1, nlay
           t = t + optical_props%tau(icol,ilay,igpt)
         end do
-        trans_total(icol,igpt) = exp(-t)
-      end do
-    end do
-
-    !$acc parallel loop gang vector collapse(2)
-    do icol = 1, ncol
-      do igpt = 1, ngpt
+        trans_total = exp(-t)
         !
         ! Optimal transport angle is a linear fit to column transmissivity
         !
         bnd = optical_props%gpt2band(igpt)
-        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total(ilay,igpt) + &
-                                  this%optimal_angle_fit(2,bnd)
+        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
+                                    this%optimal_angle_fit(2,bnd)
       end do
     end do
+
+    !$acc parallel loop gang vector collapse(2)
     !$acc exit data delete(trans_total)
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------

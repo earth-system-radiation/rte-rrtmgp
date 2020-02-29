@@ -5,30 +5,41 @@ jobs:
     matrix:
       pgi_19_9_gpu:
         compiler_module: PGI/19.9
+        PrgEnv: PrgEnv-pgi
         accel_module: cudatoolkit
         FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
         RTE_KERNELS: openacc
       pgi_default_gpu:
         compiler_module: pgi
+        PrgEnv: PrgEnv-pgi
         accel_module: craype-accel-nvidia60
         # Generic accelerator flag
         FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
         RTE_KERNELS: openacc
       pgi_19_10_cpu:
         compiler_module: PGI/19.10
+        PrgEnv: PrgEnv-pgi
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
       pgi_19_9_cpu:
         compiler_module: PGI/19.9
+        PrgEnv: PrgEnv-pgi
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
       pgi_default_cpu:
         compiler_module: pgi
+        PrgEnv: PrgEnv-pgi
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+      intel_default_cpu:
+        compiler_module: intel
+        PrgEnv: PrgEnv-intel
+        accel_module:
+        # Error checking flags
+        FCFLAGS: "-m64 -g  -traceback -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f03"
     maxParallel: 2
 
   workspace:
@@ -41,7 +52,7 @@ jobs:
       echo "
       export PATH=$CRAY_BINUTILS_BIN:$PATH
       module load daint-gpu
-      module swap PrgEnv-cray PrgEnv-pgi
+      module swap PrgEnv-cray $(PrgEnv)
       module load cray-netcdf cray-hdf5
       module swap pgi $(compiler_module)
       module load $(accel_module)

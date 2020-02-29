@@ -304,8 +304,8 @@ contains
       error_msg = fluxesJac%reduce(gpt_flux_upJac, gpt_flux_dn, optical_props, top_at_1)
       !$acc exit data delete(sourcesJac%sfc_source, sourcesJac)
     endif
-    deallocate(gpt_flux_upJac)
     !$acc exit data delete(gpt_flux_upJac)
+    deallocate(gpt_flux_upJac)
 
     !$acc exit data delete(sfc_emis_gpt)
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)

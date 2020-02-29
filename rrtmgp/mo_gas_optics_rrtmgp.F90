@@ -503,6 +503,7 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
+    col_dry_wk => col_dry_arr
     !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
@@ -715,7 +716,7 @@ contains
     real(wp), dimension(ncol,nlay+1),      intent(in   ), &
                                       optional, target :: tlev          ! level temperatures [K]
     class(ty_source_func_lw    ),          intent(inout), &
-                                      optional, target :: sourcesJac          ! perturbed sources
+                                      optional         :: sourcesJac          ! perturbed sources
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     integer                                      :: icol, ilay, igpt
@@ -796,6 +797,7 @@ contains
     !$acc exit data copyout(sourcesJac)
     endif    
 
+    !$acc exit data delete(sfc_source_Jac)
     !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
     !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc exit data copyout(sources)

@@ -216,7 +216,7 @@ contains
   function gas_optics_int(this,                             &
                           play, plev, tlay, tsfc, gas_desc, &
                           optical_props, sources,           &
-                          col_dry, tlev) result(error_msg)
+                          col_dry, tlev, sourcesJac) result(error_msg)
     ! inputs
     class(ty_gas_optics_rrtmgp), intent(in) :: this
     real(wp), dimension(:,:), intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
@@ -234,6 +234,8 @@ contains
     real(wp), dimension(:,:),   intent(in   ), &
                            optional, target :: col_dry, &  ! Column dry amount; dim(ncol,nlay)
                                                tlev        ! level temperatures [K]; (ncol,nlay+1)
+    class(ty_source_func_lw    ), intent(inout), &
+                                    optional  ::  sourcesJac       ! perturbed Planck sources
     ! ----------------------------------------------------------
     ! Local variables
     ! Interpolation coefficients for use in source function
@@ -288,6 +290,14 @@ contains
     if(error_msg  /= '') return
 
     !
+    !   output extents
+    !
+    if (present(sourcesJac)) then
+      if(any([sourcesJac%get_ncol(), sourcesJac%get_ngpt()] /= [ncol, ngpt])) &
+        error_msg = "gas_optics%gas_optics: sourcesJac function arrays inconsistently sized"
+      if(error_msg  /= '') return
+    endif
+    !
     ! Interpolate source function
     !
     error_msg = source(this,                               &
@@ -295,7 +305,7 @@ contains
                        play, plev, tlay, tsfc,             &
                        jtemp, jpress, jeta, tropo, fmajor, &
                        sources,                            &
-                       tlev)
+                       tlev, sourcesJac)
     !$acc exit data delete(tsfc,tlev)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
@@ -501,6 +511,7 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
+    col_dry_wk => col_dry_arr
     !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
@@ -692,7 +703,8 @@ contains
                   play, plev, tlay, tsfc,             &
                   jtemp, jpress, jeta, tropo, fmajor, &
                   sources,                            & ! Planck sources
-                  tlev)                               & ! optional input
+                  tlev,                               & ! optional input
+                  sourcesJac)                         & ! optional input
                   result(error_msg)
     ! inputs
     class(ty_gas_optics_rrtmgp),    intent(in ) :: this
@@ -711,11 +723,15 @@ contains
     class(ty_source_func_lw    ),          intent(inout) :: sources
     real(wp), dimension(ncol,nlay+1),      intent(in   ), &
                                       optional, target :: tlev          ! level temperatures [K]
+    class(ty_source_func_lw    ),          intent(inout), &
+                                      optional         :: sourcesJac          ! perturbed sources
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     integer                                      :: icol, ilay, igpt
     real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
     real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
+    real(wp), dimension(ngpt,     ncol)          :: sfc_source_Jac
+
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
     real(wp), dimension(:,:),            pointer :: tlev_wk
@@ -758,13 +774,15 @@ contains
     !$acc enter data copyin(sources)
     !$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
+    !$acc enter data create(sfc_source_Jac)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
+                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t, &
+                sfc_source_Jac)
     !$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
@@ -774,6 +792,23 @@ contains
     call reorder123x321(lay_source_t, sources%lay_source)
     call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
     call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
+    !
+    ! Transposition of a 2D array, for which we don't have a routine in mo_rrtmgp_util_reorder.
+    !
+    if (present(sourcesJac)) then
+      !$acc enter data copyin(sourcesJac)
+      !$acc enter data create(sourcesJac%sfc_source)
+      !$acc parallel loop collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          sourcesJac%sfc_source(icol,igpt) = sfc_source_Jac(igpt,icol)
+        end do
+      end do
+    !$acc exit data copyout(sourcesJac%sfc_source)
+    !$acc exit data copyout(sourcesJac)
+    endif
+
+    !$acc exit data delete(sfc_source_Jac)
     !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
     !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc exit data copyout(sources)

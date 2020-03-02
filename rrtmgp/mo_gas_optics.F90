@@ -72,7 +72,7 @@ module mo_gas_optics
     function gas_optics_int_abstract(this,                             &
                                      play, plev, tlay, tsfc, gas_desc, &
                                      optical_props, sources,           &
-                                     col_dry, tlev) result(error_msg)
+                                     col_dry, tlev, sourcesJac) result(error_msg)
       import ty_gas_optics, wp, ty_gas_concs, ty_optical_props_arry, ty_source_func_lw
       class(ty_gas_optics),     intent(in   ) :: this
       real(wp), dimension(:,:), intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
@@ -88,6 +88,8 @@ module mo_gas_optics
       real(wp), dimension(:,:), intent(in   ), &
                             optional, target :: col_dry, &  ! Column dry amount; dim(ncol,nlay)
                                                    tlev        ! level temperatures [K]l (ncol,nlay+1)
+      class(ty_source_func_lw    ), intent(inout), &
+                                    optional  ::  sourcesJac       ! perturbed Planck sources
     end function gas_optics_int_abstract
     !--------------------------------------------------------------------------------------------------------------------
     function logical_abstract(this)

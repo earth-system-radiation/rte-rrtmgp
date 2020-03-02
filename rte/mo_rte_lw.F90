@@ -57,7 +57,8 @@ contains
   function rte_lw(optical_props, top_at_1, &
                   sources, sfc_emis,       &
                   fluxes,                  &
-                  inc_flux, n_gauss_angles, use_2stream) result(error_msg)
+                  inc_flux, n_gauss_angles, use_2stream, &
+                  sourcesJac, fluxesJac) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
@@ -73,6 +74,9 @@ contains
                                                                   ! (no-scattering solution)
     logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
                                                                   ! Default is to use re-scaled longwave transport
+    type(ty_source_func_lw), optional, intent(in   ) :: sourcesJac
+    class(ty_fluxes),        optional, intent(inout) :: fluxesJac   !  Array of perturbed ty_fluxes.
+
     character(len=128)                          :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
     !
@@ -84,6 +88,7 @@ contains
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
     logical :: using_2stream
+    real(wp), dimension(:,:,:), allocatable :: gpt_flux_upJac, gpt_flux_dnJac
     ! --------------------------------------------------
     !
     ! Weights and angle secants for first order (k=1) Gaussian quadrature.
@@ -124,6 +129,14 @@ contains
       error_msg = "rte_lw: no space allocated for fluxes"
       return
     end if
+    if(present(sourcesJac) .neqv. present(fluxesJac)) then
+      error_msg = "rte_lw: sourcesJac and fluxesJac must be present at the same time"
+      return
+    end if
+    if ((present(sourcesJac))) then
+      if(any([sourcesJac%get_ncol(), sourcesJac%get_nlay(), sourcesJac%get_ngpt()]  /= [ncol, nlay, ngpt])) &
+        error_msg = "rte_lw: sourcesJac and optical properties inconsistently sized"
+    endif
 
     !
     ! Source functions
@@ -188,6 +201,13 @@ contains
     !$acc enter data copyin(optical_props)
     !$acc enter data create(gpt_flux_dn, gpt_flux_up)
     !$acc enter data create(sfc_emis_gpt)
+
+    allocate(gpt_flux_upJac (ncol, nlay+1, ngpt))
+    !$acc enter data create(gpt_flux_upJac)
+    if (present(fluxesJac)) then
+      !$acc enter data copyin(sourcesJac, sourcesJac%sfc_source)
+    endif
+
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     !
     !   Upper boundary condition
@@ -214,13 +234,28 @@ contains
         !$acc enter data copyin(optical_props%tau)
         error_msg =  optical_props%validate()
         if(len_trim(error_msg) > 0) return
-        call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
+
+        if (present(sourcesJac)) then
+          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
                               optical_props%tau,                                                  &
                               sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                               sfc_emis_gpt, sources%sfc_source,  &
-                              gpt_flux_up, gpt_flux_dn)
-        !$acc exit data delete(optical_props%tau)
+                              gpt_flux_up, gpt_flux_dn, &
+                              sourcesJac%sfc_source, gpt_flux_upJac)
+        else
+         ! here we have to feed with a fake Jacobian
+          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                              n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
+                              optical_props%tau,                                                  &
+                              sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                              sfc_emis_gpt, sources%sfc_source,  &
+                              gpt_flux_up, gpt_flux_dn, &
+                              sources%sfc_source, gpt_flux_upJac)
+
+       endif
+       !$acc exit data delete(optical_props%tau)
+
       class is (ty_optical_props_2str)
         if (using_2stream) then
           !
@@ -262,6 +297,16 @@ contains
     ! ...and reduce spectral fluxes to desired output quantities
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
+    if (error_msg /= '') return
+
+    if (present(fluxesJac)) then
+      gpt_flux_dn=0.
+      error_msg = fluxesJac%reduce(gpt_flux_upJac, gpt_flux_dn, optical_props, top_at_1)
+      !$acc exit data delete(sourcesJac%sfc_source, sourcesJac)
+    endif
+    !$acc exit data delete(gpt_flux_upJac)
+    deallocate(gpt_flux_upJac)
+
     !$acc exit data delete(sfc_emis_gpt)
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
     !$acc exit data delete(optical_props)

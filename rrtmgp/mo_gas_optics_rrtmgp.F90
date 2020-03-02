@@ -293,7 +293,7 @@ contains
     !   output extents
     !
     if (present(sourcesJac)) then
-      if(any([sourcesJac%get_ncol(), sourcesJac%get_nlay(), sourcesJac%get_ngpt()] /= [ncol, nlay, ngpt])) &
+      if(any([sourcesJac%get_ncol(), sourcesJac%get_ngpt()] /= [ncol, ngpt])) &
         error_msg = "gas_optics%gas_optics: sourcesJac function arrays inconsistently sized"
       if(error_msg  /= '') return
     endif
@@ -792,6 +792,9 @@ contains
     call reorder123x321(lay_source_t, sources%lay_source)
     call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
     call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
+    !
+    ! Transposition of a 2D array, for which we don't have a routine in mo_rrtmgp_util_reorder.
+    !
     if (present(sourcesJac)) then
       !$acc enter data copyin(sourcesJac)
       !$acc enter data create(sourcesJac%sfc_source)
@@ -803,7 +806,7 @@ contains
       end do
     !$acc exit data copyout(sourcesJac%sfc_source)
     !$acc exit data copyout(sourcesJac)
-    endif    
+    endif
 
     !$acc exit data delete(sfc_source_Jac)
     !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)

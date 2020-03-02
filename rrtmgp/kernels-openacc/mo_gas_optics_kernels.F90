@@ -565,7 +565,7 @@ contains
     real(wp), dimension(ngpt,     ncol), intent(out) :: sfc_source_Jac
     ! -----------------
     ! local
-    real(wp), parameter                             :: dST = 1.0_wp
+    real(wp), parameter                             :: delta_Tsurf = 1.0_wp
 
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
     integer  :: gptS, gptE
@@ -601,23 +601,18 @@ contains
     !
     !$acc parallel loop
     do icol = 1, ncol
-      call interpolate1D(tsfc(icol)      , temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,1,icol))
-      call interpolate1D(tsfc(icol) + dST, temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,2,icol))
+      call interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,1,icol))
+      call interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,2,icol))
     end do
-    !$acc parallel loop collapse(2)
-    do icol = 1, ncol
-      do ibnd = 1, nbnd
-        planck_function(ibnd,2,icol) = planck_function(ibnd,2,icol) - planck_function(ibnd,1,icol)
-      end do
-    end do ! icol
     !
     ! Map to g-points
     !
     !$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
-        sfc_src       (igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol)
-        sfc_source_Jac(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 2, icol)
+        sfc_src       (igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt),1,icol)
+        sfc_source_Jac(igpt,icol) = pfrac(igpt,sfc_lay,icol) * &
+                 (planck_function(gpoint_bands(igpt),2,icol) - planck_function(gpoint_bands(igpt),1,icol))
       end do
     end do ! icol
 

@@ -1266,7 +1266,7 @@ contains
                                              trans       ! transmissivity  = exp(-tau)
     real(wp), dimension(ncol,nlay,ngpt) :: source_dn, source_up
     real(wp), dimension(ncol,     ngpt) :: source_sfc, sfc_albedo
-    real(wp), dimension(ncol,nlay+1,ngpt) :: dummy
+    real(wp), dimension(ncol,nlay+1,ngpt) :: dummyRadn_upJac
 
     real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
@@ -1347,7 +1347,7 @@ contains
     call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
                              tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up, radn_dn,&
-                             source_sfc, dummy)
+                             source_sfc, dummyRadn_upJac)
     !  make adjustment 
     call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1,  &
                              tau_loc, trans, &

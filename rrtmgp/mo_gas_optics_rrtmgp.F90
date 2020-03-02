@@ -290,6 +290,14 @@ contains
     if(error_msg  /= '') return
 
     !
+    !   output extents
+    !
+    if (present(sourcesJac)) then
+      if(any([sourcesJac%get_ncol(), sourcesJac%get_nlay(), sourcesJac%get_ngpt()] /= [ncol, nlay, ngpt])) &
+        error_msg = "gas_optics%gas_optics: sourcesJac function arrays inconsistently sized"
+      if(error_msg  /= '') return
+    endif
+    !
     ! Interpolate source function
     !
     error_msg = source(this,                               &

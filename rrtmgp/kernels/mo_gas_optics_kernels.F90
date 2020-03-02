@@ -508,7 +508,7 @@ contains
     real(wp), dimension(ngpt,     ncol), intent(out) :: sfc_source_Jac
     ! -----------------
     ! local
-    real(wp), parameter                             :: dST = 1.0_wp
+    real(wp), parameter                             :: delta_Tsurf = 1.0_wp
 
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
     integer  :: gptS, gptE
@@ -540,8 +540,8 @@ contains
     ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
     !
     do icol = 1, ncol
-      planck_function(1:nbnd,1,icol) = interpolate1D(tsfc(icol)      , temp_ref_min, totplnk_delta, totplnk)
-      planck_function(1:nbnd,2,icol) = interpolate1D(tsfc(icol) + dST, temp_ref_min, totplnk_delta, totplnk) - planck_function(1:nbnd,1,icol)
+      planck_function(1:nbnd,1,icol) = interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk)
+      planck_function(1:nbnd,2,icol) = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk) 
       !
       ! Map to g-points
       !
@@ -549,8 +549,9 @@ contains
         gptS = band_lims_gpt(1, ibnd)
         gptE = band_lims_gpt(2, ibnd)
         do igpt = gptS, gptE
-          sfc_src       (igpt, icol) = pfrac(igpt,sfc_lay,icol) * planck_function(ibnd, 1, icol)
-          sfc_source_Jac(igpt, icol) = pfrac(igpt,sfc_lay,icol) * planck_function(ibnd, 2, icol)
+          sfc_src       (igpt, icol) = pfrac(igpt,sfc_lay,icol) * planck_function(ibnd,1,icol)
+          sfc_source_Jac(igpt, icol) = pfrac(igpt,sfc_lay,icol) * &
+                                (planck_function(ibnd, 2, icol) - planck_function(ibnd,1,icol))
         end do
       end do
     end do ! icol

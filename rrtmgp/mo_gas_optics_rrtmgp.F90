@@ -167,7 +167,6 @@ module mo_gas_optics_rrtmgp
     procedure, public  :: gas_optics_int
     procedure, public  :: gas_optics_ext
     procedure, private :: check_key_species_present
-    procedure, private :: get_minor_list
     ! Interpolation table dimensions
     procedure, private :: get_nflav
     procedure, private :: get_neta
@@ -1262,32 +1261,6 @@ contains
     if(len_trim(error_msg) > 0) error_msg = "gas_optics: required gases" // trim(error_msg) // " are not provided"
 
   end function check_key_species_present
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Function to define names of key and minor gases to be used by gas_optics().
-  ! The final list gases includes those that are defined in gas_optics_specification
-  ! and are provided in ty_gas_concs.
-  !
-  function get_minor_list(this, gas_desc, ngas, names_spec)
-    class(ty_gas_optics_rrtmgp), intent(in)       :: this
-    class(ty_gas_concs), intent(in)                      :: gas_desc
-    integer, intent(in)                                  :: ngas
-    character(32), dimension(ngas), intent(in)           :: names_spec
-
-    ! List of minor gases to be used in gas_optics()
-    character(len=32), dimension(:), allocatable         :: get_minor_list
-    ! Logical flag for minor species in specification (T = minor; F = not minor)
-    logical, dimension(size(names_spec))                 :: gas_is_present
-    integer                                              :: igas, icnt
-
-    if (allocated(get_minor_list)) deallocate(get_minor_list)
-    do igas = 1, this%get_ngas()
-      gas_is_present(igas) = string_in_array(names_spec(igas), gas_desc%gas_name)
-    end do
-    icnt = count(gas_is_present)
-    allocate(get_minor_list(icnt))
-    get_minor_list(:) = pack(this%gas_names, mask=gas_is_present)
-  end function get_minor_list
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Inquiry functions

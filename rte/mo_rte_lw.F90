@@ -74,9 +74,9 @@ contains
                                                                   ! (no-scattering solution)
     logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
                                                                   ! Default is to use re-scaled longwave transport
-    type(ty_source_func_lw), optional, intent(in   ) :: sourcesJac
-    class(ty_fluxes),        optional, intent(inout) :: fluxesJac   !  Array of perturbed ty_fluxes.
-
+    type(ty_source_func_lw),  &
+                        optional, intent(in   ) :: sourcesJac
+    class(ty_fluxes),   optional, intent(inout) :: fluxesJac   !  Array of perturbed ty_fluxes.
     character(len=128)                          :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
     !

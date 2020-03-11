@@ -205,7 +205,7 @@ contains
     allocate(gpt_flux_upJac (ncol, nlay+1, ngpt))
     !$acc enter data create(gpt_flux_upJac)
     if (present(fluxesJac)) then
-      !$acc enter data copyin(sourcesJac, sourcesJac%sfc_source)
+      !$acc enter data copyin(sources%sfc_source_Jac)
     endif
 
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
@@ -235,25 +235,12 @@ contains
         error_msg =  optical_props%validate()
         if(len_trim(error_msg) > 0) return
 
-        if (present(sourcesJac)) then
-          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
+        call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
                               optical_props%tau,                                                  &
                               sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                               sfc_emis_gpt, sources%sfc_source,  &
-                              gpt_flux_up, gpt_flux_dn, &
-                              sourcesJac%sfc_source, gpt_flux_upJac)
-        else
-         ! here we have to feed with a fake Jacobian
-          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                              n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), gauss_wts(1:n_quad_angs,n_quad_angs), &
-                              optical_props%tau,                                                  &
-                              sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
-                              sfc_emis_gpt, sources%sfc_source,  &
-                              gpt_flux_up, gpt_flux_dn, &
-                              sources%sfc_source, gpt_flux_upJac)
-
-       endif
+                              gpt_flux_up, gpt_flux_dn, sources%sfc_source_Jac, gpt_flux_upJac)
        !$acc exit data delete(optical_props%tau)
 
       class is (ty_optical_props_2str)
@@ -302,7 +289,7 @@ contains
     if (present(fluxesJac)) then
       gpt_flux_dn=0.
       error_msg = fluxesJac%reduce(gpt_flux_upJac, gpt_flux_dn, optical_props, top_at_1)
-      !$acc exit data delete(sourcesJac%sfc_source, sourcesJac)
+      !$acc exit data delete(sources%sfc_source_Jac)
     endif
     !$acc exit data delete(gpt_flux_upJac)
     deallocate(gpt_flux_upJac)

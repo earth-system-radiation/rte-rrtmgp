@@ -58,7 +58,7 @@ contains
                   sources, sfc_emis,       &
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, &
-                  sourcesJac, fluxesJac) result(error_msg)
+                  fluxesJac) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
@@ -74,8 +74,6 @@ contains
                                                                   ! (no-scattering solution)
     logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
                                                                   ! Default is to use re-scaled longwave transport
-    type(ty_source_func_lw),  &
-                        optional, intent(in   ) :: sourcesJac
     class(ty_fluxes),   optional, intent(inout) :: fluxesJac   !  Array of perturbed ty_fluxes.
     character(len=128)                          :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
@@ -129,13 +127,11 @@ contains
       error_msg = "rte_lw: no space allocated for fluxes"
       return
     end if
-    if(present(sourcesJac) .neqv. present(fluxesJac)) then
-      error_msg = "rte_lw: sourcesJac and fluxesJac must be present at the same time"
-      return
-    end if
-    if ((present(sourcesJac))) then
-      if(any([sourcesJac%get_ncol(), sourcesJac%get_nlay(), sourcesJac%get_ngpt()]  /= [ncol, nlay, ngpt])) &
-        error_msg = "rte_lw: sourcesJac and optical properties inconsistently sized"
+    if ((present(fluxesJac))) then
+      if(.not. fluxesJac%are_desired()) then
+        error_msg = "rte_lw: no space allocated for flux Jacobians"
+        return
+      end if
     endif
 
     !

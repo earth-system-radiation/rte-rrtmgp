@@ -58,7 +58,8 @@ contains
                   sources, sfc_emis,       &
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, &
-                  fluxesJac) result(error_msg)
+                  fluxJac) result(error_msg)
+    use mo_fluxes_broadband_kernels, only: sum_broadband 
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
@@ -74,7 +75,8 @@ contains
                                                                   ! (no-scattering solution)
     logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
                                                                   ! Default is to use re-scaled longwave transport
-    class(ty_fluxes),   optional, intent(inout) :: fluxesJac   !  Array of perturbed ty_fluxes.
+    real(wp), dimension(:,:),   &
+                target, optional, intent(inout) :: fluxJac     ! surface temperature flux  Jacobian [W/m2/K] (ncol, ngpts)
     character(len=128)                          :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
     !
@@ -127,9 +129,9 @@ contains
       error_msg = "rte_lw: no space allocated for fluxes"
       return
     end if
-    if ((present(fluxesJac))) then
-      if(.not. fluxesJac%are_desired()) then
-        error_msg = "rte_lw: no space allocated for flux Jacobians"
+    if ((present(fluxJac))) then
+      if( any([size(fluxJac,dim=1), size(fluxJac,dim=2) ] /= [ncol, nlay+1])) then
+        error_msg = "rte_lw: flux Jacobian inconsistently sized"
         return
       end if
     endif
@@ -200,9 +202,7 @@ contains
 
     allocate(gpt_flux_upJac (ncol, nlay+1, ngpt))
     !$acc enter data create(gpt_flux_upJac)
-    if (present(fluxesJac)) then
-      !$acc enter data copyin(sources%sfc_source_Jac)
-    endif
+    !$acc enter data copyin(sources%sfc_source_Jac)
 
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     !
@@ -282,14 +282,14 @@ contains
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
     if (error_msg /= '') return
 
-    if (present(fluxesJac)) then
-      gpt_flux_dn=0.
-      error_msg = fluxesJac%reduce(gpt_flux_upJac, gpt_flux_dn, optical_props, top_at_1)
-      !$acc exit data delete(sources%sfc_source_Jac)
+    if (present(fluxJac)) then
+      call sum_broadband(ncol, nlay+1, ngpt, gpt_flux_upJac, fluxJac)
     endif
+
     !$acc exit data delete(gpt_flux_upJac)
     deallocate(gpt_flux_upJac)
 
+    !$acc exit data delete(sources%sfc_source_Jac)
     !$acc exit data delete(sfc_emis_gpt)
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
     !$acc exit data delete(optical_props)

@@ -58,7 +58,7 @@ contains
                   sources, sfc_emis,       &
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, &
-                  fluxJac) result(error_msg)
+                  flux_up_Jac, flux_dn_Jac) result(error_msg)
     use mo_fluxes_broadband_kernels, only: sum_broadband 
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
@@ -76,7 +76,9 @@ contains
     logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
                                                                   ! Default is to use re-scaled longwave transport
     real(wp), dimension(:,:),   &
-                target, optional, intent(inout) :: fluxJac     ! surface temperature flux  Jacobian [W/m2/K] (ncol, ngpts)
+                target, optional, intent(inout) :: flux_up_Jac ! surface temperature flux  Jacobian [W/m2/K] (ncol, ngpts)
+    real(wp), dimension(:,:),   &
+                target, optional, intent(inout) :: flux_dn_Jac ! surface temperature flux  Jacobian [W/m2/K] (ncol, ngpts)
     character(len=128)                          :: error_msg   ! If empty, calculation was successful
     ! --------------------------------
     !
@@ -240,6 +242,17 @@ contains
        !$acc exit data delete(optical_props%tau)
 
       class is (ty_optical_props_2str)
+
+        if ((present(flux_dn_Jac))) then
+          if( any([size(flux_dn_Jac,dim=1), size(flux_dn_Jac,dim=2) ] /= [ncol, nlay+1])) then
+            error_msg = "rte_lw: flux_dn_Jac inconsistently sized"
+            return
+          end if
+        endif
+
+        allocate(gpt_flux_dnJac (ncol, nlay+1, ngpt))
+        !$acc enter data create(gpt_flux_dnJac)
+
         if (using_2stream) then
           !
           ! two-stream calculation with scattering
@@ -265,7 +278,8 @@ contains
                                  sources%lay_source, sources%lev_source_inc, &
                                  sources%lev_source_dec, &
                                  sfc_emis_gpt, sources%sfc_source,&
-                                 gpt_flux_up, gpt_flux_dn)
+                                 gpt_flux_up, gpt_flux_dn, &
+                                 sources%sfc_source_Jac, gpt_flux_upJac, gpt_flux_dnJac)
           !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
         endif
       class is (ty_optical_props_nstr)
@@ -285,7 +299,14 @@ contains
     if (present(fluxJac)) then
       call sum_broadband(ncol, nlay+1, ngpt, gpt_flux_upJac, fluxJac)
     endif
-
+    if (present(flux_dn_Jac)) then
+      call sum_broadband(ncol, nlay+1, ngpt, gpt_flux_dnJac, flux_dn_Jac)
+    endif
+    if (allocated(gpt_flux_dnJac)) then
+      !$acc exit data delete(gpt_flux_dnJac)
+      deallocate(gpt_flux_dnJac)
+    endif
+      
     !$acc exit data delete(gpt_flux_upJac)
     deallocate(gpt_flux_upJac)
 

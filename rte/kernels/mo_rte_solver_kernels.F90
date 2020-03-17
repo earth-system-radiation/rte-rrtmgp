@@ -472,7 +472,7 @@ contains
 
       ! Surface reflection and emission
       radn_up   (:,nlay+1) = radn_dn(:,nlay+1)*sfc_albedo(:) + source_sfc   (:)
-      radn_upJac(:,nlay+1) = radn_dn(:,nlay+1)*sfc_albedo(:) + source_sfcJac(:)
+      radn_upJac(:,nlay+1) = source_sfcJac(:)
 
       ! Upward propagation
       do ilev = nlay, 1, -1
@@ -490,7 +490,7 @@ contains
 
       ! Surface reflection and emission
       radn_up   (:, 1) = radn_dn(:,1)*sfc_albedo(:) + source_sfc   (:)
-      radn_upJac(:, 1) = radn_dn(:,1)*sfc_albedo(:) + source_sfcJac(:)
+      radn_upJac(:, 1) = source_sfcJac(:)
 
       ! Upward propagation
       do ilev = 2, nlay+1

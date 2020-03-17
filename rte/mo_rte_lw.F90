@@ -131,8 +131,8 @@ contains
       error_msg = "rte_lw: no space allocated for fluxes"
       return
     end if
-    if ((present(fluxJac))) then
-      if( any([size(fluxJac,dim=1), size(fluxJac,dim=2) ] /= [ncol, nlay+1])) then
+    if ((present(flux_up_Jac))) then
+      if( any([size(flux_up_Jac,dim=1), size(flux_up_Jac,dim=2) ] /= [ncol, nlay+1])) then
         error_msg = "rte_lw: flux Jacobian inconsistently sized"
         return
       end if
@@ -296,8 +296,8 @@ contains
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
     if (error_msg /= '') return
 
-    if (present(fluxJac)) then
-      call sum_broadband(ncol, nlay+1, ngpt, gpt_flux_upJac, fluxJac)
+    if (present(flux_up_Jac)) then
+      call sum_broadband(ncol, nlay+1, ngpt, gpt_flux_upJac, flux_up_Jac)
     endif
     if (present(flux_dn_Jac)) then
       call sum_broadband(ncol, nlay+1, ngpt, gpt_flux_dnJac, flux_dn_Jac)

@@ -32,15 +32,16 @@ module mo_source_functions
                                                                   ! Includes spectral weighting that accounts for state-dependent
                                                                   ! frequency to g-space mapping
     real(wp), allocatable, dimension(:,:  ) :: sfc_source
+    real(wp), allocatable, dimension(:,:  ) :: sfc_source_Jac     ! surface source Jacobian 
   contains
     generic,   public :: alloc => alloc_lw, copy_and_alloc_lw
     procedure, private:: alloc_lw
     procedure, private:: copy_and_alloc_lw
     procedure, public :: is_allocated => is_allocated_lw
-    procedure, public :: finalize => finalize_lw
-    procedure, public :: get_subset => get_subset_range_lw
-    procedure, public :: get_ncol => get_ncol_lw
-    procedure, public :: get_nlay => get_nlay_lw
+    procedure, public :: finalize     => finalize_lw
+    procedure, public :: get_subset   => get_subset_range_lw
+    procedure, public :: get_ncol     => get_ncol_lw
+    procedure, public :: get_nlay     => get_nlay_lw
     ! validate?
   end type ty_source_func_lw
   ! -------------------------------------------------------------------------------------------------
@@ -92,14 +93,16 @@ contains
       err_message = "source_func_lw%alloc: must provide positive extents for ncol, nlay"
     if (err_message /= "") return
 
-    if(allocated(this%sfc_source)) deallocate(this%sfc_source)
-    if(allocated(this%lay_source)) deallocate(this%lay_source)
+    if(allocated(this%sfc_source))     deallocate(this%sfc_source)
+    if(allocated(this%sfc_source_Jac)) deallocate(this%sfc_source_Jac)
+    if(allocated(this%lay_source))     deallocate(this%lay_source)
     if(allocated(this%lev_source_inc)) deallocate(this%lev_source_inc)
     if(allocated(this%lev_source_dec)) deallocate(this%lev_source_dec)
 
     ngpt = this%get_ngpt()
     allocate(this%sfc_source    (ncol,     ngpt), this%lay_source    (ncol,nlay,ngpt), &
              this%lev_source_inc(ncol,nlay,ngpt), this%lev_source_dec(ncol,nlay,ngpt))
+    allocate(this%sfc_source_Jac(ncol,     ngpt))
   end function alloc_lw
   ! --------------------------------------------------------------
   function copy_and_alloc_lw(this, ncol, nlay, spectral_desc) result(err_message)
@@ -175,6 +178,7 @@ contains
     if(allocated(this%lev_source_inc)) deallocate(this%lev_source_inc)
     if(allocated(this%lev_source_dec)) deallocate(this%lev_source_dec)
     if(allocated(this%sfc_source    )) deallocate(this%sfc_source)
+    if(allocated(this%sfc_source_Jac)) deallocate(this%sfc_source_Jac)
     call this%ty_optical_props%finalize()
   end subroutine finalize_lw
   ! --------------------------------------------------------------
@@ -248,6 +252,7 @@ contains
     err_message = subset%alloc(n, full%get_nlay(), full)
     if(err_message /= "") return
     subset%sfc_source    (1:n,  :) = full%sfc_source    (start:start+n-1,  :)
+    subset%sfc_source_Jac(1:n,  :) = full%sfc_source_Jac(start:start+n-1,  :)
     subset%lay_source    (1:n,:,:) = full%lay_source    (start:start+n-1,:,:)
     subset%lev_source_inc(1:n,:,:) = full%lev_source_inc(start:start+n-1,:,:)
     subset%lev_source_dec(1:n,:,:) = full%lev_source_dec(start:start+n-1,:,:)

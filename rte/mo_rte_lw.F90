@@ -59,7 +59,7 @@ contains
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, &
                   flux_up_Jac, flux_dn_Jac) result(error_msg)
-    use mo_fluxes_broadband_kernels, only: sum_broadband 
+    use mo_fluxes_broadband_kernels, only: sum_broadband
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
@@ -132,7 +132,7 @@ contains
       return
     end if
     if ((present(flux_up_Jac))) then
-      if( any([size(flux_up_Jac,dim=1), size(flux_up_Jac,dim=2) ] /= [ncol, nlay+1])) then
+      if( .not. extents_are(flux_up_Jac, ncol, nlay+1)) then
         error_msg = "rte_lw: flux Jacobian inconsistently sized"
         return
       end if
@@ -244,7 +244,7 @@ contains
       class is (ty_optical_props_2str)
 
         if ((present(flux_dn_Jac))) then
-          if( any([size(flux_dn_Jac,dim=1), size(flux_dn_Jac,dim=2) ] /= [ncol, nlay+1])) then
+          if( .not. extents_are(flux_dn_Jac, ncol, nlay+1)) then
             error_msg = "rte_lw: flux_dn_Jac inconsistently sized"
             return
           end if
@@ -306,7 +306,7 @@ contains
       !$acc exit data delete(gpt_flux_dnJac)
       deallocate(gpt_flux_dnJac)
     endif
-      
+
     !$acc exit data delete(gpt_flux_upJac)
     deallocate(gpt_flux_upJac)
 

@@ -1,10 +1,9 @@
 sudo: required
 dist: xenial
 language: cpp
-# Could run both sets of kernels in parallel but setup is the majority of the time
-#env:
-#  - RTE_KERNELS=""
-#  - RTE_KERNELS="openacc"
+env:
+  - RTE_KERNELS=""
+  - RTE_KERNELS="openacc"
 matrix:
   include:
   - compiler: gcc # Using
@@ -94,52 +93,33 @@ before_script:
 - python3 ./stage_files.py
 - cd ../..
 script:
-# Build library - default kernels
+- cd ${RRTMGP_ROOT}
+#
+# Build library
+#
 - make -C build clean || exit 1
 - make -C build       || exit 1
+#
 # Build and run RFMIP examples
+#
 - cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky || exit 1
 - make clean
 - make || exit 1
 - python3 ./run-rfmip-examples.py
 - python3 ./compare-to-reference.py --fail=7.e-4
 - make clean
+#
 # Build and run all-sky example
+#
 - cd ${RRTMGP_ROOT}/examples/all-sky || exit 1
 - make clean
 - make || exit 1
 - python3 ./run-allsky-example.py
 - python3 ./compare-to-reference.py
 - make clean
-# Build and regression tests
-- cd ${RRTMGP_ROOT}/tests|| exit 1
-- make clean
-- make || exit 1
-- cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
-- ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
-- ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
-- python3 verification.py
 #
-# Build library - Open-acc kernels
-#
-# Build library - default kernels
-- make -C build clean || exit 1
-- make -C build       || exit 1
-# Build and run RFMIP examples
-- cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky || exit 1
-- make clean
-- make || exit 1
-- python3 ./run-rfmip-examples.py
-- python3 ./compare-to-reference.py --fail=7.e-4
-- make clean
-# Build and run all-sky example
-- cd ${RRTMGP_ROOT}/examples/all-sky || exit 1
-- make clean
-- make || exit 1
-- python3 ./run-allsky-example.py
-- python3 ./compare-to-reference.py
-- make clean
 # Build and regression tests
+#
 - cd ${RRTMGP_ROOT}/tests|| exit 1
 - make clean
 - make || exit 1

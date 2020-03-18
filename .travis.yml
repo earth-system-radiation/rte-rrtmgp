@@ -1,11 +1,11 @@
 sudo: required
 dist: xenial
 language: cpp
-env:
-  - RTE_KERNELS=""
-  - RTE_KERNELS="openacc"
 matrix:
   include:
+  - env:
+    - RTE_KERNELS=""
+    - RTE_KERNELS="openacc"
   - compiler: gcc # Using
     env:
     - FC=pgfortran

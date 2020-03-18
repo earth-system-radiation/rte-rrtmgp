@@ -168,7 +168,6 @@ script:
 - ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
 - ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
 - python3 verification.py
-
 notifications:
   email:
     on_success: never

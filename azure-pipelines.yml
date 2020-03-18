@@ -81,7 +81,7 @@ jobs:
       make -C build/ clean
       make -C build/ -j 8
       make -C tests clean
-      make -C tests -j 1
+      make -C tests -j 8
       make -C examples/all-sky clean
       make -C examples/all-sky -j 8
       make -C examples/rfmip-clear-sky clean
@@ -90,6 +90,8 @@ jobs:
   - script: |
       set -e
       source modules
+      export RRTMGP_ROOT=$PWD
+      export RRTMGP_BUILD=$PWD/build
       cd $(RRTMGP_ROOT)/examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd  $(RRTMGP_ROOT)/examples/all-sky
@@ -101,6 +103,8 @@ jobs:
   - script: |
       set -e
       source modules
+      export RRTMGP_ROOT=$PWD
+      export RRTMGP_BUILD=$PWD/build
       # This module will unload some of the build modules, so do the checks separately
       module load netcdf-python
       cd $(RRTMGP_ROOT)/examples/rfmip-clear-sky

@@ -264,7 +264,7 @@ contains
     ! External source -- check arrays sizes and values
     ! input data sizes and values
     !
-    !$acc enter data copyin(tsfc,tlev)
+    !$acc enter data copyin(tsfc)
     if(.not. extents_are(tsfc, ncol)) &
       error_msg = "gas_optics(): array tsfc has wrong size"
     if(any_vals_outside(tsfc, this%temp_ref_min,  this%temp_ref_max)) &
@@ -272,6 +272,7 @@ contains
     if(error_msg  /= '') return
 
     if(present(tlev)) then
+      !$acc enter data copyin(tlev)
       if(.not. extents_are(tlev, ncol, nlay+1)) &
         error_msg = "gas_optics(): array tlev has wrong size"
       if(any_vals_outside(tlev, this%temp_ref_min, this%temp_ref_max)) &
@@ -289,13 +290,26 @@ contains
     !
     ! Interpolate source function
     !
-    error_msg = source(this,                               &
-                       ncol, nlay, nband, ngpt,            &
-                       play, plev, tlay, tsfc,             &
-                       jtemp, jpress, jeta, tropo, fmajor, &
-                       sources,                            &
-                       tlev)
-    !$acc exit data delete(tsfc,tlev)
+    if(present(tlev)) then
+      !
+      ! present status of optional argument should be passed to source()
+      !   but isn't with PGI 19.10
+      !
+      error_msg = source(this,                               &
+                         ncol, nlay, nband, ngpt,            &
+                         play, plev, tlay, tsfc,             &
+                         jtemp, jpress, jeta, tropo, fmajor, &
+                         sources,                            &
+                         tlev)
+      !$acc exit data delete(tlev)
+    else
+      error_msg = source(this,                               &
+                         ncol, nlay, nband, ngpt,            &
+                         play, plev, tlay, tsfc,             &
+                         jtemp, jpress, jeta, tropo, fmajor, &
+                         sources)
+    end if
+    !$acc exit data delete(tsfc)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------

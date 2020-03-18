@@ -5,49 +5,48 @@ language: cpp
 #env:
 #  - RTE_KERNELS=""
 #  - RTE_KERNELS="openacc"
-matrix:
-  include:
-  - compiler: gcc # Using
-    env:
-    - FC=pgfortran
-    - FCFLAGS="-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-    - TEST_PGI=yes
-    addons:
-      apt:
-        sources:
-          - ubuntu-toolchain-r-test
-        packages:
-          - gcc-8
-          - gfortran-8
-          - libnetcdf-dev
-  - compiler: gcc
-    env:
-    - FC=gfortran-9
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
-    - TEST_PGI=no
-    - NCHOME=/usr/
-    addons:
-      apt:
-        sources:
-          - ubuntu-toolchain-r-test
-        packages:
-          - gcc-9
-          - gfortran-9
-          - libnetcdf-dev
-  - compiler: gcc
-    env:
-    - FC=gfortran-8
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
-    - TEST_PGI=no
-    - NCHOME=/usr/
-    addons:
-      apt:
-        sources:
-          - ubuntu-toolchain-r-test
-        packages:
-          - gcc-8
-          - gfortran-8
-          - libnetcdf-dev
+include:
+- compiler: gcc # Using
+  env:
+  - FC=pgfortran
+  - FCFLAGS="-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+  - TEST_PGI=yes
+  addons:
+    apt:
+      sources:
+        - ubuntu-toolchain-r-test
+      packages:
+        - gcc-8
+        - gfortran-8
+        - libnetcdf-dev
+- compiler: gcc
+  env:
+  - FC=gfortran-9
+  - FCFLAGS="-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+  - TEST_PGI=no
+  - NCHOME=/usr/
+  addons:
+    apt:
+      sources:
+        - ubuntu-toolchain-r-test
+      packages:
+        - gcc-9
+        - gfortran-9
+        - libnetcdf-dev
+- compiler: gcc
+  env:
+  - FC=gfortran-8
+  - FCFLAGS="-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+  - TEST_PGI=no
+  - NCHOME=/usr/
+  addons:
+    apt:
+      sources:
+        - ubuntu-toolchain-r-test
+      packages:
+        - gcc-8
+        - gfortran-8
+        - libnetcdf-dev
 # cache:
 #   timeout: 1000
 #   directories:

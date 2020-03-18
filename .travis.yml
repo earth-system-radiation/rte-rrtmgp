@@ -87,7 +87,7 @@ install:
 
 before_script:
 - export RRTMGP_ROOT=$PWD
-- export RRTMGP_DIR=$PWD/build
+- export RRTMGP_BUILD=$PWD/build
 - export NFHOME=${HOME}/netcdff
 - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$NFHOME/lib
 - cd examples/rfmip-clear-sky

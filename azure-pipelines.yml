@@ -76,7 +76,7 @@ jobs:
       set -e
       source modules
       export RRTMGP_ROOT=$PWD
-      export RRTMGP_DIR=$PWD/build
+      export RRTMGP_BUILD=$PWD/build
       export FC=ftn
       make -C build/ clean
       make -C build/ -j 8

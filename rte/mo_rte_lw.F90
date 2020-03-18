@@ -58,15 +58,15 @@ contains
                   sources, sfc_emis,       &
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, lw_Ds) result(error_msg)
-    class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
-                                                                     ! and needs to be made concrete, either as an array
-                                                                     ! (class ty_optical_props_arry) or in some user-defined way
-    logical,                      intent(in   ) :: top_at_1          ! Is the top of the domain at index 1?
-                                                                     ! (if not, ordering is bottom-to-top)
+    class(ty_optical_props_arry), intent(in   ) :: optical_props  ! Array of ty_optical_props. This type is abstract
+                                                                  ! and needs to be made concrete, either as an array
+                                                                  ! (class ty_optical_props_arry) or in some user-defined way
+    logical,                      intent(in   ) :: top_at_1       ! Is the top of the domain at index 1?
+                                                                  ! (if not, ordering is bottom-to-top)
     type(ty_source_func_lw),      intent(in   ) :: sources
-    real(wp), dimension(:,:),     intent(in   ) :: sfc_emis    ! emissivity at surface [] (nband, ncol)
-    class(ty_fluxes),             intent(inout) :: fluxes      ! Array of ty_fluxes. Default computes broadband fluxes at all levels
-                                                               !   if output arrays are defined. Can be extended per user desires.
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_emis       ! emissivity at surface [] (nband, ncol)
+    class(ty_fluxes),             intent(inout) :: fluxes         ! Array of ty_fluxes. Default computes broadband fluxes at all levels
+                                                                  ! if output arrays are defined. Can be extended per user desires.
     real(wp), dimension(:,:),   &
                 target, optional, intent(in   ) :: inc_flux       ! incident flux at domain top [W/m2] (ncol, ngpts)
     integer,            optional, intent(in   ) :: n_gauss_angles ! Number of angles used in Gaussian quadrature
@@ -74,8 +74,8 @@ contains
     logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
                                                                   ! Default is to use re-scaled longwave transport
     real(wp), dimension(:,:),   &
-                      optional,   intent(in   ) :: lw_Ds
-    character(len=128)                          :: error_msg   ! If empty, calculation was successful
+                      optional,   intent(in   ) :: lw_Ds           ! linear fit to column transmissivity (ncol,ngpt)
+    character(len=128)                          :: error_msg       ! If empty, calculation was successful
     ! --------------------------------
     !
     ! Local variables
@@ -188,8 +188,8 @@ contains
     if (present(lw_Ds)) then
       if(.not. extents_are(lw_Ds, ncol, ngpt)) &
         error_msg = "rte_lw: lw_Ds inconsistently sized"
-      if(any_vals_less_than(lw_Ds, 0._wp)) &
-        error_msg = "rte_lw: one pr more values of lw_Ds < 0."
+      if(any_vals_less_than(lw_Ds, 1._wp)) &
+        error_msg = "rte_lw: one or more values of lw_Ds < 1."
       if(len_trim(error_msg) > 0) return
     end if
 

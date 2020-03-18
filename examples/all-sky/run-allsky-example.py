@@ -9,7 +9,7 @@ import glob
 import argparse
 
 rte_rrtmgp_dir   = os.path.join("..", "..")
-# This files lives in $RRTMGP_DIR/examples/all-sky/
+# This files lives in $RRTMGP_ROOT/examples/all-sky/
 all_sky_dir      = "."
 # Code should be run in the all_sky_dir directory
 

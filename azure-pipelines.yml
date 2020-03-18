@@ -92,11 +92,12 @@ jobs:
       source modules
       export RRTMGP_ROOT=$PWD
       export RRTMGP_BUILD=$PWD/build
-      cd $RRTMGP_ROOT/examples/rfmip-clear-sky
+      cd ${RRTMGP_BUILD}/examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
-      cd  $RRTMGP_ROOT/examples/all-sky
+      cd  ${RRTMGP_BUILD}/examples/all-sky
       srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
-      cd  $RRTMGP_ROOT/tests
+      cd  ${RRTMGP_BUILD}/tests
+      cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
       srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
       srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     displayName: 'Run'
@@ -107,10 +108,10 @@ jobs:
       export RRTMGP_BUILD=$PWD/build
       # This module will unload some of the build modules, so do the checks separately
       module load netcdf-python
-      cd $RRTMGP_ROOT/examples/rfmip-clear-sky
+      cd ${RRTMGP_BUILD}/examples/rfmip-clear-sky
       python ./compare-to-reference.py --fail=7.e-4
-      cd $RRTMGP_ROOT/examples/all-sky
+      cd ${RRTMGP_BUILD}/examples/all-sky
       python ./compare-to-reference.py
-      cd $RRTMGP_ROOT/tests
+      cd ${RRTMGP_BUILD}/tests
       python verification.py
     displayName: 'Check results'

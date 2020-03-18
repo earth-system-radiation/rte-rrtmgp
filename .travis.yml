@@ -23,7 +23,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-9
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:
@@ -37,7 +37,7 @@ matrix:
   - compiler: gcc
     env:
     - FC=gfortran-8
-    - FCFLAGS="-ffree-line-length-none -m64 -std=f2003 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+    - FCFLAGS="-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
     - TEST_PGI=no
     - NCHOME=/usr/
     addons:
@@ -118,7 +118,7 @@ script:
 - cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
 - ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
 - ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
-- python verification.py
+- python3 verification.py
 #
 # Build library - Open-acc kernels
 #

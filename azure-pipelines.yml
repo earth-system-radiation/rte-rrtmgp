@@ -96,7 +96,7 @@ jobs:
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd  $RRTMGP_ROOT/examples/all-sky
       srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
-      cd  $RRTMGP_ROO/tests
+      cd  $RRTMGP_ROOT/tests
       srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
       srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     displayName: 'Run'

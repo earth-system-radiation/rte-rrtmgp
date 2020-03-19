@@ -1443,7 +1443,6 @@ contains
       end do
     end do
 
-    !$acc parallel loop gang vector collapse(2)
     !$acc exit data delete(trans_total)
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------

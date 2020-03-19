@@ -490,7 +490,6 @@ contains
     atmos_2str%tau(:,:,:) = 0._wp
     atmos_2str%ssa(:,:,:) = 0._wp
     atmos_2str%g  (:,:,:) = 0._wp
-
     !
     ! Add a transparent 2-stream atmosphere to no-scattering
     !
@@ -505,24 +504,20 @@ contains
     !
     ! Create a transparent set of n-stream optical properties
     !
-    call stop_on_err(atmos_nstr%alloc_nstr(ncol, nlay, nmom, k_dist))
+    call stop_on_err(atmos_nstr%alloc_nstr(nmom, ncol, nlay, k_dist))
     atmos_nstr%tau(:,:,:)   = 0._wp
     atmos_nstr%ssa(:,:,:)   = 0._wp
     atmos_nstr%p  (:,:,:,:) = 0._wp
-
-    ! baustelle - this is crashing for reasons I don't understand
-    if(.false.) then
-      !
-      ! Add a transparent n-stream atmosphere to no-scattering
-      !
-      call stop_on_err(atmos_nstr%increment(atmos))
-      call stop_on_err(rte_lw(atmos, top_at_1, &
-                              lw_sources,      &
-                              sfc_emis,        &
-                              fluxes))
-      call write_broadband_field(input_file, flux_up, "lw_flux_up_inc_1scl_with_nstr", "LW flux up, incr. 1scl with nstr")
-      call write_broadband_field(input_file, flux_dn, "lw_flux_dn_inc_1scl_with_nstr", "LW flux dn, incr. 1scl with nstr")
-    end if
+    !
+    ! Add a transparent n-stream atmosphere to no-scattering
+    !
+    call stop_on_err(atmos_nstr%increment(atmos))
+    call stop_on_err(rte_lw(atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    call write_broadband_field(input_file, flux_up, "lw_flux_up_inc_1scl_with_nstr", "LW flux up, incr. 1scl with nstr")
+    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_inc_1scl_with_nstr", "LW flux dn, incr. 1scl with nstr")
 
   end subroutine lw_clear_sky_incr
   ! ----------------------------------------------------------------------------

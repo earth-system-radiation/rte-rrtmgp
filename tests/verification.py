@@ -59,8 +59,8 @@ if __name__ == '__main__':
     passed = assert_equal([gp.sw_flux_up_vr, gp.sw_flux_up_tsi], gp.sw_flux_up) and passed
 
     print('Incrementing')
-    passed = assert_equal([gp.lw_flux_dn_inc_1scl_with_1scl, gp.lw_flux_dn_inc_1scl_with_2str], gp.lw_flux_dn) and passed
-    passed = assert_equal([gp.lw_flux_up_inc_1scl_with_1scl, gp.lw_flux_up_inc_1scl_with_2str], gp.lw_flux_up) and passed
+    passed = assert_equal([gp.lw_flux_dn_inc_1scl_with_1scl, gp.lw_flux_dn_inc_1scl_with_2str, gp.lw_flux_dn_inc_1scl_with_nstr], gp.lw_flux_dn) and passed
+    passed = assert_equal([gp.lw_flux_up_inc_1scl_with_1scl, gp.lw_flux_up_inc_1scl_with_2str, gp.lw_flux_up_inc_1scl_with_nstr], gp.lw_flux_up) and passed
     # passed = assert_equal(gp.lw_flux_dn_inc_2str_with_1scl,                            gp.lw_flux_dn_2str) and passed
     # passed = assert_equal(gp.lw_flux_up_inc_2str_with_1scl,                            gp.lw_flux_up_2str) and passed
     passed = assert_equal([gp.sw_flux_dn_incr],

@@ -87,7 +87,8 @@ contains
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
     real(wp) :: lw_Ds_wt
     logical :: using_2stream
-    ! --------------------------------------------------
+    character(len=4) :: ctype
+     ! --------------------------------------------------
     !
     ! Weights and angle secants for first order (k=1) Gaussian quadrature.
     !   Values from Table 2, Clough et al, 1992, doi:10.1029/92JD01419
@@ -117,6 +118,19 @@ contains
     ngpt  = optical_props%get_ngpt()
     nband = optical_props%get_nband()
     error_msg = ""
+
+    !
+    ! Identify class type for both error-checking and calculating RT
+    !
+    ctype = ''
+    select type (optical_props)
+      class is (ty_optical_props_1scl)
+        ctype = '1scl'
+      class is (ty_optical_props_2str)
+        ctype = '2str'
+      class is (ty_optical_props_nstr)
+        ctype = 'nstr'
+    end select
 
     ! ------------------------------------------------------------------------------------
     !
@@ -160,6 +174,8 @@ contains
     !
     n_quad_angs = 1
     if(present(n_gauss_angles)) then
+      if (ctype .ne. '1scl') &
+        error_msg = "rte_lw: gauss_angle present but class type not correct"
       if(n_gauss_angles > max_gauss_pts) &
         error_msg = "rte_lw: asking for too many quadrature points for no-scattering calculation"
       if(n_gauss_angles < 1) &
@@ -167,11 +183,30 @@ contains
       n_quad_angs = n_gauss_angles
     end if
     if(len_trim(error_msg) > 0) return
+
+    !
+    ! Check type, extents and values of transport angle secants if supplied
+    !
+    if (present(lw_Ds)) then
+      if (ctype .ne. '1scl') &
+        error_msg = "rte_lw: lw_Ds present but class type not correct"
+      if(.not. extents_are(lw_Ds, ncol, ngpt)) &
+        error_msg = "rte_lw: lw_Ds inconsistently sized"
+      if(any_vals_less_than(lw_Ds, 1._wp)) &
+        error_msg = "rte_lw: one or more values of lw_Ds < 1."
+      if(len_trim(error_msg) > 0) return
+    end if
+
     !
     ! Optionally - use 2-stream methods when low-order scattering properties are provided?
     !
     using_2stream = .false.
-    if(present(use_2stream)) using_2stream = use_2stream
+    if(present(use_2stream)) then
+      if(ctype .ne. '2str') &
+        error_msg = "rte_lw: use_2stream present but class type not correct"
+      if(len_trim(error_msg) > 0) return
+      using_2stream = use_2stream
+    end if
     !
     ! Ensure values of tau, ssa, and g are reasonable
     !
@@ -180,17 +215,6 @@ contains
       if(len_trim(optical_props%get_name()) > 0) &
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
       return
-    end if
-
-    !
-    ! Check extents and values of transport angle secants if supplied
-    !
-    if (present(lw_Ds)) then
-      if(.not. extents_are(lw_Ds, ncol, ngpt)) &
-        error_msg = "rte_lw: lw_Ds inconsistently sized"
-      if(any_vals_less_than(lw_Ds, 1._wp)) &
-        error_msg = "rte_lw: one or more values of lw_Ds < 1."
-      if(len_trim(error_msg) > 0) return
     end if
 
     ! ------------------------------------------------------------------------------------

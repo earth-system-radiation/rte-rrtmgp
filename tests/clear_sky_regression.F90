@@ -425,25 +425,22 @@ contains
   ! Clear-sky longwave fluxes, all info, three angles
   !   Two variations on a scattering calculation but using purely emitting/absorbing layers
   !   The first uses rescaling and should agree with _1scl answers
-  !   The second is a two-stream ve
+  !   The second uses the two-stream solver
   !
   subroutine lw_clear_sky_2str
-    type(ty_optical_props_2str) :: atmos2
     call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
                                        t_lay, sfc_t, &
                                        gas_concs,    &
                                        atmos,        &
                                        lw_sources,   &
                                        tlev=t_lev))
-    ! baustelle  - this is failing because tau == 0
-    if(.false.) then
-      call stop_on_err(rte_lw(atmos, top_at_1, &
-                              lw_sources,      &
-                              sfc_emis,        &
-                              fluxes))
-      call write_broadband_field(input_file, flux_up, "lw_flux_up_1rescl", "LW flux up, clear-sky _1rescl")
-      call write_broadband_field(input_file, flux_dn, "lw_flux_dn_1rescl", "LW flux dn, clear-sky _1rescl")
-    end if
+    call stop_on_err(rte_lw(atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    call write_broadband_field(input_file, flux_up, "lw_flux_up_1rescl", "LW flux up, clear-sky _1rescl")
+    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_1rescl", "LW flux dn, clear-sky _1rescl")
+
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &

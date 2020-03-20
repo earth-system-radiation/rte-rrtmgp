@@ -113,20 +113,6 @@ if __name__ == '__main__':
             plt.title(t)
             pdf.savefig()
             plt.close()
-
-        variants = [gpi.lw_flux_up_from_deriv]
-        refs =     [gpi.lw_flux_up_stp1]
-        titles =   ["Variants: LW up"]
-        for v, r, t in zip(variants, refs, titles):
-            make_comparison_plot(v, \
-                                 labels = "Jacobian test", \
-                                 reference = r,            \
-                                 vscale = plev/100.)
-            plt.ylabel("Pressure (Pa)")
-            plt.xlabel("Difference (W/m2), solid=mean, dash=RMS")
-            plt.title(t)
-            pdf.savefig()
-            plt.close()
         ########################################################################
         # Shortwave
         #   These are in W/m2 so profiles with high run count for more.
@@ -136,7 +122,7 @@ if __name__ == '__main__':
         # Accuracy comparison
         #
         variants = [gpi.sw_flux_dn, gpi.sw_flux_up]
-        refs =     [lbli.rsd,               lbli.rsu]
+        refs =     [lbli.rsd,       lbli.rsu]
         titles = ["Accuracy: SW down", "Accuracy: SW up"]
         for v, r, t in zip(variants, refs, titles):
             make_comparison_plot(v, \

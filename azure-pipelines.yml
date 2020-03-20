@@ -94,7 +94,7 @@ jobs:
       source modules
       export RRTMGP_ROOT=$PWD
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-      python ./run-rfmip-examples.py --block_size 1800
+      srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
       cd  ${RRTMGP_ROOT}/examples/all-sky
       srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
       cd  ${RRTMGP_ROOT}/tests

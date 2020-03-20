@@ -119,24 +119,12 @@ contains
     nband = optical_props%get_nband()
     error_msg = ""
 
-    !
-    ! Identify class type for both error-checking and calculating RT
-    !
-    ctype = ''
-    select type (optical_props)
-      class is (ty_optical_props_1scl)
-        ctype = '1scl'
-      class is (ty_optical_props_2str)
-        ctype = '2str'
-      class is (ty_optical_props_nstr)
-        ctype = 'nstr'
-    end select
-
     ! ------------------------------------------------------------------------------------
     !
-    ! Error checking -- consistency of sizes and validity of values
+    ! Error checking -- input consistency of sizes and validity of values
     !
     ! --------------------------------
+
     if(.not. fluxes%are_desired()) then
       error_msg = "rte_lw: no space allocated for fluxes"
       return
@@ -174,12 +162,10 @@ contains
     !
     n_quad_angs = 1
     if(present(n_gauss_angles)) then
-      if (ctype .ne. '1scl') &
-        error_msg = "rte_lw: gauss_angle present but class type not correct"
       if(n_gauss_angles > max_gauss_pts) &
-        error_msg = "rte_lw: asking for too many quadrature points for no-scattering calculation"
+        error_msg = "rte_lw: asking for too many quadrature points for RT calculation"
       if(n_gauss_angles < 1) &
-        error_msg = "rte_lw: have to ask for at least one quadrature point for no-scattering calculation"
+        error_msg = "rte_lw: have to ask for at least one quadrature point for RT calculation"
       n_quad_angs = n_gauss_angles
     end if
     if(len_trim(error_msg) > 0) return
@@ -188,8 +174,6 @@ contains
     ! Check type, extents and values of transport angle secants if supplied
     !
     if (present(lw_Ds)) then
-      if (ctype .ne. '1scl') &
-        error_msg = "rte_lw: lw_Ds present but class type not correct"
       if(.not. extents_are(lw_Ds, ncol, ngpt)) &
         error_msg = "rte_lw: lw_Ds inconsistently sized"
       if(any_vals_less_than(lw_Ds, 1._wp)) &
@@ -202,13 +186,33 @@ contains
     !
     using_2stream = .false.
     if(present(use_2stream)) then
-      if(ctype .ne. '2str') &
-        error_msg = "rte_lw: use_2stream present but class type not correct"
-      if(len_trim(error_msg) > 0) return
       using_2stream = use_2stream
     end if
+
     !
-    ! Ensure values of tau, ssa, and g are reasonable
+    ! Checking optional argument input and class constructs
+    !
+    error_msg = ''
+    select type (optical_props)
+      class is (ty_optical_props_1scl)
+        if (using_2stream) &
+          error_msg = "rte_lw: using_2stream true not valid for _1scl class"
+        if (present(lw_Ds) .and. n_quad_angs /= 1) &
+          error_msg = "rte_lw: lw_Ds require n_gauss_angles = 1"
+      class is (ty_optical_props_2str)
+        if (present(lw_Ds)) &
+          error_msg = "rte_lw: lw_Ds not valid input for _2str class"
+        if ((using_2stream) .and. n_quad_angs /= 1) &
+          error_msg = "rte_lw: using_2stream true requires n_gauss_angles = 1"
+      class is (ty_optical_props_nstr)
+        error_msg = "rte_lw: _nstr class not valid"
+      class default
+        call stop_on_err("rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented")
+    end select
+    if(len_trim(error_msg) > 0) return
+
+    !
+    ! Ensure values of tau, ssa, and g are reasonable if using scattering
     !
     error_msg =  optical_props%validate()
     if(len_trim(error_msg) > 0) then

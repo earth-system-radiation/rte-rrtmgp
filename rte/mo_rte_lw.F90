@@ -171,17 +171,6 @@ contains
     if(len_trim(error_msg) > 0) return
 
     !
-    ! Check type, extents and values of transport angle secants if supplied
-    !
-    if (present(lw_Ds)) then
-      if(.not. extents_are(lw_Ds, ncol, ngpt)) &
-        error_msg = "rte_lw: lw_Ds inconsistently sized"
-      if(any_vals_less_than(lw_Ds, 1._wp)) &
-        error_msg = "rte_lw: one or more values of lw_Ds < 1."
-      if(len_trim(error_msg) > 0) return
-    end if
-
-    !
     ! Optionally - use 2-stream methods when low-order scattering properties are provided?
     !
     using_2stream = .false.
@@ -190,22 +179,25 @@ contains
     end if
 
     !
-    ! Checking optional argument input and class constructs
+    ! Checking that optional arguements are consistent with one another and with optical properties
     !
-    error_msg = ''
     select type (optical_props)
       class is (ty_optical_props_1scl)
         if (using_2stream) &
-          error_msg = "rte_lw: using_2stream true not valid for _1scl class"
-        if (present(lw_Ds) .and. n_quad_angs /= 1) &
-          error_msg = "rte_lw: lw_Ds require n_gauss_angles = 1"
+          error_msg = "rte_lw: can't use two-stream methods with only absorption optical depth"
+        if (present(lw_Ds)) then
+          if(.not. extents_are(lw_Ds, ncol, ngpt)) &
+            error_msg = "rte_lw: lw_Ds inconsistently sized"
+          if(any_vals_less_than(lw_Ds, 1._wp)) &
+            error_msg = "rte_lw: one or more values of lw_Ds < 1."
+          if(n_quad_angs /= 1) &
+            error_msg = "rte_lw: providing lw_Ds incompatible with specifying n_gauss_angles"
+        end if
       class is (ty_optical_props_2str)
         if (present(lw_Ds)) &
           error_msg = "rte_lw: lw_Ds not valid input for _2str class"
         if ((using_2stream) .and. n_quad_angs /= 1) &
-          error_msg = "rte_lw: using_2stream true requires n_gauss_angles = 1"
-      class is (ty_optical_props_nstr)
-        error_msg = "rte_lw: _nstr class not valid"
+          error_msg = "rte_lw: using_2stream=true incompatible with specifying n_gauss_angles"
       class default
         call stop_on_err("rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented")
     end select

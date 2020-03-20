@@ -9,7 +9,6 @@ jobs:
         accel_module: cudatoolkit
         FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
         RTE_KERNELS: openacc
-        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_default_gpu:
         compiler_module: pgi
         PrgEnv: PrgEnv-pgi
@@ -17,7 +16,6 @@ jobs:
         # Generic accelerator flag
         FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
         RTE_KERNELS: openacc
-        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_19_10_cpu:
         compiler_module: PGI/19.10
         PrgEnv: PrgEnv-pgi
@@ -98,11 +96,11 @@ jobs:
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
       python ./run-rfmip-examples.py --block_size 1800
       cd  ${RRTMGP_ROOT}/examples/all-sky
-      ${RUN_CMD} python ./run-allsky-example.py
+      srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
       cd  ${RRTMGP_ROOT}/tests
       cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
-      ${RUN_CMD} ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
-      ${RUN_CMD} ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+      srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
+      srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     displayName: 'Run'
   - script: |
       set -e

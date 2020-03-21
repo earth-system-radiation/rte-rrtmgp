@@ -78,7 +78,9 @@ if __name__ == '__main__':
         variants = [[gpi.lw_flux_dn, gpi.lw_flux_dn_optang, gpi.lw_flux_dn_3ang, gpi.lw_flux_dn_2str],
                     [gpi.lw_flux_up, gpi.lw_flux_up_optang, gpi.lw_flux_up_3ang, gpi.lw_flux_up_2str],
                     [gpi.lw_flux_net,
-                    gpi.lw_flux_dn_3ang - gpi.lw_flux_up_3ang]]
+                    gpi.lw_flux_dn_optang - gpi.lw_flux_up_optang,
+                    gpi.lw_flux_dn_3ang   - gpi.lw_flux_up_3ang,
+                    gpi.lw_flux_dn_2str   - gpi.lw_flux_up_2str]]
         refs = [lbli.rld,  lbli.rlu,  lbli.rld -  lbli.rlu]
         titles = ["Accuracy wrt LBLRTM: LW down", "Accuracy wrt LBLRTM: LW up", "Accuracy: LW net"]
         for v, r, t in zip(variants, refs, titles):

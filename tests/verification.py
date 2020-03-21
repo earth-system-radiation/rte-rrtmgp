@@ -44,7 +44,7 @@ if __name__ == '__main__':
     #
     passed = assert_equal([gp.lw_flux_dn_vr, gp.lw_flux_dn_jaco, gp.lw_flux_dn_subset], gp.lw_flux_dn)
     passed = assert_equal([gp.lw_flux_up_vr, gp.lw_flux_up_jaco, gp.lw_flux_up_subset], gp.lw_flux_up)  and passed
-    passed = assert_equal(gp.lw_flux_net_2,  gp.lw_flux_net) and passed
+    passed = assert_equal([gp.lw_flux_net,  gp.lw_flux_net_2],                          gp.lw_flux_dn - gp.lw_flux_up) and passed
     #
     # Does the flux plus the Jacobian equal a calculation with perturbed surface temperature?
     #

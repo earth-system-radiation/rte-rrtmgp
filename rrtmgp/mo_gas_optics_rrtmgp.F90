@@ -173,7 +173,6 @@ module mo_gas_optics_rrtmgp
     procedure, public  :: gas_optics_int
     procedure, public  :: gas_optics_ext
     procedure, private :: check_key_species_present
-    procedure, private :: get_minor_list
     ! Interpolation table dimensions
     procedure, private :: get_nflav
     procedure, private :: get_neta
@@ -271,7 +270,7 @@ contains
     ! External source -- check arrays sizes and values
     ! input data sizes and values
     !
-    !$acc enter data copyin(tsfc,tlev)
+    !$acc enter data copyin(tsfc)
     if(.not. extents_are(tsfc, ncol)) &
       error_msg = "gas_optics(): array tsfc has wrong size"
     if(any_vals_outside(tsfc, this%temp_ref_min,  this%temp_ref_max)) &
@@ -279,6 +278,7 @@ contains
     if(error_msg  /= '') return
 
     if(present(tlev)) then
+      !$acc enter data copyin(tlev)
       if(.not. extents_are(tlev, ncol, nlay+1)) &
         error_msg = "gas_optics(): array tlev has wrong size"
       if(any_vals_outside(tlev, this%temp_ref_min, this%temp_ref_max)) &
@@ -296,13 +296,26 @@ contains
     !
     ! Interpolate source function
     !
-    error_msg = source(this,                               &
-                       ncol, nlay, nband, ngpt,            &
-                       play, plev, tlay, tsfc,             &
-                       jtemp, jpress, jeta, tropo, fmajor, &
-                       sources,                            &
-                       tlev)
-    !$acc exit data delete(tsfc,tlev)
+    if(present(tlev)) then
+      !
+      ! present status of optional argument should be passed to source()
+      !   but isn't with PGI 19.10
+      !
+      error_msg = source(this,                               &
+                         ncol, nlay, nband, ngpt,            &
+                         play, plev, tlay, tsfc,             &
+                         jtemp, jpress, jeta, tropo, fmajor, &
+                         sources,                            &
+                         tlev)
+      !$acc exit data delete(tlev)
+    else
+      error_msg = source(this,                               &
+                         ncol, nlay, nband, ngpt,            &
+                         play, plev, tlay, tsfc,             &
+                         jtemp, jpress, jeta, tropo, fmajor, &
+                         sources)
+    end if
+    !$acc exit data delete(tsfc)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
@@ -507,6 +520,7 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
+    col_dry_wk => col_dry_arr
     !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
@@ -698,7 +712,7 @@ contains
                   play, plev, tlay, tsfc,             &
                   jtemp, jpress, jeta, tropo, fmajor, &
                   sources,                            & ! Planck sources
-                  tlev)                               & ! optional input
+                  tlev)                         & ! optional input
                   result(error_msg)
     ! inputs
     class(ty_gas_optics_rrtmgp),    intent(in ) :: this
@@ -722,6 +736,8 @@ contains
     integer                                      :: icol, ilay, igpt
     real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
     real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
+    real(wp), dimension(ngpt,     ncol)          :: sfc_source_Jac
+
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
     real(wp), dimension(:,:),            pointer :: tlev_wk
@@ -764,23 +780,32 @@ contains
     !$acc enter data copyin(sources)
     !$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
+    !$acc enter data create(sfc_source_Jac)
+    !$acc enter data create(sources%sfc_source_Jac)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
+                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t, &
+                sfc_source_Jac)
     !$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
-        sources%sfc_source(icol,igpt) = sfc_source_t(igpt,icol)
+        sources%sfc_source    (icol,igpt) = sfc_source_t  (igpt,icol)
+        sources%sfc_source_Jac(icol,igpt) = sfc_source_Jac(igpt,icol)
       end do
     end do
     call reorder123x321(lay_source_t, sources%lay_source)
     call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
     call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
+    !
+    ! Transposition of a 2D array, for which we don't have a routine in mo_rrtmgp_util_reorder.
+    !
+    !$acc exit data delete(sfc_source_Jac)
     !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
+    !$acc exit data copyout(sources%sfc_source_Jac)
     !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc exit data copyout(sources)
   end function source
@@ -1239,32 +1264,6 @@ contains
     if(len_trim(error_msg) > 0) error_msg = "gas_optics: required gases" // trim(error_msg) // " are not provided"
 
   end function check_key_species_present
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Function to define names of key and minor gases to be used by gas_optics().
-  ! The final list gases includes those that are defined in gas_optics_specification
-  ! and are provided in ty_gas_concs.
-  !
-  function get_minor_list(this, gas_desc, ngas, names_spec)
-    class(ty_gas_optics_rrtmgp), intent(in)       :: this
-    class(ty_gas_concs), intent(in)                      :: gas_desc
-    integer, intent(in)                                  :: ngas
-    character(32), dimension(ngas), intent(in)           :: names_spec
-
-    ! List of minor gases to be used in gas_optics()
-    character(len=32), dimension(:), allocatable         :: get_minor_list
-    ! Logical flag for minor species in specification (T = minor; F = not minor)
-    logical, dimension(size(names_spec))                 :: gas_is_present
-    integer                                              :: igas, icnt
-
-    if (allocated(get_minor_list)) deallocate(get_minor_list)
-    do igas = 1, this%get_ngas()
-      gas_is_present(igas) = string_in_array(names_spec(igas), gas_desc%gas_name)
-    end do
-    icnt = count(gas_is_present)
-    allocate(get_minor_list(icnt))
-    get_minor_list(:) = pack(this%gas_names, mask=gas_is_present)
-  end function get_minor_list
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Inquiry functions

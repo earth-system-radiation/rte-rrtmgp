@@ -42,7 +42,7 @@ if __name__ == '__main__':
     #
     # Longwave
     #
-    gp['lw_flux_net_from_updn'] = gp.lw_flux_up  + gp.lw_jaco_up
+    gp['lw_flux_net_from_updn'] = gp.lw_flux_dn  - gp.lw_flux_up
     gp.lw_flux_net_from_updn.attrs = {"description":"LW flux net, computed externally from dn-up"}
 
     passed = assert_equal([gp.lw_flux_dn_vr, gp.lw_flux_dn_jaco, gp.lw_flux_dn_subset], gp.lw_flux_dn)

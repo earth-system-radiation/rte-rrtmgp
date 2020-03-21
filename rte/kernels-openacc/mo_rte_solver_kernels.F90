@@ -1397,10 +1397,10 @@ contains
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: ssa  ! single-scattering albedo,
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: g       ! asymmetry parameter []
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source_inc
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
                                         ! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
                                         ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source_dec
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
                                                ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]

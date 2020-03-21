@@ -22,12 +22,14 @@ jobs:
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+        RUN_CMD:
       pgi_19_9_cpu:
         compiler_module: PGI/19.9
         PrgEnv: PrgEnv-pgi
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+        RUN_CMD:
       pgi_default_cpu:
         compiler_module: pgi
         PrgEnv: PrgEnv-pgi
@@ -76,10 +78,12 @@ jobs:
       set -e
       source modules
       export RRTMGP_ROOT=$PWD
-      export RRTMGP_DIR=$PWD/build
+      export RRTMGP_BUILD=$PWD/build
       export FC=ftn
       make -C build/ clean
       make -C build/ -j 8
+      make -C tests clean
+      make -C tests -j 1
       make -C examples/all-sky clean
       make -C examples/all-sky -j 8
       make -C examples/rfmip-clear-sky clean
@@ -88,20 +92,26 @@ jobs:
   - script: |
       set -e
       source modules
-      cd examples/rfmip-clear-sky
+      export RRTMGP_ROOT=$PWD
+      cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
       srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
-      cd ../..
-      cd examples/all-sky
+      cd  ${RRTMGP_ROOT}/examples/all-sky
       srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
+      cd  ${RRTMGP_ROOT}/tests
+      cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
+      srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
+      srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     displayName: 'Run'
   - script: |
       set -e
       source modules
+      export RRTMGP_ROOT=$PWD
       # This module will unload some of the build modules, so do the checks separately
       module load netcdf-python
-      cd examples/rfmip-clear-sky
+      cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
       python ./compare-to-reference.py --fail=7.e-4
-      cd ../..
-      cd examples/all-sky
+      cd ${RRTMGP_ROOT}/examples/all-sky
       python ./compare-to-reference.py
+      cd ${RRTMGP_ROOT}/tests
+      python verification.py
     displayName: 'Check results'

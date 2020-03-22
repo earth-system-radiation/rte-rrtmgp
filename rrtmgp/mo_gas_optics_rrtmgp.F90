@@ -893,7 +893,7 @@ contains
     allocate(this%totplnk          (size(totplnk,    1), size(totplnk,   2)), &
              this%planck_frac      (size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)), &
              this%optimal_angle_fit(size(optimal_angle_fit,    1), size(optimal_angle_fit,   2)))
-    !$acc enter data create(this%totplnk, this%planck_frac)
+    !$acc enter data create(this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$acc kernels
     this%totplnk = totplnk
     this%planck_frac = planck_frac
@@ -1420,8 +1420,8 @@ contains
     !
     ! column transmissivity
     !
-    !$acc enter data create(trans_total)
-    !$acc parallel loop gang vector collapse(2)
+    !$acc enter data
+    !$acc parallel loop gang vector collapse(2) copyin(optical_props%tau) copyout(optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !
@@ -1442,7 +1442,6 @@ contains
       end do
     end do
 
-    !$acc exit data delete(trans_total)
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
   !

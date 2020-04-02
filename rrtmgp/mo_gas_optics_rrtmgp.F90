@@ -1420,7 +1420,7 @@ contains
     !
     ! column transmissivity
     !
-    !$acc parallel loop gang vector collapse(2) copyin(optical_props%tau) copyout(optimal_angles)
+    !$acc parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !

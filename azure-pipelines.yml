@@ -9,6 +9,7 @@ jobs:
         accel_module: cudatoolkit
         FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
         RTE_KERNELS: openacc
+        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_default_gpu:
         compiler_module: pgi
         PrgEnv: PrgEnv-pgi
@@ -16,6 +17,7 @@ jobs:
         # Generic accelerator flag
         FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
         RTE_KERNELS: openacc
+        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_19_10_cpu:
         compiler_module: PGI/19.10
         PrgEnv: PrgEnv-pgi
@@ -30,12 +32,12 @@ jobs:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
         RUN_CMD:
-      pgi_default_cpu:
-        compiler_module: pgi
-        PrgEnv: PrgEnv-pgi
-        accel_module:
-        # Error checking flags
-        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+#      cce-cpu-production:
+#        compiler_module: ccce-icon/9.0.2-classic
+#        PrgEnv: PrgEnv-cray
+#        accel_module:
+#        # Production flags for Icon model
+#        FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
 #      intel_default_cpu:
 #        compiler_module: intel
 #        PrgEnv: PrgEnv-intel
@@ -94,13 +96,13 @@ jobs:
       source modules
       export RRTMGP_ROOT=$PWD
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-      srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py --block_size 1800
+      ${RUN_CMD} python ./run-rfmip-examples.py --block_size 1800
       cd  ${RRTMGP_ROOT}/examples/all-sky
-      srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
+      ${RUN_CMD} python ./run-allsky-example.py
       cd  ${RRTMGP_ROOT}/tests
       cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
-      srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
-      srun -C gpu -A c15 -p cscsci ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+      ${RUN_CMD} ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
+      ${RUN_CMD} ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     displayName: 'Run'
   - script: |
       set -e

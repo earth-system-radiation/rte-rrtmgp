@@ -67,6 +67,9 @@ jobs:
       module list
       " > modules
 
+      echo "Module commands"
+      cat modules
+
     displayName: 'Create module environment'
   - script: |
       set -e

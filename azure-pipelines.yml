@@ -5,14 +5,16 @@ jobs:
     matrix:
       pgi_19_9_gpu:
         compiler_module: PGI/19.9
-        PrgEnv: pgi
+        comp_base: pgi
+        PrgEnv: PrgEnv-pgi
         accel_module: cudatoolkit
         FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
         RTE_KERNELS: openacc
         RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_default_gpu:
         compiler_module: pgi
-        PrgEnv: pgi
+        comp_base: pgi
+        PrgEnv: PrgEnv-pgi
         accel_module: craype-accel-nvidia60
         # Generic accelerator flag
         FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
@@ -20,21 +22,24 @@ jobs:
         RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_19_10_cpu:
         compiler_module: PGI/19.10
-        PrgEnv: pgi
+        comp_base: pgi
+        PrgEnv: PrgEnv-pgi
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
         RUN_CMD:
       pgi_19_9_cpu:
         compiler_module: PGI/19.9
-        PrgEnv: pgi
+        comp_base: pgi
+        PrgEnv: PrgEnv-pgi
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
         RUN_CMD:
       intel_19_cpu:
         compiler_module: intel/19.0.1.144
-        PrgEnv: intel
+        comp_base: intel
+        PrgEnv: PrgEnv-intel
         accel_module:
         # Error checking flags
         FCFLAGS: "-m64 -g  -traceback -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f03"
@@ -56,9 +61,9 @@ jobs:
       echo "
       export PATH=$CRAY_BINUTILS_BIN:$PATH
       module load daint-gpu
-      module swap PrgEnv-cray PrgEnv-$(PrgEnv)
+      module swap PrgEnv-cray $(PrgEnv)
       module load cray-netcdf cray-hdf5
-      module swap $(PrgEnv) $(compiler_module)
+      module swap $(comp_base) $(compiler_module)
       module load $(accel_module)
       module load cray-python/3.6.5.7
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
@@ -66,9 +71,6 @@ jobs:
       echo Environment:
       module list
       " > modules
-
-      echo "Module commands"
-      cat modules
 
     displayName: 'Create module environment'
   - script: |

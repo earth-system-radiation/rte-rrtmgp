@@ -1,0 +1,266 @@
+# Path to the root source directory:
+srcdir:= @srcdir@
+
+# Path to the directory with the Fortran module files:
+moddir:= mod
+
+# Paths to the installation directories:
+prefix:= @prefix@
+exec_prefix:= @exec_prefix@
+
+# Package tarname:
+PACKAGE_TARNAME= @PACKAGE_NAME@-@PACKAGE_VERSION@
+
+# Compilers and utilities:
+AR= @AR@
+BZIP2 = bzip2
+DEPGEN= ${PYTHON} $(srcdir)/mkhelper/depgen.py
+DEPLIST= ${PYTHON} $(srcdir)/mkhelper/deplist.py
+FC= @FC@
+GIT= git
+INSTALL= @INSTALL@
+INSTALL_DATA= @INSTALL_DATA@
+MODCMP= ${PYTHON} $(srcdir)/mkhelper/fortmodcmp.py
+PYTHON= @PYTHON@
+SHELL= @SHELL@
+TAR= tar
+
+# Fortran compiler flags:
+FCFLAGS= @FCFLAGS@
+makefile_FCFLAGS= @FCMODINC@$(moddir) @FCMODOUT@$(moddir) @NETCDF_FCFLAGS@ @GPTL_FCFLAGS@
+
+# Archiver flags:
+ARFLAGS= @ARFLAGS@
+
+# Linker flags and libraries:
+LDFLAGS= @LDFLAGS@
+LIBS= @LIBS@
+makefile_LIBS= @NETCDF_FCLIBS@ @GPTL_FCLIBS@
+
+# Dependency generator flags:
+DEPGEN_F90=  --src-root='@srcdir@' --pp-enable --pp-eval-expr --fc-enable \
+             --pp-inc-flag='@FCINCFLAG_PP@' --pp-inc-order='@FCINCORDER_PP@' --pp-macro-flag='@FCDEF_PP@' \
+             --fc-mod-ext='@FCMODEXT@.proxy' --fc-mod-upper='@FCMODUC@' --fc-inc-flag='@FCINCFLAG@' \
+             --fc-inc-order='@FCINCORDER@' --fc-mod-dir-flag='@FCMODOUT@' --fc-external-mods='netcdf,gptl'
+DEPGEN_FCFLAGS= @DEPGEN_FCFLAGS@
+
+# Silent rule prefixes:
+V= @DEFAULT_VERBOSITY@
+ifeq ($(V),0)
+silent_AR=      @echo "  AR      " $@;
+silent_DEPGEN=  @echo "  DEPGEN  " $@;
+silent_FC=      @echo "  FC      " $@;
+silent_FCLD=    @echo "  FCLD    " $@;
+silent_MKDIR=   @echo "  MKDIR   " $(@D);
+endif
+
+lib_LIBRARIES= librte.a librrtmgp.a
+
+librte_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rte -name '*.F90'))
+# If OpenACC is disabled, simply filter-out OpenACC source files:
+@OPENACC_DISABLED@librte_a_SOURCES:= $(filter-out rte/kernels-openacc/%,$(librte_a_SOURCES))
+# Otherwise, filter-out non-OpenACC files that have OpenACC versions and keep
+# the rest:
+@OPENACC_ENABLED@librte_a_SOURCES:= $(filter-out $(patsubst rte/kernels-openacc/%,rte/kernels/%,$(filter rte/kernels-openacc/%,$(librte_a_SOURCES))),$(librte_a_SOURCES))
+
+librrtmgp_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rrtmgp -name '*.F90'))
+# If OpenACC is disabled, simply filter-out the related source files:
+@OPENACC_DISABLED@librrtmgp_a_SOURCES:= $(filter-out rrtmgp/kernels-openacc/%,$(librrtmgp_a_SOURCES))
+# Otherwise, filter-out non-OpenACC files that have OpenACC versions and keep
+# the rest:
+@OPENACC_ENABLED@librrtmgp_a_SOURCES:= $(filter-out $(patsubst rrtmgp/kernels-openacc/%,rrtmgp/kernels/%,$(filter rrtmgp/kernels-openacc/%,$(librrtmgp_a_SOURCES))),$(librrtmgp_a_SOURCES))
+
+# Dependency files of the libraries:
+lib_dep_files= $(addsuffix .d,$(librte_a_SOURCES) $(librrtmgp_a_SOURCES))
+
+# Programs that are built by default time:
+noinst_PROGRAMS=
+# Programs that are built only when 'make check':
+check_PROGRAMS=
+# Common list of source files of all programs:
+prog_SOURCES=
+@EXAMPLES_ENABLED@noinst_PROGRAMS+=                                    \
+@EXAMPLES_ENABLED@    examples/all-sky/rrtmgp_allsky@EXEEXT@           \
+@EXAMPLES_ENABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@ \
+@EXAMPLES_ENABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@
+@EXAMPLES_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions -name '*.F90'))
+
+@TESTS_ENABLED@@EXAMPLES_ENABLED@check_PROGRAMS+= tests/clear_sky_regression@EXEEXT@
+@TESTS_ENABLED@@EXAMPLES_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/tests -name '*.F90'))
+@TESTS_ENABLED@@EXAMPLES_DISABLED@check_PROGRAMS+= \
+@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/all-sky/rrtmgp_allsky@EXEEXT@           \
+@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@ \
+@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@ \
+@TESTS_ENABLED@@EXAMPLES_DISABLED@    tests/clear_sky_regression@EXEEXT@
+@TESTS_ENABLED@@EXAMPLES_DISABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions $(srcdir)/tests -name '*.F90'))
+
+# Dependency files of the programs:
+prog_dep_files= $(addsuffix .d,$(prog_SOURCES))
+
+# List of directories that need to be created:
+dir_files= $(addsuffix .dirstamp,$(sort $(dir $(lib_dep_files) $(prog_dep_files))) $(moddir)/) 
+
+# Selective search path:
+vpath %.F90 $(srcdir)
+
+# Disable built-in suffix rules:
+.SUFFIXES:
+# Delete partially updated files:
+.DELETE_ON_ERROR:
+# Targets not associated with files:
+.PHONY: all depend dummy-depend mostlyclean clean distclean \
+        install install-libs install-mods dist check sanitize-mod-proxies
+# Targets that do not need the inclusion of the dependency files:
+NO_INC_TARGETS:= depend dummy-depend mostlyclean clean distclean dist
+# Keep directory stamps:
+.PRECIOUS: $(dir_files)
+
+# Default rule:
+all: $(lib_LIBRARIES) $(noinst_PROGRAMS)
+
+# Explicit dependency generation rule:
+depend: $(lib_dep_files) $(prog_dep_files)
+
+# Delete the results of compilation and linking:
+mostlyclean:
+	rm -f $(patsubst %.F90,%.@OBJEXT@,$(librte_a_SOURCES) $(librrtmgp_a_SOURCES) $(prog_SOURCES))
+	rm -f $(moddir)/*.@FCMODEXT@ $(moddir)/*.@FCMODEXT@.proxy
+	rm -f $(lib_LIBRARIES) $(noinst_PROGRAMS) $(noinst_PROGRAMS:=.dSYM) $(check_PROGRAMS) $(check_PROGRAMS:=.dSYM)
+
+# Delete files generated at the building stage:
+clean: mostlyclean
+
+# Delete everything generated at the configure stage (and clean the created
+# directories if they are empty):
+distclean: clean
+	find . -name '*.pyc' -delete -o -name '*.pyo' -delete -o -name '__pycache__' -delete
+	rm -f $(lib_dep_files) $(prog_dep_files)
+	rm -f $(dir_files)
+	rm -rf examples/all-sky/all-sky.test \
+	       examples/all-sky/all-sky.test.log \
+	       examples/all-sky/ref \
+	       examples/all-sky/rrtmgp-allsky.nc \
+	       examples/rfmip-clear-sky/generate-output-file-templates.py \
+	       examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc \
+	       examples/rfmip-clear-sky/reference \
+	       examples/rfmip-clear-sky/rfmip-clear-sky.test \
+	       examples/rfmip-clear-sky/rfmip-clear-sky.test.log \
+	       examples/rfmip-clear-sky/rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
+	       examples/rfmip-clear-sky/rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
+	       examples/rfmip-clear-sky/rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
+	       examples/rfmip-clear-sky/rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
+	       examples/rfmip-clear-sky/timing.* \
+	       tests/clear_sky_regression.test \
+	       tests/clear_sky_regression.test.log \
+	       tests/test_atmospheres.nc
+	test '.' = '$(srcdir)' || \
+	  rm -f examples/all-sky/garand-atmos-1.nc \
+	        extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc \
+	        extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc \
+	        rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc \
+	        rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+	@for dir in $(moddir); do \
+          if test -d "$$dir"; then \
+            echo "find '$$dir' -type d -empty -delete"; \
+            find "$$dir" -type d -empty -delete; \
+          fi; \
+        done
+	@test '.' = '$(srcdir)' || \
+	  for dir in rte rrtmgp examples extensions tests; do \
+	    if test -d "$$dir"; then \
+	      echo "find '$$dir' -type d -empty -delete"; \
+	      find "$$dir" -type d -empty -delete; \
+	    fi; \
+	  done
+	rm -f config.log config.status Makefile
+
+# Installation rules:
+install: install-libs install-mods
+
+# Check rule:
+check: all $(check_PROGRAMS)
+	@fail=; \
+	for dir in 'examples/all-sky' 'examples/rfmip-clear-sky' 'tests'; do \
+	  (dir_fail=; cd "$$dir" && \
+	   for file in *.test; do \
+	     test -f ./$$file || continue; \
+	     if ./$$file >./$$file.log 2>&1; then result=PASS; \
+	     elif test $$? -eq 77; then result=SKIP; \
+	     else result=FAIL; dir_fail=yes; fi; \
+	     echo "$$result: $$dir/$$file (see '$$dir/$$file.log')"; \
+	     test x"$$result" = xFAIL && cat ./$$file.log | sed 's/^/| /'; \
+	   done; test x"$$dir_fail" != xyes) || fail=yes; \
+	done; test x"$$fail" != xyes
+
+# Tarball creation rule:
+dist:
+	@if test ! -e '@top_srcdir@/.git'; then echo "'@top_srcdir@' is not a git repository" >&2; exit 1; fi
+	$(GIT) -C '@top_srcdir@' archive --prefix=$(PACKAGE_TARNAME)/ --format tar -o '@abs_top_builddir@/$(PACKAGE_TARNAME).tar' HEAD
+	rm -f '$(PACKAGE_TARNAME).tar.bz2' && BZIP2=$${BZIP2--9} $(BZIP2) '$(PACKAGE_TARNAME).tar'
+
+# Fortran compilation rule:
+%.@OBJEXT@: %.F90 | $(dir_files)
+	$(silent_FC)$(FC) -o $@ -c $(makefile_FCFLAGS) $(FCFLAGS) @FCFLAGS_F90@ $<
+
+# Static library archiving rules:
+librte.a: $(librte_a_SOURCES:.F90=.@OBJEXT@)
+librrtmgp.a: $(librrtmgp_a_SOURCES:.F90=.@OBJEXT@)
+
+$(lib_LIBRARIES): | $(dir_files)
+	$(silent_AR)rm -f $@ && $(AR) $(ARFLAGS) $@ $+
+
+# Executable linking rules:
+examples/all-sky/rrtmgp_allsky@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/all-sky/rrtmgp_allsky.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
+examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/rfmip-clear-sky/rrtmgp_rfmip_lw.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
+examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/rfmip-clear-sky/rrtmgp_rfmip_sw.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
+tests/clear_sky_regression@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t tests/clear_sky_regression.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
+
+$(noinst_PROGRAMS) $(check_PROGRAMS): | $(dir_files)
+	$(silent_FCLD)$(FC) -o $@ $(makefile_FCFLAGS) $(FCFLAGS) $(LDFLAGS) $+ $(makefile_LIBS) $(LIBS)
+
+# Fortran module file rule:
+$(moddir)/%.@FCMODEXT@.proxy:| sanitize-mod-proxies
+	@if test -z '$<'; then \
+	  echo "Cannot find Fortran source file providing module '$(basename $(@F:.proxy=))'." >&2; \
+	else \
+	  if test ! -f '$(@:.proxy=)'; then rm -f '$<'; $(MAKE) '$<'; fi; \
+	  if cmp '$@' '$(@:.proxy=)' >/dev/null 2>&1 || $(MODCMP) '$@' '$(@:.proxy=)' @FC_VENDOR@ 2>/dev/null; then :; \
+	  else cp '$(@:.proxy=)' '$@' 2>/dev/null; fi; \
+	fi
+
+# Delete all Fortran module proxy files that do not have an existing module to
+# be a proxy of, i.e. if <filename>.proxy exists but <filename> does not,
+# delete <filename>.proxy:
+sanitize-mod-proxies:
+	@rm -f $(filter-out $(addsuffix .proxy,$(wildcard $(moddir)/*.@FCMODEXT@)),$(wildcard $(moddir)/*.@FCMODEXT@.proxy))
+
+# Directory creation rule:
+%/.dirstamp:
+	$(silent_MKDIR)@MKDIR_P@ $(@D) && touch $@
+
+# Fortran dependency generation rule:
+%.F90.d: %.F90 Makefile | $(dir_files)
+	$(silent_DEPGEN)$(DEPGEN) $(DEPGEN_F90) -o $@ --obj-name $(@:.F90.d=.@OBJEXT@) -i $< -- $(DEPGEN_FCFLAGS) $(makefile_FCFLAGS) $(FCFLAGS)
+
+# Dummy dependency file generation rule (called by config.status): 
+dummy-depend: | $(dir_files)
+	@for file in $(lib_dep_files) $(prog_dep_files); do \
+	  test -e "$$file" || touch "$$file"; \
+	done
+
+# Library installation rule:
+install-libs: $(lib_LIBRARIES)
+	$(INSTALL) -d $(DESTDIR)@libdir@ && $(INSTALL_DATA) $^ $(DESTDIR)@libdir@
+
+# Fortran module files installation rule:
+install-mods: $(filter %.@FCMODEXT@.proxy,$(shell $(DEPLIST) -f $(lib_dep_files)))
+	$(INSTALL) -d $(DESTDIR)@includedir@ && $(INSTALL_DATA) $(basename $^) $(DESTDIR)@includedir@
+
+current_targets:= $(strip $(MAKECMDGOALS))
+ifeq (,$(current_targets))
+current_targets:= all
+endif
+
+ifneq (,$(filter-out $(NO_INC_TARGETS),$(current_targets)))
+include $(lib_dep_files) $(prog_dep_files)
+endif

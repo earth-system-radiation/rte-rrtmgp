@@ -1,0 +1,5 @@
+#!@SHELL@
+@TESTS_DISABLED@exit 77
+
+@LAUNCH_PREFIX@ @PYTHON@ @srcdir@/run-allsky-example.py || exit 1
+@PYTHON@ @srcdir@/compare-to-reference.py

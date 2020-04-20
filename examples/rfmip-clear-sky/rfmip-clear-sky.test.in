@@ -1,0 +1,10 @@
+#!@SHELL@
+@TESTS_DISABLED@exit 77
+
+@PYTHON@ @srcdir@/stage_files.py || exit 1
+
+@OPENACC_DISABLED@args=''
+@OPENACC_ENABLED@args='--block_size 1800'
+@LAUNCH_PREFIX@ @PYTHON@ @srcdir@/run-rfmip-examples.py $args || exit 1
+
+@PYTHON@ @srcdir@/compare-to-reference.py --fail=7.e-4

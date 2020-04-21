@@ -35,6 +35,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
+  use mo_rte_config,    only: check_array_extents, check_array_values
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
@@ -131,7 +132,8 @@ contains
       error_msg = "rte_lw: no space allocated for fluxes"
       return
     end if
-    if ((present(flux_up_Jac))) then
+
+    if (present(flux_up_Jac) .and. check_array_extents) then
       if( .not. extents_are(flux_up_Jac, ncol, nlay+1)) then
         error_msg = "rte_lw: flux Jacobian inconsistently sized"
         return
@@ -141,27 +143,34 @@ contains
     !
     ! Source functions
     !
-    if(any([sources%get_ncol(), sources%get_nlay(), sources%get_ngpt()]  /= [ncol, nlay, ngpt])) &
-      error_msg = "rte_lw: sources and optical properties inconsistently sized"
+    if (check_array_extents) then
+      if(any([sources%get_ncol(), sources%get_nlay(), sources%get_ngpt()]  /= [ncol, nlay, ngpt])) &
+        error_msg = "rte_lw: sources and optical properties inconsistently sized"
+    end if
     ! Also need to validate
 
-    !
-    ! Surface emissivity
-    !
-    if(.not. extents_are(sfc_emis, nband, ncol)) &
-      error_msg = "rte_lw: sfc_emis inconsistently sized"
-    if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
-      error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
-    if(len_trim(error_msg) > 0) return
+    if (check_array_extents) then
+      !
+      ! Surface emissivity
+      !
+      if(.not. extents_are(sfc_emis, nband, ncol)) &
+        error_msg = "rte_lw: sfc_emis inconsistently sized"
+      !
+      ! Incident flux, if present
+      !
+      if(present(inc_flux)) then
+        if(.not. extents_are(inc_flux, ncol, ngpt)) &
+          error_msg = "rte_lw: inc_flux inconsistently sized"
+      end if
+    end if
 
-    !
-    ! Incident flux, if present
-    !
-    if(present(inc_flux)) then
-      if(.not. extents_are(inc_flux, ncol, ngpt)) &
-        error_msg = "rte_lw: inc_flux inconsistently sized"
-      if(any_vals_less_than(inc_flux, 0._wp)) &
-        error_msg = "rte_lw: inc_flux has values < 0"
+    if(check_array_extents) then
+      if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
+        error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
+      if(present(inc_flux)) then
+        if(any_vals_less_than(inc_flux, 0._wp)) &
+          error_msg = "rte_lw: inc_flux has values < 0"
+      end if
     end if
     if(len_trim(error_msg) > 0) return
 
@@ -184,7 +193,8 @@ contains
     !
     ! Ensure values of tau, ssa, and g are reasonable
     !
-    error_msg =  optical_props%validate()
+    if(check_array_values) error_msg =  optical_props%validate()
+
     if(len_trim(error_msg) > 0) then
       if(len_trim(optical_props%get_name()) > 0) &
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
@@ -243,7 +253,7 @@ contains
 
       class is (ty_optical_props_2str)
 
-        if ((present(flux_dn_Jac))) then
+        if (present(flux_dn_Jac) .and. check_array_extents) then
           if( .not. extents_are(flux_dn_Jac, ncol, nlay+1)) then
             error_msg = "rte_lw: flux_dn_Jac inconsistently sized"
             return

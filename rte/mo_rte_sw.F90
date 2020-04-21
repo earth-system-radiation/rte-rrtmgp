@@ -85,9 +85,8 @@ contains
     end if
 
     !
-    ! Sizes and values of input arrays
+    ! Sizes of input arrays
     !
-
     if(check_array_extents) then
       if(.not. extents_are(mu0, ncol)) &
         error_msg = "rte_sw: mu0 inconsistently sized"
@@ -103,6 +102,9 @@ contains
       end if
     end if
 
+    !
+    ! Values of input arrays 
+    !
     if(check_array_values) then
       if(any_vals_outside(mu0, 0._wp, 1._wp)) &
         error_msg = "rte_sw: one or more mu0 <= 0 or > 1"

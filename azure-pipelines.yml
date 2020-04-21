@@ -56,7 +56,7 @@ jobs:
       echo "
       export PATH=$CRAY_BINUTILS_BIN:$PATH
       module load daint-gpu
-      module swap PrgEnv-cray Prg-$(compiler_base)
+      module swap PrgEnv-cray PrgEnv-$(compiler_base)
       module swap $(compiler_base) $(compiler_module)
       module load $(accel_module)
       module load cray-netcdf cray-hdf5

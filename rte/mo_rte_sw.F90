@@ -103,7 +103,7 @@ contains
       end if
     end if
 
-    if(check_array_value) then
+    if(check_array_values) then
       if(any_vals_outside(mu0, 0._wp, 1._wp)) &
         error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
       if(any_vals_less_than(inc_flux, 0._wp)) &
@@ -115,7 +115,7 @@ contains
       if(present(inc_flux_dif)) then
         if(any_vals_less_than(inc_flux_dif, 0._wp)) &
           error_msg = "rte_sw: one or more inc_flux_dif < 0"
-      end if 
+      end if
     end if
 
 

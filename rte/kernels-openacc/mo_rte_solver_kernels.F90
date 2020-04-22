@@ -1244,8 +1244,8 @@ contains
 ! -------------------------------------------------------------------------------------------------
   subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                             &
                               tau, scaling, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
-                              radn_up, radn_dn,&
-                              sfc_srcJac,rad_up_Jac,rad_dn_Jac) bind(C, name="lw_solver_1rescl")
+                              radn_up, radn_dn, &
+                              sfc_srcJac, rad_up_Jac, rad_dn_Jac) bind(C, name="lw_solver_1rescl")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
@@ -1368,6 +1368,7 @@ contains
     !$acc exit data copyout(rad_up_Jac, rad_dn_Jac)
     !$acc exit data delete(source_sfcJac, sfc_srcJac)
 
+
     !$acc exit data copyout(radn_dn,radn_up)
     !$acc exit data delete(sfcSource, An, Cn)
     !$acc exit data delete(scaling)
@@ -1386,7 +1387,7 @@ contains
   subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
                                    tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, &
                                    sfc_emis, sfc_src,&
-                                   flux_up, flux_dn,&
+                                   flux_up, flux_dn, &
                                    sfc_src_Jac, flux_up_Jac, flux_dn_Jac) &
                                    bind(C, name="lw_solver_1rescl_GaussQuad")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
@@ -1490,7 +1491,6 @@ contains
     end do
    !$acc exit data delete(sfc_src_Jac,radn_dn_Jac, radn_up_Jac)
    !$acc exit data copyout(flux_up_Jac,flux_dn_Jac)
-
    !$acc exit data copyout(flux_up,flux_dn)
    !$acc exit data delete(Ds,weights,tau,ssa,g,tauLoc,scaling,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol)
   end subroutine lw_solver_1rescl_GaussQuad
@@ -1599,7 +1599,7 @@ contains
                                                        trans      ! transmissivity = exp(-tau)
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_albedo ! Surface albedo
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_dn, &
-                                                       source_up  ! Diffuse radiation emitted by the layer
+                                                            source_up  ! Diffuse radiation emitted by the layer
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_up    ! Radiances [W/m2-str]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn    !Top level must contain incident flux boundary condition
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: An, Cn  

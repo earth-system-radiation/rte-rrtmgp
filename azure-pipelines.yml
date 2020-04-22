@@ -36,12 +36,6 @@ jobs:
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-#      intel_default_cpu:
-#        compiler_module: intel
-#        PrgEnv: PrgEnv-intel
-#        accel_module:
-        # Error checking flags
-#        FCFLAGS: "-m64 -g  -traceback -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f03"
     maxParallel: 2
 
   workspace:
@@ -81,6 +75,7 @@ jobs:
       export RRTMGP_BUILD=$PWD/build
       export FC=ftn
       make -C build/ clean
+
       make -C build/ -j 8
       make -C tests clean
       make -C tests -j 1

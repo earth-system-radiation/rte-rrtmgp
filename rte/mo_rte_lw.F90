@@ -42,7 +42,7 @@ module mo_rte_lw
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes
   use mo_rte_solver_kernels, &
-                        only: apply_BC, lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream,&
+                        only: apply_BC, lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
                               lw_solver_1rescl_GaussQuad
   implicit none
   private
@@ -59,7 +59,6 @@ contains
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, &
                   lw_Ds, flux_up_Jac, flux_dn_Jac) result(error_msg)
-    use mo_fluxes_broadband_kernels, only: sum_broadband
     class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
                                                                      ! and needs to be made concrete, either as an array
                                                                      ! (class ty_optical_props_arry) or in some user-defined way
@@ -289,7 +288,6 @@ contains
         end if
         !$acc exit data delete(optical_props%tau)
       class is (ty_optical_props_2str)
-
         if ((present(flux_dn_Jac))) then
           if( .not. extents_are(flux_dn_Jac, ncol, nlay+1)) then
             error_msg = "rte_lw: flux_dn_Jac inconsistently sized"

@@ -29,7 +29,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_sw
   use mo_rte_kind,      only: wp, wl
-  use mo_rte_config,    only: check_array_extents, check_array_values
+  use mo_rte_config,    only: check_extents, check_values
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
@@ -87,7 +87,7 @@ contains
     !
     ! Sizes of input arrays
     !
-    if(check_array_extents) then
+    if(check_extents) then
       if(.not. extents_are(mu0, ncol)) &
         error_msg = "rte_sw: mu0 inconsistently sized"
       if(.not. extents_are(inc_flux, ncol, ngpt)) &
@@ -105,7 +105,7 @@ contains
     !
     ! Values of input arrays 
     !
-    if(check_array_values) then
+    if(check_values) then
       if(any_vals_outside(mu0, 0._wp, 1._wp)) &
         error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
       if(any_vals_less_than(inc_flux, 0._wp)) &

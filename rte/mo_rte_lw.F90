@@ -35,7 +35,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
-  use mo_rte_config,    only: check_array_extents, check_array_values
+  use mo_rte_config,    only: check_extents, check_values
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
@@ -133,7 +133,7 @@ contains
       return
     end if
 
-    if (present(flux_up_Jac) .and. check_array_extents) then
+    if (present(flux_up_Jac) .and. check_extents) then
       if( .not. extents_are(flux_up_Jac, ncol, nlay+1)) then
         error_msg = "rte_lw: flux Jacobian inconsistently sized"
         return
@@ -143,13 +143,13 @@ contains
     !
     ! Source functions
     !
-    if (check_array_extents) then
+    if (check_extents) then
       if(any([sources%get_ncol(), sources%get_nlay(), sources%get_ngpt()]  /= [ncol, nlay, ngpt])) &
         error_msg = "rte_lw: sources and optical properties inconsistently sized"
     end if
     ! Also need to validate
 
-    if (check_array_extents) then
+    if (check_extents) then
       !
       ! Surface emissivity
       !
@@ -164,7 +164,7 @@ contains
       end if
     end if
 
-    if(check_array_extents) then
+    if(check_extents) then
       if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
         error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
       if(present(inc_flux)) then
@@ -193,7 +193,7 @@ contains
     !
     ! Ensure values of tau, ssa, and g are reasonable
     !
-    if(check_array_values) error_msg =  optical_props%validate()
+    if(check_values) error_msg =  optical_props%validate()
 
     if(len_trim(error_msg) > 0) then
       if(len_trim(optical_props%get_name()) > 0) &
@@ -253,7 +253,7 @@ contains
 
       class is (ty_optical_props_2str)
 
-        if (present(flux_dn_Jac) .and. check_array_extents) then
+        if (present(flux_dn_Jac) .and. check_extents) then
           if( .not. extents_are(flux_dn_Jac, ncol, nlay+1)) then
             error_msg = "rte_lw: flux_dn_Jac inconsistently sized"
             return

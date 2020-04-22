@@ -164,12 +164,18 @@ contains
       end if
     end if
 
-    if(check_extents) then
+    if(check_values) then
       if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
         error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
       if(present(inc_flux)) then
         if(any_vals_less_than(inc_flux, 0._wp)) &
           error_msg = "rte_lw: inc_flux has values < 0"
+      end if
+      if(present(n_gauss_angles)) then
+        if(n_gauss_angles > max_gauss_pts) &
+          error_msg = "rte_lw: asking for too many quadrature points for no-scattering calculation"
+        if(n_gauss_angles < 1) &
+          error_msg = "rte_lw: have to ask for at least one quadrature point for no-scattering calculation"
       end if
     end if
     if(len_trim(error_msg) > 0) return
@@ -178,13 +184,7 @@ contains
     ! Number of quadrature points for no-scattering calculation
     !
     n_quad_angs = 1
-    if(present(n_gauss_angles)) then
-      if(n_gauss_angles > max_gauss_pts) &
-        error_msg = "rte_lw: asking for too many quadrature points for no-scattering calculation"
-      if(n_gauss_angles < 1) &
-        error_msg = "rte_lw: have to ask for at least one quadrature point for no-scattering calculation"
-      n_quad_angs = n_gauss_angles
-    end if
+    if(present(n_gauss_angles)) n_quad_angs = n_gauss_angles
     !
     ! Optionally - use 2-stream methods when low-order scattering properties are provided?
     !

@@ -143,7 +143,7 @@ contains
           error_msg = 'reduce: flux_dn_dir array incorrectly sized'
       end if
 
-      if(error_msg == "") return
+      if(error_msg /= "") return
     end if
     !
     ! Self-consistency -- shouldn't be asking for direct beam flux if it isn't supplied

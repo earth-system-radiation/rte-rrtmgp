@@ -991,8 +991,8 @@ end subroutine apply_BC_0
 ! -------------------------------------------------------------------------------------------------
 subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                             &
                             tau, scaling, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
-                            radn_up, radn_dn,&
-                            sfc_srcJac,rad_up_Jac,rad_dn_Jac) bind(C, name="lw_solver_1rescl")
+                            radn_up, radn_dn, &
+                            sfc_srcJac, rad_up_Jac, rad_dn_Jac) bind(C, name="lw_solver_1rescl")
   integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
   logical(wl),                           intent(in   ) :: top_at_1
   real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
@@ -1102,8 +1102,8 @@ end subroutine lw_solver_1rescl
 ! ---------------------------------------------------------------
 subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
                                  tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, &
-                                 sfc_emis, sfc_src,&
-                                 flux_up, flux_dn,&
+                                 sfc_emis, sfc_src, &
+                                 flux_up, flux_dn,  &
                                  sfc_src_Jac, flux_up_Jac, flux_dn_Jac) &
                                  bind(C, name="lw_solver_1rescl_GaussQuad")
   integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
@@ -1202,6 +1202,7 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: tauLoc
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: scaling
 
+
     integer  :: icol, ilay, igpt
     real(wp) :: wb, ssal, scaleTau
     do igpt=1,ngpt
@@ -1282,6 +1283,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
   real(wp), dimension(ncol,nlay),   intent(in   ) :: An, Cn
   real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_up_Jac ! Surface temperature Jacobians [W/m2-str/K]
   real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_dn_Jac !Top level must set to 0
+
   ! Local variables
   integer :: ilev, icol
   ! ---------------------------------------------------
@@ -1298,7 +1300,6 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
           adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev) - &
                    trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
           radn_up (icol,ilev) = radn_up(icol,ilev) + adjustmentFactor
-
         enddo
     end do
     ! 2nd Downward propagation

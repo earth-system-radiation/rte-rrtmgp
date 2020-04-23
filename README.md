@@ -19,11 +19,35 @@ Relative to commit `69d36c9` to `master` on Apr 20, 2020, the required arguments
 
 ## Building the libraries.
 
-1. `cd build`
-2. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Alternately create a Makefile.conf that sets these variables. You could also link to an existing file.
-3. Set environment variable `RTE_KERNELS` to `openacc` if you want the OpenACC kernels rather than the default.
-4. `make`
+This branch contains an [Autoconf](https://www.gnu.org/software/autoconf/)-based building system for [master](https://github.com/RobertPincus/rte-rrtmgp/tree/master).
+The libraries can be configured, built, tested and installed following the standard workflow:
+
+```shell
+$ ./configure && make && make check && make install
+```
+
+The configure scripts supports the following use cases:
+1. If you want to use a particular Fortran 2003 compiler with particular set of compiler flags:
+    ```shell
+    $ ./configure FC=<name of the compiler executable> FCFLAGS=<compiler flags>
+    ```
+2. If you want to use OpenACC kernels:
+    ```shell
+    $ ./configure --enable-openacc
+    ```
+3. If you want to build the [examples](#examples) by default (otherwise, they are built only for testing, i.e. when you call `make check`):
+    ```shell
+    $ ./configure --enable-examples
+    ```
+4. If you want to make sure that the tests are built and run (otherwise, the tests might be skipped):
+    ```shell
+    $ ./configure --enable-tests
+    ```
+5. If yout want to use [NetCDF Fortran library](https://www.unidata.ucar.edu/software/netcdf/docs-fortran/) (required for testing) from a non-standard directory:
+    ```shell
+    $ ./configure --with-netcdf-fortran=/path/to/netcdf-fortran
+    ```
 
 ## Examples
 
-Two examples are provided, one for clear skies and one including clouds. See the README file and codes in each directory for further information.
+Two [examples](./examples) are provided, one for [clear skies](./examples/rfmip-clear-sky) and one [including clouds](./examples/all-sky). See the README file and codes in each directory for further information.

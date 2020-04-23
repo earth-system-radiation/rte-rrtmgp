@@ -134,11 +134,9 @@ contains
 
     if(.not. fluxes%are_desired()) &
       error_msg = "rte_lw: no space allocated for fluxes"
-      return
-    end if
 
     if (present(flux_up_Jac) .and. check_extents) then
-      if( .not. extents_are(flux_up_Jac, ncol, nlay+1)) then
+      if( .not. extents_are(flux_up_Jac, ncol, nlay+1)) &
         error_msg = "rte_lw: flux Jacobian inconsistently sized"
     endif
 

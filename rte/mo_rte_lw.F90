@@ -85,13 +85,13 @@ contains
     !
     ! Local variables
     !
-    integer :: ncol, nlay, ngpt, nband
-    integer :: n_quad_angs
-    integer :: icol, iband, igpt
+    integer  :: ncol, nlay, ngpt, nband
+    integer  :: n_quad_angs
+    integer  :: icol, iband, igpt
+    real(wp) :: lw_Ds_wt
+    logical  :: using_2stream
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
-    real(wp) :: lw_Ds_wt
-    logical :: using_2stream
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_upJac, gpt_flux_dnJac
     type(ty_fluxes_broadband)               :: Jac_fluxes
     ! --------------------------------------------------
@@ -204,6 +204,8 @@ contains
           error_msg = "rte_lw: lw_Ds not valid input for _2str class"
         if (using_2stream .and. n_quad_angs /= 1) &
           error_msg = "rte_lw: using_2stream=true incompatible with specifying n_gauss_angles"
+        if (using_2stream .and. (present(flux_up_Jac) .or. present(flux_up_Jac))) &
+          error_msg = "rte_lw: can't provide Jacobian of fluxes w.r.t surface temperature with 2-stream"
       class default
         call stop_on_err("rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented")
     end select
@@ -224,10 +226,12 @@ contains
     !    Lower boundary condition -- expand surface emissivity by band to gpoints
     !
     allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
+    allocate(gpt_flux_upJac(ncol, nlay+1, ngpt))
     allocate(sfc_emis_gpt(ncol,         ngpt))
     !!$acc enter data copyin(sources, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data copyin(optical_props)
     !$acc enter data create(gpt_flux_dn, gpt_flux_up)
+    !$acc enter data create(gpt_flux_upJac)
     !$acc enter data create(sfc_emis_gpt)
 
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
@@ -245,9 +249,6 @@ contains
       call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),           gpt_flux_dn)
     end if
 
-    allocate(gpt_flux_upJac(ncol, nlay+1, ngpt))
-    !$acc enter data create(gpt_flux_upJac)
-    !$acc enter data copyin(sources%sfc_source_Jac)
 
     !
     ! Compute the radiative transfer...
@@ -343,7 +344,7 @@ contains
         error_msg = Jac_fluxes%reduce(gpt_flux_upJac, gpt_flux_upJac, optical_props, top_at_1)
       class is (ty_optical_props_2str)
         !
-        !
+        ! Compute Jacobians when using rescaling approach for scattering
         !
         if(.not. using_2stream) then
           if (present(flux_dn_Jac)) Jac_fluxes%flux_dn => flux_dn_Jac
@@ -356,7 +357,6 @@ contains
     !$acc exit data delete(gpt_flux_upJac)
     deallocate(gpt_flux_upJac)
 
-    !$acc exit data delete(sources%sfc_source_Jac)
     !$acc exit data delete(sfc_emis_gpt)
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
     !$acc exit data delete(optical_props)

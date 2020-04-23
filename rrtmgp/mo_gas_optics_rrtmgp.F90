@@ -127,11 +127,22 @@ module mo_gas_optics_rrtmgp
                                                                ! planck_frac(g-point, eta, pressure, temperature)
     real(wp), dimension(:,:),     allocatable :: totplnk       ! integrated Planck irradiance by band; (Planck temperatures,band)
     real(wp)                                  :: totplnk_delta ! temperature steps in totplnk
+    real(wp), dimension(:,:),     allocatable :: optimal_angle_fit ! coefficients of linear function
+                                                                   ! of vertical path clear-sky transmittance that is used to
+                                                                   ! determine the secant of single angle used for the
+                                                                   ! no-scattering calculation,
+                                                                   ! optimal_angle_fit(coefficient, band)
     ! -----------------------------------------------------------------------------------
-    ! Solar source function spectral mapping
-    !   Allocated only when gas optics object is external-source
+    ! Solar source function spectral mapping with solar variability capability
+    !   Allocated  when gas optics object is external-source
+    !   n-solar-terms: quiet sun, facular brightening and sunspot dimming components
+    !   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
     !
-    real(wp), dimension(:), allocatable :: solar_src ! incoming solar irradiance(g-point)
+    real(wp), dimension(:), allocatable :: solar_source         ! incoming solar irradiance, computed from other three terms (g-point)
+    real(wp), dimension(:), allocatable :: solar_source_quiet   ! incoming solar irradiance, quiet sun term (g-point)
+    real(wp), dimension(:), allocatable :: solar_source_facular ! incoming solar irradiance, facular term (g-point)
+    real(wp), dimension(:), allocatable :: solar_source_sunspot ! incoming solar irradiance, sunspot term (g-point)
+
     !
     ! -----------------------------------------------------------------------------------
     ! Ancillary
@@ -153,13 +164,15 @@ module mo_gas_optics_rrtmgp
     procedure, public :: get_press_max
     procedure, public :: get_temp_min
     procedure, public :: get_temp_max
+    procedure, public :: compute_optimal_angles
+    procedure, public :: set_solar_variability
+    procedure, public :: set_tsi
     ! Internal procedures
     procedure, private :: load_int
     procedure, private :: load_ext
     procedure, public  :: gas_optics_int
     procedure, public  :: gas_optics_ext
     procedure, private :: check_key_species_present
-    procedure, private :: get_minor_list
     ! Interpolation table dimensions
     procedure, private :: get_nflav
     procedure, private :: get_neta
@@ -185,7 +198,7 @@ contains
   pure function get_ngas(this)
     ! return the number of gases registered in the spectral configuration
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    integer                                        :: get_ngas
+    integer                                 :: get_ngas
 
     get_ngas = size(this%gas_names)
   end function get_ngas
@@ -257,7 +270,7 @@ contains
     ! External source -- check arrays sizes and values
     ! input data sizes and values
     !
-    !$acc enter data copyin(tsfc,tlev)
+    !$acc enter data copyin(tsfc)
     if(.not. extents_are(tsfc, ncol)) &
       error_msg = "gas_optics(): array tsfc has wrong size"
     if(any_vals_outside(tsfc, this%temp_ref_min,  this%temp_ref_max)) &
@@ -265,6 +278,7 @@ contains
     if(error_msg  /= '') return
 
     if(present(tlev)) then
+      !$acc enter data copyin(tlev)
       if(.not. extents_are(tlev, ncol, nlay+1)) &
         error_msg = "gas_optics(): array tlev has wrong size"
       if(any_vals_outside(tlev, this%temp_ref_min, this%temp_ref_max)) &
@@ -282,13 +296,26 @@ contains
     !
     ! Interpolate source function
     !
-    error_msg = source(this,                               &
-                       ncol, nlay, nband, ngpt,            &
-                       play, plev, tlay, tsfc,             &
-                       jtemp, jpress, jeta, tropo, fmajor, &
-                       sources,                            &
-                       tlev)
-    !$acc exit data delete(tsfc,tlev)
+    if(present(tlev)) then
+      !
+      ! present status of optional argument should be passed to source()
+      !   but isn't with PGI 19.10
+      !
+      error_msg = source(this,                               &
+                         ncol, nlay, nband, ngpt,            &
+                         play, plev, tlay, tsfc,             &
+                         jtemp, jpress, jeta, tropo, fmajor, &
+                         sources,                            &
+                         tlev)
+      !$acc exit data delete(tlev)
+    else
+      error_msg = source(this,                               &
+                         ncol, nlay, nband, ngpt,            &
+                         play, plev, tlay, tsfc,             &
+                         jtemp, jpress, jeta, tropo, fmajor, &
+                         sources)
+    end if
+    !$acc exit data delete(tsfc)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
@@ -356,7 +383,7 @@ contains
     !$acc parallel loop collapse(2)
     do igpt = 1,ngpt
        do icol = 1,ncol
-          toa_src(icol,igpt) = this%solar_src(igpt)
+          toa_src(icol,igpt) = this%solar_source(igpt)
        end do
     end do
     !$acc exit data copyout(toa_src)
@@ -442,6 +469,10 @@ contains
       error_msg = "gas_optics(): array tlay has wrong size"
     if(.not. extents_are(plev, ncol, nlay+1)) &
       error_msg = "gas_optics(): array plev has wrong size"
+    if(optical_props%get_ncol() /= ncol .or. &
+       optical_props%get_nlay() /= nlay .or. &
+       optical_props%get_ngpt() /= ngpt)     &
+      error_msg = "gas_optics(): optical properties have the wrong extents"
     if(error_msg  /= '') return
 
     if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &
@@ -489,6 +520,7 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
+    col_dry_wk => col_dry_arr
     !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
@@ -596,6 +628,83 @@ contains
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
+  ! Compute the spectral solar source function adjusted to account for solar variability
+  !   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
+  ! as specified by the facular brightening (mg_index) and sunspot dimming (sb_index)
+  ! indices provided as input.
+  !
+  ! Users provide the NRLSSI2 facular ("Bremen") index and sunspot ("SPOT67") index.
+  !   Changing either of these indicies will change the total solar irradiance (TSI)
+  !   Code in extensions/mo_solar_variability may be used to compute the value of these
+  !   indices through an average solar cycle
+  ! Users may also specify the TSI, either alone or in conjunction with the facular and sunspot indices
+  !
+  !------------------------------------------------------------------------------------------
+  function set_solar_variability(this,                      &
+                                 mg_index, sb_index, tsi)   &
+                                 result(error_msg)
+    !
+    ! Updates the spectral distribution and, optionally,
+    !   the integrated value of the solar source function
+    !   Modifying either index will change the total solar irradiance
+    !
+    class(ty_gas_optics_rrtmgp), intent(inout) :: this
+    !
+    real(wp),           intent(in) :: mg_index, & ! facular brightening index (NRLSSI2 facular "Bremen" index)
+                                      sb_index    ! sunspot dimming index     (NRLSSI2 sunspot "SPOT67" index)
+    real(wp), optional, intent(in) :: tsi         ! total solar irradiance
+    character(len=128)             :: error_msg
+    ! ----------------------------------------------------------
+    integer :: igpt
+    real(wp), parameter :: a_offset = 0.1495954_wp
+    real(wp), parameter :: b_offset = 0.00066696_wp
+    ! ----------------------------------------------------------
+    error_msg = ""
+    if(mg_index < 0._wp) error_msg = 'mg_index out of range'
+    if(sb_index < 0._wp) error_msg = 'sb_index out of range'
+    if(error_msg /= "") return
+    !
+    ! Calculate solar source function for provided facular and sunspot indices
+    !
+    !$acc parallel loop
+    do igpt = 1, size(this%solar_source_quiet)
+      this%solar_source(igpt) = this%solar_source_quiet(igpt) + &
+                                (mg_index - a_offset) * this%solar_source_facular(igpt) + &
+                                (sb_index - b_offset) * this%solar_source_sunspot(igpt)
+    end do
+    !
+    ! Scale solar source to input TSI value
+    !
+    if (present(tsi)) error_msg = this%set_tsi(tsi)
+
+  end function set_solar_variability
+  !------------------------------------------------------------------------------------------
+  function set_tsi(this, tsi) result(error_msg)
+    !
+    ! Scale the solar source function without changing the spectral distribution
+    !
+    class(ty_gas_optics_rrtmgp), intent(inout) :: this
+    real(wp),                    intent(in   ) :: tsi ! user-specified total solar irradiance;
+    character(len=128)                         :: error_msg
+
+    real(wp) :: norm
+    ! ----------------------------------------------------------
+    error_msg = ""
+    if(tsi < 0._wp) then
+      error_msg = 'tsi out of range'
+    else
+      !
+      ! Scale the solar source function to the input tsi
+      !
+      !$acc kernels
+      norm = 1._wp/sum(this%solar_source(:))
+      this%solar_source(:) = this%solar_source(:) * tsi * norm
+      !$acc end kernels
+    end if
+
+  end function set_tsi
+  !------------------------------------------------------------------------------------------
+  !
   ! Compute Planck source functions at layer centers and levels
   !
   function source(this,                               &
@@ -603,7 +712,7 @@ contains
                   play, plev, tlay, tsfc,             &
                   jtemp, jpress, jeta, tropo, fmajor, &
                   sources,                            & ! Planck sources
-                  tlev)                               & ! optional input
+                  tlev)                         & ! optional input
                   result(error_msg)
     ! inputs
     class(ty_gas_optics_rrtmgp),    intent(in ) :: this
@@ -627,6 +736,8 @@ contains
     integer                                      :: icol, ilay, igpt
     real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
     real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
+    real(wp), dimension(ngpt,     ncol)          :: sfc_source_Jac
+
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
     real(wp), dimension(:,:),            pointer :: tlev_wk
@@ -669,23 +780,32 @@ contains
     !$acc enter data copyin(sources)
     !$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
+    !$acc enter data create(sfc_source_Jac)
+    !$acc enter data create(sources%sfc_source_Jac)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
+                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t, &
+                sfc_source_Jac)
     !$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
-        sources%sfc_source(icol,igpt) = sfc_source_t(igpt,icol)
+        sources%sfc_source    (icol,igpt) = sfc_source_t  (igpt,icol)
+        sources%sfc_source_Jac(icol,igpt) = sfc_source_Jac(igpt,icol)
       end do
     end do
     call reorder123x321(lay_source_t, sources%lay_source)
     call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
     call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
+    !
+    ! Transposition of a 2D array, for which we don't have a routine in mo_rrtmgp_util_reorder.
+    !
+    !$acc exit data delete(sfc_source_Jac)
     !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
+    !$acc exit data copyout(sources%sfc_source_Jac)
     !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc exit data copyout(sources)
   end function source
@@ -713,7 +833,9 @@ contains
                     scale_by_complement_upper,                      &
                     kminor_start_lower,                             &
                     kminor_start_upper,                             &
-                    totplnk, planck_frac, rayl_lower, rayl_upper) result(err_message)
+                    totplnk, planck_frac,                           &
+                    rayl_lower, rayl_upper,                         &
+                    optimal_angle_fit) result(err_message)
     class(ty_gas_optics_rrtmgp),     intent(inout) :: this
     class(ty_gas_concs),                    intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*),   dimension(:),       intent(in   ) :: gas_names
@@ -729,6 +851,7 @@ contains
     real(wp),           dimension(:,:,:,:), intent(in   ) :: planck_frac
     real(wp),           dimension(:,:,:),   intent(in   ), &
                                               allocatable :: rayl_lower, rayl_upper
+    real(wp),           dimension(:,:),     intent(in   ) :: optimal_angle_fit
     character(len=*),   dimension(:),       intent(in   ) :: gas_minor,identifier_minor
     character(len=*),   dimension(:),       intent(in   ) :: minor_gases_lower, &
                                                              minor_gases_upper
@@ -767,13 +890,16 @@ contains
                                   rayl_lower, rayl_upper)
     ! Planck function tables
     !
-    allocate(this%totplnk    (size(totplnk,    1), size(totplnk,   2)), &
-             this%planck_frac(size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)) )
-    !$acc enter data create(this%totplnk, this%planck_frac)
+    allocate(this%totplnk          (size(totplnk,    1), size(totplnk,   2)), &
+             this%planck_frac      (size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)), &
+             this%optimal_angle_fit(size(optimal_angle_fit,    1), size(optimal_angle_fit,   2)))
+    !$acc enter data create(this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$acc kernels
     this%totplnk = totplnk
     this%planck_frac = planck_frac
+    this%optimal_angle_fit = optimal_angle_fit
     !$acc end kernels
+
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
     !   Planck grid and the Planck grid is equally spaced
@@ -801,9 +927,11 @@ contains
                     scale_by_complement_upper, &
                     kminor_start_lower, &
                     kminor_start_upper, &
-                    solar_src, rayl_lower, rayl_upper)  result(err_message)
+                    solar_quiet, solar_facular, solar_sunspot, &
+                    tsi_default, mg_default, sb_default, &
+                    rayl_lower, rayl_upper)  result(err_message)
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
-    class(ty_gas_concs),                intent(in   ) :: available_gases ! Which gases does the host model have available?
+    class(ty_gas_concs),         intent(in   ) :: available_gases ! Which gases does the host model have available?
     character(len=*), &
               dimension(:),       intent(in) :: gas_names
     integer,  dimension(:,:,:),   intent(in) :: key_species
@@ -823,22 +951,28 @@ contains
     integer,  dimension(:,:),     intent(in) :: &
                                                 minor_limits_gpt_lower, &
                                                 minor_limits_gpt_upper
-    logical(wl), dimension(:),    intent(in) :: &
+    logical(wl),    dimension(:), intent(in) :: &
                                                 minor_scales_with_density_lower, &
                                                 minor_scales_with_density_upper
-    character(len=*),   dimension(:),intent(in) :: &
+    character(len=*),dimension(:),intent(in) :: &
                                                 scaling_gas_lower, &
                                                 scaling_gas_upper
-    logical(wl), dimension(:),    intent(in) :: &
+    logical(wl),    dimension(:), intent(in) :: &
                                                 scale_by_complement_lower, &
                                                 scale_by_complement_upper
-    integer,  dimension(:),       intent(in) :: &
+    integer,        dimension(:), intent(in) :: &
                                                 kminor_start_lower, &
                                                 kminor_start_upper
-    real(wp), dimension(:),       intent(in), allocatable :: solar_src
-                                                            ! allocatable status to change when solar source is present in file
-    real(wp), dimension(:,:,:), intent(in), allocatable :: rayl_lower, rayl_upper
+    real(wp),       dimension(:), intent(in) :: solar_quiet, &
+                                                solar_facular, &
+                                                solar_sunspot
+    real(wp),                     intent(in) :: tsi_default, &
+                                                mg_default, sb_default
+    real(wp), dimension(:,:,:),   intent(in), &
+                                 allocatable :: rayl_lower, rayl_upper
     character(len = 128) err_message
+
+    integer :: ngpt
     ! ----
     !$acc enter data create(this)
     err_message = init_abs_coeffs(this, &
@@ -861,14 +995,20 @@ contains
                                   kminor_start_lower, &
                                   kminor_start_upper, &
                                   rayl_lower, rayl_upper)
+    if(err_message /= "") return
     !
-    ! Solar source table init
+    ! Spectral solar irradiance terms init
     !
-    allocate(this%solar_src(size(solar_src)))
-    !$acc enter data create(this%solar_src)
+    ngpt = size(solar_quiet)
+    allocate(this%solar_source_quiet(ngpt), this%solar_source_facular(ngpt), &
+             this%solar_source_sunspot(ngpt), this%solar_source(ngpt))
+    !$acc enter data create(this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
     !$acc kernels
-    this%solar_src = solar_src
+    this%solar_source_quiet   = solar_quiet
+    this%solar_source_facular = solar_facular
+    this%solar_source_sunspot = solar_sunspot
     !$acc end kernels
+    err_message = this%set_solar_variability(mg_default, sb_default)
   end function load_ext
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1126,32 +1266,6 @@ contains
   end function check_key_species_present
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Function to define names of key and minor gases to be used by gas_optics().
-  ! The final list gases includes those that are defined in gas_optics_specification
-  ! and are provided in ty_gas_concs.
-  !
-  function get_minor_list(this, gas_desc, ngas, names_spec)
-    class(ty_gas_optics_rrtmgp), intent(in)       :: this
-    class(ty_gas_concs), intent(in)                      :: gas_desc
-    integer, intent(in)                                  :: ngas
-    character(32), dimension(ngas), intent(in)           :: names_spec
-
-    ! List of minor gases to be used in gas_optics()
-    character(len=32), dimension(:), allocatable         :: get_minor_list
-    ! Logical flag for minor species in specification (T = minor; F = not minor)
-    logical, dimension(size(names_spec))                 :: gas_is_present
-    integer                                              :: igas, icnt
-
-    if (allocated(get_minor_list)) deallocate(get_minor_list)
-    do igas = 1, this%get_ngas()
-      gas_is_present(igas) = string_in_array(names_spec(igas), gas_desc%gas_name)
-    end do
-    icnt = count(gas_is_present)
-    allocate(get_minor_list(icnt))
-    get_minor_list(:) = pack(this%gas_names, mask=gas_is_present)
-  end function get_minor_list
-  !--------------------------------------------------------------------------------------------------------------------
-  !
   ! Inquiry functions
   !
   !--------------------------------------------------------------------------------------------------------------------
@@ -1170,7 +1284,7 @@ contains
   pure function source_is_external(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
     logical                          :: source_is_external
-    source_is_external = allocated(this%solar_src)
+    source_is_external = allocated(this%solar_source)
   end function source_is_external
 
   !--------------------------------------------------------------------------------------------------------------------
@@ -1277,6 +1391,57 @@ contains
     end do
     !$acc exit data delete (g0)
   end function get_col_dry
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
+  !
+  function compute_optimal_angles(this, optical_props, optimal_angles) result(err_msg)
+    ! input
+    class(ty_gas_optics_rrtmgp),  intent(in   ) :: this
+    class(ty_optical_props_arry), intent(in   ) :: optical_props
+    real(wp), dimension(:,:),     intent(  out)  :: optimal_angles
+    character(len=128)                           :: err_msg
+    !----------------------------
+    integer  :: ncol, nlay, ngpt
+    integer  :: icol, ilay, igpt, bnd
+    real(wp) :: t, trans_total
+    !----------------------------
+    ncol = optical_props%get_ncol()
+    nlay = optical_props%get_nlay()
+    ngpt = optical_props%get_ngpt()
+
+    err_msg=""
+    if(.not. this%gpoints_are_equal(optical_props)) &
+      err_msg = "gas_optics%compute_optimal_angles: optical_props has different spectral discretization than gas_optics"
+    if(.not. extents_are(optimal_angles, ncol, ngpt)) &
+      err_msg = "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
+    if (err_msg /=  "") return
+
+    !
+    ! column transmissivity
+    !
+    !$acc parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
+    do icol = 1, ncol
+      do igpt = 1, ngpt
+        !
+        ! Column transmissivity
+        !
+        t = 0._wp
+        trans_total = 0._wp
+        do ilay = 1, nlay
+          t = t + optical_props%tau(icol,ilay,igpt)
+        end do
+        trans_total = exp(-t)
+        !
+        ! Optimal transport angle is a linear fit to column transmissivity
+        !
+        bnd = optical_props%gpt2band(igpt)
+        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
+                                    this%optimal_angle_fit(2,bnd)
+      end do
+    end do
+
+  end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Internal procedures

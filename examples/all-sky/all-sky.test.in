@@ -1,0 +1,22 @@
+#!@SHELL@
+@TESTS_DISABLED@exit 77
+
+clean_exit()
+{
+  if test '.' = '@srcdir@'; then
+    mv rrtmgp-allsky.nc~ rrtmgp-allsky.nc
+  else
+    rm -f rrtmgp-allsky.nc
+  fi
+  exit $1
+}
+
+if test '.' = '@srcdir@'; then
+  cp rrtmgp-allsky.nc rrtmgp-allsky.nc~
+else
+  cp '@srcdir@/rrtmgp-allsky.nc' rrtmgp-allsky.nc
+fi
+
+@LAUNCH_PREFIX@ @PYTHON@ @srcdir@/run-allsky-example.py || clean_exit 1
+@PYTHON@ @srcdir@/compare-to-reference.py || clean_exit 1
+clean_exit 0

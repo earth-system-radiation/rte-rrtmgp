@@ -2,6 +2,7 @@
 #
 # This script downloads and creates files needed for the RFMIP off-line test cases
 #
+import sys
 import os, subprocess, glob
 from shutil import copy2
 import urllib.request
@@ -32,4 +33,4 @@ print("Dowloading RFMIP input files")
 urllib.request.urlretrieve(conds_url,     conds_file)
 print("Dowloading scripts for generating output templates")
 urllib.request.urlretrieve(templ_scr_url, templ_scr)
-subprocess.run(["python3", templ_scr, "--source_id", "RTE-RRTMGP-181204"])
+subprocess.run([sys.executable, templ_scr, "--source_id", "RTE-RRTMGP-181204"])

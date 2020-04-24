@@ -10,10 +10,34 @@ Example programs and documenation are evolving - please see examples/ in the rep
 
 ## Building the libraries.
 
-1. `cd build`
-2. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Alternately create a Makefile.conf that sets these variables. You could also link to an existing file.
-3. Set environment variable `RTE_KERNELS` to `openacc` if you want the OpenACC kernels rather than the default.
-4. `make`
+This branch contains a version of the library for [ICON](https://code.mpimet.mpg.de/projects/iconpublic) with an [Autoconf](https://www.gnu.org/software/autoconf/)-based building system from [autoconf](https://github.com/RobertPincus/rte-rrtmgp/tree/autoconf).
+The libraries can be configured, built, tested and installed following the standard workflow:
+
+```shell
+$ ./configure && make && make check && make install
+```
+
+The configure scripts supports the following use cases:
+1. If you want to use a particular Fortran 2003 compiler with particular set of compiler flags:
+    ```shell
+    $ ./configure FC=<name of the compiler executable> FCFLAGS=<compiler flags>
+    ```
+2. If you want to use OpenACC kernels:
+    ```shell
+    $ ./configure --enable-openacc
+    ```
+3. If you want to build the [examples](#examples) by default (otherwise, they are built only for testing, i.e. when you call `make check`):
+    ```shell
+    $ ./configure --enable-examples
+    ```
+4. If you want to make sure that the tests are built and run (otherwise, the tests might be skipped):
+    ```shell
+    $ ./configure --enable-tests
+    ```
+5. If yout want to use [NetCDF Fortran library](https://www.unidata.ucar.edu/software/netcdf/docs-fortran/) (required for testing) from a non-standard directory:
+    ```shell
+    $ ./configure --with-netcdf-fortran=/path/to/netcdf-fortran
+    ```
 
 ## Examples
 

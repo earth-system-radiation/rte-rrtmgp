@@ -21,6 +21,7 @@
 module mo_rte_kind
   use, intrinsic :: iso_c_binding, only: c_float, c_double, c_long, c_int, c_bool
   implicit none
+  public
   integer, parameter :: dp = c_double, sp = c_float, i8 = c_long, i4 = c_int
   !
   ! Floating point working precision

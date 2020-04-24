@@ -17,6 +17,7 @@
 module mo_gas_optics_kernels
   use mo_rte_kind,      only : wp, wl
   implicit none
+  public
 contains
   ! --------------------------------------------------------------------------------------
   ! Compute interpolation coefficients

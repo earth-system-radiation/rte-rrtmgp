@@ -525,10 +525,10 @@ contains
     !   is of order epsilon (smallest difference from 1. in working precision)
     !   Thanks to Peter Blossey
     !
-    if(tau(icol, ilay) > tau_thresh) then
-      fact = (1._wp - trans(icol,ilay))/tau(icol,ilay) - trans(icol,ilay)
+    if(tau(icol,ilay,igpt) > tau_thresh) then
+      fact = (1._wp - trans(icol,ilay,igpt))/tau(icol,ilay) - trans(icol,ilay,igpt)
     else
-      fact = tau(icol, ilay) * (0.5_wp - 1._wp/3._wp*tau(icol, ilay))
+      fact = tau(icol, ilay,igpt) * (0.5_wp - 1._wp/3._wp*tau(icol,ilay,igpt))
     end if
     !
     ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13

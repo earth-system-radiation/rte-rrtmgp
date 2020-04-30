@@ -32,18 +32,18 @@ jobs:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
         RUN_CMD:
+      cce-cpu-icon-production:
+        compiler_module: ccce-icon/9.0.2-classic
+        PrgEnv: PrgEnv-cray
+        accel_module:
+        # Production flags for Icon model
+        FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
       intel_19_cpu:
         compiler_base: intel
         compiler_module: intel/19.0.1.144
         accel_module:
         # Error checking flags
         FCFLAGS: "-m64 -g  -traceback -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f03"
-#      cce-cpu-production:
-#        compiler_module: ccce-icon/9.0.2-classic
-#        PrgEnv: PrgEnv-cray
-#        accel_module:
-#        # Production flags for Icon model
-#        FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
     maxParallel: 2
 
   workspace:

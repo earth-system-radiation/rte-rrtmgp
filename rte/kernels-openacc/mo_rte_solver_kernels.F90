@@ -526,7 +526,7 @@ contains
     !   Thanks to Peter Blossey
     !
     if(tau(icol,ilay,igpt) > tau_thresh) then
-      fact = (1._wp - trans(icol,ilay,igpt))/tau(icol,ilay) - trans(icol,ilay,igpt)
+      fact = (1._wp - trans(icol,ilay,igpt))/tau(icol,ilay,igpt) - trans(icol,ilay,igpt)
     else
       fact = tau(icol, ilay,igpt) * (0.5_wp - 1._wp/3._wp*tau(icol,ilay,igpt))
     end if

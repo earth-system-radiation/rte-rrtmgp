@@ -54,6 +54,7 @@ jobs:
         make -C tests -j 1
         make -C examples/all-sky clean
         make -C examples/all-sky -j 2
+        export RRTMGP_BUILD=${RRTMGP_ROOT}/build
         make -C examples/rfmip-clear-sky clean
         make -C examples/rfmip-clear-sky -j 2
     - name: Run examples, tests

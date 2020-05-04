@@ -35,10 +35,6 @@ jobs:
         ./configure --prefix=/usr
         make
         sudo make install
-    - name: Envionment
-      run: |
-        export RRTMGP_ROOT=$PWD
-        export FC=${{ matrix.fortran-compiler }}
     - name: Stage RFMIP files
       run: |
         export RRTMGP_ROOT=$PWD
@@ -48,6 +44,7 @@ jobs:
     - name: Make library, examples, tests
       run: |
         export RRTMGP_ROOT=$PWD
+        export FC=${{ matrix.fortran-compiler }}
         make -C build clean
         make -C build -j 2
         make -C tests clean

@@ -45,15 +45,19 @@ jobs:
         python ./stage_files.py
     - name: Make library, examples, tests
       run: |
-      cd ${RRTMGP_ROOT}
-      make -C build clean
-      make -C build -j 2
+      cd ${RRTMGP_ROOT}/build
+      make clean
+      make -j 2
+      cd ${RRTMGP_ROOT}/tests
       make -C tests clean
-      make -C tests -j 1
-      make -C examples/all-sky clean
-      make -C examples/all-sky -j 2
-      make -C examples/rfmip-clear-sky clean
-      make -C examples/rfmip-clear-sky -j 2 
+      make clean
+      make -j 1
+      cd ${RRTMGP_ROOT}/examples/all-sky
+      make clean
+      make -j 2
+      cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
+      make clean
+      make -j 2
     - name: Run examples, tests
       run: |
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky

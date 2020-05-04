@@ -33,6 +33,7 @@ jobs:
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
         RUN_CMD:
       cce-cpu-icon-production:
+        compiler_base: cray
         compiler_module: ccce-icon/9.0.2-classic
         PrgEnv: PrgEnv-cray
         accel_module:
@@ -54,31 +55,27 @@ jobs:
       set -e
 
       echo "
-      export PATH=$CRAY_BINUTILS_BIN:$PATH
       module load daint-gpu
+      export PATH=$CRAY_BINUTILS_BIN:$PATH
       module swap PrgEnv-cray PrgEnv-$(compiler_base)
       module swap $(compiler_base) $(compiler_module)
       module load $(accel_module)
       module load cray-netcdf cray-hdf5
-      module load cray-python/3.6.5.7
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
-
-      echo Environment:
+      echo Compiler Environment:
       module list
-      " > modules
+      " > compiler_modules
 
     displayName: 'Create module environment'
   - script: |
       set -e
-      source modules
-      # This module will unload some of the build modules, so load the files separately
       module load netcdf-python
       cd examples/rfmip-clear-sky
       python ./stage_files.py
     displayName: 'Stage files'
   - script: |
       set -e
-      source modules
+      source compiler_modules
       export RRTMGP_ROOT=$PWD
       export RRTMGP_BUILD=$PWD/build
       export FC=ftn
@@ -93,7 +90,8 @@ jobs:
     displayName: 'Make'
   - script: |
       set -e
-      source modules
+      source compiler_modules
+      module load cray-python/3.6.5.7
       export RRTMGP_ROOT=$PWD
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
       ${RUN_CMD} python ./run-rfmip-examples.py --block_size 1800

@@ -69,6 +69,7 @@ jobs:
     displayName: 'Create module environment'
   - script: |
       set -e
+      module load daint-gpu
       module load netcdf-python
       cd examples/rfmip-clear-sky
       python ./stage_files.py
@@ -104,7 +105,7 @@ jobs:
     displayName: 'Run'
   - script: |
       set -e
-      source modules
+      module load daint-gpu
       export RRTMGP_ROOT=$PWD
       # This module will unload some of the build modules, so do the checks separately
       module load netcdf-python

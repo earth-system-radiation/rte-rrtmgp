@@ -1,0 +1,56 @@
+# Workflow for continuous integration tests
+name: Continuous Integration
+on: [push, pull_request]
+
+jobs:
+  test:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        fortran-compiler: [gfortran-8, gfortran-9]
+    env:
+      F90: ${{ matrix.fortran-compiler }}
+    # Sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out repository under $GITHUB_WORKSPACE
+    - uses: actions/checkout@v2
+    # Set up Python and dependencies
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r urllib3 netcdf4 xarray dask scipy
+    # Install FORTRAN compiler and NetCDF libraries
+    - name: Install FORTRAN compiler
+      run: sudo apt-get install ${{ matrix.fortran-compiler }} libnetcdf-dev
+    # NetCDF FORTRAN library
+    - name: NetCDF FORTRAN library
+      run: |
+        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
+        cd netcdf-fortran
+        ./configure --prefix=/usr
+        make
+        sudo make install
+    - name: Envionment
+      run: |
+        export RRTMGP_ROOT=$PWD
+        export FC=${{ matrix.fortran-compiler }}
+    - name: Stage RFMIP files
+      run: |
+        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
+        python ./stage_files.py
+    - name: Make library and examples
+      run: |
+      cd ${RRTMGP_ROOT}
+      make -C build/ clean
+      make -C build/ -j 2 || exit
+      make -C tests clean
+      make -C tests -j 1  || exit
+      make -C examples/all-sky clean
+      make -C examples/all-sky -j 2 || exit
+      make -C examples/rfmip-clear-sky clean
+      make -C examples/rfmip-clear-sky -j 2 || exit

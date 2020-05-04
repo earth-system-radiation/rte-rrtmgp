@@ -35,7 +35,6 @@ jobs:
       cce-cpu-icon-production:
         compiler_base: cray
         compiler_module: ccce-icon/9.0.2-classic
-        PrgEnv: PrgEnv-cray
         accel_module:
         # Production flags for Icon model
         FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
@@ -94,6 +93,7 @@ jobs:
       source compiler_modules
       module load cray-python/3.6.5.7
       export RRTMGP_ROOT=$PWD
+      echo ${LD_LIBRARY_PATH}
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
       ${RUN_CMD} python ./run-rfmip-examples.py --block_size 1800
       cd  ${RRTMGP_ROOT}/examples/all-sky

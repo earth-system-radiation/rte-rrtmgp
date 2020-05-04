@@ -20,18 +20,17 @@ jobs:
     # Checks-out repository under $GITHUB_WORKSPACE
     - uses: actions/checkout@v2
     # Set up Python and dependencies
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+#    - name: Set up Python
+#      uses: actions/setup-python@v2
+#      with:
+#        python-version: '3.x'
     - name: Install python dependencies
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+      uses: s-weigand/setup-conda@v1
       run: |
-        conda create --yes -n github_ci python=3.7
-        conda init powershell
-        conda activate github_ci
         conda install --yes urllib3 netcdf4 xarray dask scipy
-        # python -m pip install --upgrade pip
-        # pip install urllib3 netcdf4 xarray dask scipy tlz
     # Install FORTRAN compiler and NetCDF libraries
     - name: Install FORTRAN compiler
       run: sudo apt-get install ${{ matrix.fortran-compiler }} libnetcdf-dev
@@ -44,10 +43,9 @@ jobs:
         make
         sudo make install
     - name: Stage RFMIP files
+      uses: s-weigand/setup-conda@v1
       run: |
         export RRTMGP_ROOT=$PWD
-        conda init powershell
-        conda activate github_ci
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./stage_files.py
         cd ../../
@@ -64,10 +62,9 @@ jobs:
         make -C examples/rfmip-clear-sky clean
         make -C examples/rfmip-clear-sky -j 2
     - name: Run examples, tests
+      uses: s-weigand/setup-conda@v1
       run: |
         export RRTMGP_ROOT=$PWD
-        conda init powershell
-        conda activate github_ci
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./run-rfmip-examples.py --block_size 1800
         cd  ${RRTMGP_ROOT}/examples/all-sky
@@ -77,10 +74,9 @@ jobs:
         ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
         ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     - name: Comparison
+      uses: s-weigand/setup-conda@v1
       run: |
         export RRTMGP_ROOT=$PWD
-        conda init powershell
-        conda activate github_ci
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./compare-to-reference.py --fail=7.e-4
         cd ${RRTMGP_ROOT}/examples/all-sky

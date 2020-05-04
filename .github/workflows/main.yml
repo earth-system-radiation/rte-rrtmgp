@@ -45,6 +45,8 @@ jobs:
       run: |
         export RRTMGP_ROOT=$PWD
         export FC=${{ matrix.fortran-compiler }}
+        export NCHOME=/usr
+        export NFHOME=/usr
         make -C build clean
         make -C build -j 2
         make -C tests clean

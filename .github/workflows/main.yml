@@ -25,10 +25,8 @@ jobs:
       with:
         python-version: '3.7'
       uses: s-weigand/setup-conda@v1
-
     - name: Install python dependencies
-      run: |
-        conda install --yes urllib3 netcdf4 xarray dask scipy
+      run: conda install --yes urllib3 netcdf4 xarray dask scipy
     # Install FORTRAN compiler and NetCDF libraries
     - name: Install FORTRAN compiler
       run: sudo apt-get install ${{ matrix.fortran-compiler }} libnetcdf-dev
@@ -41,7 +39,6 @@ jobs:
         make
         sudo make install
     - name: Stage RFMIP files
-      uses: s-weigand/setup-conda@v1
       run: |
         export RRTMGP_ROOT=$PWD
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
@@ -60,7 +57,6 @@ jobs:
         make -C examples/rfmip-clear-sky clean
         make -C examples/rfmip-clear-sky -j 2
     - name: Run examples, tests
-      uses: s-weigand/setup-conda@v1
       run: |
         export RRTMGP_ROOT=$PWD
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
@@ -72,7 +68,6 @@ jobs:
         ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
         ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     - name: Comparison
-      uses: s-weigand/setup-conda@v1
       run: |
         export RRTMGP_ROOT=$PWD
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky

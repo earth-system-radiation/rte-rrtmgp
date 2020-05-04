@@ -47,10 +47,7 @@ jobs:
         cd ../../
     - name: Make library, examples, tests
       run: |
-        echo "ROOT is " ${RRTMGP_ROOT}
-        print $PWD
         export RRTMGP_ROOT=$PWD
-        cd ${RRTMGP_ROOT}
         make -C build clean
         make -C build -j 2
         make -C tests clean
@@ -61,6 +58,7 @@ jobs:
         make -C examples/rfmip-clear-sky -j 2
     - name: Run examples, tests
       run: |
+        export RRTMGP_ROOT=$PWD
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./run-rfmip-examples.py --block_size 1800
         cd  ${RRTMGP_ROOT}/examples/all-sky
@@ -71,6 +69,7 @@ jobs:
         ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     - name: Comparison
       run: |
+        export RRTMGP_ROOT=$PWD
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./compare-to-reference.py --fail=7.e-4
         cd ${RRTMGP_ROOT}/examples/all-sky

@@ -27,7 +27,7 @@ jobs:
     - name: Install python dependencies
       run: |
         conda create --yes -n github_ci python=3.7
-        source activate github_ci
+        conda activate github_ci
         conda install --yes urllib3 netcdf4 xarray dask scipy
         # python -m pip install --upgrade pip
         # pip install urllib3 netcdf4 xarray dask scipy tlz
@@ -45,7 +45,7 @@ jobs:
     - name: Stage RFMIP files
       run: |
         export RRTMGP_ROOT=$PWD
-        source activate github_ci
+        conda activate github_ci
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./stage_files.py
         cd ../../
@@ -64,7 +64,7 @@ jobs:
     - name: Run examples, tests
       run: |
         export RRTMGP_ROOT=$PWD
-        source activate github_ci
+        conda activate github_ci
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./run-rfmip-examples.py --block_size 1800
         cd  ${RRTMGP_ROOT}/examples/all-sky
@@ -76,7 +76,7 @@ jobs:
     - name: Comparison
       run: |
         export RRTMGP_ROOT=$PWD
-        source activate github_ci
+        conda activate github_ci
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./compare-to-reference.py --fail=7.e-4
         cd ${RRTMGP_ROOT}/examples/all-sky

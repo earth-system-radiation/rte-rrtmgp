@@ -24,7 +24,9 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.7'
-      uses: s-weigand/setup-conda@v1
+    - uses: s-weigand/setup-conda@v1
+        with:
+          python-version: '3.7'
     - name: Install python dependencies
       run: conda install --yes urllib3 netcdf4 xarray dask scipy
     # Install FORTRAN compiler and NetCDF libraries

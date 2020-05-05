@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         fortran-compiler: [gfortran-8, gfortran-9]
-        rte-kernels: ["default", "openacc"]
+        rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
       NCHOME: /usr
@@ -51,7 +51,7 @@ jobs:
     - name: Make library, examples, tests
       run: |
         export RRTMGP_ROOT=$PWD
-        export RTE_KERNELS=${{ matrix.rte-kernels }}
+        # export RTE_KERNELS=${{ matrix.rte-kernels }}
         make -C build clean
         make -C build -j 2
         make -C tests clean

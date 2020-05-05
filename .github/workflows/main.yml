@@ -3,7 +3,7 @@ name: Continuous Integration
 on: [push, pull_request]
 
 jobs:
-  continuous-integration:
+  CI:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
@@ -15,7 +15,6 @@ jobs:
       NFHOME: /usr
       # Compiler flags for gfortran 8 and 9.
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
-      RRTMGP_ROOT: ${GITHUB_WORKSPACE}
     # Sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -44,16 +43,15 @@ jobs:
         sudo make install
     - name: Stage RFMIP files
       run: |
-        echo $PWD
-        echo ${GITHUB_WORKSPACE}
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./stage_files.py
         cd ../../
     - name: Make library, examples, tests
       run: |
-        export RRTMGP_ROOT=$PWD
+        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         export RTE_KERNELS=${{ matrix.rte-kernels }}
+        cd ${RRTMGP_ROOT}
         make -C build -j 2
         make -C tests -j 1
         make -C examples/all-sky -j 2

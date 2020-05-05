@@ -32,15 +32,15 @@ jobs:
       run: conda install --yes urllib3 netcdf4 xarray dask scipy
     # Install  NetCDF library
     - name: Install netcdf C library
-      run: sudo apt-get install libnetcdf-dev libnetcdff-dev
+      run: sudo apt-get install libnetcdf-dev
     # NetCDF FORTRAN library
-#    - name: Build NetCDF Fortran library
-#      run: |
-#        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
-#        cd netcdf-fortran
-#        ./configure --prefix=${NFHOME}
-#        make
-#        sudo make install
+    - name: Build NetCDF Fortran library
+      run: |
+        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
+        cd netcdf-fortran
+        ./configure --prefix=${NFHOME}
+        make
+        sudo make install
     - name: Stage RFMIP files
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}

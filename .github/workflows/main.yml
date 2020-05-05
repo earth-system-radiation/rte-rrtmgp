@@ -32,7 +32,7 @@ jobs:
       run: conda install --yes urllib3 netcdf4 xarray dask scipy
     # Install  NetCDF library
     - name: Install netcdf C library
-      run: sudo apt-get install libnetcdf-dev netcdff-dev
+      run: sudo apt-get install libnetcdf-dev libnetcdff-dev
     # NetCDF FORTRAN library
 #    - name: Build NetCDF Fortran library
 #      run: |

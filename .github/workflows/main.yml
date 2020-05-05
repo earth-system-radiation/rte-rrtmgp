@@ -15,7 +15,7 @@ jobs:
       NFHOME: /usr
       # Compiler flags for gfortran 8 and 9.
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
-      RRTMGP_ROOT: ${GITHUB_WORKSPACE}
+      RRTMGP_ROOT: ${{GITHUB_WORKSPACE}}
     # Sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out repository under $GITHUB_WORKSPACE

@@ -63,7 +63,7 @@ jobs:
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
       echo Compiler Environment:
       module list
-      echo LD_LIBRARY_PATH is: 
+      echo LD_LIBRARY_PATH is:
       echo $LD_LIBRARY_PATH
       " > compiler_modules
 
@@ -92,10 +92,9 @@ jobs:
     displayName: 'Make'
   - script: |
       set -e
-      source compiler_modules
       module load cray-python/3.6.5.7
+      source compiler_modules
       export RRTMGP_ROOT=$PWD
-      echo ${LD_LIBRARY_PATH}
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
       ${RUN_CMD} python ./run-rfmip-examples.py --block_size 1800
       cd  ${RRTMGP_ROOT}/examples/all-sky

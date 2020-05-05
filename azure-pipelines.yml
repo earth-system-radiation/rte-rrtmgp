@@ -63,6 +63,8 @@ jobs:
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
       echo Compiler Environment:
       module list
+      echo LD_LIBRARY_PATH is: 
+      echo $LD_LIBRARY_PATH
       " > compiler_modules
 
     displayName: 'Create module environment'

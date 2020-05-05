@@ -138,6 +138,7 @@ script:
 # Open-acc kernels
 #
 - cd ${RRTMGP_ROOT}
+- export RTE_KERNELS="openacc"
 #
 # Build library
 #

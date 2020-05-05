@@ -3,13 +3,12 @@ name: Continuous Integration
 on: [push, pull_request]
 
 jobs:
-  test:
-    # The type of runner that the job will run on
+  continuous-integration:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
         fortran-compiler: [gfortran-8, gfortran-9]
-        rte-kernels: [default, openacc]
+        # rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
       NCHOME: /usr

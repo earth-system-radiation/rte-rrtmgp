@@ -92,8 +92,8 @@ jobs:
     displayName: 'Make'
   - script: |
       set -e
-      module load cray-python/3.6.5.7
       source compiler_modules
+      module load cray-python/3.6.5.7
       export RRTMGP_ROOT=$PWD
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
       ${RUN_CMD} python ./run-rfmip-examples.py --block_size 1800

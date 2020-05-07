@@ -158,7 +158,7 @@ module mo_optical_props
   !     phase function moments (index 1 = g) for use with discrete ordinate methods
   !
   ! -------------------------------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_1scl
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_1scl
   contains
     procedure, public  :: validate => validate_1scalar
     procedure, public  :: get_subset => subset_1scl_range
@@ -171,7 +171,7 @@ module mo_optical_props
   end type
 
   ! --- 2 stream ------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_2str
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_2str
     real(wp), dimension(:,:,:), allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
     real(wp), dimension(:,:,:), allocatable :: g   ! asymmetry parameter (ncol, nlay, ngpt)
   contains
@@ -186,7 +186,7 @@ module mo_optical_props
   end type
 
   ! --- n stream ------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_nstr
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_nstr
     real(wp), dimension(:,:,:),   allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
     real(wp), dimension(:,:,:,:), allocatable :: p   ! phase-function moments (nmom, ncol, nlay, ngpt)
   contains

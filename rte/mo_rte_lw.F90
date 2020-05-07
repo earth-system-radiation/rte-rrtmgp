@@ -78,9 +78,9 @@ contains
     real(wp), dimension(:,:),   &
                       optional,   intent(in   ) :: lw_Ds          ! linear fit to column transmissivity (ncol,ngpt)
     real(wp), dimension(:,:),   &
-                target, optional, intent(inout) :: flux_up_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, ngpts)
+                target, optional, intent(inout) :: flux_up_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
     real(wp), dimension(:,:),   &
-                target, optional, intent(inout) :: flux_dn_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, ngpts)
+                target, optional, intent(inout) :: flux_dn_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
     character(len=128)                          :: error_msg      ! If empty, calculation was successful
     ! --------------------------------
     !
@@ -214,7 +214,7 @@ contains
         if (using_2stream .and. (present(flux_up_Jac) .or. present(flux_up_Jac))) &
           error_msg = "rte_lw: can't provide Jacobian of fluxes w.r.t surface temperature with 2-stream"
       class default
-        call stop_on_err("rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented")
+        error_msg =  "rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented"
     end select
     if(len_trim(error_msg) > 0) return
 

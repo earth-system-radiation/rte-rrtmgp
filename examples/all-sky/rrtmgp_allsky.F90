@@ -31,7 +31,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
 end subroutine vmr_2d_to_1d
 ! ----------------------------------------------------------------------------------
 program rte_rrtmgp_clouds
-  use mo_rte_kind,           only: wp
+  use mo_rte_kind,           only: wp, i8
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
@@ -112,9 +112,9 @@ program rte_rrtmgp_clouds
   !
   ! Timing variables
   !
-  integer(kind=8)              :: start, finish, start_all, finish_all, clock_rate
-  real(wp)                     :: avg
-  integer(kind=8), allocatable :: elapsed(:)
+  integer(kind=i8)              :: start, finish, start_all, finish_all, clock_rate
+  real(wp)                      :: avg
+  integer(kind=i8), allocatable :: elapsed(:)
   !$omp threadprivate( lw_sources, toa_flux, flux_up, flux_dn, flux_dir )
   ! ----------------------------------------------------------------------------------
   ! Code

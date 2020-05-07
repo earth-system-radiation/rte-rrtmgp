@@ -2,6 +2,7 @@
 # Here set variables RRTMGP_BUILD, NCHOME, NFHOME, TIME_DIR (for GPTL)
 #   or have those variables set in the environment
 #
+RRTMGP_BUILD=$(RRTMGP_ROOT)/build
 -include Makefile.libs
 -include $(RRTMGP_BUILD)/Makefile.conf
 #

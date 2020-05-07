@@ -204,6 +204,7 @@ program rte_clear_sky_regression
     call lw_clear_sky_default
     call lw_clear_sky_notlev
     call lw_clear_sky_3ang
+    call lw_clear_sky_optangle
     call lw_clear_sky_jaco
     call lw_clear_sky_subset
     call lw_clear_sky_vr
@@ -293,6 +294,26 @@ contains
     call write_broadband_field(input_file, flux_up, "lw_flux_up_3ang", "LW flux up, three quadrature angles")
     call write_broadband_field(input_file, flux_dn, "lw_flux_dn_3ang", "LW flux dn, three quadrature angles")
   end subroutine lw_clear_sky_3ang
+  ! ----------------------------------------------------------------------------
+  !
+  ! Clear-sky longwave fluxes, all info, three angles
+  !
+  subroutine lw_clear_sky_optangle
+    real(wp), dimension(ncol, ngpt) :: lw_Ds
+    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+                                       t_lay, sfc_t, &
+                                       gas_concs,    &
+                                       atmos,        &
+                                       lw_sources,   &
+                                       tlev = t_lev))
+    call stop_on_err(k_dist%compute_optimal_angles(atmos, lw_Ds))
+    call stop_on_err(rte_lw(atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes, lw_Ds=lw_Ds))
+    call write_broadband_field(input_file, flux_up, "lw_flux_up_optang", "LW flux up, single optimal angles")
+    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_optang", "LW flux dn, single optimal angles")
+  end subroutine lw_clear_sky_optangle
   ! ----------------------------------------------------------------------------
   !
   ! Clear-sky longwave fluxes, all info, computing surface Jacobian

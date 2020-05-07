@@ -76,6 +76,7 @@ jobs:
       export RRTMGP_BUILD=$PWD/build
       export FC=ftn
       make -C build/ clean
+
       make -C build/ -j 8
       make -C tests clean
       make -C tests -j 1

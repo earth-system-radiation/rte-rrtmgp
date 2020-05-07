@@ -77,9 +77,9 @@ contains
     real(wp), dimension(:,:),   &
                       optional,   intent(in   ) :: lw_Ds          ! linear fit to column transmissivity (ncol,ngpt)
     real(wp), dimension(:,:),   &
-                target, optional, intent(inout) :: flux_up_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, ngpts)
+                target, optional, intent(inout) :: flux_up_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
     real(wp), dimension(:,:),   &
-                target, optional, intent(inout) :: flux_dn_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, ngpts)
+                target, optional, intent(inout) :: flux_dn_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
     character(len=128)                          :: error_msg      ! If empty, calculation was successful
     ! --------------------------------
     !

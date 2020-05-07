@@ -423,9 +423,11 @@ contains
       !   is of order epsilon (smallest difference from 1. in working precision)
       !   Thanks to Peter Blossey
       !
-      fact = merge((1._wp - trans(icol,ilay))/tau(icol,ilay) - trans(icol,ilay), &
-                   tau(icol, ilay) * ( 0.5_wp - 1._wp/3._wp*tau(icol, ilay)   ), &
-                   tau(icol, ilay) > tau_thresh)
+      if(tau(icol, ilay) > tau_thresh) then
+        fact = (1._wp - trans(icol,ilay))/tau(icol,ilay) - trans(icol,ilay)
+      else
+        fact = tau(icol, ilay) * (0.5_wp - 1._wp/3._wp*tau(icol, ilay))
+      end if
       !
       ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
       !
@@ -1123,7 +1125,7 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
   real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
   real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up      ! Radiances [W/m2-str]
   real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn      ! Top level must contain incident flux boundary condition
-  
+
   real(wp), dimension(ncol       ,ngpt), intent(in )   :: sfc_src_Jac  ! surface temperature Jacobian of surface source function [W/m2/K]
   real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: flux_up_Jac  ! surface temperature Jacobian of Radiances [W/m2-str / K]
   real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: flux_dn_Jac  ! surface temperature Jacobian of Radiances [W/m2-str / K]

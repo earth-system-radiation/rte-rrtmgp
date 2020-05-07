@@ -22,14 +22,14 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_gas_optics_rrtmgp
   use mo_rte_kind,           only: wp, wl
-  use mo_rrtmgp_constants,   only: avogad, m_dry, m_h2o, grav
+  use mo_rte_config,         only: check_extents, check_values
   use mo_rte_util_array,     only: zero_array, any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props,      only: ty_optical_props
   use mo_source_functions,   only: ty_source_func_lw
   use mo_gas_optics_kernels, only: interpolation,                                                       &
                                    compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source, &
                                    combine_and_reorder_2str, combine_and_reorder_nstr
-
+  use mo_rrtmgp_constants,   only: avogad, m_dry, m_h2o, grav
   use mo_rrtmgp_util_string, only: lower_case, string_in_array, string_loc_in_array
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
@@ -270,27 +270,31 @@ contains
     ! External source -- check arrays sizes and values
     ! input data sizes and values
     !
-    !$acc enter data copyin(tsfc)
-    if(.not. extents_are(tsfc, ncol)) &
-      error_msg = "gas_optics(): array tsfc has wrong size"
-    if(any_vals_outside(tsfc, this%temp_ref_min,  this%temp_ref_max)) &
-      error_msg = "gas_optics(): array tsfc has values outside range"
+    !$acc enter data copyin(tsfc, tlev) ! Should be fine even if tlev is not supplied
+
+    if(check_extents) then
+      if(.not. extents_are(tsfc, ncol)) &
+        error_msg = "gas_optics(): array tsfc has wrong size"
+      if(present(tlev)) then
+        if(.not. extents_are(tlev, ncol, nlay+1)) &
+          error_msg = "gas_optics(): array tlev has wrong size"
+      end if
+      !
+      !   output extents
+      !
+      if(any([sources%get_ncol(), sources%get_nlay(), sources%get_ngpt()] /= [ncol, nlay, ngpt])) &
+        error_msg = "gas_optics%gas_optics: source function arrays inconsistently sized"
+    end if
     if(error_msg  /= '') return
 
-    if(present(tlev)) then
-      !$acc enter data copyin(tlev)
-      if(.not. extents_are(tlev, ncol, nlay+1)) &
-        error_msg = "gas_optics(): array tlev has wrong size"
-      if(any_vals_outside(tlev, this%temp_ref_min, this%temp_ref_max)) &
-        error_msg = "gas_optics(): array tlev has values outside range"
-      if(error_msg  /= '') return
+    if(check_values) then
+      if(any_vals_outside(tsfc, this%temp_ref_min,  this%temp_ref_max)) &
+        error_msg = "gas_optics(): array tsfc has values outside range"
+      if(present(tlev)) then
+        if(any_vals_outside(tlev, this%temp_ref_min, this%temp_ref_max)) &
+            error_msg = "gas_optics(): array tlev has values outside range"
+      end if
     end if
-
-    !
-    !   output extents
-    !
-    if(any([sources%get_ncol(), sources%get_nlay(), sources%get_ngpt()] /= [ncol, nlay, ngpt])) &
-      error_msg = "gas_optics%gas_optics: source function arrays inconsistently sized"
     if(error_msg  /= '') return
 
     !
@@ -376,8 +380,10 @@ contains
     ! External source function is constant
     !
     !$acc enter data create(toa_src)
-    if(.not. extents_are(toa_src, ncol, ngpt)) &
-      error_msg = "gas_optics(): array toa_src has wrong size"
+    if(check_extents) then
+      if(.not. extents_are(toa_src, ncol, ngpt)) &
+        error_msg = "gas_optics(): array toa_src has wrong size"
+    end if
     if(error_msg  /= '') return
 
     !$acc parallel loop collapse(2)
@@ -463,33 +469,38 @@ contains
     ! Check input data sizes and values
     !
     !$acc enter data copyin(play,plev,tlay)
-    if(.not. extents_are(play, ncol, nlay  )) &
-      error_msg = "gas_optics(): array play has wrong size"
-    if(.not. extents_are(tlay, ncol, nlay  )) &
-      error_msg = "gas_optics(): array tlay has wrong size"
-    if(.not. extents_are(plev, ncol, nlay+1)) &
-      error_msg = "gas_optics(): array plev has wrong size"
-    if(optical_props%get_ncol() /= ncol .or. &
-       optical_props%get_nlay() /= nlay .or. &
-       optical_props%get_ngpt() /= ngpt)     &
-      error_msg = "gas_optics(): optical properties have the wrong extents"
-    if(error_msg  /= '') return
-
-    if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &
-      error_msg = "gas_optics(): array play has values outside range"
-    if(any_vals_outside(plev, this%press_ref_min,this%press_ref_max)) &
-      error_msg = "gas_optics(): array plev has values outside range"
-    if(any_vals_outside(tlay, this%temp_ref_min,  this%temp_ref_max)) &
-      error_msg = "gas_optics(): array tlay has values outside range"
-    if(error_msg  /= '') return
-
-    if(present(col_dry)) then
-      if(.not. extents_are(col_dry, ncol, nlay)) &
-        error_msg = "gas_optics(): array col_dry has wrong size"
-      if(any_vals_less_than(col_dry, 0._wp)) &
-        error_msg = "gas_optics(): array col_dry has values outside range"
-      if(error_msg  /= '') return
+    if(check_extents) then
+      if(.not. extents_are(play, ncol, nlay  )) &
+        error_msg = "gas_optics(): array play has wrong size"
+      if(.not. extents_are(tlay, ncol, nlay  )) &
+        error_msg = "gas_optics(): array tlay has wrong size"
+      if(.not. extents_are(plev, ncol, nlay+1)) &
+        error_msg = "gas_optics(): array plev has wrong size"
+      if(optical_props%get_ncol() /= ncol .or. &
+         optical_props%get_nlay() /= nlay .or. &
+         optical_props%get_ngpt() /= ngpt)     &
+        error_msg = "gas_optics(): optical properties have the wrong extents"
+      if(present(col_dry)) then
+        if(.not. extents_are(col_dry, ncol, nlay)) &
+          error_msg = "gas_optics(): array col_dry has wrong size"
+      end if
     end if
+    if(error_msg  /= '') return
+
+    if(check_values) then
+      if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &
+        error_msg = "gas_optics(): array play has values outside range"
+      if(any_vals_outside(plev, this%press_ref_min,this%press_ref_max)) &
+        error_msg = "gas_optics(): array plev has values outside range"
+      if(any_vals_outside(tlay, this%temp_ref_min,  this%temp_ref_max)) &
+        error_msg = "gas_optics(): array tlay has values outside range"
+      if(present(col_dry)) then
+        if(any_vals_less_than(col_dry, 0._wp)) &
+          error_msg = "gas_optics(): array col_dry has values outside range"
+      end if
+    end if
+    if(error_msg  /= '') return
+
 
     ! ----------------------------------------------------------
     ngas  = this%get_ngas()

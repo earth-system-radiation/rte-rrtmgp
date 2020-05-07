@@ -35,6 +35,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
+  use mo_rte_config,    only: check_extents, check_values
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
@@ -133,7 +134,8 @@ contains
 
     if(.not. fluxes%are_desired()) &
       error_msg = "rte_lw: no space allocated for fluxes"
-    if (present(flux_up_Jac)) then
+
+    if (present(flux_up_Jac) .and. check_extents) then
       if( .not. extents_are(flux_up_Jac, ncol, nlay+1)) &
         error_msg = "rte_lw: flux Jacobian inconsistently sized"
     endif
@@ -141,27 +143,40 @@ contains
     !
     ! Source functions
     !
-    if(any([sources%get_ncol(), sources%get_nlay(), sources%get_ngpt()]  /= [ncol, nlay, ngpt])) &
-      error_msg = "rte_lw: sources and optical properties inconsistently sized"
+    if (check_extents) then
+      if(any([sources%get_ncol(), sources%get_nlay(), sources%get_ngpt()]  /= [ncol, nlay, ngpt])) &
+        error_msg = "rte_lw: sources and optical properties inconsistently sized"
+    end if
     ! Also need to validate
 
-    !
-    ! Surface emissivity
-    !
-    if(.not. extents_are(sfc_emis, nband, ncol)) &
-      error_msg = "rte_lw: sfc_emis inconsistently sized"
-    if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
-      error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
-    if(len_trim(error_msg) > 0) return
+    if (check_extents) then
+      !
+      ! Surface emissivity
+      !
+      if(.not. extents_are(sfc_emis, nband, ncol)) &
+        error_msg = "rte_lw: sfc_emis inconsistently sized"
+      !
+      ! Incident flux, if present
+      !
+      if(present(inc_flux)) then
+        if(.not. extents_are(inc_flux, ncol, ngpt)) &
+          error_msg = "rte_lw: inc_flux inconsistently sized"
+      end if
+    end if
 
-    !
-    ! Incident flux, if present
-    !
-    if(present(inc_flux)) then
-      if(.not. extents_are(inc_flux, ncol, ngpt)) &
-        error_msg = "rte_lw: inc_flux inconsistently sized"
-      if(any_vals_less_than(inc_flux, 0._wp)) &
-        error_msg = "rte_lw: inc_flux has values < 0"
+    if(check_values) then
+      if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
+        error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
+      if(present(inc_flux)) then
+        if(any_vals_less_than(inc_flux, 0._wp)) &
+          error_msg = "rte_lw: inc_flux has values < 0"
+      end if
+      if(present(n_gauss_angles)) then
+        if(n_gauss_angles > max_gauss_pts) &
+          error_msg = "rte_lw: asking for too many quadrature points for no-scattering calculation"
+        if(n_gauss_angles < 1) &
+          error_msg = "rte_lw: have to ask for at least one quadrature point for no-scattering calculation"
+      end if
     end if
     if(len_trim(error_msg) > 0) return
 
@@ -169,15 +184,7 @@ contains
     ! Number of quadrature points for no-scattering calculation
     !
     n_quad_angs = 1
-    if(present(n_gauss_angles)) then
-      if(n_gauss_angles > max_gauss_pts) &
-        error_msg = "rte_lw: asking for too many quadrature points for RT calculation"
-      if(n_gauss_angles < 1) &
-        error_msg = "rte_lw: have to ask for at least one quadrature point for RT calculation"
-      n_quad_angs = n_gauss_angles
-    end if
-    if(len_trim(error_msg) > 0) return
-
+    if(present(n_gauss_angles)) n_quad_angs = n_gauss_angles
     !
     ! Optionally - use 2-stream methods when low-order scattering properties are provided?
     !
@@ -214,7 +221,8 @@ contains
     !
     ! Ensure values of tau, ssa, and g are reasonable if using scattering
     !
-    error_msg =  optical_props%validate()
+    if(check_values) error_msg =  optical_props%validate()
+
     if(len_trim(error_msg) > 0) then
       if(len_trim(optical_props%get_name()) > 0) &
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
@@ -284,7 +292,8 @@ contains
         end if
         !$acc exit data delete(optical_props%tau)
       class is (ty_optical_props_2str)
-        if ((present(flux_dn_Jac))) then
+
+        if (present(flux_dn_Jac) .and. check_extents) then
           if( .not. extents_are(flux_dn_Jac, ncol, nlay+1)) then
             error_msg = "rte_lw: flux_dn_Jac inconsistently sized"
             return

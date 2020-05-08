@@ -207,7 +207,7 @@ contains
         if (using_2stream .and. (present(flux_up_Jac) .or. present(flux_up_Jac))) &
           error_msg = "rte_lw: can't provide Jacobian of fluxes w.r.t surface temperature with 2-stream"
       class default
-        call stop_on_err("rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented")
+        error_msg = "rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented"
     end select
     if(len_trim(error_msg) > 0) return
 

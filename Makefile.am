@@ -51,8 +51,7 @@ librrtmgp_la_SOURCES = $(rrtmgp)/mo_gas_concentrations.F90 \
                        $(rrtmgp)/mo_rrtmgp_util_string.F90 \
                        $(rrtmgp)/$(kernels)/mo_gas_optics_kernels.F90 \
                        $(rrtmgp)/$(kernels)/mo_rrtmgp_util_reorder_kernels.F90 \
-                       $(top_srcdir)/examples/mo_load_coefficients.F90 \
-                       $(top_srcdir)/examples/mo_simple_netcdf.F90
+                       $(top_srcdir)/examples/mo_load_coefficients.F90
 librrtmgp_la_LIBADD = $(top_builddir)/librte.la
 $(rrtmgp)/mo_gas_concentrations.lo: $(rrtmgp)/mo_rrtmgp_util_string.lo
 $(rrtmgp)/mo_gas_optics.lo: $(rrtmgp)/mo_gas_concentrations.lo
@@ -63,7 +62,6 @@ $(rrtmgp)/mo_gas_optics_rrtmgp.lo: $(rrtmgp)/mo_rrtmgp_constants.lo \
                                    $(rrtmgp)/mo_gas_concentrations.lo \
                                    $(rrtmgp)/mo_gas_optics.lo
 $(rrtmgp)/mo_rrtmgp_util_reorder.lo: $(rrtmgp)/$(kernels)/mo_rrtmgp_util_reorder_kernels.lo
-$(top_srcdir)/examples/mo_load_coefficients.lo: $(top_srcdir)/examples/mo_simple_netcdf.lo
 
 include_HEADERS = mo_fluxes.mod \
                   mo_optical_props.mod \
@@ -83,7 +81,6 @@ include_HEADERS = mo_fluxes.mod \
                   mo_rrtmgp_util_string.mod \
                   mo_gas_optics_kernels.mod \
                   mo_rrtmgp_util_reorder_kernels.mod \
-                  mo_load_coefficients.mod \
-                  mo_simple_netcdf.mod
+                  mo_load_coefficients.mod
 
 CLEANFILES = *.mod

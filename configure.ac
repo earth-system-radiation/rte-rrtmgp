@@ -276,7 +276,7 @@ AS_IF([test x"$enable_tests" != xno],
 
 dnl We need some additional Python modules for the tests:
 AS_IF([test x"$enable_tests" != xno],
-  [for acx_python_mod in 'netCDF4' 'xarray' 'dask' 'toolz'; do
+  [for acx_python_mod in 'netCDF4' 'xarray' 'dask.array'; do
      AC_MSG_CHECKING([whether Python module '$acx_python_mod' is available])
      acx_python_try="$PYTHON -c 'import $acx_python_mod' >&AS_MESSAGE_LOG_FD"
      _AC_DO_VAR([acx_python_try])

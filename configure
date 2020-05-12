@@ -3722,7 +3722,7 @@ fi
 fi
 
 if test x"$enable_tests" != xno; then :
-  for acx_python_mod in 'netCDF4' 'xarray' 'dask' 'toolz'; do
+  for acx_python_mod in 'netCDF4' 'xarray' 'dask.array'; do
      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Python module '$acx_python_mod' is available" >&5
 $as_echo_n "checking whether Python module '$acx_python_mod' is available... " >&6; }
      acx_python_try="$PYTHON -c 'import $acx_python_mod' >&5"

@@ -9,7 +9,7 @@ unset CUBHOME
 unset ROCPRIMHOME
 unset HIPCUBHOME
 
-export NCHOME=/ccs/home/imn/mysoftware/netcdf-4.3.3.1_gnu
+export NCHOME=/ccs/home/imn/libs_gnu8.1.0/netcdf-4.3.3.1_gnu
 export CC=gcc
 export CXX=g++
 export CXXFLAGS="-O3"

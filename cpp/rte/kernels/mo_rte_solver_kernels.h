@@ -31,9 +31,9 @@ YAKL_INLINE void lw_source_noscat_stencil(int ncol, int nlay, int ngpt, int icol
 
 // Direct beam source for diffuse radiation in layers and at surface;
 //   report direct beam as a byproduct
-YAKL_INLINE void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &Rdir, real3d const &Tdir,
-                                real3d const &Tnoscat, real2d const &sfc_albedo, real3d &source_up, real3d &source_dn,
-                                real2d &source_sfc, real3d &flux_dn_dir) {
+inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &Rdir, real3d const &Tdir,
+                           real3d const &Tnoscat, real2d const &sfc_albedo, real3d &source_up, real3d &source_dn,
+                           real2d &source_sfc, real3d &flux_dn_dir) {
 
   if (top_at_1) {
     // do igpt = 1, ngpt
@@ -69,9 +69,9 @@ YAKL_INLINE void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, rea
 
 
 // Longwave no-scattering transport
-YAKL_INLINE void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real3d const &trans,
-                                     real2d const &sfc_albedo, real3d const &source_dn, real3d const &source_up, real2d const &source_sfc, 
-                                     real3d &radn_up, real3d &radn_dn) {
+inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real3d const &trans,
+                                real2d const &sfc_albedo, real3d const &source_dn, real3d const &source_up, real2d const &source_sfc, 
+                                real3d &radn_up, real3d &radn_dn) {
   if (top_at_1) {
     // Top of domain is index 1
     // do igpt = 1, ngpt
@@ -120,9 +120,9 @@ YAKL_INLINE void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1
 //
 // Equations are developed in Meador and Weaver, 1980,
 //    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
-YAKL_INLINE void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3d const &tau,
-                               real3d const &w0, real3d const &g, real3d &Rdif, real3d &Tdif,
-                               real3d &Rdir, real3d &Tdir, real3d &Tnoscat) {
+inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3d const &tau,
+                          real3d const &w0, real3d const &g, real3d &Rdif, real3d &Tdif,
+                          real3d &Rdir, real3d &Tdir, real3d &Tnoscat) {
   real1d mu0_inv("mu0_inv",ncol);
 
   real eps = std::numeric_limits<real>::epsilon();

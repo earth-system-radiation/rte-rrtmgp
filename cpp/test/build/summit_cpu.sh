@@ -8,8 +8,8 @@ unset ARCH
 unset CUDA_ARCH
 unset CUBHOME
 
-export NCHOME=${OLCF_NETCDF_CXX4_ROOT}
-export CC=mpicc
-export CXX=mpic++
+export NCFLAGS="`ncxx4-config --libs`"
+export CC=gcc
+export CXX=g++
 export CXXFLAGS="-O3"
 export YAKLHOME="/ccs/home/$USER/YAKL"

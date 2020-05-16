@@ -6,7 +6,7 @@ set(SRCLOC ../../examples/all-sky/mo_garand_atmos_io.cpp
            ${CPP_SRC})
 
 add_executable(allsky ${SRCLOC})
-target_link_libraries(allsky yakl ${NCFLAGS} -lnetcdf_c++4)
+target_link_libraries(allsky yakl ${NCFLAGS})
 
 set_source_files_properties( ${SRCLOC} PROPERTIES COMPILE_FLAGS "${YAKL_CXX_FLAGS} ${CXX_FLAGS}")
 if ("${ARCH}" STREQUAL "CUDA")

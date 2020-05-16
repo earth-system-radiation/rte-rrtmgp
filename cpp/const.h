@@ -4,6 +4,7 @@
 #include "YAKL.h"
 #include "Array.h"
 #include <iostream>
+#include <cmath>
 
 template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
 
@@ -16,9 +17,9 @@ YAKL_INLINE real constexpr operator"" _wp( long double x ) {
 
 using yakl::fortran::parallel_for;
 using yakl::fortran::Bounds;
-using yakl::max;
-using yakl::min;
-using yakl::abs;
+using std::max;
+using std::min;
+using std::abs;
 using yakl::fortran::mod;
 using yakl::fortran::merge;
 using yakl::fortran::size;

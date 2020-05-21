@@ -13,6 +13,10 @@
 #include "mo_rte_lw.h"
 #include "mo_rte_sw.h"
 
+bool constexpr print_timers = true;
+bool constexpr verbose      = false;
+bool constexpr write_fluxes = false;
+
 
 int main(int argc , char **argv) {
 
@@ -37,12 +41,14 @@ int main(int argc , char **argv) {
       exit(0);
     }
 
-    std::cout << "Parameters: \n";
-    std::cout << "    Input file:        " << input_file        << "\n";
-    std::cout << "    k_dist file:       " << k_dist_file       << "\n";
-    std::cout << "    Cloud Optics file: " << cloud_optics_file << "\n";
-    std::cout << "    ncol:              " << ncol              << "\n";
-    std::cout << "    nloops:            " << nloops            << "\n\n";
+    if (verbose) {
+      std::cout << "Parameters: \n";
+      std::cout << "    Input file:        " << input_file        << "\n";
+      std::cout << "    k_dist file:       " << k_dist_file       << "\n";
+      std::cout << "    Cloud Optics file: " << cloud_optics_file << "\n";
+      std::cout << "    ncol:              " << ncol              << "\n";
+      std::cout << "    nloops:            " << nloops            << "\n\n";
+    }
 
     // Read temperature, pressure, gas concentrations. Arrays are allocated as they are read
     real2d p_lay;
@@ -53,20 +59,20 @@ int main(int argc , char **argv) {
     real2d col_dry;
 
     // Read data from the input file
-    std::cout << "Reading input file\n\n";
+    if (verbose) std::cout << "Reading input file\n\n";
     read_atmos(input_file, p_lay, t_lay, p_lev, t_lev, gas_concs, col_dry, ncol);
 
     int nlay = size(p_lay,2);
 
     // load data into classes
-    std::cout << "Reading k_dist file\n\n";
+    if (verbose) std::cout << "Reading k_dist file\n\n";
     GasOpticsRRTMGP k_dist;
     load_and_init(k_dist, k_dist_file, gas_concs);
 
     bool is_sw = k_dist.source_is_external();
     bool is_lw = ! is_sw;
 
-    std::cout << "Reading cloud optics file\n\n";
+    if (verbose) std::cout << "Reading cloud optics file\n\n";
     CloudOptics cloud_optics;
     if (use_luts) {
       load_cld_lutcoeff (cloud_optics, cloud_optics_file);
@@ -85,7 +91,7 @@ int main(int argc , char **argv) {
     // LW calculations neglect scattering; SW calculations use the 2-stream approximation
     if (is_sw) {  // Shortwave
 
-      std::cout << "This is a shortwave simulation\n\n";
+      if (verbose) std::cout << "This is a shortwave simulation\n\n";
       OpticalProps2str atmos;
       OpticalProps2str clouds;
 
@@ -133,7 +139,7 @@ int main(int argc , char **argv) {
         rei(icol,ilay) = merge(rei_val, 0._wp, iwp(icol,ilay) > 0._wp);
       });
 
-      std::cout << "Running the main loop\n\n";
+      if (verbose) std::cout << "Running the main loop\n\n";
       auto start_time = std::chrono::high_resolution_clock::now();
       auto end_time   = std::chrono::high_resolution_clock::now();
       for (int iloop = 1 ; iloop <= nloops ; iloop++) {
@@ -156,16 +162,22 @@ int main(int argc , char **argv) {
         yakl::fence();
         end_time = std::chrono::high_resolution_clock::now();
 
-        fluxes.print_norms();
+        if (write_fluxes) fluxes.print_norms();
       }
-      std::cout << "Elapsed Time: " << std::setprecision(15) << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() * 1.e-9 << "\n";
+      if (print_timers) std::cout << "Elapsed Time: " << std::setprecision(15) << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() * 1.e-9 << "\n";
 
-      std::cout << "Writing fluxes\n\n";
-      write_sw_fluxes(input_file, flux_up, flux_dn, flux_dir, ncol);
+      if (verbose) std::cout << "Writing fluxes\n\n";
+      if (write_fluxes) write_sw_fluxes(input_file, flux_up, flux_dn, flux_dir, ncol);
+
+      if (ncol == 1 && nloops == 1) {
+        if ( abs(sum(flux_up )-19104.862129836212)/(19104.862129836212) > 1.e-10) exit(-1);
+        if ( abs(sum(flux_dn )-38046.157649700355)/(38046.157649700355) > 1.e-10) exit(-1);
+        if ( abs(sum(flux_dir)-24998.593939345046)/(24998.593939345046) > 1.e-10) exit(-1);
+      }
 
     } else {  // Longwave
 
-      // std::cout << "This is a longwave simulation\n\n";
+      if (verbose) std::cout << "This is a longwave simulation\n\n";
 
       // Weights and angle secants for first order (k=1) Gaussian quadrature.
       //   Values from Table 2, Clough et al, 1992, doi:10.1029/92JD01419
@@ -240,7 +252,7 @@ int main(int argc , char **argv) {
 
       // Multiple iterations for big problem sizes, and to help identify data movement
       //   For CPUs we can introduce OpenMP threading over loop iterations
-      std::cout << "Running the main loop\n\n";
+      if (verbose) std::cout << "Running the main loop\n\n";
       auto start_time = std::chrono::high_resolution_clock::now();
       auto end_time   = std::chrono::high_resolution_clock::now();
       for (int iloop = 1 ; iloop <= nloops ; iloop++) {
@@ -262,12 +274,17 @@ int main(int argc , char **argv) {
         yakl::fence();
         end_time = std::chrono::high_resolution_clock::now();
 
-        fluxes.print_norms();
+        if (write_fluxes) fluxes.print_norms();
       }
-      std::cout << "Elapsed Time: " << std::setprecision(15) << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() * 1.e-9 << "\n";
+      if (print_timers) std::cout << "Elapsed Time: " << std::setprecision(15) << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() * 1.e-9 << "\n";
 
-      std::cout << "Writing fluxes\n\n";
-      write_lw_fluxes(input_file, flux_up, flux_dn, ncol);
+      if (verbose) std::cout << "Writing fluxes\n\n";
+      if (write_fluxes) write_lw_fluxes(input_file, flux_up, flux_dn, ncol);
+
+      if (ncol == 1 && nloops == 1) {
+        if ( abs(sum(flux_up )-10264.518998579415)/(10264.518998579415) > 1.e-10) exit(-1);
+        if ( abs(sum(flux_dn )-6853.2350138542843)/(6853.2350138542843) > 1.e-10) exit(-1);
+      }
 
     }  // if (is_sw)
 

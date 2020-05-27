@@ -17,4 +17,4 @@ some optional arguments, see `run-rfmip-examples.py -h`
 answers produced on a Mac with Intel 19 Fortran compiler. Differences are normally
 within 10<sup>-6</sup> W/m<sup>2</sup>.
 
-The Python scripts require modules `netCDF4`, `numpy`, and `xarray`.
+The Python scripts require modules `netCDF4`, `numpy`, `xarray`, `dask`, and `toolz`.

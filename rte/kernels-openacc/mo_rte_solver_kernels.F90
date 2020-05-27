@@ -525,9 +525,11 @@ contains
     !   is of order epsilon (smallest difference from 1. in working precision)
     !   Thanks to Peter Blossey
     !
-    fact = merge((1._wp - trans(icol,ilay,igpt))/tau(icol,ilay,igpt) - trans(icol,ilay,igpt), &
-                          tau(icol,ilay,igpt) * ( 0.5_wp - 1._wp/3._wp*tau(icol,ilay,igpt) ), &
-                          tau(icol,ilay,igpt) > tau_thresh)
+    if(tau(icol,ilay,igpt) > tau_thresh) then
+      fact = (1._wp - trans(icol,ilay,igpt))/tau(icol,ilay,igpt) - trans(icol,ilay,igpt)
+    else
+      fact = tau(icol, ilay,igpt) * (0.5_wp - 1._wp/3._wp*tau(icol,ilay,igpt))
+    end if
     !
     ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
     !
@@ -1234,13 +1236,13 @@ contains
 !   b) adds adustment term based on cloud properties (lw_transport_1rescl)
 !      adustment terms is computed based on solution of the Tang equations
 !      for "linear-in-tau" internal source (not in the paper)
-!       
+!
 !   Attention:
 !      use must prceompute scaling before colling the function
 !
 !   Implemented based on the paper
 !   Tang G, et al, 2018: https://doi.org/10.1175/JAS-D-18-0014.1
-! 
+!
 ! -------------------------------------------------------------------------------------------------
   subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                             &
                               tau, scaling, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
@@ -1354,12 +1356,12 @@ contains
     !
     ! Transport
     !
-    !  compute no-scattering fluxes 
+    !  compute no-scattering fluxes
     call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
                              tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                              radn_up, radn_dn,&
                              source_sfcJac, rad_up_Jac)
-    !  make adjustment 
+    !  make adjustment
     call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1,  &
                              tau_loc, trans, &
                              sfc_albedo, source_dn, source_up, &
@@ -1380,9 +1382,9 @@ contains
 !
 !  Similar to lw_solver_noscat_GaussQuad.
 !    It is main solver to use the Tang approximation for fluxes
-!    In addition to the no scattering input parameters the user must provide 
-!    scattering related properties (ssa and g) that the solver uses to compute scaling 
-!     
+!    In addition to the no scattering input parameters the user must provide
+!    scattering related properties (ssa and g) that the solver uses to compute scaling
+!
 ! ---------------------------------------------------------------
   subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
                                    tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, &
@@ -1498,7 +1500,7 @@ contains
 !
 !  Computes Tang scaling of layer optical thickness and scaling parameter
 !    unsafe if ssa*g =1.
-!     
+!
 ! ---------------------------------------------------------------
   pure subroutine scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
     integer ,                              intent(in)    :: ncol
@@ -1522,9 +1524,9 @@ contains
           ssal = ssa(icol, ilay, igpt)
           wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
           scaleTau = (1._wp - ssal + wb )
-          
+
           tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt) ! Eq.15 of the paper
-          ! 
+          !
           ! here scaling is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
           ! actually it is in line of parameter rescaling defined in Eq.7
           ! potentialy if g=ssa=1  then  wb/scaleTau = NaN
@@ -1540,7 +1542,7 @@ contains
 !
 !  Computes Tang scaling of layer optical thickness and scaling parameter
 !  Safe implementation
-!     
+!
 ! ---------------------------------------------------------------
   pure subroutine scaling_1rescl_safe(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
     integer ,                              intent(in)    :: ncol
@@ -1564,9 +1566,9 @@ contains
           ssal = ssa(icol, ilay, igpt)
           wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
           scaleTau = (1._wp - ssal + wb )
-          
+
           tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt) ! Eq.15 of the paper
-          ! 
+          !
           ! here scaling is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
           ! actually it is in line of parameter rescaling defined in Eq.7
           if (scaleTau < 1e-6_wp) then
@@ -1602,7 +1604,7 @@ contains
                                                             source_up  ! Diffuse radiation emitted by the layer
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_up    ! Radiances [W/m2-str]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn    !Top level must contain incident flux boundary condition
-    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: An, Cn  
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: An, Cn
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: rad_up_Jac ! Radiances [W/m2-str]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: rad_dn_Jac !Top level must contain incident flux boundary condition
     ! Local variables
@@ -1627,7 +1629,7 @@ contains
                      source_dn(icol,ilev,igpt)  *trans(icol,ilev,igpt ) - &
                      source_up(icol,ilev,igpt))
             radn_up(icol,ilev,igpt) = radn_up(icol,ilev,igpt) + adjustmentFactor
-          enddo  
+          enddo
           ! 2nd Downward propagation
           do ilev = 1, nlay
             radn_dn   (icol,ilev+1,igpt) = trans(icol,ilev,igpt)*radn_dn   (icol,ilev,igpt) + source_dn(icol,ilev,igpt)
@@ -1640,7 +1642,7 @@ contains
 
             adjustmentFactor             = Cn(icol,ilev,igpt)*An(icol,ilev,igpt)*rad_up_Jac(icol,ilev,igpt)
             rad_dn_Jac(icol,ilev+1,igpt) = rad_dn_Jac(icol,ilev+1,igpt) + adjustmentFactor
-          enddo  
+          enddo
         enddo
       enddo
     else

@@ -114,8 +114,8 @@ jobs:
         cd ${RRTMGP_ROOT}/tests
         python validation-plots.py
     - name: Upload plots
-      if: contains(matrix.fortran-compiler, 'ifort')
+      if: contains(matrix.fortran-compiler, 'ifort') && contains(matrix.rte-kernels, 'default')
       uses: actions/upload-artifact@v2
       with:
         name: valdiation-plot
-        path: ${GITHUB_WORKSPACE}/tests/validation-figures.pdf
+        path: tests/validation-figures.pdf

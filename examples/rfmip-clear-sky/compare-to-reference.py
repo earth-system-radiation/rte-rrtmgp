@@ -17,6 +17,8 @@ rrtmgp_suffix = "_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"
 #
 def construct_esgf_file(var):
     esgf_url_base = "http://esgf3.dkrz.de/thredds/fileServer/cmip6/RFMIP/RTE-RRTMGP-Consortium/RTE-RRTMGP-181204/rad-irf/r1i1p1f1/Efx/"
+    # DKRZ node goes down frequently 
+    esgf_url_base = "http://esgf-data1.llnl.gov/thredds/dodsC/css03_data/CMIP6/RFMIP/RTE-RRTMGP-Consortium/RTE-RRTMGP-181204/rad-irf/r1i1p1f1/Efx/"
     esgf_url_ver  = "gn/v20191007/"
     return (os.path.join(esgf_url_base, var, esgf_url_ver, var+rrtmgp_suffix))
 #

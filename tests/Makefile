@@ -1,20 +1,16 @@
+#
 # Location of RTE+RRTMGP libraries, module files.
+#
 RRTMGP_BUILD = $(RRTMGP_ROOT)/build
-# Sets macros FC, FCFLAGS consistent with RTE+RRTMGP
--include $(RRTMGP_BUILD)/Makefile.conf
-
-# Location of netcdf C and Fortran libraries. Could specify with environment variables if file doesn't exist
--include $(RRTMGP_ROOT)/examples/rfmip-clear-sky/Makefile.libs
 #
 # RRTMGP library, module files
 #
 LDFLAGS   += -L$(RRTMGP_BUILD)
 LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_BUILD)
-
 #
 # netcdf library, module files
-# C and Fortran interfaces respectively
+# Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
 #
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib

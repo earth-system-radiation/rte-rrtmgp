@@ -4,8 +4,9 @@ Before using the Makefiles supplied with the `RTE+RRTMGP` repository, the enviro
 `FCFLAGS`, identifying the Fortran compiler and flags passed to it, need to be set. Here are some examples
 used during development and testing.
 
-To build and of the executables in `examples/` or `tests` the locations of the C and Fortran netCDF libraries
-need to be set via environment variables `NCHOME` and `NFHOME`.
+To build any of the executables in `examples/` or `tests` the locations of the C and Fortran netCDF libraries
+need to be set via environment variables `NCHOME` and `NFHOME`, and the variable `RRTMGP_ROOT` must be set to the
+root of the RTE+RRTMGP installation. 
 
 ## Gnu Fortran
 `FC: gfortran-8` or `gfortran-9`  

@@ -1,10 +1,7 @@
 #
-# Here set variables RRTMGP_BUILD, NCHOME, NFHOME, TIME_DIR (for GPTL)
-#   or have those variables set in the environment
+# Location of RTE+RRTMGP libraries, module files.
 #
-RRTMGP_BUILD=$(RRTMGP_ROOT)/build
--include Makefile.libs
--include $(RRTMGP_BUILD)/Makefile.conf
+RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
 #
@@ -14,7 +11,7 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 
 #
 # netcdf library, module files
-# C and Fortran interfaces respectively
+# Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
 #
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
@@ -23,6 +20,7 @@ LIBS      += -lnetcdff -lnetcdf
 #
 # Setting macro TIMING=yes uses routines from the General Purpose Timing Library
 #  https://jmrosinski.github.io/GPTL/
+# If TIMING=yes evironment variables TIME_DIR must be set to root of GPTL installation
 #
 TIMING=no
 # Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran

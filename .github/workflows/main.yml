@@ -32,7 +32,7 @@ jobs:
       with:
         python-version: 3.7
     - name: Install python dependencies
-      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colocet
+      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
     #
     # Install  NetCDF library
     #
@@ -118,4 +118,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: valdiation-plot
-        path: ${GITHUB_WORKSPACE}/tests/validation-figures.pdf 
+        path: ${GITHUB_WORKSPACE}/tests/validation-figures.pdf

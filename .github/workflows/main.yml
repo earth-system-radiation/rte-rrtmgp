@@ -32,7 +32,7 @@ jobs:
       with:
         python-version: 3.7
     - name: Install python dependencies
-      run: conda install --yes urllib3 netcdf4 xarray dask scipy
+      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
     #
     # Install  NetCDF library
     #
@@ -108,3 +108,14 @@ jobs:
         python ./compare-to-reference.py
         cd ${RRTMGP_ROOT}/tests
         python verification.py
+    - name: Validation plots
+      run: |
+        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
+        cd ${RRTMGP_ROOT}/tests
+        python validation-plots.py
+    - name: Upload plots
+      if: contains(matrix.fortran-compiler, 'ifort') && contains(matrix.rte-kernels, 'default')
+      uses: actions/upload-artifact@v2
+      with:
+        name: valdiation-plot
+        path: tests/validation-figures.pdf

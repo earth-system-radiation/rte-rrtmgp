@@ -41,6 +41,7 @@ def construct_lbl_esgf_name(var):
     # For a given variable name, provide the OpenDAP URL for the LBLRM line-by-line results
     #
     prefix = "http://esgf3.dkrz.de/thredds/dodsC/cmip6/RFMIP/AER/LBLRTM-12-8/rad-irf/r1i1p1f1/Efx/"
+    prefix = "http://esgf-data1.llnl.gov/thredds/dodsC/css03_data/CMIP6/RFMIP/AER/LBLRTM-12-8/rad-irf/r1i1p1f1/Efx/"
     return(prefix + var + "/gn/v20190514/" + var + "_Efx_LBLRTM-12-8_rad-irf_r1i1p1f1_gn.nc")
 
 ########################################################################

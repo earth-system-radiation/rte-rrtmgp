@@ -21,7 +21,7 @@ Relative to commit `69d36c9` to `master` on Apr 20, 2020, the required arguments
 ## Building the libraries.
 
 1. `cd build`
-2. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Alternately create a Makefile.conf that sets these variables. You could also link to an existing file.
+2. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Examples are provided in the `Compiler-flags.md` file. 
 3. Set environment variable `RTE_KERNELS` to `openacc` if you want the OpenACC kernels rather than the default.
 4. `make`
 

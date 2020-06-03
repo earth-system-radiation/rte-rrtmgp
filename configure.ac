@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([rte+rrtmgp], [1.2.0], [], [],
+AC_INIT([rte+rrtmgp], [1.2.1], [], [],
   [https://github.com/RobertPincus/rte-rrtmgp])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([config])

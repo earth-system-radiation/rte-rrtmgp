@@ -54,7 +54,7 @@ silent_FCLD=    @echo "  FCLD    " $@;
 silent_MKDIR=   @echo "  MKDIR   " $(@D);
 endif
 
-lib_LIBRARIES= librte.a librrtmgp.a
+lib_LIBRARIES= librrtmgp.a librte.a
 
 librte_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rte -name '*.F90'))
 # If OpenACC is disabled, simply filter-out OpenACC source files:

@@ -1,0 +1,122 @@
+name: Continuous Integration
+on: [push, pull_request]
+
+jobs:
+  CI:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        fortran-compiler: [gfortran-8, gfortran-9, ifort]
+        rte-kernels: [default, openacc]
+    env:
+      FC: ${{ matrix.fortran-compiler }}
+    steps:
+    #
+    # Checks-out repository under $GITHUB_WORKSPACE
+    #
+    - uses: actions/checkout@v2
+    #
+    # Set up Python and dependencies
+    #
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install Python dependencies
+      run: |
+        pip install --upgrade pip
+        pip install netCDF4 xarray dask[array]
+    #
+    # Install  NetCDF library
+    #
+    - name: Install NetCDF C library
+      run: sudo apt-get install libnetcdf-dev
+    #
+    # Create environment initialization script
+    #
+    - name: Create environment initialization script
+      run: echo "cat init_env.sh" >> init_env.sh
+    #
+    # Intel compilers and libraries if needed
+    #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
+    #
+    - name: Install Intel compiler
+      if: contains(matrix.fortran-compiler, 'ifort')
+      run: |
+        wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+        sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+        sudo add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
+        sudo apt-get update
+        sudo apt-get install intel-oneapi-common-licensing
+        sudo apt-get install intel-oneapi-common-vars
+        sudo apt-get install intel-oneapi-dev-utilities
+        sudo apt-get install intel-oneapi-ifort
+        echo ". /opt/intel/inteloneapi/setvars.sh" >> init_env.sh
+    #
+    # NetCDF FORTRAN library
+    #
+    - name: Build NetCDF Fortran library
+      run: |
+        . init_env.sh
+        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
+        cd netcdf-fortran
+        ./configure && make && sudo make install
+    #
+    # Extend the environment initialization script with FCFLAGS
+    #
+    - name: Set Fortran compiler flags (GCC)
+      if: contains(matrix.fortran-compiler, 'gfortran')
+      run: echo "export FCFLAGS='-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan'" >> init_env.sh
+    - name: Set Fortran compiler flags (Intel)
+      if: contains(matrix.fortran-compiler, 'ifort')
+      run: echo "export FCFLAGS='-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08'" >> init_env.sh
+    #
+    # In-source (as an example) configuration with default kernels
+    #
+    - name: Configure (default kernels)
+      if: contains(matrix.rte-kernels, 'default')
+      run: |
+        . init_env.sh
+        ./configure --disable-silent-rules --enable-tests --with-netcdf-fortran=/usr/local --disable-openacc || { cat ./config.log; exit 1; }
+    #
+    # Out-of-source (as an example) configuration with OpenACC kernels
+    # We want to compile OpenACC kernels without OpenACC support. A way
+    # to do that is to prevent the configure script from appending the
+    # compiler flag enabling OpenACC support by calling it with an
+    # additional argument 'acx_cv_fc_openacc_flag='
+    #
+    - name: Configure (OpenACC kernels)
+      if: contains(matrix.rte-kernels, 'openacc')
+      run: |
+        mkdir test_build
+        echo "cd test_build" >> init_env.sh
+        . init_env.sh
+        ../configure --disable-silent-rules --enable-tests --with-netcdf-fortran=/usr/local --enable-openacc acx_cv_fc_openacc_flag= || { cat ./config.log; exit 1; }
+    #
+    # Build the library
+    #
+    - name: Build
+      run: |
+        . init_env.sh
+        make
+    #
+    # Check the library
+    #
+    - name: Check
+      run: |
+        . init_env.sh
+        make check
+    #
+    # Check the installation procedure
+    #
+    - name: Install
+      run: |
+        . init_env.sh
+        sudo make install
+    #
+    # Check the distclean procedure
+    #
+    - name: Distclean
+      run: |
+        . init_env.sh
+        make distclean

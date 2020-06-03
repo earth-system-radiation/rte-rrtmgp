@@ -4,38 +4,40 @@ jobs:
   strategy:
     matrix:
       pgi_19_9_gpu:
+        compiler_base: pgi
         compiler_module: PGI/19.9
-        PrgEnv: PrgEnv-pgi
         accel_module: cudatoolkit
         FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
         RTE_KERNELS: openacc
+        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_default_gpu:
+        compiler_base: pgi
         compiler_module: pgi
-        PrgEnv: PrgEnv-pgi
         accel_module: craype-accel-nvidia60
         # Generic accelerator flag
         FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
         RTE_KERNELS: openacc
+        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_19_10_cpu:
+        compiler_base: pgi
         compiler_module: PGI/19.10
-        PrgEnv: PrgEnv-pgi
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
         RUN_CMD:
       pgi_19_9_cpu:
+        compiler_base: pgi
         compiler_module: PGI/19.9
-        PrgEnv: PrgEnv-pgi
         accel_module:
         # Error checking flags
         FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
         RUN_CMD:
-      pgi_default_cpu:
-        compiler_module: pgi
-        PrgEnv: PrgEnv-pgi
+      cce-cpu-icon-production:
+        compiler_base: cray
+        compiler_module: ccce-icon/9.0.2-classic
         accel_module:
-        # Error checking flags
-        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+        # Production flags for Icon model
+        FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
     maxParallel: 2
 
   workspace:
@@ -45,39 +47,34 @@ jobs:
   - script: |
       set -e
 
-      echo "
-      export PATH=$CRAY_BINUTILS_BIN:$PATH
-      module load daint-gpu
-      module swap PrgEnv-cray $(PrgEnv)
-      module load cray-netcdf cray-hdf5
-      module swap pgi $(compiler_module)
-      module load $(accel_module)
       module load cray-python/3.6.5.7
+      python -m venv python
+      python/bin/pip install --upgrade pip
+      python/bin/pip install netCDF4 xarray dask[array]
+
+      echo "
+      module load daint-gpu
+      export PATH=$CRAY_BINUTILS_BIN:$PATH
+      module swap PrgEnv-cray PrgEnv-$(compiler_base)
+      module swap $(compiler_base) $(compiler_module)
+      module load $(accel_module)
+      module load cray-netcdf cray-hdf5
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
 
-      # The following adds a virtual environment with all Python modules
-      # that are required for the test suite. The environment has been
-      # created as follows:
-      #     module load cray-python/3.6.5.7
-      #     python -m venv python-rte-rrtmgp
-      #     python-rte-rrtmgp/bin/pip install --upgrade pip
-      #     python-rte-rrtmgp/bin/pop install netCDF4
-      #     python-rte-rrtmgp/bin/pop install xarray
-      #     python-rte-rrtmgp/bin/pop install dask
-      #     python-rte-rrtmgp/bin/pop install toolz
-      #
-      export PATH=\"/scratch/snx3000/skosukhi/python-rte-rrtmgp/bin:\$PATH\"
+      export PYTHON=$(pwd)/python/bin/python
       export FC=ftn
-      export LAUNCH_PREFIX='srun -C gpu -A c15 -p cscsci'
+      export LAUNCH_PREFIX=\$RUN_CMD
 
-      echo Environment:
+      echo Compiler Environment:
       module list
-      " > modules
+      echo LD_LIBRARY_PATH is:
+      echo $LD_LIBRARY_PATH
+      " > compiler_modules
 
     displayName: 'Create module environment'
   - script: |
       set -e
-      source modules
+      source compiler_modules
       config_args='--enable-tests --disable-silent-rules'
       if test -n "$RTE_KERNELS"; then
         config_args="$config_args --enable-openacc"
@@ -88,11 +85,11 @@ jobs:
     displayName: 'Configure'
   - script: |
       set -e
-      source modules
+      source compiler_modules
       make -j8
     displayName: 'Make'
   - script: |
       set -e
-      source modules
+      source compiler_modules
       make -j8 check
     displayName: 'Check'

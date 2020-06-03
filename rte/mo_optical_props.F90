@@ -158,7 +158,7 @@ module mo_optical_props
   !     phase function moments (index 1 = g) for use with discrete ordinate methods
   !
   ! -------------------------------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_1scl
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_1scl
   contains
     procedure, public  :: validate => validate_1scalar
     procedure, public  :: get_subset => subset_1scl_range
@@ -171,7 +171,7 @@ module mo_optical_props
   end type
 
   ! --- 2 stream ------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_2str
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_2str
     real(wp), dimension(:,:,:), allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
     real(wp), dimension(:,:,:), allocatable :: g   ! asymmetry parameter (ncol, nlay, ngpt)
   contains
@@ -186,7 +186,7 @@ module mo_optical_props
   end type
 
   ! --- n stream ------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_nstr
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_nstr
     real(wp), dimension(:,:,:),   allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
     real(wp), dimension(:,:,:,:), allocatable :: p   ! phase-function moments (nmom, ncol, nlay, ngpt)
   contains
@@ -519,7 +519,7 @@ contains
         err_message = "delta_scale: dimension of 'for' don't match optical properties arrays"
         return
       end if
-      if(any(for < 0._wp .or. for > 1._wp)) then
+      if(any_vals_outside(for, 0._wp, 1._wp)) then
         err_message = "delta_scale: values of 'for' out of bounds [0,1]"
         return
       end if
@@ -817,7 +817,7 @@ contains
     if(.not. all([op_in%get_ncol(), op_in%get_nlay()] == [ncol, nlay])) &
       err_message = "ty_optical_props%increment: optical properties objects have different ncol and/or nlay"
     if(err_message /= "")  return
-    
+
     if(op_in%gpoints_are_equal(op_io)) then
       !
       ! Increment by gpoint

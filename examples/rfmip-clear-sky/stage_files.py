@@ -2,6 +2,7 @@
 #
 # This script downloads and creates files needed for the RFMIP off-line test cases
 #
+import sys
 import os
 import subprocess
 import glob
@@ -26,8 +27,8 @@ for f in glob.glob("multiple_input4MIPs_radiation_RFMIP*.nc"): os.remove(f)
 #
 # Download the profiles for RFMIP; make the empty output files
 #
-print("Dowloading RFMIP input files")
+print("Downloading RFMIP input files")
 urllib.request.urlretrieve(conds_url,     conds_file)
-print("Dowloading scripts for generating output templates")
+print("Downloading scripts for generating output templates")
 urllib.request.urlretrieve(templ_scr_url, templ_scr)
-subprocess.run(["python3", templ_scr, "--source_id", "RTE-RRTMGP-181204"])
+subprocess.run([sys.executable, templ_scr, "--source_id", "RTE-RRTMGP-181204"])

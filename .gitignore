@@ -14,4 +14,11 @@
 Makefile.libs
 Makefile.conf
 
-src/
+# Intel code coverage
+*.dyn
+*.dpi
+*.spi
+*.spl
+*.HTML
+*.html
+*.gif

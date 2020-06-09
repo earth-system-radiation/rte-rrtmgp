@@ -20,6 +20,8 @@ module mo_compute_bc
   ! The boundary condition is on diffuse flux in the LW and direct flux in the SW
   ! -------------------------------------------------------------------------------------------------
   use mo_rte_kind,           only: wp, wl
+  use mo_rte_config,         only: check_extents
+  use mo_rte_util_array,     only: extents_are
   use mo_source_functions,   only: ty_source_func_lw
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props, ty_optical_props_arry, &
@@ -88,19 +90,16 @@ contains
     ncol  = size(play, dim=1)
     nlay  = size(play, dim=2)
     ngpt  = k_dist%get_ngpt()
-    if(any([size(plev,1) /= ncol, size(plev,2) /= nlay+1])) then
-      error_msg = "compute_bc: array plev has wrong dimensions"
-      return
-    end if
-    if(any([size(tlay,1) /= ncol, size(tlay,2) /= nlay  ])) then
-      error_msg = "compute_bc: array tlay has wrong dimensions"
-      return
-    end if
-    if(present(mu0)) then
-      if(size(mu0) /= ncol) then
-        error_msg  = "compute bc: array mu0 has wrong dimensions"
-        return
+    if(check_extents) then
+      if(.not. extents_are(plev, ncol, nlay+1)) &
+        error_msg = "compute_bc: array plev has wrong dimensions"
+      if(.not. extents_are(tlay, ncol, nlay  )) &
+        error_msg = "compute_bc: array tlay has wrong dimensions"
+      if(present(mu0)) then
+        if(size(mu0) /= ncol) &
+          error_msg  = "compute bc: array mu0 has wrong dimensions"
       end if
+      if(error_msg /= "") return
     end if
 
     !

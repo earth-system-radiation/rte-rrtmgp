@@ -211,7 +211,7 @@ contains
           error_msg = "rte_lw: lw_Ds not valid input for _2str class"
         if (using_2stream .and. n_quad_angs /= 1) &
           error_msg = "rte_lw: using_2stream=true incompatible with specifying n_gauss_angles"
-        if (using_2stream .and. (present(flux_up_Jac) .or. present(flux_up_Jac))) &
+        if (using_2stream .and. (present(flux_up_Jac) .or. present(flux_dn_Jac))) &
           error_msg = "rte_lw: can't provide Jacobian of fluxes w.r.t surface temperature with 2-stream"
       class default
         error_msg =  "rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented"

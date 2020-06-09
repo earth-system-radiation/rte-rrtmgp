@@ -16,6 +16,7 @@
 
 module mo_gas_optics_kernels
   use mo_rte_kind,      only : wp, wl
+  use mo_rte_util_array,only : zero_array
   implicit none
   public
 contains
@@ -542,7 +543,7 @@ contains
     !
     do icol = 1, ncol
       planck_function(1:nbnd,1,icol) = interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk)
-      planck_function(1:nbnd,2,icol) = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk) 
+      planck_function(1:nbnd,2,icol) = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk)
       !
       ! Map to g-points
       !
@@ -729,12 +730,12 @@ contains
     integer  :: icol, ilay, igpt
     real(wp) :: t
     ! -----------------------
-    do icol = 1, ncol
-      do ilay = 1, nlay
-        do igpt = 1, ngpt
+    call zero_array(ncol, nlay, ngpt, g)
+    do ilay = 1, nlay
+      do igpt = 1, ngpt
+        do icol = 1, ncol
            t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol)
            tau(icol,ilay,igpt) = t
-           g  (icol,ilay,igpt) = 0._wp
            if(t > 2._wp * tiny(t)) then
              ssa(icol,ilay,igpt) = tau_rayleigh(igpt,ilay,icol) / t
            else

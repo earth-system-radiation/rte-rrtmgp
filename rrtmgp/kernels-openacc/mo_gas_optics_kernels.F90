@@ -16,6 +16,7 @@
 
 module mo_gas_optics_kernels
   use mo_rte_kind,      only: wp, wl
+  use mo_rte_util_array,only: zero_array
   implicit none
   public
 contains
@@ -770,6 +771,7 @@ contains
     !$acc data copy(tau, ssa, g)                 &
     !$acc      copyin(tau_rayleigh, tau_abs)
 
+    call zero_array(ncol, nlay, ngpt, g)
     ! We are using blocking memory accesses here to improve performance
     !  of the transpositions. See also comments in mo_rrtmgp_util_reorder_kernels.F90
     !
@@ -785,16 +787,13 @@ contains
               icol = icol0 + icdiff
               igpt = igpt0 + igdiff
               if (icol > ncol .or. igpt > ngpt) cycle
-
-           t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol)
-           tau(icol,ilay,igpt) = t
-           g  (icol,ilay,igpt) = 0._wp
-           if(t > 2._wp * tiny(t)) then
-             ssa(icol,ilay,igpt) = tau_rayleigh(igpt,ilay,icol) / t
-           else
-             ssa(icol,ilay,igpt) = 0._wp
-           end if
-
+               t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol)
+               tau(icol,ilay,igpt) = t
+               if(t > 2._wp * tiny(t)) then
+                 ssa(icol,ilay,igpt) = tau_rayleigh(igpt,ilay,icol) / t
+               else
+                 ssa(icol,ilay,igpt) = 0._wp
+               end if
             end do
           end do
 

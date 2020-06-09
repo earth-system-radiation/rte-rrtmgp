@@ -301,7 +301,7 @@ contains
   !-------------------------------------------------------------------------------------------------
   ! Initializing arrays to 0
   !-------------------------------------------------------------------------------------------------
-  subroutine zero_array_1D(ni, array) bind(C, name="zero_array_1D")
+  pure subroutine zero_array_1D(ni, array) bind(C, name="zero_array_1D")
     integer,                 intent(in ) :: ni
     real(wp), dimension(ni), intent(out) :: array
     ! -----------------------
@@ -313,7 +313,7 @@ contains
     end do
   end subroutine zero_array_1D
   ! ----------------------------------------------------------
-  subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
+  pure subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
     integer,                         intent(in ) :: ni, nj, nk
     real(wp), dimension(ni, nj, nk), intent(out) :: array
     ! -----------------------
@@ -330,7 +330,7 @@ contains
 
   end subroutine zero_array_3D
   ! ----------------------------------------------------------
-  subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
+  pure subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
     integer,                             intent(in ) :: ni, nj, nk, nl
     real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
     ! -----------------------

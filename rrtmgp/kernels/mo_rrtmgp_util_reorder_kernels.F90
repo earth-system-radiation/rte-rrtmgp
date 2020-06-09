@@ -16,6 +16,7 @@
 module mo_rrtmgp_util_reorder_kernels
   use mo_rte_kind,      only: wp
   implicit none
+  public
 contains
   ! ----------------------------------------------------------------------------
   subroutine reorder_123x312_kernel(d1, d2, d3, array_in, array_out) &

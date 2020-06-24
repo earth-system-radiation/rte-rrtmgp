@@ -447,7 +447,8 @@ contains
                 if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
                   scaling = scaling * (1._wp - mycol_gas_imnr * vmr_fact * dry_fact)
                 else
-                  scaling = scaling *          mycol_gas_imnr * vmr_fact * dry_fact
+                 !scaling = scaling *          mycol_gas_imnr * vmr_fact * dry_fact
+                  scaling = scaling *          (mycol_gas_imnr * vmr_fact * dry_fact)
                 endif
               endif
             endif

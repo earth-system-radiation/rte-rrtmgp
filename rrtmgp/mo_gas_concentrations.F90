@@ -35,7 +35,7 @@ module mo_gas_concentrations
   use mo_rrtmgp_util_string, only: lower_case
   use mo_rte_util_array,     only: any_vals_outside
   implicit none
-  integer, parameter :: GAS_NOT_IN_LIST = 0
+  integer, parameter :: GAS_NOT_IN_LIST = -1
 
   type, private :: conc_field
     real(wp), dimension(:,:), pointer :: conc => NULL()
@@ -475,8 +475,13 @@ contains
     ! -----------------
     integer :: igas
     ! -----------------
+    find_gas = GAS_NOT_IN_LIST
     if(.not. allocated(this%gas_name)) return
-    find_gas = findloc(this%gas_name,gas,dim=1)
+    do igas = 1, size(this%gas_name)
+      if (lower_case(trim(this%gas_name(igas))) == lower_case(trim(gas))) then
+        find_gas = igas
+      end if
+    end do
   end function
   ! -------------------------------------------------------------------------------------
   subroutine del(this)

@@ -13,3 +13,12 @@
 # Don't commit specific Makefile variants
 Makefile.libs
 Makefile.conf
+
+# Intel code coverage
+*.dyn
+*.dpi
+*.spi
+*.spl
+*.HTML
+*.html
+*.gif

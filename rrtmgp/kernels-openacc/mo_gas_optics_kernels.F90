@@ -16,11 +16,9 @@
 
 module mo_gas_optics_kernels
   use mo_rte_kind,      only: wp, wl
+  use mo_rte_util_array,only: zero_array
   implicit none
-
-  interface zero_array
-    module procedure zero_array_3D, zero_array_4D
-  end interface
+  public
 contains
   ! --------------------------------------------------------------------------------------
   ! Compute interpolation coefficients
@@ -39,7 +37,7 @@ contains
     integer,                            intent(in) :: ngas,nflav,neta,npres,ntemp
     integer,     dimension(2,nflav),    intent(in) :: flavor
     real(wp),    dimension(npres),      intent(in) :: press_ref_log
-    real(wp),    dimension(npres),      intent(in) :: temp_ref
+    real(wp),    dimension(ntemp),      intent(in) :: temp_ref
     real(wp),                           intent(in) :: press_ref_log_delta, &
                                                       temp_ref_min, temp_ref_delta, &
                                                       press_ref_trop_log
@@ -73,12 +71,12 @@ contains
     !$acc enter data create(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor)
     !$acc enter data create(ftemp,fpress)
 
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop gang vector collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
         jtemp(icol,ilay) = int((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta)
-        jtemp(icol,ilay) = min(npres - 1, max(1, jtemp(icol,ilay))) ! limit the index range
+        jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp(icol,ilay))) ! limit the index range
         ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta
 
         ! index and factor for pressure interpolation
@@ -94,7 +92,7 @@ contains
     ! loop over implemented combinations of major species
     ! PGI BUG WORKAROUND: if present(vmr_ref) isn't there, OpenACC runtime
     ! thinks it isn't present.
-    !$acc parallel loop collapse(4) private(igases) present(vmr_ref)
+    !$acc parallel loop gang vector collapse(4) private(igases) present(vmr_ref)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! loop over implemented combinations of major species
@@ -257,7 +255,7 @@ contains
     idx_tropo = 1
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,             & ! dimensions
-           ngas,nflav,npres,neta,      &
+           ngas,nflav,ntemp,neta,      &
            nminorlower,nminorklower,   &
            idx_h2o,idx_tropo,          &
            gpoint_flavor,              &
@@ -278,7 +276,7 @@ contains
     idx_tropo = 2
     call gas_optical_depths_minor(     &
            ncol,nlay,ngpt,             & ! dimensions
-           ngas,nflav,npres,neta,      &
+           ngas,nflav,ntemp,neta,      &
            nminorupper,nminorkupper,   &
            idx_h2o,idx_tropo,          &
            gpoint_flavor,              &
@@ -366,7 +364,7 @@ contains
   ! compute minor species optical depths
   !
   subroutine gas_optical_depths_minor(ncol,nlay,ngpt,        &
-                                      ngas,nflav,npres,neta, &
+                                      ngas,nflav,ntemp,neta, &
                                       nminor,nminork,        &
                                       idx_h2o,idx_tropo,     &
                                       gpt_flv,               &
@@ -380,24 +378,24 @@ contains
                                       col_gas,fminor,jeta, &
                                       layer_limits,jtemp,  &
                                       tau) bind(C, name="gas_optical_depths_minor")
-    integer,                                     intent(in ) :: ncol,nlay,ngpt
-    integer,                                     intent(in ) :: ngas,nflav
-    integer,                                     intent(in ) :: npres,neta,nminor,nminork
-    integer,                                     intent(in ) :: idx_h2o, idx_tropo
-    integer,     dimension(2, ngpt),             intent(in ) :: gpt_flv
-    real(wp),    dimension(nminork,neta,npres),  intent(in ) :: kminor
-    integer,     dimension(2,nminor),            intent(in ) :: minor_limits_gpt
-    logical(wl), dimension(  nminor),            intent(in ) :: minor_scales_with_density
-    logical(wl), dimension(  nminor),            intent(in ) :: scale_by_complement
-    integer,     dimension(  nminor),            intent(in ) :: kminor_start
-    integer,     dimension(  nminor),            intent(in ) :: idx_minor, idx_minor_scaling
-    real(wp),    dimension(ncol,nlay),           intent(in ) :: play, tlay
-    real(wp),    dimension(ncol,nlay,0:ngas),    intent(in ) :: col_gas
-    real(wp),    dimension(2,2,nflav,ncol,nlay), intent(in ) :: fminor
-    integer,     dimension(2,  nflav,ncol,nlay), intent(in ) :: jeta
-    integer,     dimension(ncol, 2),             intent(in ) :: layer_limits
-    integer,     dimension(ncol,nlay),           intent(in ) :: jtemp
-    real(wp),    dimension(ngpt,nlay,ncol),      intent(out) :: tau
+    integer,                                     intent(in   ) :: ncol,nlay,ngpt
+    integer,                                     intent(in   ) :: ngas,nflav
+    integer,                                     intent(in   ) :: ntemp,neta,nminor,nminork
+    integer,                                     intent(in   ) :: idx_h2o, idx_tropo
+    integer,     dimension(2, ngpt),             intent(in   ) :: gpt_flv
+    real(wp),    dimension(nminork,neta,ntemp),  intent(in   ) :: kminor
+    integer,     dimension(2,nminor),            intent(in   ) :: minor_limits_gpt
+    logical(wl), dimension(  nminor),            intent(in   ) :: minor_scales_with_density
+    logical(wl), dimension(  nminor),            intent(in   ) :: scale_by_complement
+    integer,     dimension(  nminor),            intent(in   ) :: kminor_start
+    integer,     dimension(  nminor),            intent(in   ) :: idx_minor, idx_minor_scaling
+    real(wp),    dimension(ncol,nlay),           intent(in   ) :: play, tlay
+    real(wp),    dimension(ncol,nlay,0:ngas),    intent(in   ) :: col_gas
+    real(wp),    dimension(2,2,nflav,ncol,nlay), intent(in   ) :: fminor
+    integer,     dimension(2,  nflav,ncol,nlay), intent(in   ) :: jeta
+    integer,     dimension(ncol, 2),             intent(in   ) :: layer_limits
+    integer,     dimension(ncol,nlay),           intent(in   ) :: jtemp
+    real(wp),    dimension(ngpt,nlay,ncol),      intent(inout) :: tau
     ! -----------------
     ! local variables
     real(wp), parameter :: PaTohPa = 0.01
@@ -406,61 +404,82 @@ contains
     integer  :: icol, ilay, iflav, igpt, imnr
     integer  :: gptS, gptE
     integer  :: minor_start, minor_loc, extent
+
+    real(wp) :: myplay, mytlay, mycol_gas_h2o, mycol_gas_imnr, mycol_gas_0
+    real(wp) :: myfminor(2,2)
+    integer  :: myjtemp, myjeta(2), max_gpt_diff, igpt0
     ! -----------------
 
     extent = size(scale_by_complement,dim=1)
 
-    !$acc parallel loop collapse(3) 
-    do imnr = 1, extent  ! loop over minor absorbers in each band
+    ! Find the largest number of g-points per band
+    max_gpt_diff = maxval( minor_limits_gpt(2,:) - minor_limits_gpt(1,:) )
+
+    !$acc parallel loop gang vector collapse(3)
+    do ilay = 1 , nlay
       do icol = 1, ncol
-        do ilay = 1 , nlay
+        do igpt0 = 0, max_gpt_diff
           !
           ! This check skips individual columns with no pressures in range
           !
-          if(layer_limits(icol,1) > 0) then
-            if (ilay >= layer_limits(icol,1)  .and. ilay <= layer_limits(icol,2) ) then
+          if ( layer_limits(icol,1) <= 0 .or. ilay < layer_limits(icol,1) .or. ilay > layer_limits(icol,2) ) cycle
+
+          myplay  = play (icol,ilay)
+          mytlay  = tlay (icol,ilay)
+          myjtemp = jtemp(icol,ilay)
+          mycol_gas_h2o = col_gas(icol,ilay,idx_h2o)
+          mycol_gas_0   = col_gas(icol,ilay,0)
+
+          do imnr = 1, extent
+
+            scaling = col_gas(icol,ilay,idx_minor(imnr))
+            if (minor_scales_with_density(imnr)) then
               !
-              ! Scaling of minor gas absortion coefficient begins with column amount of minor gas
+              ! NOTE: P needed in hPa to properly handle density scaling.
               !
-              scaling = col_gas(icol,ilay,idx_minor(imnr))
-              !
-              ! Density scaling (e.g. for h2o continuum, collision-induced absorption)
-              !
-              if (minor_scales_with_density(imnr)) then
-                !
-                ! NOTE: P needed in hPa to properly handle density scaling.
-                !
-                scaling = scaling * (PaTohPa*play(icol,ilay)/tlay(icol,ilay))
-                if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
-                  vmr_fact = 1._wp / col_gas(icol,ilay,0)
-                  dry_fact = 1._wp / (1._wp + col_gas(icol,ilay,idx_h2o) * vmr_fact)
-                  ! scale by density of special gas
-                  if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
-                    scaling = scaling * (1._wp - col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact)
-                  else
-                    scaling = scaling *          col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact
-                  endif
+              scaling = scaling * (PaTohPa * myplay/mytlay)
+
+              if(idx_minor_scaling(imnr) > 0) then  ! there is a second gas that affects this gas's absorption
+                mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr))
+                vmr_fact = 1._wp / mycol_gas_0
+                dry_fact = 1._wp / (1._wp + mycol_gas_h2o * vmr_fact)
+                ! scale by density of special gas
+                if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
+                  scaling = scaling * (1._wp - mycol_gas_imnr * vmr_fact * dry_fact)
+                else
+                  scaling = scaling *          mycol_gas_imnr * vmr_fact * dry_fact
                 endif
               endif
-              !
-              ! Interpolation of absorption coefficient and calculation of optical depth
-              !
-              ! Which gpoint range does this minor gas affect?
-              gptS = minor_limits_gpt(1,imnr)
-              gptE = minor_limits_gpt(2,imnr)
+            endif
+
+            !
+            ! Interpolation of absorption coefficient and calculation of optical depth
+            !
+            ! Which gpoint range does this minor gas affect?
+            gptS = minor_limits_gpt(1,imnr)
+            gptE = minor_limits_gpt(2,imnr)
+
+            ! Find the actual g-point to work on
+            igpt = igpt0 + gptS
+
+            ! Proceed only if the g-point is within the correct range
+            if (igpt <= gptE) then
               ! What is the starting point in the stored array of minor absorption coefficients?
               minor_start = kminor_start(imnr)
-              do igpt = gptS,gptE
-                tau_minor = 0._wp
-                iflav = gpt_flv(idx_tropo,igpt) ! eta interpolation depends on flavor
-                minor_loc = minor_start + (igpt - gptS) ! add offset to starting point
-                kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, jeta(:,iflav,icol,ilay), jtemp(icol,ilay))
-                tau_minor = kminor_loc * scaling
-                !$acc atomic update
-                tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
-              enddo
+
+              tau_minor = 0._wp
+              iflav = gpt_flv(idx_tropo,igpt) ! eta interpolation depends on flavor
+              minor_loc = minor_start + (igpt - gptS) ! add offset to starting point
+              kminor_loc = interpolate2D(fminor(:,:,iflav,icol,ilay), kminor, minor_loc, &
+                                          jeta(:,iflav,icol,ilay), myjtemp)
+              tau_minor = kminor_loc * scaling
+
+              !$acc atomic update
+              tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_minor
             endif
-          endif
+
+          enddo
+
         enddo
       enddo
     enddo
@@ -521,7 +540,7 @@ contains
                     fmajor, jeta, tropo, jtemp, jpress,    &
                     gpoint_bands, band_lims_gpt,           &
                     pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, &
-                    sfc_src, lay_src, lev_src_inc, lev_src_dec) bind(C, name="compute_Planck_source")
+                    sfc_src, lay_src, lev_src_inc, lev_src_dec, sfc_source_Jac) bind(C, name="compute_Planck_source")
     integer,                                    intent(in) :: ncol, nlay, nbnd, ngpt
     integer,                                    intent(in) :: nflav, neta, npres, ntemp, nPlanckTemp
     real(wp),    dimension(ncol,nlay  ),        intent(in) :: tlay
@@ -544,8 +563,12 @@ contains
     real(wp), dimension(ngpt,     ncol), intent(out) :: sfc_src
     real(wp), dimension(ngpt,nlay,ncol), intent(out) :: lay_src
     real(wp), dimension(ngpt,nlay,ncol), intent(out) :: lev_src_inc, lev_src_dec
+
+    real(wp), dimension(ngpt,     ncol), intent(out) :: sfc_source_Jac
     ! -----------------
     ! local
+    real(wp), parameter                             :: delta_Tsurf = 1.0_wp
+
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
     integer  :: gptS, gptE
     real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
@@ -553,9 +576,10 @@ contains
     real(wp) :: planck_function(nbnd,nlay+1,ncol)
     ! -----------------
 
-    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,one)
+    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor)
     !$acc enter data create(sfc_src,lay_src,lev_src_inc,lev_src_dec)
     !$acc enter data create(pfrac,planck_function)
+    !$acc enter data create(sfc_source_Jac)
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
     !$acc parallel loop collapse(3)
@@ -579,7 +603,8 @@ contains
     !
     !$acc parallel loop
     do icol = 1, ncol
-      call interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,1,icol))
+      call interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,1,icol))
+      call interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk, planck_function(1:nbnd,2,icol))
     end do
     !
     ! Map to g-points
@@ -587,7 +612,9 @@ contains
     !$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
-        sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol)
+        sfc_src       (igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt),1,icol)
+        sfc_source_Jac(igpt,icol) = pfrac(igpt,sfc_lay,icol) * &
+                 (planck_function(gpoint_bands(igpt),2,icol) - planck_function(gpoint_bands(igpt),1,icol))
       end do
     end do ! icol
 
@@ -601,11 +628,16 @@ contains
     !
     ! Map to g-points
     !
+    ! Explicitly unroll a time-consuming loop here to increase instruction-level parallelism on a GPU
+    ! Helps to achieve higher bandwidth
+    !
     !$acc parallel loop collapse(3)
-    do igpt = 1, ngpt
+    do icol = 1, ncol, 2
       do ilay = 1, nlay
-        do icol = 1, ncol
-          lay_src(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,icol)
+        do igpt = 1, ngpt
+          lay_src(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,icol)
+          if (icol < ncol) &
+          lay_src(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay,icol+1)
         end do
       end do ! ilay
     end do ! icol
@@ -626,19 +658,26 @@ contains
     !
     ! Map to g-points
     !
+    ! Same unrolling as mentioned before
+    !
     !$acc parallel loop collapse(3)
-    do igpt = 1, ngpt
+    do icol = 1, ncol, 2
       do ilay = 1, nlay
-        do icol = 1, ncol
-          lev_src_dec(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay,  icol)
-          lev_src_inc(igpt,ilay,icol) = pfrac(igpt,ilay,icol) * planck_function(gpoint_bands(igpt),ilay+1,icol)
+        do igpt = 1, ngpt
+          lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  )
+          lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  )
+          if (icol < ncol) then
+          lev_src_dec(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay,  icol+1)
+          lev_src_inc(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay+1,icol+1)
+          end if
         end do
       end do ! ilay
     end do ! icol
 
-    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,temp_ref_min,totplnk_delta,pfracin,totplnk,gpoint_flavor,one)
-    !$acc exit data copyout(sfc_src,lay_src,lev_src_inc,lev_src_dec)
+    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor)
     !$acc exit data delete(pfrac,planck_function)
+    !$acc exit data copyout(sfc_src,lay_src,lev_src_inc,lev_src_dec)
+    !$acc exit data copyout(sfc_source_Jac)
 
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------
@@ -725,26 +764,44 @@ contains
     real(wp), dimension(ngpt,nlay,ncol), intent(in   ) :: tau_abs, tau_rayleigh
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau, ssa, g ! inout because components are allocated
     ! -----------------------
-    integer  :: icol, ilay, igpt
+    integer  :: icol, ilay, igpt,  icol0, igpt0, icdiff, igdiff
     real(wp) :: t
+    integer, parameter :: tile = 32
     ! -----------------------
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(tau, ssa, g) &
-    !$acc&     copyin(tau_rayleigh,tau_abs)
-    do icol = 1, ncol
+    !$acc data copy(tau, ssa, g)                 &
+    !$acc      copyin(tau_rayleigh, tau_abs)
+
+    call zero_array(ncol, nlay, ngpt, g)
+    ! We are using blocking memory accesses here to improve performance
+    !  of the transpositions. See also comments in mo_rrtmgp_util_reorder_kernels.F90
+    !
+    !$acc parallel default(none) vector_length(tile*tile)
+    !$acc loop gang collapse(3)
       do ilay = 1, nlay
-        do igpt = 1, ngpt
-           t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol)
-           tau(icol,ilay,igpt) = t
-           g  (icol,ilay,igpt) = 0._wp
-           if(t > 2._wp * tiny(t)) then
-             ssa(icol,ilay,igpt) = tau_rayleigh(igpt,ilay,icol) / t
-           else
-             ssa(icol,ilay,igpt) = 0._wp
-           end if
+      do icol0 = 1, ncol, tile
+        do igpt0 = 1, ngpt, tile
+
+          !$acc loop vector collapse(2)
+          do igdiff = 0, tile-1
+            do icdiff = 0, tile-1
+              icol = icol0 + icdiff
+              igpt = igpt0 + igdiff
+              if (icol > ncol .or. igpt > ngpt) cycle
+               t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol)
+               tau(icol,ilay,igpt) = t
+               if(t > 2._wp * tiny(t)) then
+                 ssa(icol,ilay,igpt) = tau_rayleigh(igpt,ilay,icol) / t
+               else
+                 ssa(icol,ilay,igpt) = 0._wp
+               end if
+            end do
+          end do
+
         end do
       end do
     end do
+    !$acc end parallel
+    !$acc end data
   end subroutine combine_and_reorder_2str
   ! ----------------------------------------------------------
   !
@@ -783,43 +840,5 @@ contains
       end do
     end do
   end subroutine combine_and_reorder_nstr
-  ! ----------------------------------------------------------
-  subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
-    integer, intent(in) :: ni, nj, nk
-    real(wp), dimension(ni, nj, nk), intent(out) :: array
-    ! -----------------------
-    integer :: i,j,k
-    ! -----------------------
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyout(array(:ni,:nj,:nk))
-    do k = 1, nk
-      do j = 1, nj
-        do i = 1, ni
-          array(i,j,k) = 0.0_wp
-        end do
-      end do
-    end do
-
-  end subroutine zero_array_3D
-  ! ----------------------------------------------------------
-  subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
-    integer, intent(in) :: ni, nj, nk, nl
-    real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
-    ! -----------------------
-    integer :: i,j,k,l
-    ! -----------------------
-    !$acc parallel loop collapse(4) &
-    !$acc&     copyout(array(:ni,:nj,:nk,:nl))
-    do l = 1, nl
-      do k = 1, nk
-        do j = 1, nj
-          do i = 1, ni
-            array(i,j,k,l) = 0.0_wp
-          end do
-        end do
-      end do
-    end do
-
-  end subroutine zero_array_4D
   ! ----------------------------------------------------------
 end module mo_gas_optics_kernels

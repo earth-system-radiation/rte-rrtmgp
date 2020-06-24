@@ -40,6 +40,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp
+  use mo_rte_util_array,        only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props_kernels, only: &
         increment_1scalar_by_1scalar, increment_1scalar_by_2stream, increment_1scalar_by_nstream, &
         increment_2stream_by_1scalar, increment_2stream_by_2stream, increment_2stream_by_nstream, &
@@ -48,7 +49,7 @@ module mo_optical_props
         inc_2stream_by_1scalar_bybnd, inc_2stream_by_2stream_bybnd, inc_2stream_by_nstream_bybnd, &
         inc_nstream_by_1scalar_bybnd, inc_nstream_by_2stream_bybnd, inc_nstream_by_nstream_bybnd, &
         delta_scale_2str_kernel, &
-        any_vals_less_than, any_vals_outside, extract_subset
+        extract_subset
   implicit none
   integer, parameter :: name_len = 32
   ! -------------------------------------------------------------------------------------------------
@@ -157,7 +158,7 @@ module mo_optical_props
   !     phase function moments (index 1 = g) for use with discrete ordinate methods
   !
   ! -------------------------------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_1scl
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_1scl
   contains
     procedure, public  :: validate => validate_1scalar
     procedure, public  :: get_subset => subset_1scl_range
@@ -170,7 +171,7 @@ module mo_optical_props
   end type
 
   ! --- 2 stream ------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_2str
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_2str
     real(wp), dimension(:,:,:), allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
     real(wp), dimension(:,:,:), allocatable :: g   ! asymmetry parameter (ncol, nlay, ngpt)
   contains
@@ -185,7 +186,7 @@ module mo_optical_props
   end type
 
   ! --- n stream ------------------------------------------------------------------------
-  type, extends(ty_optical_props_arry) :: ty_optical_props_nstr
+  type, public, extends(ty_optical_props_arry) :: ty_optical_props_nstr
     real(wp), dimension(:,:,:),   allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
     real(wp), dimension(:,:,:,:), allocatable :: p   ! phase-function moments (nmom, ncol, nlay, ngpt)
   contains
@@ -228,17 +229,15 @@ contains
     err_message = ""
     if(size(band_lims_wvn,1) /= 2) &
       err_message = "optical_props%init(): band_lims_wvn 1st dim should be 2"
-    if(any(band_lims_wvn < 0._wp) ) &
+    if(any_vals_less_than(band_lims_wvn, 0._wp) ) &
       err_message = "optical_props%init(): band_lims_wvn has values <  0., respectively"
-    if(len_trim(err_message) > 0) return
+    if(err_message /="") return
     if(present(band_lims_gpt)) then
-      if(size(band_lims_gpt, 1) /= 2)&
-        err_message = "optical_props%init(): band_lims_gpt 1st dim should be 2"
-      if(size(band_lims_gpt,2) /= size(band_lims_wvn,2)) &
-        err_message = "optical_props%init(): band_lims_gpt and band_lims_wvn sized inconsistently"
+      if(.not. extents_are(band_lims_gpt, 2, size(band_lims_wvn,2))) &
+        err_message = "optical_props%init(): band_lims_gpt size inconsistent with band_lims_wvn"
       if(any(band_lims_gpt < 1) ) &
         err_message = "optical_props%init(): band_lims_gpt has values < 1"
-      if(len_trim(err_message) > 0) return
+      if(err_message /= "") return
 
       band_lims_gpt_lcl(:,:) = band_lims_gpt(:,:)
     else
@@ -516,11 +515,11 @@ contains
     err_message = ""
 
     if(present(for)) then
-      if(any([size(for, 1), size(for, 2), size(for, 3)] /= [ncol, nlay, ngpt])) then
+      if(.not. extents_are(for, ncol, nlay, ngpt)) then
         err_message = "delta_scale: dimension of 'for' don't match optical properties arrays"
         return
       end if
-      if(any(for < 0._wp .or. for > 1._wp)) then
+      if(any_vals_outside(for, 0._wp, 1._wp)) then
         err_message = "delta_scale: values of 'for' out of bounds [0,1]"
         return
       end if
@@ -553,7 +552,7 @@ contains
       err_message = "validate: tau not allocated/initialized"
       return
     end if
-    if(any_vals_less_than(size(this%tau, 1), size(this%tau, 2), size(this%tau, 3), this%tau, 0._wp)) &
+    if(any_vals_less_than(this%tau, 0._wp)) &
       err_message = "validate: tau values out of range"
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
       err_message = trim(this%get_name()) // ': ' // trim(err_message)
@@ -564,7 +563,7 @@ contains
     class(ty_optical_props_2str), intent(in) :: this
     character(len=128)                       :: err_message
 
-    integer :: varSizes(3)
+    integer :: d1, d2, d3
 
     err_message = ''
     !
@@ -574,18 +573,20 @@ contains
       err_message = "validate: arrays not allocated/initialized"
       return
     end if
-    varSizes =   [size(this%tau, 1), size(this%tau, 2), size(this%tau, 3)]
-    if(.not. all([size(this%ssa, 1), size(this%ssa, 2), size(this%ssa, 3)] == varSizes) .or. &
-       .not. all([size(this%g,   1), size(this%g,   2), size(this%g,   3)] == varSizes))     &
+    d1 = size(this%tau, 1)
+    d2 = size(this%tau, 2)
+    d3 = size(this%tau, 3)
+    if(.not. extents_are(this%ssa, d1, d2, d3) .or. &
+       .not. extents_are(this%g  , d1, d2, d3))     &
     err_message = "validate: arrays not sized consistently"
     !
     ! Valid values
     !
-    if(any_vals_less_than(varSizes(1), varSizes(2), varSizes(3), this%tau,  0._wp)) &
+    if(any_vals_less_than(this%tau,  0._wp)) &
       err_message = "validate: tau values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%ssa,  0._wp, 1._wp)) &
+    if(any_vals_outside  (this%ssa,  0._wp, 1._wp)) &
       err_message = "validate: ssa values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%g  , -1._wp, 1._wp)) &
+    if(any_vals_outside  (this%g  , -1._wp, 1._wp)) &
       err_message = "validate: g values out of range"
 
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
@@ -598,7 +599,7 @@ contains
     class(ty_optical_props_nstr), intent(in) :: this
     character(len=128)                       :: err_message
 
-    integer :: varSizes(3)
+    integer :: d1, d2, d3, d4
 
     err_message = ''
     !
@@ -608,18 +609,21 @@ contains
       err_message = "validate: arrays not allocated/initialized"
       return
     end if
-    varSizes =   [size(this%tau, 1), size(this%tau, 2), size(this%tau, 3)]
-    if(.not. all([size(this%ssa, 1), size(this%ssa, 2), size(this%ssa, 3)] == varSizes) .or. &
-       .not. all([size(this%p,   2), size(this%p,   3), size(this%p,   4)] == varSizes))     &
+    d1 = size(this%tau, 1)
+    d2 = size(this%tau, 2)
+    d3 = size(this%tau, 3)
+    d4 = size(this%p,   1)
+    if(.not. extents_are(this%ssa, d1, d2, d3) .or. &
+       .not. extents_are(this%p  , d4, d1, d2, d3))     &
     err_message = "validate: arrays not sized consistently"
     !
     ! Valid values
     !
-    if(any_vals_less_than(varSizes(1), varSizes(2), varSizes(3), this%tau,  0._wp)) &
+    if(any_vals_less_than(this%tau,  0._wp)) &
       err_message = "validate: tau values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%ssa,  0._wp, 1._wp)) &
+    if(any_vals_outside  (this%ssa,  0._wp, 1._wp)) &
       err_message = "validate: ssa values out of range"
-    if(any_vals_outside  (varSizes(1), varSizes(2), varSizes(3), this%p(1,:,:,:),  &
+    if(any_vals_outside  (this%p(1,:,:,:),  &
                                                                            -1._wp, 1._wp)) &
       err_message = "validate: p(1,:,:,:)  = g values out of range"
 
@@ -805,13 +809,15 @@ contains
     integer :: ncol, nlay, ngpt, nmom
     ! -----
     err_message = ""
-    if(.not. op_in%bands_are_equal(op_io)) then
-      err_message = "ty_optical_props%increment: optical properties objects have different band structures"
-      return
-    end if
     ncol = op_io%get_ncol()
     nlay = op_io%get_nlay()
     ngpt = op_io%get_ngpt()
+    if(.not. op_in%bands_are_equal(op_io)) &
+      err_message = "ty_optical_props%increment: optical properties objects have different band structures"
+    if(.not. all([op_in%get_ncol(), op_in%get_nlay()] == [ncol, nlay])) &
+      err_message = "ty_optical_props%increment: optical properties objects have different ncol and/or nlay"
+    if(err_message /= "")  return
+
     if(op_in%gpoints_are_equal(op_io)) then
       !
       ! Increment by gpoint

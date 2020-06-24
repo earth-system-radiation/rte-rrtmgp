@@ -477,6 +477,7 @@ contains
     ! -----------------
     find_gas = GAS_NOT_IN_LIST
     if(.not. allocated(this%gas_name)) return
+    ! search gases using a loop. Fortran intrinsic findloc would be faster, but only supported since gfortran 9
     do igas = 1, size(this%gas_name)
       if (lower_case(trim(this%gas_name(igas))) == lower_case(trim(gas))) then
         find_gas = igas

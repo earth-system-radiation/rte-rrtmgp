@@ -404,7 +404,8 @@ contains
                   if (scale_by_complement(imnr)) then ! scale by densities of all gases but the special one
                     scaling = scaling * (1._wp - col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact)
                   else
-                    scaling = scaling *          col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact
+                  ! scaling = scaling *          col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact
+                    scaling = scaling *          (col_gas(icol,ilay,idx_minor_scaling(imnr)) * vmr_fact * dry_fact)
                   endif
                 endif
               endif

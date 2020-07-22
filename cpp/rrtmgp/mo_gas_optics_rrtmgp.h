@@ -7,6 +7,7 @@
 #include "mo_gas_optics_kernels.h"
 #include "mo_rrtmgp_constants.h"
 #include "mo_rrtmgp_util_reorder.h"
+#include "mo_gas_concentrations.h"
 
 using yakl::fortran::count;
 using yakl::fortran::pack;

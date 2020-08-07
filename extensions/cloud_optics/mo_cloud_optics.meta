@@ -1,3 +1,9 @@
+[ccpp-table-properties]
+  name = mo_cloud_optics
+  type = module
+  relative_path = ../../rte
+  dependencies = mo_rte_kind.F90,mo_rte_util_array.F90,mo_optical_props.F90
+
 [ccpp-arg-table]
   name = mo_cloud_optics
   type = module

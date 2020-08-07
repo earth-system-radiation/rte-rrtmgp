@@ -1,3 +1,8 @@
+[ccpp-table-properties]
+  name = mo_source_functions
+  type = module
+  dependencies = mo_rte_kind.F90,mo_optical_props.F90
+
 [ccpp-arg-table]
   name = mo_source_functions
   type = module

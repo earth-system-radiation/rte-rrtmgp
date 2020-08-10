@@ -29,6 +29,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_sw
   use mo_rte_kind,      only: wp, wl
+  use mo_rte_config,    only: check_extents, check_values
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
@@ -84,32 +85,41 @@ contains
     end if
 
     !
-    ! Sizes and values of input arrays
+    ! Sizes of input arrays
     !
-    if(.not. extents_are(mu0, ncol)) &
-      error_msg = "rte_sw: mu0 inconsistently sized"
-    if(any_vals_outside(mu0, 0._wp, 1._wp)) &
-      error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
-
-    if(.not. extents_are(inc_flux, ncol, ngpt)) &
-      error_msg = "rte_sw: inc_flux inconsistently sized"
-    if(any_vals_less_than(inc_flux, 0._wp)) &
-      error_msg = "rte_sw: one or more inc_flux < 0"
-    if(present(inc_flux_dif)) then
-      if(.not. extents_are(inc_flux_dif, ncol, ngpt)) &
-        error_msg = "rte_sw: inc_flux_dif inconsistently sized"
-      if(any_vals_less_than(inc_flux_dif, 0._wp)) &
-        error_msg = "rte_sw: one or more inc_flux_dif < 0"
+    if(check_extents) then
+      if(.not. extents_are(mu0, ncol)) &
+        error_msg = "rte_sw: mu0 inconsistently sized"
+      if(.not. extents_are(inc_flux, ncol, ngpt)) &
+        error_msg = "rte_sw: inc_flux inconsistently sized"
+      if(.not. extents_are(sfc_alb_dir, nband, ncol)) &
+        error_msg = "rte_sw: sfc_alb_dir inconsistently sized"
+      if(.not. extents_are(sfc_alb_dif, nband, ncol)) &
+        error_msg = "rte_sw: sfc_alb_dif inconsistently sized"
+      if(present(inc_flux_dif)) then
+        if(.not. extents_are(inc_flux_dif, ncol, ngpt)) &
+          error_msg = "rte_sw: inc_flux_dif inconsistently sized"
+      end if
     end if
 
-    if(.not. extents_are(sfc_alb_dir, nband, ncol)) &
-      error_msg = "rte_sw: sfc_alb_dir inconsistently sized"
-    if(any_vals_outside(sfc_alb_dir,  0._wp, 1._wp)) &
-      error_msg = "rte_sw: sfc_alb_dir out of bounds [0,1]"
-    if(.not. extents_are(sfc_alb_dif, nband, ncol)) &
-      error_msg = "rte_sw: sfc_alb_dif inconsistently sized"
-    if(any_vals_outside(sfc_alb_dif,  0._wp, 1._wp)) &
-      error_msg = "rte_sw: sfc_alb_dif out of bounds [0,1]"
+    !
+    ! Values of input arrays 
+    !
+    if(check_values) then
+      if(any_vals_outside(mu0, 0._wp, 1._wp)) &
+        error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
+      if(any_vals_less_than(inc_flux, 0._wp)) &
+        error_msg = "rte_sw: one or more inc_flux < 0"
+      if(any_vals_outside(sfc_alb_dir,  0._wp, 1._wp)) &
+        error_msg = "rte_sw: sfc_alb_dir out of bounds [0,1]"
+      if(any_vals_outside(sfc_alb_dif,  0._wp, 1._wp)) &
+        error_msg = "rte_sw: sfc_alb_dif out of bounds [0,1]"
+      if(present(inc_flux_dif)) then
+        if(any_vals_less_than(inc_flux_dif, 0._wp)) &
+          error_msg = "rte_sw: one or more inc_flux_dif < 0"
+      end if
+    end if
+
 
     if(len_trim(error_msg) > 0) then
       if(len_trim(atmos%get_name()) > 0) &

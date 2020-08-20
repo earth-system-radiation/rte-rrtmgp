@@ -98,7 +98,7 @@ jobs:
     - name: Run examples, tests
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
-        if [[ -e /opt/intel/oneapi/setvars.sh ]]; then source /opt/intel/oneapi/setvars.sh; fi
+        source /opt/intel/oneapi/setvars.sh || true
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./run-rfmip-examples.py --block_size 8
         cd  ${RRTMGP_ROOT}/examples/all-sky

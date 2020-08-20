@@ -83,8 +83,9 @@ jobs:
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         export RTE_KERNELS=${{ matrix.rte-kernels }}
-        if [[ -e /opt/intel/oneapi/setvars.sh ]]; then
-          source /opt/intel/oneapi/setvars.sh;
+
+        source /opt/intel/oneapi/setvars.sh || true
+        if [ -f /opt/intel/oneapi/setvars.sh ]; then
           export FCFLAGS="-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08";
         fi
         cd ${RRTMGP_ROOT}

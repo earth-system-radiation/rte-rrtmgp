@@ -63,11 +63,6 @@ jobs:
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran
         ./configure --prefix=${NFHOME} F77=${FC}
-        if [ -f /opt/intel/oneapi/setvars.sh ]; then
-          ./configure --prefix=${NFHOME} F77=${FC} CC=icc
-        else
-          ./configure --prefix=${NFHOME} F77=${FC}
-        fi  
         make
         sudo make install
     - name: Stage RFMIP files

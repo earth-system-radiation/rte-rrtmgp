@@ -37,8 +37,9 @@ jobs:
     # Install  NetCDF library
     #
     - name: Install netcdf C library
-      run: sudo apt-get install libnetcdf-dev
-    #
+      run: |
+        sudo apt-get update
+        sudo apt-get install libnetcdf-dev
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
     #
@@ -52,16 +53,21 @@ jobs:
         sudo apt-get install intel-oneapi-common-licensing
         sudo apt-get install intel-oneapi-common-vars
         sudo apt-get install intel-oneapi-dev-utilities
++       sudo apt-get install intel-oneapi-icc
         sudo apt-get install intel-oneapi-ifort
     #
     # NetCDF FORTRAN library
     #
     - name: Build NetCDF Fortran library
       run: |
-        if [[ -e /opt/intel/inteloneapi/setvars.sh ]]; then source /opt/intel/inteloneapi/setvars.sh; fi
+        source /opt/intel/oneapi/setvars.sh || true
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran
-        ./configure --prefix=${NFHOME} F77=${FC}
+        if [ -f /opt/intel/oneapi/setvars.sh ]; then
+          ./configure --prefix=${NFHOME} CC=icc
+        else
+          ./configure --prefix=${NFHOME}
+        fi
         make
         sudo make install
     - name: Stage RFMIP files
@@ -76,8 +82,8 @@ jobs:
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         export RTE_KERNELS=${{ matrix.rte-kernels }}
-        if [[ -e /opt/intel/inteloneapi/setvars.sh ]]; then
-          source /opt/intel/inteloneapi/setvars.sh;
+        source /opt/intel/oneapi/setvars.sh || true
+        if [ -f /opt/intel/oneapi/setvars.sh ]; then
           export FCFLAGS="-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08";
         fi
         cd ${RRTMGP_ROOT}
@@ -90,7 +96,7 @@ jobs:
     - name: Run examples, tests
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
-        if [[ -e /opt/intel/inteloneapi/setvars.sh ]]; then source /opt/intel/inteloneapi/setvars.sh; fi
+        source /opt/intel/oneapi/setvars.sh || true
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./run-rfmip-examples.py --block_size 8
         cd  ${RRTMGP_ROOT}/examples/all-sky

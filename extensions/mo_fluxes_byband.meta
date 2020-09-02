@@ -1,3 +1,8 @@
+[ccpp-table-properties]
+  name = mo_fluxes_byband
+  type = module
+  dependencies = ../rte/mo_rte_kind.F90,../rte/mo_rte_util_array.F90,../rte/mo_fluxes.F90,../rte/rte/mo_optical_props.F90,extensions/mo_fluxes_byband_kernels.F90
+
 [ccpp-arg-table]
   name = mo_fluxes_byband
   type = module

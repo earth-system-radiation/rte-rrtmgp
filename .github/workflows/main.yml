@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-8, gfortran-9, nvfortran, ifort]
+        fortran-compiler: [gfortran-8, gfortran-9, ifort] #nvfortran
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
@@ -33,11 +33,6 @@ jobs:
         python-version: 3.7
     - name: Install python dependencies
       run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
-    - name: Setup ifort environment
-      if: contains(matrix.fortran-compiler, 'ifort')
-      run: |
-        echo "::set-env name=CC::icc"
-        echo "::set-env name=FCFLAGS::'-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08'
     #
     # Install  NetCDF library
     #
@@ -60,6 +55,8 @@ jobs:
         sudo apt-get install intel-oneapi-dev-utilities
         sudo apt-get install intel-oneapi-icc
         sudo apt-get install intel-oneapi-ifort
+        echo "::set-env name=CC::icc"
+        echo "::set-env name=FCFLAGS::'-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08'"
     - name: Install Nvidia compilers libraries
       if: contains(matrix.fortran-compiler, 'nvfortran')
       run: |

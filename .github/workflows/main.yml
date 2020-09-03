@@ -43,7 +43,7 @@ jobs:
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
     #
-    - name: Install Intel compilers libraries
+    - name: Intel setup compilers, environment
       if: contains(matrix.fortran-compiler, 'ifort')
       run: |
         wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
@@ -55,24 +55,26 @@ jobs:
         sudo apt-get install intel-oneapi-dev-utilities
         sudo apt-get install intel-oneapi-icc
         sudo apt-get install intel-oneapi-ifort
+        echo "::set-env name=FC::ifort"
         echo "::set-env name=CC::icc"
         echo "::set-env name=FCFLAGS::'-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08'"
-    - name: Install Nvidia compilers libraries
+    - name: Nvidia setup compilers, environment
       if: contains(matrix.fortran-compiler, 'nvfortran')
       run: |
         wget -q https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-7_20.7_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.7_amd64.deb
         sudo apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-2020_20.7_amd64.deb
-        which nvfortran
+        echo "::set-env name=FC::nvfortran"
+        echo "::set-env name=CC::nvcc"
+        echo "::set-env name=FCFLAGS::'-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk'"
     #
     # NetCDF FORTRAN library
     #
     - name: Build NetCDF Fortran library
       run: |
-        echo "using_ifort " ${USING_IFORT}
         echo "FC is " ${FC}
         echo "CC is " ${CC}
-        echo `which ${FC}`
         echo FCFLAGS is ${FCFLAGS}
+        which ${FC}
         source /opt/intel/oneapi/setvars.sh || true
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran

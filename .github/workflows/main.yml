@@ -74,7 +74,6 @@ jobs:
         echo "FC is " ${FC}
         echo "CC is " ${CC}
         echo FCFLAGS is ${FCFLAGS}
-        which ${FC}
         source /opt/intel/oneapi/setvars.sh || true
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran

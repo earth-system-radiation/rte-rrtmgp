@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-8, gfortran-9, gfortran-10, ifort]
+        fortran-compiler: [gfortran-8, gfortran-9, nvfortran, ifort]
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
@@ -55,6 +55,11 @@ jobs:
         sudo apt-get install intel-oneapi-dev-utilities
         sudo apt-get install intel-oneapi-icc
         sudo apt-get install intel-oneapi-ifort
+    - name: Install Nvidia compilers libraries
+      if: contains(matrix.fortran-compiler, 'nvfortran')
+      run: |
+        wget https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-7_20.7_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.7_amd64.deb
+        sudo apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-2020_20.7_amd64.deb
     #
     # NetCDF FORTRAN library
     #

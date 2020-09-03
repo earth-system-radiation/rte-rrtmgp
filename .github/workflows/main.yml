@@ -65,9 +65,9 @@ jobs:
     #
     - name: Build NetCDF Fortran library
       run: |
-        echo "using_ifort " USING_IFORT
+        echo "using_ifort " ${USING_IFORT}
         echo "FC is " ${FC}
-        echo which ${FC}
+        echo `which ${FC}`
         source /opt/intel/oneapi/setvars.sh || true
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran

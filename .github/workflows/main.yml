@@ -78,11 +78,7 @@ jobs:
         source /opt/intel/oneapi/setvars.sh || true
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran
-#        if [ -f /opt/intel/oneapi/setvars.sh ]; then
-#          ./configure --prefix=${NFHOME} CC=icc
-#        else
         ./configure --prefix=${NFHOME}
-#        fi
         make
         sudo make install
     - name: Stage RFMIP files
@@ -98,9 +94,6 @@ jobs:
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         export RTE_KERNELS=${{ matrix.rte-kernels }}
         source /opt/intel/oneapi/setvars.sh || true
-#        if [ -f /opt/intel/oneapi/setvars.sh ]; then
-#          export FCFLAGS="-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08";
-#        fi
         cd ${RRTMGP_ROOT}
         ${FC} --version
         make -C build -j 2

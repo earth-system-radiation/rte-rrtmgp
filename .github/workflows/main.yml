@@ -57,7 +57,7 @@ jobs:
         sudo apt-get install intel-oneapi-ifort
         echo "::set-env name=FC::ifort"
         echo "::set-env name=CC::icc"
-        echo "::set-env name=FCFLAGS::'-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08'"
+        echo "::set-env name=FCFLAGS::-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
     - name: Nvidia setup compilers, environment
       if: contains(matrix.fortran-compiler, 'nvfortran')
       run: |
@@ -65,26 +65,19 @@ jobs:
         sudo apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-2020_20.7_amd64.deb
         echo "::set-env name=FC::nvfortran"
         echo "::set-env name=CC::nvcc"
-        echo "::set-env name=FCFLAGS::'-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk'"
+        echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
     #
     # NetCDF FORTRAN library
     #
     - name: Build NetCDF Fortran library
       env:
-        FCFLAGS: 
+        FCFLAGS:
       run: |
-        echo "FC is " ${FC}
-        echo "CC is " ${CC}
-        echo FCFLAGS is ${FCFLAGS}
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran
-        if [ -f /opt/intel/oneapi/setvars.sh ]; then
-          ./configure --prefix=${NFHOME} CC=icc
-        else
-          ./configure --prefix=${NFHOME}
-        fi
+        ./configure --prefix=${NFHOME} CC=${CC}
         make
         sudo make install
     - name: Stage RFMIP files

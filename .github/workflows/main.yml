@@ -6,15 +6,15 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-8, gfortran-9, ifort] #nvfortran
+        fortran-compiler: [gfortran-8, ifort] # [gfortran-8, gfortran-9, nvfortran, ifort]
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
       NCHOME: /usr
       NFHOME: /usr
-      # I would like to use this variable within the run scripts
-      #   i.e. to source files and change FCFLAGS, but can't figure out how
-      USING_IFORT: ${{ contains(matrix.fortran-compiler, 'ifort') }}
+      # Defaults for gfortran, over-ridden below
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+      CC: gcc
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -72,10 +72,11 @@ jobs:
         echo "FC is " ${FC}
         echo "CC is " ${CC}
         echo `which ${FC}`
+        echo FCFLAGS is ${FCFLAGS}
         source /opt/intel/oneapi/setvars.sh || true
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran
-        ./configure --prefix=${NFHOME}
+        ./configure --prefix=${NFHOME} CC=${CC}
         make
         sudo make install
     - name: Stage RFMIP files
@@ -85,8 +86,6 @@ jobs:
         python ./stage_files.py
     - name: Make library, examples, tests
       # Compiler flags for gfortran 8 and 9. Over-ridden in run script if using ifort
-      env:
-        FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         export RTE_KERNELS=${{ matrix.rte-kernels }}

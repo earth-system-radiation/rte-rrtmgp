@@ -9,9 +9,9 @@ jobs:
         fortran-compiler: [gfortran-8, ifort] # [gfortran-8, gfortran-9, nvfortran, ifort]
         rte-kernels: [default, openacc]
     env:
-      FC: ${{ matrix.fortran-compiler }}
       NCHOME: /usr
       NFHOME: /usr
+      FC: ${{ matrix.fortran-compiler }}
       # Defaults for gfortran, over-ridden below
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
       CC: gcc
@@ -75,9 +75,14 @@ jobs:
         echo "CC is " ${CC}
         echo FCFLAGS is ${FCFLAGS}
         source /opt/intel/oneapi/setvars.sh || true
+        ${FC} --version
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran
-        ./configure --prefix=${NFHOME} CC=${CC}
+        if [ -f /opt/intel/oneapi/setvars.sh ]; then
+          ./configure --prefix=${NFHOME} CC=icc
+        else
+          ./configure --prefix=${NFHOME}
+        fi
         make
         sudo make install
     - name: Stage RFMIP files

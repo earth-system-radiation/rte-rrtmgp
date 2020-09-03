@@ -70,6 +70,8 @@ jobs:
     # NetCDF FORTRAN library
     #
     - name: Build NetCDF Fortran library
+      env:
+        FCFLAGS: 
       run: |
         echo "FC is " ${FC}
         echo "CC is " ${CC}

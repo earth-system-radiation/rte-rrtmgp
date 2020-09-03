@@ -33,6 +33,11 @@ jobs:
         python-version: 3.7
     - name: Install python dependencies
       run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
+    -name: ifort environment
+      if: contains(matrix.fortran-compiler, 'ifort')
+      run: |
+        echo "::set-env name=CC::icc"
+        echo "::set-env name=FCFLAGS::'-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08'
     #
     # Install  NetCDF library
     #
@@ -58,8 +63,9 @@ jobs:
     - name: Install Nvidia compilers libraries
       if: contains(matrix.fortran-compiler, 'nvfortran')
       run: |
-        wget https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-7_20.7_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.7_amd64.deb
+        wget -q https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-7_20.7_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.7_amd64.deb
         sudo apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-2020_20.7_amd64.deb
+        which nvfortran
     #
     # NetCDF FORTRAN library
     #
@@ -71,11 +77,11 @@ jobs:
         source /opt/intel/oneapi/setvars.sh || true
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran
-        if [ -f /opt/intel/oneapi/setvars.sh ]; then
-          ./configure --prefix=${NFHOME} CC=icc
-        else
-          ./configure --prefix=${NFHOME}
-        fi
+#        if [ -f /opt/intel/oneapi/setvars.sh ]; then
+#          ./configure --prefix=${NFHOME} CC=icc
+#        else
+        ./configure --prefix=${NFHOME}
+#        fi
         make
         sudo make install
     - name: Stage RFMIP files
@@ -91,9 +97,9 @@ jobs:
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         export RTE_KERNELS=${{ matrix.rte-kernels }}
         source /opt/intel/oneapi/setvars.sh || true
-        if [ -f /opt/intel/oneapi/setvars.sh ]; then
-          export FCFLAGS="-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08";
-        fi
+#        if [ -f /opt/intel/oneapi/setvars.sh ]; then
+#          export FCFLAGS="-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08";
+#        fi
         cd ${RRTMGP_ROOT}
         ${FC} --version
         make -C build -j 2

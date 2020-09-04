@@ -87,10 +87,7 @@ jobs:
         echo "::set-env name=NCHOME::/usr"
         ${CC} --version
         sudo apt-get install libnetcdf-dev
-        git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
-        cd netcdf-c
-        ./configure --prefix=${NFHOME} H5DIR=/usr
-        make
+        which h5diff
     - name: Build NetCDF Fortran library
       env:
         FCFLAGS:
@@ -103,6 +100,7 @@ jobs:
         ./configure --prefix=${NFHOME} CC=${CC}
         make
         sudo make install
+        which nc-config
     ############################################################################
     # Checks out repository under $GITHUB_WORKSPACE
     - uses: actions/checkout@v2

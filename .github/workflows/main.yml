@@ -46,7 +46,7 @@ jobs:
     - name: gfortran-10 setup compiler
       if: contains(matrix.fortran-compiler, 'gfortran-10')
       run: |
-        sudo apt-get install gfortran-10
+        sudo apt-get install gfortran-10 gcc-10
         echo "::set-env name=CC::icc"
     #
     # Intel compilers and libraries if needed
@@ -87,6 +87,7 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
+        ${CC} --version
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
         cd netcdf-fortran
         ./configure --prefix=${NFHOME} CC=${CC}

@@ -86,6 +86,7 @@ jobs:
     #
     - name: Install netcdf C library, upgrading from source
       run: |
+        source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version
         sudo apt-get install libnetcdf-dev
     - name: Build NetCDF Fortran library

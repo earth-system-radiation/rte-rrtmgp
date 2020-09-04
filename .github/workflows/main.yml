@@ -88,7 +88,7 @@ jobs:
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
         ${CC} --version
-        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
+        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.3
         cd netcdf-fortran
         ./configure --prefix=${NFHOME} CC=${CC}
         make

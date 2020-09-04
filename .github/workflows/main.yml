@@ -40,14 +40,17 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install libnetcdf-dev
+
     #
     # Gfortran 10 not yet on Github hosts
     #
-    - name: gfortran-10
+    - name: gfortran-10 setup compiler
     if: contains(matrix.fortran-compiler, 'gfortran-10')
     run: |
       sudo apt-get install ${FC}
       echo "::set-env name=CC::gcc-10"
+
+    #
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
     #

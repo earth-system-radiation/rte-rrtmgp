@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-8, ifort, nvfortran] # [gfortran-8, gfortran-9, nvfortran, ifort]
+        fortran-compiler: [gfortran-8,  gfortran-9, gfortran-10] # [gfortran-8, gfortran-9, nvfortran, ifort]
         rte-kernels: [default, openacc]
     env:
       NCHOME: /usr
@@ -64,7 +64,7 @@ jobs:
         wget -q https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-7_20.7_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.7_amd64.deb
         sudo apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-2020_20.7_amd64.deb
         echo "::set-env name=FC::nvfortran"
-        echo "::set-env name=CC::nvcc"
+        echo "::set-env name=CC::nvc"
         echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
     #
     # NetCDF FORTRAN library

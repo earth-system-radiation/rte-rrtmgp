@@ -63,19 +63,6 @@ jobs:
         echo "::set-env name=CC::nvc"
         echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
     ############################################################################
-    # Set up Python and packages
-    #
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Setup conda
-      uses: s-weigand/setup-conda@v1
-      with:
-        python-version: 3.7
-    - name: Install python packages
-      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
-    ############################################################################
     # Netcdf C and Fortran
     #
     # Install  NetCDF library
@@ -88,7 +75,7 @@ jobs:
       run: |
         sudo apt-get install libnetcdf-dev
     - name: Upgrade netcdf C library from source
-      if: True
+      if: False
       env:
         CPPFLAGS: -I/usr/include
         LDFLAGS: -L/usr/lib
@@ -112,6 +99,19 @@ jobs:
         ./configure --prefix=${NFHOME} CC=${CC}
         make
         sudo make install
+    ############################################################################
+    # Set up Python and packages
+    #
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Setup conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        python-version: 3.7
+    - name: Install python packages
+      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
     ############################################################################
     # Checks out repository under $GITHUB_WORKSPACE
     - uses: actions/checkout@v2

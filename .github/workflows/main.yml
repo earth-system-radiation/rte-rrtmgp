@@ -53,7 +53,6 @@ jobs:
     #
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
-    #
     - name: Intel setup compilers, environment
       if: contains(matrix.fortran-compiler, 'ifort')
       run: |

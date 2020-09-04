@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-8, ifort] # [gfortran-8, gfortran-9, nvfortran, ifort]
+        fortran-compiler: [gfortran-8, ifort, nvfortran] # [gfortran-8, gfortran-9, nvfortran, ifort]
         rte-kernels: [default, openacc]
     env:
       NCHOME: /usr

@@ -65,15 +65,17 @@ jobs:
     ############################################################################
     # Netcdf C and Fortran
     #
-    # Install  NetCDF library
     # I would love to install libnetcdf-dev 4.7.4 to be compatible with
     #  netcdf-fortran 4.5.3, which then supports gfortran-10.
     # 4.7.4 is in the groovy set of packages: https://packages.ubuntu.com/groovy/libnetcdf-dev
     #    but I don't know how to use it
+    # Nor have I been able to figure out how to build it from source
     #
     - name: Install netcdf C library
       run: |
         sudo apt-get install libnetcdf-dev
+
+    # Skipping this for now - netCDF configure doesn't see the HDF libararies
     - name: Upgrade netcdf C library from source
       if: False
       env:
@@ -88,7 +90,9 @@ jobs:
         ./configure --prefix=${NCHOME}
         make
         sudo make install
+
     - name: Build NetCDF Fortran library
+      # Unset any Fortran flags
       env:
         FCFLAGS:
       run: |
@@ -100,21 +104,9 @@ jobs:
         make
         sudo make install
     ############################################################################
-    # Set up Python and packages
-    #
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Setup conda
-      uses: s-weigand/setup-conda@v1
-      with:
-        python-version: 3.7
-    - name: Install python packages
-      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
-    ############################################################################
     # Checks out repository under $GITHUB_WORKSPACE
-    - uses: actions/checkout@v2
+    - name: Check out code
+      uses: actions/checkout@v2
 
     - name: Make library, examples, tests
       run: |
@@ -129,6 +121,20 @@ jobs:
         export RRTMGP_BUILD=${RRTMGP_ROOT}/build
         make -C examples/rfmip-clear-sky -j 2
 
+    ############################################################################
+    # Set up Python and packages
+    #
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Setup conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        python-version: 3.7
+    - name: Install python packages
+      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
+    ############################################################################
     - name: Stage RFMIP files
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}

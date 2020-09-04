@@ -155,7 +155,9 @@ jobs:
         python ./compare-to-reference.py
         cd ${RRTMGP_ROOT}/tests
         python verification.py
+    ############################################################################
     - name: Validation plots
+      if: contains(matrix.fortran-compiler, 'ifort') && contains(matrix.rte-kernels, 'default')
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         cd ${RRTMGP_ROOT}/tests

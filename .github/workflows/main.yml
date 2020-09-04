@@ -39,7 +39,7 @@ jobs:
     - name: Install netcdf C library
       run: |
         sudo apt-get update
-        sudo apt-get install libnetcdf-dev=4.7.4
+        sudo apt-get install libnetcdf-dev
     #
     # Gfortran 10 not yet on Github hosts
     #
@@ -88,8 +88,11 @@ jobs:
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
         ${CC} --version
-        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.3
+        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.1
         cd netcdf-fortran
+        if [${FC} == "gfortran-10"]; then
+          export FCFLAGS="-fallow_argument_mismatch"
+        fi
         ./configure --prefix=${NFHOME} CC=${CC}
         make
         sudo make install

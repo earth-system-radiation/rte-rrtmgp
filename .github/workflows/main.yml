@@ -116,11 +116,6 @@ jobs:
     # Checks out repository under $GITHUB_WORKSPACE
     - uses: actions/checkout@v2
 
-    - name: Stage RFMIP files
-      run: |
-        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
-        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-        python ./stage_files.py
     - name: Make library, examples, tests
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
@@ -133,6 +128,12 @@ jobs:
         make -C examples/all-sky -j 2
         export RRTMGP_BUILD=${RRTMGP_ROOT}/build
         make -C examples/rfmip-clear-sky -j 2
+
+    - name: Stage RFMIP files
+      run: |
+        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
+        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
+        python ./stage_files.py
     - name: Run examples, tests
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}

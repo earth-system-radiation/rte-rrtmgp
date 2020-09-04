@@ -39,7 +39,7 @@ jobs:
     - name: Install netcdf C library
       run: |
         sudo apt-get update
-        sudo apt-get install libnetcdf-dev
+        sudo apt-get install libnetcdf-dev=4.7.4
     #
     # Gfortran 10 not yet on Github hosts
     #

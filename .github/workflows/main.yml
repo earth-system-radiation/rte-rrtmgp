@@ -89,7 +89,7 @@ jobs:
         sudo apt-get install libnetcdf-dev
         git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
         cd netcdf-c
-        ./configure --prefix=${NFHOME}
+        ./configure --prefix=${NFHOME} H5DIR=/usr
         make
     - name: Build NetCDF Fortran library
       env:

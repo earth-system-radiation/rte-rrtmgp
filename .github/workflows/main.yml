@@ -88,9 +88,10 @@ jobs:
       run: |
         sudo apt-get install libnetcdf-dev
     - name: Upgrade netcdf C library from source
+      if: True
       env:
-        CPPFLAGS: -I${{ NCHOME }}/include
-        LDFLAGS: -L${{ NCHOME }/lib
+        CPPFLAGS: -I/usr/include
+        LDFLAGS: -L/usr/lib
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version

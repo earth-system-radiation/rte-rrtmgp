@@ -17,9 +17,9 @@ jobs:
       CC: gcc
     steps:
     - name Update system packages
-    run: |
-      sudo apt-get update
-      sudo apt-get upgrade
+      run: |
+        sudo apt-get update
+        sudo apt-get upgrade
     ############################################################################
     #
     # Compilers....

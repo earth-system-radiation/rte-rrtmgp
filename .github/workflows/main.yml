@@ -15,6 +15,8 @@ jobs:
       # Defaults for gfortran, over-ridden below
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
       CC: gcc
+      NCHOME: /usr
+      NFHOME: /usr
     steps:
     - name: Update system packages
       run: |
@@ -84,15 +86,12 @@ jobs:
     #
     - name: Install netcdf C library, upgrading from source
       run: |
-        echo "::set-env name=NCHOME::/usr"
         ${CC} --version
         sudo apt-get install libnetcdf-dev
-        ls /usr/*/*h5*
     - name: Build NetCDF Fortran library
       env:
         FCFLAGS:
       run: |
-        echo "::set-env name=NFHOME::/usr"
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.1
@@ -100,7 +99,6 @@ jobs:
         ./configure --prefix=${NFHOME} CC=${CC}
         make
         sudo make install
-        ls /usr/*/*netcdf*
     ############################################################################
     # Checks out repository under $GITHUB_WORKSPACE
     - uses: actions/checkout@v2

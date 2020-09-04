@@ -47,7 +47,7 @@ jobs:
       if: contains(matrix.fortran-compiler, 'gfortran-10')
       run: |
         sudo apt-get install gfortran-10 gcc-10
-        echo "::set-env name=CC::icc"
+        echo "::set-env name=CC::gcc-10"
     #
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg

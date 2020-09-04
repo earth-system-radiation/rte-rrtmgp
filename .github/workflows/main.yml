@@ -16,6 +16,10 @@ jobs:
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
       CC: gcc
     steps:
+    - name Update system packages
+    run: |
+      sudo apt-get update
+      sudo apt-get upgrade
     ############################################################################
     #
     # Compilers....
@@ -82,8 +86,8 @@ jobs:
     - name: Install netcdf C library
       run: |
         echo "::set-env name=NCHOME::/usr"
-        sudo apt-get update
         sudo apt-get install libnetcdf-dev
+        ncdump -h
     # Support for gfortran-10 is included in netcdf-fotran 4.5.3, but this
     #   requires netcdf-c 4.7.4 or higher, which is not installed by
     #   the apt-get above

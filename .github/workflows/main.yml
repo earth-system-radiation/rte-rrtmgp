@@ -40,19 +40,18 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install libnetcdf-dev
-
     #
     # Gfortran 10 not yet on Github hosts
     #
     - name: gfortran-10 setup compiler
-    if: contains(matrix.fortran-compiler, 'gfortran-10')
-    run: |
-      sudo apt-get install ${FC}
+      if: contains(matrix.fortran-compiler, 'gfortran-10')
+      run: |
+      sudo apt-get install gfortran-10
       echo "::set-env name=CC::gcc-10"
-
     #
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
+    #
     - name: Intel setup compilers, environment
       if: contains(matrix.fortran-compiler, 'ifort')
       run: |
@@ -68,6 +67,9 @@ jobs:
         echo "::set-env name=FC::ifort"
         echo "::set-env name=CC::icc"
         echo "::set-env name=FCFLAGS::-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+    #
+    # Nvidia compilers
+    #
     - name: Nvidia setup compilers, environment
       if: contains(matrix.fortran-compiler, 'nvfortran')
       run: |

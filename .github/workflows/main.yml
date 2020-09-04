@@ -86,13 +86,16 @@ jobs:
     #
     - name: Install netcdf C library
       run: |
-        echo "::set-env name=TEST1::/usr"
-        echo "::set-env name=TEST2::\/usr"
-        echo ${TEST1} ${TEST2}
+        sudo apt-get install libnetcdf-dev
+    - name: Upgrade netcdf C library from source
+      run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version
-        sudo apt-get install libnetcdf-dev
-
+        git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
+        cd netcdf-c
+        CPPFLAGS='-I${NCHOME}/include' LDFLAGS='-L${NCHOM}/lib' ./configure --prefix=${NCHOME}
+        make
+        sudo make install
     - name: Build NetCDF Fortran library
       env:
         FCFLAGS:

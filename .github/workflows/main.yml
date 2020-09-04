@@ -84,11 +84,15 @@ jobs:
     # 4.7.4 is in the groovy set of packages: https://packages.ubuntu.com/groovy/libnetcdf-dev
     #    but I don't know how to use it
     #
-    - name: Install netcdf C library, upgrading from source
+    - name: Install netcdf C library
       run: |
+        echo "::set-env name=TEST1::/usr"
+        echo "::set-env name=TEST2::\/usr"
+        echo ${TEST1} ${TEST2}
         source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version
         sudo apt-get install libnetcdf-dev
+
     - name: Build NetCDF Fortran library
       env:
         FCFLAGS:

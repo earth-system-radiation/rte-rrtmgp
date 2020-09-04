@@ -11,43 +11,16 @@ jobs:
         # I'd like to add nvfortran but it can't be found after installation
         rte-kernels: [default, openacc]
     env:
-      NCHOME: /usr
-      NFHOME: /usr
       FC: ${{ matrix.fortran-compiler }}
       # Defaults for gfortran, over-ridden below
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
       CC: gcc
     steps:
+    ############################################################################
     #
-    # Checks-out repository under $GITHUB_WORKSPACE
+    # Compilers....
     #
-    - uses: actions/checkout@v2
-    #
-    # Set up Python and dependencies
-    #
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Setup conda
-      uses: s-weigand/setup-conda@v1
-      with:
-        python-version: 3.7
-    - name: Install python dependencies
-      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
-    #
-    # Install  NetCDF library
-    # I would love to install libnetcdf-dev 4.7.4 to be compatible with
-    #  netcdf-fortran 4.5.3, which then supports gfortran-10.
-    # 4.7.4 is in the groovy set of packages: https://packages.ubuntu.com/groovy/libnetcdf-dev
-    #
-    #
-    - name: Install netcdf C library
-      run: |
-        sudo apt-get update
-        sudo apt-get install libnetcdf-dev=4.7.4-1build1
-    #
-    # Gfortran 10 not yet on Github hosts
+    # Gfortran 10 not available in Github CI stack, so install
     #
     - name: gfortran-10 setup compiler
       if: contains(matrix.fortran-compiler, 'gfortran-10')
@@ -84,6 +57,36 @@ jobs:
         echo "::set-env name=FC::nvfortran"
         echo "::set-env name=CC::nvc"
         echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+    ############################################################################
+    # Set up Python and packages
+    #
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Setup conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        python-version: 3.7
+    - name: Install python packages
+      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
+    ############################################################################
+    # Netcdf C and Fortran
+    #
+    # Install  NetCDF library
+    # I would love to install libnetcdf-dev 4.7.4 to be compatible with
+    #  netcdf-fortran 4.5.3, which then supports gfortran-10.
+    # 4.7.4 is in the groovy set of packages: https://packages.ubuntu.com/groovy/libnetcdf-dev
+    #    but I don't know how to use it
+    #
+    - name: Install netcdf C library
+      run: |
+        sudo apt-get update
+        sudo apt-get install libnetcdf-dev
+        echo "::set-env name=NCHOME::/usr"
+    # Support for gfortran-10 is included in netcdf-fotran 4.5.3, but this
+    #   requires netcdf-c 4.7.4 or higher, which is not installed by
+    #   the apt-get above
     - name: Build NetCDF Fortran library
       env:
         FCFLAGS:
@@ -91,20 +94,21 @@ jobs:
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
         ${CC} --version
-        # Support for gfortran-10 is included in netcdf-fotran 4.5.3, but this
-        #   requires netcdf-c 4.7.4 or higher, which is not installed by
-        #   the apt-get above
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.1
         cd netcdf-fortran
         make
         sudo make install
+        echo "::set-env name=NFHOME::/usr"
+    ############################################################################
+    # Checks out repository under $GITHUB_WORKSPACE
+    - uses: actions/checkout@v2
+
     - name: Stage RFMIP files
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./stage_files.py
     - name: Make library, examples, tests
-      # Compiler flags for gfortran 8 and 9. Over-ridden in run script if using ifort
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         export RTE_KERNELS=${{ matrix.rte-kernels }}

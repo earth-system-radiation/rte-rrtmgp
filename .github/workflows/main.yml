@@ -55,6 +55,8 @@ jobs:
     # Nvidia compilers
     #
     - name: Nvidia setup compilers, environment
+      env:
+        NVCOMPILERS: /opt/nvidia/hpc_sdk
       if: contains(matrix.fortran-compiler, 'nvfortran')
       run: |
         wget -q https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-7_20.7_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.7_amd64.deb
@@ -63,6 +65,9 @@ jobs:
         echo "::set-env name=CC::nvc"
         echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
         ls /opt/nvidia/hpc_sdk
+        echo "::set-env name=NVARCH::`uname -s`_`uname -m`"
+        echo "::set-env name=PATH::$NVCOMPILERS/$NVARCH/20.7/compilers/bin:$PATH"
+
     ############################################################################
     # Netcdf C and Fortran
     #

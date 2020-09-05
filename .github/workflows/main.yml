@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-8,  gfortran-9, ifort]
+        fortran-compiler: [nvfortran]
         # I'd like to add gfortran-10 to this list but have version issues with netcdf as below
         # I'd like to add nvfortran but it can't be found after installation
         rte-kernels: [default, openacc]
@@ -62,6 +62,7 @@ jobs:
         echo "::set-env name=FC::nvfortran"
         echo "::set-env name=CC::nvc"
         echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+        ls /opt/nvidia/hpc_sdk
     ############################################################################
     # Netcdf C and Fortran
     #

@@ -3,35 +3,35 @@ jobs:
   pool: CSCS
   strategy:
     matrix:
-      pgi_19_9_gpu:
-        compiler_base: pgi
-        compiler_module: PGI/19.9
-        accel_module: cudatoolkit
-        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
-        RTE_KERNELS: openacc
-        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
-      pgi_default_gpu:
-        compiler_base: pgi
-        compiler_module: pgi
-        accel_module: craype-accel-nvidia60
-        # Generic accelerator flag
-        FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
-        RTE_KERNELS: openacc
-        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
-      pgi_19_10_cpu:
-        compiler_base: pgi
-        compiler_module: PGI/19.10
-        accel_module:
-        # Error checking flags
-        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-        RUN_CMD:
-      pgi_19_9_cpu:
-        compiler_base: pgi
-        compiler_module: PGI/19.9
-        accel_module:
-        # Error checking flags
-        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-        RUN_CMD:
+#      pgi_19_9_gpu:
+#        compiler_base: pgi
+#        compiler_module: PGI/19.9
+#        accel_module: cudatoolkit
+#        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+#        RTE_KERNELS: openacc
+#        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
+#      pgi_default_gpu:
+#        compiler_base: pgi
+#        compiler_module: pgi
+#        accel_module: craype-accel-nvidia60
+#        # Generic accelerator flag
+#        FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
+#        RTE_KERNELS: openacc
+#        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
+#      pgi_19_10_cpu:
+#        compiler_base: pgi
+#        compiler_module: PGI/19.10
+#        accel_module:
+#        # Error checking flags
+#        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+#        RUN_CMD:
+#      pgi_19_9_cpu:
+#        compiler_base: pgi
+#        compiler_module: PGI/19.9
+#        accel_module:
+#        # Error checking flags
+#        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+#        RUN_CMD:
       cce-cpu-icon-production:
         compiler_base: cray
         compiler_module: ccce-icon/9.0.2-classic

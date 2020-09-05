@@ -97,13 +97,13 @@ jobs:
     - name: Build NetCDF Fortran library
       # Unset any Fortran flags
       env:
-        FCFLAGS:
+        FCFLAGS: -fPIC
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.1
         cd netcdf-fortran
-        ./configure --prefix=${NFHOME} CC=${CC}
+        ./configure --prefix=${NFHOME}
         make
         sudo make install
     ############################################################################

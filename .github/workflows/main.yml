@@ -64,10 +64,10 @@ jobs:
         echo "::set-env name=FC::nvfortran"
         echo "::set-env name=CC::nvc"
         echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-        ls /opt/nvidia/hpc_sdk
-        echo "::set-env name=NVARCH::`uname -s`_`uname -m`"
-        echo "::set-env name=PATH::$NVCOMPILERS/$NVARCH/20.7/compilers/bin:$PATH"
-
+        echo "::set-env name=PATH::${NVCOMPILERS}/Linux_x86_64/20.7/compilers/bin:${PATH}"
+        ${NVCOMPILERS}/Linux_x86_64/20.7/compilers/bin/${FC} --version
+        echo ${PATH}
+        ${FC} --version
     ############################################################################
     # Netcdf C and Fortran
     #

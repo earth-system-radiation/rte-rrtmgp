@@ -64,7 +64,7 @@ jobs:
         echo "::set-env name=FC::nvfortran"
         echo "::set-env name=CC::nvc"
         echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-        echo "::set-env name=PATH::${NVCOMPILERS}/Linux_x86_64/20.7/compilers/bin:${PATH}"
+        echo "::add-path::${NVCOMPILERS}/Linux_x86_64/20.7/compilers/bin"
         ${NVCOMPILERS}/Linux_x86_64/20.7/compilers/bin/${FC} --version
         echo ${PATH}
         ${FC} --version

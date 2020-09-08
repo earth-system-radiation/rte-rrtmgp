@@ -90,8 +90,7 @@ jobs:
         echo ${CPPFLAGS}
         git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
         cd netcdf-c
-        find /usr/ -name "*netcdf*" -print 
-        ./configure --prefix=${NCHOME} --with-hdf5=/usr/lib
+        ./configure --prefix=${NCHOME} --with-hdf5=/usr/lib/x86_64-linux-gnu/
         make
         sudo make install
 

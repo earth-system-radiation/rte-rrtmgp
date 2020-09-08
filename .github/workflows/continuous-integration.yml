@@ -83,7 +83,7 @@ jobs:
       if: True
       env:
         CPPFLAGS: -I/usr/lib/x86_64-linux-gnu/
-        LDFLAGS: -L/usr/lib/x86_64-linux-gnu/
+        LDFLAGS: -L/usr/lib/x86_64-linux-gnu/ -lhdf5_serial_hl
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version

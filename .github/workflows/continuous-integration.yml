@@ -6,7 +6,8 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        fortran-compiler: [gfortran-8, gfortran-9, ifort, nvfortran]
+        fortran-compiler:  [gfortran-8]
+        # [gfortran-8, gfortran-9, ifort, nvfortran]
         # I'd like to add gfortran-10 to this list but have version issues with netcdf as below
         rte-kernels: [default, openacc]
     env:
@@ -79,17 +80,17 @@ jobs:
 
     # Skipping this for now - netCDF configure doesn't see the HDF libararies
     - name: Upgrade netcdf C library from source
-      if: False
+      if: True
       env:
-        CPPFLAGS: -I/usr/include
-        LDFLAGS: -L/usr/lib
+        CPPFLAGS: -I/usr/lib/x86_64-linux-gnu/
+        LDFLAGS: -L/usr/lib/x86_64-linux-gnu/
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version
         echo ${CPPFLAGS}
         git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
         cd netcdf-c
-        ./configure --prefix=${NCHOME} --with-hdf5=/usr/lib/x86_64-linux-gnu/
+        ./configure --prefix=${NCHOME}
         make
         sudo make install
 

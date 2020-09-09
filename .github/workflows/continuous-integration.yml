@@ -134,7 +134,6 @@ jobs:
         RTE_KERNELS: ${{ matrix.rte-kernels }}
       run: |
         echo "::set-env name=RRTMGP_ROOT::${GITHUB_WORKSPACE}"
-      # Variable aboce isn't availabe in this step
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         export RRTMGP_BUILD=${RRTMGP_ROOT}/build
         source /opt/intel/oneapi/setvars.sh || true

@@ -17,11 +17,9 @@ jobs:
       CC: gcc
       NCHOME: /usr
       NFHOME: /home/runner/netcdf-fortran
-      RRTMGP_ROOT: ${GITHUB_WORKSPACE}
     steps:
     - name: Update system packages
       run: |
-        echo ${RRTMGP_ROOT}
         sudo apt-get update
     ############################################################################
     #
@@ -135,14 +133,16 @@ jobs:
       env:
         RTE_KERNELS: ${{ matrix.rte-kernels }}
       run: |
+        echo "::set-env name=RRTMGP_ROOT::${GITHUB_WORKSPACE}"
+      # Variable aboce isn't availabe in this step
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
+        export RRTMGP_BUILD=${RRTMGP_ROOT}/build
         source /opt/intel/oneapi/setvars.sh || true
         cd ${RRTMGP_ROOT}
         ${FC} --version
         make -C build -j 2
         make -C tests -j 1
         make -C examples/all-sky -j 2
-        export RRTMGP_BUILD=${RRTMGP_ROOT}/build
         make -C examples/rfmip-clear-sky -j 2
 
     ############################################################################
@@ -161,7 +161,7 @@ jobs:
     ############################################################################
     - name: Stage RFMIP files
       run: |
-        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
+        echo ${RRTMGP_ROOT}
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./stage_files.py
     - name: Run examples, tests

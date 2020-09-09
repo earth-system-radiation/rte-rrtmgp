@@ -16,7 +16,7 @@ jobs:
       CC: gcc
       NCHOME: /usr
       NFHOME: /home/runner/netcdf-fortran
-      TEST: ${{ env.NFHOME }}
+      TEST: ${{ env.GITHUB_WORKSPACE }}
     steps:
     - name: Update system packages
       run: sudo apt-get update

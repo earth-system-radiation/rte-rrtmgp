@@ -17,7 +17,7 @@ jobs:
       CC: gcc
       NCHOME: /usr
       NFHOME: /home/runner/netcdf-fortran
-      RRTMGP_ROOT: ${{ env.GITHUB_WORKSPACE }}
+      RRTMGP_ROOT: ${GITHUB_WORKSPACE}
     steps:
     - name: Update system packages
       run: |

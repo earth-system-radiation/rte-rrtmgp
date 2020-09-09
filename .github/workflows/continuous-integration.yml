@@ -51,13 +51,21 @@ jobs:
         echo "::set-env name=FC::ifort"
         echo "::set-env name=CC::icc"
         echo "::set-env name=FCFLAGS::-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+
+    # Caching cribbed from https://github.com/NCAR/ParallelIO/blob/3a77973ad5e09d354257045bf3d53827ae36a86b/.github/workflows/a3.yml#L1
+    - name: cache-nvidia-compilers
+      id: cache-nvidia-compilers
+      uses: actions/cache@v2
+      with:
+        path: /opt/nvidia/hpc_sdk/Linux_x86_64/20.7/
+        key: nvhpc-${{ runner.os }}-2020-20.7
     #
     # Nvidia compilers
     #
     - name: Nvidia setup compilers, environment
       env:
         NVCOMPILERS: /opt/nvidia/hpc_sdk
-      if: contains(matrix.fortran-compiler, 'nvfortran')
+      if: contains(matrix.fortran-compiler, 'nvfortran') && steps.cache-nvidia-compilers.outputs.cache-hit != 'true'
       run: |
         wget -q https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-7_20.7_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.7_amd64.deb
         sudo apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-2020_20.7_amd64.deb

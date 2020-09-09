@@ -108,7 +108,7 @@ jobs:
       id: cache-netcdf-fortran
       uses: actions/cache@v2
       with:
-        path: ${NFHOME}
+        path: /home/runner/netcdf-fortran
         key: netcdf-fortran-4.5.1-${{ runner.os }}-${{ matrix.fortran-compiler }}
 
     - name: Build NetCDF Fortran library
@@ -160,12 +160,10 @@ jobs:
     ############################################################################
     - name: Stage RFMIP files
       run: |
-        echo ${RRTMGP_ROOT}
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./stage_files.py
     - name: Run examples, tests
       run: |
-        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         source /opt/intel/oneapi/setvars.sh || true
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./run-rfmip-examples.py --block_size 8
@@ -177,7 +175,6 @@ jobs:
         ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
     - name: Comparison
       run: |
-        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./compare-to-reference.py --fail=7.e-4
         cd ${RRTMGP_ROOT}/examples/all-sky
@@ -188,7 +185,6 @@ jobs:
     - name: Validation plots
       if: contains(matrix.fortran-compiler, 'ifort') && contains(matrix.rte-kernels, 'default')
       run: |
-        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
         cd ${RRTMGP_ROOT}/tests
         python validation-plots.py
     - name: Upload plots

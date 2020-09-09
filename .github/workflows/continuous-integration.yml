@@ -17,9 +17,11 @@ jobs:
       CC: gcc
       NCHOME: /usr
       NFHOME: /home/runner/netcdf-fortran
+      RRTMGP_ROOT: ${{ env.GITHUB_WORKSPACE }}
     steps:
     - name: Update system packages
       run: |
+        echo ${RRTMGP_ROOT}
         sudo apt-get update
     ############################################################################
     #
@@ -130,9 +132,10 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Make library, examples, tests
+      env:
+        RTE_KERNELS: ${{ matrix.rte-kernels }}
       run: |
         export RRTMGP_ROOT=${GITHUB_WORKSPACE}
-        export RTE_KERNELS=${{ matrix.rte-kernels }}
         source /opt/intel/oneapi/setvars.sh || true
         cd ${RRTMGP_ROOT}
         ${FC} --version

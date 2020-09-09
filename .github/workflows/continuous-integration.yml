@@ -55,6 +55,7 @@ jobs:
     # Caching cribbed from https://github.com/NCAR/ParallelIO/blob/3a77973ad5e09d354257045bf3d53827ae36a86b/.github/workflows/a3.yml#L1
     - name: cache-nvidia-compilers
       id: cache-nvidia-compilers
+      if: contains(matrix.fortran-compiler, 'nvfortran')
       uses: actions/cache@v2
       with:
         path: /opt/nvidia/hpc_sdk/Linux_x86_64/20.7/
@@ -121,7 +122,7 @@ jobs:
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.1
         cd netcdf-fortran
         ./configure --prefix=${NFHOME}
-        make -j 
+        make -j
         sudo make install
     ############################################################################
     # Checks out repository under $GITHUB_WORKSPACE

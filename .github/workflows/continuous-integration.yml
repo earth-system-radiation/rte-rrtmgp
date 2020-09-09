@@ -7,7 +7,6 @@ jobs:
     strategy:
       matrix:
         fortran-compiler:  [gfortran-8, gfortran-9, ifort, nvfortran]
-        #
         # I'd like to add gfortran-10 to this list but have version issues with netcdf as below
         rte-kernels: [default, openacc]
     env:
@@ -19,8 +18,7 @@ jobs:
       NFHOME: /home/runner/netcdf-fortran
     steps:
     - name: Update system packages
-      run: |
-        sudo apt-get update
+      run: sudo apt-get update
     ############################################################################
     #
     # Compilers....
@@ -58,7 +56,7 @@ jobs:
       if: contains(matrix.fortran-compiler, 'nvfortran')
       uses: actions/cache@v2
       with:
-        path: /opt/nvidia/hpc_sdk/Linux_x86_64/20.7/
+        path: /opt/nvidia/hpc_sdk/
         key: nvhpc-${{ runner.os }}-2020-20.7
     #
     # Nvidia compilers
@@ -84,15 +82,11 @@ jobs:
     # Nor have I been able to figure out how to build it from source
     #
     - name: Install netcdf C library
-      run: |
-        sudo apt-get install libnetcdf-dev
+      run: sudo apt-get install libnetcdf-dev
 
     # Skipping this for now - netCDF configure doesn't see the HDF libararies
     - name: Upgrade netcdf C library from source
       if: False
-      env:
-        CPPFLAGS: -I/usr/lib/x86_64-linux-gnu/
-        LDFLAGS: -L/usr/lib/x86_64-linux-gnu/ -lhdf5_serial_hl
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version

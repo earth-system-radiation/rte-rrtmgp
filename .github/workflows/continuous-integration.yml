@@ -16,7 +16,8 @@ jobs:
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
       CC: gcc
       NCHOME: /usr
-      NFHOME: /usr
+      NFHOME: /home/runner/netcdf-fortran
+      NFVERSION: 4.5.1
     steps:
     - name: Update system packages
       run: |
@@ -102,14 +103,22 @@ jobs:
         make
         sudo make install
 
+    - name: cache-netcdf-fortran
+      id: cache-netcdf-fortran
+      uses: actions/cache@v2
+      with:
+        path: ${NFHOME}
+        key: netcdf-fortran--${NFVERSION}-${{ runner.os }}-${{ matrix.fortran-compiler }}
+
     - name: Build NetCDF Fortran library
       # Unset any Fortran flags
       env:
         FCFLAGS: -fPIC
+      if: steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
-        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.1
+        git clone https://github.com/Unidata/netcdf-fortran.git --branch v${NFVERSION}
         cd netcdf-fortran
         ./configure --prefix=${NFHOME}
         make

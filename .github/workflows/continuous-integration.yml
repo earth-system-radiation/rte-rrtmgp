@@ -61,13 +61,18 @@ jobs:
     #
     # Nvidia compilers
     #
-    - name: Nvidia setup compilers, environment
+    - name: Nvidia setup compilers
       env:
         NVCOMPILERS: /opt/nvidia/hpc_sdk
       if: contains(matrix.fortran-compiler, 'nvfortran') && steps.cache-nvidia-compilers.outputs.cache-hit != 'true'
       run: |
         wget -q https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-7_20.7_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.7_amd64.deb
         sudo apt-get install ./nvhpc-20-7_20.7_amd64.deb ./nvhpc-2020_20.7_amd64.deb
+    - name: Nvidia environment
+      env:
+        NVCOMPILERS: /opt/nvidia/hpc_sdk
+      if: contains(matrix.fortran-compiler, 'nvfortran')
+      run: |
         echo "::set-env name=FC::nvfortran"
         echo "::set-env name=CC::nvc"
         echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
@@ -103,7 +108,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /home/runner/netcdf-fortran
-        key: netcdf-fortran-4.5.1-${{ runner.os }}-${{ matrix.fortran-compiler }}
+        key: netcdf-fortran-4.4.4-${{ runner.os }}-${{ matrix.fortran-compiler }}
 
     - name: Build NetCDF Fortran library
       # Unset any Fortran flags

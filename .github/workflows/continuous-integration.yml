@@ -160,6 +160,7 @@ jobs:
     - name: Run examples, tests
       run: |
         source /opt/intel/oneapi/setvars.sh || true
+        export LD_LIBRARY_PATH=${NFHOME}/lib:${LD_LIBRARY_PATH}
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
         python ./run-rfmip-examples.py --block_size 8
         cd  ${RRTMGP_ROOT}/examples/all-sky

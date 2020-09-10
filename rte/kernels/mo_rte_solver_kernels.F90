@@ -537,16 +537,14 @@ contains
         !
         gamma1(i,j)= LW_diff_sec * (1._wp - 0.5_wp * w0(i,j) * (1._wp + g(i,j))) ! Fu et al. Eq 2.9
         gamma2(i,j)= LW_diff_sec *          0.5_wp * w0(i,j) * (1._wp - g(i,j))  ! Fu et al. Eq 2.10
+        ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
+        !   k = 0 for isotropic, conservative scattering; this lower limit on k
+        !   gives relative error with respect to conservative solution
+        !   of < 0.1% in Rdif down to tau = 10^-9
+        k(i) = sqrt(max((gamma1(i,j) - gamma2(i,j)) * (gamma1(i,j) + gamma2(i,j)), 1.e-12_wp))
       end do
 
-      ! Written to encourage vectorization of exponential, square root
-      ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
-      !   k = 0 for isotropic, conservative scattering; this lower limit on k
-      !   gives relative error with respect to conservative solution
-      !   of < 0.1% in Rdif down to tau = 10^-9
-      k(1:ncol) = sqrt(max((gamma1(1:ncol,j) - gamma2(1:ncol,j)) * &
-                           (gamma1(1:ncol,j) + gamma2(1:ncol,j)),  &
-                           1.e-12_wp))
+      ! Written to encourage vectorization of exponential
       exp_minusktau(1:ncol) = exp(-tau(1:ncol,j)*k(1:ncol))
 
       !
@@ -705,16 +703,14 @@ contains
 
         alpha1(i) = gamma1(i) * gamma4(i) + gamma2(i) * gamma3(i)           ! Eq. 16
         alpha2(i) = gamma1(i) * gamma3(i) + gamma2(i) * gamma4(i)           ! Eq. 17
+        ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
+        !   k = 0 for isotropic, conservative scattering; this lower limit on k
+        !   gives relative error with respect to conservative solution
+        !   of < 0.1% in Rdif down to tau = 10^-9
+        k(i) = sqrt(max((gamma1(i) - gamma2(i)) * (gamma1(i) + gamma2(i)), 1.e-12_wp))
       end do
 
-      ! Written to encourage vectorization of exponential, square root
-      ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
-      !   k = 0 for isotropic, conservative scattering; this lower limit on k
-      !   gives relative error with respect to conservative solution
-      !   of < 0.1% in Rdif down to tau = 10^-9
-      k(1:ncol) = sqrt(max((gamma1(1:ncol) - gamma2(1:ncol)) * &
-                           (gamma1(1:ncol) + gamma2(1:ncol)),  &
-                           1.e-12_wp))
+      ! Written to encourage vectorization of exponential
       exp_minusktau(1:ncol) = exp(-tau(1:ncol,j)*k(1:ncol))
 
       !

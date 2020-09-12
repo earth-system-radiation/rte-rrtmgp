@@ -18,21 +18,18 @@ LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
 #
-# Setting macro TIMING=yes uses routines from the General Purpose Timing Library
-#  https://jmrosinski.github.io/GPTL/
-# If TIMING=yes evironment variables TIME_DIR must be set to root of GPTL installation
+# General Purpose Timing Library https://jmrosinski.github.io/GPTL/
+# Set environment variable GPTL_DIR to the root of a GPTL installation to build
+#   the RFMIP example with timers
 #
-TIMING=no
-# Compiler specific - e.g. turn off for pgfortran, set to -cpp for gfortran
-#FCFLAGS += -fpp
-ifeq ($(TIMING),yes)
+ifneq ($(origin GPTL_DIR),undefined)
 	#
 	# Timing library
 	#
-	FCINCLUDE += -I$(TIME_DIR)/include
+	FCINCLUDE += -I$(GPTL_DIR)/include
 	# Compiler specific
-	FCFLAGS += -DUSE_TIMING
-	LDFLAGS   += -L$(TIME_DIR)/lib
+	FCFLAGS   += -DUSE_TIMING
+	LDFLAGS   += -L$(GPTL_DIR)/lib
 	LIBS      += -lgptl
 endif
 

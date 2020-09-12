@@ -241,7 +241,7 @@ program rrtmgp_rfmip_lw
   ! Loop over blocks
   !
 #ifdef USE_TIMING
-  do i = 1, 32
+  do i = 1, 4
 #endif
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)

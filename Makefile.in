@@ -54,7 +54,7 @@ silent_FCLD=    @echo "  FCLD    " $@;
 silent_MKDIR=   @echo "  MKDIR   " $(@D);
 endif
 
-lib_LIBRARIES= librte.a librrtmgp.a
+lib_LIBRARIES= librrtmgp.a librte.a
 
 librte_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rte -name '*.F90'))
 # If OpenACC is disabled, simply filter-out OpenACC source files:
@@ -85,11 +85,14 @@ prog_SOURCES=
 @EXAMPLES_ENABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@
 @EXAMPLES_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions -name '*.F90'))
 
+@TESTS_ENABLED@@EXAMPLES_ENABLED@check_PROGRAMS+= tests/clear_sky_regression@EXEEXT@
+@TESTS_ENABLED@@EXAMPLES_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/tests -name '*.F90'))
 @TESTS_ENABLED@@EXAMPLES_DISABLED@check_PROGRAMS+= \
 @TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/all-sky/rrtmgp_allsky@EXEEXT@           \
 @TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@ \
-@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@
-@TESTS_ENABLED@@EXAMPLES_DISABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions -name '*.F90'))
+@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@ \
+@TESTS_ENABLED@@EXAMPLES_DISABLED@    tests/clear_sky_regression@EXEEXT@
+@TESTS_ENABLED@@EXAMPLES_DISABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions $(srcdir)/tests -name '*.F90'))
 
 # Dependency files of the programs:
 prog_dep_files= $(addsuffix .d,$(prog_SOURCES))
@@ -136,6 +139,7 @@ distclean: clean
 	rm -rf examples/all-sky/all-sky.test \
 	       examples/all-sky/all-sky.test.log \
 	       examples/all-sky/ref \
+	       examples/all-sky/rrtmgp-allsky.nc \
 	       examples/rfmip-clear-sky/generate-output-file-templates.py \
 	       examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc \
 	       examples/rfmip-clear-sky/reference \
@@ -145,9 +149,13 @@ distclean: clean
 	       examples/rfmip-clear-sky/rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
 	       examples/rfmip-clear-sky/rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
 	       examples/rfmip-clear-sky/rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
-	       examples/rfmip-clear-sky/timing.*
+	       examples/rfmip-clear-sky/timing.* \
+	       tests/clear_sky_regression.test \
+	       tests/clear_sky_regression.test.log \
+	       tests/test_atmospheres.nc
 	test '.' = '$(srcdir)' || \
-	  rm -f extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc \
+	  rm -f examples/all-sky/garand-atmos-1.nc \
+	        extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc \
 	        extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc \
 	        rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc \
 	        rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
@@ -158,7 +166,7 @@ distclean: clean
           fi; \
         done
 	@test '.' = '$(srcdir)' || \
-	  for dir in rte rrtmgp examples extensions; do \
+	  for dir in rte rrtmgp examples extensions tests; do \
 	    if test -d "$$dir"; then \
 	      echo "find '$$dir' -type d -empty -delete"; \
 	      find "$$dir" -type d -empty -delete; \
@@ -172,7 +180,7 @@ install: install-libs install-mods
 # Check rule:
 check: all $(check_PROGRAMS)
 	@fail=; \
-	for dir in 'examples/all-sky' 'examples/rfmip-clear-sky'; do \
+	for dir in 'examples/all-sky' 'examples/rfmip-clear-sky' 'tests'; do \
 	  (dir_fail=; cd "$$dir" && \
 	   for file in *.test; do \
 	     test -f ./$$file || continue; \
@@ -205,6 +213,7 @@ $(lib_LIBRARIES): | $(dir_files)
 examples/all-sky/rrtmgp_allsky@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/all-sky/rrtmgp_allsky.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/rfmip-clear-sky/rrtmgp_rfmip_lw.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/rfmip-clear-sky/rrtmgp_rfmip_sw.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
+tests/clear_sky_regression@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t tests/clear_sky_regression.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 
 $(noinst_PROGRAMS) $(check_PROGRAMS): | $(dir_files)
 	$(silent_FCLD)$(FC) -o $@ $(makefile_FCFLAGS) $(FCFLAGS) $(LDFLAGS) $+ $(makefile_LIBS) $(LIBS)

@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([rte+rrtmgp], [1.0.0], [], [],
+AC_INIT([rte+rrtmgp], [1.2.1], [], [],
   [https://github.com/RobertPincus/rte-rrtmgp])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([config])
@@ -314,9 +314,11 @@ AC_PROG_INSTALL
 AC_CONFIG_FILES([
    examples/all-sky/all-sky.test
    examples/rfmip-clear-sky/rfmip-clear-sky.test
+   tests/clear_sky_regression.test
 ], [chmod a+x "$ac_file"])
 
 AC_CONFIG_LINKS([
+   examples/all-sky/garand-atmos-1.nc:examples/all-sky/garand-atmos-1.nc
    extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc:extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc
    extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc:extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc
    rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc:rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc

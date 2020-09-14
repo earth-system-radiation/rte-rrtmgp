@@ -10,6 +10,7 @@
 /config.log
 /config.status
 /examples/**/*.test
+/tests/**/*.test
 __pycache__
 
 # Build stage files:
@@ -23,11 +24,14 @@ __pycache__
 # Test stage files:
 /examples/**/*.test.log
 /examples/all-sky/ref/rrtmgp-allsky.nc
+/examples/all-sky/rrtmgp-allsky.nc
 /examples/rfmip-clear-sky/**/*_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
 /examples/rfmip-clear-sky/generate-output-file-templates.py
 /examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
 /examples/rfmip-clear-sky/timing.*
-examples/all-sky/rrtmgp-allsky.nc~
+/tests/**/*.test.log
+/tests/clear_sky_regression
+/tests/test_atmospheres.nc
 
 # Dist stage files:
 /rte+rrtmgp-*.tar*
@@ -54,4 +58,11 @@ examples/all-sky/rrtmgp-allsky.nc~
 Makefile.libs
 Makefile.conf
 
-src/
+# Intel code coverage
+*.dyn
+*.dpi
+*.spi
+*.spl
+*.HTML
+*.html
+*.gif

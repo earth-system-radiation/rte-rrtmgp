@@ -519,7 +519,7 @@ contains
         err_message = "delta_scale: dimension of 'for' don't match optical properties arrays"
         return
       end if
-      if(any(for < 0._wp .or. for > 1._wp)) then
+      if(any_vals_outside(for, 0._wp, 1._wp)) then
         err_message = "delta_scale: values of 'for' out of bounds [0,1]"
         return
       end if
@@ -809,13 +809,15 @@ contains
     integer :: ncol, nlay, ngpt, nmom
     ! -----
     err_message = ""
-    if(.not. op_in%bands_are_equal(op_io)) then
-      err_message = "ty_optical_props%increment: optical properties objects have different band structures"
-      return
-    end if
     ncol = op_io%get_ncol()
     nlay = op_io%get_nlay()
     ngpt = op_io%get_ngpt()
+    if(.not. op_in%bands_are_equal(op_io)) &
+      err_message = "ty_optical_props%increment: optical properties objects have different band structures"
+    if(.not. all([op_in%get_ncol(), op_in%get_nlay()] == [ncol, nlay])) &
+      err_message = "ty_optical_props%increment: optical properties objects have different ncol and/or nlay"
+    if(err_message /= "")  return
+
     if(op_in%gpoints_are_equal(op_io)) then
       !
       ! Increment by gpoint

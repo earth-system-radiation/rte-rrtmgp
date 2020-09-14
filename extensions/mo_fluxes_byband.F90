@@ -17,6 +17,7 @@
 !
 module mo_fluxes_byband
   use mo_rte_kind,      only: wp
+  use mo_rte_config,    only: check_extents
   use mo_rte_util_array,only: extents_are
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_optical_props, only: ty_optical_props
@@ -69,29 +70,24 @@ contains
     end if
 
     ! Check sizes of output arrays
-    if(associated(this%bnd_flux_up)) then
-      if(.not. extents_are(this%bnd_flux_up, ncol, nlev, nbnd)) then
-        error_msg = "reduce: bnd_flux_up array incorrectly sized (can't compute net flux either)"
-        return
+    if(check_extents) then
+      if(associated(this%bnd_flux_up)) then
+        if(.not. extents_are(this%bnd_flux_up, ncol, nlev, nbnd)) &
+          error_msg = "reduce: bnd_flux_up array incorrectly sized (can't compute net flux either)"
       end if
-    end if
-    if(associated(this%bnd_flux_dn)) then
-      if(.not. extents_are(this%bnd_flux_dn, ncol, nlev, nbnd)) then
-        error_msg = "reduce: bnd_flux_dn array incorrectly sized (can't compute net flux either)"
-        return
+      if(associated(this%bnd_flux_dn)) then
+        if(.not. extents_are(this%bnd_flux_dn, ncol, nlev, nbnd)) &
+          error_msg = "reduce: bnd_flux_dn array incorrectly sized (can't compute net flux either)"
       end if
-    end if
-    if(associated(this%bnd_flux_dn_dir)) then
-      if(.not. extents_are(this%bnd_flux_dn_dir, ncol, nlev, nbnd)) then
-        error_msg = "reduce: bnd_flux_dn_dir array incorrectly sized"
-        return
+      if(associated(this%bnd_flux_dn_dir)) then
+        if(.not. extents_are(this%bnd_flux_dn_dir, ncol, nlev, nbnd)) &
+          error_msg = "reduce: bnd_flux_dn_dir array incorrectly sized"
       end if
-    end if
-    if(associated(this%bnd_flux_net)) then
-      if(.not. extents_are(this%bnd_flux_net, ncol, nlev, nbnd)) then
-        error_msg = "reduce: bnd_flux_net array incorrectly sized (can't compute net flux either)"
-        return
+      if(associated(this%bnd_flux_net)) then
+        if(.not. extents_are(this%bnd_flux_net, ncol, nlev, nbnd)) &
+          error_msg = "reduce: bnd_flux_net array incorrectly sized (can't compute net flux either)"
       end if
+      if(error_msg /= "") return 
     end if
     !
     ! Self-consistency -- shouldn't be asking for direct beam flux if it isn't supplied

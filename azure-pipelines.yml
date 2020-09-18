@@ -34,6 +34,7 @@ jobs:
       module load $(accel_module)
       module load cray-netcdf cray-hdf5
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+      export CUDA_HOME=$CUDATOOLKIT_HOME
       echo Compiler Environment:
       module list
       echo LD_LIBRARY_PATH is:

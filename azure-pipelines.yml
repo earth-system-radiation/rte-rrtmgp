@@ -26,7 +26,7 @@ jobs:
   - script: |
       set -e
 
-      echo "
+      echo '
       module load daint-gpu
       export PATH=$CRAY_BINUTILS_BIN:$PATH
       module swap PrgEnv-cray PrgEnv-$(compiler_base)
@@ -39,7 +39,7 @@ jobs:
       module list
       echo LD_LIBRARY_PATH is:
       echo $LD_LIBRARY_PATH
-      " > compiler_modules
+      ' > compiler_modules
 
     displayName: 'Create module environment'
   - script: |

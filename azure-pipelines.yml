@@ -3,13 +3,6 @@ jobs:
   pool: CSCS
   strategy:
     matrix:
-      pgi_19_9_gpu:
-        compiler_base: pgi
-        compiler_module: PGI/19.9
-        accel_module: cudatoolkit
-        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
-        RTE_KERNELS: openacc
-        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       pgi_default_gpu:
         compiler_base: pgi
         compiler_module: pgi
@@ -18,23 +11,9 @@ jobs:
         FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
         RTE_KERNELS: openacc
         RUN_CMD: "srun -C gpu -A c15 -p cscsci"
-      pgi_19_10_cpu:
-        compiler_base: pgi
-        compiler_module: PGI/19.10
-        accel_module:
-        # Error checking flags
-        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-        RUN_CMD:
-      pgi_19_9_cpu:
-        compiler_base: pgi
-        compiler_module: PGI/19.9
-        accel_module:
-        # Error checking flags
-        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-        RUN_CMD:
       cce-cpu-icon-production:
         compiler_base: cray
-        compiler_module: ccce-icon/9.0.2-classic
+        compiler_module: cce-icon/10.0.2
         accel_module:
         # Production flags for Icon model
         FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
@@ -47,7 +26,7 @@ jobs:
   - script: |
       set -e
 
-      echo "
+      echo '
       module load daint-gpu
       export PATH=$CRAY_BINUTILS_BIN:$PATH
       module swap PrgEnv-cray PrgEnv-$(compiler_base)
@@ -55,11 +34,12 @@ jobs:
       module load $(accel_module)
       module load cray-netcdf cray-hdf5
       export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+      export CUDA_HOME=$CUDATOOLKIT_HOME
       echo Compiler Environment:
       module list
       echo LD_LIBRARY_PATH is:
       echo $LD_LIBRARY_PATH
-      " > compiler_modules
+      ' > compiler_modules
 
     displayName: 'Create module environment'
   - script: |
@@ -88,7 +68,7 @@ jobs:
   - script: |
       set -e
       source compiler_modules
-      module load cray-python/3.6.5.7
+      module load cray-python
       export RRTMGP_ROOT=$PWD
       cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
       ${RUN_CMD} python ./run-rfmip-examples.py --block_size 1800

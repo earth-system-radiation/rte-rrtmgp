@@ -33,6 +33,7 @@ jobs:
     #
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
+    # Trying list of packages from https://github.com/intel/oneapi-containers/blob/master/images/docker/hpckit-devel-ubuntu18.04/Dockerfile
     #
     - name: Intel setup compilers, environment
       if: contains(matrix.fortran-compiler, 'ifort')
@@ -41,6 +42,8 @@ jobs:
         sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
         sudo add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
         sudo apt-get update
+        sudo apt-get install intel-hpckit-getting-started
+        sudo apt-get install intel-clck
         sudo apt-get install intel-oneapi-common-licensing
         sudo apt-get install intel-oneapi-common-vars
         sudo apt-get install intel-oneapi-dev-utilities

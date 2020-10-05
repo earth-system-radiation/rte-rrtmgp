@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        fortran-compiler:  [gfortran-8, gfortran-9, nvfortran]
+        fortran-compiler:  [gfortran-8, gfortran-9, ifort, nvfortran]
         # I'd like to add gfortran-10 to this list but have version issues with netcdf as below
         rte-kernels: [default, openacc]
     env:
@@ -33,6 +33,7 @@ jobs:
     #
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
+    # Trying list of packages from https://github.com/intel/oneapi-containers/blob/master/images/docker/hpckit-devel-ubuntu18.04/Dockerfile
     #
     - name: Intel setup compilers, environment
       if: contains(matrix.fortran-compiler, 'ifort')
@@ -41,13 +42,12 @@ jobs:
         sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
         sudo add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
         sudo apt-get update
-        sudo apt-get install intel-oneapi-common-licensing
-        sudo apt-get install intel-oneapi-common-vars
-        sudo apt-get install intel-oneapi-dev-utilities
-        sudo apt-get install intel-oneapi-icc
-        sudo apt-get install intel-oneapi-ifort
+        sudo apt-get install intel-hpckit-getting-started intel-oneapi-clck
+        sudo apt-get install intel-oneapi-common-licensing intel-oneapi-common-vars
+        sudo apt-get install intel-oneapi-dev-utilities  intel-oneapi-dpcpp-cpp-compiler-pro
+        sudo apt-get install intel-oneapi-ifort intel-oneapi-inspector intel-oneapi-itac
         echo "::set-env name=FC::ifort"
-        echo "::set-env name=CC::icc"
+        echo "::set-env name=CC::icx"
         echo "::set-env name=FCFLAGS::-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
 
     # Caching cribbed from https://github.com/NCAR/ParallelIO/blob/3a77973ad5e09d354257045bf3d53827ae36a86b/.github/workflows/a3.yml#L1

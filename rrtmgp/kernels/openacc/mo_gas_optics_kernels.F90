@@ -630,7 +630,7 @@ contains
     ! Explicitly unroll a time-consuming loop here to increase instruction-level parallelism on a GPU
     ! Helps to achieve higher bandwidth
     !
-    !$acc parallel loop collapse(3)
+    !$acc parallel loop present(planck_function) collapse(3)
     do icol = 1, ncol, 2
       do ilay = 1, nlay
         do igpt = 1, ngpt
@@ -659,7 +659,7 @@ contains
     !
     ! Same unrolling as mentioned before
     !
-    !$acc parallel loop collapse(3)
+    !$acc parallel loop present(planck_function) collapse(3)
     do icol = 1, ncol, 2
       do ilay = 1, nlay
         do igpt = 1, ngpt

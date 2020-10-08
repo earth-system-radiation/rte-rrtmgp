@@ -28,6 +28,7 @@
 module mo_rte_solver_kernels
   use,  intrinsic :: iso_c_binding
   use mo_rte_kind, only: wp, wl
+  use mo_rte_config, only: compute_Jac
   implicit none
   private
 
@@ -81,7 +82,7 @@ contains
                                                                            ! Top level must contain incident flux boundary condition
 
     real(wp), dimension(ncol       ,ngpt), intent(in )   :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(:   ,:     ,:   ), intent(out)   :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables, no g-point dependency
     real(wp), dimension(ncol,nlay,ngpt) :: tau_loc, &  ! path length (tau/mu)
                                            trans       ! transmissivity  = exp(-tau)
@@ -134,7 +135,8 @@ contains
     end do
 
     !$acc enter data copyin(sfc_srcJac)
-    !$acc enter data create(source_sfcJac, radn_upJac)
+    !$acc enter data create(source_sfcJac)
+    !$acc enter data create(radn_upJac) if (compute_Jac)
     !$acc parallel loop collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
@@ -173,18 +175,19 @@ contains
     !
     ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
     !
-    !$acc parallel loop collapse(3)
+    !$acc parallel loop collapse(3) no_create(radn_upJac)
     do igpt = 1, ngpt
       do ilev = 1, nlay+1
         do icol = 1, ncol
           radn_dn   (icol,ilev,igpt) = 2._wp * pi * weight * radn_dn   (icol,ilev,igpt)
           radn_up   (icol,ilev,igpt) = 2._wp * pi * weight * radn_up   (icol,ilev,igpt)
+          if (compute_Jac) &
           radn_upJac(icol,ilev,igpt) = 2._wp * pi * weight * radn_upJac(icol,ilev,igpt)
         end do
       end do
     end do
     !$acc exit data delete(sfc_srcJac, source_sfcJac)
-    !$acc exit data copyout(radn_upJac)
+    !$acc exit data copyout(radn_upJac) if (compute_Jac)
 
     !$acc exit data copyout(radn_dn,radn_up)
     !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo)
@@ -219,19 +222,24 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up ! Radiances [W/m2-str]
                                                                            ! Top level must contain incident flux boundary condition
     real(wp), dimension(ncol       ,ngpt), intent(in )   :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(:   ,:     ,:   ), intent(out)   :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables
-    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up, radn_upJac ! Fluxes per quad angle
+    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
+    real(wp), dimension(:,:,:), allocatable :: radn_upJac 
     real(wp), dimension(ncol,       ngpt) :: Ds_ncol
     real(wp), dimension(ncol,       ngpt) :: flux_top
 
     integer :: imu, top_level
     integer :: icol, ilev, igpt
 
+    if (compute_Jac) then
+      allocate(radn_upJac(ncol,nlay+1,ngpt))
+      !$acc enter data create(radn_upJac)
+    end if
     !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn)
     !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol,flux_top)
     !$acc enter data copyin(sfc_srcJac)
-    !$acc enter data create(flux_upJac, radn_upJac)
+    !$acc enter data create(flux_upJac) if (compute_Jac)
 
     ! ------------------------------------
     ! ------------------------------------
@@ -269,12 +277,13 @@ contains
                             top_at_1, Ds_ncol, weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn, sfc_srcJac, radn_upJac)
-      !$acc  parallel loop collapse(3)
+      !$acc  parallel loop collapse(3) no_create(flux_upJac)
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
           do icol = 1, ncol
             flux_up   (icol,ilev,igpt) = flux_up   (icol,ilev,igpt) + radn_up   (icol,ilev,igpt)
             flux_dn   (icol,ilev,igpt) = flux_dn   (icol,ilev,igpt) + radn_dn   (icol,ilev,igpt)
+            if (compute_Jac) &
             flux_upJac(icol,ilev,igpt) = flux_upJac(icol,ilev,igpt) + radn_upJac(icol,ilev,igpt)
           end do
         end do
@@ -282,7 +291,7 @@ contains
 
     end do ! imu loop
     !$acc exit data delete(sfc_srcJac, radn_upJac)
-    !$acc exit data copyout(flux_upJac)
+    !$acc exit data copyout(flux_upJac) if (compute_Jac)
 
     !$acc exit data copyout(flux_up,flux_dn)
     !$acc exit data delete(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol,flux_top)
@@ -591,7 +600,7 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up ! Radiances [W/m2-str]
                                                                              ! Top level must contain incident flux boundary condition
     real(wp), dimension(ncol       ,ngpt), intent(in )   :: source_sfcJac ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(:   ,:     ,:   ), intent(out)   :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables
     integer :: igpt, ilev, icol
     ! ---------------------------------------------------
@@ -600,7 +609,7 @@ contains
       !
       ! Top of domain is index 1
       !
-      !$acc  parallel loop collapse(2)
+      !$acc  parallel loop collapse(2) no_create(radn_upJac)
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Downward propagation
@@ -610,11 +619,13 @@ contains
 
           ! Surface reflection and emission
           radn_up   (icol,nlay+1,igpt) = radn_dn(icol,nlay+1,igpt)*sfc_albedo(icol,igpt) + source_sfc   (icol,igpt)
+          if (compute_Jac) &
           radn_upJac(icol,nlay+1,igpt) = source_sfcJac(icol,igpt)
 
           ! Upward propagation
           do ilev = nlay, 1, -1
             radn_up   (icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_up   (icol,ilev+1,igpt) + source_up(icol,ilev,igpt)
+            if (compute_Jac) &
             radn_upJac(icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_upJac(icol,ilev+1,igpt)
           end do
         end do
@@ -623,7 +634,7 @@ contains
       !
       ! Top of domain is index nlay+1
       !
-      !$acc  parallel loop collapse(2)
+      !$acc  parallel loop collapse(2) no_create(radn_upJac)
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Downward propagation
@@ -633,11 +644,13 @@ contains
 
           ! Surface reflection and emission
           radn_up   (icol,1,igpt) = radn_dn(icol,1,igpt)*sfc_albedo(icol,igpt) + source_sfc   (icol,igpt)
+          if (compute_Jac) &
           radn_upJac(icol,1,igpt) = source_sfcJac(icol,igpt)
 
           ! Upward propagation
           do ilev = 2, nlay+1
             radn_up   (icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up   (icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt)
+            if (compute_Jac) &
             radn_upJac(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_upJac(icol,ilev-1,igpt)
           end do
         end do
@@ -1265,8 +1278,8 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn      ! Top level must contain incident flux boundary condition
 
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_srcJac   ! Surface Temperature Jacobian source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: rad_up_Jac  ! Surface Temperature Jacobians [W/m2-str/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: rad_dn_Jac  ! Top level set to 0
+    real(wp), dimension(:   ,:     ,:   ), intent(  out) :: rad_up_Jac  ! Surface Temperature Jacobians [W/m2-str/K]
+    real(wp), dimension(:   ,:     ,:   ), intent(  out) :: rad_dn_Jac  ! Top level set to 0
     ! Local variables, WITH g-point dependency
     real(wp), dimension(ncol,nlay,ngpt) :: tau_loc, &  ! path length (tau/mu)
                                              trans       ! transmissivity  = exp(-tau)
@@ -1306,14 +1319,15 @@ contains
     !$acc enter data create(sfcSource, An, Cn)
     !$acc enter data attach(lev_source_up,lev_source_dn)
 
-    !$acc enter data create(rad_up_Jac, rad_dn_Jac, source_sfcJac)
+    !$acc enter data create(source_sfcJac)
+    !$acc enter data create(rad_up_Jac, rad_dn_Jac) if (compute_Jac)
     !$acc enter data copyin(sfc_srcJac)
 
     ! NOTE: This kernel produces small differences between GPU and CPU
     ! implementations on Ascent with PGI, we assume due to floating point
     ! differences in the exp() function. These differences are small in the
     ! RFMIP test case (10^-6).
-    !$acc parallel loop collapse(3)
+    !$acc parallel loop collapse(3) no_create(rad_dn_Jac)
     do igpt = 1, ngpt
       do ilev = 1, nlay
         do icol = 1, ncol
@@ -1328,7 +1342,8 @@ contains
           An(icol,ilev,igpt) = (1._wp-trans(icol,ilev,igpt)*trans(icol,ilev,igpt))
 
           ! initialize radn_dn_Jac
-          rad_dn_Jac(icol,ilev,igpt) = 0._wp
+          if (compute_Jac) &
+            rad_dn_Jac(icol,ilev,igpt) = 0._wp
         end do
       end do
     end do
@@ -1367,7 +1382,7 @@ contains
                              sfc_albedo, source_dn, source_up, &
                              radn_up, radn_dn, An, Cn, rad_up_Jac, rad_dn_Jac)
 
-    !$acc exit data copyout(rad_up_Jac, rad_dn_Jac)
+    !$acc exit data copyout(rad_up_Jac, rad_dn_Jac) if (compute_Jac)
     !$acc exit data delete(source_sfcJac, sfc_srcJac)
 
 
@@ -1411,13 +1426,14 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn      ! Top level must contain incident flux boundary condition
 
     real(wp), dimension(ncol       ,ngpt), intent(in )   :: sfc_src_Jac  ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: flux_up_Jac  ! surface temperature Jacobian of Radiances [W/m2-str / K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: flux_dn_Jac  ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(:   ,:     ,:   ), intent(out)   :: flux_up_Jac  ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(:   ,:     ,:   ), intent(out)   :: flux_dn_Jac  ! surface temperature Jacobian of Radiances [W/m2-str / K]
 
     ! Local variables
     real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
     real(wp), dimension(ncol,       ngpt) :: Ds_ncol
-    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn_Jac, radn_up_Jac ! Surface temperature Jsacobians per quad angle
+
+    real(wp), dimension(:,:,:), allocatable :: radn_dn_Jac, radn_up_Jac ! Surface temperature Jsacobians per quad angle
 
     integer :: imu, top_level,icol,ilev,igpt
     real    :: weight
@@ -1427,8 +1443,12 @@ contains
     real(wp), dimension(ncol,nlay,  ngpt) :: scaling          ! scaling
     real(wp), parameter                   :: tresh=1.0_wp - 1e-6_wp
 
+    if (compute_Jac) then
+      allocate(radn_dn_Jac(ncol,nlay+1,ngpt), radn_up_Jac(ncol,nlay+1,ngpt))
+    end if
     !$acc enter data copyin(Ds,weights,tau,ssa,g,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn,sfc_src_Jac)
-    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol, scaling, tauLoc,flux_up_Jac,flux_dn_Jac,radn_dn_Jac, radn_up_Jac)
+    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol, scaling, tauLoc)
+    !$acc enter data create(flux_up_Jac, flux_dn_Jac, radn_dn_Jac, radn_up_Jac) if (compute_Jac)
 
 
     ! Tang rescaling
@@ -1457,14 +1477,16 @@ contains
                           top_at_1, Ds_ncol, tauLoc, scaling, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           flux_up, flux_dn,sfc_src_Jac,flux_up_Jac,flux_dn_Jac)
-    !$acc  parallel loop collapse(3)
+    !$acc  parallel loop collapse(3) no_create(flux_up_Jac, flux_dn_Jac)
     do igpt = 1, ngpt
       do ilev = 1, nlay+1
         do icol = 1, ncol
           flux_up    (icol,ilev,igpt) = weight*flux_up    (icol,ilev,igpt)
           flux_dn    (icol,ilev,igpt) = weight*flux_dn    (icol,ilev,igpt)
+          if (compute_Jac) then
           flux_up_Jac(icol,ilev,igpt) = weight*flux_up_Jac(icol,ilev,igpt)
           flux_dn_Jac(icol,ilev,igpt) = weight*flux_dn_Jac(icol,ilev,igpt)
+          end if
         enddo
       enddo
     enddo
@@ -1478,21 +1500,23 @@ contains
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             radn_up, radn_dn,sfc_src_Jac,radn_up_Jac,radn_dn_Jac)
 
-      !$acc  parallel loop collapse(3)
+      !$acc  parallel loop collapse(3) no_create(flux_up_Jac, flux_dn_Jac, radn_up_Jac, radn_dn_Jac)
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
           do icol = 1, ncol
             flux_up    (icol,ilev,igpt) = flux_up    (icol,ilev,igpt) + weight*radn_up    (icol,ilev,igpt)
             flux_dn    (icol,ilev,igpt) = flux_dn    (icol,ilev,igpt) + weight*radn_dn    (icol,ilev,igpt)
+            if (compute_Jac) then
             flux_up_Jac(icol,ilev,igpt) = flux_up_Jac(icol,ilev,igpt) + weight*radn_up_Jac(icol,ilev,igpt)
             flux_dn_Jac(icol,ilev,igpt) = flux_dn_Jac(icol,ilev,igpt) + weight*radn_dn_Jac(icol,ilev,igpt)
+            end if
           enddo
         enddo
       enddo
 
     end do
-   !$acc exit data delete(sfc_src_Jac,radn_dn_Jac, radn_up_Jac)
-   !$acc exit data copyout(flux_up_Jac,flux_dn_Jac)
+   !$acc exit data delete(sfc_src_Jac)
+   !$acc exit data copyout(flux_up_Jac,flux_dn_Jac) delete(radn_dn_Jac, radn_up_Jac) if (compute_Jac)
    !$acc exit data copyout(flux_up,flux_dn)
    !$acc exit data delete(Ds,weights,tau,ssa,g,tauLoc,scaling,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol)
   end subroutine lw_solver_1rescl_GaussQuad
@@ -1605,8 +1629,8 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_up    ! Radiances [W/m2-str]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn    !Top level must contain incident flux boundary condition
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: An, Cn
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: rad_up_Jac ! Radiances [W/m2-str]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: rad_dn_Jac !Top level must contain incident flux boundary condition
+    real(wp), dimension(:   ,:     ,:   ), intent(inout) :: rad_up_Jac ! Radiances [W/m2-str]
+    real(wp), dimension(:   ,:     ,:   ), intent(inout) :: rad_dn_Jac !Top level must contain incident flux boundary condition
     ! Local variables
     integer :: ilev, icol, igpt
     ! ---------------------------------------------------
@@ -1616,12 +1640,13 @@ contains
       ! Top of domain is index 1
       !
       ! Downward propagation
-      !$acc  parallel loop collapse(2)
+      !$acc  parallel loop collapse(2) no_create(rad_up_Jac, rad_dn_Jac)
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! 1st Upward propagation
           do ilev = nlay, 1, -1
             radn_up   (icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_up   (icol,ilev+1,igpt) + source_up(icol,ilev,igpt)
+            if (compute_Jac) &
             rad_up_Jac(icol,ilev,igpt) = trans(icol,ilev,igpt)*rad_up_Jac(icol,ilev+1,igpt)
 
             adjustmentFactor = Cn(icol,ilev,igpt)*&
@@ -1633,6 +1658,7 @@ contains
           ! 2nd Downward propagation
           do ilev = 1, nlay
             radn_dn   (icol,ilev+1,igpt) = trans(icol,ilev,igpt)*radn_dn   (icol,ilev,igpt) + source_dn(icol,ilev,igpt)
+            if (compute_Jac) &
             rad_dn_Jac(icol,ilev+1,igpt) = trans(icol,ilev,igpt)*rad_dn_Jac(icol,ilev,igpt)
             adjustmentFactor = Cn(icol,ilev,igpt)*( &
                 An(icol,ilev,igpt)*radn_up(icol,ilev,igpt) - &
@@ -1640,18 +1666,21 @@ contains
                 source_dn(icol,ilev,igpt) )
             radn_dn(icol,ilev+1,igpt)    = radn_dn(icol,ilev+1,igpt) + adjustmentFactor
 
+            if (compute_Jac) then
             adjustmentFactor             = Cn(icol,ilev,igpt)*An(icol,ilev,igpt)*rad_up_Jac(icol,ilev,igpt)
             rad_dn_Jac(icol,ilev+1,igpt) = rad_dn_Jac(icol,ilev+1,igpt) + adjustmentFactor
+            end if
           enddo
         enddo
       enddo
     else
-      !$acc  parallel loop collapse(2)
+      !$acc  parallel loop collapse(2) no_create(rad_up_Jac, rad_dn_Jac)
       do igpt = 1, ngpt
         do icol = 1, ncol
           ! Upward propagation
           do ilev = 1, nlay
             radn_up   (icol,ilev+1,igpt) = trans(icol,ilev,igpt)*radn_up   (icol,ilev,igpt) +  source_up(icol,ilev,igpt)
+            if (compute_Jac) &
             rad_up_Jac(icol,ilev+1,igpt) = trans(icol,ilev,igpt)*rad_up_Jac(icol,ilev,igpt)
             adjustmentFactor = Cn(icol,ilev,igpt)*&
                    ( An(icol,ilev,igpt)*radn_dn(icol,ilev+1,igpt) - &
@@ -1662,6 +1691,7 @@ contains
           ! 2st Downward propagation
           do ilev = nlay, 1, -1
             radn_dn   (icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_dn   (icol,ilev+1,igpt) + source_dn(icol,ilev,igpt)
+            if (compute_Jac) &
             rad_dn_Jac(icol,ilev,igpt) = trans(icol,ilev,igpt)*rad_dn_Jac(icol,ilev+1,igpt)
             adjustmentFactor = Cn(icol,ilev,igpt)*( &
                     An(icol,ilev,igpt)*radn_up(icol,ilev,igpt) - &
@@ -1669,8 +1699,10 @@ contains
                     source_dn(icol,ilev,igpt) )
             radn_dn(icol,ilev,igpt)    = radn_dn(icol,ilev,igpt) + adjustmentFactor
 
+            if (compute_Jac) then
             adjustmentFactor           = Cn(icol,ilev,igpt)*An(icol,ilev,igpt)*rad_up_Jac(icol,ilev,igpt)
             rad_dn_Jac(icol,ilev,igpt) = rad_dn_Jac(icol,ilev,igpt) + adjustmentFactor
+            end if
           end do
         enddo
       enddo

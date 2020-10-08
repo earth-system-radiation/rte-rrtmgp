@@ -35,7 +35,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
-  use mo_rte_config,    only: check_extents, check_values
+  use mo_rte_config,    only: check_extents, check_values, compute_Jac
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
@@ -200,12 +200,12 @@ contains
           error_msg = "rte_lw: can't use two-stream methods with only absorption optical depth"
         if (present(lw_Ds)) then
           if (check_extents) then
-          if(.not. extents_are(lw_Ds, ncol, ngpt)) &
-            error_msg = "rte_lw: lw_Ds inconsistently sized"
+            if(.not. extents_are(lw_Ds, ncol, ngpt)) &
+              error_msg = "rte_lw: lw_Ds inconsistently sized"
           end if
           if (check_values) then
-          if(any_vals_less_than(lw_Ds, 1._wp)) &
-            error_msg = "rte_lw: one or more values of lw_Ds < 1."
+            if(any_vals_less_than(lw_Ds, 1._wp)) &
+              error_msg = "rte_lw: one or more values of lw_Ds < 1."
           end if
           if(n_quad_angs /= 1) &
             error_msg = "rte_lw: providing lw_Ds incompatible with specifying n_gauss_angles"
@@ -238,12 +238,14 @@ contains
     !    Lower boundary condition -- expand surface emissivity by band to gpoints
     !
     allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
-    allocate(gpt_flux_upJac(ncol, nlay+1, ngpt))
     allocate(sfc_emis_gpt(ncol,         ngpt))
+    if (compute_Jac) then
+      allocate(gpt_flux_upJac(ncol, nlay+1, ngpt))
+      !$acc enter data create(gpt_flux_upJac)
+    end if
     !!$acc enter data copyin(sources, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data copyin(optical_props)
     !$acc enter data create(gpt_flux_dn, gpt_flux_up)
-    !$acc enter data create(gpt_flux_upJac)
     !$acc enter data create(sfc_emis_gpt)
 
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
@@ -320,8 +322,10 @@ contains
           !
           ! Re-scaled solution to account for scattering
           !
-          allocate(gpt_flux_dnJac (ncol, nlay+1, ngpt))
-          !$acc enter data create(gpt_flux_dnJac)
+          if (compute_Jac) then
+            allocate(gpt_flux_dnJac (ncol, nlay+1, ngpt))
+            !$acc enter data create(gpt_flux_dnJac)
+          end if
           !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
           call lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
                                  n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), &
@@ -363,12 +367,12 @@ contains
           if (present(flux_dn_Jac)) Jac_fluxes%flux_dn => flux_dn_Jac
           error_msg = Jac_fluxes%reduce(gpt_flux_upJac, gpt_flux_dnJac, optical_props, top_at_1)
           !$acc exit data delete(gpt_flux_dnJac)
-          deallocate(gpt_flux_dnJac)
+          if (compute_Jac) deallocate(gpt_flux_dnJac)
         end if
       end select
 
     !$acc exit data delete(gpt_flux_upJac)
-    deallocate(gpt_flux_upJac)
+    if (compute_Jac) deallocate(gpt_flux_upJac)
 
     !$acc exit data delete(sfc_emis_gpt)
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)

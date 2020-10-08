@@ -394,28 +394,32 @@ contains
     !
     ! Array sizes
     !
-    if(size(liqmsk,1) /= ncol .or. size(liqmsk,2) /= nlay) &
-      error_msg = "cloud optics: liqmask has wrong extents"
-    if(size(icemsk,1) /= ncol .or. size(icemsk,2) /= nlay) &
-      error_msg = "cloud optics: icemsk has wrong extents"
-    if(size(ciwp,  1) /= ncol .or. size(ciwp,  2) /= nlay) &
-      error_msg = "cloud optics: ciwp has wrong extents"
-    if(size(reliq, 1) /= ncol .or. size(reliq, 2) /= nlay) &
-      error_msg = "cloud optics: reliq has wrong extents"
-    if(size(reice, 1) /= ncol .or. size(reice, 2) /= nlay) &
-      error_msg = "cloud optics: reice has wrong extents"
-    if(optical_props%get_ncol() /= ncol .or. optical_props%get_nlay() /= nlay) &
-      error_msg = "cloud optics: optical_props have wrong extents"
-    if(error_msg /= "") return
+    if (check_extents) then
+      if(size(liqmsk,1) /= ncol .or. size(liqmsk,2) /= nlay) &
+        error_msg = "cloud optics: liqmask has wrong extents"
+      if(size(icemsk,1) /= ncol .or. size(icemsk,2) /= nlay) &
+        error_msg = "cloud optics: icemsk has wrong extents"
+      if(size(ciwp,  1) /= ncol .or. size(ciwp,  2) /= nlay) &
+        error_msg = "cloud optics: ciwp has wrong extents"
+      if(size(reliq, 1) /= ncol .or. size(reliq, 2) /= nlay) &
+        error_msg = "cloud optics: reliq has wrong extents"
+      if(size(reice, 1) /= ncol .or. size(reice, 2) /= nlay) &
+        error_msg = "cloud optics: reice has wrong extents"
+      if(optical_props%get_ncol() /= ncol .or. optical_props%get_nlay() /= nlay) &
+        error_msg = "cloud optics: optical_props have wrong extents"
+      if(error_msg /= "") return
+    end if
 
     !
     ! Spectral consistency
     !
-    if(.not. this%bands_are_equal(optical_props)) &
-      error_msg = "cloud optics: optical properties don't have the same band structure"
-    if(optical_props%get_nband() /= optical_props%get_ngpt() ) &
-      error_msg = "cloud optics: optical properties must be requested by band not g-points"
-    if(error_msg /= "") return
+    if(check_values) then
+      if(.not. this%bands_are_equal(optical_props)) &
+        error_msg = "cloud optics: optical properties don't have the same band structure"
+      if(optical_props%get_nband() /= optical_props%get_ngpt() ) &
+        error_msg = "cloud optics: optical properties must be requested by band not g-points"
+      if(error_msg /= "") return
+    end if
 
     !$acc data copyin(clwp, ciwp, reliq, reice)                         &
     !$acc      create(ltau, ltaussa, ltaussag, itau, itaussa, itaussag) &
@@ -441,8 +445,9 @@ contains
         error_msg = 'cloud optics: ice effective radius is out of bounds'
       if(any_vals_less_than(clwp, liqmsk, 0._wp) .or. any_vals_less_than(ciwp, icemsk, 0._wp)) &
         error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
-      if(error_msg == "") then
     end if
+
+    if(error_msg == "") then
       !
       !
       ! ----------------------------------------

@@ -199,10 +199,14 @@ contains
         if (using_2stream) &
           error_msg = "rte_lw: can't use two-stream methods with only absorption optical depth"
         if (present(lw_Ds)) then
+          if (check_extents) then
           if(.not. extents_are(lw_Ds, ncol, ngpt)) &
             error_msg = "rte_lw: lw_Ds inconsistently sized"
+          end if
+          if (check_values) then
           if(any_vals_less_than(lw_Ds, 1._wp)) &
             error_msg = "rte_lw: one or more values of lw_Ds < 1."
+          end if
           if(n_quad_angs /= 1) &
             error_msg = "rte_lw: providing lw_Ds incompatible with specifying n_gauss_angles"
         end if
@@ -221,7 +225,7 @@ contains
     !
     ! Ensure values of tau, ssa, and g are reasonable if using scattering
     !
-    if(check_values) error_msg =  optical_props%validate()
+    error_msg = optical_props%validate()
 
     if(len_trim(error_msg) > 0) then
       if(len_trim(optical_props%get_name()) > 0) &

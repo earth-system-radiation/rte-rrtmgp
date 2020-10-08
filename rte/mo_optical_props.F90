@@ -40,6 +40,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp
+  use mo_rte_config,            only: check_extents, check_values
   use mo_rte_util_array,        only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props_kernels, only: &
         increment_1scalar_by_1scalar, increment_1scalar_by_2stream, increment_1scalar_by_nstream, &
@@ -229,14 +230,20 @@ contains
     err_message = ""
     if(size(band_lims_wvn,1) /= 2) &
       err_message = "optical_props%init(): band_lims_wvn 1st dim should be 2"
-    if(any_vals_less_than(band_lims_wvn, 0._wp) ) &
-      err_message = "optical_props%init(): band_lims_wvn has values <  0., respectively"
+    if (check_values) then
+      if(any_vals_less_than(band_lims_wvn, 0._wp) ) &
+        err_message = "optical_props%init(): band_lims_wvn has values <  0., respectively"
+    end if
     if(err_message /="") return
     if(present(band_lims_gpt)) then
-      if(.not. extents_are(band_lims_gpt, 2, size(band_lims_wvn,2))) &
-        err_message = "optical_props%init(): band_lims_gpt size inconsistent with band_lims_wvn"
-      if(any(band_lims_gpt < 1) ) &
-        err_message = "optical_props%init(): band_lims_gpt has values < 1"
+      if (check_extents) then
+        if(.not. extents_are(band_lims_gpt, 2, size(band_lims_wvn,2))) &
+          err_message = "optical_props%init(): band_lims_gpt size inconsistent with band_lims_wvn"
+      end if
+      if (check_values) then
+        if(any(band_lims_gpt < 1) ) &
+          err_message = "optical_props%init(): band_lims_gpt has values < 1"
+      end if
       if(err_message /= "") return
 
       band_lims_gpt_lcl(:,:) = band_lims_gpt(:,:)
@@ -515,13 +522,17 @@ contains
     err_message = ""
 
     if(present(for)) then
-      if(.not. extents_are(for, ncol, nlay, ngpt)) then
-        err_message = "delta_scale: dimension of 'for' don't match optical properties arrays"
-        return
+      if (check_extents) then
+        if(.not. extents_are(for, ncol, nlay, ngpt)) then
+          err_message = "delta_scale: dimension of 'for' don't match optical properties arrays"
+          return
+        end if
       end if
-      if(any_vals_outside(for, 0._wp, 1._wp)) then
-        err_message = "delta_scale: values of 'for' out of bounds [0,1]"
-        return
+      if (check_values) then
+        if(any_vals_outside(for, 0._wp, 1._wp)) then
+          err_message = "delta_scale: values of 'for' out of bounds [0,1]"
+          return
+        end if
       end if
       call delta_scale_2str_kernel(ncol, nlay, ngpt, this%tau, this%ssa, this%g, for)
     else
@@ -552,8 +563,10 @@ contains
       err_message = "validate: tau not allocated/initialized"
       return
     end if
-    if(any_vals_less_than(this%tau, 0._wp)) &
-      err_message = "validate: tau values out of range"
+    if (check_values) then
+      if(any_vals_less_than(this%tau, 0._wp)) &
+        err_message = "validate: tau values out of range"
+    end if
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
       err_message = trim(this%get_name()) // ': ' // trim(err_message)
 
@@ -569,25 +582,29 @@ contains
     !
     ! Array allocation status, sizing
     !
-    if(.not. all([allocated(this%tau), allocated(this%ssa), allocated(this%g)])) then
-      err_message = "validate: arrays not allocated/initialized"
-      return
+    if(check_extents) then
+      if(.not. all([allocated(this%tau), allocated(this%ssa), allocated(this%g)])) then
+        err_message = "validate: arrays not allocated/initialized"
+        return
+      end if
+      d1 = size(this%tau, 1)
+      d2 = size(this%tau, 2)
+      d3 = size(this%tau, 3)
+      if(.not. extents_are(this%ssa, d1, d2, d3) .or. &
+        .not. extents_are(this%g  , d1, d2, d3))     &
+      err_message = "validate: arrays not sized consistently"
     end if
-    d1 = size(this%tau, 1)
-    d2 = size(this%tau, 2)
-    d3 = size(this%tau, 3)
-    if(.not. extents_are(this%ssa, d1, d2, d3) .or. &
-       .not. extents_are(this%g  , d1, d2, d3))     &
-    err_message = "validate: arrays not sized consistently"
     !
     ! Valid values
     !
-    if(any_vals_less_than(this%tau,  0._wp)) &
-      err_message = "validate: tau values out of range"
-    if(any_vals_outside  (this%ssa,  0._wp, 1._wp)) &
-      err_message = "validate: ssa values out of range"
-    if(any_vals_outside  (this%g  , -1._wp, 1._wp)) &
-      err_message = "validate: g values out of range"
+    if (check_values) then
+      if(any_vals_less_than(this%tau,  0._wp)) &
+        err_message = "validate: tau values out of range"
+      if(any_vals_outside  (this%ssa,  0._wp, 1._wp)) &
+        err_message = "validate: ssa values out of range"
+      if(any_vals_outside  (this%g  , -1._wp, 1._wp)) &
+        err_message = "validate: g values out of range"
+    end if
 
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
       err_message = trim(this%get_name()) // ': ' // trim(err_message)
@@ -613,19 +630,22 @@ contains
     d2 = size(this%tau, 2)
     d3 = size(this%tau, 3)
     d4 = size(this%p,   1)
-    if(.not. extents_are(this%ssa, d1, d2, d3) .or. &
-       .not. extents_are(this%p  , d4, d1, d2, d3))     &
-    err_message = "validate: arrays not sized consistently"
+    if (check_extents) then
+      if(.not. extents_are(this%ssa, d1, d2, d3) .or. &
+        .not. extents_are(this%p  , d4, d1, d2, d3))     &
+      err_message = "validate: arrays not sized consistently"
+    end if
     !
     ! Valid values
     !
-    if(any_vals_less_than(this%tau,  0._wp)) &
-      err_message = "validate: tau values out of range"
-    if(any_vals_outside  (this%ssa,  0._wp, 1._wp)) &
-      err_message = "validate: ssa values out of range"
-    if(any_vals_outside  (this%p(1,:,:,:),  &
-                                                                           -1._wp, 1._wp)) &
-      err_message = "validate: p(1,:,:,:)  = g values out of range"
+    if (check_values) then
+      if(any_vals_less_than(this%tau,  0._wp)) &
+        err_message = "validate: tau values out of range"
+      if(any_vals_outside  (this%ssa,  0._wp, 1._wp)) &
+        err_message = "validate: ssa values out of range"
+      if(any_vals_outside  (this%p(1,:,:,:), -1._wp, 1._wp)) &
+        err_message = "validate: p(1,:,:,:)  = g values out of range"
+    end if
 
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
         err_message = trim(this%get_name()) // ': ' // trim(err_message)

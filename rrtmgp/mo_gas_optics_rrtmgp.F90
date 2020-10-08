@@ -710,6 +710,8 @@ contains
       !
       !$acc kernels
       norm = 1._wp/sum(this%solar_source(:))
+      !$acc end kernels
+      !$acc kernels
       this%solar_source(:) = this%solar_source(:) * tsi * norm
       !$acc end kernels
     end if
@@ -1179,6 +1181,7 @@ contains
       allocate(this%krayl(size(rayl_lower,dim=1),size(rayl_lower,dim=2),size(rayl_lower,dim=3),2))
       this%krayl(:,:,:,1) = rayl_lower
       this%krayl(:,:,:,2) = rayl_upper
+      !$acc enter data copyin(this%krayl)
     end if
 
     ! ---- post processing ----

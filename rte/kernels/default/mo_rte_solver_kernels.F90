@@ -28,6 +28,7 @@
 module mo_rte_solver_kernels
   use,  intrinsic :: iso_c_binding
   use mo_rte_kind, only: wp, wl
+  use mo_rte_config, only: compute_Jac
   implicit none
   private
 
@@ -133,7 +134,7 @@ contains
       !
       sfc_albedo(:) = 1._wp - sfc_emis(:,igpt)
       source_sfc(:) = sfc_emis(:,igpt) * sfc_src(:,igpt)
-      source_sfcJac(:) = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
+      if (compute_Jac) source_sfcJac(:) = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
       !
       ! Transport
       !
@@ -146,7 +147,7 @@ contains
       !
       radn_dn   (:,:,igpt) = 2._wp * pi * weight * radn_dn   (:,:,igpt)
       radn_up   (:,:,igpt) = 2._wp * pi * weight * radn_up   (:,:,igpt)
-      radn_upJac(:,:,igpt) = 2._wp * pi * weight * radn_upJac(:,:,igpt)
+      if (compute_Jac) radn_upJac(:,:,igpt) = 2._wp * pi * weight * radn_upJac(:,:,igpt)
     end do  ! g point loop
 
   end subroutine lw_solver_noscat
@@ -210,7 +211,7 @@ contains
                             sfc_srcJac, radn_upJac)
       flux_up   (:,:,:) = flux_up   (:,:,:) + radn_up   (:,:,:)
       flux_dn   (:,:,:) = flux_dn   (:,:,:) + radn_dn   (:,:,:)
-      flux_upJac(:,:,:) = flux_upJac(:,:,:) + radn_upJac(:,:,:)
+      if (compute_Jac) flux_upJac(:,:,:) = flux_upJac(:,:,:) + radn_upJac(:,:,:)
 
     end do
   end subroutine lw_solver_noscat_GaussQuad
@@ -474,12 +475,12 @@ contains
 
       ! Surface reflection and emission
       radn_up   (:,nlay+1) = radn_dn(:,nlay+1)*sfc_albedo(:) + source_sfc   (:)
-      radn_upJac(:,nlay+1) = source_sfcJac(:)
+      if (compute_Jac) radn_upJac(:,nlay+1) = source_sfcJac(:)
 
       ! Upward propagation
       do ilev = nlay, 1, -1
         radn_up   (:,ilev) = trans(:,ilev  )*radn_up   (:,ilev+1) + source_up(:,ilev)
-        radn_upJac(:,ilev) = trans(:,ilev  )*radn_upJac(:,ilev+1)
+        if (compute_Jac) radn_upJac(:,ilev) = trans(:,ilev  )*radn_upJac(:,ilev+1)
       end do
     else
       !
@@ -492,12 +493,12 @@ contains
 
       ! Surface reflection and emission
       radn_up   (:, 1) = radn_dn(:,1)*sfc_albedo(:) + source_sfc   (:)
-      radn_upJac(:, 1) = source_sfcJac(:)
+      if (compute_Jac) radn_upJac(:, 1) = source_sfcJac(:)
 
       ! Upward propagation
       do ilev = 2, nlay+1
         radn_up   (:,ilev) = trans(:,ilev-1) * radn_up   (:,ilev-1) +  source_up(:,ilev-1)
-        radn_upJac(:,ilev) = trans(:,ilev-1) * radn_upJac(:,ilev-1)
+        if (compute_Jac) radn_upJac(:,ilev) = trans(:,ilev-1) * radn_upJac(:,ilev-1)
       end do
     end if
   end subroutine lw_transport_noscat
@@ -1075,7 +1076,7 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
     !
     sfc_albedo(:)    = 1._wp - sfc_emis(:,igpt)
     source_sfc(:)    = sfc_emis(:,igpt) * sfc_src   (:,igpt)
-    source_sfcJac(:) = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
+    if (compute_Jac) source_sfcJac(:) = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
     !
     ! Transport
     !
@@ -1085,7 +1086,7 @@ subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                      
                              radn_up(:,:,igpt), radn_dn(:,:,igpt), &
                              source_sfcJac, rad_up_Jac(:,:,igpt))
 
-    rad_dn_Jac(:,:,igpt) = 0._wp
+    if (compute_Jac) rad_dn_Jac(:,:,igpt) = 0._wp
     !  make adjustment
     call lw_transport_1rescl(ncol, nlay, top_at_1, trans, &
                              source_dn, source_up, &
@@ -1167,8 +1168,8 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
 
   flux_up     = flux_up     * weight
   flux_dn     = flux_dn     * weight
-  flux_up_Jac = flux_up_Jac * weight
-  flux_dn_Jac = flux_dn_Jac * weight
+  if (compute_Jac) flux_up_Jac = flux_up_Jac * weight
+  if (compute_Jac) flux_dn_Jac = flux_dn_Jac * weight
   do imu = 2, nmus
     Ds_ncol(:,:) = Ds(imu)
     weight = 2._wp*pi*weights(imu)
@@ -1183,8 +1184,8 @@ subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weig
 
     flux_up    (:,:,:) = flux_up    (:,:,:) + weight*radn_up    (:,:,:)
     flux_dn    (:,:,:) = flux_dn    (:,:,:) + weight*radn_dn    (:,:,:)
-    flux_up_Jac(:,:,:) = flux_up_Jac(:,:,:) + weight*radn_up_Jac(:,:,:)
-    flux_dn_Jac(:,:,:) = flux_dn_Jac(:,:,:) + weight*radn_dn_Jac(:,:,:)
+    if (compute_Jac) flux_up_Jac(:,:,:) = flux_up_Jac(:,:,:) + weight*radn_up_Jac(:,:,:)
+    if (compute_Jac) flux_dn_Jac(:,:,:) = flux_dn_Jac(:,:,:) + weight*radn_dn_Jac(:,:,:)
   end do
   end subroutine lw_solver_1rescl_GaussQuad
 ! -------------------------------------------------------------------------------------------------
@@ -1297,7 +1298,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     ! 1st Upward propagation
     do ilev = nlay, 1, -1
       radn_up    (:,ilev) = trans(:,ilev)*radn_up    (:,ilev+1) + source_up(:,ilev)
-      radn_up_Jac(:,ilev) = trans(:,ilev)*radn_up_Jac(:,ilev+1)
+      if (compute_Jac) radn_up_Jac(:,ilev) = trans(:,ilev)*radn_up_Jac(:,ilev+1)
       do icol=1,ncol
           adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev) - &
                    trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
@@ -1307,15 +1308,17 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     ! 2nd Downward propagation
     do ilev = 1, nlay
       radn_dn    (:,ilev+1) = trans(:,ilev)*radn_dn    (:,ilev) + source_dn(:,ilev)
-      radn_dn_Jac(:,ilev+1) = trans(:,ilev)*radn_dn_Jac(:,ilev)
+      if (compute_Jac) radn_dn_Jac(:,ilev+1) = trans(:,ilev)*radn_dn_Jac(:,ilev)
       do icol=1,ncol
           adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
                    trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
 
           radn_dn    (icol,ilev+1) = radn_dn(icol,ilev+1) + adjustmentFactor
 
+          if (compute_Jac) then
           adjustmentFactor         = Cn(icol,ilev)*An(icol,ilev)*radn_up_Jac(icol,ilev)
           radn_dn_Jac(icol,ilev+1) = radn_dn_Jac(icol,ilev+1) + adjustmentFactor
+          endif
       enddo
     end do
   else
@@ -1325,7 +1328,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     ! Upward propagation
     do ilev = 1, nlay
       radn_up    (:,ilev+1) = trans(:,ilev) * radn_up    (:,ilev) +  source_up(:,ilev)
-      radn_up_Jac(:,ilev+1) = trans(:,ilev) * radn_up_Jac(:,ilev)
+      if (compute_Jac) radn_up_Jac(:,ilev+1) = trans(:,ilev) * radn_up_Jac(:,ilev)
       do icol=1,ncol
           adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev+1) - &
                    trans(icol,ilev)*source_dn(icol,ilev) - source_up(icol,ilev) )
@@ -1336,14 +1339,16 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     ! 2st Downward propagation
     do ilev = nlay, 1, -1
       radn_dn    (:,ilev) = trans(:,ilev)*radn_dn    (:,ilev+1) + source_dn(:,ilev)
-      radn_dn_Jac(:,ilev) = trans(:,ilev)*radn_dn_Jac(:,ilev+1)
+      if (compute_Jac) radn_dn_Jac(:,ilev) = trans(:,ilev)*radn_dn_Jac(:,ilev+1)
       do icol=1,ncol
           adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_up(icol,ilev) - &
                    trans(icol,ilev)*source_up(icol,ilev) - source_dn(icol,ilev) )
           radn_dn(icol,ilev)  = radn_dn(icol,ilev) + adjustmentFactor
 
+          if (compute_Jac) then
           adjustmentFactor    = Cn(icol,ilev)*An(icol,ilev)*radn_up_Jac(icol,ilev)
           radn_dn_Jac(icol,ilev) = radn_dn_Jac(icol,ilev) + adjustmentFactor
+          endif
       enddo
     end do
   end if

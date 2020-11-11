@@ -20,12 +20,12 @@ using yakl::fortran::Bounds;
 using std::max;
 using std::min;
 using std::abs;
-using yakl::fortran::mod;
-using yakl::fortran::merge;
-using yakl::fortran::size;
-using yakl::fortran::sum;
-using yakl::fortran::count;
-using yakl::fortran::allocated;
+using yakl::intrinsics::mod;
+using yakl::intrinsics::merge;
+using yakl::intrinsics::size;
+using yakl::intrinsics::sum;
+using yakl::intrinsics::count;
+using yakl::intrinsics::allocated;
 using yakl::memHost;
 using yakl::memDevice;
 

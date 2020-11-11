@@ -3,6 +3,10 @@ project(standalone)
 
 enable_testing()
 
+if ("${ARCH}" STREQUAL "CUDA")
+  enable_language(CUDA)
+endif()
+
 file(GLOB CPP_SRC ../rrtmgp/*.cpp
                   ../rrtmgp/kernels/*.cpp
                   ../rte/*.cpp

@@ -9,10 +9,10 @@
 #include "mo_rrtmgp_util_reorder.h"
 #include "mo_gas_concentrations.h"
 
-using yakl::fortran::count;
-using yakl::fortran::pack;
-using yakl::fortran::lbound;
-using yakl::fortran::ubound;
+using yakl::intrinsics::count;
+using yakl::intrinsics::pack;
+using yakl::intrinsics::lbound;
+using yakl::intrinsics::ubound;
 using yakl::COLON;
 
 // This code is part of RRTM for GCM Applications - Parallel (RRTMGP)
@@ -437,17 +437,11 @@ public:
                         minor_limits_gpt_lower_red, minor_scales_with_density_lower_red, scaling_gas_lower_red, 
                         scale_by_complement_lower_red, kminor_start_lower_red);
 
-    this->kminor_lower                    = real3d("kminor_lower                   " , kminor_lower_red                   .get_bounds() );
-    this->minor_limits_gpt_lower          = int2d ("minor_limits_gpt_lower         " , minor_limits_gpt_lower_red         .get_bounds() );
-    this->minor_scales_with_density_lower = bool1d("minor_scales_with_density_lower" , minor_scales_with_density_lower_red.get_bounds() );
-    this->scale_by_complement_lower       = bool1d("scale_by_complement_lower      " , scale_by_complement_lower_red      .get_bounds() );
-    this->kminor_start_lower              = int1d ("kminor_start_lower             " , kminor_start_lower_red             .get_bounds() );
-    // Copy Host temps to class device data members
-    kminor_lower_red                   .deep_copy_to(this->kminor_lower                   );
-    minor_limits_gpt_lower_red         .deep_copy_to(this->minor_limits_gpt_lower         );
-    minor_scales_with_density_lower_red.deep_copy_to(this->minor_scales_with_density_lower);
-    scale_by_complement_lower_red      .deep_copy_to(this->scale_by_complement_lower      );
-    kminor_start_lower_red             .deep_copy_to(this->kminor_start_lower             );
+    this->kminor_lower                    = kminor_lower_red                   .createDeviceCopy();
+    this->minor_limits_gpt_lower          = minor_limits_gpt_lower_red         .createDeviceCopy();
+    this->minor_scales_with_density_lower = minor_scales_with_density_lower_red.createDeviceCopy();
+    this->scale_by_complement_lower       = scale_by_complement_lower_red      .createDeviceCopy();
+    this->kminor_start_lower              = kminor_start_lower_red             .createDeviceCopy();
 
     // Find the largest number of g-points per band
     this->max_gpt_diff_lower = minor_limits_gpt_lower_red(2,1) - minor_limits_gpt_lower_red(1,1);
@@ -470,17 +464,11 @@ public:
                         minor_limits_gpt_upper_red, minor_scales_with_density_upper_red, scaling_gas_upper_red, 
                         scale_by_complement_upper_red, kminor_start_upper_red);
 
-    this->kminor_upper                    = real3d("kminor_upper                   " , kminor_upper_red                   .get_bounds() );
-    this->minor_limits_gpt_upper          = int2d ("minor_limits_gpt_upper         " , minor_limits_gpt_upper_red         .get_bounds() );
-    this->minor_scales_with_density_upper = bool1d("minor_scales_with_density_upper" , minor_scales_with_density_upper_red.get_bounds() );
-    this->scale_by_complement_upper       = bool1d("scale_by_complement_upper      " , scale_by_complement_upper_red      .get_bounds() );
-    this->kminor_start_upper              = int1d ("kminor_start_upper             " , kminor_start_upper_red             .get_bounds() );
-    // Copy Host temps to class device data members
-    kminor_upper_red                   .deep_copy_to(this->kminor_upper                   );
-    minor_limits_gpt_upper_red         .deep_copy_to(this->minor_limits_gpt_upper         );
-    minor_scales_with_density_upper_red.deep_copy_to(this->minor_scales_with_density_upper);
-    scale_by_complement_upper_red      .deep_copy_to(this->scale_by_complement_upper      );
-    kminor_start_upper_red             .deep_copy_to(this->kminor_start_upper             );
+    this->kminor_upper                    = kminor_upper_red                   .createDeviceCopy();
+    this->minor_limits_gpt_upper          = minor_limits_gpt_upper_red         .createDeviceCopy();
+    this->minor_scales_with_density_upper = minor_scales_with_density_upper_red.createDeviceCopy();
+    this->scale_by_complement_upper       = scale_by_complement_upper_red      .createDeviceCopy();
+    this->kminor_start_upper              = kminor_start_upper_red             .createDeviceCopy();
 
     // Find the largest number of g-points per band
     this->max_gpt_diff_upper = minor_limits_gpt_upper_red(2,1) - minor_limits_gpt_upper_red(1,1);
@@ -512,8 +500,7 @@ public:
           }
         }
       }
-      this->krayl = real4d("krayl",krayltmp.get_bounds());
-      krayltmp.deep_copy_to(this->krayl);
+      this->krayl = krayltmp.createDeviceCopy();
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -536,19 +523,15 @@ public:
     intHost1d idx_minor_upper_tmp;
     create_idx_minor(this->gas_names, gas_minor, identifier_minor, minor_gases_lower_red, idx_minor_lower_tmp);
     create_idx_minor(this->gas_names, gas_minor, identifier_minor, minor_gases_upper_red, idx_minor_upper_tmp);
-    this->idx_minor_lower = int1d("idx_minor_lower",idx_minor_lower_tmp.get_bounds());
-    this->idx_minor_upper = int1d("idx_minor_upper",idx_minor_upper_tmp.get_bounds());
-    idx_minor_lower_tmp.deep_copy_to(this->idx_minor_lower);
-    idx_minor_upper_tmp.deep_copy_to(this->idx_minor_upper);
+    this->idx_minor_lower = idx_minor_lower_tmp.createDeviceCopy();
+    this->idx_minor_upper = idx_minor_upper_tmp.createDeviceCopy();
     // Get index of gas (if present) that has special treatment in density scaling
     intHost1d idx_minor_scaling_lower_tmp;
     intHost1d idx_minor_scaling_upper_tmp;
     create_idx_minor_scaling(this->gas_names, scaling_gas_lower_red, idx_minor_scaling_lower_tmp);
     create_idx_minor_scaling(this->gas_names, scaling_gas_upper_red, idx_minor_scaling_upper_tmp);
-    this->idx_minor_scaling_lower = int1d("idx_minor_scaling_lower",idx_minor_scaling_lower_tmp.get_bounds());
-    this->idx_minor_scaling_upper = int1d("idx_minor_scaling_upper",idx_minor_scaling_upper_tmp.get_bounds());
-    idx_minor_scaling_lower_tmp.deep_copy_to(this->idx_minor_scaling_lower);
-    idx_minor_scaling_upper_tmp.deep_copy_to(this->idx_minor_scaling_upper);
+    this->idx_minor_scaling_lower = idx_minor_scaling_lower_tmp.createDeviceCopy();
+    this->idx_minor_scaling_upper = idx_minor_scaling_upper_tmp.createDeviceCopy();
 
     // create flavor list
     // Reduce (remap) key_species list; checks that all key gases are present in incoming

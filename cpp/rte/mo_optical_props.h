@@ -4,11 +4,11 @@
 #include "const.h"
 #include "mo_optical_props_kernels.h"
 
-using yakl::fortran::anyLT;
-using yakl::fortran::anyGT;
-using yakl::fortran::allocated;
-using yakl::fortran::maxval;
-using yakl::fortran::epsilon;
+using yakl::intrinsics::anyLT;
+using yakl::intrinsics::anyGT;
+using yakl::intrinsics::allocated;
+using yakl::intrinsics::maxval;
+using yakl::intrinsics::epsilon;
 
 // Base class for optical properties
 //   Describes the spectral discretization including the wavenumber limits

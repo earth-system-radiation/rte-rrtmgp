@@ -6,7 +6,6 @@ printf "NetCDF Flags: $NCFLAGS\n\n"
 ############################################################################
 ## RUN THE CONFIGURE
 ############################################################################
-CXXFLAGS="$CXXFLAGS -std=c++14"
 
 printf "CXXFLAGS: $CXXFLAGS\n\n"
 

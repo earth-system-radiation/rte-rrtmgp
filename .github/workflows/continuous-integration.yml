@@ -133,11 +133,10 @@ jobs:
       env:
         RTE_KERNELS: ${{ matrix.rte-kernels }}
       run: |
-        echo "::set-env name=RRTMGP_ROOT::${GITHUB_WORKSPACE}"
-        export RRTMGP_ROOT=${GITHUB_WORKSPACE}
-        export RRTMGP_BUILD=${RRTMGP_ROOT}/build
+        echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
+        echo "RRTMGP_BUILD=${GITHUB_WORKSPACE}/build" >> $GITHUB_ENV
         source /opt/intel/oneapi/setvars.sh || true
-        cd ${RRTMGP_ROOT}
+        cd ${GITHUB_WORKSPACE}
         ${FC} --version
         make -C build -j 2
         make -C tests -j 1

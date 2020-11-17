@@ -29,7 +29,7 @@ jobs:
       if: contains(matrix.fortran-compiler, 'gfortran-10')
       run: |
         sudo apt-get install gfortran-10 gcc-10
-        echo "::set-env name=CC::gcc-10"
+        echo "CC=gcc-10" >> $GITHUB_ENV
     #
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
@@ -46,9 +46,9 @@ jobs:
         sudo apt-get install intel-oneapi-common-licensing intel-oneapi-common-vars
         sudo apt-get install intel-oneapi-dev-utilities  intel-oneapi-dpcpp-cpp-compiler-pro
         sudo apt-get install intel-oneapi-ifort intel-oneapi-inspector intel-oneapi-itac
-        echo "::set-env name=FC::ifort"
-        echo "::set-env name=CC::icx"
-        echo "::set-env name=FCFLAGS::-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+        echo "FC=fort" >> $GITHUB_ENV
+        echo "CC=icx"  >> $GITHUB_ENV
+        echo "FCFLAGS='-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08'" >> $GITHUB_ENV
 
     # Caching cribbed from https://github.com/NCAR/ParallelIO/blob/3a77973ad5e09d354257045bf3d53827ae36a86b/.github/workflows/a3.yml#L1
     - name: cache-nvidia-compilers
@@ -73,10 +73,10 @@ jobs:
         NVCOMPILERS: /opt/nvidia/hpc_sdk
       if: contains(matrix.fortran-compiler, 'nvfortran')
       run: |
-        echo "::set-env name=FC::nvfortran"
-        echo "::set-env name=CC::nvc"
-        echo "::set-env name=FCFLAGS::-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-        echo "::add-path::${NVCOMPILERS}/Linux_x86_64/20.7/compilers/bin"
+        echo "FC=nvfortran" >> $GITHUB_ENV
+        echo "CC=nvc"       >> $GITHUB_ENV
+        echo "FCFLAGS='-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk'" >> $GITHUB_ENV
+        echo "${NVCOMPILERS}/Linux_x86_64/20.7/compilers/bin" >> $GITHUB_PATH
     ############################################################################
     # Netcdf C and Fortran
     #

@@ -48,7 +48,7 @@ jobs:
         sudo apt-get install intel-oneapi-ifort intel-oneapi-inspector intel-oneapi-itac
         echo "FC=fort" >> $GITHUB_ENV
         echo "CC=icx"  >> $GITHUB_ENV
-        echo "FCFLAGS='-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08'" >> $GITHUB_ENV
+        echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
 
     # Caching cribbed from https://github.com/NCAR/ParallelIO/blob/3a77973ad5e09d354257045bf3d53827ae36a86b/.github/workflows/a3.yml#L1
     - name: cache-nvidia-compilers
@@ -75,7 +75,7 @@ jobs:
       run: |
         echo "FC=nvfortran" >> $GITHUB_ENV
         echo "CC=nvc"       >> $GITHUB_ENV
-        echo "FCFLAGS='-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk'" >> $GITHUB_ENV
+        echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
         echo "${NVCOMPILERS}/Linux_x86_64/20.7/compilers/bin" >> $GITHUB_PATH
     ############################################################################
     # Netcdf C and Fortran

@@ -46,7 +46,7 @@ jobs:
         sudo apt-get install intel-oneapi-common-licensing intel-oneapi-common-vars
         sudo apt-get install intel-oneapi-dev-utilities  intel-oneapi-dpcpp-cpp-compiler-pro
         sudo apt-get install intel-oneapi-ifort intel-oneapi-inspector intel-oneapi-itac
-        echo "FC=fort" >> $GITHUB_ENV
+        echo "FC=ifort" >> $GITHUB_ENV
         echo "CC=icx"  >> $GITHUB_ENV
         echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
 

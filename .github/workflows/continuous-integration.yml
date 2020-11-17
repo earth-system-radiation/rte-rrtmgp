@@ -130,6 +130,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Environmental variables
+      run: |
         echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
         echo "RRTMGP_BUILD=${GITHUB_WORKSPACE}/build" >> $GITHUB_ENV
 

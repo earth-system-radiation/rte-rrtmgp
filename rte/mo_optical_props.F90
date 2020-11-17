@@ -163,6 +163,7 @@ module mo_optical_props
     procedure, public  :: validate => validate_1scalar
     procedure, public  :: get_subset => subset_1scl_range
     procedure, public  :: delta_scale => delta_scale_1scl
+    procedure, public  :: finalize => finalize_1scl
 
     procedure, private :: alloc_only_1scl
     procedure, private :: init_and_alloc_1scl
@@ -178,6 +179,7 @@ module mo_optical_props
     procedure, public  :: validate => validate_2stream
     procedure, public  :: get_subset => subset_2str_range
     procedure, public  :: delta_scale => delta_scale_2str
+    procedure, public  :: finalize => finalize_2str
 
     procedure, private :: alloc_only_2str
     procedure, private :: init_and_alloc_2str
@@ -194,6 +196,7 @@ module mo_optical_props
     procedure, public :: get_subset => subset_nstr_range
     procedure, public :: delta_scale => delta_scale_nstr
     procedure, public :: get_nmom
+    procedure, public :: finalize => finalize_nstr
 
     procedure, private :: alloc_only_nstr
     procedure, private :: init_and_alloc_nstr
@@ -482,6 +485,35 @@ contains
     if(err_message /= "") return
     err_message = this%alloc_nstr(nmom, ncol, nlay)
   end function copy_and_alloc_nstr
+  ! ------------------------------------------------------------------------------------------
+  !
+  ! Finalize routines
+  !
+  ! ------------------------------------------------------------------------------------------
+  subroutine finalize_1scl(this)
+    class(ty_optical_props_1scl), intent(inout) :: this
+    
+    if(allocated(this%tau)) deallocate(this%tau)    
+    this%name = ""
+  end subroutine finalize_1scl
+  ! ---------------------------------------------------------------------------
+  subroutine finalize_2str(this)
+    class(ty_optical_props_2str), intent(inout)  :: this
+    
+    if(allocated(this%tau)) deallocate(this%tau)    
+    if(allocated(this%ssa)) deallocate(this%ssa)    
+    if(allocated(this%g  )) deallocate(this%g  )    
+    this%name = ""
+  end subroutine finalize_2str
+  ! ---------------------------------------------------------------------------
+  subroutine finalize_nstr(this)
+    class(ty_optical_props_nstr), intent(inout)  :: this
+    
+    if(allocated(this%tau)) deallocate(this%tau)    
+    if(allocated(this%ssa)) deallocate(this%ssa)    
+    if(allocated(this%p  )) deallocate(this%p  )    
+    this%name = ""
+  end subroutine finalize_nstr  
   ! ------------------------------------------------------------------------------------------
   !
   !  Routines for array classes: delta-scaling, validation (ensuring all values can be used )

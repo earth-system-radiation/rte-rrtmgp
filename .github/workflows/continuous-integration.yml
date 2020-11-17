@@ -129,14 +129,16 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
 
+    - name: Environmental variables
+        echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
+        echo "RRTMGP_BUILD=${GITHUB_WORKSPACE}/build" >> $GITHUB_ENV
+
     - name: Make library, examples, tests
       env:
         RTE_KERNELS: ${{ matrix.rte-kernels }}
       run: |
-        echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
-        echo "RRTMGP_BUILD=${GITHUB_WORKSPACE}/build" >> $GITHUB_ENV
         source /opt/intel/oneapi/setvars.sh || true
-        cd ${GITHUB_WORKSPACE}
+        cd ${RRTMGP_ROOT}
         ${FC} --version
         make -C build -j 2
         make -C tests -j 1

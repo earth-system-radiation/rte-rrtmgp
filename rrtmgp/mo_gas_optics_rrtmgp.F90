@@ -494,7 +494,7 @@ contains
     if(check_values) then
       if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &
         error_msg = "gas_optics(): array play has values outside range"
-      if(any_vals_outside(plev, this%press_ref_min,this%press_ref_max)) &
+      if(any_vals_less_than(plev, 0._wp)) &
         error_msg = "gas_optics(): array plev has values outside range"
       if(any_vals_outside(tlay, this%temp_ref_min,  this%temp_ref_max)) &
         error_msg = "gas_optics(): array tlay has values outside range"

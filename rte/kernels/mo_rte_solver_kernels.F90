@@ -27,7 +27,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_solver_kernels
   use,  intrinsic :: iso_c_binding
-  use mo_rte_kind, only: wp, wl
+  use mo_rte_kind, only: wp, dp, wl
   implicit none
   private
 
@@ -689,6 +689,14 @@ contains
     real(wp) :: exp_minusktau(ncol), exp_minus2ktau(ncol)
     real(WP) :: k_mu, k_gamma3, k_gamma4
     real(wp) :: mu0_inv(ncol)
+    real(wp) :: k_floor
+
+    if (wp == dp) then ! double precision
+      k_floor = 1.e-12_wp 
+     else              ! single precision
+      k_floor = 1.e-4_wp
+    end if
+
     ! ---------------------------------
     mu0_inv(1:ncol) = 1._wp/mu0(1:ncol)
     do j = 1, nlay
@@ -707,7 +715,7 @@ contains
         !   k = 0 for isotropic, conservative scattering; this lower limit on k
         !   gives relative error with respect to conservative solution
         !   of < 0.1% in Rdif down to tau = 10^-9
-        k(i) = sqrt(max((gamma1(i) - gamma2(i)) * (gamma1(i) + gamma2(i)), 1.e-12_wp))
+        k(i) = sqrt(max((gamma1(i) - gamma2(i)) * (gamma1(i) + gamma2(i)), k_floor))
       end do
 
       ! Written to encourage vectorization of exponential

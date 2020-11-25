@@ -27,7 +27,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_solver_kernels
   use,  intrinsic :: iso_c_binding
-  use mo_rte_kind, only: wp, wl
+  use mo_rte_kind, only: wp, dp, wl
   implicit none
   private
 
@@ -853,6 +853,13 @@ contains
       real(wp) :: exp_minusktau, exp_minus2ktau
       real(wp) :: k_mu, k_gamma3, k_gamma4
       real(wp) :: mu0_inv(ncol)
+      real(wp) :: k_floor
+
+      if (wp == dp) then ! double precision
+        k_floor = 1.e-12_wp 
+       else              ! single precision
+        k_floor = 1.e-4_wp
+      end if
       ! ---------------------------------
       ! ---------------------------------
       !$acc enter data copyin (mu0, tau, w0, g)
@@ -887,7 +894,7 @@ contains
             !   of < 0.1% in Rdif down to tau = 10^-9
             k = sqrt(max((gamma1 - gamma2) * &
                          (gamma1 + gamma2),  &
-                         1.e-12_wp))
+                         k_floor))
             exp_minusktau = exp(-tau(icol,ilay,igpt)*k)
             !
             ! Diffuse reflection and transmission

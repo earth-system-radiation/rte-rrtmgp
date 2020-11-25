@@ -441,8 +441,8 @@ contains
         error_msg = 'cloud optics: ice effective radius is out of bounds'
       if(any_vals_less_than(clwp, liqmsk, 0._wp) .or. any_vals_less_than(ciwp, icemsk, 0._wp)) &
         error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
-      if(error_msg == "") then
     end if
+    if(error_msg == "") then
       !
       !
       ! ----------------------------------------
@@ -528,8 +528,7 @@ contains
       type is (ty_optical_props_nstr)
         error_msg = "cloud optics: n-stream calculations not yet supported"
       end select
-
-    end if ! error_msg == ""
+    end if 
     !$acc end data
   end function cloud_optics
   !--------------------------------------------------------------------------------------------------------------------

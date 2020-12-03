@@ -127,6 +127,39 @@ public:
   // Index into %gas_names -- is this a key species in any band?
   bool1d is_key;
 
+  void finalize () {
+      // Free memory
+      press_ref.deallocate();
+      press_ref_log.deallocate();
+      temp_ref.deallocate();
+      gas_names.deallocate();  // gas names
+      vmr_ref.deallocate();      // vmr_ref(lower or upper atmosphere, gas, temp)
+      flavor.deallocate();        // major species pair; (2,nflav)
+      gpoint_flavor.deallocate(); // flavor = gpoint_flavor(2, g-point)
+      kmajor.deallocate();       //  kmajor(g-point,eta,pressure,temperature)
+      minor_limits_gpt_lower.deallocate();
+      minor_limits_gpt_upper.deallocate();
+      minor_scales_with_density_lower.deallocate();
+      minor_scales_with_density_upper.deallocate();
+      scale_by_complement_lower.deallocate();
+      scale_by_complement_upper.deallocate();
+      idx_minor_lower.deallocate();
+      idx_minor_upper.deallocate();
+      idx_minor_scaling_lower.deallocate();
+      idx_minor_scaling_upper.deallocate();
+      kminor_start_lower.deallocate();
+      kminor_start_upper.deallocate();
+      kminor_lower.deallocate(); // kminor_lower(n_minor,eta,temperature)
+      kminor_upper.deallocate(); // kminor_upper(n_minor,eta,temperature)
+      krayl.deallocate(); // krayl(g-point,eta,temperature,upper/lower atmosphere)
+      planck_frac.deallocate();   // stored fraction of Planck irradiance in band for given g-point
+      totplnk.deallocate();       // integrated Planck irradiance by band; (Planck temperatures,band)
+      solar_src.deallocate(); // incoming solar irradiance(g-point)
+      is_key.deallocate();
+
+      // Free memory in base class
+      OpticalProps::finalize();
+  }
 
   // Everything except GasConcs is on the host by default, and the available_gases.gas_name is on the host as well
   // Things will be copied to the GPU outside of this routine and stored into class variables

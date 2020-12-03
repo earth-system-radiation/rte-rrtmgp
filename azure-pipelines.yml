@@ -1,71 +1,114 @@
 jobs:
 - job: build_daint
+  pool: CSCS
+  strategy:
+    matrix:
+      pgi_19_9_gpu:
+        compiler_base: pgi
+        compiler_module: PGI/19.9
+        accel_module: cudatoolkit
+        FCFLAGS: "-O3 -ta=tesla:cc60,cuda10.1 -Mallocatable=03 -gopt -Minline,reshape,maxsize:40"
+        RTE_KERNELS: openacc
+        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
+      pgi_default_gpu:
+        compiler_base: pgi
+        compiler_module: pgi
+        accel_module: craype-accel-nvidia60
+        # Generic accelerator flag
+        FCFLAGS: "-O3 -acc                   -Mallocatable=03 -gopt"
+        RTE_KERNELS: openacc
+        RUN_CMD: "srun -C gpu -A c15 -p cscsci"
+      pgi_19_10_cpu:
+        compiler_base: pgi
+        compiler_module: PGI/19.10
+        accel_module:
+        # Error checking flags
+        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+        RUN_CMD:
+      pgi_19_9_cpu:
+        compiler_base: pgi
+        compiler_module: PGI/19.9
+        accel_module:
+        # Error checking flags
+        FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+        RUN_CMD:
+      cce-cpu-icon-production:
+        compiler_base: cray
+        compiler_module: ccce-icon/9.0.2-classic
+        accel_module:
+        # Production flags for Icon model
+        FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
+    maxParallel: 2
 
   workspace:
     clean: all
 
   steps:
-
   - script: |
       set -e
-      # This module will unload some of the build modules, so load the files separately
+
+      echo "
       module load daint-gpu
-      module load cray-python/3.6.5.3 netcdf-python
+      export PATH=$CRAY_BINUTILS_BIN:$PATH
+      module swap PrgEnv-cray PrgEnv-$(compiler_base)
+      module swap $(compiler_base) $(compiler_module)
+      module load $(accel_module)
+      module load cray-netcdf cray-hdf5
+      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+      echo Compiler Environment:
+      module list
+      echo LD_LIBRARY_PATH is:
+      echo $LD_LIBRARY_PATH
+      " > compiler_modules
+
+    displayName: 'Create module environment'
+  - script: |
+      set -e
+      module load daint-gpu
+      module load netcdf-python
       cd examples/rfmip-clear-sky
       python ./stage_files.py
     displayName: 'Stage files'
-
   - script: |
       set -e
-      echo "Initial environment:"
-      module list
-
-      export PATH=$CRAY_BINUTILS_BIN:$PATH
-      module load daint-gpu
-      module swap PrgEnv-cray PrgEnv-pgi
-      module load cdt/19.08
-      module unload pgi
-      module load PGI/19.9.0
-      module load cray-netcdf cray-hdf5 cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8
-      module load cray-python/3.6.5.3
-      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
-
-      echo "*********************************************"
-      echo "Building environment:"
-      module list
-
-      export RTE_KERNELS="openacc"
+      source compiler_modules
       export RRTMGP_ROOT=$PWD
-      export RRTMGP_DIR=$PWD/build
-
+      export RRTMGP_BUILD=$PWD/build
       export FC=ftn
-      export FCFLAGS="-O3 -ta=tesla:cc60,cuda9.2 -Minfo -Mallocatable=03 -Mpreprocess -gopt -Minline,reshape,maxsize:40"
+      make -C build/ clean
 
       make -C build/ -j 8
+      make -C tests clean
+      make -C tests -j 1
+      make -C examples/all-sky clean
       make -C examples/all-sky -j 8
+      make -C examples/rfmip-clear-sky clean
       make -C examples/rfmip-clear-sky -j 8
-
-      cd examples/rfmip-clear-sky
-      srun -C gpu -A c15 -p cscsci python ./run-rfmip-examples.py
-      cd ../..
-
-      cd examples/all-sky
-      srun -C gpu -A c15 -p cscsci python ./run-allsky-example.py
-    displayName: 'Make & run'
-
+    displayName: 'Make'
   - script: |
       set -e
-
+      source compiler_modules
+      module load cray-python/3.6.5.7
+      export RRTMGP_ROOT=$PWD
+      cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
+      ${RUN_CMD} python ./run-rfmip-examples.py --block_size 1800
+      cd  ${RRTMGP_ROOT}/examples/all-sky
+      ${RUN_CMD} python ./run-allsky-example.py
+      cd  ${RRTMGP_ROOT}/tests
+      cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
+      ${RUN_CMD} ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
+      ${RUN_CMD} ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+    displayName: 'Run'
+  - script: |
+      set -e
       module load daint-gpu
+      export RRTMGP_ROOT=$PWD
       # This module will unload some of the build modules, so do the checks separately
-      module load cray-python/3.6.5.3 netcdf-python
-
-      cd examples/rfmip-clear-sky
-      python ./compare-to-reference.py --fail=1.e-4
-      cd ../..
-
-      cd examples/all-sky
+      module load netcdf-python
+      cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
+      python ./compare-to-reference.py --fail=7.e-4
+      cd ${RRTMGP_ROOT}/examples/all-sky
       python ./compare-to-reference.py
+      cd ${RRTMGP_ROOT}/tests
+      python verification.py
     displayName: 'Check results'
-
-  pool: CSCS

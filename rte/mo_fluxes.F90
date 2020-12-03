@@ -18,6 +18,7 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_fluxes
   use mo_rte_kind,       only: wp
+  use mo_rte_config,     only: check_extents
   use mo_rte_util_array, only: extents_are
   use mo_optical_props,  only: ty_optical_props
   use mo_fluxes_broadband_kernels, &
@@ -110,49 +111,43 @@ contains
     ngpt = size(gpt_flux_up, DIM=3)
     error_msg = ""
 
-    !
-    ! Check array sizes
-    !  Input arrays
-    !
-    if(.not. extents_are(gpt_flux_dn, ncol, nlev, ngpt)) then
-      error_msg = "reduce: gpt_flux_dn array incorrectly sized"
-      return
-    end if
-    if(present(gpt_flux_dn_dir)) then
-      if(.not. extents_are(gpt_flux_dn_dir, ncol, nlev, ngpt)) then
-        error_msg = "reduce: gpt_flux_dn_dir array incorrectly sized"
-        return
+    if(check_extents) then
+      !
+      ! Check array sizes
+      !  Input arrays
+      !
+      if(.not. extents_are(gpt_flux_dn, ncol, nlev, ngpt)) &
+        error_msg = "reduce: gpt_flux_dn array incorrectly sized"
+
+      if(present(gpt_flux_dn_dir)) then
+        if(.not. extents_are(gpt_flux_dn_dir, ncol, nlev, ngpt)) &
+          error_msg = "reduce: gpt_flux_dn_dir array incorrectly sized"
       end if
-    end if
-    !
-    ! Output arrays
-    !
-    if(associated(this%flux_up)) then
-      if(.not. extents_are(this%flux_up, ncol, nlev)) then
-        error_msg = 'reduce: flux_up array incorrectly sized'
-        return
+      !
+      ! Output arrays
+      !
+      if(associated(this%flux_up)) then
+        if(.not. extents_are(this%flux_up, ncol, nlev)) &
+          error_msg = 'reduce: flux_up array incorrectly sized'
       end if
-    end if
-    if(associated(this%flux_dn)) then
-      if(.not. extents_are(this%flux_dn, ncol, nlev)) then
-        error_msg = 'reduce: flux_dn array incorrectly sized'
-        return
+      if(associated(this%flux_dn)) then
+        if(.not. extents_are(this%flux_dn, ncol, nlev)) &
+          error_msg = 'reduce: flux_dn array incorrectly sized'
       end if
-    end if
-    if(associated(this%flux_net)) then
-      if(.not. extents_are(this%flux_net, ncol, nlev)) then
-        error_msg = 'reduce: flux_net array incorrectly sized'
-        return
+      if(associated(this%flux_net)) then
+        if(.not. extents_are(this%flux_net, ncol, nlev)) &
+          error_msg = 'reduce: flux_net array incorrectly sized'
       end if
-    end if
-    if(associated(this%flux_dn_dir)) then
-      if(.not. extents_are(this%flux_dn_dir, ncol, nlev)) then
-        error_msg = 'reduce: flux_dn_dir array incorrectly sized'
-        return
+      if(associated(this%flux_dn_dir)) then
+        if(.not. extents_are(this%flux_dn_dir, ncol, nlev)) &
+          error_msg = 'reduce: flux_dn_dir array incorrectly sized'
       end if
+
+      if(error_msg /= "") return
     end if
     !
     ! Self-consistency -- shouldn't be asking for direct beam flux if it isn't supplied
+    !
     if(associated(this%flux_dn_dir) .and. .not. present(gpt_flux_dn_dir)) then
       error_msg = "reduce: requesting direct downward flux but this hasn't been supplied"
       return

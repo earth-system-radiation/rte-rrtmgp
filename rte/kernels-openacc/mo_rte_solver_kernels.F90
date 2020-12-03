@@ -39,6 +39,7 @@ module mo_rte_solver_kernels
             lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
             sw_solver_noscat,                             sw_solver_2stream
 
+  public :: lw_solver_1rescl_GaussQuad,  lw_solver_1rescl
   ! These routines don't really need to be visible but making them so is useful for testing.
   public :: lw_source_noscat, lw_combine_sources, &
             lw_source_2str, sw_source_2str, &
@@ -60,7 +61,8 @@ contains
   ! ---------------------------------------------------------------
   subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                             &
                               tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
-                              radn_up, radn_dn) bind(C, name="lw_solver_noscat")
+                              radn_up, radn_dn, &
+                              sfc_srcJac, radn_upJac) bind(C, name="lw_solver_noscat")
     integer,                    intent( in) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                intent( in) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent( in) :: D            ! secant of propagation angle  []
@@ -78,11 +80,13 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up ! Radiances [W/m2-str]
                                                                            ! Top level must contain incident flux boundary condition
 
+    real(wp), dimension(ncol       ,ngpt), intent(in )   :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables, no g-point dependency
     real(wp), dimension(ncol,nlay,ngpt) :: tau_loc, &  ! path length (tau/mu)
                                            trans       ! transmissivity  = exp(-tau)
     real(wp), dimension(ncol,nlay,ngpt) :: source_dn, source_up
-    real(wp), dimension(ncol,     ngpt) :: source_sfc, sfc_albedo
+    real(wp), dimension(ncol,     ngpt) :: source_sfc, sfc_albedo, source_sfcJac
 
     real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
@@ -129,6 +133,14 @@ contains
       end do
     end do
 
+    !$acc enter data copyin(sfc_srcJac)
+    !$acc enter data create(source_sfcJac, radn_upJac)
+    !$acc parallel loop collapse(2)
+    do igpt = 1, ngpt
+      do icol = 1, ncol
+        source_sfcJac(icol,igpt) = sfc_emis(icol,igpt) * sfc_srcJac(icol,igpt)
+      end do
+    end do
     ! NOTE: This kernel produces small differences between GPU and CPU
     ! implementations on Ascent with PGI, we assume due to floating point
     ! differences in the exp() function. These differences are small in the
@@ -156,7 +168,7 @@ contains
     !
     call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
                              tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                             radn_up, radn_dn)
+                             radn_up, radn_dn, source_sfcJac, radn_upJac)
 
     !
     ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
@@ -165,11 +177,14 @@ contains
     do igpt = 1, ngpt
       do ilev = 1, nlay+1
         do icol = 1, ncol
-          radn_dn(icol,ilev,igpt) = 2._wp * pi * weight * radn_dn(icol,ilev,igpt)
-          radn_up(icol,ilev,igpt) = 2._wp * pi * weight * radn_up(icol,ilev,igpt)
+          radn_dn   (icol,ilev,igpt) = 2._wp * pi * weight * radn_dn   (icol,ilev,igpt)
+          radn_up   (icol,ilev,igpt) = 2._wp * pi * weight * radn_up   (icol,ilev,igpt)
+          radn_upJac(icol,ilev,igpt) = 2._wp * pi * weight * radn_upJac(icol,ilev,igpt)
         end do
       end do
     end do
+    !$acc exit data delete(sfc_srcJac, source_sfcJac)
+    !$acc exit data copyout(radn_upJac)
 
     !$acc exit data copyout(radn_dn,radn_up)
     !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo)
@@ -184,7 +199,8 @@ contains
   !
   ! ---------------------------------------------------------------
   subroutine lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
-                                   tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_up, flux_dn) &
+                                   tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_up, flux_dn,&
+                                   sfc_srcJac, flux_upJac) &
                                    bind (C, name="lw_solver_noscat_GaussQuad")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
@@ -202,8 +218,10 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn ! Radiances [W/m2-str]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up ! Radiances [W/m2-str]
                                                                            ! Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol       ,ngpt), intent(in )   :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables
-    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
+    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up, radn_upJac ! Fluxes per quad angle
     real(wp), dimension(ncol,       ngpt) :: Ds_ncol
     real(wp), dimension(ncol,       ngpt) :: flux_top
 
@@ -212,6 +230,8 @@ contains
 
     !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn)
     !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol,flux_top)
+    !$acc enter data copyin(sfc_srcJac)
+    !$acc enter data create(flux_upJac, radn_upJac)
 
     ! ------------------------------------
     ! ------------------------------------
@@ -225,7 +245,7 @@ contains
     call lw_solver_noscat(ncol, nlay, ngpt, &
                           top_at_1, Ds_ncol, weights(1), tau, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
-                          flux_up, flux_dn)
+                          flux_up, flux_dn, sfc_srcJac, flux_upJac)
     !
     ! For more than one angle use local arrays
     !
@@ -248,18 +268,21 @@ contains
       call lw_solver_noscat(ncol, nlay, ngpt, &
                             top_at_1, Ds_ncol, weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
-                            radn_up, radn_dn)
+                            radn_up, radn_dn, sfc_srcJac, radn_upJac)
       !$acc  parallel loop collapse(3)
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
           do icol = 1, ncol
-            flux_up(icol,ilev,ngpt) = flux_up(icol,ilev,ngpt) + radn_up(icol,ilev,ngpt)
-            flux_dn(icol,ilev,ngpt) = flux_dn(icol,ilev,ngpt) + radn_dn(icol,ilev,ngpt)
+            flux_up   (icol,ilev,igpt) = flux_up   (icol,ilev,igpt) + radn_up   (icol,ilev,igpt)
+            flux_dn   (icol,ilev,igpt) = flux_dn   (icol,ilev,igpt) + radn_dn   (icol,ilev,igpt)
+            flux_upJac(icol,ilev,igpt) = flux_upJac(icol,ilev,igpt) + radn_upJac(icol,ilev,igpt)
           end do
         end do
       end do
 
     end do ! imu loop
+    !$acc exit data delete(sfc_srcJac, radn_upJac)
+    !$acc exit data copyout(flux_upJac)
 
     !$acc exit data copyout(flux_up,flux_dn)
     !$acc exit data delete(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol,flux_top)
@@ -502,9 +525,11 @@ contains
     !   is of order epsilon (smallest difference from 1. in working precision)
     !   Thanks to Peter Blossey
     !
-    fact = merge((1._wp - trans(icol,ilay,igpt))/tau(icol,ilay,igpt) - trans(icol,ilay,igpt), &
-                          tau(icol,ilay,igpt) * ( 0.5_wp - 1._wp/3._wp*tau(icol,ilay,igpt) ), &
-                          tau(icol,ilay,igpt) > tau_thresh)
+    if(tau(icol,ilay,igpt) > tau_thresh) then
+      fact = (1._wp - trans(icol,ilay,igpt))/tau(icol,ilay,igpt) - trans(icol,ilay,igpt)
+    else
+      fact = tau(icol, ilay,igpt) * (0.5_wp - 1._wp/3._wp*tau(icol,ilay,igpt))
+    end if
     !
     ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
     !
@@ -553,7 +578,7 @@ contains
   ! ---------------------------------------------------------------
   subroutine lw_transport_noscat(ncol, nlay, ngpt, top_at_1, &
                                  tau, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                                 radn_up, radn_dn) bind(C, name="lw_transport_noscat")
+                                 radn_up, radn_dn, source_sfcJac, radn_upJac) bind(C, name="lw_transport_noscat")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: tau, &     ! Absorption optical thickness, pre-divided by mu []
@@ -565,6 +590,8 @@ contains
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn ! Radiances [W/m2-str]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up ! Radiances [W/m2-str]
                                                                              ! Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol       ,ngpt), intent(in )   :: source_sfcJac ! surface temperature Jacobian of surface source function [W/m2/K]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables
     integer :: igpt, ilev, icol
     ! ---------------------------------------------------
@@ -582,11 +609,13 @@ contains
           end do
 
           ! Surface reflection and emission
-          radn_up(icol,nlay+1,igpt) = radn_dn(icol,nlay+1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt)
+          radn_up   (icol,nlay+1,igpt) = radn_dn(icol,nlay+1,igpt)*sfc_albedo(icol,igpt) + source_sfc   (icol,igpt)
+          radn_upJac(icol,nlay+1,igpt) = source_sfcJac(icol,igpt)
 
           ! Upward propagation
           do ilev = nlay, 1, -1
-            radn_up(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_up(icol,ilev+1,igpt) + source_up(icol,ilev,igpt)
+            radn_up   (icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_up   (icol,ilev+1,igpt) + source_up(icol,ilev,igpt)
+            radn_upJac(icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_upJac(icol,ilev+1,igpt)
           end do
         end do
       end do
@@ -603,11 +632,13 @@ contains
           end do
 
           ! Surface reflection and emission
-          radn_up(icol,     1,igpt) = radn_dn(icol,     1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt)
+          radn_up   (icol,1,igpt) = radn_dn(icol,1,igpt)*sfc_albedo(icol,igpt) + source_sfc   (icol,igpt)
+          radn_upJac(icol,1,igpt) = source_sfcJac(icol,igpt)
 
           ! Upward propagation
           do ilev = 2, nlay+1
-            radn_up(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up(icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt)
+            radn_up   (icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up   (icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt)
+            radn_upJac(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_upJac(icol,ilev-1,igpt)
           end do
         end do
       end do
@@ -1197,5 +1228,452 @@ contains
       end do
     end if
   end subroutine apply_BC_0
+! -------------------------------------------------------------------------------------------------
+!
+! Similar to Longwave no-scattering (lw_solver_noscat)
+!   a) relies on rescaling of the optical parameters based on asymetry factor and single scattering albedo
+!       scaling can be computed  by scaling_1rescl
+!   b) adds adustment term based on cloud properties (lw_transport_1rescl)
+!      adustment terms is computed based on solution of the Tang equations
+!      for "linear-in-tau" internal source (not in the paper)
+!
+!   Attention:
+!      use must prceompute scaling before colling the function
+!
+!   Implemented based on the paper
+!   Tang G, et al, 2018: https://doi.org/10.1175/JAS-D-18-0014.1
+!
+! -------------------------------------------------------------------------------------------------
+  subroutine lw_solver_1rescl(ncol, nlay, ngpt, top_at_1, D,                             &
+                              tau, scaling, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                              radn_up, radn_dn, &
+                              sfc_srcJac, rad_up_Jac, rad_dn_Jac) bind(C, name="lw_solver_1rescl")
+    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    logical(wl),                           intent(in   ) :: top_at_1
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: scaling          ! single scattering albedo []
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
+    ! Planck source at layer edge for radiation in increasing/decreasing ilay direction
+    ! lev_source_dec applies the mapping in layer i to the Planck function at layer i
+    ! lev_source_inc applies the mapping in layer i to the Planck function at layer i+1
+    real(wp), dimension(ncol,nlay,  ngpt), target, &
+                                           intent(in   ) :: lev_source_inc, lev_source_dec
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up      ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn      ! Top level must contain incident flux boundary condition
 
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_srcJac   ! Surface Temperature Jacobian source function [W/m2/K]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: rad_up_Jac  ! Surface Temperature Jacobians [W/m2-str/K]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: rad_dn_Jac  ! Top level set to 0
+    ! Local variables, WITH g-point dependency
+    real(wp), dimension(ncol,nlay,ngpt) :: tau_loc, &  ! path length (tau/mu)
+                                             trans       ! transmissivity  = exp(-tau)
+    real(wp), dimension(ncol,nlay,ngpt) :: source_dn, source_up
+    real(wp), dimension(ncol,     ngpt) :: source_sfc, sfc_albedo
+    real(wp), dimension(ncol,     ngpt) :: source_sfcJac
+
+    real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
+
+    real(wp), parameter :: pi = acos(-1._wp)
+    integer             :: ilev, igpt, top_level
+    ! ------------------------------------
+    real(wp)            :: fact
+    real(wp), parameter :: tau_thresh = sqrt(epsilon(tau))
+    integer             :: icol
+    real(wp), dimension(ncol     )      :: sfcSource
+    real(wp), dimension(ncol,nlay,ngpt) :: An, Cn
+    ! ------------------------------------
+
+    ! Which way is up?
+    ! Level Planck sources for upward and downward radiation
+    ! When top_at_1, lev_source_up => lev_source_dec
+    !                lev_source_dn => lev_source_inc, and vice-versa
+    if(top_at_1) then
+      top_level = 1
+      lev_source_up => lev_source_dec
+      lev_source_dn => lev_source_inc
+    else
+      top_level = nlay+1
+      lev_source_up => lev_source_inc
+      lev_source_dn => lev_source_dec
+    end if
+
+    !$acc enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn)
+    !$acc enter data copyin(scaling)
+    !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up)
+    !$acc enter data create(sfcSource, An, Cn)
+    !$acc enter data attach(lev_source_up,lev_source_dn)
+
+    !$acc enter data create(rad_up_Jac, rad_dn_Jac, source_sfcJac)
+    !$acc enter data copyin(sfc_srcJac)
+
+    ! NOTE: This kernel produces small differences between GPU and CPU
+    ! implementations on Ascent with PGI, we assume due to floating point
+    ! differences in the exp() function. These differences are small in the
+    ! RFMIP test case (10^-6).
+    !$acc parallel loop collapse(3)
+    do igpt = 1, ngpt
+      do ilev = 1, nlay
+        do icol = 1, ncol
+          !
+          ! Optical path and transmission, used in source function and transport calculations
+          !
+          tau_loc(icol,ilev,igpt) = tau(icol,ilev,igpt)*D(icol,igpt)
+          trans  (icol,ilev,igpt) = exp(-tau_loc(icol,ilev,igpt))
+          ! here scaling is used to store parameter wb/[(]1-w(1-b)] of Eq.21 of the Tang's paper
+          ! explanation of factor 0.4 note A of Table
+          Cn(icol,ilev,igpt) = 0.4_wp*scaling(icol,ilev,igpt)
+          An(icol,ilev,igpt) = (1._wp-trans(icol,ilev,igpt)*trans(icol,ilev,igpt))
+
+          ! initialize radn_dn_Jac
+          rad_dn_Jac(icol,ilev,igpt) = 0._wp
+        end do
+      end do
+    end do
+
+    !$acc parallel loop collapse(2)
+    do igpt = 1, ngpt
+      do icol = 1, ncol
+      !
+      ! Surface albedo, surface source function
+      !
+        sfc_albedo   (icol,igpt) = 1._wp - sfc_emis(icol,igpt)
+        source_sfc   (icol,igpt) = sfc_emis(icol,igpt) * sfc_src   (icol,igpt)
+        source_sfcJac(icol,igpt) = sfc_emis(icol,igpt) * sfc_srcJac(icol,igpt)
+      end do
+    end do
+
+
+    !
+    ! Source function for diffuse radiation
+    !
+    call lw_source_noscat(ncol, nlay, ngpt, &
+                          lay_source, lev_source_up, lev_source_dn, &
+                          tau_loc, trans, source_dn, source_up)
+
+    !
+    ! Transport
+    !
+    !  compute no-scattering fluxes
+    call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
+                             tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
+                             radn_up, radn_dn,&
+                             source_sfcJac, rad_up_Jac)
+    !  make adjustment
+    call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1,  &
+                             tau_loc, trans, &
+                             sfc_albedo, source_dn, source_up, &
+                             radn_up, radn_dn, An, Cn, rad_up_Jac, rad_dn_Jac)
+
+    !$acc exit data copyout(rad_up_Jac, rad_dn_Jac)
+    !$acc exit data delete(source_sfcJac, sfc_srcJac)
+
+
+    !$acc exit data copyout(radn_dn,radn_up)
+    !$acc exit data delete(sfcSource, An, Cn)
+    !$acc exit data delete(scaling)
+    !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo)
+    !$acc exit data detach(lev_source_up,lev_source_dn)
+
+  end subroutine lw_solver_1rescl
+! -------------------------------------------------------------------------------------------------
+!
+!  Similar to lw_solver_noscat_GaussQuad.
+!    It is main solver to use the Tang approximation for fluxes
+!    In addition to the no scattering input parameters the user must provide
+!    scattering related properties (ssa and g) that the solver uses to compute scaling
+!
+! ---------------------------------------------------------------
+  subroutine lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
+                                   tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, &
+                                   sfc_emis, sfc_src,&
+                                   flux_up, flux_dn, &
+                                   sfc_src_Jac, flux_up_Jac, flux_dn_Jac) &
+                                   bind(C, name="lw_solver_1rescl_GaussQuad")
+    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    logical(wl),                           intent(in   ) :: top_at_1
+    integer,                               intent(in   ) :: nmus         ! number of quadrature angles
+    real(wp), dimension(nmus),             intent(in   ) :: Ds, weights  ! quadrature secants, weights
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau  ! Optical thickness,
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: ssa  ! single-scattering albedo,
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: g       ! asymmetry parameter []
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
+                                        ! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
+                                        ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
+                                               ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up      ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn      ! Top level must contain incident flux boundary condition
+
+    real(wp), dimension(ncol       ,ngpt), intent(in )   :: sfc_src_Jac  ! surface temperature Jacobian of surface source function [W/m2/K]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: flux_up_Jac  ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: flux_dn_Jac  ! surface temperature Jacobian of Radiances [W/m2-str / K]
+
+    ! Local variables
+    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
+    real(wp), dimension(ncol,       ngpt) :: Ds_ncol
+    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn_Jac, radn_up_Jac ! Surface temperature Jsacobians per quad angle
+
+    integer :: imu, top_level,icol,ilev,igpt
+    real    :: weight
+
+    real(wp), dimension(ncol,ngpt)        :: fluxTOA          ! downward flux at TOA
+    real(wp), dimension(ncol,nlay,  ngpt) :: tauLoc           ! rescaled Tau
+    real(wp), dimension(ncol,nlay,  ngpt) :: scaling          ! scaling
+    real(wp), parameter                   :: tresh=1.0_wp - 1e-6_wp
+
+    !$acc enter data copyin(Ds,weights,tau,ssa,g,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn,sfc_src_Jac)
+    !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol, scaling, tauLoc,flux_up_Jac,flux_dn_Jac,radn_dn_Jac, radn_up_Jac)
+
+
+    ! Tang rescaling
+    if (any(ssa*g >= tresh)) then
+      call scaling_1rescl_safe(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+    else
+      call scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+    endif
+
+    ! ------------------------------------
+    !
+    ! For the first angle output arrays store total flux
+    !
+    top_level = MERGE(1, nlay+1, top_at_1)
+    ! store TOA flux
+    fluxTOA = flux_dn(1:ncol, top_level, 1:ngpt)
+
+    Ds_ncol(:,:) = Ds(1)
+    weight = 2._wp*pi*weights(1)
+    ! Transport is for intensity
+    !   convert flux at top of domain to intensity assuming azimuthal isotropy
+    !
+    radn_dn(1:ncol, top_level, 1:ngpt) = fluxTOA(1:ncol, 1:ngpt) / weight
+
+    call lw_solver_1rescl(ncol, nlay, ngpt, &
+                          top_at_1, Ds_ncol, tauLoc, scaling, &
+                          lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                          flux_up, flux_dn,sfc_src_Jac,flux_up_Jac,flux_dn_Jac)
+    !$acc  parallel loop collapse(3)
+    do igpt = 1, ngpt
+      do ilev = 1, nlay+1
+        do icol = 1, ncol
+          flux_up    (icol,ilev,igpt) = weight*flux_up    (icol,ilev,igpt)
+          flux_dn    (icol,ilev,igpt) = weight*flux_dn    (icol,ilev,igpt)
+          flux_up_Jac(icol,ilev,igpt) = weight*flux_up_Jac(icol,ilev,igpt)
+          flux_dn_Jac(icol,ilev,igpt) = weight*flux_dn_Jac(icol,ilev,igpt)
+        enddo
+      enddo
+    enddo
+
+    do imu = 2, nmus
+      Ds_ncol(:,:) = Ds(imu)
+      weight = 2._wp*pi*weights(imu)
+      radn_dn(1:ncol, top_level, 1:ngpt)  = fluxTOA(1:ncol, 1:ngpt) / weight
+      call lw_solver_1rescl(ncol, nlay, ngpt, &
+                            top_at_1, Ds_ncol, tauLoc, scaling, &
+                            lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                            radn_up, radn_dn,sfc_src_Jac,radn_up_Jac,radn_dn_Jac)
+
+      !$acc  parallel loop collapse(3)
+      do igpt = 1, ngpt
+        do ilev = 1, nlay+1
+          do icol = 1, ncol
+            flux_up    (icol,ilev,igpt) = flux_up    (icol,ilev,igpt) + weight*radn_up    (icol,ilev,igpt)
+            flux_dn    (icol,ilev,igpt) = flux_dn    (icol,ilev,igpt) + weight*radn_dn    (icol,ilev,igpt)
+            flux_up_Jac(icol,ilev,igpt) = flux_up_Jac(icol,ilev,igpt) + weight*radn_up_Jac(icol,ilev,igpt)
+            flux_dn_Jac(icol,ilev,igpt) = flux_dn_Jac(icol,ilev,igpt) + weight*radn_dn_Jac(icol,ilev,igpt)
+          enddo
+        enddo
+      enddo
+
+    end do
+   !$acc exit data delete(sfc_src_Jac,radn_dn_Jac, radn_up_Jac)
+   !$acc exit data copyout(flux_up_Jac,flux_dn_Jac)
+   !$acc exit data copyout(flux_up,flux_dn)
+   !$acc exit data delete(Ds,weights,tau,ssa,g,tauLoc,scaling,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,radn_dn,radn_up,Ds_ncol)
+  end subroutine lw_solver_1rescl_GaussQuad
+! -------------------------------------------------------------------------------------------------
+!
+!  Computes Tang scaling of layer optical thickness and scaling parameter
+!    unsafe if ssa*g =1.
+!
+! ---------------------------------------------------------------
+  pure subroutine scaling_1rescl(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+    integer ,                              intent(in)    :: ncol
+    integer ,                              intent(in)    :: nlay
+    integer ,                              intent(in)    :: ngpt
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: tau
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: ssa
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: g
+
+    real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: tauLoc
+    real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: scaling
+
+    integer  :: icol, ilay, igpt
+    real(wp) :: wb, ssal, scaleTau
+    !$acc enter data copyin(tau, ssa, g)
+    !$acc enter data create(tauLoc, scaling)
+    !$acc parallel loop collapse(3)
+    do igpt=1,ngpt
+      do ilay=1,nlay
+        do icol=1,ncol
+          ssal = ssa(icol, ilay, igpt)
+          wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
+          scaleTau = (1._wp - ssal + wb )
+
+          tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt) ! Eq.15 of the paper
+          !
+          ! here scaling is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
+          ! actually it is in line of parameter rescaling defined in Eq.7
+          ! potentialy if g=ssa=1  then  wb/scaleTau = NaN
+          ! it should not happen
+          scaling(icol, ilay, igpt) = wb / scaleTau
+        enddo
+      enddo
+    enddo
+    !$acc exit data copyout(tauLoc, scaling)
+    !$acc exit data delete(tau, ssa, g)
+  end subroutine scaling_1rescl
+! -------------------------------------------------------------------------------------------------
+!
+!  Computes Tang scaling of layer optical thickness and scaling parameter
+!  Safe implementation
+!
+! ---------------------------------------------------------------
+  pure subroutine scaling_1rescl_safe(ncol, nlay, ngpt, tauLoc, scaling, tau, ssa, g)
+    integer ,                              intent(in)    :: ncol
+    integer ,                              intent(in)    :: nlay
+    integer ,                              intent(in)    :: ngpt
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: tau
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: ssa
+    real(wp), dimension(ncol, nlay, ngpt), intent(in)    :: g
+
+    real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: tauLoc
+    real(wp), dimension(ncol, nlay, ngpt), intent(inout) :: scaling
+
+    integer  :: icol, ilay, igpt
+    real(wp) :: wb, ssal, scaleTau
+    !$acc enter data copyin(tau, ssa, g)
+    !$acc enter data create(tauLoc, scaling)
+    !$acc parallel loop collapse(3)
+    do igpt=1,ngpt
+      do ilay=1,nlay
+        do icol=1,ncol
+          ssal = ssa(icol, ilay, igpt)
+          wb = ssal*(1._wp - g(icol, ilay, igpt)) / 2._wp
+          scaleTau = (1._wp - ssal + wb )
+
+          tauLoc(icol, ilay, igpt) = scaleTau * tau(icol, ilay, igpt) ! Eq.15 of the paper
+          !
+          ! here scaling is used to store parameter wb/[1-w(1-b)] of Eq.21 of the Tang's paper
+          ! actually it is in line of parameter rescaling defined in Eq.7
+          if (scaleTau < 1e-6_wp) then
+              scaling(icol, ilay, igpt) = 1.0_wp
+          else
+              scaling(icol, ilay, igpt) = wb / scaleTau
+          endif
+        enddo
+      enddo
+    enddo
+    !$acc exit data copyout(tauLoc, scaling)
+    !$acc exit data delete(tau, ssa, g)
+  end subroutine scaling_1rescl_safe
+! -------------------------------------------------------------------------------------------------
+!
+! Similar to Longwave no-scattering tarnsport  (lw_transport_noscat)
+!   a) adds adjustment factor based on cloud properties
+!
+!   implementation notice:
+!       the adjustmentFactor computation can be skipped where Cn <= epsilon
+!
+! -------------------------------------------------------------------------------------------------
+  subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
+                                 tau, trans, sfc_albedo, source_dn, source_up, &
+                                 radn_up, radn_dn, An, Cn,&
+                                 rad_up_Jac, rad_dn_Jac) bind(C, name="lw_transport_1rescl")
+    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    logical(wl),                           intent(in   ) :: top_at_1   !
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: tau, &     ! Absorption optical thickness, pre-divided by mu []
+                                                       trans      ! transmissivity = exp(-tau)
+    real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_albedo ! Surface albedo
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_dn, &
+                                                            source_up  ! Diffuse radiation emitted by the layer
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_up    ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn    !Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: An, Cn
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: rad_up_Jac ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: rad_dn_Jac !Top level must contain incident flux boundary condition
+    ! Local variables
+    integer :: ilev, icol, igpt
+    ! ---------------------------------------------------
+    real(wp) :: adjustmentFactor
+    if(top_at_1) then
+      !
+      ! Top of domain is index 1
+      !
+      ! Downward propagation
+      !$acc  parallel loop collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          ! 1st Upward propagation
+          do ilev = nlay, 1, -1
+            radn_up   (icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_up   (icol,ilev+1,igpt) + source_up(icol,ilev,igpt)
+            rad_up_Jac(icol,ilev,igpt) = trans(icol,ilev,igpt)*rad_up_Jac(icol,ilev+1,igpt)
+
+            adjustmentFactor = Cn(icol,ilev,igpt)*&
+                   ( An(icol,ilev,igpt)*radn_dn(icol,ilev,igpt) - &
+                     source_dn(icol,ilev,igpt)  *trans(icol,ilev,igpt ) - &
+                     source_up(icol,ilev,igpt))
+            radn_up(icol,ilev,igpt) = radn_up(icol,ilev,igpt) + adjustmentFactor
+          enddo
+          ! 2nd Downward propagation
+          do ilev = 1, nlay
+            radn_dn   (icol,ilev+1,igpt) = trans(icol,ilev,igpt)*radn_dn   (icol,ilev,igpt) + source_dn(icol,ilev,igpt)
+            rad_dn_Jac(icol,ilev+1,igpt) = trans(icol,ilev,igpt)*rad_dn_Jac(icol,ilev,igpt)
+            adjustmentFactor = Cn(icol,ilev,igpt)*( &
+                An(icol,ilev,igpt)*radn_up(icol,ilev,igpt) - &
+                source_up(icol,ilev,igpt)*trans(icol,ilev,igpt) - &
+                source_dn(icol,ilev,igpt) )
+            radn_dn(icol,ilev+1,igpt)    = radn_dn(icol,ilev+1,igpt) + adjustmentFactor
+
+            adjustmentFactor             = Cn(icol,ilev,igpt)*An(icol,ilev,igpt)*rad_up_Jac(icol,ilev,igpt)
+            rad_dn_Jac(icol,ilev+1,igpt) = rad_dn_Jac(icol,ilev+1,igpt) + adjustmentFactor
+          enddo
+        enddo
+      enddo
+    else
+      !$acc  parallel loop collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          ! Upward propagation
+          do ilev = 1, nlay
+            radn_up   (icol,ilev+1,igpt) = trans(icol,ilev,igpt)*radn_up   (icol,ilev,igpt) +  source_up(icol,ilev,igpt)
+            rad_up_Jac(icol,ilev+1,igpt) = trans(icol,ilev,igpt)*rad_up_Jac(icol,ilev,igpt)
+            adjustmentFactor = Cn(icol,ilev,igpt)*&
+                   ( An(icol,ilev,igpt)*radn_dn(icol,ilev+1,igpt) - &
+                     source_dn(icol,ilev,igpt) *trans(icol,ilev ,igpt) - &
+                     source_up(icol,ilev,igpt))
+            radn_up(icol,ilev+1,igpt) = radn_up(icol,ilev+1,igpt) + adjustmentFactor
+          end do
+          ! 2st Downward propagation
+          do ilev = nlay, 1, -1
+            radn_dn   (icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_dn   (icol,ilev+1,igpt) + source_dn(icol,ilev,igpt)
+            rad_dn_Jac(icol,ilev,igpt) = trans(icol,ilev,igpt)*rad_dn_Jac(icol,ilev+1,igpt)
+            adjustmentFactor = Cn(icol,ilev,igpt)*( &
+                    An(icol,ilev,igpt)*radn_up(icol,ilev,igpt) - &
+                    source_up(icol,ilev,igpt)*trans(icol,ilev ,igpt ) - &
+                    source_dn(icol,ilev,igpt) )
+            radn_dn(icol,ilev,igpt)    = radn_dn(icol,ilev,igpt) + adjustmentFactor
+
+            adjustmentFactor           = Cn(icol,ilev,igpt)*An(icol,ilev,igpt)*rad_up_Jac(icol,ilev,igpt)
+            rad_dn_Jac(icol,ilev,igpt) = rad_dn_Jac(icol,ilev,igpt) + adjustmentFactor
+          end do
+        enddo
+      enddo
+    end if
+  end subroutine lw_transport_1rescl
 end module mo_rte_solver_kernels

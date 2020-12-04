@@ -79,7 +79,6 @@ public:
   }
 
 
-
   // Routines to load data needed for cloud optics calculations. Two routines: one to load
   //    lookup-tables and one for coefficients for Pade approximates
   void load(real2d const &band_lims_wvn, real radliq_lwr, real radliq_upr, real radliq_fac, real radice_lwr, real radice_upr,
@@ -214,33 +213,36 @@ public:
 
   // Finalize
   void finalize() {
-    int icergh = 0;  
-    real radliq_lwr = 0;
-    real radliq_upr = 0;
-    real radice_lwr = 0;
-    real radice_upr = 0;
-    int liq_nsteps = 0;
-    int ice_nsteps = 0;
-    real liq_step_size = 0;
-    real ice_step_size = 0;
-    real2d lut_extliq = real2d(); 
-    real2d lut_ssaliq = real2d(); 
-    real2d lut_asyliq = real2d(); 
-    real3d lut_extice = real3d(); 
-    real3d lut_ssaice = real3d(); 
-    real3d lut_asyice = real3d(); 
-    real3d pade_extliq = real3d(); 
-    real3d pade_ssaliq = real3d(); 
-    real3d pade_asyliq = real3d(); 
-    real4d pade_extice = real4d(); 
-    real4d pade_ssaice = real4d(); 
-    real4d pade_asyice = real4d(); 
-    real1d pade_sizreg_extliq = real1d(); 
-    real1d pade_sizreg_ssaliq = real1d(); 
-    real1d pade_sizreg_asyliq = real1d(); 
-    real1d pade_sizreg_extice = real1d(); 
-    real1d pade_sizreg_ssaice = real1d(); 
-    real1d pade_sizreg_asyice = real1d(); 
+    icergh = 0;  
+    radliq_lwr = 0;
+    radliq_upr = 0;
+    radice_lwr = 0;
+    radice_upr = 0;
+    liq_nsteps = 0;
+    ice_nsteps = 0;
+    liq_step_size = 0;
+    ice_step_size = 0;
+    lut_extliq.deallocate();
+    lut_ssaliq.deallocate();
+    lut_asyliq.deallocate();
+    lut_extice.deallocate();
+    lut_ssaice.deallocate();
+    lut_asyice.deallocate();
+    pade_extliq.deallocate();
+    pade_ssaliq.deallocate();
+    pade_asyliq.deallocate();
+    pade_extice.deallocate();
+    pade_ssaice.deallocate();
+    pade_asyice.deallocate();
+    pade_sizreg_extliq.deallocate();
+    pade_sizreg_ssaliq.deallocate();
+    pade_sizreg_asyliq.deallocate();
+    pade_sizreg_extice.deallocate();
+    pade_sizreg_ssaice.deallocate();
+    pade_sizreg_asyice.deallocate();
+
+    // Base class finalize
+    OpticalProps::finalize();
   }
 
 

@@ -52,7 +52,7 @@ jobs:
         sudo apt-get install intel-oneapi-common-licensing
         sudo apt-get install intel-oneapi-common-vars
         sudo apt-get install intel-oneapi-dev-utilities
-        sudo apt-get install intel-oneapi-ifort
+        sudo apt-get install intel-oneapi-compiler-fortran
     #
     # NetCDF FORTRAN library
     #

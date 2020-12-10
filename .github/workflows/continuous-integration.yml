@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   CI:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         fortran-compiler:  [gfortran-8, gfortran-9, ifort, nvfortran]
@@ -44,8 +44,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install intel-hpckit-getting-started intel-oneapi-clck
         sudo apt-get install intel-oneapi-common-licensing intel-oneapi-common-vars
-        sudo apt-get install intel-oneapi-dev-utilities  intel-oneapi-dpcpp-cpp-compiler-pro
-        sudo apt-get install intel-oneapi-ifort intel-oneapi-inspector intel-oneapi-itac
+        sudo apt-get install intel-oneapi-dev-utilities  intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
+        sudo apt-get install intel-oneapi-compiler-fortran intel-oneapi-inspector intel-oneapi-itac
         echo "FC=ifort" >> $GITHUB_ENV
         echo "CC=icx"  >> $GITHUB_ENV
         echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV

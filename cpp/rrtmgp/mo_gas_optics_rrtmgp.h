@@ -921,7 +921,7 @@ public:
         stoprun("gas_optics(): array plev has values outside range");
       }
       if ( anyLT(tlay,this->temp_ref_min) || anyGT(tlay,this->temp_ref_max) ) {
-        stoprun("gas_optics(): array play has values outside range");
+        stoprun("gas_optics(): array tlay has values outside range");
       }
     #endif
     if (allocated(col_dry)) {

@@ -66,7 +66,7 @@ jobs:
         NVCOMPILERS: /opt/nvidia/hpc_sdk
       if: contains(matrix.fortran-compiler, 'nvfortran') && steps.cache-nvidia-compilers.outputs.cache-hit != 'true'
       run: |
-        wget https://developer.download.nvidia.com/hpc-sdk/nvhpc-20-11_20.11_amd64.deb https://developer.download.nvidia.com/hpc-sdk/nvhpc-2020_20.11_amd64.deb
+        wget https://developer.download.nvidia.com/hpc-sdk/20.11/nvhpc-20-11_20.11_amd64.deb https://developer.download.nvidia.com/hpc-sdk/20.11/nvhpc-2020_20.11_amd64.deb
         sudo apt-get install ./nvhpc-20-7_20.11_amd64.deb ./nvhpc-2020_20.11_amd64.deb
     - name: Nvidia environment
       env:

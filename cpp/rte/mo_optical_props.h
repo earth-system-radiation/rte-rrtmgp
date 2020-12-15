@@ -314,9 +314,9 @@ public:
       stoprun("validate: arrays not sized consistently");
     }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (anyLT(this->tau,0._wp)                          ) { stoprun("validate: tau values out of range"); }
-      if (anyLT(this->ssa,0._wp) || anyGT(this->ssa,1._wp)) { stoprun("validate: ssa values out of range"); }
-      if (anyLT(this->g  ,0._wp) || anyGT(this->g  ,1._wp)) { stoprun("validate: g   values out of range"); }
+      if (anyLT(this->tau, 0._wp)                          ) { stoprun("validate: tau values out of range"); }
+      if (anyLT(this->ssa, 0._wp) || anyGT(this->ssa,1._wp)) { stoprun("validate: ssa values out of range"); }
+      if (anyLT(this->g  ,-1._wp) || anyGT(this->g  ,1._wp)) { stoprun("validate: g   values out of range"); }
     #endif
   }
 

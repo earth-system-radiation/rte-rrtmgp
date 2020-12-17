@@ -363,7 +363,7 @@ contains
     real(wp),    dimension(ngpt,nlay,ncol),      intent(inout) :: tau
     ! -----------------
     ! local variables
-    real(wp), parameter :: PaTohPa = 0.01
+    real(wp), parameter :: PaTohPa = 0.01_wp
     real(wp) :: vmr_fact, dry_fact             ! conversion from column abundance to dry vol. mixing ratio;
     real(wp) :: scaling, kminor_loc            ! minor species absorption coefficient, optical depth
     integer  :: icol, ilay, iflav, igpt, imnr

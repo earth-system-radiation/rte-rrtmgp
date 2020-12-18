@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        fortran-compiler:  [gfortran-8, gfortran-9, ifort, nvfortran]
+        fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, ifort, nvfortran]
         # I'd like to add gfortran-10 to this list but have version issues with netcdf as below
         rte-kernels: [default, openacc]
     env:
@@ -14,8 +14,9 @@ jobs:
       # Defaults for gfortran, over-ridden below
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
       CC: gcc
-      NCHOME: /usr
+      NCHOME: /home/runner/netcdf-c
       NFHOME: /home/runner/netcdf-fortran
+      RFMIP_DIR: /home/runner/rfmip-files
     steps:
     - name: Update system packages
       run: sudo apt-get update
@@ -33,7 +34,8 @@ jobs:
     #
     # Intel compilers and libraries if needed
     #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
-    # Trying list of packages from https://github.com/intel/oneapi-containers/blob/master/images/docker/hpckit-devel-ubuntu18.04/Dockerfile
+    #   Trying list of packages from https://github.com/intel/oneapi-containers/blob/master/images/docker/hpckit-devel-ubuntu18.04/Dockerfile
+    #   Better examples are probably at https://github.com/oneapi-src/oneapi-ci
     #
     - name: Intel setup compilers, environment
       if: contains(matrix.fortran-compiler, 'ifort')
@@ -78,26 +80,33 @@ jobs:
         echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
         echo "${NVCOMPILERS}/Linux_x86_64/20.11/compilers/bin" >> $GITHUB_PATH
     ############################################################################
+    #
     # Netcdf C and Fortran
     #
-    # I would love to install libnetcdf-dev 4.7.4 to be compatible with
-    #  netcdf-fortran 4.5.3, which then supports gfortran-10.
-    # 4.7.4 is in the groovy set of packages: https://packages.ubuntu.com/groovy/libnetcdf-dev
-    #    but I don't know how to use it
-    # Nor have I been able to figure out how to build it from source
-    #
-    - name: Install netcdf C library
-      run: sudo apt-get install libnetcdf-dev
+    - name: Install HDF5 library
+      run: |
+        sudo apt-get install libhdf5-dev libcurl4-gnutls-dev hdf5-helpers
+        dpkg -L libhdf5-dev
 
     # Skipping this for now - netCDF configure doesn't see the HDF libararies
-    - name: Upgrade netcdf C library from source
-      if: False
+    - name: cache-netcdf-c
+      id: cache-netcdf-c
+      uses: actions/cache@v2
+      with:
+        path: /home/runner/netcdf-c
+        key: netcdf-c-4.7.4a-${{ runner.os }}-${{ matrix.fortran-compiler }}
+
+    - name: Install netcdf C library from source
+      if: steps.cache-netcdf-c.outputs.cache-hit != 'true'
+      env:
+        CPPFLAGS: -I/usr/include/hdf5/serial
+        LDFLAGS: -L/usr/lib/x86_64-linux-gnu/hdf5/serial/
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version
-        echo ${CPPFLAGS}
         git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
         cd netcdf-c
+        ls /usr/include
         ./configure --prefix=${NCHOME}
         make -j
         sudo make install
@@ -108,19 +117,24 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /home/runner/netcdf-fortran
-        key: netcdf-fortran-4.4.4-${{ runner.os }}-${{ matrix.fortran-compiler }}
+        key: netcdf-fortran-4.5.3-${{ runner.os }}-${{ matrix.fortran-compiler }}
 
     - name: Build NetCDF Fortran library
       # Unset any Fortran flags
+      # Here too it would be nice to use the environment to specify netcdf-c location
       env:
+        CPPFLAGS: -I/home/runner/netcdf-c/include
+        LDFLAGS: -L/home/runner/netcdf-c/lib
+        LD_LIBRARY_PATH: /home/runner/netcdf-c/lib
         FCFLAGS: -fPIC
       if: steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
       run: |
         echo ${TEST}
         source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
-        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.4.4
+        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.3
         cd netcdf-fortran
+        echo ${CPPFLAGS}
         ./configure --prefix=${NFHOME}
         make -j
         sudo make install
@@ -160,15 +174,29 @@ jobs:
     - name: Install python packages
       run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
     ############################################################################
+    - name: Cache RFMIP files
+      id: cache-rfmip-files
+      uses: actions/cache@v2
+      with:
+        path: /home/runner/rfmip-files # Same as #{RFMIP_DIR}
+        key: rfmip-files
+
     - name: Stage RFMIP files
+      if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
       run: |
-        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-        python ./stage_files.py
+        mkdir -p ${RFMIP_DIR}
+        cd ${RFMIP_DIR}
+        python ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
+    ############################################################################
+    # Would be great to encode version info
     - name: Run examples, tests
+      env:
+        LD_LIBRARY_PATH: /home/runner/netcdf-c/lib
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         export LD_LIBRARY_PATH=${NFHOME}/lib:${LD_LIBRARY_PATH}
         cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
+        cp ${RFMIP_DIR}/* .
         python ./run-rfmip-examples.py --block_size 8
         cd  ${RRTMGP_ROOT}/examples/all-sky
         python ./run-allsky-example.py

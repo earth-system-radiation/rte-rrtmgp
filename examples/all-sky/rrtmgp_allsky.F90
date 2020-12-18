@@ -29,7 +29,22 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
   call stop_on_err(gas_concs%set_vmr       (name, tmp_col))
   !$acc end data
 end subroutine vmr_2d_to_1d
+
+subroutine print_flux_norms(fluxes)
+   use mo_fluxes_byband, only: ty_fluxes_byband
+   type(ty_fluxes_byband), intent(in) :: fluxes
+   if (associated(fluxes%flux_up))         write(*,'(A17,F24.16)') 'flux_up:         ', sum(fluxes%flux_up)
+   if (associated(fluxes%flux_dn))         write(*,'(A17,F24.16)') 'flux_dn:         ', sum(fluxes%flux_dn)
+   if (associated(fluxes%flux_net))        write(*,'(A17,F24.16)') 'flux_net:        ', sum(fluxes%flux_net)
+   if (associated(fluxes%flux_dn_dir))     write(*,'(A17,F24.16)') 'flux_dn_dir:     ', sum(fluxes%flux_dn_dir)
+   if (associated(fluxes%bnd_flux_up))     write(*,'(A17,F24.16)') 'bnd_flux_up:     ', sum(fluxes%bnd_flux_up)
+   if (associated(fluxes%bnd_flux_dn))     write(*,'(A17,F24.16)') 'bnd_flux_dn:     ', sum(fluxes%bnd_flux_dn)
+   if (associated(fluxes%bnd_flux_net))    write(*,'(A17,F24.16)') 'bnd_flux_net:    ', sum(fluxes%bnd_flux_net)
+   if (associated(fluxes%bnd_flux_dn_dir)) write(*,'(A17,F24.16)') 'bnd_flux_dn_dir: ', sum(fluxes%bnd_flux_dn_dir)
+end subroutine print_flux_norms
+
 ! ----------------------------------------------------------------------------------
+
 program rte_rrtmgp_clouds
   use mo_rte_kind,           only: wp
   use mo_optical_props,      only: ty_optical_props, &
@@ -38,7 +53,7 @@ program rte_rrtmgp_clouds
   use mo_cloud_optics,       only: ty_cloud_optics
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_source_functions,   only: ty_source_func_lw
-  use mo_fluxes,             only: ty_fluxes_broadband
+  use mo_fluxes_byband,      only: ty_fluxes_byband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
   use mo_load_coefficients,  only: load_and_init
@@ -82,6 +97,8 @@ program rte_rrtmgp_clouds
   !
   real(wp), dimension(:,:), target, &
                             allocatable :: flux_up, flux_dn, flux_dir
+  real(wp), dimension(:,:,:), target, &
+                            allocatable :: bnd_flux_up, bnd_flux_dn, bnd_flux_dir
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
@@ -90,7 +107,7 @@ program rte_rrtmgp_clouds
   type(ty_gas_concs)         :: gas_concs, gas_concs_garand, gas_concs_1col
   class(ty_optical_props_arry), &
                  allocatable :: atmos, clouds
-  type(ty_fluxes_broadband)  :: fluxes
+  type(ty_fluxes_byband)     :: fluxes
 
   !
   ! Inputs to RRTMGP
@@ -103,7 +120,7 @@ program rte_rrtmgp_clouds
 
   character(len=8) :: char_input
   integer  :: nUserArgs=0, nloops
-  logical :: use_luts = .true., write_fluxes = .true.
+  logical :: use_luts = .true., write_fluxes = .false., print_norms = .true.
   integer, parameter :: ngas = 8
   character(len=3), dimension(ngas) &
                      :: gas_names = ['h2o', 'co2', 'o3 ', 'n2o', 'co ', 'ch4', 'o2 ', 'n2 ']
@@ -115,7 +132,7 @@ program rte_rrtmgp_clouds
   integer(kind=8)              :: start, finish, start_all, finish_all, clock_rate
   real(wp)                     :: avg
   integer(kind=8), allocatable :: elapsed(:)
-  !$omp threadprivate( lw_sources, toa_flux, flux_up, flux_dn, flux_dir )
+  !$omp threadprivate( lw_sources, toa_flux, flux_up, flux_dn, flux_dir, bnd_flux_up, bnd_flux_dn, bnd_flux_dir )
   ! ----------------------------------------------------------------------------------
   ! Code
   ! ----------------------------------------------------------------------------------
@@ -270,12 +287,14 @@ program rte_rrtmgp_clouds
   !
   !$omp parallel
   allocate(flux_up(ncol,nlay+1), flux_dn(ncol,nlay+1))
+  allocate(bnd_flux_up(ncol,nlay+1,nbnd), bnd_flux_dn(ncol,nlay+1,nbnd))
   !$omp end parallel
 
-  !$acc enter data create(flux_up, flux_dn)
+  !$acc enter data create(flux_up, flux_dn, bnd_flux_up, bnd_flux_dn)
   if(is_sw) then
     allocate(flux_dir(ncol,nlay+1))
-    !$acc enter data create(flux_dir)
+    allocate(bnd_flux_dir(ncol,nlay+1,nbnd))
+    !$acc enter data create(flux_dir, bnd_flux_dir)
   end if
   !
   ! Clouds
@@ -325,6 +344,8 @@ program rte_rrtmgp_clouds
     !
     fluxes%flux_up => flux_up(:,:)
     fluxes%flux_dn => flux_dn(:,:)
+    fluxes%bnd_flux_up => bnd_flux_up(:,:,:)
+    fluxes%bnd_flux_dn => bnd_flux_dn(:,:,:)
     if(is_lw) then
       !$acc enter data create(lw_sources, lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source)
       call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
@@ -342,6 +363,7 @@ program rte_rrtmgp_clouds
     else
       !$acc enter data create(toa_flux)
       fluxes%flux_dn_dir => flux_dir(:,:)
+      fluxes%bnd_flux_dn_dir => bnd_flux_dir(:,:,:)
 
       call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
                                          t_lay,        &
@@ -378,13 +400,14 @@ program rte_rrtmgp_clouds
 #endif
 
   if(is_lw) then
-    !$acc exit data copyout(flux_up, flux_dn)
+    !$acc exit data copyout(flux_up, flux_dn, bnd_flux_up, bnd_flux_dn)
     if(write_fluxes) call write_lw_fluxes(input_file, flux_up, flux_dn)
     !$acc exit data delete(t_sfc, emis_sfc)
   else
-    !$acc exit data copyout(flux_up, flux_dn, flux_dir)
+    !$acc exit data copyout(flux_up, flux_dn, flux_dir, bnd_flux_up, bnd_flux_dn, bnd_flux_dir)
     if(write_fluxes) call write_sw_fluxes(input_file, flux_up, flux_dn, flux_dir)
     !$acc exit data delete(sfc_alb_dir, sfc_alb_dif, mu0)
   end if
+  if (print_norms) call print_flux_norms(fluxes)
   !$acc enter data create(lwp, iwp, rel, rei)
 end program rte_rrtmgp_clouds

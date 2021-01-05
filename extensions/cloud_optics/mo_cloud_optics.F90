@@ -331,7 +331,7 @@ contains
       !$acc           delete(this%lut_extice, this%lut_ssaice, this%lut_asyice)  &
       !$acc           delete(this)
       !$omp target exit data map(release:this%lut_extliq, this%lut_ssaliq, this%lut_asyliq) &
-      !$omp map(release:this%lut_extice, this%lut_ssaice, this%lut_asyice) &
+      !$omp map(release:this%lut_extice, this%lut_ssaice, this%lut_asyice)
 
 
       deallocate(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq, &
@@ -353,7 +353,7 @@ contains
       !$omp target exit data map(release:this%pade_extliq, this%pade_ssaliq, this%pade_asyliq) &
       !$omp map(release:this%pade_extice, this%pade_ssaice, this%pade_asyice) &
       !$omp map(release:this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq) &
-      !$omp map(release:this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice) &
+      !$omp map(release:this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)
 
       deallocate(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq, &
                  this%pade_extice, this%pade_ssaice, this%pade_asyice, &

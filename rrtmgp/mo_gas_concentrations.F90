@@ -309,20 +309,22 @@ contains
     if(error_msg /= "") return
 
     !$acc data copyout (array) present(this)
-    !$omp data map(from:array)
+    !$omp target data map(from:array)
     if(size(this%concs(igas)%conc, 2) > 1) then
       !$acc kernels default(none)
+      !$omp target
       array(:) = this%concs(igas)%conc(1,:)
       !$acc end kernels
       !$omp end target
     else
       !$acc kernels default(none)
+      !$omp target
       array(:) = this%concs(igas)%conc(1,1)
       !$acc end kernels
       !$omp end target
     end if
     !$acc end data
-    !$omp end data
+    !$omp end target data
 
   end function get_vmr_1d
   ! -------------------------------------------------------------------------------------
@@ -357,9 +359,10 @@ contains
     if(error_msg /= "") return
 
     !$acc data copyout (array) present(this, this%concs)
-    !$omp data map(from:array)
+    !$omp target data map(from:array)
     if(size(this%concs(igas)%conc, 1) > 1) then      ! Concentration stored as 2D
       !$acc parallel loop collapse(2) default(none)
+      !$omp target teams distribute parallel do simd
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
           !print *, (size(this%concs))
@@ -368,6 +371,7 @@ contains
       end do
     else if(size(this%concs(igas)%conc, 2) > 1) then ! Concentration stored as 1D
       !$acc parallel loop collapse(2) default(none)
+      !$omp target teams distribute parallel do simd
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
          array(icol, ilay) = this%concs(igas)%conc(1,ilay)
@@ -382,7 +386,7 @@ contains
       end do
     end if
     !$acc end data
-    !$omp end data
+    !$omp end target data
 
   end function get_vmr_2d
   ! -------------------------------------------------------------------------------------

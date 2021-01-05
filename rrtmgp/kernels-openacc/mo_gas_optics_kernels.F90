@@ -235,18 +235,28 @@ contains
       !$omp target teams distribute parallel do simd
       do icol = 1,ncol
         itropo_lower(icol,2) = nlay
+#ifdef _CRAYFTN
+        itropo_upper(icol,1) = 1
+        call minmaxloc(icol, tropo, play, itropo_lower(icol,1), itropo_upper(icol,2))
+#else
         itropo_lower(icol,1) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
         itropo_upper(icol,1) = 1
         itropo_upper(icol,2) = maxloc(play(icol,:), dim=1, mask=(.not. tropo(icol,:)))
+#endif
       end do
     else
       !$acc parallel loop
       !$omp target teams distribute parallel do simd
       do icol = 1,ncol
         itropo_lower(icol,1) = 1
+#ifdef _CRAYFTN
+        itropo_upper(icol,2) = nlay
+        call minmaxloc(icol, tropo, play, itropo_lower(icol,2), itropo_upper(icol,1))
+#else
         itropo_lower(icol,2) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
         itropo_upper(icol,2) = nlay
         itropo_upper(icol,1) = maxloc(play(icol,:), dim=1, mask=(.not.tropo(icol,:)))
+#endif
       end do
     end if
     ! ---------------------
@@ -883,5 +893,39 @@ contains
       end do
     end do
   end subroutine combine_and_reorder_nstr
+
   ! ----------------------------------------------------------
+  !
+  ! In-house subroutine for handling minloc and maxloc for
+  ! compilers which do not support GPU versions
+  !
+  subroutine minmaxloc(i, mask, a, minl, maxl)
+    !$acc routine seq
+    !$omp declare target
+    implicit none
+    integer :: i, minl, maxl
+    logical(wl) :: mask(:,:)
+    real(wp) :: a(:,:)
+    integer :: j, n
+    real(wp) :: aij, amax, amin
+    n = size(a,2)
+    amax = -huge(amax)
+    amin = huge(amin)
+    do j = 1, n
+      aij = a(i,j)
+      if (mask(i,j)) then
+        if (aij.lt.amin) then
+          amin = aij
+          minl = j
+        end if
+      else
+        if (aij.gt.amax) then
+          amax = aij
+          maxl = j
+        end if
+      end if
+    end do
+  end subroutine
+  ! ----------------------------------------------------------
+
 end module mo_gas_optics_kernels

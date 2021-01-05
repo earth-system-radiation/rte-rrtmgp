@@ -228,9 +228,9 @@ program rrtmgp_rfmip_lw
   !$acc enter data create(sfc_emis_spec)
   !$omp target enter data map(alloc:sfc_emis_spec)
   !$acc enter data create(optical_props, optical_props%tau)
-  !$omp target enter data map(alloc:optical_props, optical_props%tau)
+  !$omp target enter data map(alloc:optical_props%tau)
   !$acc enter data create(source, source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
-  !$omp target enter data map(alloc:source, source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !$omp target enter data map(alloc:source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -305,11 +305,10 @@ program rrtmgp_rfmip_lw
   !$acc exit data delete(sfc_emis_spec)
   !$omp target exit data map(release:sfc_emis_spec)
   !$acc exit data delete(optical_props%tau, optical_props)
-  !$omp target exit data map(release:optical_props%tau, optical_props)
+  !$omp target exit data map(release:optical_props%tau)
   !$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   !$omp target exit data map(release:source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   !$acc exit data delete(source)
-  !$omp target exit data map(release:source)
   ! --------------------------------------------------m
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rld', flux_dn)

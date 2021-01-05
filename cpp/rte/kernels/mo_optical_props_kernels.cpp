@@ -112,7 +112,7 @@ void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, real3d &tau1, re
   parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
   });
-  std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
+  //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
 
@@ -177,15 +177,13 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3d &tau1, re
     // w=(tau1*ssa1 + tau2*ssa2) / t
     real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
-    if (tauscat12 > eps) {
-      g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
-                            tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt)) 
-                             / tauscat12;
-      ssa1(icol,ilay,igpt) = tauscat12 / tau12;
-      tau1(icol,ilay,igpt) = tau12;
-    }
+    g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
+                          tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt)) 
+                           / max(eps,tauscat12);
+    ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+    tau1(icol,ilay,igpt) = tau12;
   });
-  std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
+  //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
 

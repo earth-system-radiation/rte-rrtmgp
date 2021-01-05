@@ -104,7 +104,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
                                 src(icol,ilev,igpt);                                  // emission from below
 
       // From the top of the atmosphere downward -- compute fluxes
-      for (ilev = 1; ilev <= nlay+1; ilev++) {
+      for (ilev = 2; ilev <= nlay+1; ilev++) {
         flux_dn(icol,ilev,igpt) = (tdif(icol,ilev-1,igpt)*flux_dn(icol,ilev-1,igpt) +   // Equation 13
                                   rdif(icol,ilev-1,igpt)*src(icol,ilev,igpt) +       
                                   src_dn(icol,ilev-1,igpt)) * denom(icol,ilev-1,igpt);

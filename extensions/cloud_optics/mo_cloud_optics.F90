@@ -151,7 +151,7 @@ contains
     !$acc enter data create(this)                                               &
     !$acc            create(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq)  &
     !$acc            create(this%lut_extice, this%lut_ssaice, this%lut_asyice)
-    !$omp target enter data map(alloc:this) &
+    !$omp target enter data &
     !$omp map(alloc:this%lut_extliq, this%lut_ssaliq, this%lut_asyliq) &
     !$omp map(alloc:this%lut_extice, this%lut_ssaice, this%lut_asyice)
     ! Load LUT constants
@@ -282,7 +282,7 @@ contains
     !$acc            create(this%pade_extice, this%pade_ssaice, this%pade_asyice)                       &
     !$acc            create(this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq)  &
     !$acc            create(this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)
-    !$omp target enter data map(alloc:this) &
+    !$omp target enter data &
     !$omp map(alloc:this%pade_extliq, this%pade_ssaliq, this%pade_asyliq) &
     !$omp map(alloc:this%pade_extice, this%pade_ssaice, this%pade_asyice) &
     !$omp map(alloc:this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq) &
@@ -445,7 +445,7 @@ contains
     ! Cloud masks; don't need value re values if there's no cloud
     !
     !$acc parallel loop gang vector default(none) collapse(2)
-    !$omp target teams distribute parallel do simd default(none) collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         liqmsk(icol,ilay) = clwp(icol,ilay) > 0._wp
@@ -522,7 +522,7 @@ contains
       type is (ty_optical_props_1scl)
         !$acc parallel loop gang vector default(none) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau)
-        !$omp target teams distribute parallel do simd default(none) collapse(3) &
+        !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau)
 
         do ibnd = 1, nbnd
@@ -537,7 +537,7 @@ contains
       type is (ty_optical_props_2str)
         !$acc parallel loop gang vector default(none) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
-        !$omp target teams parallel do simd default(none) collapse(3) &
+        !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau, optical_props%ssa, optical_props%g)
         do ibnd = 1, nbnd
           do ilay = 1, nlay

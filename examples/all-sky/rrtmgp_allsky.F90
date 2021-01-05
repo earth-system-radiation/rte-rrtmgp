@@ -119,7 +119,8 @@ program rte_rrtmgp_clouds
   integer(kind=i8)              :: start, finish, start_all, finish_all, clock_rate
   real(wp)                      :: avg
   integer(kind=i8), allocatable :: elapsed(:)
-  !$omp threadprivate( lw_sources, toa_flux, flux_up, flux_dn, flux_dir )
+  ! NAR OpenMP CPU directives in compatible with OpenMP GPU directives  
+  !!$omp threadprivate( lw_sources, toa_flux, flux_up, flux_dn, flux_dir )
   ! ----------------------------------------------------------------------------------
   ! Code
   ! ----------------------------------------------------------------------------------
@@ -247,9 +248,9 @@ program rte_rrtmgp_clouds
   !   is LW or SW
   if(is_sw) then
     ! toa_flux is threadprivate
-    !$omp parallel
+    !!$omp parallel
     allocate(toa_flux(ncol, ngpt))
-    !$omp end parallel
+    !!$omp end parallel
     !
     allocate(sfc_alb_dir(nbnd, ncol), sfc_alb_dif(nbnd, ncol), mu0(ncol))
     !$acc enter data create(sfc_alb_dir, sfc_alb_dif, mu0)
@@ -283,9 +284,9 @@ program rte_rrtmgp_clouds
   !
   ! Fluxes
   !
-  !$omp parallel
+  !!$omp parallel
   allocate(flux_up(ncol,nlay+1), flux_dn(ncol,nlay+1))
-  !$omp end parallel
+  !!$omp end parallel
 
   !$acc enter data create(flux_up, flux_dn)
   !$omp target enter data map(alloc:flux_up, flux_dn)
@@ -335,7 +336,7 @@ program rte_rrtmgp_clouds
   !
   call system_clock(start_all)
   !
-  !$omp parallel do firstprivate(fluxes)
+  !!$omp parallel do firstprivate(fluxes)
   do iloop = 1, nloops
     call system_clock(start)
     call stop_on_err(                                      &

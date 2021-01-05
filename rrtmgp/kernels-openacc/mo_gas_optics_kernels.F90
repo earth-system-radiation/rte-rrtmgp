@@ -822,7 +822,6 @@ contains
         do igpt0 = 1, ngpt, tile
 
           !$acc loop vector collapse(2)
-          !$omp parallel do simd simd collapse(2)
           do igdiff = 0, tile-1
             do icdiff = 0, tile-1
               icol = icol0 + icdiff

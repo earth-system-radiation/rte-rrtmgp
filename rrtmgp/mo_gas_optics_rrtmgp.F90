@@ -556,14 +556,14 @@ contains
     ! compute column gas amounts [molec/cm^2]
     !
     !$acc parallel loop gang vector collapse(2)
-    !$omp target teams distribute parallel do simd simd collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
       end do
     end do
     !$acc parallel loop gang vector collapse(3)
-    !$omp target teams distribute parallel do simd simd collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do igas = 1, ngas
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -1441,7 +1441,7 @@ contains
     end if
 
     !$acc parallel loop gang vector collapse(2) copyin(plev,vmr_h2o) copyout(col_dry)
-    !$omp target teams distribute parallel do simd simd collapse(2) map(to:plev, vmr_h2o) map(from:col_dry)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:plev, vmr_h2o) map(from:col_dry)
     do ilev = 1, nlev-1
       do icol = 1, ncol
         delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1))

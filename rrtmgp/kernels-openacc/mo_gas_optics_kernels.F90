@@ -75,7 +75,7 @@ contains
     !$omp target enter data map(alloc:ftemp, fpress)
 
     !$acc parallel loop gang vector collapse(2)
-    !$omp target teams distribute parallel do simd simd collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -97,7 +97,7 @@ contains
     ! PGI BUG WORKAROUND: if present(vmr_ref) isn't there, OpenACC runtime
     ! thinks it isn't present.
     !$acc parallel loop gang vector collapse(4) private(igases) present(vmr_ref)
-    !$omp target teams distribute parallel do simd simd collapse(4) private(igases)
+    !$omp target teams distribute parallel do simd collapse(4) private(igases)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! loop over implemented combinations of major species
@@ -442,7 +442,7 @@ contains
     max_gpt_diff = maxval( minor_limits_gpt(2,:) - minor_limits_gpt(1,:) )
 
     !$acc parallel loop gang vector collapse(3)
-    !$omp target teams distribute parallel do simd simd collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do ilay = 1 , nlay
       do icol = 1, ncol
         do igpt0 = 0, max_gpt_diff

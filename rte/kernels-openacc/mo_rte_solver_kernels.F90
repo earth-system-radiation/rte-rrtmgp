@@ -623,6 +623,7 @@ contains
   subroutine lw_transport_noscat(ncol, nlay, ngpt, top_at_1, &
                                  tau, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                                  radn_up, radn_dn, source_sfcJac, radn_upJac) bind(C, name="lw_transport_noscat")
+    !dir$ optimize(-O0)
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: tau, &     ! Absorption optical thickness, pre-divided by mu []
@@ -1085,6 +1086,7 @@ contains
                     rdif, tdif,           &
                     src_dn, src_up, src_sfc, &
                     flux_up, flux_dn) bind(C, name="adding")
+    !dir$ optimize(-O0)
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: albedo_sfc

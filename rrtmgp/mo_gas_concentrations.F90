@@ -225,7 +225,6 @@ contains
     !$omp end target
 
     !$acc exit data delete(w)
-    !$omp target exit data map(release:w)
   end function set_vmr_1d
   ! -------------------------------------------------------------------------------------
   function set_vmr_2d(this, gas, w) result(error_msg)

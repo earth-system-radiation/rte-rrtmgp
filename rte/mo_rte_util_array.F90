@@ -48,7 +48,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue)
     minValue = minval(array)
     !$acc end kernels
     !$omp end target
@@ -64,7 +64,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue)
     minValue = minval(array)
     !$acc end kernels
     !$omp end target
@@ -80,7 +80,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue)
     minValue = minval(array)
     !$acc end kernels
     !$omp end target
@@ -99,7 +99,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -116,7 +116,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -133,7 +133,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -151,7 +151,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
     minValue = minval(array)
     maxValue = maxval(array)
     !$acc end kernels
@@ -167,7 +167,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
     minValue = minval(array)
     maxValue = maxval(array)
     !$acc end kernels
@@ -185,7 +185,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
     minValue = minval(array)
     maxValue = maxval(array)
     !$acc end kernels
@@ -204,7 +204,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
@@ -221,7 +221,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
@@ -238,7 +238,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels

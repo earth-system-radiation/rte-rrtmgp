@@ -21,6 +21,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
   real(wp) :: tmp(sz1, sz2), tmp_col(sz2)
 
   !$acc data create(tmp, tmp_col)
+  !$omp data map(alloc:tmp, tmp_col)
   call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
   !$acc kernels
   tmp_col(:) = tmp(1, :)
@@ -28,6 +29,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
 
   call stop_on_err(gas_concs%set_vmr       (name, tmp_col))
   !$acc end data
+  !$omp end data
 end subroutine vmr_2d_to_1d
 ! ----------------------------------------------------------------------------------
 program rte_rrtmgp_clouds
@@ -173,6 +175,7 @@ program rte_rrtmgp_clouds
   call move_alloc(temp_array, t_lev)
   ! This puts pressure and temperature arrays on the GPU
   !$acc enter data copyin(p_lay, p_lev, t_lay, t_lev)
+  !$omp target enter data map(to:p_lay, p_lev, t_lay, t_lev)
   ! ----------------------------------------------------------------------------
   ! load data into classes
   call load_and_init(k_dist, k_dist_file, gas_concs)
@@ -215,11 +218,14 @@ program rte_rrtmgp_clouds
   select type(atmos)
     class is (ty_optical_props_1scl)
       !$acc enter data copyin(atmos)
+      !$omp target enter data map(to:atmos)
       call stop_on_err(atmos%alloc_1scl(ncol, nlay, k_dist))
       !$acc enter data copyin(atmos) create(atmos%tau)
+      !$omp target enter data map(to:atmos) map(alloc:atmos%tau)
     class is (ty_optical_props_2str)
       call stop_on_err(atmos%alloc_2str( ncol, nlay, k_dist))
       !$acc enter data copyin(atmos) create(atmos%tau, atmos%ssa, atmos%g)
+      !$omp target enter data map(to:atmos) map(alloc:atmos%tau, atmos%ssa, atmos%g)
     class default
       call stop_on_err("rte_rrtmgp_clouds: Don't recognize the kind of optical properties ")
   end select
@@ -227,9 +233,11 @@ program rte_rrtmgp_clouds
     class is (ty_optical_props_1scl)
       call stop_on_err(clouds%alloc_1scl(ncol, nlay))
       !$acc enter data copyin(clouds) create(clouds%tau)
+      !$omp target enter data map(to:clouds) map(alloc:clouds%tau)
     class is (ty_optical_props_2str)
       call stop_on_err(clouds%alloc_2str(ncol, nlay))
       !$acc enter data copyin(clouds) create(clouds%tau, clouds%ssa, clouds%g)
+      !$omp target enter data map(to:clouds) map(alloc:clouds%tau, clouds%ssa, clouds%g)
     class default
       call stop_on_err("rte_rrtmgp_clouds: Don't recognize the kind of optical properties ")
   end select
@@ -244,6 +252,7 @@ program rte_rrtmgp_clouds
     !
     allocate(sfc_alb_dir(nbnd, ncol), sfc_alb_dif(nbnd, ncol), mu0(ncol))
     !$acc enter data create(sfc_alb_dir, sfc_alb_dif, mu0)
+    !$omp target enter data map(alloc:sfc_alb_dir, sfc_alb_dif, mu0)
     ! Ocean-ish values for no particular reason
     !$acc kernels
     sfc_alb_dir = 0.06_wp
@@ -258,6 +267,7 @@ program rte_rrtmgp_clouds
 
     allocate(t_sfc(ncol), emis_sfc(nbnd, ncol))
     !$acc enter data create(t_sfc, emis_sfc)
+    !$omp target enter data map(alloc:t_sfc, emis_sfc)
     ! Surface temperature
     !$acc kernels
     t_sfc = t_lev(1, merge(nlay+1, 1, top_at_1))
@@ -273,9 +283,11 @@ program rte_rrtmgp_clouds
   !$omp end parallel
 
   !$acc enter data create(flux_up, flux_dn)
+  !$omp target enter data map(alloc:flux_up, flux_dn)
   if(is_sw) then
     allocate(flux_dir(ncol,nlay+1))
     !$acc enter data create(flux_dir)
+    !$omp target enter data map(alloc:flux_dir)
   end if
   !
   ! Clouds
@@ -283,6 +295,7 @@ program rte_rrtmgp_clouds
   allocate(lwp(ncol,nlay), iwp(ncol,nlay), &
            rel(ncol,nlay), rei(ncol,nlay), cloud_mask(ncol,nlay))
   !$acc enter data create(cloud_mask, lwp, iwp, rel, rei)
+  !$omp target enter data map(alloc:cloud_mask, lwp, iwp, rel, rei)
 
   ! Restrict clouds to troposphere (> 100 hPa = 100*100 Pa)
   !   and not very close to the ground (< 900 hPa), and
@@ -291,6 +304,7 @@ program rte_rrtmgp_clouds
   rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
   rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
   !$acc parallel loop collapse(2) copyin(t_lay) copyout(lwp, iwp, rel, rei)
+  !$omp target teams distribute parallel do simd collapse(2) map(to:t_lay) map(from:lwp, iwp, rel, rei)
   do ilay=1,nlay
     do icol=1,ncol
       cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp .and. &
@@ -306,6 +320,7 @@ program rte_rrtmgp_clouds
     end do
   end do
   !$acc exit data delete(cloud_mask)
+  !$omp target exit data map(release:cloud_mask)
   ! ----------------------------------------------------------------------------
   !
   ! Multiple iterations for big problem sizes, and to help identify data movement
@@ -327,6 +342,7 @@ program rte_rrtmgp_clouds
     fluxes%flux_dn => flux_dn(:,:)
     if(is_lw) then
       !$acc enter data create(lw_sources, lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source)
+      !$omp target enter data map(alloc:lw_sources, lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source)
       call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
                                          t_lay, t_sfc, &
                                          gas_concs,    &
@@ -339,8 +355,10 @@ program rte_rrtmgp_clouds
                               emis_sfc,        &
                               fluxes))
       !$acc exit data delete(lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source, lw_sources)
+      !$omp target exit data map(release:lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source, lw_sources)
     else
       !$acc enter data create(toa_flux)
+      !$omp target enter data map(alloc:toa_flux)
       fluxes%flux_dn_dir => flux_dir(:,:)
 
       call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
@@ -355,6 +373,7 @@ program rte_rrtmgp_clouds
                               sfc_alb_dir, sfc_alb_dif, &
                               fluxes))
       !$acc exit data delete(toa_flux)
+      !$omp target exit data map(release:toa_flux)
     end if
     !print *, "******************************************************************"
     call system_clock(finish, clock_rate)
@@ -364,7 +383,9 @@ program rte_rrtmgp_clouds
   call system_clock(finish_all, clock_rate)
   !
   !$acc exit data delete(lwp, iwp, rel, rei)
+  !$omp target exit data map(release:lwp, iwp, rel, rei)
   !$acc exit data delete(p_lay, p_lev, t_lay, t_lev)
+  !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
 
 #ifdef _OPENACC
   avg = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
@@ -379,12 +400,17 @@ program rte_rrtmgp_clouds
 
   if(is_lw) then
     !$acc exit data copyout(flux_up, flux_dn)
+    !$omp target exit data map(from:flux_up, flux_dn)
     if(write_fluxes) call write_lw_fluxes(input_file, flux_up, flux_dn)
     !$acc exit data delete(t_sfc, emis_sfc)
+    !$omp target exit data map(release:t_sfc, emis_sfc)
   else
     !$acc exit data copyout(flux_up, flux_dn, flux_dir)
+    !$omp target exit data map(from:flux_up, flux_dn, flux_dir)
     if(write_fluxes) call write_sw_fluxes(input_file, flux_up, flux_dn, flux_dir)
     !$acc exit data delete(sfc_alb_dir, sfc_alb_dif, mu0)
+    !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif, mu0)
   end if
   !$acc enter data create(lwp, iwp, rel, rei)
+  !$omp target enter data map(alloc:lwp, iwp, rel, rei)
 end program rte_rrtmgp_clouds

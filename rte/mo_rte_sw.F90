@@ -135,6 +135,7 @@ contains
     !   and switch dimension ordering
 
     !$acc enter data create(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
+    !$omp target enter data map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
     call expand_and_transpose(atmos, sfc_alb_dir, sfc_alb_dir_gpt)
     call expand_and_transpose(atmos, sfc_alb_dif, sfc_alb_dif_gpt)
     ! ------------------------------------------------------------------------------------
@@ -147,15 +148,21 @@ contains
     !   direct and diffuse to represent the total, consistent with the LW
     !
     !$acc enter data copyin(mu0)
+    !$omp target enter data map(to:mu0)
     !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
 
     !$acc enter data copyin(inc_flux)
+    !$omp target enter data map(to:inc_flux)
     call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),   inc_flux, mu0, gpt_flux_dir)
     !$acc exit data delete(inc_flux)
+    !$omp target exit data map(release:inc_flux)
     if(present(inc_flux_dif)) then
       !$acc enter data copyin(inc_flux_dif)
+      !$omp target enter data map(to:inc_flux_dif)
       call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl), inc_flux_dif,  gpt_flux_dn )
       !$acc exit data delete(inc_flux_dif)
+      !$omp target exit data map(release:inc_flux_dif)
     else
       call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),                gpt_flux_dn )
     end if
@@ -166,6 +173,7 @@ contains
         ! Direct beam only
         !
         !$acc enter data copyin(atmos, atmos%tau)
+        !$omp target enter data map(to:atmos, atmos%tau)
         error_msg =  atmos%validate()
         if(len_trim(error_msg) > 0) return
         call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
@@ -177,11 +185,13 @@ contains
         !gpt_flux_up = 0._wp
         !gpt_flux_dn = 0._wp
         !$acc exit data delete(atmos%tau, atmos)
+        !$omp target exit data map(release:atmos%tau, atmos)
       class is (ty_optical_props_2str)
         !
         ! two-stream calculation with scattering
         !
         !$acc enter data copyin(atmos, atmos%tau, atmos%ssa, atmos%g)
+        !$omp target enter data map(to:atmos, atmos%tau, atmos%ssa, atmos%g)
         error_msg =  atmos%validate()
         if(len_trim(error_msg) > 0) return
         call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
@@ -189,7 +199,9 @@ contains
                                sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
                                gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         !$acc exit data delete(atmos%tau, atmos%ssa, atmos%g, atmos)
+        !$omp target exit data map(release:atmos%tau, atmos%ssa, atmos%g, atmos)
         !$acc exit data delete(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
+        !$omp target exit data map(release:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
       class is (ty_optical_props_nstr)
         !
         ! n-stream calculation
@@ -208,7 +220,9 @@ contains
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
     !$acc exit data delete(mu0)
+    !$omp target exit data map(release:mu0)
     !$acc exit data delete(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
   end function rte_sw
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -228,6 +242,7 @@ contains
     ngpt  = ops%get_ngpt()
     limits = ops%get_band_lims_gpoint()
     !$acc parallel loop collapse(2) copyin(arr_in, limits)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:arr_in, limits)
     do iband = 1, nband
       do icol = 1, ncol
         do igpt = limits(1, iband), limits(2, iband)

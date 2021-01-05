@@ -308,6 +308,7 @@ contains
     integer :: i
     ! -----------------------
     !$acc parallel loop copyout(array)
+    !$omp target teams distribute parallel do simd map(from:array)
     do i = 1, ni
       array(i) = 0.0_wp
     end do
@@ -320,6 +321,7 @@ contains
     integer :: i,j,k
     ! -----------------------
     !$acc parallel loop collapse(3) copyout(array)
+    !$omp target teams distribute parallel do simd collapse(3) map(from:array)
     do k = 1, nk
       do j = 1, nj
         do i = 1, ni
@@ -337,6 +339,7 @@ contains
     integer :: i,j,k,l
     ! -----------------------
     !$acc parallel loop collapse(4) copyout(array)
+    !$omp target teams distribute parallel do simd collapse(4) map(from:array)
     do l = 1, nl
       do k = 1, nk
         do j = 1, nj

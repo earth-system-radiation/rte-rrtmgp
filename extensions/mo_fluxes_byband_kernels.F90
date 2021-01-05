@@ -36,6 +36,7 @@ contains
 
     integer :: icol, ilev, igpt, ibnd
     !$acc parallel loop collapse(3) copyin(spectral_flux, band_lims) copyout(byband_flux)
+    !$omp target teams distribute parallel do collapse(3) map(to:spectral_flux, band_lims) map(from:byband_flux)
     do ibnd = 1, nbnd
       do ilev = 1, nlev
         do icol = 1, ncol
@@ -61,6 +62,7 @@ contains
     integer :: icol, ilev, igpt, ibnd
 
     !$acc parallel loop collapse(3) copyin(spectral_flux_dn, spectral_flux_up, band_lims) copyout(byband_flux_net)
+    !$omp target teams distribute parallel do collapse(3) map(to:spectral_flux_dn, spectral_flux_up, band_lims) map(from:byband_flux_net)
     do ibnd = 1, nbnd
       do ilev = 1, nlev
         do icol = 1, ncol

@@ -106,7 +106,9 @@ contains
     call this%reset()
     allocate(this%gas_name(ngas), this%concs(ngas))
     !$acc enter data copyin(this)
+    !$omp target enter data map(to:this)
     !$acc enter data copyin(this%concs)
+    !$omp target enter data map(to:this%concs)
 
     this%gas_name(:) = gas_names(:)
   end function
@@ -142,6 +144,7 @@ contains
     if (associated(this%concs(igas)%conc)) then
       if ( any(shape(this%concs(igas)%conc) /= [1, 1]) ) then
         !$acc exit data delete(this%concs(igas)%conc)
+        !$omp target exit data map(release:this%concs(igas)%conc)
         deallocate(this%concs(igas)%conc)
         nullify   (this%concs(igas)%conc)
       end if
@@ -149,11 +152,14 @@ contains
     if (.not. associated(this%concs(igas)%conc)) then
       allocate(this%concs(igas)%conc(1,1))
       !$acc enter data create(this%concs(igas)%conc)
+      !$omp target enter data map(alloc:this%concs(igas)%conc)
     end if
 
     !$acc kernels
+    !$omp target
     this%concs(igas)%conc(:,:) = w
     !$acc end kernels
+    !$omp end target
   end function set_vmr_scalar
   ! -------------------------------------------------------------------------------------
   function set_vmr_1d(this, gas, w) result(error_msg)
@@ -191,6 +197,7 @@ contains
     if (associated(this%concs(igas)%conc)) then
       if ( any(shape(this%concs(igas)%conc) /= [1, this%nlay]) ) then
         !$acc exit data delete(this%concs(igas)%conc)
+        !$omp target exit data map(release:this%concs(igas)%conc)
         deallocate(this%concs(igas)%conc)
         nullify   (this%concs(igas)%conc)
       end if
@@ -198,13 +205,17 @@ contains
     if (.not. associated(this%concs(igas)%conc)) then
       allocate(this%concs(igas)%conc(1,this%nlay))
       !$acc enter data create(this%concs(igas)%conc)
+      !$omp target enter data map(alloc:this%concs(igas)%conc)
     end if
 
     !$acc kernels copyin(w)
+    !$omp target map(to:w)
     this%concs(igas)%conc(1,:) = w
     !$acc end kernels
+    !$omp end target
 
     !$acc exit data delete(w)
+    !$omp target exit data map(release:w)
   end function set_vmr_1d
   ! -------------------------------------------------------------------------------------
   function set_vmr_2d(this, gas, w) result(error_msg)
@@ -249,6 +260,7 @@ contains
     if (associated(this%concs(igas)%conc)) then
       if ( any(shape(this%concs(igas)%conc) /= [this%ncol,this%nlay]) ) then
         !$acc exit data delete(this%concs(igas)%conc)
+        !$omp target exit data map(release:this%concs(igas)%conc)
         deallocate(this%concs(igas)%conc)
         nullify   (this%concs(igas)%conc)
       end if
@@ -256,11 +268,14 @@ contains
     if (.not. associated(this%concs(igas)%conc)) then
       allocate(this%concs(igas)%conc(this%ncol,this%nlay))
       !$acc enter data create(this%concs(igas)%conc)
+      !$omp target enter data map(alloc:this%concs(igas)%conc)
     end if
 
     !$acc kernels copyin(w)
+    !$omp target map(to:w)
     this%concs(igas)%conc(:,:) = w(:,:)
     !$acc end kernels
+    !$omp end target
   end function set_vmr_2d
   ! -------------------------------------------------------------------------------------
   !
@@ -295,16 +310,20 @@ contains
     if(error_msg /= "") return
 
     !$acc data copyout (array) present(this)
+    !$omp data map(from:array)
     if(size(this%concs(igas)%conc, 2) > 1) then
       !$acc kernels default(none)
       array(:) = this%concs(igas)%conc(1,:)
       !$acc end kernels
+      !$omp end target
     else
       !$acc kernels default(none)
       array(:) = this%concs(igas)%conc(1,1)
       !$acc end kernels
+      !$omp end target
     end if
     !$acc end data
+    !$omp end data
 
   end function get_vmr_1d
   ! -------------------------------------------------------------------------------------
@@ -339,6 +358,7 @@ contains
     if(error_msg /= "") return
 
     !$acc data copyout (array) present(this, this%concs)
+    !$omp data map(from:array)
     if(size(this%concs(igas)%conc, 1) > 1) then      ! Concentration stored as 2D
       !$acc parallel loop collapse(2) default(none)
       do ilay = 1, size(array,2)
@@ -363,6 +383,7 @@ contains
       end do
     end if
     !$acc end data
+    !$omp end data
 
   end function get_vmr_2d
   ! -------------------------------------------------------------------------------------
@@ -391,6 +412,7 @@ contains
     allocate(subset%gas_name(size(this%gas_name)), &
              subset%concs   (size(this%concs))) ! These two arrays should be the same length
     !$acc enter data create(subset, subset%concs)
+    !$omp target enter data map(alloc:subset, subset%concs)
     subset%nlay = this%nlay
     subset%ncol = merge(n, 0, this%ncol > 0)
     subset%gas_name(:)  = this%gas_name(:)
@@ -403,14 +425,19 @@ contains
       allocate(subset%concs(i)%conc(min(max(subset%ncol,1), size(this%concs(i)%conc, 1)), &
                                     min(    subset%nlay,    size(this%concs(i)%conc, 2))))
       !$acc enter data create(subset%concs(i)%conc)
+      !$omp target enter data map(alloc:subset%concs(i)%conc)
       if(size(this%concs(i)%conc, 1) > 1) then      ! Concentration stored as 2D
         !$acc kernels
+        !$omp target
         subset%concs(i)%conc(:,:) = this%concs(i)%conc(start:(start+n-1),:)
         !$acc end kernels
+        !$omp end target
       else
         !$acc kernels
+        !$omp target
         subset%concs(i)%conc(:,:) = this%concs(i)%conc(:,:)
         !$acc end kernels
+        !$omp end target
       end if
     end do
 
@@ -432,11 +459,13 @@ contains
       do i = 1, size(this%concs)
         if(associated(this%concs(i)%conc)) then
           !$acc exit data delete(this%concs(i)%conc)
+          !$omp target exit data map(release:this%concs(i)%conc)
           deallocate(this%concs(i)%conc)
           nullify(this%concs(i)%conc)
         end if
       end do
       !$acc exit data delete(this%concs)
+      !$omp target exit data map(release:this%concs)
       deallocate(this%concs)
     end if
   end subroutine reset
@@ -489,6 +518,7 @@ contains
     type(ty_gas_concs), intent(inout) :: this
     call this%reset()
     !$acc exit data delete(this)
+    !$omp target exit data map(release:this)
   end subroutine del
   ! -------------------------------------------------------------------------------------
 end module mo_gas_concentrations

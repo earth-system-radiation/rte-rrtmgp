@@ -240,14 +240,10 @@ contains
     !$acc enter data copyin(optical_props)
     !$acc enter data create(gpt_flux_dn, gpt_flux_up)
     !$omp target enter data map(alloc:gpt_flux_dn, gpt_flux_up)
-    !$acc enter data create(sfc_emis_gpt)
-    !$omp target enter data map(alloc:sfc_emis_gpt)
-
-    allocate(gpt_flux_upJac (ncol, nlay+1, ngpt))
     !$acc enter data create(gpt_flux_upJac)
     !$omp target enter data map(alloc:gpt_flux_upJac)
-    !$acc enter data copyin(sources%sfc_source_Jac)
-    !$omp target enter data map(to:sources%sfc_source_Jac)
+    !$acc enter data create(sfc_emis_gpt)
+    !$omp target enter data map(alloc:sfc_emis_gpt)
 
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     !

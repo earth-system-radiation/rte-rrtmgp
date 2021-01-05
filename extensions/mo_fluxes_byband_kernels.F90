@@ -28,7 +28,7 @@ contains
   !
   ! Spectral reduction over all points
   !
-  pure subroutine sum_byband(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux, byband_flux) bind (C)
+  subroutine sum_byband(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux, byband_flux) bind (C)
     integer,                               intent(in ) :: ncol, nlev, ngpt, nbnd
     integer,  dimension(2,          nbnd), intent(in ) :: band_lims
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux
@@ -53,7 +53,7 @@ contains
   !
   ! Net flux: Spectral reduction over all points
   !
-  pure subroutine net_byband_full(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux_dn, spectral_flux_up, byband_flux_net) bind (C)
+  subroutine net_byband_full(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux_dn, spectral_flux_up, byband_flux_net) bind (C)
     integer,                               intent(in ) :: ncol, nlev, ngpt, nbnd
     integer,  dimension(2,          nbnd), intent(in ) :: band_lims
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux_dn, spectral_flux_up
@@ -79,7 +79,7 @@ contains
     end do
   end subroutine net_byband_full
   ! ----------------------------------------------------------------------------
-  pure subroutine net_byband_precalc(ncol, nlev, nbnd, byband_flux_dn, byband_flux_up, byband_flux_net) bind (C)
+  subroutine net_byband_precalc(ncol, nlev, nbnd, byband_flux_dn, byband_flux_up, byband_flux_net) bind (C)
     integer,                               intent(in ) :: ncol, nlev, nbnd
     real(wp), dimension(ncol, nlev, nbnd), intent(in ) :: byband_flux_dn, byband_flux_up
     real(wp), dimension(ncol, nlev, nbnd), intent(out) :: byband_flux_net

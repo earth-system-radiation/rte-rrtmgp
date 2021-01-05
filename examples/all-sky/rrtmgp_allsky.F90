@@ -21,7 +21,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
   real(wp) :: tmp(sz1, sz2), tmp_col(sz2)
 
   !$acc data create(tmp, tmp_col)
-  !$omp data map(alloc:tmp, tmp_col)
+  !$omp target data map(alloc:tmp, tmp_col)
   call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
   !$acc kernels
   !$omp target
@@ -31,7 +31,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
 
   call stop_on_err(gas_concs%set_vmr       (name, tmp_col))
   !$acc end data
-  !$omp end data
+  !$omp end target data
 end subroutine vmr_2d_to_1d
 ! ----------------------------------------------------------------------------------
 program rte_rrtmgp_clouds

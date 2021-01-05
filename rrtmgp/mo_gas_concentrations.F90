@@ -156,7 +156,7 @@ contains
 
     p => this%concs(igas)%conc(:,:)
     !$acc kernels
-    !$omp target
+    !$omp target map(to:w)
 #ifdef _CRAYFTN
     p(:,:) = w
 #else

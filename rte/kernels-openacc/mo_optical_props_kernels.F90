@@ -399,14 +399,14 @@ contains
     !$acc&     copyin(ssa2(:ncol,:nlay,:ngpt)) &
     !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
     !$acc&     copyin(g2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(temp_moms(:nmom1)) &
+    !$acc&     private(temp_moms) &
     !$acc&     copyin(tau2(:ncol,:nlay,:ngpt))
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:p1(:nmom1, :ncol, :nlay, :ngpt), ssa1(:ncol, :nlay, :ngpt)) &
     !$omp& map(to:ssa2(:ncol, :nlay, :ngpt)) &
     !$omp& map(tofrom:tau1(:ncol, :nlay, :ngpt)) &
     !$omp& map(to:g2(:ncol, :nlay, :ngpt)) &
-    !$omp& map(tofrom:temp_moms(:nmom1)) &
+    !$omp& private(temp_moms) &
     !$omp& map(to:tau2(:ncol, :nlay, :ngpt))
     do igpt = 1, ngpt
       do ilay = 1, nlay
@@ -786,14 +786,14 @@ contains
     !$acc&     copyin(ssa2(:ncol,:nlay,:nbnd)) &
     !$acc&     copy(ssa1(:ncol,:nlay,:ngpt),p1(:nmom1,:ncol,:nlay,:ngpt)) &
     !$acc&     copyin(tau2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(temp_moms(:nmom1)) &
+    !$acc&     private(temp_moms) &
     !$acc&     copyin(gpt_lims(:,:nbnd),g2(:ncol,:nlay,:nbnd))
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:tau1(:ncol, :nlay, :ngpt)) &
     !$omp& map(to:ssa2(:ncol, :nlay, :nbnd)) &
     !$omp& map(tofrom:ssa1(:ncol, :nlay, :ngpt), p1(:nmom1, :ncol, :nlay, :ngpt)) &
     !$omp& map(to:tau2(:ncol, :nlay, :nbnd)) &
-    !$omp& map(tofrom:temp_moms(:nmom1)) &
+    !$omp& private(temp_moms) &
     !$omp& map(to:gpt_lims(:, :nbnd), g2(:ncol, :nlay, :nbnd))
     do igpt = 1 , ngpt
       do ilay = 1, nlay

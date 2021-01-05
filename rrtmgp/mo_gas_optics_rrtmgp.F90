@@ -736,9 +736,11 @@ contains
       ! Scale the solar source function to the input tsi
       !
       !$acc kernels
+      !$omp target
       norm = 1._wp/sum(this%solar_source(:))
       this%solar_source(:) = this%solar_source(:) * tsi * norm
       !$acc end kernels
+      !$omp end target
     end if
 
   end function set_tsi
@@ -944,10 +946,12 @@ contains
     !$acc enter data create(this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$omp target enter data map(alloc:this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$acc kernels
+    !$omp target
     this%totplnk = totplnk
     this%planck_frac = planck_frac
     this%optimal_angle_fit = optimal_angle_fit
     !$acc end kernels
+    !$omp end target
 
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
@@ -1054,10 +1058,12 @@ contains
     !$acc enter data create(this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
     !$omp target enter data map(alloc:this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
     !$acc kernels
+    !$omp target
     this%solar_source_quiet   = solar_quiet
     this%solar_source_facular = solar_facular
     this%solar_source_sunspot = solar_sunspot
     !$acc end kernels
+    !$omp end target
     err_message = this%set_solar_variability(mg_default, sb_default)
   end function load_ext
   !--------------------------------------------------------------------------------------------------------------------

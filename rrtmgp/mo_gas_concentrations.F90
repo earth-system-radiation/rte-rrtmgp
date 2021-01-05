@@ -123,6 +123,7 @@ contains
     real(wp),            intent(in   ) :: w
     character(len=128)                 :: error_msg
     ! ---------
+    real(wp), dimension(:,:), pointer :: p
     integer :: igas
     ! ---------
     error_msg = ''
@@ -154,9 +155,14 @@ contains
       !$omp target enter data map(alloc:this%concs(igas)%conc)
     end if
 
+    p => this%concs(igas)%conc(:,:)
     !$acc kernels
     !$omp target
+#ifdef _CRAYFTN
+    p(:,:) = w
+#else
     this%concs(igas)%conc(:,:) = w
+#endif
     !$acc end kernels
     !$omp end target
   end function set_vmr_scalar
@@ -169,6 +175,7 @@ contains
                          intent(in   ) :: w
     character(len=128)                 :: error_msg
     ! ---------
+    real(wp), dimension(:,:), pointer :: p
     integer :: igas
     ! ---------
     error_msg = ''
@@ -207,9 +214,14 @@ contains
       !$omp target enter data map(alloc:this%concs(igas)%conc)
     end if
 
+    p => this%concs(igas)%conc(:,:)
     !$acc kernels copyin(w)
     !$omp target map(to:w)
+#ifdef _CRAYFTN
+    p(1,:) = w
+#else
     this%concs(igas)%conc(1,:) = w
+#endif
     !$acc end kernels
     !$omp end target
 
@@ -225,6 +237,7 @@ contains
                          intent(in   ) :: w
     character(len=128)                 :: error_msg
     ! ---------
+    real(wp), dimension(:,:), pointer :: p
     integer :: igas
     ! ---------
     error_msg = ''
@@ -270,9 +283,14 @@ contains
       !$omp target enter data map(alloc:this%concs(igas)%conc)
     end if
 
+    p => this%concs(igas)%conc(:,:)
     !$acc kernels copyin(w)
     !$omp target map(to:w)
+#ifdef _CRAYFTN
+    p(:,:) = w(:,:)
+#else
     this%concs(igas)%conc(:,:) = w(:,:)
+#endif
     !$acc end kernels
     !$omp end target
   end function set_vmr_2d
@@ -290,6 +308,7 @@ contains
     real(wp), dimension(:),   intent(out) :: array
     character(len=128) :: error_msg
     ! ---------------------
+    real(wp), dimension(:,:), pointer :: p
     integer :: igas
     ! ---------------------
     error_msg = ''
@@ -308,18 +327,27 @@ contains
     end if
     if(error_msg /= "") return
 
+    p => this%concs(igas)%conc(:,:)
     !$acc data copyout (array) present(this)
     !$omp target data map(from:array)
     if(size(this%concs(igas)%conc, 2) > 1) then
       !$acc kernels default(none)
       !$omp target
+#ifdef _CRAYFTN
+      array(:) = p(1,:)
+#else
       array(:) = this%concs(igas)%conc(1,:)
+#endif
       !$acc end kernels
       !$omp end target
     else
       !$acc kernels default(none)
       !$omp target
+#ifdef _CRAYFTN
+      array(:) = p(1,1)
+#else
       array(:) = this%concs(igas)%conc(1,1)
+#endif
       !$acc end kernels
       !$omp end target
     end if
@@ -337,6 +365,7 @@ contains
     real(wp), dimension(:,:), intent(out) :: array
     character(len=128)                    :: error_msg
     ! ---------------------
+    real(wp), dimension(:,:), pointer :: p
     integer :: icol, ilay, igas
     ! ---------------------
     error_msg = ''
@@ -358,6 +387,7 @@ contains
     end if
     if(error_msg /= "") return
 
+    p => this%concs(igas)%conc(:,:)
     !$acc data copyout (array) present(this, this%concs)
     !$omp target data map(from:array)
     if(size(this%concs(igas)%conc, 1) > 1) then      ! Concentration stored as 2D
@@ -366,7 +396,11 @@ contains
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
           !print *, (size(this%concs))
+#ifdef _CRAYFTN
+           array(icol,ilay) = p(icol,ilay)
+#else
           array(icol,ilay) = this%concs(igas)%conc(icol,ilay)
+#endif
         end do
       end do
     else if(size(this%concs(igas)%conc, 2) > 1) then ! Concentration stored as 1D
@@ -374,14 +408,23 @@ contains
       !$omp target teams distribute parallel do simd
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
+#ifdef _CRAYFTN
+          array(icol,ilay) = p(1,ilay)
+#else
          array(icol, ilay) = this%concs(igas)%conc(1,ilay)
+#endif
         end do
       end do
     else                                             ! Concentration stored as scalar
       !$acc parallel loop collapse(2) default(none)
+      !$omp target teams distribute parallel do simd
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
+#ifdef _CRAYFTN
+          array(icol,ilay) = p(1,1)
+#else
           array(icol,ilay) = this%concs(igas)%conc(1,1)
+#endif
         end do
       end do
     end if
@@ -400,6 +443,7 @@ contains
     class(ty_gas_concs),      intent(inout) :: subset
     character(len=128)                      :: error_msg
     ! ---------------------
+    real(wp), dimension(:,:), pointer :: p1, p2
     integer :: i
     ! ---------------------
     error_msg = ''
@@ -427,18 +471,28 @@ contains
       !
       allocate(subset%concs(i)%conc(min(max(subset%ncol,1), size(this%concs(i)%conc, 1)), &
                                     min(    subset%nlay,    size(this%concs(i)%conc, 2))))
+      p1 => subset%concs(i)%conc(:,:)
+      p2 => this%concs(i)%conc(:,:)
       !$acc enter data create(subset%concs(i)%conc)
       !$omp target enter data map(alloc:subset%concs(i)%conc)
       if(size(this%concs(i)%conc, 1) > 1) then      ! Concentration stored as 2D
         !$acc kernels
         !$omp target
+#ifdef _CRAYFTN
+        p1(:,:) = p2(start:(start+n-1),:)
+#else
         subset%concs(i)%conc(:,:) = this%concs(i)%conc(start:(start+n-1),:)
+#endif
         !$acc end kernels
         !$omp end target
       else
         !$acc kernels
         !$omp target
+#ifdef _CRAYFTN
+        p1(:,:) = p2(:,:)
+#else
         subset%concs(i)%conc(:,:) = this%concs(i)%conc(:,:)
+#endif
         !$acc end kernels
         !$omp end target
       end if

@@ -106,7 +106,6 @@ contains
     call this%reset()
     allocate(this%gas_name(ngas), this%concs(ngas))
     !$acc enter data copyin(this)
-    !$omp target enter data map(to:this)
     !$acc enter data copyin(this%concs)
     !$omp target enter data map(to:this%concs)
 
@@ -412,7 +411,7 @@ contains
     allocate(subset%gas_name(size(this%gas_name)), &
              subset%concs   (size(this%concs))) ! These two arrays should be the same length
     !$acc enter data create(subset, subset%concs)
-    !$omp target enter data map(alloc:subset, subset%concs)
+    !$omp target enter data map(alloc:subset%concs)
     subset%nlay = this%nlay
     subset%ncol = merge(n, 0, this%ncol > 0)
     subset%gas_name(:)  = this%gas_name(:)
@@ -518,7 +517,6 @@ contains
     type(ty_gas_concs), intent(inout) :: this
     call this%reset()
     !$acc exit data delete(this)
-    !$omp target exit data map(release:this)
   end subroutine del
   ! -------------------------------------------------------------------------------------
 end module mo_gas_concentrations

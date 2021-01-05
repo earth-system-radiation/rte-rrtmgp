@@ -238,7 +238,6 @@ contains
     allocate(sfc_emis_gpt(ncol,         ngpt))
     !!$acc enter data copyin(sources, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data copyin(optical_props)
-    !$omp target enter data map(to:optical_props)
     !$acc enter data create(gpt_flux_dn, gpt_flux_up)
     !$omp target enter data map(alloc:gpt_flux_dn, gpt_flux_up)
     !$acc enter data create(sfc_emis_gpt)
@@ -390,7 +389,6 @@ contains
     !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
     !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn)
     !$acc exit data delete(optical_props)
-    !$omp target exit data map(release:optical_props)
     !!$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source,sources)
   end function rte_lw
   !--------------------------------------------------------------------------------------------------------------------

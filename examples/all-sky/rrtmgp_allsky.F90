@@ -24,8 +24,10 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
   !$omp data map(alloc:tmp, tmp_col)
   call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
   !$acc kernels
+  !$omp target
   tmp_col(:) = tmp(1, :)
   !$acc end kernels
+  !$omp end target
 
   call stop_on_err(gas_concs%set_vmr       (name, tmp_col))
   !$acc end data
@@ -255,10 +257,12 @@ program rte_rrtmgp_clouds
     !$omp target enter data map(alloc:sfc_alb_dir, sfc_alb_dif, mu0)
     ! Ocean-ish values for no particular reason
     !$acc kernels
+    !$omp target
     sfc_alb_dir = 0.06_wp
     sfc_alb_dif = 0.06_wp
     mu0 = .86_wp
     !$acc end kernels
+    !$omp end target
   else
     ! lw_sorces is threadprivate
     !$omp parallel
@@ -270,9 +274,11 @@ program rte_rrtmgp_clouds
     !$omp target enter data map(alloc:t_sfc, emis_sfc)
     ! Surface temperature
     !$acc kernels
+    !$omp target
     t_sfc = t_lev(1, merge(nlay+1, 1, top_at_1))
     emis_sfc = 0.98_wp
     !$acc end kernels
+    !$omp end target
   end if
   ! ----------------------------------------------------------------------------
   !

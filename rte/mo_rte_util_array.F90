@@ -99,7 +99,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue)
+    !$omp target map(to:array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -116,7 +116,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue)
+    !$omp target map(to:array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -133,7 +133,7 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue)
+    !$omp target map(to:array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -204,7 +204,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue, maxValue)
+    !$omp target map(to:array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
@@ -221,7 +221,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue, maxValue)
+    !$omp target map(to:array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
@@ -238,7 +238,7 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue, maxValue)
+    !$omp target map(to:array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
@@ -332,7 +332,7 @@ contains
     integer :: i
     ! -----------------------
     !$acc parallel loop copyout(array)
-    !$omp target teams distribute parallel do simd map(from:array)
+    !$omp target teams distribute parallel do simd map(from:array) 
     do i = 1, ni
       array(i) = 0.0_wp
     end do

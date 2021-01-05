@@ -107,7 +107,6 @@ contains
     allocate(this%gas_name(ngas), this%concs(ngas))
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%concs)
-    !$omp target enter data map(to:this%concs)
 
     this%gas_name(:) = gas_names(:)
   end function

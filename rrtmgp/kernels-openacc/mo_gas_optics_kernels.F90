@@ -870,10 +870,10 @@ contains
     real(wp) :: t
     ! -----------------------
     !$acc parallel loop collapse(3) &
-    !$omp target teams distribute parallel do simd collapse(3) &
     !$acc&     copy(tau, ssa, p) &
-    !$omp& map(tofrom:tau, ssa, p) &
     !$acc&     copyin(tau_rayleigh(:ngpt,:nlay,:ncol),tau_abs(:ngpt,:nlay,:ncol))
+    !$omp target teams distribute parallel do simd collapse(3) &
+    !$omp& map(tofrom:tau, ssa, p) &
     !$omp& map(to:tau_rayleigh(:ngpt, :nlay, :ncol), tau_abs(:ngpt, :nlay, :ncol))
     do icol = 1, ncol
       do ilay = 1, nlay

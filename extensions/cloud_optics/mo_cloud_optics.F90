@@ -151,6 +151,9 @@ contains
     !$acc enter data create(this)                                               &
     !$acc            create(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq)  &
     !$acc            create(this%lut_extice, this%lut_ssaice, this%lut_asyice)
+    !$omp target enter data map(alloc:this) &
+    !$omp map(alloc:this%lut_extliq, this%lut_ssaliq, this%lut_asyliq) &
+    !$omp map(alloc:this%lut_extice, this%lut_ssaice, this%lut_asyice)
     ! Load LUT constants
     this%radliq_lwr = radliq_lwr
     this%radliq_upr = radliq_upr
@@ -159,6 +162,7 @@ contains
 
     ! Load LUT coefficients
     !$acc kernels
+    !$omp target
     this%lut_extliq = lut_extliq
     this%lut_ssaliq = lut_ssaliq
     this%lut_asyliq = lut_asyliq
@@ -166,6 +170,7 @@ contains
     this%lut_ssaice = lut_ssaice
     this%lut_asyice = lut_asyice
     !$acc end kernels
+    !$omp end target
     !
     ! Set default ice roughness - min values
     !
@@ -277,10 +282,16 @@ contains
     !$acc            create(this%pade_extice, this%pade_ssaice, this%pade_asyice)                       &
     !$acc            create(this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq)  &
     !$acc            create(this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)
+    !$omp target enter data map(alloc:this) &
+    !$omp map(alloc:this%pade_extliq, this%pade_ssaliq, this%pade_asyliq) &
+    !$omp map(alloc:this%pade_extice, this%pade_ssaice, this%pade_asyice) &
+    !$omp map(alloc:this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq) &
+    !$omp map(alloc:this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)
     !
     ! Load data
     !
     !$acc kernels
+    !$omp target
     this%pade_extliq = pade_extliq
     this%pade_ssaliq = pade_ssaliq
     this%pade_asyliq = pade_asyliq
@@ -294,6 +305,7 @@ contains
     this%pade_sizreg_ssaice = pade_sizreg_ssaice
     this%pade_sizreg_asyice = pade_sizreg_asyice
     !$acc end kernels
+    !$omp end target
     !
     ! Set default ice roughness - min values
     !
@@ -318,6 +330,8 @@ contains
       !$acc exit data delete(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq)  &
       !$acc           delete(this%lut_extice, this%lut_ssaice, this%lut_asyice)  &
       !$acc           delete(this)
+      !$omp target exit data map(release:this%lut_extliq, this%lut_ssaliq, this%lut_asyliq) &
+      !$omp map(release:this%lut_extice, this%lut_ssaice, this%lut_asyice) &
 
 
       deallocate(this%lut_extliq, this%lut_ssaliq, this%lut_asyliq, &
@@ -336,6 +350,10 @@ contains
       !$acc           delete(this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq)  &
       !$acc           delete(this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice)  &
       !$acc           delete(this)
+      !$omp target exit data map(release:this%pade_extliq, this%pade_ssaliq, this%pade_asyliq) &
+      !$omp map(release:this%pade_extice, this%pade_ssaice, this%pade_asyice) &
+      !$omp map(release:this%pade_sizreg_extliq, this%pade_sizreg_ssaliq, this%pade_sizreg_asyliq) &
+      !$omp map(release:this%pade_sizreg_extice, this%pade_sizreg_ssaice, this%pade_sizreg_asyice) &
 
       deallocate(this%pade_extliq, this%pade_ssaliq, this%pade_asyliq, &
                  this%pade_extice, this%pade_ssaice, this%pade_asyice, &
@@ -420,10 +438,14 @@ contains
     !$acc data copyin(clwp, ciwp, reliq, reice)                         &
     !$acc      create(ltau, ltaussa, ltaussag, itau, itaussa, itaussag) &
     !$acc      create(liqmsk,icemsk)
+    !$omp target data map(to:clwp, ciwp, reliq, reice) &
+    !$omp map(alloc:ltau, ltaussa, ltaussag, itau, itaussa, itaussag) &
+    !$omp map(alloc:liqmsk, icemsk)
     !
     ! Cloud masks; don't need value re values if there's no cloud
     !
     !$acc parallel loop gang vector default(none) collapse(2)
+    !$omp target teams distribute parallel do simd default(none) collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         liqmsk(icol,ilay) = clwp(icol,ilay) > 0._wp
@@ -500,6 +522,8 @@ contains
       type is (ty_optical_props_1scl)
         !$acc parallel loop gang vector default(none) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau)
+        !$omp target teams distribute parallel do simd default(none) collapse(3) &
+        !$omp map(from:optical_props%tau)
 
         do ibnd = 1, nbnd
           do ilay = 1, nlay
@@ -513,6 +537,8 @@ contains
       type is (ty_optical_props_2str)
         !$acc parallel loop gang vector default(none) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
+        !$omp target teams parallel do simd default(none) collapse(3) &
+        !$omp map(from:optical_props%tau, optical_props%ssa, optical_props%g)
         do ibnd = 1, nbnd
           do ilay = 1, nlay
             do icol = 1,ncol
@@ -530,6 +556,7 @@ contains
       end select
     end if 
     !$acc end data
+    !$omp end target data
   end function cloud_optics
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -615,6 +642,7 @@ contains
     real(wp) :: t, ts, tsg  ! tau, tau*ssa, tau*ssa*g
     ! ---------------------------
     !$acc parallel loop gang vector default(present) collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do ibnd = 1, nbnd
       do ilay = 1,nlay
         do icol = 1, ncol
@@ -669,6 +697,7 @@ contains
     real(wp) :: t, ts
 
     !$acc parallel loop gang vector default(present) collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do ibnd = 1, nbnd
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -741,6 +770,7 @@ contains
   !
   function pade_eval_1(iband, nbnd, nrads, m, n, irad, re, pade_coeffs)
     !$acc routine seq
+    !$omp declare target
     !
     integer,                intent(in) :: iband, nbnd, nrads, m, n, irad
     real(wp), dimension(nbnd, nrads, 0:m+n), &

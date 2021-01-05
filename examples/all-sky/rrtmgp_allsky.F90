@@ -392,7 +392,7 @@ program rte_rrtmgp_clouds
   !$acc exit data delete(p_lay, p_lev, t_lay, t_lev)
   !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
 
-#ifdef _OPENACC
+#if defined(_OPENACC) || defined(_OPENMP)
   avg = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
 
   print *, "Execution times - min(s)        :", minval(elapsed) / real(clock_rate)

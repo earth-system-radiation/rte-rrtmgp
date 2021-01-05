@@ -265,9 +265,9 @@ program rte_rrtmgp_clouds
     !$omp end target
   else
     ! lw_sorces is threadprivate
-    !$omp parallel
+    !!$omp parallel
     call stop_on_err(lw_sources%alloc(ncol, nlay, k_dist))
-    !$omp end parallel
+    !!$omp end parallel
 
     allocate(t_sfc(ncol), emis_sfc(nbnd, ncol))
     !$acc enter data create(t_sfc, emis_sfc)

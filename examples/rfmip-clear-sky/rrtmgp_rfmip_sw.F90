@@ -272,7 +272,7 @@ program rrtmgp_rfmip_sw
     !   (This is partly to show how to keep work on GPUs using OpenACC in a host application)
     ! What's the total solar irradiance assumed by RRTMGP?
     !
-#ifdef _OPENACC
+#if defined(_OPENACC) || defined(_OPENMP)
     call zero_array(block_size, def_tsi)
     !$acc parallel loop collapse(2) copy(def_tsi) copyin(toa_flux)
     !$omp target teams distribute parallel do simd collapse(2) map(tofrom:def_tsi) map(to:toa_flux)

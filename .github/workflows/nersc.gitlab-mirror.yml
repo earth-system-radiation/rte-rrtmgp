@@ -1,0 +1,20 @@
+name: Mirror and run GitLab CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Mirror + trigger CI
+      uses: stenongithub/gitlab-mirror-and-ci-action@0.2.5
+      with:
+        args: "https://software.nersc.gov/naromero/rte-rrtmgp"
+      env:
+        GITLAB_HOSTNAME: "software.nersc.gov"
+        GITLAB_USERNAME: "naromero"
+        GITLAB_PASSWORD: ${{ secrets.NERSC_GITLAB_PASSWORD }}
+        GITLAB_PROJECT_ID: "132"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        POLL_TIMEOUT: "300"

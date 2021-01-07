@@ -5,8 +5,8 @@ RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
 #
-LDFLAGS   += -L$(RRTMGP_BUILD)
-LIBS      += -lrrtmgp -lrte
+# LDFLAGS   += -L$(RRTMGP_BUILD)
+# LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_BUILD)
 
 #
@@ -53,7 +53,7 @@ rrtmgp_rfmip_lw:   rrtmgp_rfmip_lw.o   $(ADDITIONS) $(RRTMGP_BUILD)/librte.a $(R
 
 rrtmgp_rfmip_lw.o: rrtmgp_rfmip_lw.F90 $(ADDITIONS)
 
-rrtmgp_rfmip_sw:   rrtmgp_rfmip_sw.o   $(ADDITIONS) $(RRTMGP_BUILD)/librte.a $(RRTMGP_BUILD)/librrtmgp.a
+rrtmgp_rfmip_sw:   rrtmgp_rfmip_sw.o   $(ADDITIONS) $(RRTMGP_BUILD)/librrtmgp.a $(RRTMGP_BUILD)/librte.a
 
 rrtmgp_rfmip_sw.o: rrtmgp_rfmip_sw.F90 $(ADDITIONS)
 

@@ -41,6 +41,7 @@ contains
     !$acc&     copyout(array_out) &
     !$acc&     copyin(array_in)
     !$acc loop gang collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3) map(to:array_in) map(from:array_out)
     do i2 = 1, d2
       do i10 = 1, d1, tile
         do i30 = 1, d3, tile
@@ -79,6 +80,7 @@ contains
     !$acc&     copyin(array_in)
     !$acc loop gang collapse(3)
     ! private(cache(:,:))
+    !$omp target teams distribute parallel do simd collapse(3) map(to:array_in) map(from:array_out)
     do i2 = 1, d2
       do i10 = 1, d1, tile
         do i30 = 1, d3, tile

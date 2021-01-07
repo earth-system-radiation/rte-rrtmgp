@@ -48,8 +48,10 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array) map(from:minValue)
     minValue = minval(array)
     !$acc end kernels
+    !$omp end target
 
     any_vals_less_than_1D = (minValue < check_value)
 
@@ -62,8 +64,10 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array) map(from:minValue)
     minValue = minval(array)
     !$acc end kernels
+    !$omp end target
 
     any_vals_less_than_2D = (minValue < check_value)
 
@@ -75,9 +79,28 @@ contains
 
     real(wp) :: minValue
 
+#ifdef _OPENMP
+    integer :: dim1, dim2, dim3, i, j, k
+    dim1 = size(array,1)
+    dim2 = size(array,2)
+    dim3 = size(array,3)
+    minValue = array(1,1,1) ! initialize to some value
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue)
+    !$omp distribute parallel do simd reduction(min:minValue)
+    do i = 1, dim1
+       do j = 1, dim2
+          do k = 1, dim3
+             minValue = min(minValue,array(i,j,k))
+          enddo
+       enddo
+    enddo
+    !$omp end target teams
+#else
     !$acc kernels copyin(array)
     minValue = minval(array)
     !$acc end kernels
+#endif
 
     any_vals_less_than_3D = (minValue < check_value)
 
@@ -93,8 +116,10 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
+    !$omp end target
 
     any_vals_less_than_1D_masked = (minValue < check_value)
 
@@ -108,8 +133,10 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
+    !$omp end target
 
     any_vals_less_than_2D_masked = (minValue < check_value)
 
@@ -123,8 +150,10 @@ contains
     real(wp) :: minValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
+    !$omp end target
 
     any_vals_less_than_3D_masked = (minValue < check_value)
 
@@ -139,9 +168,11 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
     minValue = minval(array)
     maxValue = maxval(array)
     !$acc end kernels
+    !$omp end target
     any_vals_outside_1D = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_1D
@@ -153,9 +184,11 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
     minValue = minval(array)
     maxValue = maxval(array)
     !$acc end kernels
+    !$omp end target
     any_vals_outside_2D = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_2D
@@ -168,10 +201,33 @@ contains
       ! but an explicit loop is the only current solution on GPUs
     real(wp) :: minValue, maxValue
 
+
+#ifdef _OPENMP
+    integer :: dim1, dim2, dim3, i, j, k
+    dim1 = size(array,1)
+    dim2 = size(array,2)
+    dim3 = size(array,3)
+    minValue = array(1,1,1) ! initialize to some value
+    maxValue = array(1,1,1) ! initialize to some value
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue) reduction(max:maxValue)
+    !$omp distribute parallel do simd reduction(min:minValue) reduction(max:maxValue)
+    do i= 1, dim1
+       do j = 1, dim2
+          do k = 1, dim3
+             minValue = min(minValue,array(i,j,k))
+             maxValue = max(maxValue,array(i,j,k))
+          enddo
+       enddo
+    enddo
+    !$omp end target teams
+#else
     !$acc kernels copyin(array)
     minValue = minval(array)
     maxValue = maxval(array)
     !$acc end kernels
+#endif
+
     any_vals_outside_3D = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_3D
@@ -186,9 +242,11 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
+    !$omp end target
     any_vals_outside_1D_masked = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_1D_masked
@@ -201,9 +259,11 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
+    !$omp end target
     any_vals_outside_2D_masked = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_2D_masked
@@ -216,9 +276,11 @@ contains
     real(wp) :: minValue, maxValue
 
     !$acc kernels copyin(array)
+    !$omp target map(to:array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
+    !$omp end target
     any_vals_outside_3D_masked = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_3D_masked
@@ -301,25 +363,27 @@ contains
   !-------------------------------------------------------------------------------------------------
   ! Initializing arrays to 0
   !-------------------------------------------------------------------------------------------------
-  pure subroutine zero_array_1D(ni, array) bind(C, name="zero_array_1D")
+  subroutine zero_array_1D(ni, array) bind(C, name="zero_array_1D")
     integer,                 intent(in ) :: ni
     real(wp), dimension(ni), intent(out) :: array
     ! -----------------------
     integer :: i
     ! -----------------------
     !$acc parallel loop copyout(array)
+    !$omp target teams distribute parallel do simd map(from:array) 
     do i = 1, ni
       array(i) = 0.0_wp
     end do
   end subroutine zero_array_1D
   ! ----------------------------------------------------------
-  pure subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
+  subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
     integer,                         intent(in ) :: ni, nj, nk
     real(wp), dimension(ni, nj, nk), intent(out) :: array
     ! -----------------------
     integer :: i,j,k
     ! -----------------------
     !$acc parallel loop collapse(3) copyout(array)
+    !$omp target teams distribute parallel do simd collapse(3) map(from:array)
     do k = 1, nk
       do j = 1, nj
         do i = 1, ni
@@ -330,13 +394,14 @@ contains
 
   end subroutine zero_array_3D
   ! ----------------------------------------------------------
-  pure subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
+  subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="zero_array_4D")
     integer,                             intent(in ) :: ni, nj, nk, nl
     real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
     ! -----------------------
     integer :: i,j,k,l
     ! -----------------------
     !$acc parallel loop collapse(4) copyout(array)
+    !$omp target teams distribute parallel do simd collapse(4) map(from:array)
     do l = 1, nl
       do k = 1, nk
         do j = 1, nj

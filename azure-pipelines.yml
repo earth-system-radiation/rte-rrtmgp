@@ -23,6 +23,7 @@ jobs:
         accel_module: craype-accel-nvidia60
         # OpenMP flags from Nichols Romero (Argonne)
         FCFLAGS: "-hnoacc -homp -O0"
+        RTE_KERNELS: openacc
         RUN_CMD: "srun -C gpu -A c15 -p cscsci"
     maxParallel: 2
 

@@ -17,6 +17,12 @@ jobs:
         accel_module:
         # Production flags for Icon model
         FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
+      cce-openmp:
+        compiler_base: cray
+        compiler_module: cce-icon/10.0.2
+        accel_module:
+        # OpenMP flags from Nichols Romero (Argonne)
+        FCFLAGS: "-hnoacc -homp -O0"
     maxParallel: 2
 
   workspace:

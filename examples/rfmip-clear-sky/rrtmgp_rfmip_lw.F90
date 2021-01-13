@@ -226,8 +226,11 @@ program rrtmgp_rfmip_lw
   ! bug related to the use of Fortran classes on the GPU.
   !
   !$acc enter data create(sfc_emis_spec)
+  !$omp target enter data map(alloc:sfc_emis_spec)
   !$acc enter data create(optical_props, optical_props%tau)
+  !$omp target enter data map(alloc:optical_props%tau)
   !$acc enter data create(source, source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !$omp target enter data map(alloc:source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -251,6 +254,7 @@ program rrtmgp_rfmip_lw
     !   (This is partly to show how to keep work on GPUs using OpenACC)
     !
     !$acc parallel loop collapse(2) copyin(sfc_emis)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:sfc_emis)
     do icol = 1, block_size
       do ibnd = 1, nbnd
         sfc_emis_spec(ibnd,icol) = sfc_emis(icol,b)
@@ -299,8 +303,11 @@ program rrtmgp_rfmip_lw
   ret = gptlfinalize()
 #endif
   !$acc exit data delete(sfc_emis_spec)
+  !$omp target exit data map(release:sfc_emis_spec)
   !$acc exit data delete(optical_props%tau, optical_props)
+  !$omp target exit data map(release:optical_props%tau)
   !$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !$omp target exit data map(release:source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
   !$acc exit data delete(source)
   ! --------------------------------------------------m
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)

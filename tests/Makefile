@@ -5,8 +5,8 @@ RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
 #
-LDFLAGS   += -L$(RRTMGP_BUILD)
-LIBS      += -lrrtmgp -lrte
+# LDFLAGS   += -L$(RRTMGP_BUILD)
+# LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_BUILD)
 #
 # netcdf library, module files

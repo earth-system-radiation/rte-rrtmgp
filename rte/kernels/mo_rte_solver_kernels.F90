@@ -787,7 +787,7 @@ contains
     integer  :: i, j
 
     ! Ancillary variables
-    real(wp) :: gamma1, gamma2, k, exp_minusktau
+    real(wp) :: gamma1, gamma2, k(ncol), exp_minusktau(ncol)
     real(wp) :: RT_term
     real(wp) :: exp_minus2ktau
     ! ---------------------------------
@@ -803,21 +803,23 @@ contains
         !   k = 0 for isotropic, conservative scattering; this lower limit on k
         !   gives relative error with respect to conservative solution
         !   of < 0.1% in Rdif down to tau = 10^-9
-        k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
-        exp_minusktau = exp(-tau(i,j)*k)
+        k(i) = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
+      end do
+      exp_minusktau(1:ncol) = exp(-tau(i,j)*k(1:ncol))
+      do i = 1, ncol
         !
         ! Diffuse reflection and transmission
         !
-        exp_minus2ktau = exp_minusktau * exp_minusktau
+        exp_minus2ktau = exp_minusktau(i) * exp_minusktau(i)
         ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
-        RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + &
+        RT_term = 1._wp / (k(i)   * (1._wp + exp_minus2ktau)  + &
                            gamma1 * (1._wp - exp_minus2ktau) )
 
         ! Equation 25
         Rdif(i,j) = RT_term * gamma2 * (1._wp - exp_minus2ktau)
 
         ! Equation 26
-        Tdif(i,j) = RT_term * 2._wp * k * exp_minusktau
+        Tdif(i,j) = RT_term * 2._wp * k(i) * exp_minusktau(i)
       end do
     end do
 
@@ -844,7 +846,7 @@ contains
     real(wp) :: gamma1, gamma2, gamma3, gamma4, alpha1, alpha2
 
     ! Ancillary variables
-    real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
+    real(wp) :: k(ncol), exp_minusktau(ncol), k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat(ncol)
     real(wp), pointer, dimension(:) :: dir_flux_inc, dir_flux_trans
@@ -881,15 +883,17 @@ contains
         !   k = 0 for isotropic, conservative scattering; this lower limit on k
         !   gives relative error with respect to conservative solution
         !   of < 0.1% in Rdif down to tau = 10^-9
-        k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
-        exp_minusktau = exp(-tau(i,j)*k)
-        k_mu     = k * mu0(i)
-        k_gamma3 = k * gamma3
-        k_gamma4 = k * gamma4
-        exp_minus2ktau = exp_minusktau * exp_minusktau
+        k(i) = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
+      end do
+      exp_minusktau(1:ncol) = exp(-tau(i,j)*k(1:ncol))
+      do i = 1, ncol
+        k_mu     = k(i) * mu0(i)
+        k_gamma3 = k(i) * gamma3
+        k_gamma4 = k(i) * gamma4
+        exp_minus2ktau = exp_minusktau(i) * exp_minusktau(i)
 
         ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
-        RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + &
+        RT_term = 1._wp / (k(i)   * (1._wp + exp_minus2ktau)  + &
                            gamma1 * (1._wp - exp_minus2ktau) )
         !
         ! Equation 14, multiplying top and bottom by exp(-k*tau)
@@ -902,8 +906,7 @@ contains
         Rdir = RT_term  *                                            &
             ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
              (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
-             2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau * Tnoscat(i))
-
+             2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau(i) * Tnoscat(i))
         !
         ! Equation 15, multiplying top and bottom by exp(-k*tau),
         !   multiplying through by exp(-tau/mu0) to
@@ -913,7 +916,7 @@ contains
         Tdir = -RT_term *                                                             &
               ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat(i) - &
                (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat(i) - &
-               2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
+               2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau(i))
         source_up  (i,j)  =       Rdir * dir_flux_inc(i)
         source_dn  (i,j)  =       Tdir * dir_flux_inc(i)
         dir_flux_trans(i) = Tnoscat(i) * dir_flux_inc(i)

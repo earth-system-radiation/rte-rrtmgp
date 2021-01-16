@@ -362,6 +362,7 @@ contains
     ! -------------------------------------------
     integer :: igpt
     real(wp), dimension(ncol,nlay) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
+    real(wp), dimension(ncol,nlay) :: gamma1, gamma2, k, exp_minusktau
     real(wp), dimension(ncol,nlay) :: source_up, source_dn
     real(wp), dimension(ncol     ) :: source_srf
     ! ------------------------------------
@@ -369,14 +370,19 @@ contains
       !
       ! Cell properties: transmittance and reflectance for direct and diffuse radiation
       !
-      call sw_two_stream(ncol, nlay, mu0,                                &
-                         tau (:,:,igpt), ssa (:,:,igpt), g   (:,:,igpt), &
-                         Rdif, Tdif, Rdir, Tdir, Tnoscat)
+      !call sw_two_stream(ncol, nlay, mu0,                                &
+      !                   tau (:,:,igpt), ssa (:,:,igpt), g   (:,:,igpt), &
+      !                   Rdif, Tdif, Rdir, Tdir, Tnoscat)
+      call sw_two_stream_dif(ncol, nlay, tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt), &
+                             gamma1, gamma2, k, exp_minusktau, Rdif, Tdif)
       !
       ! Direct-beam and source for diffuse radiation
       !
-      call sw_source_2str(ncol, nlay, top_at_1, Rdir, Tdir, Tnoscat, sfc_alb_dir(:,igpt),&
-                          source_up, source_dn, source_srf, flux_dir(:,:,igpt))
+      !call sw_source_2str(ncol, nlay, top_at_1, Rdir, Tdir, Tnoscat, sfc_alb_dir(:,igpt),&
+      !                    source_up, source_dn, source_srf, flux_dir(:,:,igpt))
+      call sw_source_dir(ncol, nlay, top_at_1, mu0, sfc_alb_dif(:,igpt), &
+                         tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt), gamma1, gamma2, k, exp_minusktau, &
+                         source_dn, source_up, source_srf, flux_dir(:,:,igpt))
       !
       ! Transport
       !
@@ -855,7 +861,7 @@ contains
       !
       ! Transmittance of direct, unscattered beam.
       !
-      Tnoscat      (1:ncol) = exp(-tau(1:ncol,j)/mu0(i:ncol))
+      Tnoscat      (1:ncol) = exp(-tau(1:ncol,j)/mu0(1:ncol))
 
       if(top_at_1) then
         dir_flux_inc   => flux_dn_dir(:,j)
@@ -915,7 +921,7 @@ contains
         dir_flux_trans(i) = Tnoscat(i) * dir_flux_inc(i)
       end do
     end do
-    source_sfc(:) = dir_flux_trans(i)*sfc_albedo(:)
+    source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)
 
   end subroutine sw_source_dir
 

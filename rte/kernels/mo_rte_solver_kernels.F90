@@ -770,6 +770,155 @@ contains
       end do
     end do
   end subroutine sw_two_stream
+  ! ------------------------------
+  ! ------------------------------
+  ! ------------------------------
+  pure subroutine sw_two_stream_dif(ncol, nlay, tau, w0, g, &
+                                    gamma1, gamma2, k, exp_minusktau, Rdif, Tdif) bind (C, name="sw_two_stream_dif")
+    integer,                        intent(in)  :: ncol, nlay
+    real(wp), dimension(ncol,nlay), intent(in)  :: tau, w0, g
+    real(wp), dimension(ncol,nlay), intent(out) :: Rdif, Tdif, gamma1, gamma2, k, exp_minusktau
+
+    ! -----------------------
+    integer  :: i, j
+
+    ! Ancillary variables
+    real(wp) :: RT_term
+    real(wp) :: exp_minus2ktau
+    ! ---------------------------------
+    do j = 1, nlay
+      do i = 1, ncol
+        !
+        ! Zdunkowski Practical Improved Flux Method "PIFM"
+        !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
+        !
+        gamma1(i,j) = (8._wp - w0(i,j) * (5._wp + 3._wp * g(i,j))) * .25_wp
+        gamma2(i,j) =  3._wp *(w0(i,j) * (1._wp -         g(i,j))) * .25_wp
+        ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
+        !   k = 0 for isotropic, conservative scattering; this lower limit on k
+        !   gives relative error with respect to conservative solution
+        !   of < 0.1% in Rdif down to tau = 10^-9
+        k(i,j) = sqrt(max((gamma1(i,j) - gamma2(i,j)) * (gamma1(i,j) + gamma2(i,j)), 1.e-12_wp))
+      end do
+
+      ! Written to encourage vectorization of exponential
+      exp_minusktau(1:ncol,j) = exp(-tau(1:ncol,j)*k(1:ncol,j))
+
+      !
+      ! Diffuse reflection and transmission
+      !
+      do i = 1, ncol
+        exp_minus2ktau = exp_minusktau(i,j) * exp_minusktau(i,j)
+        ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
+        RT_term = 1._wp / (k     (i,j) * (1._wp + exp_minus2ktau)  + &
+                           gamma1(i,j) * (1._wp - exp_minus2ktau) )
+
+        ! Equation 25
+        Rdif(i,j) = RT_term * gamma2(i,j) * (1._wp - exp_minus2ktau)
+
+        ! Equation 26
+        Tdif(i,j) = RT_term * 2._wp * k(i,j) * exp_minusktau(i,j)
+      end do
+    end do
+
+  end subroutine sw_two_stream_dif
+  ! ------------------------------
+  ! ------------------------------
+  ! ------------------------------
+  pure subroutine sw_source_dir(ncol, nlay, top_at_1, mu0, sfc_albedo, &
+                                tau, w0, g, gamma1, gamma2, k, exp_minusktau, &
+                                source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="sw_source_dir")
+    integer,                          intent(in   ) :: ncol, nlay
+    logical(wl),                      intent(in   ) :: top_at_1
+    real(wp), dimension(ncol       ), intent(in   ) :: mu0, sfc_albedo          ! surface albedo for direct radiation
+    real(wp), dimension(ncol,nlay  ), intent(in   ) :: tau, w0, g, gamma1, gamma2, k, exp_minusktau
+    real(wp), dimension(ncol,nlay  ), intent(  out) :: source_dn, source_up
+    real(wp), dimension(ncol       ), intent(  out) :: source_sfc ! Source function for upward radation at surface
+    real(wp), dimension(ncol,nlay+1), target, &
+                                      intent(inout) :: flux_dn_dir ! Direct beam flux
+
+    ! -----------------------
+    integer  :: i, j
+
+    ! Variables used in Meador and Weaver
+    real(wp) :: gamma3, gamma4, alpha1, alpha2
+
+    ! Ancillary variables
+    real(wp) :: k_loc, gamma1_loc, gamma2_loc
+    real(wp) :: k_mu, k_gamma3, k_gamma4
+    real(wp) :: RT_term, exp_minus2ktau
+    real(wp) :: Rdir, Tdir, Tnoscat(ncol)
+    real(wp), pointer, dimension(:) :: dir_flux_inc, dir_flux_trans
+    ! ---------------------------------
+
+    do j = merge(1, nlay, top_at_1), merge(nlay, 1, top_at_1), merge(1, -1, top_at_1)
+      !
+      ! Transmittance of direct, unscattered beam.
+      !
+      Tnoscat      (1:ncol) = exp(-tau(1:ncol,j)/mu0(i:ncol))
+
+      if(top_at_1) then
+        dir_flux_inc   => flux_dn_dir(:,j)
+        dir_flux_trans => flux_dn_dir(:,j+1)
+      else
+        dir_flux_inc   => flux_dn_dir(:,j+1)
+        dir_flux_trans => flux_dn_dir(:,j)
+      end if
+      do i = 1, ncol
+        k_loc      = k(i,j)
+        gamma1_loc = gamma1(i,j)
+        gamma2_loc = gamma2(i,j)
+        !
+        ! Zdunkowski Practical Improved Flux Method "PIFM"
+        !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
+        !
+        gamma3 = (2._wp - 3._wp * mu0(i) * g(i,j) ) * .25_wp
+        gamma4 =  1._wp - gamma3
+        alpha1 = gamma1_loc * gamma4 + gamma2_loc * gamma3           ! Eq. 16
+        alpha2 = gamma1_loc * gamma3 + gamma2_loc * gamma4           ! Eq. 17
+        !
+        ! Direct reflect and transmission
+        !
+        k_mu     = k_loc * mu0(i)
+        k_gamma3 = k_loc * gamma3
+        k_gamma4 = k_loc * gamma4
+        exp_minus2ktau = exp_minusktau(i,j) * exp_minusktau(i,j)
+
+        ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
+        RT_term = 1._wp / (k_loc      * (1._wp + exp_minus2ktau)  + &
+                           gamma1_loc * (1._wp - exp_minus2ktau) )
+        !
+        ! Equation 14, multiplying top and bottom by exp(-k*tau)
+        !   and rearranging to avoid div by 0.
+        !
+        RT_term =  w0(i,j) * RT_term/merge(1._wp - k_mu*k_mu, &
+                                           epsilon(1._wp),    &
+                                           abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
+
+        Rdir = RT_term  *                                            &
+            ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
+             (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
+             2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau(i,j) * Tnoscat(i))
+
+        !
+        ! Equation 15, multiplying top and bottom by exp(-k*tau),
+        !   multiplying through by exp(-tau/mu0) to
+        !   prefer underflow to overflow
+        ! Omitting direct transmittance
+        !
+        Tdir = -RT_term *                                                             &
+              ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat(i) - &
+               (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat(i) - &
+               2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau (i,j))
+        source_up  (i,j)  =       Rdir * dir_flux_inc(i)
+        source_dn  (i,j)  =       Tdir * dir_flux_inc(i)
+        dir_flux_trans(i) = Tnoscat(i) * dir_flux_inc(i)
+      end do
+    end do
+    source_sfc(:) = dir_flux_trans(i)*sfc_albedo(:)
+
+  end subroutine sw_source_dir
+
   ! ---------------------------------------------------------------
   !
   ! Direct beam source for diffuse radiation in layers and at surface;

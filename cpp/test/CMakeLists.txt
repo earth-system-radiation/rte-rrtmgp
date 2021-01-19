@@ -11,6 +11,7 @@ file(GLOB CPP_SRC ../rrtmgp/*.cpp
                   ../rrtmgp/kernels/*.cpp
                   ../rte/*.cpp
                   ../rte/kernels/*.cpp
+                  ../extensions/*.cpp
                   ../extensions/cloud_optics/mo_cloud_optics.cpp
                   ../examples/*.cpp )
 

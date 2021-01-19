@@ -8,12 +8,14 @@ set(CXX_SRC
   rrtmgp/kernels/mo_gas_optics_kernels.cpp
   rrtmgp/mo_rrtmgp_constants.cpp
   rrtmgp/mo_rrtmgp_util_reorder.cpp
-  rte/mo_rte_lw.cpp
-  rte/mo_rte_sw.cpp
+  #rte/mo_rte_lw.cpp
+  #rte/mo_rte_sw.cpp
   rte/expand_and_transpose.cpp
   rte/kernels/mo_fluxes_broadband_kernels.cpp
   rte/kernels/mo_optical_props_kernels.cpp
   rte/kernels/mo_rte_solver_kernels.cpp
+  extensions/mo_fluxes_byband.cpp
+  extensions/mo_fluxes_byband_kernels.cpp
   examples/mo_load_coefficients.cpp
   # This is a hack; I should not have to build this here, but we need it for the standalone RRTMGP
   # unit tests, and I could not figure out how to get it to build without adding it to the RRTMGP
@@ -45,5 +47,6 @@ target_include_directories(rrtmgp PUBLIC rrtmgp/kernels)
 target_include_directories(rrtmgp PUBLIC examples)
 # Again, this is a hack to get the standalone tests to build that need the mo_garand_atmos_io.h header
 target_include_directories(rrtmgp PUBLIC examples/all-sky)
+target_include_directories(rrtmgp PUBLIC extensions)
 target_include_directories(rrtmgp PUBLIC extensions/cloud_optics)
 #target_include_directories(rrtmgp PUBLIC ${SCREAM_BASE_DIR}/../../externals/yakl)

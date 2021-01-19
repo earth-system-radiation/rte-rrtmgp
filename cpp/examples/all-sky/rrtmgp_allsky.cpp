@@ -10,13 +10,14 @@
 #include "mo_load_coefficients.h"
 #include "mo_load_cloud_coefficients.h"
 #include "mo_fluxes.h"
+#include "mo_fluxes_byband.h"
 #include "mo_rte_lw.h"
 #include "mo_rte_sw.h"
 
 bool constexpr print_timers = true;
 bool constexpr verbose      = false;
 bool constexpr write_fluxes = false;
-
+bool constexpr print_norms  = true;
 
 int main(int argc , char **argv) {
 
@@ -116,6 +117,9 @@ int main(int argc , char **argv) {
       real2d flux_up ("flux_up" ,ncol,nlay+1);
       real2d flux_dn ("flux_dn" ,ncol,nlay+1);
       real2d flux_dir("flux_dir",ncol,nlay+1);
+      real3d bnd_flux_up ("bnd_flux_up" ,ncol,nlay+1,nbnd);
+      real3d bnd_flux_dn ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
+      real3d bnd_flux_dir("bnd_flux_dir",ncol,nlay+1,nbnd);
 
       // Clouds
       real2d lwp("lwp",ncol,nlay);
@@ -149,10 +153,13 @@ int main(int argc , char **argv) {
         cloud_optics.cloud_optics(lwp, iwp, rel, rei, clouds);
 
         // Solvers
-        FluxesBroadband fluxes;
+        FluxesByband fluxes;
         fluxes.flux_up     = flux_up ;
         fluxes.flux_dn     = flux_dn ;
         fluxes.flux_dn_dir = flux_dir;
+        fluxes.bnd_flux_up     = bnd_flux_up ;
+        fluxes.bnd_flux_dn     = bnd_flux_dn ;
+        fluxes.bnd_flux_dn_dir = bnd_flux_dir;
 
         k_dist.gas_optics(top_at_1, p_lay, p_lev, t_lay, gas_concs, atmos, toa_flux);
         clouds.delta_scale();
@@ -162,17 +169,22 @@ int main(int argc , char **argv) {
         yakl::fence();
         end_time = std::chrono::high_resolution_clock::now();
 
-        if (write_fluxes) fluxes.print_norms();
+        if (print_norms) fluxes.print_norms();
       }
       if (print_timers) std::cout << "Elapsed Time: " << std::setprecision(15) << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() * 1.e-9 << "\n";
 
       if (verbose) std::cout << "Writing fluxes\n\n";
       if (write_fluxes) write_sw_fluxes(input_file, flux_up, flux_dn, flux_dir, ncol);
 
+      // Hacky unit test against reference fluxes
       if (ncol == 1 && nloops == 1) {
-        if ( abs(sum(flux_up )-19104.862129836212)/(19104.862129836212) > 1.e-10) exit(-1);
-        if ( abs(sum(flux_dn )-38046.157649700355)/(38046.157649700355) > 1.e-10) exit(-1);
-        if ( abs(sum(flux_dir)-24998.593939345046)/(24998.593939345046) > 1.e-10) exit(-1);
+        if (abs(sum(flux_up )-19104.862129836212)/(19104.862129836212) > 1.e-10) exit(-1);
+        if (abs(sum(flux_dn )-38046.157649700355)/(38046.157649700355) > 1.e-10) exit(-1);
+        if (abs(sum(flux_dir)-24998.593939345046)/(24998.593939345046) > 1.e-10) exit(-1);
+        // NOTE: these will fail! WHHYYYY????!!!
+        if (abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) exit(-1);
+        if (abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) exit(-1);
+        if (abs(sum(flux_dir)-sum(bnd_flux_dir) )/sum(flux_dir)        > 1.e-10) exit(-1);
       }
 
     } else {  // Longwave
@@ -225,6 +237,8 @@ int main(int argc , char **argv) {
       // Fluxes
       real2d flux_up ("flux_up" ,ncol,nlay+1);
       real2d flux_dn ("flux_dn" ,ncol,nlay+1);
+      real3d bnd_flux_up ("bnd_flux_up" ,ncol,nlay+1,nbnd);
+      real3d bnd_flux_dn ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
 
       // Clouds
       real2d lwp("lwp",ncol,nlay);
@@ -262,9 +276,11 @@ int main(int argc , char **argv) {
         cloud_optics.cloud_optics(lwp, iwp, rel, rei, clouds);
 
         // Solvers
-        FluxesBroadband fluxes;
+        FluxesByband fluxes;
         fluxes.flux_up = flux_up;
         fluxes.flux_dn = flux_dn;
+        fluxes.bnd_flux_up = bnd_flux_up;
+        fluxes.bnd_flux_dn = bnd_flux_dn;
 
         // Calling with an empty col_dry parameter
         k_dist.gas_optics(top_at_1, p_lay, p_lev, t_lay, t_sfc, gas_concs, atmos, lw_sources, real2d(), t_lev);
@@ -274,7 +290,7 @@ int main(int argc , char **argv) {
         yakl::fence();
         end_time = std::chrono::high_resolution_clock::now();
 
-        if (write_fluxes) fluxes.print_norms();
+        if (print_norms) fluxes.print_norms();
       }
       if (print_timers) std::cout << "Elapsed Time: " << std::setprecision(15) << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() * 1.e-9 << "\n";
 
@@ -282,8 +298,11 @@ int main(int argc , char **argv) {
       if (write_fluxes) write_lw_fluxes(input_file, flux_up, flux_dn, ncol);
 
       if (ncol == 1 && nloops == 1) {
-        if ( abs(sum(flux_up )-10264.518998579415)/(10264.518998579415) > 1.e-10) exit(-1);
-        if ( abs(sum(flux_dn )-6853.2350138542843)/(6853.2350138542843) > 1.e-10) exit(-1);
+        if (abs(sum(flux_up )-10264.518998579415)/(10264.518998579415) > 1.e-10) exit(-1);
+        if (abs(sum(flux_dn )-6853.2350138542843)/(6853.2350138542843) > 1.e-10) exit(-1);
+        // NOTE: these will fail
+        if (abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) exit(-1);
+        if (abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) exit(-1);
       }
 
     }  // if (is_sw)

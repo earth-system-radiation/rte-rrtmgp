@@ -46,7 +46,7 @@ contains
   function rte_sw(atmos, top_at_1,                 &
                   mu0, inc_flux,                   &
                   sfc_alb_dir, sfc_alb_dif,        &
-                  fluxes, inc_flux_dif) result(error_msg)
+                  fluxes, flux_up, flux_dn, flux_dir, inc_flux_dif) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: atmos           ! Optical properties provided as arrays
     logical,                      intent(in   ) :: top_at_1        ! Is the top of the domain at index 1?
                                                                    ! (if not, ordering is bottom-to-top)
@@ -54,7 +54,12 @@ contains
     real(wp), dimension(:,:),     intent(in   ) :: inc_flux,    &  ! incident flux at top of domain [W/m2] (ncol, ngpt)
                                                    sfc_alb_dir, &  ! surface albedo for direct and
                                                    sfc_alb_dif     ! diffuse radiation (nband, ncol)
-    class(ty_fluxes),             intent(inout) :: fluxes          ! Class describing output calculations
+    class(ty_fluxes),         optional, &
+                                  intent(inout) :: fluxes          ! Class describing output calculations
+    real(wp), dimension(:,:), optional, &
+                                  intent(inout) :: flux_up, &
+                                                   flux_dn, &
+                                                   flux_dir ! Spectrally-integrated fluxes; flux_dir is optional
     real(wp), dimension(:,:), optional, &
                                   intent(in   ) :: inc_flux_dif    ! incident diffuse flux at top of domain [W/m2] (ncol, ngpt)
     character(len=128)                          :: error_msg       ! If empty, calculation was successful
@@ -79,9 +84,13 @@ contains
     ! Error checking -- consistency of sizes and validity of values
     !
     ! --------------------------------
-    if(.not. fluxes%are_desired()) then
-      error_msg = "rte_sw: no space allocated for fluxes"
-      return
+    if (present(flux_up) .neqv. present(flux_dn)) &
+      error_msg = "rte_sw: must provide both or neither of flux_up, flux_dn"
+    if(present(fluxes)) then
+      if(.not. fluxes%are_desired()) &
+        error_msg = "rte_sw: no space allocated for fluxes"
+      if (present(flux_up)) &
+        error_msg = "rte_sw: must provide either a flux class variables (fluxes) or flux_up, flux_dn arrays"
     end if
 
     !
@@ -100,10 +109,22 @@ contains
         if(.not. extents_are(inc_flux_dif, ncol, ngpt)) &
           error_msg = "rte_sw: inc_flux_dif inconsistently sized"
       end if
+      if(present(flux_up)) then
+        if(.not. extents_are(flux_up, ncol, nlay+1)) &
+          error_msg = "rte_sw: flux_up inconsistently sized"
+      end if
+      if(present(flux_dn)) then
+        if(.not. extents_are(flux_dn, ncol, nlay+1)) &
+          error_msg = "rte_sw: flux_dn inconsistently sized"
+      end if
+      if(present(flux_dir)) then
+        if(.not. extents_are(flux_dir, ncol, nlay+1)) &
+          error_msg = "rte_sw: flux_dir inconsistently sized"
+      end if
     end if
 
     !
-    ! Values of input arrays 
+    ! Values of input arrays
     !
     if(check_values) then
       if(any_vals_outside(mu0, 0._wp, 1._wp)) &
@@ -128,7 +149,9 @@ contains
     end if
 
     ! ------------------------------------------------------------------------------------
-    allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt), gpt_flux_dir(ncol, nlay+1, ngpt))
+    if(present(fluxes)) allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
+                                 gpt_flux_dn (ncol, nlay+1, ngpt), &
+                                 gpt_flux_dir(ncol, nlay+1, ngpt))
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
     ! ------------------------------------------------------------------------------------
     ! Lower boundary condition -- expand surface albedos by band to gpoints

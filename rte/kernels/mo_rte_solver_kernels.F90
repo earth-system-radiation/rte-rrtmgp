@@ -392,6 +392,78 @@ contains
   end subroutine sw_solver_2stream
   ! -------------------------------------------------------------------------------------------------
   !
+  ! Variant of the
+  !
+  ! -------------------------------------------------------------------------------------------------
+  subroutine sw_solver_2stream_integrated(ncol, nlay, ngpt, top_at_1, &
+                                 tau, ssa, g, mu0,           &
+                                 sfc_alb_dir, sfc_alb_dif,   &
+                                 flux_inc_dir, flux_inc_dif, &
+                                 flux_up, flux_dn, flux_dir) bind(C, name="sw_solver_2stream_integrated")
+    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    logical(wl),                           intent(in   ) :: top_at_1
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &  ! Optical thickness,
+                                                            ssa, &  ! single-scattering albedo,
+                                                            g       ! asymmetry parameter []
+    real(wp), dimension(ncol            ), intent(in   ) :: mu0     ! cosine of solar zenith angle
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_alb_dir, sfc_alb_dif
+                                                                    ! Spectral albedo of surface to direct and diffuse radiation
+    real(wp), dimension(ncol,ngpt  ),      intent(in   ) :: flux_inc_dir, flux_inc_dif ! Incident spectrally-resolved flux
+    real(wp), dimension(ncol,nlay+1), &
+                                           intent(  out) :: flux_up ! Fluxes [W/m2]
+    real(wp), dimension(ncol,nlay+1), &                        ! Downward fluxes contain boundary conditions
+                                           intent(inout) :: flux_dn, flux_dir
+    ! -------------------------------------------
+    integer                          :: igpt
+    real(wp), dimension(ncol,nlay  ) :: Rdif, Tdif
+    real(wp), dimension(ncol,nlay  ) :: source_up, source_dn
+    real(wp), dimension(ncol       ) :: source_srf
+    real(wp), dimension(ncol,nlay+1) :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
+    ! ------------------------------------
+    flux_up (:,:) = 0._wp
+    flux_dn (:,:) = 0._wp
+    flux_dir(:,:) = 0._wp
+    do igpt = 1, ngpt
+      if(top_at_1) then
+        gpt_flux_dn (:,     1) = flux_inc_dif(:,igpt)
+        gpt_flux_dir(:,     1) = flux_inc_dir(:,igpt)
+      else
+        gpt_flux_dn (:,nlay+1) = flux_inc_dif(:,igpt)
+        gpt_flux_dir(:,nlay+1) = flux_inc_dir(:,igpt)
+      end if
+      !
+      ! Cell properties: transmittance and reflectance for direct and diffuse radiation
+      !
+      !call sw_two_stream(ncol, nlay, mu0,                                &
+      !                   tau (:,:,igpt), ssa (:,:,igpt), g   (:,:,igpt), &
+      !                   Rdif, Tdif, Rdir, Tdir, Tnoscat)
+      call sw_two_stream_dif(ncol, nlay, tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt), &
+                             Rdif, Tdif)
+      !
+      ! Direct-beam and source for diffuse radiation
+      !
+      !call sw_source_2str(ncol, nlay, top_at_1, Rdir, Tdir, Tnoscat, sfc_alb_dir(:,igpt),&
+      !                    source_up, source_dn, source_srf, flux_dir(:,:,igpt))
+      call sw_source_dir(ncol, nlay, top_at_1, mu0, sfc_alb_dif(:,igpt), &
+                         tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt),      &
+                         source_dn, source_up, source_srf, gpt_flux_dir)
+      !
+      ! Transport
+      !
+      call adding(ncol, nlay, top_at_1,            &
+                  sfc_alb_dif(:,igpt), Rdif, Tdif, &
+                  source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
+      flux_up (:,:) = flux_up (:,:) + gpt_flux_up (:,:)
+      flux_dn (:,:) = flux_dn (:,:) + gpt_flux_dn (:,:)
+      flux_dir(:,:) = flux_dir(:,:) + gpt_flux_dir(:,:)
+    end do
+    !
+    ! adding computes only diffuse flux; flux_dn is total
+    !
+    flux_dn(:,:) = flux_dn(:,:) + flux_dir(:,:)
+  end subroutine sw_solver_2stream_integrated
+  ! -------------------------------------------------------------------------------------------------
+  !
   !   Lower-level longwave kernels
   !
   ! -------------------------------------------------------------------------------------------------

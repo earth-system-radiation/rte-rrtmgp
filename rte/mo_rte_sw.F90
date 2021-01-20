@@ -33,9 +33,9 @@ module mo_rte_sw
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
-  use mo_fluxes,        only: ty_fluxes
+  use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_rte_solver_kernels, &
-                        only: apply_BC, sw_solver_noscat, sw_solver_2stream
+                        only: apply_BC, sw_solver_noscat, sw_solver_2stream, sw_solver_2stream_integrated
   implicit none
   private
 
@@ -46,7 +46,7 @@ contains
   function rte_sw(atmos, top_at_1,                 &
                   mu0, inc_flux,                   &
                   sfc_alb_dir, sfc_alb_dif,        &
-                  fluxes, flux_up, flux_dn, flux_dir, inc_flux_dif) result(error_msg)
+                  fluxes, inc_flux_dif) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: atmos           ! Optical properties provided as arrays
     logical,                      intent(in   ) :: top_at_1        ! Is the top of the domain at index 1?
                                                                    ! (if not, ordering is bottom-to-top)
@@ -54,12 +54,7 @@ contains
     real(wp), dimension(:,:),     intent(in   ) :: inc_flux,    &  ! incident flux at top of domain [W/m2] (ncol, ngpt)
                                                    sfc_alb_dir, &  ! surface albedo for direct and
                                                    sfc_alb_dif     ! diffuse radiation (nband, ncol)
-    class(ty_fluxes),         optional, &
-                                  intent(inout) :: fluxes          ! Class describing output calculations
-    real(wp), dimension(:,:), optional, &
-                                  intent(inout) :: flux_up, &
-                                                   flux_dn, &
-                                                   flux_dir ! Spectrally-integrated fluxes; flux_dir is optional
+    class(ty_fluxes),             intent(inout) :: fluxes          ! Class describing output calculations
     real(wp), dimension(:,:), optional, &
                                   intent(in   ) :: inc_flux_dif    ! incident diffuse flux at top of domain [W/m2] (ncol, ngpt)
     character(len=128)                          :: error_msg       ! If empty, calculation was successful
@@ -72,6 +67,8 @@ contains
 
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     real(wp), dimension(:,:),   allocatable :: sfc_alb_dir_gpt, sfc_alb_dif_gpt
+    real(wp), dimension(:,:),   allocatable :: inc_flux_diffuse ! Temporary use when using _integrated kernels
+    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_dir_loc
     ! ------------------------------------------------------------------------------------
     ncol  = atmos%get_ncol()
     nlay  = atmos%get_nlay()
@@ -84,14 +81,8 @@ contains
     ! Error checking -- consistency of sizes and validity of values
     !
     ! --------------------------------
-    if (present(flux_up) .neqv. present(flux_dn)) &
-      error_msg = "rte_sw: must provide both or neither of flux_up, flux_dn"
-    if(present(fluxes)) then
-      if(.not. fluxes%are_desired()) &
-        error_msg = "rte_sw: no space allocated for fluxes"
-      if (present(flux_up)) &
-        error_msg = "rte_sw: must provide either a flux class variables (fluxes) or flux_up, flux_dn arrays"
-    end if
+    if(.not. fluxes%are_desired()) &
+      error_msg = "rte_sw: no space allocated for fluxes"
 
     !
     ! Sizes of input arrays
@@ -108,18 +99,6 @@ contains
       if(present(inc_flux_dif)) then
         if(.not. extents_are(inc_flux_dif, ncol, ngpt)) &
           error_msg = "rte_sw: inc_flux_dif inconsistently sized"
-      end if
-      if(present(flux_up)) then
-        if(.not. extents_are(flux_up, ncol, nlay+1)) &
-          error_msg = "rte_sw: flux_up inconsistently sized"
-      end if
-      if(present(flux_dn)) then
-        if(.not. extents_are(flux_dn, ncol, nlay+1)) &
-          error_msg = "rte_sw: flux_dn inconsistently sized"
-      end if
-      if(present(flux_dir)) then
-        if(.not. extents_are(flux_dir, ncol, nlay+1)) &
-          error_msg = "rte_sw: flux_dir inconsistently sized"
       end if
     end if
 
@@ -149,16 +128,54 @@ contains
     end if
 
     ! ------------------------------------------------------------------------------------
-    if(present(fluxes)) allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
-                                 gpt_flux_dn (ncol, nlay+1, ngpt), &
-                                 gpt_flux_dir(ncol, nlay+1, ngpt))
+    select type(fluxes)
+      type is (ty_fluxes_broadband)
+        !
+        ! Broadband, spectrally integrated profiles get their own solvers that integrate in place
+        !   Fluxes class has three possible outputs; allocate memory for local use if one or
+        !   more haven't been requested
+        !   OpenMP and OpenACC directives needed here
+        !
+        if(associated(fluxes%flux_up)) then
+          flux_up_loc => fluxes%flux_up
+        else
+          allocate(flux_up_loc(ncol, nlay+1))
+          !$acc enter data create(flux_up_loc)
+          !$omp target enter data map(alloc:flux_up_loc)
+        end if
+        if(associated(fluxes%flux_dn)) then
+          flux_dn_loc => fluxes%flux_dn
+        else
+          allocate(flux_dn_loc(ncol, nlay+1))
+          !$acc enter data create(flux_dn_loc)
+          !$omp target enter data map(alloc:flux_dn_loc)
+        end if
+        if(associated(fluxes%flux_dn_dir)) then
+          flux_dir_loc => fluxes%flux_dn_dir
+        else
+          allocate(flux_dir_loc(ncol, nlay+1))
+          !$acc enter data create(flux_dir_loc)
+          !$omp target enter data map(alloc:flux_dir_loc)
+        end if
+        !
+        ! Diffuse flux - will use values in optional arg or be set to 0
+        !
+        allocate(inc_flux_diffuse(ncol, ngpt))
+        !$acc enter data create(inc_flux_diffuse)
+        !$omp target enter data map(alloc:inc_flux_diffuse)
+      class default
+        allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
+                 gpt_flux_dn (ncol, nlay+1, ngpt), &
+                 gpt_flux_dir(ncol, nlay+1, ngpt))
+    end select
+    !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
+    !$acc enter data create(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
+    !$omp target enter data map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
     ! ------------------------------------------------------------------------------------
     ! Lower boundary condition -- expand surface albedos by band to gpoints
     !   and switch dimension ordering
-
-    !$acc enter data create(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
-    !$omp target enter data map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
     call expand_and_transpose(atmos, sfc_alb_dir, sfc_alb_dir_gpt)
     call expand_and_transpose(atmos, sfc_alb_dif, sfc_alb_dif_gpt)
     ! ------------------------------------------------------------------------------------
@@ -166,29 +183,37 @@ contains
     ! Compute the radiative transfer...
     !
     !
-    ! Apply boundary conditions
-    !   On input flux_dn is the diffuse component; the last action in each solver is to add
-    !   direct and diffuse to represent the total, consistent with the LW
-    !
-    !$acc enter data copyin(mu0)
-    !$omp target enter data map(to:mu0)
-    !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-    !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-
-    !$acc enter data copyin(inc_flux)
-    !$omp target enter data map(to:inc_flux)
-    call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),   inc_flux, mu0, gpt_flux_dir)
-    !$acc exit data delete(inc_flux)
-    !$omp target exit data map(release:inc_flux)
-    if(present(inc_flux_dif)) then
-      !$acc enter data copyin(inc_flux_dif)
-      !$omp target enter data map(to:inc_flux_dif)
-      call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl), inc_flux_dif,  gpt_flux_dn )
-      !$acc exit data delete(inc_flux_dif)
-      !$omp target exit data map(release:inc_flux_dif)
-    else
-      call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),                gpt_flux_dn )
-    end if
+    !$acc enter data copyin(mu0, inc_flux)
+    !$omp target enter data map(to:mu0, inc_flux)
+    select type(fluxes)
+      type is (ty_fluxes_broadband)
+        !
+        ! Boundary conditions for direct flux are applied in the solver
+        !
+        !
+        ! OpenACC/OpenMP directives needed here
+        if(present(inc_flux_dif)) then
+          inc_flux_diffuse(:,:) = inc_flux_dif(:,:)
+        else
+          inc_flux_diffuse(:,:) = 0._wp
+        end if
+      class default
+        !
+        ! Boundary conditions are applied to the spectrally-resolved flux fields
+        !
+        call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),   inc_flux, mu0, gpt_flux_dir)
+        !$acc exit data delete(inc_flux)
+        !$omp target exit data map(release:inc_flux)
+        if(present(inc_flux_dif)) then
+          !$acc enter data copyin(inc_flux_dif) !!! <--- Why are these needed?
+          !$omp target enter data map(to:inc_flux_dif)
+          call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl), inc_flux_dif,  gpt_flux_dn )
+          !$acc exit data delete(inc_flux_dif)
+          !$omp target exit data map(release:inc_flux_dif)
+        else
+          call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),                gpt_flux_dn )
+        end if
+    end select
 
     select type (atmos)
       class is (ty_optical_props_1scl)
@@ -205,8 +230,6 @@ contains
         !
         ! No diffuse flux
         !
-        !gpt_flux_up = 0._wp
-        !gpt_flux_dn = 0._wp
         !$acc exit data delete(atmos%tau, atmos)
         !$omp target exit data map(release:atmos%tau)
       class is (ty_optical_props_2str)
@@ -217,10 +240,22 @@ contains
         !$omp target enter data map(to:atmos%tau, atmos%ssa, atmos%g)
         error_msg =  atmos%validate()
         if(len_trim(error_msg) > 0) return
-        call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                               atmos%tau, atmos%ssa, atmos%g, mu0,      &
-                               sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
-                               gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        select type(fluxes)
+          type is (ty_fluxes_broadband)
+            call sw_solver_2stream_integrated( &
+                                   ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                   atmos%tau, atmos%ssa, atmos%g, mu0,      &
+                                   sfc_alb_dir, sfc_alb_dif,                &
+                                   inc_flux, inc_flux_diffuse,              &
+                                   flux_up_loc, flux_dn_loc, flux_dir_loc)
+            !$acc exit data delete(inc_flux, inc_flux_diffuse)
+            !$omp target exit data map(release:inc_flux, inc_flux_diffuse)
+          class default
+            call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                   atmos%tau, atmos%ssa, atmos%g, mu0,      &
+                                   sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
+                                   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        end select
         !$acc exit data delete(atmos%tau, atmos%ssa, atmos%g, atmos)
         !$omp target exit data map(release:atmos%tau, atmos%ssa, atmos%g)
         !$acc exit data delete(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
@@ -241,11 +276,16 @@ contains
     !
     ! ...and reduce spectral fluxes to desired output quantities
     !
-    error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
+    select type(fluxes)
+      type is (ty_fluxes_broadband)
+        ! Need to delete GPU data
+      class default
+        error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
+        !$acc exit data delete(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    end select
     !$acc exit data delete(mu0)
     !$omp target exit data map(release:mu0)
-    !$acc exit data delete(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-    !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
   end function rte_sw
   !--------------------------------------------------------------------------------------------------------------------
   !

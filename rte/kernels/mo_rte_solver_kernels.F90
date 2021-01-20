@@ -36,10 +36,9 @@ module mo_rte_solver_kernels
   end interface apply_BC
 
   public :: apply_BC, &
-            lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
-            sw_solver_noscat,                             sw_solver_2stream
-
-  public :: lw_solver_1rescl_GaussQuad,  lw_solver_1rescl
+            lw_solver_noscat, lw_solver_noscat_GaussQuad,  lw_solver_2stream, &
+            sw_solver_noscat,                              sw_solver_2stream, sw_solver_2stream_integrated, &
+                              lw_solver_1rescl_GaussQuad,  lw_solver_1rescl
 
   ! These routines don't really need to be visible but making them so is useful for testing.
   public :: lw_source_noscat, lw_combine_sources, &
@@ -211,7 +210,6 @@ contains
       flux_up   (:,:,:) = flux_up   (:,:,:) + radn_up   (:,:,:)
       flux_dn   (:,:,:) = flux_dn   (:,:,:) + radn_dn   (:,:,:)
       flux_upJac(:,:,:) = flux_upJac(:,:,:) + radn_upJac(:,:,:)
-
     end do
   end subroutine lw_solver_noscat_GaussQuad
   ! -------------------------------------------------------------------------------------------------
@@ -408,14 +406,14 @@ contains
     real(wp), dimension(ncol            ), intent(in   ) :: mu0     ! cosine of solar zenith angle
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_alb_dir, sfc_alb_dif
                                                                     ! Spectral albedo of surface to direct and diffuse radiation
-    real(wp), dimension(ncol,ngpt  ),      intent(in   ) :: flux_inc_dir, flux_inc_dif ! Incident spectrally-resolved flux
-    real(wp), dimension(ncol,nlay+1), &
-                                           intent(  out) :: flux_up ! Fluxes [W/m2]
-    real(wp), dimension(ncol,nlay+1), &                        ! Downward fluxes contain boundary conditions
-                                           intent(inout) :: flux_dn, flux_dir
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: flux_inc_dir, &
+                                                            flux_inc_dif ! Incident spectrally-resolved flux
+    real(wp), dimension(ncol,nlay+1),      intent(  out) :: flux_up, &
+                                                            flux_dn, &
+                                                            flux_dir ! Fluxes [W/m2]
     ! -------------------------------------------
     integer                          :: igpt
-    real(wp), dimension(ncol,nlay  ) :: Rdif, Tdif
+    real(wp), dimension(ncol,nlay  ) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
     real(wp), dimension(ncol,nlay  ) :: source_up, source_dn
     real(wp), dimension(ncol       ) :: source_srf
     real(wp), dimension(ncol,nlay+1) :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
@@ -426,27 +424,23 @@ contains
     do igpt = 1, ngpt
       if(top_at_1) then
         gpt_flux_dn (:,     1) = flux_inc_dif(:,igpt)
-        gpt_flux_dir(:,     1) = flux_inc_dir(:,igpt)
+        gpt_flux_dir(:,     1) = flux_inc_dir(:,igpt) * mu0(:)
       else
         gpt_flux_dn (:,nlay+1) = flux_inc_dif(:,igpt)
-        gpt_flux_dir(:,nlay+1) = flux_inc_dir(:,igpt)
+        gpt_flux_dir(:,nlay+1) = flux_inc_dir(:,igpt) * mu0(:)
       end if
       !
       ! Cell properties: transmittance and reflectance for direct and diffuse radiation
       !
-      !call sw_two_stream(ncol, nlay, mu0,                                &
-      !                   tau (:,:,igpt), ssa (:,:,igpt), g   (:,:,igpt), &
-      !                   Rdif, Tdif, Rdir, Tdir, Tnoscat)
-      call sw_two_stream_dif(ncol, nlay, tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt), &
-                             Rdif, Tdif)
+      call sw_two_stream(ncol, nlay, mu0,                                &
+                         tau (:,:,igpt), ssa (:,:,igpt), g   (:,:,igpt), &
+                         Rdif, Tdif, Rdir, Tdir, Tnoscat)
       !
       ! Direct-beam and source for diffuse radiation
       !
-      !call sw_source_2str(ncol, nlay, top_at_1, Rdir, Tdir, Tnoscat, sfc_alb_dir(:,igpt),&
-      !                    source_up, source_dn, source_srf, flux_dir(:,:,igpt))
-      call sw_source_dir(ncol, nlay, top_at_1, mu0, sfc_alb_dif(:,igpt), &
-                         tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt),      &
-                         source_dn, source_up, source_srf, gpt_flux_dir)
+      call sw_source_2str(ncol, nlay, top_at_1, Rdir, Tdir, Tnoscat, sfc_alb_dir(:,igpt),&
+                          source_up, source_dn, source_srf, gpt_flux_dir)
+      flux_dir(:,:) = flux_dir(:,:) + gpt_flux_dir(:,:)
       !
       ! Transport
       !
@@ -455,7 +449,6 @@ contains
                   source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
       flux_up (:,:) = flux_up (:,:) + gpt_flux_up (:,:)
       flux_dn (:,:) = flux_dn (:,:) + gpt_flux_dn (:,:)
-      flux_dir(:,:) = flux_dir(:,:) + gpt_flux_dir(:,:)
     end do
     !
     ! adding computes only diffuse flux; flux_dn is total

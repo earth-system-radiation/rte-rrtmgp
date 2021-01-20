@@ -167,9 +167,9 @@ contains
         allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
                  gpt_flux_dn (ncol, nlay+1, ngpt), &
                  gpt_flux_dir(ncol, nlay+1, ngpt))
+        !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
-    !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-    !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
     !$acc enter data create(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
     !$omp target enter data map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
@@ -227,11 +227,11 @@ contains
         call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               atmos%tau, mu0,                          &
                               gpt_flux_dir)
-        !
-        ! No diffuse flux
-        !
         !$acc exit data delete(atmos%tau, atmos)
         !$omp target exit data map(release:atmos%tau)
+        !
+        ! No diffuse flux - should set arrays to 0.
+        !
       class is (ty_optical_props_2str)
         !
         ! two-stream calculation with scattering
@@ -245,7 +245,7 @@ contains
             call sw_solver_2stream_integrated( &
                                    ncol, nlay, ngpt, logical(top_at_1, wl), &
                                    atmos%tau, atmos%ssa, atmos%g, mu0,      &
-                                   sfc_alb_dir, sfc_alb_dif,                &
+                                   sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
                                    inc_flux, inc_flux_diffuse,              &
                                    flux_up_loc, flux_dn_loc, flux_dir_loc)
             !$acc exit data delete(inc_flux, inc_flux_diffuse)

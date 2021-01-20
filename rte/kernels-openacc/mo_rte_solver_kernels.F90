@@ -37,7 +37,7 @@ module mo_rte_solver_kernels
 
   public :: apply_BC, &
             lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
-            sw_solver_noscat,                             sw_solver_2stream
+            sw_solver_noscat,                             sw_solver_2stream, sw_solver_2stream_integrated
 
   public :: lw_solver_1rescl_GaussQuad,  lw_solver_1rescl
   ! These routines don't really need to be visible but making them so is useful for testing.
@@ -621,7 +621,7 @@ contains
     !$omp target exit data map(release:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
     !$acc exit data delete (gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-
+  end subroutine sw_solver_2stream_integrated
   ! -------------------------------------------------------------------------------------------------
   !
   !   Lower-level longwave kernels

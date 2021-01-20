@@ -1,3 +1,5 @@
+# NOTE: you need to build rrtmgp as a library before building the
+# the standalone code. See ../../test/CMakeLists.txt.
 cmake_minimum_required(VERSION 3.0)
 project(standalone)
 

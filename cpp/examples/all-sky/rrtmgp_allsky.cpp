@@ -176,12 +176,12 @@ int main(int argc , char **argv) {
       if (verbose) std::cout << "Writing fluxes\n\n";
       if (write_fluxes) write_sw_fluxes(input_file, flux_up, flux_dn, flux_dir, ncol);
 
-      // Hacky unit test against reference fluxes
+      // Hacky "unit" test against pre-computed reference fluxes
       if (ncol == 1 && nloops == 1) {
         if (abs(sum(flux_up )-19104.862129836212)/(19104.862129836212) > 1.e-10) exit(-1);
         if (abs(sum(flux_dn )-38046.157649700355)/(38046.157649700355) > 1.e-10) exit(-1);
         if (abs(sum(flux_dir)-24998.593939345046)/(24998.593939345046) > 1.e-10) exit(-1);
-        // NOTE: these will fail! WHHYYYY????!!!
+        // And test to make sure our broadband and byband fluxes are consistent
         if (abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) exit(-1);
         if (abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) exit(-1);
         if (abs(sum(flux_dir)-sum(bnd_flux_dir) )/sum(flux_dir)        > 1.e-10) exit(-1);
@@ -297,10 +297,11 @@ int main(int argc , char **argv) {
       if (verbose) std::cout << "Writing fluxes\n\n";
       if (write_fluxes) write_lw_fluxes(input_file, flux_up, flux_dn, ncol);
 
+      // Hacky "unit" test against pre-computed reference fluxes
       if (ncol == 1 && nloops == 1) {
         if (abs(sum(flux_up )-10264.518998579415)/(10264.518998579415) > 1.e-10) exit(-1);
         if (abs(sum(flux_dn )-6853.2350138542843)/(6853.2350138542843) > 1.e-10) exit(-1);
-        // NOTE: these will fail
+        // And test to make sure our broadband and byband fluxes are consistent
         if (abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) exit(-1);
         if (abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) exit(-1);
       }

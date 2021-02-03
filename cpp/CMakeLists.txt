@@ -12,13 +12,6 @@ set(CXX_SRC
   rte/kernels/mo_fluxes_broadband_kernels.cpp
   rte/kernels/mo_optical_props_kernels.cpp
   rte/kernels/mo_rte_solver_kernels.cpp
-  examples/mo_load_coefficients.cpp
-  # This is a hack; I should not have to build this here, but we need it for the standalone RRTMGP
-  # unit tests, and I could not figure out how to get it to build without adding it to the RRTMGP
-  # library. TODO: revisit this!
-  examples/all-sky/mo_garand_atmos_io.cpp
-  examples/all-sky/mo_load_cloud_coefficients.cpp
-  extensions/fluxes_byband/mo_fluxes_byband_kernels.cpp
 )
 
 # Add RRTMGP as a library and make sure we link against YAKL
@@ -40,8 +33,3 @@ target_include_directories(rrtmgp PUBLIC rte)
 target_include_directories(rrtmgp PUBLIC rte/kernels)
 target_include_directories(rrtmgp PUBLIC rrtmgp)
 target_include_directories(rrtmgp PUBLIC rrtmgp/kernels)
-target_include_directories(rrtmgp PUBLIC examples)
-# Again, this is a hack to get the standalone tests to build that need the mo_garand_atmos_io.h header
-target_include_directories(rrtmgp PUBLIC examples/all-sky)
-target_include_directories(rrtmgp PUBLIC extensions/fluxes_byband)
-target_include_directories(rrtmgp PUBLIC extensions/cloud_optics)

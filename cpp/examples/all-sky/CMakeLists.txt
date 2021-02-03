@@ -5,6 +5,7 @@ project(standalone)
 
 set(CPP_SRC 
     ../mo_load_coefficients.cpp
+    ../../extensions/fluxes_byband/mo_fluxes_byband_kernels.cpp
     mo_garand_atmos_io.cpp 
     mo_load_cloud_coefficients.cpp
     rrtmgp_allsky.cpp
@@ -16,6 +17,9 @@ target_compile_features(allsky PUBLIC cxx_std_14)
 
 target_include_directories(allsky PUBLIC ${YAKL_HOME})
 target_include_directories(allsky PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/yakl)
+target_include_directories(allsky PUBLIC ../)
+target_include_directories(allsky PUBLIC ../../extensions/cloud_optics)
+target_include_directories(allsky PUBLIC ../../extensions/fluxes_byband)
 set_source_files_properties( ${CPP_SRC} PROPERTIES COMPILE_FLAGS "${YAKL_CXX_FLAGS} ${CXX_FLAGS}")
 if ("${ARCH}" STREQUAL "CUDA")
   enable_language(CUDA)

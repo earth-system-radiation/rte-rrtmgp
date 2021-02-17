@@ -2,7 +2,7 @@
 
 source $MODULESHOME/init/bash
 module purge
-module load DefApps gcc cmake cuda netcdf-cxx4 netcdf
+module load DefApps gcc cmake cuda netcdf-cxx4 netcdf nco
 
 unset ARCH
 unset CUDA_ARCH

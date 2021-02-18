@@ -9,5 +9,4 @@ void sum_byband(int ncol, int nlev, int ngpt, int nbnd, int2d const &bnd_lims, r
     }
     byband_flux(icol,ilev,ibnd) = bb_flux_s;
   });
-  std::cout << "DEBUG: " << byband_flux(1,1,1) << std::endl;
 }

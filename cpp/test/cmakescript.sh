@@ -12,7 +12,6 @@ cmake                                  \
   -DNCFLAGS="$NCFLAGS"                 \
   -DARCH="$ARCH"                       \
   -DCUDA_FLAGS="$CUDA_ARCH"            \
-  -DYAKL_CUB_HOME="$CUBHOME"           \
   -DYAKL_HIPCUB_HOME="$HIPCUBHOME"     \
   -DYAKL_ROCPRIM_HOME="$ROCPRIMHOME"   \
   -DYAKL_HOME="$YAKLHOME"              \

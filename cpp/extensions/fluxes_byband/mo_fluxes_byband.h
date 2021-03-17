@@ -32,6 +32,8 @@ class FluxesByband : public FluxesBroadband {
         if (allocated(this->bnd_flux_net)) {
             if (allocated(this->bnd_flux_dn) && allocated(this->bnd_flux_up)) {
                 net_byband(ncol, nlev, nbnd, this->bnd_flux_dn, this->bnd_flux_up, this->bnd_flux_net);
+            } else {
+                stoprun("reduce: bnd_flux_net requested but bnd_flux_dn or bnd_flux_up not allocated.");
             }
         }
     }

@@ -28,6 +28,12 @@ class FluxesByband : public FluxesBroadband {
         if (allocated(this->bnd_flux_up    )) { sum_byband(ncol, nlev, ngpt, nbnd, band2gpt, gpt_flux_up,     this->bnd_flux_up    ); }
         if (allocated(this->bnd_flux_dn    )) { sum_byband(ncol, nlev, ngpt, nbnd, band2gpt, gpt_flux_dn,     this->bnd_flux_dn    ); }
         if (allocated(this->bnd_flux_dn_dir)) { sum_byband(ncol, nlev, ngpt, nbnd, band2gpt, gpt_flux_dn_dir, this->bnd_flux_dn_dir); }
+        // Compute net fluxes
+        if (allocated(this->bnd_flux_net)) {
+            if (allocated(this->bnd_flux_dn) && allocated(this->bnd_flux_up)) {
+                net_byband(ncol, nlev, nbnd, this->bnd_flux_dn, this->bnd_flux_up, this->bnd_flux_net);
+            }
+        }
     }
     
 };

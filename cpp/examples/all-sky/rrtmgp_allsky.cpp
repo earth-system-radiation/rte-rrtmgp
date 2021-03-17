@@ -117,9 +117,11 @@ int main(int argc , char **argv) {
       real2d flux_up ("flux_up" ,ncol,nlay+1);
       real2d flux_dn ("flux_dn" ,ncol,nlay+1);
       real2d flux_dir("flux_dir",ncol,nlay+1);
+      real2d flux_net("flux_net",ncol,nlay+1);
       real3d bnd_flux_up ("bnd_flux_up" ,ncol,nlay+1,nbnd);
       real3d bnd_flux_dn ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
       real3d bnd_flux_dir("bnd_flux_dir",ncol,nlay+1,nbnd);
+      real3d bnd_flux_net("bnd_flux_net",ncol,nlay+1,nbnd);
 
       // Clouds
       real2d lwp("lwp",ncol,nlay);
@@ -157,9 +159,11 @@ int main(int argc , char **argv) {
         fluxes.flux_up     = flux_up ;
         fluxes.flux_dn     = flux_dn ;
         fluxes.flux_dn_dir = flux_dir;
+        fluxes.flux_net    = flux_net;
         fluxes.bnd_flux_up     = bnd_flux_up ;
         fluxes.bnd_flux_dn     = bnd_flux_dn ;
         fluxes.bnd_flux_dn_dir = bnd_flux_dir;
+        fluxes.bnd_flux_net = bnd_flux_net;
 
         k_dist.gas_optics(top_at_1, p_lay, p_lev, t_lay, gas_concs, atmos, toa_flux);
         clouds.delta_scale();
@@ -185,6 +189,7 @@ int main(int argc , char **argv) {
         if (abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) exit(-1);
         if (abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) exit(-1);
         if (abs(sum(flux_dir)-sum(bnd_flux_dir) )/sum(flux_dir)        > 1.e-10) exit(-1);
+        if (abs(sum(flux_net)-sum(bnd_flux_net) )/sum(flux_net)        > 1.e-10) exit(-1);
       }
 
     } else {  // Longwave
@@ -235,10 +240,12 @@ int main(int argc , char **argv) {
       memset( emis_sfc , 0.98_wp                                   );
 
       // Fluxes
-      real2d flux_up ("flux_up" ,ncol,nlay+1);
-      real2d flux_dn ("flux_dn" ,ncol,nlay+1);
+      real2d flux_up ( "flux_up" ,ncol,nlay+1);
+      real2d flux_dn ( "flux_dn" ,ncol,nlay+1);
+      real2d flux_net("flux_net" ,ncol,nlay+1);
       real3d bnd_flux_up ("bnd_flux_up" ,ncol,nlay+1,nbnd);
       real3d bnd_flux_dn ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
+      real3d bnd_flux_net("bnd_flux_net" ,ncol,nlay+1,nbnd);
 
       // Clouds
       real2d lwp("lwp",ncol,nlay);
@@ -279,8 +286,10 @@ int main(int argc , char **argv) {
         FluxesByband fluxes;
         fluxes.flux_up = flux_up;
         fluxes.flux_dn = flux_dn;
+        fluxes.flux_net= flux_net;
         fluxes.bnd_flux_up = bnd_flux_up;
         fluxes.bnd_flux_dn = bnd_flux_dn;
+        fluxes.bnd_flux_net= bnd_flux_net;
 
         // Calling with an empty col_dry parameter
         k_dist.gas_optics(top_at_1, p_lay, p_lev, t_lay, t_sfc, gas_concs, atmos, lw_sources, real2d(), t_lev);
@@ -304,6 +313,7 @@ int main(int argc , char **argv) {
         // And test to make sure our broadband and byband fluxes are consistent
         if (abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) exit(-1);
         if (abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) exit(-1);
+        if (abs(sum(flux_net)-sum(bnd_flux_net) )/sum(flux_net)        > 1.e-10) exit(-1);
       }
 
     }  // if (is_sw)

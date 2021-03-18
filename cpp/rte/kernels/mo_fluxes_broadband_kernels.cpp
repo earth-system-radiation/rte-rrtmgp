@@ -29,8 +29,10 @@ void net_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux_dn,
     real diff = spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt);
     yakl::atomicAdd( broadband_flux_net(icol,ilev) , diff );
   });
+#ifdef RRTMGP_DEBUG
   std::cout << "WARNING: THIS ISN'T TESTED!\n";
   std::cout << __FILE__ << ": " << __LINE__ << std::endl;
+#endif
 }
 
 // Net flux when bradband flux up and down are already available
@@ -40,6 +42,8 @@ void net_broadband(int ncol, int nlev, real2d const &flux_dn, real2d const &flux
   parallel_for( Bounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
      broadband_flux_net(icol,ilev) = flux_dn(icol,ilev) - flux_up(icol,ilev);
   });
+#ifdef RRTMGP_DEBUG
   std::cout << "WARNING: THIS ISN'T TESTED!\n";
   std::cout << __FILE__ << ": " << __LINE__ << std::endl;
+#endif
 }

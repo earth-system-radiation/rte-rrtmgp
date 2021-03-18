@@ -16,7 +16,7 @@ FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
-VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky
+VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
 VPATH += $(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/extensions/cloud_optics:$(RRTMGP_ROOT)/extensions/solar_variability
 
 # Compilation rules
@@ -34,7 +34,7 @@ ADDITIONS  = mo_heating_rates.o mo_compute_bc.o mo_rrtmgp_clr_all_sky.o
 ADDITIONS += mo_load_coefficients.o mo_simple_netcdf.o mo_rfmip_io.o
 ADDITIONS += mo_testing_io.o
 # Cloud optics
-CLOUDS    += mo_cloud_sampling.o mo_cloud_optics.o mo_load_cloud_coefficients.o
+CLOUDS    += mo_cloud_sampling.o mo_cloud_optics.o mo_load_cloud_coefficients.o mo_garand_atmos_io.o
 # Solar variability
 ADDITIONS += mo_solar_variability.o
 
@@ -47,6 +47,9 @@ all: clear_sky_regression
 
 clear_sky_regression:   $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.o
 clear_sky_regression.o: $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.F90
+
+cloud_scattering:   $(CLOUDS) $(ADDITIONS) $(LIB_DEPS) cloud_scattering.o
+cloud_scattering.o: $(CLOUDS) $(ADDITIONS) $(LIB_DEPS) cloud_scattering.F90
 
 mo_testing_io.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_testing_io.F90
 

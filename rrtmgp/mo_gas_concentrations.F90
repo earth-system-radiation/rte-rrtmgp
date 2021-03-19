@@ -520,7 +520,7 @@ contains
         end if
       end do
       !$acc exit data delete(this%concs)
-      !$omp target exit data map(release:this%concs)
+      !!$omp target exit data map(release:this%concs) ! Not needed with Cray compiler
       deallocate(this%concs)
     end if
   end subroutine reset

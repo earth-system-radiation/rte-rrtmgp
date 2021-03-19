@@ -56,7 +56,7 @@ contains
   !   using user-supplied weights
   !
   ! ---------------------------------------------------------------
-  subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                             &
+  subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                              &
                               tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                               radn_up, radn_dn, &
                               sfc_srcJac, radn_upJac, &
@@ -97,12 +97,11 @@ contains
     real(wp), dimension(ncol,nlay,ngpt) :: tau_loc, &  ! path length (tau/mu)
                                            trans       ! transmissivity  = exp(-tau)
     real(wp), dimension(ncol,nlay,ngpt) :: source_dn, source_up
-    real(wp), dimension(ncol,     ngpt) :: source_sfc, sfc_albedo, source_sfcJac
 
     real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
     real(wp), parameter :: pi = acos(-1._wp)
-    integer             :: icol, ilev, igpt, top_level, ilay
+    integer             :: icol, ilay, ilev, igpt, top_level, sfc_level
 
     real(wp)            :: fact
     real(wp), parameter :: tau_thresh = sqrt(epsilon(tau_loc))
@@ -119,10 +118,12 @@ contains
     !                lev_source_dn => lev_source_inc, and vice-versa
     if(top_at_1) then
       top_level = 1
+      sfc_level = nlay+1
       lev_source_up => lev_source_dec
       lev_source_dn => lev_source_inc
     else
       top_level = nlay+1
+      sfc_level = 1
       lev_source_up => lev_source_inc
       lev_source_dn => lev_source_dec
     end if
@@ -131,13 +132,13 @@ contains
     !$omp target enter data map(to:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, radn_dn)
     !$acc        enter data attach(lev_source_up,lev_source_dn)
     !$omp target enter data map(to:lev_source_up, lev_source_dn)
-    !$acc        enter data create(   tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up)
-    !$omp target enter data map(alloc:tau_loc, trans, source_dn, source_up, source_sfc, sfc_albedo, radn_up)
+    !$acc        enter data create(   tau_loc,trans,source_dn,source_up,radn_up)
+    !$omp target enter data map(alloc:tau_loc,trans,source_dn,source_up,radn_up)
 
     !$acc        enter data copyin(sfc_srcJac)
     !$omp target enter data map(to:sfc_srcJac)
-    !$acc        enter data create(   source_sfcJac, radn_upJac)
-    !$omp target enter data map(alloc:source_sfcJac, radn_upJac)
+    !$acc        enter data create(   radn_upJac)
+    !$omp target enter data map(alloc:radn_upJac)
 
     !$acc enter data create(An, Cn, temp) if(do_rescaling)
     !$omp target enter data map(alloc:An, Cn, temp) if(do_rescaling)
@@ -151,21 +152,9 @@ contains
         !   convert flux at top of domain to intensity assuming azimuthal isotropy
         !
         radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2._wp * pi * weight)
-        !
-        ! Surface albedo, surface source function
-        !
-        sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt)
-        source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt)
       end do
     end do
 
-    !$acc parallel loop collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
-    do igpt = 1, ngpt
-      do icol = 1, ncol
-        source_sfcJac(icol,igpt) = sfc_emis(icol,igpt) * sfc_srcJac(icol,igpt)
-      end do
-    end do
     !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
     do igpt = 1, ngpt
@@ -206,17 +195,36 @@ contains
     end do
 
     !
-    ! Transport
+    ! Transport down
     !
-    call lw_transport_noscat(ncol, nlay, ngpt, top_at_1,  &
-                             tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                             radn_up, radn_dn, source_sfcJac, radn_upJac)
-
+    call lw_transport_noscat_dn(ncol, nlay, ngpt, top_at_1, trans, source_dn, radn_dn)
+    !
+    ! Surface reflection and emission
+    !
+    !$acc parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    !$acc parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do igpt = 1, ngpt
+      do icol = 1, ncol
+        !
+        ! Surface albedo, surface source function
+        !
+        radn_up   (icol,sfc_level,igpt) = radn_dn(icol,sfc_level,igpt)*(1._wp - sfc_emis(icol,igpt)) + &
+                                          sfc_src(icol,          igpt)*         sfc_emis(icol,igpt)
+        radn_upJac(icol,sfc_level,igpt) = sfc_srcJac(icol,       igpt)*         sfc_emis(icol,igpt)
+      end do
+    end do
+    !
+    ! Transport up, or up and down again if using rescaling
+    !
     if(do_rescaling) then
       call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, trans, &
-                               source_dn, source_up, &
-                               radn_up, radn_dn, An, Cn,&
-                               rad_up_Jac, temp) ! Standing in for Jacobian, i.e. rad_up_Jac, rad_dn_Jac)
+                               source_dn, source_up,              &
+                               radn_up, radn_dn, An, Cn,          &
+                               radn_upJac, temp) ! Standing in for Jacobian, i.e. rad_up_Jac, rad_dn_Jac)
+    else
+      call lw_transport_noscat_up(ncol, nlay, ngpt, top_at_1, trans, source_up, radn_up, radn_upJac)
     end if
     !
     ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
@@ -232,15 +240,15 @@ contains
         end do
       end do
     end do
-    !$acc        exit data delete(     sfc_srcJac, source_sfcJac)
-    !$omp target exit data map(release:sfc_srcJac, source_sfcJac)
+    !$acc        exit data delete(     sfc_srcJac)
+    !$omp target exit data map(release:sfc_srcJac)
     !$acc        exit data copyout( radn_upJac)
     !$omp target exit data map(from:radn_upJac)
 
     !$acc        exit data copyout( radn_dn,radn_up)
     !$omp target exit data map(from:radn_dn, radn_up)
-    !$acc        exit data delete(     d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo)
-    !$omp target exit data map(release:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, tau_loc, trans, source_dn, source_up, source_sfc, sfc_albedo)
+    !$acc        exit data delete(     d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up)
+    !$omp target exit data map(release:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, tau_loc, trans, source_dn, source_up)
     !$acc        exit data detach(  lev_source_up,lev_source_dn)
     !$omp target exit data map(from:lev_source_up, lev_source_dn)
     !$acc        exit data delete(     An, Cn, temp) if(do_rescaling)
@@ -638,6 +646,93 @@ contains
   ! Longwave no-scattering transport
   !
   ! ---------------------------------------------------------------
+  subroutine lw_transport_noscat_dn(ncol, nlay, ngpt, top_at_1, &
+                                    trans, source_dn,radn_dn) bind(C, name="lw_transport_noscat_dn")
+    !dir$ optimize(-O0)
+    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    logical(wl),                           intent(in   ) :: top_at_1   !
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: trans      ! transmissivity = exp(-tau)
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_dn  ! Diffuse radiation emitted by the layer
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn    ! Radiances [W/m2-str]
+                                                                       ! Top level must contain incident flux boundary condition
+    ! Local variables
+    integer :: igpt, ilev, icol
+    ! ---------------------------------------------------
+    ! ---------------------------------------------------
+    if(top_at_1) then
+      !
+      ! Top of domain is index 1
+      !
+      !$acc  parallel loop collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          do ilev = 2, nlay+1
+            radn_dn(icol,ilev,igpt) = trans(icol,ilev-1,igpt)*radn_dn(icol,ilev-1,igpt) + source_dn(icol,ilev-1,igpt)
+          end do
+        end do
+      end do
+    else
+      !
+      ! Top of domain is index nlay+1
+      !
+      !$acc  parallel loop collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          do ilev = nlay, 1, -1
+            radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt)
+          end do
+        end do
+      end do
+    end if
+
+  end subroutine lw_transport_noscat_dn
+  ! -------------------------------------------------------------------------------------------------
+  subroutine lw_transport_noscat_up(ncol, nlay, ngpt, top_at_1, trans, source_up, radn_up, radn_upJac) bind(C, name="lw_transport_noscat_up")
+    !dir$ optimize(-O0)
+    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    logical(wl),                           intent(in   ) :: top_at_1   !
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: trans      ! transmissivity = exp(-tau)
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_up  ! Diffuse radiation emitted by the layer
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    ! Local variables
+    integer :: igpt, ilev, icol
+    ! ---------------------------------------------------
+    ! ---------------------------------------------------
+    if(top_at_1) then
+      !
+      ! Top of domain is index 1
+      !
+      !$acc  parallel loop collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          do ilev = nlay, 1, -1
+            radn_up   (icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_up   (icol,ilev+1,igpt) + source_up(icol,ilev,igpt)
+            radn_upJac(icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_upJac(icol,ilev+1,igpt)
+          end do
+        end do
+      end do
+    else
+      !
+      ! Top of domain is index nlay+1
+      !
+      !$acc  parallel loop collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          do ilev = 2, nlay+1
+            radn_up   (icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up   (icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt)
+            radn_upJac(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_upJac(icol,ilev-1,igpt)
+          end do
+        end do
+      end do
+    end if
+
+  end subroutine lw_transport_noscat_up
+  ! -------------------------------------------------------------------------------------------------
   subroutine lw_transport_noscat(ncol, nlay, ngpt, top_at_1, &
                                  tau, trans, sfc_albedo, source_dn, source_up, source_sfc, &
                                  radn_up, radn_dn, source_sfcJac, radn_upJac) bind(C, name="lw_transport_noscat")

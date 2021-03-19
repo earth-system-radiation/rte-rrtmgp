@@ -236,11 +236,11 @@ contains
     allocate(sfc_emis_gpt(ncol,         ngpt))
     !!$acc enter data copyin(sources, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data copyin(optical_props)
-    !$acc enter data create(gpt_flux_dn, gpt_flux_up)
+    !$acc        enter data create(   gpt_flux_dn, gpt_flux_up)
     !$omp target enter data map(alloc:gpt_flux_dn, gpt_flux_up)
-    !$acc enter data create(gpt_flux_upJac)
+    !$acc        enter data create(   gpt_flux_upJac)
     !$omp target enter data map(alloc:gpt_flux_upJac)
-    !$acc enter data create(sfc_emis_gpt)
+    !$acc        enter data create(   sfc_emis_gpt)
     !$omp target enter data map(alloc:sfc_emis_gpt)
 
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
@@ -248,10 +248,10 @@ contains
     !   Upper boundary condition
     !
     if(present(inc_flux)) then
-      !$acc enter data copyin(inc_flux)
+      !$acc        enter data copyin(inc_flux)
       !$omp target enter data map(to:inc_flux)
       call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl), inc_flux, gpt_flux_dn)
-      !$acc exit data delete(inc_flux)
+      !$acc        exit data delete(     inc_flux)
       !$omp target exit data map(release:inc_flux)
     else
       !
@@ -269,7 +269,7 @@ contains
         !
         ! No scattering two-stream calculation
         !
-        !$acc enter data copyin(optical_props%tau)
+        !$acc        enter data copyin(optical_props%tau)
         !$omp target enter data map(to:optical_props%tau)
         error_msg =  optical_props%validate()
         if(len_trim(error_msg) > 0) return
@@ -296,7 +296,7 @@ contains
                                 gpt_flux_up, gpt_flux_dn, sources%sfc_source_Jac, gpt_flux_upJac, &
                                 logical(.false., wl),  optical_props%tau, optical_props%tau)
         end if
-        !$acc exit data delete(optical_props%tau)
+        !$acc        exit data delete(     optical_props%tau)
         !$omp target exit data map(release:optical_props%tau)
       class is (ty_optical_props_2str)
 
@@ -310,7 +310,7 @@ contains
           !
           ! two-stream calculation with scattering
           !
-          !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
+          !$acc        enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target enter data map(to:optical_props%tau, optical_props%ssa, optical_props%g)
           error_msg =  optical_props%validate()
           if(len_trim(error_msg) > 0) return
@@ -319,16 +319,16 @@ contains
                                  sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                                  sfc_emis_gpt, sources%sfc_source,       &
                                  gpt_flux_up, gpt_flux_dn)
-          !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+          !$acc        exit data delete(     optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)
         else
           !
           ! Re-scaled solution to account for scattering
           !
           allocate(gpt_flux_dnJac (ncol, nlay+1, ngpt))
-          !$acc enter data create(gpt_flux_dnJac)
+          !$acc        enter data create(   gpt_flux_dnJac)
           !$omp target enter data map(alloc:gpt_flux_dnJac)
-          !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
+          !$acc        enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target enter data map(to:optical_props%tau, optical_props%ssa, optical_props%g)
           call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, &
                                 logical(top_at_1, wl), &
@@ -341,7 +341,7 @@ contains
                                 sfc_emis_gpt, sources%sfc_source,  &
                                 gpt_flux_up, gpt_flux_dn, sources%sfc_source_Jac, gpt_flux_upJac, &
                                 logical(.true., wl),  optical_props%ssa, optical_props%g)
-          !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
+          !$acc        exit data delete(     optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)
         endif
       class is (ty_optical_props_nstr)
@@ -372,21 +372,21 @@ contains
         if(.not. using_2stream) then
           if (present(flux_dn_Jac)) Jac_fluxes%flux_dn => flux_dn_Jac
           error_msg = Jac_fluxes%reduce(gpt_flux_upJac, gpt_flux_dnJac, optical_props, top_at_1)
-          !$acc exit data delete(gpt_flux_dnJac)
+          !$acc        exit data delete(     gpt_flux_dnJac)
           !$omp target exit data map(release:gpt_flux_dnJac)
           deallocate(gpt_flux_dnJac)
         end if
       end select
 
-    !$acc exit data delete(gpt_flux_upJac)
+    !$acc        exit data delete(     gpt_flux_upJac)
     !$omp target exit data map(release:gpt_flux_upJac)
     deallocate(gpt_flux_upJac)
 
-    !$acc exit data delete(sfc_emis_gpt)
+    !$acc        exit data delete(     sfc_emis_gpt)
     !$omp target exit data map(release:sfc_emis_gpt)
-    !$acc exit data delete(gpt_flux_up,gpt_flux_dn)
+    !$acc        exit data delete(      gpt_flux_up,gpt_flux_dn)
     !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn)
-    !$acc exit data delete(optical_props)
+    !$acc        exit data delete(optical_props)
     !!$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source,sources)
   end function rte_lw
   !--------------------------------------------------------------------------------------------------------------------

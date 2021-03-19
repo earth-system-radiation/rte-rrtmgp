@@ -133,8 +133,8 @@ contains
     !$omp target enter data map(alloc:tau_loc, trans, source_dn, source_up, source_sfc, sfc_albedo, radn_up)
     !$acc enter data attach(lev_source_up,lev_source_dn)
     !$omp target enter data map(to:lev_source_up, lev_source_dn)
-
-    ! Need to add An, Cn, temp (eventually down Jacobian) to GPU if do_rescaling is true
+    !$acc enter data create(An, Cn, temp) if(do_rescaling)
+    !$omp target enter data map(alloc:An, Cn, temp) if(do_rescaling)
 
     !$acc parallel loop collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
@@ -246,6 +246,8 @@ contains
     !$omp target exit data map(release:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, tau_loc, trans, source_dn, source_up, source_sfc, sfc_albedo)
     !$acc exit data detach(lev_source_up,lev_source_dn)
     !$omp target exit data map(from:lev_source_up, lev_source_dn)
+    !$acc exit data delete(An, Cn, temp) if(do_rescaling)
+    !$omp target exit data map(release:An, Cn, temp) if(do_rescaling)
 
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------

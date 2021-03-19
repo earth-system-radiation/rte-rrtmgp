@@ -218,7 +218,7 @@ contains
     if(do_rescaling) then
       call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, trans, &
                                source_dn, source_up, &
-                               radn_up(:,:,igpt), radn_dn(:,:,igpt), An, Cn,&
+                               radn_up, radn_dn, An, Cn,&
                                temp, temp) ! Standing in for Jacobian, i.e. rad_up_Jac(:,:,igpt), rad_dn_Jac(:,:,igpt))
     end if
     !

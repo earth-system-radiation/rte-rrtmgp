@@ -1847,7 +1847,7 @@ contains
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(     ncol,nlay,ngpt,optical_props%g  )
           !$acc exit data copyout(optical_props%ssa, optical_props%g)
-          !$omp target exit data map(from:optical_props%ssa, optical_props%g)
+          !!$omp target exit data map(from:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
           !$acc enter data create(optical_props%ssa, optical_props%p)

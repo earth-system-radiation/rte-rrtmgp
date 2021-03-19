@@ -101,15 +101,15 @@ contains
     real(wp), dimension(ncol,nlay) :: tau_loc, &  ! path length (tau/mu)
                                       trans       ! transmissivity  = exp(-tau)
     real(wp), dimension(ncol,nlay) :: source_dn, source_up
-    real(wp), dimension(ncol     ) :: source_sfc, sfc_albedo, source_sfcJac
+    real(wp), dimension(ncol     ) :: sfc_albedo
 
     real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
     real(wp), parameter :: pi = acos(-1._wp)
-    integer             :: icol, ilay, igpt, top_level
+    integer             :: icol, ilay, igpt, top_level, sfc_level
     ! Used when approximating scattering
-    real(wp)            :: ssal, wb, scaleTau, scaling
-    real(wp), dimension(ncol,nlay) :: An, Cn
+    real(wp)                         :: ssal, wb, scaleTau
+    real(wp), dimension(ncol,nlay  ) :: An, Cn
     real(wp), dimension(ncol,nlay+1) :: temp
     ! ------------------------------------
     ! Which way is up?
@@ -118,10 +118,12 @@ contains
     !                lev_source_dn => lev_source_inc, and vice-versa
     if(top_at_1) then
       top_level = 1
+      sfc_level = nlay+1
       lev_source_up => lev_source_dec
       lev_source_dn => lev_source_inc
     else
       top_level = nlay+1
+      sfc_level = 1
       lev_source_up => lev_source_inc
       lev_source_dn => lev_source_dec
     end if
@@ -147,10 +149,10 @@ contains
             ssal = ssa(icol, ilay, igpt)
             wb = ssal*(1._wp - g(icol, ilay, igpt)) * 0.5_wp
             scaleTau = (1._wp - ssal + wb)
-            ! here scaling is used to store parameter wb/(1-w(1-b)) of Eq.21 of the Tang paper
+            ! here wb/scaleTau is parameter wb/(1-w(1-b)) of Eq.21 of the Tang paper
             ! actually it is in line of parameter rescaling defined in Eq.7
             ! potentialy if g=ssa=1  then  wb/scaleTau = NaN
-            ! it should not happen
+            ! it should not happen because g is never 1 in atmospheres
             ! explanation of factor 0.4 note A of Table
             Cn(icol,ilay) = 0.4_wp*wb/scaleTau
             ! Eq.15 of the paper, multiplied by path length
@@ -172,23 +174,27 @@ contains
                             lay_source(:,:,igpt), lev_source_up(:,:,igpt), lev_source_dn(:,:,igpt), &
                             tau_loc, trans, source_dn, source_up)
       !
-      ! Surface albedo, surface source function
+      ! Transport down
       !
-      sfc_albedo(:) = 1._wp - sfc_emis(:,igpt)
-      source_sfc(:) = sfc_emis(:,igpt) * sfc_src(:,igpt)
-      source_sfcJac(:) = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
+      call lw_transport_noscat_dn(ncol, nlay, top_at_1, trans, source_dn, radn_dn(:,:,igpt))
       !
-      ! Transport
+      ! Surface albedo, surface source function, reflection and emission
       !
-      call lw_transport_noscat(ncol, nlay, top_at_1,  &
-                               tau_loc, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                               radn_up(:,:,igpt), radn_dn(:,:,igpt), &
-                               source_sfcJac, radn_upJac(:,:,igpt))
-      if(do_rescaling) &
-        call lw_transport_1rescl(ncol, nlay, top_at_1, trans, &
-                                 source_dn, source_up, &
-                                 radn_up(:,:,igpt), radn_dn(:,:,igpt), An, Cn,&
-                                 temp, temp) ! Standing in for Jacobian, i.e. rad_up_Jac(:,:,igpt), rad_dn_Jac(:,:,igpt))
+      sfc_albedo(:)    = 1._wp - sfc_emis(:,igpt)
+      radn_up   (:,sfc_level,igpt) = radn_dn(:,sfc_level,igpt)*sfc_albedo(:) + &
+                                     sfc_emis(:,igpt) * sfc_src(:,igpt)
+      radn_upJac(:,sfc_level,igpt) = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
+      !
+      ! Transport up, or up and down again if using rescaling
+      !
+      if(do_rescaling) then
+        call lw_transport_1rescl(ncol, nlay, top_at_1, trans,                  &
+                                 source_dn, source_up,                         &
+                                 radn_up(:,:,igpt), radn_dn(:,:,igpt), An, Cn, &
+                                 radn_upJac(:,:,igpt), temp) ! Standing in for Jacobian, i.e. rad_up_Jac(:,:,igpt), rad_dn_Jac(:,:,igpt))
+      else
+        call lw_transport_noscat_up(ncol, nlay, top_at_1, trans, source_up, radn_up(:,:,igpt), radn_upJac(:,:,igpt))
+      end if
 
       !
       ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
@@ -500,26 +506,18 @@ contains
   end subroutine lw_source_noscat
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Longwave no-scattering transport
+  ! Longwave no-scattering transport - separate routines for up and down 
   !
   ! -------------------------------------------------------------------------------------------------
-  subroutine lw_transport_noscat(ncol, nlay, top_at_1, &
-                                 tau, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                                 radn_up, radn_dn,&
-                                 source_sfcJac, radn_upJac) bind(C, name="lw_transport_noscat")
+  subroutine lw_transport_noscat_dn(ncol, nlay, top_at_1,     &
+                                   trans, source_dn, radn_dn) bind(C, name="lw_transport_noscat_dn")
     integer,                          intent(in   ) :: ncol, nlay ! Number of columns, layers, g-points
     logical(wl),                      intent(in   ) :: top_at_1   !
-    real(wp), dimension(ncol,nlay  ), intent(in   ) :: tau, &     ! Absorption optical thickness, pre-divided by mu []
-                                                       trans      ! transmissivity = exp(-tau)
-    real(wp), dimension(ncol       ), intent(in   ) :: sfc_albedo ! Surface albedo
-    real(wp), dimension(ncol,nlay  ), intent(in   ) :: source_dn, &
-                                                       source_up  ! Diffuse radiation emitted by the layer
-    real(wp), dimension(ncol       ), intent(in   ) :: source_sfc ! Surface source function [W/m2]
-    real(wp), dimension(ncol,nlay+1), intent(  out) :: radn_up    ! Radiances [W/m2-str]
-    real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_dn    !Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol,nlay  ), intent(in   ) :: trans      ! transmissivity = exp(-tau)
+    real(wp), dimension(ncol,nlay  ), intent(in   ) :: source_dn  ! Diffuse radiation emitted by the layer
+    real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_dn    ! Radiances [W/m2-str] Top level must contain incident flux boundary condition
 
-    real(wp), dimension(ncol       ), intent(in )   :: source_sfcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1), intent(out)   :: radn_upJac       ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    ! ---------------------------------------------------
     ! Local variables
     integer :: ilev
     ! ---------------------------------------------------
@@ -527,15 +525,36 @@ contains
       !
       ! Top of domain is index 1
       !
-      ! Downward propagation
       do ilev = 2, nlay+1
         radn_dn(:,ilev) = trans(:,ilev-1)*radn_dn(:,ilev-1) + source_dn(:,ilev-1)
       end do
+    else
+      !
+      ! Top of domain is index nlay+1
+      !
+      do ilev = nlay, 1, -1
+        radn_dn(:,ilev) = trans(:,ilev  )*radn_dn(:,ilev+1) + source_dn(:,ilev)
+      end do
+    end if
+  end subroutine lw_transport_noscat_dn
+  ! -------------------------------------------------------------------------------------------------
+  subroutine lw_transport_noscat_up(ncol, nlay, top_at_1,     &
+                                   trans, source_up, radn_up, radn_upJac) bind(C, name="lw_transport_noscat_up")
+    integer,                          intent(in   ) :: ncol, nlay ! Number of columns, layers, g-points
+    logical(wl),                      intent(in   ) :: top_at_1   !
+    real(wp), dimension(ncol,nlay  ), intent(in   ) :: trans      ! transmissivity = exp(-tau)
+    real(wp), dimension(ncol,nlay  ), intent(in   ) :: source_up  ! Diffuse radiation emitted by the layer
+    real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_up    ! Radiances [W/m2-str] Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol,nlay+1), intent(out)   :: radn_upJac       ! surface temperature Jacobian of Radiances [W/m2-str / K]
 
-      ! Surface reflection and emission
-      radn_up   (:,nlay+1) = radn_dn(:,nlay+1)*sfc_albedo(:) + source_sfc   (:)
-      radn_upJac(:,nlay+1) = source_sfcJac(:)
-
+    ! ---------------------------------------------------
+    ! Local variables
+    integer :: ilev
+    ! ---------------------------------------------------
+    if(top_at_1) then
+      !
+      ! Top of domain is index 1
+      !
       ! Upward propagation
       do ilev = nlay, 1, -1
         radn_up   (:,ilev) = trans(:,ilev  )*radn_up   (:,ilev+1) + source_up(:,ilev)
@@ -545,22 +564,13 @@ contains
       !
       ! Top of domain is index nlay+1
       !
-      ! Downward propagation
-      do ilev = nlay, 1, -1
-        radn_dn(:,ilev) = trans(:,ilev  )*radn_dn(:,ilev+1) + source_dn(:,ilev)
-      end do
-
-      ! Surface reflection and emission
-      radn_up   (:, 1) = radn_dn(:,1)*sfc_albedo(:) + source_sfc   (:)
-      radn_upJac(:, 1) = source_sfcJac(:)
-
       ! Upward propagation
       do ilev = 2, nlay+1
         radn_up   (:,ilev) = trans(:,ilev-1) * radn_up   (:,ilev-1) +  source_up(:,ilev-1)
         radn_upJac(:,ilev) = trans(:,ilev-1) * radn_upJac(:,ilev-1)
       end do
     end if
-  end subroutine lw_transport_noscat
+  end subroutine lw_transport_noscat_up
   ! -------------------------------------------------------------------------------------------------
   !
   ! Longwave two-stream solutions to diffuse reflectance and transmittance for a layer

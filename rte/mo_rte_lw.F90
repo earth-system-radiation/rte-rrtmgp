@@ -43,8 +43,7 @@ module mo_rte_lw
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_rte_solver_kernels, &
-                        only: apply_BC, lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
-                              lw_solver_1rescl_GaussQuad
+                        only: apply_BC, lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream
   implicit none
   private
 
@@ -60,23 +59,22 @@ contains
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, &
                   lw_Ds, flux_up_Jac, flux_dn_Jac) result(error_msg)
-    class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Array of ty_optical_props. This type is abstract
-                                                                     ! and needs to be made concrete, either as an array
-                                                                     ! (class ty_optical_props_arry) or in some user-defined way
+    class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Set of optical properties as one or more arrays
     logical,                      intent(in   ) :: top_at_1          ! Is the top of the domain at index 1?
                                                                      ! (if not, ordering is bottom-to-top)
-    type(ty_source_func_lw),      intent(in   ) :: sources
+    type(ty_source_func_lw),      intent(in   ) :: sources        ! Derived type with Planck source functions
     real(wp), dimension(:,:),     intent(in   ) :: sfc_emis       ! emissivity at surface [] (nband, ncol)
-    class(ty_fluxes),             intent(inout) :: fluxes         ! Array of ty_fluxes. Default computes broadband fluxes at all levels
+    class(ty_fluxes),             intent(inout) :: fluxes         ! Dervied type for computing spectral integrals from g-point fluxes.
+                                                                  ! Default computes broadband fluxes at all levels
                                                                   ! if output arrays are defined. Can be extended per user desires.
     real(wp), dimension(:,:),   &
                 target, optional, intent(in   ) :: inc_flux       ! incident flux at domain top [W/m2] (ncol, ngpts)
-    integer,            optional, intent(in   ) :: n_gauss_angles ! Number of angles used in Gaussian quadrature
+    integer,            optional, intent(in   ) :: n_gauss_angles ! Number of angles used in Gaussian quadrature (max 3)
                                                                   ! (no-scattering solution)
     logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
                                                                   ! Default is to use re-scaled longwave transport
     real(wp), dimension(:,:),   &
-                      optional,   intent(in   ) :: lw_Ds          ! linear fit to column transmissivity (ncol,ngpt)
+                      optional,   intent(in   ) :: lw_Ds          ! User-specifed 1/cos of transport angle per col, g-point
     real(wp), dimension(:,:),   &
                 target, optional, intent(inout) :: flux_up_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
     real(wp), dimension(:,:),   &
@@ -208,7 +206,7 @@ contains
         end if
       class is (ty_optical_props_2str)
         if (present(lw_Ds)) &
-          error_msg = "rte_lw: lw_Ds not valid input for _2str class"
+          error_msg = "rte_lw: lw_Ds not valid when providing scattering optical properties"
         if (using_2stream .and. n_quad_angs /= 1) &
           error_msg = "rte_lw: using_2stream=true incompatible with specifying n_gauss_angles"
         if (using_2stream .and. (present(flux_up_Jac) .or. present(flux_dn_Jac))) &
@@ -283,7 +281,8 @@ contains
                                 optical_props%tau, &
                                 sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                                 sfc_emis_gpt, sources%sfc_source,  &
-                                gpt_flux_up, gpt_flux_dn, sources%sfc_source_Jac, gpt_flux_upJac)
+                                gpt_flux_up, gpt_flux_dn, sources%sfc_source_Jac, gpt_flux_upJac, &
+                                logical(.false., wl),  optical_props%tau, optical_props%tau)
         else
           call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, &
                                 logical(top_at_1, wl), &
@@ -294,7 +293,8 @@ contains
                                 sources%lay_source, sources%lev_source_inc, &
                                 sources%lev_source_dec, &
                                 sfc_emis_gpt, sources%sfc_source,  &
-                                gpt_flux_up, gpt_flux_dn, sources%sfc_source_Jac, gpt_flux_upJac)
+                                gpt_flux_up, gpt_flux_dn, sources%sfc_source_Jac, gpt_flux_upJac, &
+                                logical(.false., wl),  optical_props%tau, optical_props%tau)
         end if
         !$acc exit data delete(optical_props%tau)
         !$omp target exit data map(release:optical_props%tau)
@@ -330,15 +330,17 @@ contains
           !$omp target enter data map(alloc:gpt_flux_dnJac)
           !$acc enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target enter data map(to:optical_props%tau, optical_props%ssa, optical_props%g)
-          call lw_solver_1rescl_GaussQuad(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                                 n_quad_angs, gauss_Ds(1:n_quad_angs,n_quad_angs), &
-                                 gauss_wts(1:n_quad_angs,n_quad_angs), &
-                                 optical_props%tau, optical_props%ssa, optical_props%g, &
-                                 sources%lay_source, sources%lev_source_inc, &
-                                 sources%lev_source_dec, &
-                                 sfc_emis_gpt, sources%sfc_source,&
-                                 gpt_flux_up, gpt_flux_dn, &
-                                 sources%sfc_source_Jac, gpt_flux_upJac, gpt_flux_dnJac)
+          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, &
+                                logical(top_at_1, wl), &
+                                n_quad_angs, &
+                                gauss_Ds(1:n_quad_angs,n_quad_angs), &
+                                gauss_wts(1:n_quad_angs,n_quad_angs), &
+                                optical_props%tau, &
+                                sources%lay_source, sources%lev_source_inc, &
+                                sources%lev_source_dec, &
+                                sfc_emis_gpt, sources%sfc_source,  &
+                                gpt_flux_up, gpt_flux_dn, sources%sfc_source_Jac, gpt_flux_upJac, &
+                                logical(.true., wl),  optical_props%ssa, optical_props%g)
           !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)
         endif

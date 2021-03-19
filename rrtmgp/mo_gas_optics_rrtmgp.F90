@@ -1843,7 +1843,7 @@ contains
       select type(optical_props)
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%ssa, optical_props%g)
-          !$omp target enter data map(alloc:optical_props%ssa, optical_props%g)
+          !!$omp target enter data map(alloc:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(     ncol,nlay,ngpt,optical_props%g  )
           !$acc exit data copyout(optical_props%ssa, optical_props%g)

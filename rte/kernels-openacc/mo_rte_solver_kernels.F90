@@ -127,12 +127,18 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
-    !$acc enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn)
+    !$acc        enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn)
     !$omp target enter data map(to:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, radn_dn)
-    !$acc enter data create(tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up)
-    !$omp target enter data map(alloc:tau_loc, trans, source_dn, source_up, source_sfc, sfc_albedo, radn_up)
-    !$acc enter data attach(lev_source_up,lev_source_dn)
+    !$acc        enter data attach(lev_source_up,lev_source_dn)
     !$omp target enter data map(to:lev_source_up, lev_source_dn)
+    !$acc        enter data create(   tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo,radn_up)
+    !$omp target enter data map(alloc:tau_loc, trans, source_dn, source_up, source_sfc, sfc_albedo, radn_up)
+
+    !$acc        enter data copyin(sfc_srcJac)
+    !$omp target enter data map(to:sfc_srcJac)
+    !$acc        enter data create(   source_sfcJac, radn_upJac)
+    !$omp target enter data map(alloc:source_sfcJac, radn_upJac)
+
     !$acc enter data create(An, Cn, temp) if(do_rescaling)
     !$omp target enter data map(alloc:An, Cn, temp) if(do_rescaling)
 
@@ -153,11 +159,6 @@ contains
       end do
     end do
 
-    !$acc enter data copyin(sfc_srcJac)
-    !$omp target enter data map(to:sfc_srcJac)
-    !$acc enter data create(source_sfcJac, radn_upJac)
-    !$omp target enter data map(alloc:source_sfcJac, radn_upJac)
-
     !$acc parallel loop collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
@@ -165,17 +166,13 @@ contains
         source_sfcJac(icol,igpt) = sfc_emis(icol,igpt) * sfc_srcJac(icol,igpt)
       end do
     end do
-    ! NOTE: This kernel produces small differences between GPU and CPU
-    ! implementations on Ascent with PGI, we assume due to floating point
-    ! differences in the exp() function. These differences are small in the
-    ! RFMIP test case (10^-6).
     !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
           !
-          ! The scaling and scaleTau terms are independent of propagation
+          ! The wb and scaleTau terms are independent of propagation
           !   angle D and could be pre-computed if several values of D are used
           ! We re-compute them here to keep not have to localize memory use
           !
@@ -183,10 +180,10 @@ contains
             ssal = ssa(icol, ilay, igpt)
             wb = ssal*(1._wp - g(icol, ilay, igpt)) * 0.5_wp
             scaleTau = (1._wp - ssal + wb)
-            ! here scaling is used to store parameter wb/(1-w(1-b)) of Eq.21 of the Tang paper
+            ! here wb/scaleTau is parameter wb/(1-w(1-b)) of Eq.21 of the Tang paper
             ! actually it is in line of parameter rescaling defined in Eq.7
             ! potentialy if g=ssa=1  then  wb/scaleTau = NaN
-            ! it should not happen
+            ! it should not happen because g is never 1 in atmospheres
             ! explanation of factor 0.4 note A of Table
             Cn(icol,ilay,igpt) = 0.4_wp*wb/scaleTau
             ! Eq.15 of the paper, multiplied by path length
@@ -219,7 +216,7 @@ contains
       call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, trans, &
                                source_dn, source_up, &
                                radn_up, radn_dn, An, Cn,&
-                               temp, temp) ! Standing in for Jacobian, i.e. rad_up_Jac(:,:,igpt), rad_dn_Jac(:,:,igpt))
+                               rad_up_Jac, temp) ! Standing in for Jacobian, i.e. rad_up_Jac, rad_dn_Jac)
     end if
     !
     ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
@@ -235,18 +232,18 @@ contains
         end do
       end do
     end do
-    !$acc exit data delete(sfc_srcJac, source_sfcJac)
+    !$acc        exit data delete(     sfc_srcJac, source_sfcJac)
     !$omp target exit data map(release:sfc_srcJac, source_sfcJac)
-    !$acc exit data copyout(radn_upJac)
+    !$acc        exit data copyout( radn_upJac)
     !$omp target exit data map(from:radn_upJac)
 
-    !$acc exit data copyout(radn_dn,radn_up)
+    !$acc        exit data copyout( radn_dn,radn_up)
     !$omp target exit data map(from:radn_dn, radn_up)
-    !$acc exit data delete(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo)
+    !$acc        exit data delete(     d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up,source_sfc,sfc_albedo)
     !$omp target exit data map(release:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, tau_loc, trans, source_dn, source_up, source_sfc, sfc_albedo)
-    !$acc exit data detach(lev_source_up,lev_source_dn)
+    !$acc        exit data detach(  lev_source_up,lev_source_dn)
     !$omp target exit data map(from:lev_source_up, lev_source_dn)
-    !$acc exit data delete(An, Cn, temp) if(do_rescaling)
+    !$acc        exit data delete(     An, Cn, temp) if(do_rescaling)
     !$omp target exit data map(release:An, Cn, temp) if(do_rescaling)
 
   end subroutine lw_solver_noscat

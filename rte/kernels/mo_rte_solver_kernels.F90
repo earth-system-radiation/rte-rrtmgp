@@ -1074,7 +1074,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
         enddo
     end do
     ! 2nd Downward propagation
-    radn_dn_Jac(1,ilev) = 0._wp
+    radn_dn_Jac(:,1) = 0._wp
     do ilev = 1, nlay
       radn_dn    (:,ilev+1) = trans(:,ilev)*radn_dn    (:,ilev) + source_dn(:,ilev)
       radn_dn_Jac(:,ilev+1) = trans(:,ilev)*radn_dn_Jac(:,ilev)
@@ -1104,7 +1104,7 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     end do
 
     ! 2st Downward propagation
-    radn_dn_Jac(nlay+1,ilev) = 0._wp
+    radn_dn_Jac(:,nlay+1) = 0._wp
     do ilev = nlay, 1, -1
       radn_dn    (:,ilev) = trans(:,ilev)*radn_dn    (:,ilev+1) + source_dn(:,ilev)
       radn_dn_Jac(:,ilev) = trans(:,ilev)*radn_dn_Jac(:,ilev+1)

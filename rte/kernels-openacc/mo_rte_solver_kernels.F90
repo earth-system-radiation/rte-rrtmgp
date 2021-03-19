@@ -200,10 +200,10 @@ contains
             tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt)
             trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt))
           end if
-          call lw_source_noscat_stencil(lay_source(icol,ilay,igpt), &
-                                        lev_source_up(icol,ilay,igpt), lev_source_dn(icol,ilay,igpt),  &
-                                        tau_loc(icol,ilay,igpt), trans(icol,ilay,igpt),                &
-                                        source_dn(icol,ilay,igpt), source_up(icol,ilay,igpt))
+          call lw_source_noscat(lay_source(icol,ilay,igpt), &
+                                lev_source_up(icol,ilay,igpt), lev_source_dn(icol,ilay,igpt),  &
+                                tau_loc(icol,ilay,igpt), trans(icol,ilay,igpt),                &
+                                source_dn(icol,ilay,igpt), source_up(icol,ilay,igpt))
         end do
       end do
     end do
@@ -598,8 +598,8 @@ contains
   ! This routine implements point-wise stencil, and has to be called in a loop
   !
   ! ---------------------------------------------------------------
-  subroutine lw_source_noscat_stencil(lay_source, lev_source_up, lev_source_dn, tau, trans, &
-                                      source_dn, source_up)
+  subroutine lw_source_noscat(lay_source, lev_source_up, lev_source_dn, tau, trans, &
+                              source_dn, source_up)
     !$acc routine seq
     !$omp declare target
     !
@@ -633,7 +633,7 @@ contains
     source_up = (1._wp - trans) * lev_source_up + &
             2._wp * fact * (lay_source - lev_source_up)
 
-  end subroutine lw_source_noscat_stencil
+  end subroutine lw_source_noscat
   ! ---------------------------------------------------------------
   !
   ! Longwave no-scattering transport

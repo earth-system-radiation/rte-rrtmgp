@@ -1484,6 +1484,7 @@ contains
     ! column transmissivity
     !
     !$acc parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
+    !$omp target teams distribute parallel do simd collapse(2) map(to: optical_props%tau, optical_props%gpt2band) map(from:optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !

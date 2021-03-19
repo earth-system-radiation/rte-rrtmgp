@@ -203,8 +203,6 @@ contains
     !
     !$acc parallel loop collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
-    !$acc parallel loop collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
         !
@@ -732,79 +730,6 @@ contains
     end if
 
   end subroutine lw_transport_noscat_up
-  ! -------------------------------------------------------------------------------------------------
-  subroutine lw_transport_noscat(ncol, nlay, ngpt, top_at_1, &
-                                 tau, trans, sfc_albedo, source_dn, source_up, source_sfc, &
-                                 radn_up, radn_dn, source_sfcJac, radn_upJac) bind(C, name="lw_transport_noscat")
-    !dir$ optimize(-O0)
-    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
-    logical(wl),                           intent(in   ) :: top_at_1   !
-    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: tau, &     ! Absorption optical thickness, pre-divided by mu []
-                                                            trans      ! transmissivity = exp(-tau)
-    real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_albedo ! Surface albedo
-    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_dn, &
-                                                            source_up  ! Diffuse radiation emitted by the layer
-    real(wp), dimension(ncol       ,ngpt), intent(in   ) :: source_sfc ! Surface source function [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn ! Radiances [W/m2-str]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up ! Radiances [W/m2-str]
-                                                                             ! Top level must contain incident flux boundary condition
-    real(wp), dimension(ncol       ,ngpt), intent(in )   :: source_sfcJac ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out)   :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
-    ! Local variables
-    integer :: igpt, ilev, icol
-    ! ---------------------------------------------------
-    ! ---------------------------------------------------
-    if(top_at_1) then
-      !
-      ! Top of domain is index 1
-      !
-      !$acc  parallel loop collapse(2)
-      !$omp target teams distribute parallel do simd collapse(2)
-      do igpt = 1, ngpt
-        do icol = 1, ncol
-          ! Downward propagation
-          do ilev = 2, nlay+1
-            radn_dn(icol,ilev,igpt) = trans(icol,ilev-1,igpt)*radn_dn(icol,ilev-1,igpt) + source_dn(icol,ilev-1,igpt)
-          end do
-
-          ! Surface reflection and emission
-          radn_up   (icol,nlay+1,igpt) = radn_dn(icol,nlay+1,igpt)*sfc_albedo(icol,igpt) + source_sfc   (icol,igpt)
-          radn_upJac(icol,nlay+1,igpt) = source_sfcJac(icol,igpt)
-
-          ! Upward propagation
-          do ilev = nlay, 1, -1
-            radn_up   (icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_up   (icol,ilev+1,igpt) + source_up(icol,ilev,igpt)
-            radn_upJac(icol,ilev,igpt) = trans(icol,ilev,igpt)*radn_upJac(icol,ilev+1,igpt)
-          end do
-        end do
-      end do
-    else
-      !
-      ! Top of domain is index nlay+1
-      !
-      !$acc  parallel loop collapse(2)
-      !$omp target teams distribute parallel do simd collapse(2)
-      do igpt = 1, ngpt
-        do icol = 1, ncol
-          ! Downward propagation
-          do ilev = nlay, 1, -1
-            radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt)
-          end do
-
-          ! Surface reflection and emission
-          radn_up   (icol,1,igpt) = radn_dn(icol,1,igpt)*sfc_albedo(icol,igpt) + source_sfc   (icol,igpt)
-          radn_upJac(icol,1,igpt) = source_sfcJac(icol,igpt)
-
-          ! Upward propagation
-          do ilev = 2, nlay+1
-            radn_up   (icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up   (icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt)
-            radn_upJac(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_upJac(icol,ilev-1,igpt)
-          end do
-        end do
-      end do
-    end if
-
-  end subroutine lw_transport_noscat
   ! -------------------------------------------------------------------------------------------------
   !
   ! Longwave two-stream solutions to diffuse reflectance and transmittance for a layer

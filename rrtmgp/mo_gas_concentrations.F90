@@ -107,6 +107,7 @@ contains
     allocate(this%gas_name(ngas), this%concs(ngas))
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%concs)
+    !$omp target enter data map(to:this%concs)
 
     this%gas_name(:) = gas_names(:)
   end function
@@ -520,7 +521,7 @@ contains
         end if
       end do
       !$acc exit data delete(this%concs)
-      !!$omp target exit data map(release:this%concs) ! Not needed with Cray compiler
+      !$omp target exit data map(release:this%concs)
       deallocate(this%concs)
     end if
   end subroutine reset

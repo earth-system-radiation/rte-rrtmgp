@@ -374,8 +374,10 @@ contains
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
           do icol = 1, ncol
-            flux_up   (icol,ilev,igpt) = flux_up   (icol,ilev,igpt) + radn_up   (icol,ilev,igpt)
-            flux_dn   (icol,ilev,igpt) = flux_dn   (icol,ilev,igpt) + radn_dn   (icol,ilev,igpt)
+            flux_up(icol,ilev,igpt) = flux_up(icol,ilev,igpt) + radn_up(icol,ilev,igpt)
+            flux_dn(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) + radn_dn(icol,ilev,igpt)
+            if(do_Jacobians) &
+              flux_upJac(icol,ilev,igpt) = flux_upJac(icol,ilev,igpt) + radn_upJac(icol,ilev,igpt)
           end do
         end do
       end do

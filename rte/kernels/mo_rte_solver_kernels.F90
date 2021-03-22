@@ -253,7 +253,7 @@ contains
     !
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out  ) :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol,nlay+1     ), intent(out  ) :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     logical(wl),                           intent(in   ) :: do_rescaling
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g    ! single-scattering albedo, asymmetry parameter
     ! ------------------------------------
@@ -262,7 +262,7 @@ contains
     !
     real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
     real(wp), dimension(ncol,       ngpt) :: Ds_ncol
-    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_upJac ! perturbed Fluxes per quad angle
+    real(wp), dimension(ncol,nlay+1     ) :: radn_upJac ! perturbed Fluxes per quad angle
 
     integer :: imu, top_level
     ! ------------------------------------
@@ -292,7 +292,7 @@ contains
       flux_up   (:,:,:) = flux_up   (:,:,:) + radn_up   (:,:,:)
       flux_dn   (:,:,:) = flux_dn   (:,:,:) + radn_dn   (:,:,:)
       if (do_Jacobians) &
-        flux_upJac(:,:,:) = flux_upJac(:,:,:) + radn_upJac(:,:,:)
+        flux_upJac(:,:) = flux_upJac(:,:  ) + radn_upJac(:,:  )
 
     end do
   end subroutine lw_solver_noscat_GaussQuad

@@ -303,14 +303,15 @@ contains
     !
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out  ) :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol,nlay+1     ), intent(out  ) :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     logical(wl),                           intent(in   ) :: do_rescaling
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g    ! single-scattering albedo, asymmetry parameter
     ! ------------------------------------
     !
     ! Local variables
     !
-    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up, radn_upJac ! Fluxes per quad angle
+    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up
+    real(wp), dimension(ncol,nlay+1     ) :: radn_upJac ! Fluxes per quad angle
     real(wp), dimension(ncol,       ngpt) :: Ds_ncol
     real(wp), dimension(ncol,       ngpt) :: flux_top
 
@@ -321,10 +322,11 @@ contains
     !$omp target enter data map(to:Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_dn)
     !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol,flux_top)
     !$omp target enter data map(alloc:flux_up, radn_dn, radn_up, Ds_ncol, flux_top)
-    !$acc enter data copyin(sfc_srcJac)
-    !$omp target enter data map(to:sfc_srcJac)
-    !$acc enter data create(flux_upJac, radn_upJac)
-    !$omp target enter data map(alloc:flux_upJac, radn_upJac)
+    !$acc        enter data copyin(sfc_srcJac) if(do_Jacobians)
+    !$omp target enter data map(to:sfc_srcJac) if(do_Jacobians)
+    !$acc        enter data create(   flux_upJac, radn_upJac) if(do_Jacobians)
+    !$omp target enter data map(alloc:flux_upJac, radn_upJac) if(do_Jacobians)
+    ! radn_upJac is needed only if do_Jacobians is true .and. nmus > 1
 
     ! ------------------------------------
     ! ------------------------------------
@@ -376,17 +378,17 @@ contains
           do icol = 1, ncol
             flux_up(icol,ilev,igpt) = flux_up(icol,ilev,igpt) + radn_up(icol,ilev,igpt)
             flux_dn(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) + radn_dn(icol,ilev,igpt)
-            if(do_Jacobians) &
-              flux_upJac(icol,ilev,igpt) = flux_upJac(icol,ilev,igpt) + radn_upJac(icol,ilev,igpt)
+            if(do_Jacobians .and. igpt == 1) &
+              flux_upJac(icol,ilev) = flux_upJac(icol,ilev  ) + radn_upJac(icol,ilev  )
           end do
         end do
       end do
 
     end do ! imu loop
-    !$acc exit data delete(sfc_srcJac, radn_upJac)
-    !$omp target exit data map(release:sfc_srcJac, radn_upJac)
-    !$acc exit data copyout(flux_upJac)
-    !$omp target exit data map(from:flux_upJac)
+    !$acc        exit data delete(     sfc_srcJac, radn_upJac) if(do_Jacobians)
+    !$omp target exit data map(release:sfc_srcJac, radn_upJac) if(do_Jacobians)
+    !$acc        exit data copyout( flux_upJac)                if(do_Jacobians)
+    !$omp target exit data map(from:flux_upJac)                if(do_Jacobians)
 
     !$acc exit data copyout(flux_up,flux_dn)
     !$omp target exit data map(from:flux_up, flux_dn)

@@ -75,7 +75,7 @@ contains
                                                                   ! Default is to use re-scaled longwave transport
     real(wp), dimension(:,:),   &
                       optional,   intent(in   ) :: lw_Ds          ! User-specifed 1/cos of transport angle per col, g-point
-    real(wp), dimension(:,:),   &
+    real(wp), dimension(:,:), target,  &
                       optional,   intent(inout) :: flux_up_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
     character(len=128)                          :: error_msg      ! If empty, calculation was successful
     ! --------------------------------
@@ -89,6 +89,8 @@ contains
     logical  :: using_2stream, do_Jacobians
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
+    real(wp), dimension(1,1), target        :: decoy
+    real(wp), dimension(:,:), pointer       :: jacobian
     ! --------------------------------------------------
     !
     ! Weights and angle secants for first order (k=1) Gaussian quadrature.
@@ -119,8 +121,12 @@ contains
     ngpt  = optical_props%get_ngpt()
     nband = optical_props%get_nband()
     do_Jacobians = present(flux_up_Jac)
+    if(do_Jacobians) then
+      jacobian => flux_up_Jac
+    else
+      jacobian => decoy
+    end if
     error_msg = ""
-
     ! ------------------------------------------------------------------------------------
     !
     ! Error checking -- input consistency of sizes and validity of values
@@ -223,7 +229,6 @@ contains
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
       return
     end if
-
     ! ------------------------------------------------------------------------------------
     !
     !    Lower boundary condition -- expand surface emissivity by band to gpoints
@@ -278,7 +283,7 @@ contains
                                 sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                                 sfc_emis_gpt, sources%sfc_source,  &
                                 gpt_flux_up, gpt_flux_dn,          &
-                                logical(do_Jacobians, wl), sources%sfc_source_Jac, flux_up_Jac, &
+                                logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
                                 logical(.false., wl),  optical_props%tau, optical_props%tau)
         else
           call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, &
@@ -290,8 +295,8 @@ contains
                                 sources%lay_source, sources%lev_source_inc, &
                                 sources%lev_source_dec, &
                                 sfc_emis_gpt, sources%sfc_source,  &
-                                gpt_flux_up, gpt_flux_dn,          & 
-                                logical(do_Jacobians, wl), sources%sfc_source_Jac, flux_up_Jac, &
+                                gpt_flux_up, gpt_flux_dn,          &
+                                logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
                                 logical(.false., wl),  optical_props%tau, optical_props%tau)
         end if
         !$acc        exit data delete(     optical_props%tau)
@@ -328,7 +333,7 @@ contains
                                 sources%lev_source_dec, &
                                 sfc_emis_gpt, sources%sfc_source,  &
                                 gpt_flux_up, gpt_flux_dn, &
-                                logical(do_Jacobians, wl), sources%sfc_source_Jac, flux_up_Jac, &
+                                logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
                                 logical(.true., wl),  optical_props%ssa, optical_props%g)
           !$acc        exit data delete(     optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)

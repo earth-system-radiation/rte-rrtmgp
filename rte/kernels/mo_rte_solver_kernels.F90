@@ -281,7 +281,6 @@ contains
     !
     top_level = MERGE(1, nlay+1, top_at_1)
     call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
-
     do imu = 2, nmus
       Ds_ncol(:,:) = Ds(imu)
       call lw_solver_noscat(ncol, nlay, ngpt, &
@@ -292,7 +291,8 @@ contains
                             do_rescaling, ssa, g)
       flux_up   (:,:,:) = flux_up   (:,:,:) + radn_up   (:,:,:)
       flux_dn   (:,:,:) = flux_dn   (:,:,:) + radn_dn   (:,:,:)
-      flux_upJac(:,:,:) = flux_upJac(:,:,:) + radn_upJac(:,:,:)
+      if (do_Jacobians) &
+        flux_upJac(:,:,:) = flux_upJac(:,:,:) + radn_upJac(:,:,:)
 
     end do
   end subroutine lw_solver_noscat_GaussQuad

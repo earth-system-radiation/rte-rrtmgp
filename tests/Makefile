@@ -48,9 +48,6 @@ all: clear_sky_regression
 clear_sky_regression:   $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.o
 clear_sky_regression.o: $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.F90
 
-cloud_scattering:   $(CLOUDS) $(ADDITIONS) $(LIB_DEPS) cloud_scattering.o
-cloud_scattering.o: $(CLOUDS) $(ADDITIONS) $(LIB_DEPS) cloud_scattering.F90
-
 mo_testing_io.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_testing_io.F90
 
 mo_cloud_optics.o:            $(LIB_DEPS) mo_cloud_optics.F90

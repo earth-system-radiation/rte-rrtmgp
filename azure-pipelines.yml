@@ -68,7 +68,7 @@ jobs:
 
       make -C build/ -j 8
       make -C tests clean
-      make -C tests -j 1 all cloud_scattering
+      make -C tests -j 1 all 
       make -C examples/all-sky clean
       make -C examples/all-sky -j 8
       make -C examples/rfmip-clear-sky clean

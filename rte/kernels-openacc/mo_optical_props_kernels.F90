@@ -900,8 +900,8 @@ contains
     !$acc&     copyout(array_out(:cole-cols+1,:nlay,:ngpt)) &
     !$acc&     copyin(array_in(cols:cole,:nlay,:ngpt))
     !$omp target teams distribute parallel do simd collapse(3) &
-    !$omp& map(from:array_out(:cole-cols+1, :nlay, :ngpt)) &
-    !$omp& map(to:array_in(cols:cole, :nlay, :ngpt))
+    !$omp& map(from:array_out) &
+    !$omp& map(to:array_in)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE
@@ -926,8 +926,8 @@ contains
     !$acc&     copyout(array_out(:nmom,:cole-cols+1,:nlay,:ngpt)) &
     !$acc&     copyin(array_in(:nmom,cols:cole,:nlay,:ngpt))
     !$omp target teams distribute parallel do simd collapse(4) &
-    !$omp& map(from:array_out(:nmom, :cole-cols+1, :nlay, :ngpt)) &
-    !$omp& map(to:array_in(:nmom, cols:cole, :nlay, :ngpt))
+    !$omp& map(from:array_out) &
+    !$omp& map(to:array_in)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE
@@ -959,9 +959,9 @@ contains
     !$acc&     copyout(tau_out(:cole-cols+1,:nlay,:ngpt)) &
     !$acc&     copyin(tau_in(cols:cole,:nlay,:ngpt))
     !$omp target teams distribute parallel do simd collapse(3) &
-    !$omp& map(to:ssa_in(cols:cole, :nlay, :ngpt)) &
-    !$omp& map(from:tau_out(:cole-cols+1, :nlay, :ngpt)) &
-    !$omp& map(to:tau_in(cols:cole, :nlay, :ngpt))
+    !$omp& map(to:ssa_in) &
+    !$omp& map(from:tau_out) &
+    !$omp& map(to:tau_in)
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = colS, colE

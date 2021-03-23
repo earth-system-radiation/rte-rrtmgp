@@ -7,7 +7,6 @@ jobs:
     strategy:
       matrix:
         fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, ifort, nvfortran]
-        # fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, ifort]
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}

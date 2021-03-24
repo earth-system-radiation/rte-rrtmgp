@@ -6,13 +6,12 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, ifort, nvfortran]
-        # I'd like to add gfortran-10 to this list but have version issues with netcdf as below
+        fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, ifort] # nvfortran fails with illegal instruction
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
       # Defaults for gfortran, over-ridden below
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DUSE_CBOOL"
       CC: gcc
       NCHOME: /home/runner/netcdf-c
       NFHOME: /home/runner/netcdf-fortran

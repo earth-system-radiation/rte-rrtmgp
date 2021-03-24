@@ -56,7 +56,6 @@ jobs:
       module load netcdf-python
       cd examples/rfmip-clear-sky
       python ./stage_files.py
-      cd ..
     displayName: 'Stage files'
   - script: |
       set -e
@@ -68,7 +67,7 @@ jobs:
 
       make -C build/ -j 8
       make -C tests clean
-      make -C tests -j 1 
+      make -C tests -j 1
       make -C examples/all-sky clean
       make -C examples/all-sky -j 8
       make -C examples/rfmip-clear-sky clean

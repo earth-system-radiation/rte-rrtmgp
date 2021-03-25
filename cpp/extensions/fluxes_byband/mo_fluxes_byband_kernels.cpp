@@ -10,3 +10,9 @@ void sum_byband(int ncol, int nlev, int ngpt, int nbnd, int2d const &bnd_lims, r
     byband_flux(icol,ilev,ibnd) = bb_flux_s;
   });
 }
+// Compute net flux
+void net_byband(int ncol, int nlev, int nbnd, real3d const &bnd_flux_dn, real3d const &bnd_flux_up, real3d &bnd_flux_net) {
+    parallel_for( Bounds<3>(nbnd,nlev,ncol), YAKL_LAMBDA(int ibnd, int ilev, int icol) {
+        bnd_flux_net(icol,ilev,ibnd) = bnd_flux_dn(icol,ilev,ibnd) - bnd_flux_up(icol,ilev,ibnd);
+    });
+}

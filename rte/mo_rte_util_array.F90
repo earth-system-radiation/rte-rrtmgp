@@ -384,8 +384,8 @@ contains
     ! -----------------------
     !$acc parallel loop collapse(2) copyout(array)
     !$omp target teams distribute parallel do simd collapse(2) map(from:array)
-    do k = 1, nk
-      do j = 1, nj
+    do k = 1, nj
+      do j = 1, ni
         array(i,j) = 0.0_wp
       end do
     end do

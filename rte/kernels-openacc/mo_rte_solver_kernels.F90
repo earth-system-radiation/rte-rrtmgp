@@ -662,6 +662,7 @@ contains
         else
           gpt_flux_dn (icol,nlay+1,igpt) = flux_inc_dif(icol,igpt)
           gpt_flux_dir(icol,nlay+1,igpt) = flux_inc_dir(icol,igpt) * mu0(icol)
+        end if
       end do
     end do
     call sw_two_stream(ncol, nlay, ngpt, mu0, &
@@ -692,9 +693,9 @@ contains
           ! adding computes only diffuse flux; flux_dn is total -
           !   -- or better to have a separate smaller kernel?
           !
-          flux_dn(icol,ilay) = flux_dn(icol,ilay) + gpt_flux_dn (icol,ilay,igpt) &
-                                                  + gpt_flux_dir(icol,ilay,igpt)
+          flux_dn(icol,ilay) = flux_dn(icol,ilay) + gpt_flux_dn (icol,ilay,igpt)
         end do
+        flux_dn(icol,ilay) = flux_dn(icol,ilay) + flux_dir(icol,ilay)
       end do
     end do
     !$acc exit data copyout(flux_up, flux_dn, flux_dir)

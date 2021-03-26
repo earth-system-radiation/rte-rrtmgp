@@ -1484,6 +1484,7 @@ contains
     ! column transmissivity
     !
     !$acc parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
+    !$omp target teams distribute parallel do simd collapse(2) map(to: optical_props%tau, optical_props%gpt2band) map(from:optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !
@@ -1842,11 +1843,11 @@ contains
       select type(optical_props)
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%ssa, optical_props%g)
-          !$omp target enter data map(alloc:optical_props%ssa, optical_props%g)
+          !!$omp target enter data map(alloc:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(     ncol,nlay,ngpt,optical_props%g  )
           !$acc exit data copyout(optical_props%ssa, optical_props%g)
-          !$omp target exit data map(from:optical_props%ssa, optical_props%g)
+          !!$omp target exit data map(from:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
           !$acc enter data create(optical_props%ssa, optical_props%p)

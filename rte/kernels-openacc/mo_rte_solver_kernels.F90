@@ -648,9 +648,9 @@ contains
     !$omp target enter data map(alloc:Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up)
     !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-    call zero_array(flux_up,  ncol, nlay+1)
-    call zero_array(flux_dn,  ncol, nlay+1)
-    call zero_array(flux_dir, ncol, nlay+1)
+    call zero_array(ncol, nlay+1, flux_up)
+    call zero_array(ncol, nlay+1, flux_dn)
+    call zero_array(ncol, nlay+1, flux_dir)
     ! Apply boundary conditions
     !$acc  parallel loop collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)

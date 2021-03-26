@@ -27,7 +27,8 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_solver_kernels
   use,  intrinsic :: iso_c_binding
-  use mo_rte_kind, only: wp, wl
+  use mo_rte_kind,       only: wp, wl
+  use mo_rte_util_array, only: zero_array
   implicit none
   private
 
@@ -647,30 +648,33 @@ contains
     !$omp target enter data map(alloc:Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up)
     !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-    flux_up (:,:) = 0._wp
-    flux_dn (:,:) = 0._wp
-    flux_dir(:,:) = 0._wp
+    call zero_array(flux_up,  ncol, nlay+1)
+    call zero_array(flux_dn,  ncol, nlay+1)
+    call zero_array(flux_dir, ncol, nlay+1)
     ! Apply boundary conditions
-    if(top_at_1) then
-      gpt_flux_dn (:,     1,:) = flux_inc_dif(:,:)
-      gpt_flux_dir(:,     1,:) = flux_inc_dir(:,:) * spread(mu0(:), dim=2, ncopies=ngpt)
-    else
-      gpt_flux_dn (:,nlay+1,:) = flux_inc_dif(:,:)
-      gpt_flux_dir(:,nlay+1,:) = flux_inc_dir(:,:) * spread(mu0(:), dim=2, ncopies=ngpt)
-    end if
+    !$acc  parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do icol = 1, ncol
+      do igpt = 1, ngpt
+        if(top_at_1) then
+          gpt_flux_dn (icol,     1,igpt) = flux_inc_dif(icol,igpt)
+          gpt_flux_dir(icol,     1,igpt) = flux_inc_dir(icol,igpt) * mu0(icol)
+        else
+          gpt_flux_dn (icol,nlay+1,igpt) = flux_inc_dif(icol,igpt)
+          gpt_flux_dir(icol,nlay+1,igpt) = flux_inc_dir(icol,igpt) * mu0(icol)
+      end do
+    end do
     call sw_two_stream(ncol, nlay, ngpt, mu0, &
                         tau , ssa , g   ,      &
                         Rdif, Tdif, Rdir, Tdir, Tnoscat)
     call sw_source_2str(ncol, nlay, ngpt, top_at_1,       &
                         Rdir, Tdir, Tnoscat, sfc_alb_dir, &
                         source_up, source_dn, source_srf, gpt_flux_dir)
-    !$acc  parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay+1
-        do icol = 1, ncol
-          !$acc atomic update
-          !$omp atomic update
+    !$acc  parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do ilay = 1, nlay+1
+      do icol = 1, ncol
+        do igpt = 1, ngpt ! Note gpoint loop is serial
           flux_dir(icol,ilay) = flux_dir(icol,ilay) + gpt_flux_dir(icol,ilay,igpt)
         end do
       end do
@@ -678,20 +682,16 @@ contains
     call adding(ncol, nlay, ngpt, top_at_1,   &
                 sfc_alb_dif, Rdif, Tdif,      &
                 source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
-    !$acc  parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay+1
-        do icol = 1, ncol
-          !$acc atomic update
-          !$omp atomic update
+    !$acc  parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do ilay = 1, nlay+1
+      do icol = 1, ncol
+        do igpt = 1, ngpt ! Note gpoint loop is serial
           flux_up(icol,ilay) = flux_up(icol,ilay) + gpt_flux_up(icol,ilay,igpt)
           !
           ! adding computes only diffuse flux; flux_dn is total -
           !   -- or better to have a separate smaller kernel?
           !
-          !$acc atomic update
-          !$omp atomic update
           flux_dn(icol,ilay) = flux_dn(icol,ilay) + gpt_flux_dn (icol,ilay,igpt) &
                                                   + gpt_flux_dir(icol,ilay,igpt)
         end do

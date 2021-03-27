@@ -380,12 +380,12 @@ contains
     integer,                     intent(in ) :: ni, nj
     real(wp), dimension(ni, nj), intent(out) :: array
     ! -----------------------
-    integer :: i,j,k
+    integer :: i,j
     ! -----------------------
     !$acc parallel loop collapse(2) copyout(array)
     !$omp target teams distribute parallel do simd collapse(2) map(from:array)
-    do k = 1, nj
-      do j = 1, ni
+    do j = 1, nj
+      do i = 1, ni
         array(i,j) = 0.0_wp
       end do
     end do

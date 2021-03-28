@@ -13,7 +13,7 @@ jobs:
         RUN_CMD: "srun -C gpu -A c15 -p cscsci"
       cce-cpu-icon-production:
         compiler_base: cray
-        compiler_module: cce-icon/11.0.0	
+        compiler_module: cce-icon/11.0.0
         accel_module:
         # Production flags for Icon model
         FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
@@ -52,10 +52,8 @@ jobs:
     displayName: 'Create module environment'
   - script: |
       set -e
-      module load daint-gpu
-      module load netcdf-python
       cd examples/rfmip-clear-sky
-      python ./stage_files.py
+      source ./stage_files.sh
     displayName: 'Stage files'
   - script: |
       set -e

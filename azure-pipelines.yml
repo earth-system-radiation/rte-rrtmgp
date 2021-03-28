@@ -59,7 +59,6 @@ jobs:
       set -e
       source compiler_modules
       export RRTMGP_ROOT=$PWD
-      export RRTMGP_BUILD=$PWD/build
       export FC=ftn
       make clean
       make libs
@@ -77,5 +76,5 @@ jobs:
       export RRTMGP_ROOT=$PWD
       # This module will unload some of the build modules, so do the checks separately
       module load netcdf-python
-      make check 
+      make check
     displayName: 'Check results'

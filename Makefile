@@ -19,3 +19,9 @@ check:
 	make -C examples/rfmip-clear-sky check
 	make -C examples/all-sky         check
 	make -C tests                    check
+
+clean:
+	make -C clean
+	make -C examples/rfmip-clear-sky clean
+	make -C examples/all-sky         clean
+	make -C tests                    clean

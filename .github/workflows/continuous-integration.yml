@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, ifort] # nvfortran fails with illegal instruction
+        fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, nvfortran] # add ifort when avaiable
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}

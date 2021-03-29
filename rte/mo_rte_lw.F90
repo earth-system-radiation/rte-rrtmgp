@@ -350,7 +350,6 @@ contains
     ! ...and reduce spectral fluxes to desired output quantities
     !
     error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
-    if (error_msg /= '') return
 
     !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, sfc_emis_gpt)
     !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, sfc_emis_gpt)

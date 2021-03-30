@@ -6,8 +6,8 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        fortran-compiler:  [gfortran-8] # add ifort when avaiable
-        rte-kernels: [default]
+        fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, ifort, nvfortran] # add ifort when avaiable
+        rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
       # Defaults for gfortran, over-ridden below

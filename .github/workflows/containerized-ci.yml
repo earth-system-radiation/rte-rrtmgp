@@ -1,20 +1,63 @@
-name: Continuous Integration
+name: Continuous Integration in a box
 on: [push, pull_request]
 
 jobs:
   Containerized-CI:
     runs-on: ubuntu-18.04
-    container: intel/oneapi-hpckit
+    container: nvcr.io/nvidia/nvhpc:21.2-devel-cuda_multi-ubuntu20.04
     env:
-      FC: ifort
-      CC: icx
-      FCFLAGS: "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+      FC: nvfortran
+      CC: nvc
+      FCFLAGS: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
       NCHOME: /home/runner/netcdf-c
       NFHOME: /home/runner/netcdf-fortran
       RFMIP_DIR: /home/runner/rfmip-files
     steps:
     - name: Update system packages
       run: sudo apt-get update
+    ############################################################################
+    #
+    # Netcdf C and Fortran
+    #
+    - name: Install HDF5 library
+      run: |
+        sudo apt-get install libhdf5-dev libcurl4-gnutls-dev hdf5-helpers
+        dpkg -L libhdf5-dev
+
+    - name: Install netcdf C library from source
+      if: steps.cache-netcdf-c.outputs.cache-hit != 'true'
+      env:
+        CPPFLAGS: -I/usr/include/hdf5/serial
+        LDFLAGS: -L/usr/lib/x86_64-linux-gnu/hdf5/serial/
+      run: |
+        source /opt/intel/oneapi/setvars.sh || true
+        ${CC} --version
+        git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
+        cd netcdf-c
+        ls /usr/include
+        ./configure --prefix=${NCHOME}
+        make -j
+        sudo make install
+
+    - name: Build NetCDF Fortran library
+      # Unset any Fortran flags
+      # Here too it would be nice to use the environment to specify netcdf-c location
+      env:
+        CPPFLAGS: -I/home/runner/netcdf-c/include
+        LDFLAGS: -L/home/runner/netcdf-c/lib
+        LD_LIBRARY_PATH: /home/runner/netcdf-c/lib
+        FCFLAGS: -fPIC
+      if: steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
+      run: |
+        echo ${TEST}
+        source /opt/intel/oneapi/setvars.sh || true
+        ${FC} --version
+        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.3
+        cd netcdf-fortran
+        echo ${CPPFLAGS}
+        ./configure --prefix=${NFHOME}
+        make -j
+        sudo make install
     ############################################################################
     # Checks out repository under $GITHUB_WORKSPACE
     - name: Check out code

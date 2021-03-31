@@ -19,7 +19,6 @@ jobs:
     # Checks out repository under $GITHUB_WORKSPACE
     - name: Check out code
       uses: actions/checkout@v2
-
     - name: Environmental variables
       run: |
         echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
@@ -36,7 +35,7 @@ jobs:
         echo "FC=nvfortran"                                                          >> $GITHUB_ENV
         echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
         echo "${NVCOMPILERS}/Linux_x86_64/20.11/compilers/bin" >> $GITHUB_PATH
-
+    ############################################################################
     - name: Make library, examples, tests
       shell: bash
       env:
@@ -45,10 +44,7 @@ jobs:
         source /opt/intel/oneapi/setvars.sh || true
         cd ${RRTMGP_ROOT}
         ${FC} --version
-        make -C build -j 2
-        make -C tests -j 1
-        make -C examples/all-sky -j 2
-        make -C examples/rfmip-clear-sky -j 2
+        make libs
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files
@@ -64,7 +60,6 @@ jobs:
         cd ${RFMIP_DIR}
         python3 ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
     ############################################################################
-    # Would be great to encode version info
     - name: Run examples, tests
       shell: bash
       env:

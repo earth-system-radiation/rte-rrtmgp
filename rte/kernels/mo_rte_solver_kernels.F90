@@ -187,7 +187,7 @@ contains
       radn_up   (:,sfc_level,igpt) = radn_dn(:,sfc_level,igpt)*sfc_albedo(:) + &
                                      sfc_emis(:,igpt) * sfc_src(:,igpt)
       if(do_Jacobians) &
-        radn_upJac(:,sfc_level)    = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
+        gpt_flux_Jac(:,sfc_level)    = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
       !
       ! Transport up, or up and down again if using rescaling
       !

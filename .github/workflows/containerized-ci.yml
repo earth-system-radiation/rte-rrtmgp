@@ -54,7 +54,7 @@ jobs:
       run: |
         mkdir -p ${RFMIP_DIR}
         cd ${RFMIP_DIR}
-        python3 ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
+        python ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
     ############################################################################
     - name: Run examples, tests
       shell: bash
@@ -68,12 +68,12 @@ jobs:
       run: make check
     ############################################################################
     - name: Validation plots
-      if: contains(matrix.rte-kernels, 'default')
+      if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
       run: |
         cd ${RRTMGP_ROOT}/tests
-        python3 validation-plots.py
+        python validation-plots.py
     - name: Upload plots
-      if: contains(matrix.rte-kernels, 'default')
+      if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
       uses: actions/upload-artifact@v2
       with:
         name: valdiation-plot

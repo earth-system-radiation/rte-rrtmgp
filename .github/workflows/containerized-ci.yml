@@ -63,23 +63,9 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         export LD_LIBRARY_PATH=${NFHOME}/lib:${LD_LIBRARY_PATH}
-        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-        cp ${RFMIP_DIR}/* .
-        python3 ./run-rfmip-examples.py --block_size 8
-        cd  ${RRTMGP_ROOT}/examples/all-sky
-        python3 ./run-allsky-example.py
-        cd  ${RRTMGP_ROOT}/tests
-        cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
-        ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
-        ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+        make tests
     - name: Comparison
-      run: |
-        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-        python3 ./compare-to-reference.py --fail=7.e-4
-        cd ${RRTMGP_ROOT}/examples/all-sky
-        python3 ./compare-to-reference.py
-        cd ${RRTMGP_ROOT}/tests
-        python3 verification.py
+      run: make check
     ############################################################################
     - name: Validation plots
       if: contains(matrix.rte-kernels, 'default')

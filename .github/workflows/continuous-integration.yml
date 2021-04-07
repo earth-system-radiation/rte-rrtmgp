@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, nvfortran]
+        fortran-compiler:  [gfortran-9, gfortran-10]
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
@@ -31,33 +31,6 @@ jobs:
         sudo apt-get install gfortran-10 gcc-10
         echo "CC=gcc-10" >> $GITHUB_ENV
 
-    # Caching cribbed from https://github.com/NCAR/ParallelIO/blob/3a77973ad5e09d354257045bf3d53827ae36a86b/.github/workflows/a3.yml#L1
-    - name: cache-nvidia-compilers
-      id: cache-nvidia-compilers
-      if: contains(matrix.fortran-compiler, 'nvfortran')
-      uses: actions/cache@v2
-      with:
-        path: /opt/nvidia/hpc_sdk/
-        key: nvhpc-${{ runner.os }}-2020-20.11
-    #
-    # Nvidia compilers
-    #
-    - name: Nvidia setup compilers
-      env:
-        NVCOMPILERS: /opt/nvidia/hpc_sdk
-      if: contains(matrix.fortran-compiler, 'nvfortran') && steps.cache-nvidia-compilers.outputs.cache-hit != 'true'
-      run: |
-        wget -q https://developer.download.nvidia.com/hpc-sdk/20.11/nvhpc-20-11_20.11_amd64.deb https://developer.download.nvidia.com/hpc-sdk/20.11/nvhpc-2020_20.11_amd64.deb
-        sudo apt-get install ./nvhpc-20-11_20.11_amd64.deb ./nvhpc-2020_20.11_amd64.deb
-    - name: Nvidia environment
-      env:
-        NVCOMPILERS: /opt/nvidia/hpc_sdk
-      if: contains(matrix.fortran-compiler, 'nvfortran')
-      run: |
-        echo "FC=nvfortran" >> $GITHUB_ENV
-        echo "CC=nvc"       >> $GITHUB_ENV
-        echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
-        echo "${NVCOMPILERS}/Linux_x86_64/20.11/compilers/bin" >> $GITHUB_PATH
     ############################################################################
     #
     # Netcdf C and Fortran

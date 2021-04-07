@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         rte-kernels: [default, openacc]
-        container: ["robertmpincus/ifort-netcdf-python"]
+        container: ["earthsystemradiation/rte-rrtmgp-ci:ifort","earthsystemradiation/rte-rrtmgp-ci:nvfortran"]
     container:
       image: ${{ matrix.container }}
     env:
@@ -27,15 +27,11 @@ jobs:
     - name: Environmental variables - ifort
       if: contains(matrix.container, 'ifort')
       run: |
-        echo "FC=ifort"        >> $GITHUB_ENV
         echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
     - name: Environmental variables - nvfortran
       if: contains(matrix.container, 'nvfortran')
       run:
-        echo "NVCOMPILERS=/opt/nvidia/hpc_sdk"                                       >> $GITHUB_ENV
-        echo "FC=nvfortran"                                                          >> $GITHUB_ENV
         echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
-        echo "${NVCOMPILERS}/Linux_x86_64/20.11/compilers/bin" >> $GITHUB_PATH
 
     - name: Make library, examples, tests
       shell: bash

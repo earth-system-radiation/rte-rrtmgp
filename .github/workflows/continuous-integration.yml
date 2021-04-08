@@ -10,7 +10,6 @@ jobs:
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
-      # Defaults for gfortran, over-ridden below
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DUSE_CBOOL"
       CC: gcc
       NCHOME: /home/runner/netcdf-c
@@ -71,7 +70,6 @@ jobs:
         key: netcdf-fortran-4.5.3-${{ runner.os }}-${{ matrix.fortran-compiler }}
 
     - name: Build NetCDF Fortran library
-      # Unset any Fortran flags
       # Here too it would be nice to use the environment to specify netcdf-c location
       env:
         CPPFLAGS: -I/home/runner/netcdf-c/include

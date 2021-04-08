@@ -20,17 +20,14 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
     - name: Environmental variables
-      run: |
-        echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
-        echo "RRTMGP_BUILD=${GITHUB_WORKSPACE}/build" >> $GITHUB_ENV
+      # This might be able to be set in the ENV section above
+      run: echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
     - name: Environmental variables - ifort
       if: contains(matrix.container, 'ifort')
-      run: |
-        echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
+      run: echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
     - name: Environmental variables - nvfortran
       if: contains(matrix.container, 'nvfortran')
-      run:
-        echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
+      run: echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
 
     - name: Make library, examples, tests
       shell: bash

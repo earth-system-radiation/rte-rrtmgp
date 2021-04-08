@@ -19,19 +19,15 @@ jobs:
     # Checks out repository under $GITHUB_WORKSPACE
     - name: Check out code
       uses: actions/checkout@v2
-
     - name: Environmental variables
-      run: |
-        echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
-        echo "RRTMGP_BUILD=${GITHUB_WORKSPACE}/build" >> $GITHUB_ENV
+      # This might be able to be set in the ENV section above
+      run: echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
     - name: Environmental variables - ifort
       if: contains(matrix.container, 'ifort')
-      run: |
-        echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
+      run: echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
     - name: Environmental variables - nvfortran
       if: contains(matrix.container, 'nvfortran')
-      run:
-        echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
+      run: echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
 
     - name: Make library, examples, tests
       shell: bash
@@ -41,10 +37,7 @@ jobs:
         source /opt/intel/oneapi/setvars.sh || true
         cd ${RRTMGP_ROOT}
         ${FC} --version
-        make -C build -j 2
-        make -C tests -j 1
-        make -C examples/all-sky -j 2
-        make -C examples/rfmip-clear-sky -j 2
+        make libs
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files
@@ -58,9 +51,8 @@ jobs:
       run: |
         mkdir -p ${RFMIP_DIR}
         cd ${RFMIP_DIR}
-        python3 ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
+        python ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
     ############################################################################
-    # Would be great to encode version info
     - name: Run examples, tests
       shell: bash
       env:
@@ -68,31 +60,17 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh || true
         export LD_LIBRARY_PATH=${NFHOME}/lib:${LD_LIBRARY_PATH}
-        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-        cp ${RFMIP_DIR}/* .
-        python3 ./run-rfmip-examples.py --block_size 8
-        cd  ${RRTMGP_ROOT}/examples/all-sky
-        python3 ./run-allsky-example.py
-        cd  ${RRTMGP_ROOT}/tests
-        cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
-        ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
-        ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+        make tests
     - name: Comparison
-      run: |
-        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-        python3 ./compare-to-reference.py --fail=7.e-4
-        cd ${RRTMGP_ROOT}/examples/all-sky
-        python3 ./compare-to-reference.py
-        cd ${RRTMGP_ROOT}/tests
-        python3 verification.py
+      run: make check
     ############################################################################
     - name: Validation plots
-      if: contains(matrix.rte-kernels, 'default')
+      if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
       run: |
         cd ${RRTMGP_ROOT}/tests
-        python3 validation-plots.py
+        python validation-plots.py
     - name: Upload plots
-      if: contains(matrix.rte-kernels, 'default')
+      if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
       uses: actions/upload-artifact@v2
       with:
         name: valdiation-plot

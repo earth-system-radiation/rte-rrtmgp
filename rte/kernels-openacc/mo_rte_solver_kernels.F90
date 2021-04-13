@@ -642,11 +642,11 @@ contains
     !
     ! Cell properties: transmittance and reflectance for direct and diffuse radiation
     !
-    !$acc enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_dn, flux_dir)
-    !$omp target enter data map(to:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_dn, flux_dir)
-    !$acc enter data create(Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up)
-    !$omp target enter data map(alloc:Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up)
-    !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    !$acc        enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_inc_dif, flux_inc_dir)
+    !$omp target enter data map(to:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_inc_dif, flux_inc_dir)
+    !$acc        enter data create(   Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up, flux_dn, flux_dir)
+    !$omp target enter data map(alloc:Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up, flux_dn, flux_dir)
+    !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     call zero_array(ncol, nlay+1, flux_up)
     call zero_array(ncol, nlay+1, flux_dn)
@@ -698,12 +698,12 @@ contains
         flux_dn(icol,ilay) = flux_dn(icol,ilay) + flux_dir(icol,ilay)
       end do
     end do
-    !$acc exit data copyout(flux_up, flux_dn, flux_dir)
+    !$acc        exit data copyout( flux_up, flux_dn, flux_dir)
     !$omp target exit data map(from:flux_up, flux_dn, flux_dir)
-    !$acc exit data delete(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
+    !$acc        exit data delete(     tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
     !$omp target exit data map(release:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
-    !$acc exit data delete (gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-    !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    !$acc        exit data delete (    gpt_flux_up, gpt_flux_dn, gpt_flux_dir, flux_inc_dif, flux_inc_dir)
+    !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir, flux_inc_dif, flux_inc_dir)
   end subroutine sw_solver_2stream_integrated
   ! -------------------------------------------------------------------------------------------------
   !

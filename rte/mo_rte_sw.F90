@@ -290,19 +290,19 @@ contains
         ! Components of ty_fluxes already contain spectral integral
         !
         if(.not. associated(fluxes%flux_up)) then
-          deallocate(flux_up_loc)
           !$acc        exit data delete(     flux_up_loc)
           !$omp target exit data map(release:flux_up_loc)
+          deallocate(flux_up_loc)
         end if
         if(.not. associated(fluxes%flux_dn)) then
-          deallocate(flux_dn_loc)
           !$acc        exit data delete(     flux_dn_loc)
           !$omp target exit data map(release:flux_dn_loc)
+          deallocate(flux_dn_loc)
         end if
         if(.not. associated(fluxes%flux_dn_dir)) then
-          deallocate(flux_dir_loc)
           !$acc        exit data delete(     flux_dir_loc)
           !$omp target exit data map(release:flux_dir_loc)
+          deallocate(flux_dir_loc)
         end if
       class default
         error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)

@@ -63,7 +63,7 @@ contains
     ! Local variables
     !
     integer :: ncol, nlay, ngpt, nband
-    integer :: icol
+    integer :: icol, igpt
 
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     real(wp), dimension(:,:),   allocatable :: sfc_alb_dir_gpt, sfc_alb_dif_gpt
@@ -140,38 +140,38 @@ contains
           flux_up_loc => fluxes%flux_up
         else
           allocate(flux_up_loc(ncol, nlay+1))
-          !$acc enter data create(flux_up_loc)
+          !$acc        enter data create(   flux_up_loc)
           !$omp target enter data map(alloc:flux_up_loc)
         end if
         if(associated(fluxes%flux_dn)) then
           flux_dn_loc => fluxes%flux_dn
         else
           allocate(flux_dn_loc(ncol, nlay+1))
-          !$acc enter data create(flux_dn_loc)
+          !$acc        enter data create(   flux_dn_loc)
           !$omp target enter data map(alloc:flux_dn_loc)
         end if
         if(associated(fluxes%flux_dn_dir)) then
           flux_dir_loc => fluxes%flux_dn_dir
         else
           allocate(flux_dir_loc(ncol, nlay+1))
-          !$acc enter data create(flux_dir_loc)
+          !$acc        enter data create(   flux_dir_loc)
           !$omp target enter data map(alloc:flux_dir_loc)
         end if
         !
         ! Diffuse flux - will use values in optional arg or be set to 0
         !
         allocate(inc_flux_diffuse(ncol, ngpt))
-        !$acc enter data create(inc_flux_diffuse)
+        !$acc        enter data create(   inc_flux_diffuse)
         !$omp target enter data map(alloc:inc_flux_diffuse)
       class default
         allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
                  gpt_flux_dn (ncol, nlay+1, ngpt), &
                  gpt_flux_dir(ncol, nlay+1, ngpt))
-        !$acc enter data create(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
-    !$acc enter data create(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
+    !$acc        enter data create(   sfc_alb_dir_gpt, sfc_alb_dif_gpt)
     !$omp target enter data map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
     ! ------------------------------------------------------------------------------------
     ! Lower boundary condition -- expand surface albedos by band to gpoints
@@ -183,7 +183,7 @@ contains
     ! Compute the radiative transfer...
     !
     !
-    !$acc enter data copyin(mu0, inc_flux)
+    !$acc        enter data copyin(mu0, inc_flux)
     !$omp target enter data map(to:mu0, inc_flux)
     select type(fluxes)
       type is (ty_fluxes_broadband)
@@ -195,7 +195,13 @@ contains
           !
           ! OpenACC/OpenMP directives needed here
           !
-          inc_flux_diffuse(:,:) = inc_flux_dif(:,:)
+          !$acc                         parallel loop    collapse(2)
+          !$omp target teams distribute parallel do simd collapse(2)
+          do igpt = 1, ngpt
+            do icol = 1, ncol
+              inc_flux_diffuse(icol, igpt) = inc_flux_dif(icol, igpt)
+            end do
+          end do
         else
           call zero_array(ncol, ngpt, inc_flux_diffuse)
         end if
@@ -204,13 +210,13 @@ contains
         ! Boundary conditions are applied to the spectrally-resolved flux fields
         !
         call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),   inc_flux, mu0, gpt_flux_dir)
-        !$acc exit data delete(inc_flux)
+        !$acc        exit data delete(     inc_flux)
         !$omp target exit data map(release:inc_flux)
         if(present(inc_flux_dif)) then
-          !$acc enter data copyin(inc_flux_dif) !!! <--- Why are these needed?
+          !$acc        enter data copyin(inc_flux_dif) !!! <--- Why are these needed?
           !$omp target enter data map(to:inc_flux_dif)
           call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl), inc_flux_dif,  gpt_flux_dn )
-          !$acc exit data delete(inc_flux_dif)
+          !$acc        exit data delete(     inc_flux_dif)
           !$omp target exit data map(release:inc_flux_dif)
         else
           call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),                gpt_flux_dn )
@@ -258,9 +264,9 @@ contains
                                    sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
                                    gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         end select
-        !$acc exit data delete(atmos%tau, atmos%ssa, atmos%g, atmos)
+        !$acc        exit data delete(     atmos%tau, atmos%ssa, atmos%g, atmos)
         !$omp target exit data map(release:atmos%tau, atmos%ssa, atmos%g)
-        !$acc exit data delete(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
+        !$acc        exit data delete(     sfc_alb_dir_gpt, sfc_alb_dif_gpt)
         !$omp target exit data map(release:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
       class is (ty_optical_props_nstr)
         !
@@ -280,10 +286,27 @@ contains
     !
     select type(fluxes)
       type is (ty_fluxes_broadband)
-        ! Need to delete GPU data
+        !
+        ! Components of ty_fluxes already contain spectral integral
+        !
+        if(.not. associated(fluxes%flux_up)) then
+          deallocate(flux_up_loc)
+          !$acc        exit data delete(     flux_up_loc)
+          !$omp target exit data map(release:flux_up_loc)
+        end if
+        if(.not. associated(fluxes%flux_dn)) then
+          deallocate(flux_dn_loc)
+          !$acc        exit data delete(     flux_dn_loc)
+          !$omp target exit data map(release:flux_dn_loc)
+        end if
+        if(.not. associated(fluxes%flux_dn_dir)) then
+          deallocate(flux_dir_loc)
+          !$acc        exit data delete(     flux_dir_loc)
+          !$omp target exit data map(release:flux_dir_loc)
+        end if
       class default
         error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
-        !$acc exit data delete(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
     !$acc exit data delete(mu0)

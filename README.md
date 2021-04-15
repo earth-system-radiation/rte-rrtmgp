@@ -18,13 +18,15 @@ Example programs and documentation are evolving - please see examples/ in the re
 Relative to commit `69d36c9` to `master` on Apr 20, 2020, the required arguments to both the longwave and shortwave versions of `ty_gas_optics_rrtmgp%load()`have changed.
 
 
-## Building the libraries.
+## Building the libraries, examples, and unit-testing codes.
 
-1. `cd build`
-2. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Alternately create a Makefile.conf that sets these variables. You could also link to an existing file.
-3. Set environment variable `RTE_KERNELS` to `openacc` if you want the OpenACC kernels rather than the default.
-4. `make`
+1. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Examples are provided in the `Compiler-flags.md` file.
+2. Set environment variables `RRTMGP_ROOT` to the top-level RTE+RRTMGP directory and `RTE_KERNELS` to `openacc` if you want the OpenACC/OpenMP kernels rather than the default.
+3. `make libs` in the top-level directory will make the RTE and RRTMGP libraries.
+4. The examples and testing codes use netCDF. Set the variables `NCHOME` and `NFHOME` to the roots of the C and Fortran netCDF installations, then `make tests` to build and run these. (A few files need to be downloaded for `examples/rfmaip-clear-sky`. The default is to download these with `wget` but a Python script is also available.)
+5. Evaluating the results of the tests requires `Python` with the `xarray` package and its depdencies installed. Comparisons can be made with `make check` in the top level directory.
+6. `make` invoked without a target in the top level attempts all three steps.
 
 ## Examples
 
-Two examples are provided, one for clear skies and one including clouds. See the README file and codes in each directory for further information.
+Two examples are provided in `examples/`, one for clear skies and one including clouds. Directory `tests/` contains regression testing (e.g. to ensure that answers are independent of orientation) and unit testing (to be sure all the code paths are tested). See the README file and codes in each directory for further information.

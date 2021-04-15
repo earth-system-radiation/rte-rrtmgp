@@ -28,7 +28,7 @@ contains
   !
   ! Spectral reduction over all points
   !
-  pure subroutine sum_byband(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux, byband_flux) bind (C)
+  subroutine sum_byband(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux, byband_flux) bind (C)
     integer,                               intent(in ) :: ncol, nlev, ngpt, nbnd
     integer,  dimension(2,          nbnd), intent(in ) :: band_lims
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux
@@ -36,6 +36,7 @@ contains
 
     integer :: icol, ilev, igpt, ibnd
     !$acc parallel loop collapse(3) copyin(spectral_flux, band_lims) copyout(byband_flux)
+    !$omp target teams distribute parallel do collapse(3) map(to:spectral_flux, band_lims) map(from:byband_flux)
     do ibnd = 1, nbnd
       do ilev = 1, nlev
         do icol = 1, ncol
@@ -52,7 +53,7 @@ contains
   !
   ! Net flux: Spectral reduction over all points
   !
-  pure subroutine net_byband_full(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux_dn, spectral_flux_up, byband_flux_net) bind (C)
+  subroutine net_byband_full(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux_dn, spectral_flux_up, byband_flux_net) bind (C)
     integer,                               intent(in ) :: ncol, nlev, ngpt, nbnd
     integer,  dimension(2,          nbnd), intent(in ) :: band_lims
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux_dn, spectral_flux_up
@@ -61,6 +62,7 @@ contains
     integer :: icol, ilev, igpt, ibnd
 
     !$acc parallel loop collapse(3) copyin(spectral_flux_dn, spectral_flux_up, band_lims) copyout(byband_flux_net)
+    !$omp target teams distribute parallel do collapse(3) map(to:spectral_flux_dn, spectral_flux_up, band_lims) map(from:byband_flux_net)
     do ibnd = 1, nbnd
       do ilev = 1, nlev
         do icol = 1, ncol
@@ -77,7 +79,7 @@ contains
     end do
   end subroutine net_byband_full
   ! ----------------------------------------------------------------------------
-  pure subroutine net_byband_precalc(ncol, nlev, nbnd, byband_flux_dn, byband_flux_up, byband_flux_net) bind (C)
+  subroutine net_byband_precalc(ncol, nlev, nbnd, byband_flux_dn, byband_flux_up, byband_flux_net) bind (C)
     integer,                               intent(in ) :: ncol, nlev, nbnd
     real(wp), dimension(ncol, nlev, nbnd), intent(in ) :: byband_flux_dn, byband_flux_up
     real(wp), dimension(ncol, nlev, nbnd), intent(out) :: byband_flux_net

@@ -4,11 +4,11 @@ the [RTE+RRTMGP](https://github.com/RobertPincus/rte-rrtmgp) radiation parameter
 [RFMIP](https://www.earthsystemcog.org/projects/rfmip/) cases.
 
 1. Build the RTE+RRTMGP libraries in `../../build/`. This will require setting
-environmental variables `FC` for the Fortran compiler and `FCFLAGS`, or creating
-`../../build/Makefile.conf` with that information.
+environmental variables `FC` for the Fortran compiler and `FCFLAGS`.
 2. Build the executables in this directory, which will require providing the
 locations of the netCDF C and Fortran libraries and module files as environmental
-variables (NCHOME and NFHOME) or via file `Makefile.libs`
+variables `NCHOME` and `NFHOME`, as well a variable `RRTMGP_ROOT` pointing to the root of the installation
+(the absolute path to `../../`).
 3. Use Python script `stage_files.py` to download relevant files from the
 [RFMIP web site](https://www.earthsystemcog.org/projects/rfmip/resources/).This script invokes another Python script to create empty output files.
 4. Use Python script `run-rfmip-examples.py` to run the examples. The script takes

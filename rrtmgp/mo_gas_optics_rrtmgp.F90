@@ -261,6 +261,7 @@ contains
     ! Gas optics
     !
     !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
+    !$omp target enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
@@ -275,6 +276,7 @@ contains
     ! input data sizes and values
     !
     !$acc enter data copyin(tsfc, tlev) ! Should be fine even if tlev is not supplied
+    !$omp target enter data map(to:tsfc, tlev)
 
     if(check_extents) then
       if(.not. extents_are(tsfc, ncol)) &
@@ -316,6 +318,7 @@ contains
                          sources,                            &
                          tlev)
       !$acc exit data delete(tlev)
+      !$omp target exit data map(release:tlev)
     else
       error_msg = source(this,                               &
                          ncol, nlay, nband, ngpt,            &
@@ -324,7 +327,9 @@ contains
                          sources)
     end if
     !$acc exit data delete(tsfc)
+    !$omp target exit data map(release:tsfc)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
+    !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
@@ -370,6 +375,7 @@ contains
     ! Gas optics
     !
     !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
+    !$omp target enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
@@ -377,6 +383,7 @@ contains
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
+    !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -384,6 +391,7 @@ contains
     ! External source function is constant
     !
     !$acc enter data create(toa_src)
+    !$omp target enter data map(alloc:toa_src)
     if(check_extents) then
       if(.not. extents_are(toa_src, ncol, ngpt)) &
         error_msg = "gas_optics(): array toa_src has wrong size"
@@ -391,12 +399,14 @@ contains
     if(error_msg  /= '') return
 
     !$acc parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1,ngpt
        do icol = 1,ncol
           toa_src(icol,igpt) = this%solar_source(igpt)
        end do
     end do
     !$acc exit data copyout(toa_src)
+    !$omp target exit data map(from:toa_src)
   end function gas_optics_ext
   !------------------------------------------------------------------------------------------
   !
@@ -473,6 +483,7 @@ contains
     ! Check input data sizes and values
     !
     !$acc enter data copyin(play,plev,tlay)
+    !$omp target enter data map(to:play, plev, tlay)
     if(check_extents) then
       if(.not. extents_are(play, ncol, nlay  )) &
         error_msg = "gas_optics(): array play has wrong size"
@@ -521,6 +532,7 @@ contains
     ! Fill out the array of volume mixing ratios
     !
     !$acc enter data create(vmr)
+    !$omp target enter data map(alloc:vmr)
     do igas = 1, ngas
       !
       ! Get vmr if  gas is provided in ty_gas_concs
@@ -537,6 +549,7 @@ contains
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
     col_dry_wk => col_dry_arr
     !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
+    !$omp target enter data map(alloc:col_dry_wk, col_dry_arr, col_gas)
     if (present(col_dry)) then
       col_dry_wk => col_dry
     else
@@ -547,12 +560,14 @@ contains
     ! compute column gas amounts [molec/cm^2]
     !
     !$acc parallel loop gang vector collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
       end do
     end do
     !$acc parallel loop gang vector collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do igas = 1, ngas
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -561,15 +576,20 @@ contains
       end do
     end do
     !$acc exit data delete(vmr)
+    !$omp target exit data map(release:vmr)
 
     !
     ! ---- calculate gas optical depths ----
     !
     !$acc enter data create(jtemp, jpress, jeta, tropo, fmajor)
+    !$omp target enter data map(alloc:jtemp, jpress, jeta, tropo, fmajor)
     !$acc enter data create(tau, tau_rayleigh)
+    !$omp target enter data map(alloc:tau, tau_rayleigh)
     !$acc enter data create(col_mix, fminor)
+    !$omp target enter data map(alloc:col_mix, fminor)
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%gpoint_flavor)
+    !$omp target enter data map(to:this%gpoint_flavor)
     call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
@@ -620,6 +640,7 @@ contains
             tau)
     if (allocated(this%krayl)) then
       !$acc enter data attach(col_dry_wk) copyin(this%krayl)
+      !$omp target enter data map(to:col_dry_wk) map(to:this%krayl)
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
@@ -630,16 +651,22 @@ contains
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
       !$acc exit data detach(col_dry_wk) delete(this%krayl)
+      !$omp target exit data map(from:col_dry_wk) map(release:this%krayl)
     end if
     if (error_msg /= '') return
 
     ! Combine optical depths and reorder for radiative transfer solver.
     call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
     !$acc exit data delete(play, tlay, plev)
+    !$omp target exit data map(release:play, tlay, plev)
     !$acc exit data delete(tau, tau_rayleigh)
+    !$omp target exit data map(release:tau, tau_rayleigh)
     !$acc exit data delete(col_dry_wk, col_dry_arr, col_gas, col_mix, fminor)
+    !$omp target exit data map(release:col_dry_wk, col_dry_arr, col_gas, col_mix, fminor)
     !$acc exit data delete(this%gpoint_flavor)
+    !$omp target exit data map(release:this%gpoint_flavor)
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
+    !$omp target exit data map(from:jtemp, jpress, jeta, tropo, fmajor)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
@@ -682,6 +709,7 @@ contains
     ! Calculate solar source function for provided facular and sunspot indices
     !
     !$acc parallel loop
+    !$omp target teams distribute parallel do simd
     do igpt = 1, size(this%solar_source_quiet)
       this%solar_source(igpt) = this%solar_source_quiet(igpt) + &
                                 (mg_index - a_offset) * this%solar_source_facular(igpt) + &
@@ -712,9 +740,11 @@ contains
       ! Scale the solar source function to the input tsi
       !
       !$acc kernels
+      !$omp target
       norm = 1._wp/sum(this%solar_source(:))
       this%solar_source(:) = this%solar_source(:) * tsi * norm
       !$acc end kernels
+      !$omp end target
     end if
 
   end function set_tsi
@@ -794,9 +824,13 @@ contains
     !  which depend on mapping from spectral space that creates k-distribution.
     !$acc enter data copyin(sources)
     !$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$omp target enter data map(alloc:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
+    !$omp target enter data map(alloc:sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) map(to:tlev_wk)
     !$acc enter data create(sfc_source_Jac)
+    !$omp target enter data map(alloc:sfc_source_Jac)
     !$acc enter data create(sources%sfc_source_Jac)
+    !$omp target enter data map(alloc:sources%sfc_source_Jac)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
@@ -806,6 +840,7 @@ contains
                 sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t, &
                 sfc_source_Jac)
     !$acc parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
         sources%sfc_source    (icol,igpt) = sfc_source_t  (igpt,icol)
@@ -819,9 +854,13 @@ contains
     ! Transposition of a 2D array, for which we don't have a routine in mo_rrtmgp_util_reorder.
     !
     !$acc exit data delete(sfc_source_Jac)
+    !$omp target exit data map(release:sfc_source_Jac)
     !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
+    !$omp target exit data map(release:sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) map(from:tlev_wk)
     !$acc exit data copyout(sources%sfc_source_Jac)
+    !$omp target exit data map(from:sources%sfc_source_Jac)
     !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+    !$omp target exit data map(from:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$acc exit data copyout(sources)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
@@ -909,11 +948,14 @@ contains
              this%planck_frac      (size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)), &
              this%optimal_angle_fit(size(optimal_angle_fit,    1), size(optimal_angle_fit,   2)))
     !$acc enter data create(this%totplnk, this%planck_frac, this%optimal_angle_fit)
+    !$omp target enter data map(alloc:this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$acc kernels
+    !$omp target
     this%totplnk = totplnk
     this%planck_frac = planck_frac
     this%optimal_angle_fit = optimal_angle_fit
     !$acc end kernels
+    !$omp end target
 
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
@@ -1018,11 +1060,14 @@ contains
     allocate(this%solar_source_quiet(ngpt), this%solar_source_facular(ngpt), &
              this%solar_source_sunspot(ngpt), this%solar_source(ngpt))
     !$acc enter data create(this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
+    !$omp target enter data map(alloc:this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
     !$acc kernels
+    !$omp target
     this%solar_source_quiet   = solar_quiet
     this%solar_source_facular = solar_facular
     this%solar_source_sunspot = solar_sunspot
     !$acc end kernels
+    !$omp end target
     err_message = this%set_solar_variability(mg_default, sb_default)
   end function load_ext
   !--------------------------------------------------------------------------------------------------------------------
@@ -1172,6 +1217,7 @@ contains
     this%temp_ref  = temp_ref
     this%kmajor    = kmajor
     !$acc enter data copyin(this%kmajor)
+    !$omp target enter data map(to:this%kmajor)
 
 
     if(allocated(rayl_lower) .neqv. allocated(rayl_upper)) then
@@ -1189,6 +1235,7 @@ contains
     allocate(this%press_ref_log(size(this%press_ref)))
     this%press_ref_log(:) = log(this%press_ref(:))
     !$acc enter data copyin(this%press_ref_log)
+    !$omp target enter data map(to:this%press_ref_log)
 
 
     ! log scale of reference pressure
@@ -1381,20 +1428,24 @@ contains
     ncol = size(plev, dim=1)
     nlev = size(plev, dim=2)
     !$acc enter data create(g0)
+    !$omp target enter data map(alloc:g0)
     if(present(latitude)) then
       ! A purely OpenACC implementation would probably compute g0 within the kernel below
       !$acc parallel loop
+      !$omp target teams distribute parallel do simd
       do icol = 1, ncol
         g0(icol) = helmert1 - helmert2 * cos(2.0_wp * pi * latitude(icol) / 180.0_wp) ! acceleration due to gravity [m/s^2]
       end do
     else
       !$acc parallel loop
+      !$omp target teams distribute parallel do simd
       do icol = 1, ncol
         g0(icol) = grav
       end do
     end if
 
     !$acc parallel loop gang vector collapse(2) copyin(plev,vmr_h2o) copyout(col_dry)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:plev, vmr_h2o) map(from:col_dry)
     do ilev = 1, nlev-1
       do icol = 1, ncol
         delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1))
@@ -1405,6 +1456,7 @@ contains
       end do
     end do
     !$acc exit data delete (g0)
+    !$omp target exit data map(release:g0)
   end function get_col_dry
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1436,6 +1488,7 @@ contains
     ! column transmissivity
     !
     !$acc parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
+    !$omp target teams distribute parallel do simd collapse(2) map(to: optical_props%tau, optical_props%gpt2band) map(from:optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !
@@ -1724,6 +1777,7 @@ contains
       enddo
     endif
     !$acc enter data copyin(kminor_atm_red)
+    !$omp target enter data map(to:kminor_atm_red)
 
   end subroutine reduce_minor_arrays
 
@@ -1786,45 +1840,61 @@ contains
     if (.not. has_rayleigh) then
       ! index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
       !$acc enter data copyin(tau)
+      !$omp target enter data map(to:tau)
       !$acc enter data create(optical_props%tau)
+      !$omp target enter data map(alloc:optical_props%tau)
       call reorder123x321(tau, optical_props%tau)
       select type(optical_props)
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%ssa, optical_props%g)
+          !!$omp target enter data map(alloc:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(     ncol,nlay,ngpt,optical_props%g  )
           !$acc exit data copyout(optical_props%ssa, optical_props%g)
+          !!$omp target exit data map(from:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
           !$acc enter data create(optical_props%ssa, optical_props%p)
+          !$omp target enter data map(alloc:optical_props%ssa, optical_props%p)
           call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
           call zero_array(nmom,ncol,nlay,ngpt,optical_props%p  )
           !$acc exit data copyout(optical_props%ssa, optical_props%p)
+          !$omp target exit data map(from:optical_props%ssa, optical_props%p)
         end select
       !$acc exit data copyout(optical_props%tau)
+      !$omp target exit data map(from:optical_props%tau)
       !$acc exit data delete(tau)
+      !$omp target exit data map(release:tau)
     else
       ! combine optical depth and rayleigh scattering
       !$acc enter data copyin(tau, tau_rayleigh)
+      !$omp target enter data map(to:tau, tau_rayleigh)
       select type(optical_props)
         type is (ty_optical_props_1scl)
           ! User is asking for absorption optical depth
           !$acc enter data create(optical_props%tau)
+          !$omp target enter data map(alloc:optical_props%tau)
           call reorder123x321(tau, optical_props%tau)
           !$acc exit data copyout(optical_props%tau)
+          !$omp target exit data map(from:optical_props%tau)
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
+          !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
           call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
                                         optical_props%tau, optical_props%ssa, optical_props%g)
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
+          !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
           !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%p)
+          !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
           call combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau, tau_rayleigh, &
                                         optical_props%tau, optical_props%ssa, optical_props%p)
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%p)
+          !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
       !$acc exit data delete(tau, tau_rayleigh)
+      !$omp target exit data map(release:tau, tau_rayleigh)
     end if
     !$acc exit data copyout(optical_props)
   end subroutine combine_and_reorder

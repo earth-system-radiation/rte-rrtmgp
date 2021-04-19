@@ -1,26 +1,22 @@
+#
 # Location of RTE+RRTMGP libraries, module files.
+#
 RRTMGP_BUILD = $(RRTMGP_ROOT)/build
-# Sets macros FC, FCFLAGS consistent with RTE+RRTMGP
--include $(RRTMGP_BUILD)/Makefile.conf
-
-# Location of netcdf C and Fortran libraries. Could specify with environment variables if file doesn't exist
--include $(RRTMGP_ROOT)/examples/rfmip-clear-sky/Makefile.libs
 #
 # RRTMGP library, module files
 #
-LDFLAGS   += -L$(RRTMGP_BUILD)
-LIBS      += -lrrtmgp -lrte
+# LDFLAGS   += -L$(RRTMGP_BUILD)
+# LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_BUILD)
-
 #
 # netcdf library, module files
-# C and Fortran interfaces respectively
+# Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
 #
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
-VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky
+VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
 VPATH += $(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/extensions/cloud_optics:$(RRTMGP_ROOT)/extensions/solar_variability
 
 # Compilation rules
@@ -38,7 +34,7 @@ ADDITIONS  = mo_heating_rates.o mo_compute_bc.o mo_rrtmgp_clr_all_sky.o
 ADDITIONS += mo_load_coefficients.o mo_simple_netcdf.o mo_rfmip_io.o
 ADDITIONS += mo_testing_io.o
 # Cloud optics
-CLOUDS    += mo_cloud_sampling.o mo_cloud_optics.o mo_load_cloud_coefficients.o
+CLOUDS    += mo_cloud_sampling.o mo_cloud_optics.o mo_load_cloud_coefficients.o mo_garand_atmos_io.o
 # Solar variability
 ADDITIONS += mo_solar_variability.o
 
@@ -61,6 +57,14 @@ mo_cloud_sampling.o:          $(LIB_DEPS) mo_cloud_sampling.F90
 mo_load_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_load_coefficients.F90
 mo_rfmip_io.o.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_rfmip_io.F90
 mo_simple_netcdf.o:     $(LIB_DEPS) mo_simple_netcdf.F90
+
+tests:
+	cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
+	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
+	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+
+check:
+	python verification.py
 
 clean:
 	-rm clear_sky_regression *.o *.optrpt

@@ -370,7 +370,7 @@ contains
     integer :: i
     ! -----------------------
     !$acc parallel loop copyout(array)
-    !$omp target teams distribute parallel do simd map(from:array)
+    !$omp target teams distribute parallel do simd map(from:array) 
     do i = 1, ni
       array(i) = 0.0_wp
     end do

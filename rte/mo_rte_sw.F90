@@ -176,6 +176,9 @@ contains
     ! ------------------------------------------------------------------------------------
     ! Lower boundary condition -- expand surface albedos by band to gpoints
     !   and switch dimension ordering
+
+    !$acc enter data create(sfc_alb_dir_gpt, sfc_alb_dif_gpt)
+    !$omp target enter data map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
     call expand_and_transpose(atmos, sfc_alb_dir, sfc_alb_dir_gpt)
     call expand_and_transpose(atmos, sfc_alb_dif, sfc_alb_dif_gpt)
     ! ------------------------------------------------------------------------------------

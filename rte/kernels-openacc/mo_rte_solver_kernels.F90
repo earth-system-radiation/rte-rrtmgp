@@ -256,12 +256,21 @@ contains
         end do
       end do
     end if
+<<<<<<< HEAD
 
     !$acc        exit data delete(     sfc_srcJac, gpt_Jac) if(do_Jacobians)
     !$omp target exit data map(release:sfc_srcJac, gpt_Jac) if(do_Jacobians)
     !$acc        exit data copyout( radn_upJac)             if(do_Jacobians)
     !$omp target exit data map(from:radn_upJac)             if(do_Jacobians)
 
+=======
+
+    !$acc        exit data delete(     sfc_srcJac, gpt_Jac) if(do_Jacobians)
+    !$omp target exit data map(release:sfc_srcJac, gpt_Jac) if(do_Jacobians)
+    !$acc        exit data copyout( radn_upJac)             if(do_Jacobians)
+    !$omp target exit data map(from:radn_upJac)             if(do_Jacobians)
+
+>>>>>>> aca56b723e8c35d0fc0166c25ead3c906530cf72
     !$acc        exit data copyout( radn_dn,radn_up)
     !$omp target exit data map(from:radn_dn,radn_up)
     !$acc        exit data delete(     d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up)

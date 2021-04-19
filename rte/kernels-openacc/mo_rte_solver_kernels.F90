@@ -27,7 +27,8 @@
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_solver_kernels
   use,  intrinsic :: iso_c_binding
-  use mo_rte_kind, only: wp, wl
+  use mo_rte_kind,       only: wp, wl
+  use mo_rte_util_array, only: zero_array
   implicit none
   private
 
@@ -37,7 +38,7 @@ module mo_rte_solver_kernels
 
   public :: apply_BC, &
             lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
-            sw_solver_noscat,                             sw_solver_2stream
+            sw_solver_noscat,                             sw_solver_2stream, sw_solver_2stream_integrated
 
   ! These routines don't really need to be visible but making them so is useful for testing.
   public :: lw_two_stream, sw_two_stream, &
@@ -612,7 +613,98 @@ contains
     !$omp target exit data map(release:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
 
   end subroutine sw_solver_2stream
-
+  ! -------------------------------------------------------------------------------------------------
+  subroutine sw_solver_2stream_integrated(ncol, nlay, ngpt, top_at_1, &
+                                 tau, ssa, g, mu0,           &
+                                 sfc_alb_dir, sfc_alb_dif,   &
+                                 flux_inc_dir, flux_inc_dif, &
+                                 flux_up, flux_dn, flux_dir) bind(C, name="sw_solver_2stream_integrated")
+    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    logical(wl),                           intent(in   ) :: top_at_1
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &  ! Optical thickness,
+                                                            ssa, &  ! single-scattering albedo,
+                                                            g       ! asymmetry parameter []
+    real(wp), dimension(ncol            ), intent(in   ) :: mu0     ! cosine of solar zenith angle
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_alb_dir, sfc_alb_dif
+                                                                    ! Spectral albedo of surface to direct and diffuse radiation
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: flux_inc_dir, &
+                                                            flux_inc_dif ! Incident spectrally-resolved flux
+    real(wp), dimension(ncol,nlay+1),      intent(  out) :: flux_up, &
+                                                            flux_dn, &
+                                                            flux_dir ! Fluxes [W/m2]
+    ! -------------------------------------------
+    integer :: icol, ilay, igpt
+    real(wp), dimension(ncol,nlay  ,ngpt) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
+    real(wp), dimension(ncol,nlay  ,ngpt) :: source_up, source_dn
+    real(wp), dimension(ncol       ,ngpt) :: source_srf
+    real(wp), dimension(ncol,nlay+1,ngpt) :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
+    ! ------------------------------------
+    !
+    ! Cell properties: transmittance and reflectance for direct and diffuse radiation
+    !
+    !$acc        enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_inc_dif, flux_inc_dir)
+    !$omp target enter data map(to:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_inc_dif, flux_inc_dir)
+    !$acc        enter data create(   Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up, flux_dn, flux_dir)
+    !$omp target enter data map(alloc:Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf, flux_up, flux_dn, flux_dir)
+    !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    call zero_array(ncol, nlay+1, flux_up)
+    call zero_array(ncol, nlay+1, flux_dn)
+    call zero_array(ncol, nlay+1, flux_dir)
+    ! Apply boundary conditions
+    !$acc  parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do icol = 1, ncol
+      do igpt = 1, ngpt
+        if(top_at_1) then
+          gpt_flux_dn (icol,     1,igpt) = flux_inc_dif(icol,igpt)
+          gpt_flux_dir(icol,     1,igpt) = flux_inc_dir(icol,igpt) * mu0(icol)
+        else
+          gpt_flux_dn (icol,nlay+1,igpt) = flux_inc_dif(icol,igpt)
+          gpt_flux_dir(icol,nlay+1,igpt) = flux_inc_dir(icol,igpt) * mu0(icol)
+        end if
+      end do
+    end do
+    call sw_two_stream(ncol, nlay, ngpt, mu0, &
+                        tau , ssa , g   ,      &
+                        Rdif, Tdif, Rdir, Tdir, Tnoscat)
+    call sw_source_2str(ncol, nlay, ngpt, top_at_1,       &
+                        Rdir, Tdir, Tnoscat, sfc_alb_dir, &
+                        source_up, source_dn, source_srf, gpt_flux_dir)
+    !$acc  parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do ilay = 1, nlay+1
+      do icol = 1, ncol
+        do igpt = 1, ngpt ! Note gpoint loop is serial
+          flux_dir(icol,ilay) = flux_dir(icol,ilay) + gpt_flux_dir(icol,ilay,igpt)
+        end do
+      end do
+    end do
+    call adding(ncol, nlay, ngpt, top_at_1,   &
+                sfc_alb_dif, Rdif, Tdif,      &
+                source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
+    !$acc  parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do ilay = 1, nlay+1
+      do icol = 1, ncol
+        do igpt = 1, ngpt ! Note gpoint loop is serial
+          flux_up(icol,ilay) = flux_up(icol,ilay) + gpt_flux_up(icol,ilay,igpt)
+          !
+          ! adding computes only diffuse flux; flux_dn is total -
+          !   -- or better to have a separate smaller kernel?
+          !
+          flux_dn(icol,ilay) = flux_dn(icol,ilay) + gpt_flux_dn (icol,ilay,igpt)
+        end do
+        flux_dn(icol,ilay) = flux_dn(icol,ilay) + flux_dir(icol,ilay)
+      end do
+    end do
+    !$acc        exit data copyout( flux_up, flux_dn, flux_dir)
+    !$omp target exit data map(from:flux_up, flux_dn, flux_dir)
+    !$acc        exit data delete(     tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
+    !$omp target exit data map(release:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, Rdir, Tdir, Tnoscat, source_up, source_dn, source_srf)
+    !$acc        exit data delete (    gpt_flux_up, gpt_flux_dn, gpt_flux_dir, flux_inc_dif, flux_inc_dir)
+    !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir, flux_inc_dif, flux_inc_dir)
+  end subroutine sw_solver_2stream_integrated
   ! -------------------------------------------------------------------------------------------------
   !
   !   Lower-level longwave kernels

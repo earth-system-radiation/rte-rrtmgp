@@ -27,7 +27,7 @@ module mo_rte_util_array
     module procedure any_vals_outside_1D_masked, any_vals_outside_2D_masked, any_vals_outside_3D_masked
   end interface
   interface zero_array
-    module procedure zero_array_1D, zero_array_3D, zero_array_4D
+    module procedure zero_array_1D, zero_array_2D, zero_array_3D, zero_array_4D
   end interface
   interface extents_are
     module procedure extents_are_1D, extents_are_2D, extents_are_3D
@@ -370,11 +370,27 @@ contains
     integer :: i
     ! -----------------------
     !$acc parallel loop copyout(array)
-    !$omp target teams distribute parallel do simd map(from:array) 
+    !$omp target teams distribute parallel do simd map(from:array)
     do i = 1, ni
       array(i) = 0.0_wp
     end do
   end subroutine zero_array_1D
+  ! ----------------------------------------------------------
+  subroutine zero_array_2D(ni, nj, array) bind(C, name="zero_array_2D")
+    integer,                     intent(in ) :: ni, nj
+    real(wp), dimension(ni, nj), intent(out) :: array
+    ! -----------------------
+    integer :: i,j
+    ! -----------------------
+    !$acc parallel loop collapse(2) copyout(array)
+    !$omp target teams distribute parallel do simd collapse(2) map(from:array)
+    do j = 1, nj
+      do i = 1, ni
+        array(i,j) = 0.0_wp
+      end do
+    end do
+
+  end subroutine zero_array_2D
   ! ----------------------------------------------------------
   subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="zero_array_3D")
     integer,                         intent(in ) :: ni, nj, nk

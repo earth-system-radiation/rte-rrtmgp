@@ -37,7 +37,7 @@ contains
 
     if(msg /= "") then
       write(error_unit, *) msg
-      stop
+      error stop 1
     end if
   end subroutine
   !--------------------------------------------------------------------------------------------------------------------

@@ -462,7 +462,7 @@ contains
     character(len=*), intent(in) :: msg
     if(len_trim(msg) > 0) then
       write(error_unit,*) trim(msg)
-      stop
+      error stop 1
     end if
   end subroutine
 end module mo_rfmip_io

@@ -1,0 +1,110 @@
+name: Continuous Integration
+on: [push, pull_request]
+
+jobs:
+  CI:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        fortran-compiler: [gfortran-9, gfortran-10]
+        rte-kernels: [default, openacc]
+    env:
+      FC: ${{ matrix.fortran-compiler }}
+      FCFLAGS: "-m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g"
+      NETCDF_FCFLAGS: "-I/usr/include"
+      RFMIP_CACHEDIR: ${{ github.workspace }}/.testcache
+    steps:
+    #
+    # Checks-out repository under $GITHUB_WORKSPACE
+    #
+    - uses: actions/checkout@v2
+    #
+    # Set up Python and dependencies
+    #
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install Python dependencies
+      run: |
+        pip install --upgrade pip
+        pip install netCDF4 xarray dask[array]
+    #
+    # Synchronize the package index
+    #
+    - name: Synchronize the package index
+      run: sudo apt-get update
+    #
+    # Install Gfortran 10
+    #
+    - name: Install Gfortran 10
+      if: contains(matrix.fortran-compiler, 'gfortran-10')
+      run: sudo apt-get install gfortran-10
+    #
+    # Install NetCDF-Fortran (compatible with both compilers)
+    #
+    - name: Install NetCDF-Fortran
+      run: sudo apt-get install libnetcdff-dev
+    #
+    # In-source (as an example) configuration with default kernels
+    #
+    - name: Configure (in-source)
+      if: contains(matrix.rte-kernels, 'default')
+      run: |
+        echo "RRTMGP_BUILD_DIR=$(pwd)" >> $GITHUB_ENV
+        ./configure --disable-silent-rules --enable-tests --with-netcdf-fortran --disable-gpu || { cat ./config.log; exit 1; }
+    #
+    # Out-of-source (as an example) configuration with GPU kernels
+    #   We want to compile GPU kernels without OpenACC support. A way to do that
+    #   is to prevent the configure script from appending the compiler flag
+    #   enabling OpenACC support by calling it with an additional argument
+    #   'acx_cv_fc_openacc_flag='.
+    #
+    - name: Configure (out-of-source)
+      if: contains(matrix.rte-kernels, 'openacc')
+      run: |
+        mkdir test_build && cd test_build && ln -s ${RFMIP_CACHEDIR} ./
+        echo "RRTMGP_BUILD_DIR=$(pwd)" >> $GITHUB_ENV
+        ../configure --disable-silent-rules --enable-tests --with-netcdf-fortran --enable-gpu acx_cv_fc_openacc_flag= || { cat ./config.log; exit 1; }
+    #
+    # Build the library
+    #
+    - name: Build
+      run: cd "$RRTMGP_BUILD_DIR" && make
+    #
+    # Check whether RFMIP files are cached
+    #
+    - uses: actions/cache@v2
+      id: cache-rfmip-files
+      with:
+        path: ${{ env.RFMIP_CACHEDIR }}
+        key: rfmip-files-autoconf
+    #
+    # Stage RFMIP files if they are not in the cache
+    #
+    - name: Stage RFMIP files
+      if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ${RFMIP_CACHEDIR} && cd ${RFMIP_CACHEDIR}
+        python ${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py
+        touch ${RFMIP_CACHEDIR}/.cache
+    #
+    # Check the library
+    #
+    - name: Check
+      run: cd "$RRTMGP_BUILD_DIR" && make check
+    #
+    # Check the installation procedure
+    #
+    - name: Install
+      run: cd "$RRTMGP_BUILD_DIR" && sudo make install
+    #
+    # Check the distclean procedure
+    #   We want to keep the cached RFMIP files, therefore we run this only for
+    #   the out-of-source build, which we perform when configuring with GPU
+    #   kernels.
+    #
+    - name: Distclean (out-of-source)
+      if: contains(matrix.rte-kernels, 'openacc')
+      run: cd "$RRTMGP_BUILD_DIR" && make distclean
+

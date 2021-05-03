@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import fnmatch
+import collections
 
 try:
     import argparse
@@ -14,27 +15,48 @@ _re_rule = re.compile(
     r':(?:[ ]*([-+\w./]+(?:[ ]+[-+\w./]+)*))?[ ]*'  # normal prerequisites
     r'(?:\|[ ]*([-+\w./]+(?:[ ]+[-+\w./]+)*))?')  # order-only prerequisites
 _meta_root = 0
+_term_colors = {
+    'black': 90,
+    'red': 91,
+    'green': 92,
+    'yellow': 93,
+    'blue': 94,
+    'magenta': 95,
+    'cyan': 96,
+    'white': 97
+}
 
 
 def parse_args():
     class ArgumentParser(argparse.ArgumentParser):
-        # Allow for comments in the argument file:
         def convert_arg_line_to_args(self, arg_line):
-            if arg_line.startswith('#'):
-                return []
-            return arg_line.split()
+            try:
+                # Drop everything after the first occurrence of #:
+                arg_line = arg_line[:arg_line.index('#')]
+            except ValueError:
+                pass
+
+            result = []
+            # Do not regard consecutive whitespaces as a single separator:
+            for arg in arg_line.split(' '):
+                if arg:
+                    result.append(arg)
+                elif result:
+                    # The previous argument has a significant space:
+                    result[-1] += ' '
+            return result
 
     parser = ArgumentParser(
         fromfile_prefix_chars='@',
-        description='Reads a set of makefiles and prints a topologically '
-                    'sorted list of prerequisites of the TARGET.')
+        description='Reads a set of MAKEFILEs and prints a topologically '
+                    'sorted list of TARGETs together with their prerequisites.')
 
     parser.add_argument(
         '-d', '--debug-file',
         help='dump debug information to DEBUG_FILE')
     parser.add_argument(
-        '-t', '--target',
-        help='name of the makefile target; if not specified, all targets and '
+        '-t', '--target', nargs='*',
+        help='names of the makefile targets; if not specified, all targets and '
              'prerequisites found in the makefiles are sent to the output')
     parser.add_argument(
         '--inc-oo', action='store_true',
@@ -63,7 +85,7 @@ def parse_args():
              'circular dependencies; if a cycle is found, a warning message is '
              'emitted to the standard output')
     parser.add_argument(
-        '--check-colour', action='store_true',
+        '--check-colour', choices=_term_colors.keys(),
         help='colour the message output of the checks using ANSI escape '
              'sequences; the argument is ignored if the standard error stream '
              'is not associated with a terminal device')
@@ -80,13 +102,14 @@ def parse_args():
                 parser.error('argument --check-exists: expected 2 or more '
                              'arguments')
 
-    args.check_colour = args.check_colour and sys.stderr.isatty()
+    if not sys.stderr.isatty():
+        args.check_colour = None
 
     return args
 
 
 def read_makefile(makefile, inc_order_only):
-    result = dict()
+    result = collections.defaultdict(list)
 
     if makefile == '-':
         stream = sys.stdin
@@ -117,8 +140,6 @@ def read_makefile(makefile, inc_order_only):
                 prereqs.extend(match.group(3).split())
 
             for target in targets:
-                if target not in result:
-                    result[target] = []
                 result[target].extend(prereqs)
 
     stream.close()
@@ -167,13 +188,11 @@ def remove_duplicates(l):
 
 def build_graph(makefiles, inc_oo=False):
     # Read makefiles:
-    result = dict()
+    result = collections.defaultdict(list)
     for mkf in makefiles:
         mkf_dict = read_makefile(mkf, inc_oo)
 
         for target, prereqs in mkf_dict.items():
-            if target not in result:
-                result[target] = []
             result[target].extend(prereqs)
 
     for target in result.keys():
@@ -182,11 +201,12 @@ def build_graph(makefiles, inc_oo=False):
     return result
 
 
-def warn(msg, colour=False):
-    sys.stderr.write("%s%s: WARNING: %s%s\n" % ('\033[93m' if colour else '',
-                                                os.path.basename(__file__),
-                                                msg,
-                                                '\033[0m' if colour else ''))
+def warn(msg, colour=None):
+    sys.stderr.write("%s%s: WARNING: %s%s\n"
+                     % (('\033[%dm' % _term_colors[colour]) if colour else '',
+                        os.path.basename(__file__),
+                        msg,
+                        '\033[0m' if colour else ''))
 
 
 def main():
@@ -215,8 +235,7 @@ def main():
     # Insert _meta_root, which will be the starting-point for the dependency
     # graph traverse:
     if args.target:
-        dep_graph[_meta_root] = \
-            [args.target] if args.target in dep_graph else []
+        dep_graph[_meta_root] = [t for t in args.target if t in dep_graph]
     else:
         dep_graph[_meta_root] = sorted(dep_graph.keys())
 

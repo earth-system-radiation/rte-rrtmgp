@@ -29,7 +29,7 @@ subroutine stop_on_err(error_msg)
   if(error_msg /= "") then
     write (error_unit,*) trim(error_msg)
     write (error_unit,*) "rrtmgp_rfmip_sw stopping"
-    stop
+    error stop 1
   end if
 end subroutine stop_on_err
 ! -------------------------------------------------------------------------------------------------
@@ -229,8 +229,11 @@ program rrtmgp_rfmip_sw
   allocate(mu0(block_size), sfc_alb_spec(nbnd,block_size))
   call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
   !$acc enter data create(optical_props, optical_props%tau, optical_props%ssa, optical_props%g)
+  !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
   !$acc enter data create (toa_flux, def_tsi)
+  !$omp target enter data map(alloc:toa_flux, def_tsi)
   !$acc enter data create (sfc_alb_spec, mu0)
+  !$omp target enter data map(alloc:sfc_alb_spec, mu0)
   ! --------------------------------------------------
 #ifdef USE_TIMING
   !
@@ -244,7 +247,7 @@ program rrtmgp_rfmip_sw
   ! Loop over blocks
   !
 #ifdef USE_TIMING
-  do i = 1, 32
+  do i = 1, 4
 #endif
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
@@ -269,12 +272,14 @@ program rrtmgp_rfmip_sw
     !   (This is partly to show how to keep work on GPUs using OpenACC in a host application)
     ! What's the total solar irradiance assumed by RRTMGP?
     !
-#ifdef _OPENACC
+#if defined(_OPENACC) || defined(_OPENMP)
     call zero_array(block_size, def_tsi)
     !$acc parallel loop collapse(2) copy(def_tsi) copyin(toa_flux)
+    !$omp target teams distribute parallel do simd collapse(2) map(tofrom:def_tsi) map(to:toa_flux)
     do igpt = 1, ngpt
       do icol = 1, block_size
         !$acc atomic update
+        !$omp atomic update
         def_tsi(icol) = def_tsi(icol) + toa_flux(icol, igpt)
       end do
     end do
@@ -288,6 +293,7 @@ program rrtmgp_rfmip_sw
     ! Normalize incoming solar flux to match RFMIP specification
     !
     !$acc parallel loop collapse(2) copyin(total_solar_irradiance, def_tsi) copy(toa_flux)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:total_solar_irradiance, def_tsi) map(tofrom:toa_flux)
     do igpt = 1, ngpt
       do icol = 1, block_size
         toa_flux(icol,igpt) = toa_flux(icol,igpt) * total_solar_irradiance(icol,b)/def_tsi(icol)
@@ -297,6 +303,7 @@ program rrtmgp_rfmip_sw
     ! Expand the spectrally-constant surface albedo to a per-band albedo for each column
     !
     !$acc parallel loop collapse(2) copyin(surface_albedo)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:surface_albedo)
     do icol = 1, block_size
       do ibnd = 1, nbnd
         sfc_alb_spec(ibnd,icol) = surface_albedo(icol,b)
@@ -306,6 +313,7 @@ program rrtmgp_rfmip_sw
     ! Cosine of the solar zenith angle
     !
     !$acc parallel loop copyin(solar_zenith_angle, usecol)
+    !$omp target teams distribute parallel do simd map(to:solar_zenith_angle, usecol)
     do icol = 1, block_size
       mu0(icol) = merge(cos(solar_zenith_angle(icol,b)*deg_to_rad), 1._wp, usecol(icol,b))
     end do
@@ -346,8 +354,11 @@ program rrtmgp_rfmip_sw
   ret = gptlfinalize()
 #endif
   !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g, optical_props)
+  !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)
   !$acc exit data delete(sfc_alb_spec, mu0)
+  !$omp target exit data map(release:sfc_alb_spec, mu0)
   !$acc exit data delete(toa_flux, def_tsi)
+  !$omp target exit data map(release:toa_flux, def_tsi)
   ! --------------------------------------------------
   call unblock_and_write(trim(flxup_file), 'rsu', flux_up)
   call unblock_and_write(trim(flxdn_file), 'rsd', flux_dn)

@@ -1,10 +1,13 @@
 #!@SHELL@
 @TESTS_DISABLED@exit 77
 
-@PYTHON@ @srcdir@/stage_files.py || exit 1
+# Symlink all files from the cache directory into the current one:
+for f in @top_builddir@/@testcachedir@/*; do
+  fname=`echo "$f" | sed 's%.*/%%'`
+  test -f "$fname" || @LN_S@ "$f" "$fname"
+done
 
-@OPENACC_DISABLED@args=''
-@OPENACC_ENABLED@args='--block_size 1800'
-@LAUNCH_PREFIX@ @PYTHON@ @srcdir@/run-rfmip-examples.py $args || exit 1
+@LAUNCH_PREFIX@ ./rrtmgp_rfmip_lw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc @top_srcdir@/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc || exit 1
+@LAUNCH_PREFIX@ ./rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc @top_srcdir@/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc || exit 1
 
 @PYTHON@ @srcdir@/compare-to-reference.py --fail=7.e-4

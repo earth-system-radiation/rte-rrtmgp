@@ -52,7 +52,7 @@ generated RPATH flags])
    AC_MSG_RESULT([$acx_shlib_rpath_flags_check_result])
    AS_VAR_IF([acx_shlib_rpath_flags_check_result], [yes], [$2],
      [m4_default([$3], [AC_MSG_FAILURE([_AC_LANG compiler does not accept dnl
-the automatically generated RPATH flags '$1'])])])])
+the automatically generated RPATH flags[]m4_ifnblank([$1],[ '$1'])])])])])
 
 # ACX_SHLIB_PATH_VAR()
 # -----------------------------------------------------------------------------

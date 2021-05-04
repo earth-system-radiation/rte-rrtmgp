@@ -46,12 +46,12 @@
 
 // Interface using only optical properties and source functions as inputs; fluxes as outputs.
 template <class FluxesType>
-void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, OpticalProps1scl const &optical_props, 
+void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, OpticalProps1scl const &optical_props,
             bool top_at_1, SourceFuncLW const &sources, real2d const &sfc_emis,
             FluxesType &fluxes, real2d const &inc_flux=real2d(), int n_gauss_angles=-1);
 
 template <class FluxesType>
-void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, OpticalProps1scl const &optical_props, 
+void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, OpticalProps1scl const &optical_props,
             bool top_at_1, SourceFuncLW const &sources, real2d const &sfc_emis,
             FluxesType &fluxes, real2d const &inc_flux, int n_gauss_angles) {
   real3d gpt_flux_up;
@@ -98,7 +98,7 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
     }
     n_quad_angs = n_gauss_angles;
   }
-  
+
   // Ensure values of tau, ssa, and g are reasonable
   optical_props.validate();
 
@@ -107,7 +107,7 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
   gpt_flux_dn  = real3d("gpt_flux_dn" ,ncol,nlay+1,ngpt);
   sfc_emis_gpt = real2d("sfc_emis_gpt",ncol       ,ngpt);
   expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt);
-  
+
   //   Upper boundary condition
   if (allocated(inc_flux)) {
     apply_BC(ncol, nlay, ngpt, top_at_1, inc_flux, gpt_flux_dn);
@@ -126,8 +126,8 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
     tmp_Ds (i) = gauss_Ds (i,n_quad_angs);
     tmp_wts(i) = gauss_wts(i,n_quad_angs);
   });
-  lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, n_quad_angs, tmp_Ds, tmp_wts, optical_props.tau,                                                  
-                             sources.lay_source, sources.lev_source_inc, sources.lev_source_dec, 
+  lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, n_quad_angs, tmp_Ds, tmp_wts, optical_props.tau,
+                             sources.lay_source, sources.lev_source_inc, sources.lev_source_dec,
                              sfc_emis_gpt, sources.sfc_source, gpt_flux_up, gpt_flux_dn);
   // ...and reduce spectral fluxes to desired output quantities
   fluxes.reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1);

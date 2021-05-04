@@ -152,7 +152,7 @@ int main(int argc , char **argv) {
         yakl::fence();
         start_time = std::chrono::high_resolution_clock::now();
 
-        cloud_optics.cloud_optics(lwp, iwp, rel, rei, clouds);
+        cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
 
         // Solvers
         FluxesByband fluxes;
@@ -165,7 +165,7 @@ int main(int argc , char **argv) {
         fluxes.bnd_flux_dn_dir = bnd_flux_dir;
         fluxes.bnd_flux_net = bnd_flux_net;
 
-        k_dist.gas_optics(top_at_1, p_lay, p_lev, t_lay, gas_concs, atmos, toa_flux);
+        k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay, gas_concs, atmos, toa_flux);
         clouds.delta_scale();
         clouds.increment(atmos);
         rte_sw(atmos, top_at_1, mu0, toa_flux, sfc_alb_dir, sfc_alb_dif, fluxes);

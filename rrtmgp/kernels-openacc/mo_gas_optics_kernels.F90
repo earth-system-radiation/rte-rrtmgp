@@ -235,7 +235,7 @@ contains
       !$omp target teams distribute parallel do simd
       do icol = 1,ncol
         itropo_lower(icol,2) = nlay
-#ifdef _CRAYFTN
+#if defined(_CRAYFTN) || defined(__NVCOMPILER)
         itropo_upper(icol,1) = 1
         call minmaxloc(icol, tropo, play, itropo_lower(icol,1), itropo_upper(icol,2))
 #else
@@ -249,7 +249,7 @@ contains
       !$omp target teams distribute parallel do simd
       do icol = 1,ncol
         itropo_lower(icol,1) = 1
-#ifdef _CRAYFTN
+#if defined(_CRAYFTN) || defined(__NVCOMPILER)
         itropo_upper(icol,2) = nlay
         call minmaxloc(icol, tropo, play, itropo_lower(icol,2), itropo_upper(icol,1))
 #else

@@ -389,7 +389,7 @@ contains
 
     integer  :: icol, ilay, igpt
     real(wp) :: tau12, tauscat12
-    real(wp), dimension(nmom1) :: temp_moms ! TK
+    real(wp) :: temp_mom ! TK
     integer  :: imom  !TK
     ! --------------
     ! --------------
@@ -399,14 +399,12 @@ contains
     !$acc&     copyin(ssa2(:ncol,:nlay,:ngpt)) &
     !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
     !$acc&     copyin(g2(:ncol,:nlay,:ngpt)) &
-    !$acc&     private(temp_moms) &
     !$acc&     copyin(tau2(:ncol,:nlay,:ngpt))
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:p1, ssa1) &
     !$omp& map(to:ssa2) &
     !$omp& map(tofrom:tau1) &
     !$omp& map(to:g2) &
-    !$omp& private(temp_moms) &
     !$omp& map(to:tau2)
     do igpt = 1, ngpt
       do ilay = 1, nlay
@@ -419,13 +417,13 @@ contains
           ! Here assume Henyey-Greenstein
           !
           if(tauscat12 > eps) then
-            temp_moms(1) = g2(icol,ilay,igpt)
-            do imom = 2, nmom1
-              temp_moms(imom) = temp_moms(imom-1) * g2(icol,ilay,igpt)
+            temp_mom = g2(icol,ilay,igpt)
+            do imom = 1, nmom1
+               p1(imom, icol,ilay,igpt) = &
+                    (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + &
+                    tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * temp_mom) / tauscat12
+               temp_mom = temp_mom * g2(icol,ilay,igpt)
             end do
-            p1(1:nmom1, icol,ilay,igpt) = &
-                (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(1:nmom1, icol,ilay,igpt) + &
-                 tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * temp_moms(1:nmom1)  ) / tauscat12
             ssa1(icol,ilay,igpt) = tauscat12 / tau12
             tau1(icol,ilay,igpt) = tau12
          end if
@@ -778,7 +776,7 @@ contains
 
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12, tauscat12
-    real(wp), dimension(nmom1) :: temp_moms ! TK
+    real(wp) :: temp_mom ! TK
     integer  :: imom  !TK
 
     !$acc parallel loop collapse(3) &
@@ -786,14 +784,12 @@ contains
     !$acc&     copyin(ssa2(:ncol,:nlay,:nbnd)) &
     !$acc&     copy(ssa1(:ncol,:nlay,:ngpt),p1(:nmom1,:ncol,:nlay,:ngpt)) &
     !$acc&     copyin(tau2(:ncol,:nlay,:nbnd)) &
-    !$acc&     private(temp_moms) &
     !$acc&     copyin(gpt_lims(:,:nbnd),g2(:ncol,:nlay,:nbnd))
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:tau1) &
     !$omp& map(to:ssa2) &
     !$omp& map(tofrom:ssa1, p1) &
     !$omp& map(to:tau2) &
-    !$omp& private(temp_moms) &
     !$omp& map(to:gpt_lims, g2)
     do igpt = 1 , ngpt
       do ilay = 1, nlay
@@ -807,13 +803,13 @@ contains
               !
               ! Here assume Henyey-Greenstein
               !
-              temp_moms(1) = g2(icol,ilay,ibnd)
-              do imom = 2, nmom1
-                temp_moms(imom) = temp_moms(imom-1) * g2(icol,ilay,ibnd)
+              temp_mom = g2(icol,ilay,ibnd)
+              do imom = 1, nmom1
+                 p1(imom, icol,ilay,igpt) = &
+                      (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + &
+                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_mom  ) / max(eps,tauscat12)
+                 temp_mom = temp_mom * g2(icol,ilay,igpt)
               end do
-              p1(1:nmom1, icol,ilay,igpt) = &
-                  (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(1:nmom1, icol,ilay,igpt) + &
-                   tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_moms(1:nmom1)  ) / max(eps,tauscat12)
               ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12)
               tau1(icol,ilay,igpt) = tau12
             endif

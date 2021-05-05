@@ -900,9 +900,9 @@ contains
   ! compilers which do not support GPU versions
   !
   subroutine minmaxloc(i, mask, a, minl, maxl)
+    implicit none
     !$acc routine seq
     !$omp declare target
-    implicit none
     integer :: i, minl, maxl
     logical(wl) :: mask(:,:)
     real(wp) :: a(:,:)

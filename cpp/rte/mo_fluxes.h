@@ -35,29 +35,7 @@ public:
     int ncol = size(gpt_flux_up,1);
     int nlev = size(gpt_flux_up,2);
     int ngpt = size(gpt_flux_up,3);
-    // Check array sizes
-    //  Input arrays
-    if (size(gpt_flux_dn,1) != ncol || size(gpt_flux_dn,2) != nlev || size(gpt_flux_dn,3) != ngpt) {
-      stoprun("reduce: gpt_flux_dn array incorrectly sized");
-    }
-    if (allocated(gpt_flux_dn_dir)) {
-      if (size(gpt_flux_dn_dir,1) != ncol || size(gpt_flux_dn_dir,2) != nlev || size(gpt_flux_dn_dir,3) != ngpt) {
-        stoprun("reduce: gpt_flux_dn_dir array incorrectly sized");
-      }
-    }
-    // Output arrays
-    if (allocated(this->flux_up)) {
-      if (size(this->flux_up,1) != ncol || size(this->flux_up,2) != nlev) { stoprun("reduce: flux_up array incorrectly sized"); }
-    }
-    if (allocated(this->flux_dn)) {
-      if (size(this->flux_dn,1) != ncol || size(this->flux_dn,2) != nlev) { stoprun("reduce: flux_dn array incorrectly sized"); }
-    }
-    if (allocated(this->flux_net)) {
-      if (size(this->flux_net,1) != ncol || size(this->flux_net,2) != nlev) { stoprun("reduce: flux_net array incorrectly sized"); }
-    }
-    if (allocated(this->flux_dn_dir)) {
-      if (size(this->flux_dn_dir,1) != ncol || size(this->flux_dn_dir,2) != nlev) { stoprun("reduce: flux_dn_dir array incorrectly sized"); }
-    }
+
     // Self-consistency -- shouldn't be asking for direct beam flux if it isn't supplied
     if (allocated(this->flux_dn_dir) && ! allocated(gpt_flux_dn_dir)) {
       stoprun("reduce: requesting direct downward flux but this hasn't been supplied");

@@ -250,23 +250,14 @@ public:
   // Derive cloud optical properties from provided cloud physical properties
   // Compute single-scattering properties
   template <class T>  // T is a template for a child class of OpticalPropsArry
-  void cloud_optics(real2d const &clwp, real2d const &ciwp, real2d const &reliq, real2d const &reice, T &optical_props) {
-    int ncol = size(clwp,1);
-    int nlay = size(clwp,2);
+  void cloud_optics(const int ncol, const int nlay, real2d const &clwp, real2d const &ciwp, real2d const &reliq, real2d const &reice, T &optical_props) {
     int nbnd = this->get_nband();
     // Error checking
     if (! (allocated(this->lut_extliq) || allocated(this->pade_extliq))) { stoprun("cloud optics: no data has been initialized"); }
     // Array sizes
-    bool2d liqmsk("liqmsk",size(clwp,1), size(clwp,2));
-    bool2d icemsk("icemsk",size(clwp,1), size(clwp,2));
-    if (size(liqmsk,1) != ncol || size(liqmsk,2) != nlay) { stoprun("cloud optics: liqmask has wrong extents"); }
-    if (size(icemsk,1) != ncol || size(icemsk,2) != nlay) { stoprun("cloud optics: icemsk has wrong extents"); }
-    if (size(ciwp,  1) != ncol || size(ciwp,  2) != nlay) { stoprun("cloud optics: ciwp has wrong extents"); }
-    if (size(reliq, 1) != ncol || size(reliq, 2) != nlay) { stoprun("cloud optics: reliq has wrong extents"); }
-    if (size(reice, 1) != ncol || size(reice, 2) != nlay) { stoprun("cloud optics: reice has wrong extents"); }
-    if (optical_props.get_ncol() != ncol || optical_props.get_nlay() != nlay) {
-      stoprun("cloud optics: optical_props have wrong extents");
-    }
+    bool2d liqmsk("liqmsk",ncol, nlay);
+    bool2d icemsk("icemsk",ncol, nlay);
+
     // Spectral consistency
     if (! this->bands_are_equal(optical_props)) { stoprun("cloud optics: optical properties don't have the same band structure"); }
     if (optical_props.get_nband() != optical_props.get_ngpt() ) {

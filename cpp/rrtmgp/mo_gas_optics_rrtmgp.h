@@ -806,19 +806,18 @@ public:
 
   // Compute gas optical depth and Planck source functions, given temperature, pressure, and composition
   template <class T>
-  void gas_optics(bool top_at_1, real2d const &play, real2d const &plev, real2d const &tlay, real1d const &tsfc,
+  void gas_optics(const int ncol, const int nlay,
+                  bool top_at_1, real2d const &play, real2d const &plev, real2d const &tlay, real1d const &tsfc,
                   GasConcs const &gas_desc, T &optical_props, SourceFuncLW &sources,
                   real2d const &col_dry=real2d(), real2d const &tlev=real2d()) {
-    int ncol  = size(play,1);
-    int nlay  = size(play,2);
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     // Interpolation coefficients for use in source function
-    int2d  jtemp ("jtemp"                         ,size(play,1),size(play,2));
-    int2d  jpress("jpress"                        ,size(play,1),size(play,2));
-    bool2d tropo ("tropo"                         ,size(play,1),size(play,2));
-    real6d fmajor("fmajor",2,2,2,this->get_nflav(),size(play,1),size(play,2));
-    int4d  jeta  ("jeta"  ,2    ,this->get_nflav(),size(play,1),size(play,2));
+    int2d  jtemp ("jtemp"                         ,ncol,nlay);
+    int2d  jpress("jpress"                        ,ncol,nlay);
+    bool2d tropo ("tropo"                         ,ncol,nlay);
+    real6d fmajor("fmajor",2,2,2,this->get_nflav(),ncol,nlay);
+    int4d  jeta  ("jeta"  ,2    ,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, optical_props, jtemp, jpress,
                      jeta, tropo, fmajor, col_dry);
@@ -833,7 +832,6 @@ public:
     #endif
 
     if (allocated(tlev)) {
-      if (size(tlev,1) != ncol || size(tlev,2) != nlay+1) { stoprun("gas_optics(): array tlev has wrong size"); }
       #ifdef RRTMGP_EXPENSIVE_CHECKS
         if (anyLT(tlev,this->temp_ref_min) || anyGT(tlev,this->temp_ref_max)) {
           stoprun("gas_optics(): array tlev has values outside range");
@@ -854,21 +852,20 @@ public:
 
   // Compute gas optical depth given temperature, pressure, and composition
   template <class T>
-  void gas_optics(bool top_at_1, real2d const &play, real2d const &plev, real2d const &tlay, GasConcs const &gas_desc,   
+  void gas_optics(const int ncol, const int nlay,
+                  bool top_at_1, real2d const &play, real2d const &plev, real2d const &tlay, GasConcs const &gas_desc,
                   T &optical_props, real2d &toa_src, real2d const &col_dry=real2d()) {
-    int ncol  = size(play,1);
-    int nlay  = size(play,2);
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     int ngas  = this->get_ngas();
     int nflav = get_nflav();
     
     // Interpolation coefficients for use in source function
-    int2d  jtemp ("jtemp"                         ,size(play,1),size(play,2));
-    int2d  jpress("jpress"                        ,size(play,1),size(play,2));
-    bool2d tropo ("tropo"                         ,size(play,1),size(play,2));
-    real6d fmajor("fmajor",2,2,2,this->get_nflav(),size(play,1),size(play,2));
-    int4d  jeta  ("jeta  ",2    ,this->get_nflav(),size(play,1),size(play,2));
+    int2d  jtemp ("jtemp"                         ,ncol,nlay);
+    int2d  jpress("jpress"                        ,ncol,nlay);
+    bool2d tropo ("tropo"                         ,ncol,nlay);
+    real6d fmajor("fmajor",2,2,2,this->get_nflav(),ncol,nlay);
+    int4d  jeta  ("jeta  ",2    ,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, optical_props, jtemp, jpress, jeta,
                      tropo, fmajor, col_dry);
@@ -909,10 +906,6 @@ public:
     if (! this->is_initialized()) { stoprun("ERROR: spectral configuration not loaded"); }
     // Check for presence of key species in ty_gas_concs; return error if any key species are not present
     this->check_key_species_present(gas_desc);
-    // Check input data sizes and values
-    if (size(play,1) != ncol || size(play,2) != nlay  ) { stoprun("gas_optics(): array play has wrong size"); }
-    if (size(tlay,1) != ncol || size(tlay,2) != nlay  ) { stoprun("gas_optics(): array tlay has wrong size"); }
-    if (size(plev,1) != ncol || size(plev,2) != nlay+1) { stoprun("gas_optics(): array plev has wrong size"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
       if ( anyLT(play,this->press_ref_min) || anyGT(play,this->press_ref_max) ) {
         stoprun("gas_optics(): array play has values outside range");

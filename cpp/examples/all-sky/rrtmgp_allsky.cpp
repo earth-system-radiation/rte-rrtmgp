@@ -280,7 +280,7 @@ int main(int argc , char **argv) {
         yakl::fence();
         start_time = std::chrono::high_resolution_clock::now();
 
-        cloud_optics.cloud_optics(lwp, iwp, rel, rei, clouds);
+        cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
 
         // Solvers
         FluxesByband fluxes;
@@ -292,7 +292,7 @@ int main(int argc , char **argv) {
         fluxes.bnd_flux_net= bnd_flux_net;
 
         // Calling with an empty col_dry parameter
-        k_dist.gas_optics(top_at_1, p_lay, p_lev, t_lay, t_sfc, gas_concs, atmos, lw_sources, real2d(), t_lev);
+        k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay, t_sfc, gas_concs, atmos, lw_sources, real2d(), t_lev);
         clouds.increment(atmos);
         rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, atmos, top_at_1, lw_sources, emis_sfc, fluxes);
 

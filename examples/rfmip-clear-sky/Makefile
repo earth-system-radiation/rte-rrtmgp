@@ -1,8 +1,6 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
 #
-RRTMGP_ROOT  = ../..
-NFHOME       = /usr
 RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files

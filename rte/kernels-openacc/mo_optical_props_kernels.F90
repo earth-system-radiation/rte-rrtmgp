@@ -64,15 +64,9 @@ contains
     !$acc&     copyin(f(:ncol,:nlay,:ngpt)) &
     !$acc&     copy(g(:ncol,:nlay,:ngpt))
     !$omp target teams distribute parallel do simd collapse(3) &
-<<<<<<< HEAD
-    !$omp& map(tofrom:ssa(:ncol, :nlay, :ngpt), tau(:ncol, :nlay, :ngpt)) &
-    !$omp& map(to:f(:ncol, :nlay, :ngpt)) &
-    !$omp& map(tofrom:g(:ncol, :nlay, :ngpt))
-=======
     !$omp& map(tofrom:ssa, tau) &
     !$omp& map(to:f) &
     !$omp& map(tofrom:g)
->>>>>>> origin/develop
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -103,11 +97,7 @@ contains
     !$acc  parallel loop collapse(3) &
     !$acc&     copy(tau(:ncol,:nlay,:ngpt),ssa(:ncol,:nlay,:ngpt),g(:ncol,:nlay,:ngpt))
     !$omp target teams distribute parallel do simd collapse(3) &
-<<<<<<< HEAD
-    !$omp& map(tofrom:tau(:ncol, :nlay, :ngpt), ssa(:ncol, :nlay, :ngpt), g(:ncol, :nlay, :ngpt))
-=======
     !$omp& map(tofrom:tau, ssa, g)
->>>>>>> origin/develop
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol

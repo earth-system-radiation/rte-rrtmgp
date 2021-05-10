@@ -131,7 +131,8 @@ contains
     real(wp), dimension(ncol_l, nexp_l) :: temp2D
     ! ---------------------------
     if(any([ncol_l, nlay_l, nexp_l]  == 0)) call stop_on_err("read_and_block_sw_bc: Haven't read problem size yet.")
-    if(mod(ncol_l*nexp_l, blocksize) /= 0 ) call stop_on_err("read_and_block_sw_bc: number of columns doesn't fit evenly into blocks.")
+    if(mod(ncol_l*nexp_l, blocksize) /= 0 ) call stop_on_err(&
+    "read_and_block_sw_bc: number of columns doesn't fit evenly into blocks.")
     nblocks = (ncol_l*nexp_l)/blocksize
     !
     ! Check that output arrays are sized correctly : blocksize, nlay, (ncol * nexp)/blocksize
@@ -374,7 +375,8 @@ contains
       if(string_in_array(gas_names(g), ['h2o', 'o3 ', 'no2'])) cycle
 
       ! Read the values as a function of experiment
-      gas_conc_temp_1d = read_field(ncid, trim(names_in_file(g)) // "_GM", nexp_l) * read_scaling(ncid, trim(names_in_file(g)) // "_GM")
+      gas_conc_temp_1d = read_field(ncid, trim(names_in_file(g)) // "_GM", nexp_l) * read_scaling(ncid, &
+      trim(names_in_file(g)) // "_GM")
 
       do b = 1, nblocks
         ! Does every value in this block belong to the same experiment?

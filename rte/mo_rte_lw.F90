@@ -241,7 +241,7 @@ contains
     !$omp target enter data map(alloc:gpt_flux_dn, gpt_flux_up)
     !$acc        enter data create(   sfc_emis_gpt)
     !$omp target enter data map(alloc:sfc_emis_gpt)
-    !$omp        enter data create(   flux_up_Jac) if(do_Jacobians)
+    !$acc        enter data create(   flux_up_Jac) if(do_Jacobians)
     !$omp target enter data map(alloc:flux_up_Jac) if(do_Jacobians)
 
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
@@ -355,7 +355,11 @@ contains
     !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, sfc_emis_gpt)
     !$acc        exit data delete(optical_props)
     !!$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source,sources)
+<<<<<<< HEAD
     !$omp        exit data copyout( flux_up_Jac) if(do_Jacobians)
+=======
+    !$acc        exit data copyout( flux_up_Jac) if(do_Jacobians)
+>>>>>>> origin/develop
     !$omp target exit data map(from:flux_up_Jac) if(do_Jacobians)
 
   end function rte_lw

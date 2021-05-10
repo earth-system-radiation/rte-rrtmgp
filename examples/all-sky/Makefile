@@ -51,7 +51,7 @@ tests:
 	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc 128
 
 check:
-	python3 ./compare-to-reference.py
+	python ./compare-to-reference.py
 
 clean:
 	-rm rrtmgp_allsky *.o *.optrpt ../*.optrpt *.mod

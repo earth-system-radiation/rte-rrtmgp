@@ -64,7 +64,7 @@ tests:
 	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
 
 check:
-	python3 verification.py
+	python verification.py
 
 clean:
 	-rm clear_sky_regression *.o *.optrpt

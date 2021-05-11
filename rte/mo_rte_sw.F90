@@ -63,7 +63,6 @@ contains
     ! Local variables
     !
     integer :: ncol, nlay, ngpt, nband
-    integer :: icol
 
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     real(wp), dimension(:,:),   allocatable :: sfc_alb_dir_gpt, sfc_alb_dif_gpt

@@ -217,24 +217,6 @@ contains
 
   end function write_4d_field
   !--------------------------------------------------------------------------------------------------------------------
-  function write_string(ncid, varName, var) result(err_msg)
-    integer,                    intent(in) :: ncid
-    character(len=*),           intent(in) :: varName
-    character(len=*),           intent(in) :: var
-    character(len=128)                     :: err_msg
-
-    integer :: varid
-
-    err_msg = ""
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) then
-      err_msg = "write_field: can't find variable " // trim(varName)
-      return
-    end if
-    if(nf90_put_var(ncid, varid, var)  /= NF90_NOERR) &
-      err_msg = "write_field: can't write variable " // trim(varName)
-
-  end function write_string
-  !--------------------------------------------------------------------------------------------------------------------
   function read_logical_vec(ncid, varName, nx)
     integer,          intent(in) :: ncid
     character(len=*), intent(in) :: varName
@@ -308,7 +290,7 @@ contains
     character(len=*), intent(in) :: dimName
     integer,          intent(in) :: dimLength
 
-    integer                 :: i, dimid
+    integer                 :: dimid
 
     if(dim_exists(ncid, dimName)) then
       if (dimLength /= get_dim_size(ncid, trim(dimName))) &

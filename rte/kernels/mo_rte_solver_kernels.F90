@@ -387,7 +387,7 @@ contains
     real(wp), dimension(ncol            ), intent( in) :: mu0          ! cosine of solar zenith angle
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
                                                                        ! Top level must contain incident flux boundary condition
-    integer :: icol, ilev, igpt
+    integer :: ilev, igpt
     real(wp) :: mu0_inv(ncol)
 
     ! ------------------------------------

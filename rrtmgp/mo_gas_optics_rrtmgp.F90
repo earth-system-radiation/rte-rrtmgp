@@ -247,7 +247,7 @@ contains
     real(wp),    dimension(2,2,2,get_nflav(this),size(play,dim=1), size(play,dim=2)) :: fmajor
     integer,     dimension(2,    get_nflav(this),size(play,dim=1), size(play,dim=2)) :: jeta
 
-    integer :: ncol, nlay, ngpt, nband, ngas, nflav
+    integer :: ncol, nlay, ngpt, nband
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)

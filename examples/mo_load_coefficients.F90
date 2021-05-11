@@ -128,7 +128,7 @@ contains
     ! Read the many arrays
     !
     gas_names         = read_char_vec(ncid, 'gas_names', nabsorbers)
-    key_species       = read_field(ncid, 'key_species',  2, nlayers, nbnds)
+    key_species       = int(read_field(ncid, 'key_species',  2, nlayers, nbnds))
     band_lims         = read_field(ncid, 'bnd_limits_wavenumber', 2, nbnds)
     band2gpt          = int(read_field(ncid, 'bnd_limits_gpt', 2, nbnds))
     press_ref         = read_field(ncid, 'press_ref', npress)
@@ -161,9 +161,9 @@ contains
     scaling_gas_upper &
                       = read_char_vec(ncid, 'scaling_gas_upper', nminor_absorber_intervals_upper)
     kminor_start_lower &
-                      = read_field(ncid, 'kminor_start_lower', nminor_absorber_intervals_lower)
+                      = int(read_field(ncid, 'kminor_start_lower', nminor_absorber_intervals_lower))
     kminor_start_upper &
-                      = read_field(ncid, 'kminor_start_upper', nminor_absorber_intervals_upper)
+                      = int(read_field(ncid, 'kminor_start_upper', nminor_absorber_intervals_upper))
     vmr_ref           = read_field(ncid, 'vmr_ref', nlayers, nextabsorbers, ntemps)
 
     kmajor            = read_field(ncid, 'kmajor',  ngpts, nmixingfracs,  npress+1, ntemps)

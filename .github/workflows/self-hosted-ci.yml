@@ -54,11 +54,11 @@ jobs:
         echo LD_LIBRARY_PATH is:
         echo $LD_LIBRARY_PATH
         ' > compiler_modules
+    - name: Check out code
+      uses: actions/checkout@v2
     - name: Stage files
       run: |
         set -e
-        pwd -P
-        ls -l
         cd examples/rfmip-clear-sky
         source ./stage_files.sh
     - name: Make

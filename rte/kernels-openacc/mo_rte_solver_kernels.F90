@@ -717,7 +717,7 @@ contains
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_up  ! Diffuse radiation emitted by the layer
     real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up    ! Radiances [W/m2-str]
     logical(wl),                           intent(in   ) :: do_Jacobians
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables
     integer :: igpt, ilev, icol
     ! ---------------------------------------------------

@@ -220,7 +220,7 @@ contains
     !
     ! Ensure values of tau, ssa, and g are reasonable if using scattering
     !
-    if(check_values) error_msg =  optical_props%validate()
+    error_msg =  optical_props%validate()
 
     if(len_trim(error_msg) > 0) then
       if(len_trim(optical_props%get_name()) > 0) &

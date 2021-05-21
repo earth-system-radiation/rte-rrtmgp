@@ -1,0 +1,84 @@
+name: Self-hosted CI
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  CI:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        include:
+        - config_name: pgi_default_gpu
+          compiler_base: pgi
+          compiler_module: pgi
+          accel_module: craype-accel-nvidia60
+          # Generic accelerator flag
+          FCFLAGS: "-O3 -acc -Mallocatable=03 -gopt"
+          RTE_KERNELS: openacc
+          RUN_CMD: "srun -C gpu -A pr55 -p cscsci"
+        - config_name: cce-cpu-icon-production
+          compiler_base: cray
+          compiler_module: cce-icon/11.0.0
+          accel_module: ""
+          # Production flags for Icon model
+          RTE_KERNELS: default
+          FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
+          RUN_CMD: "srun -C gpu -A pr55 -p cscsci"
+        - config_name: cce-openmp
+          compiler_base: cray
+          compiler_module: cce/11.0.0
+          accel_module: craype-accel-nvidia60
+          # OpenMP flags from Nichols Romero (Argonne)
+          FCFLAGS: "-hnoacc -homp -O0"
+          RTE_KERNELS: openacc
+          RUN_CMD: "srun -C gpu -A pr55 -p cscsci"
+    env:
+      FCFLAGS: ${{ matrix.FCFLAGS }}
+      RTE_KERNELS: ${{ matrix.RTE_KERNELS }}
+      RUN_CMD: ${{ matrix.RUN_CMD }}
+    steps:
+    - name: Create modlue environment
+      run: |
+        set -e
+        echo '
+        module load daint-gpu
+        export PATH=$CRAY_BINUTILS_BIN:$PATH
+        module swap PrgEnv-cray PrgEnv-${{ matrix.compiler_base }}
+        module swap ${{ matrix.compiler_base }} ${{ matrix.compiler_module }}
+        module load ${{ matrix.accel_module }}
+        module load cray-netcdf cray-hdf5
+        export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+        export CUDA_HOME=$CUDATOOLKIT_HOME
+        echo Compiler Environment:
+        module list
+        echo LD_LIBRARY_PATH is:
+        echo $LD_LIBRARY_PATH
+        ' > compiler_modules
+    - name: Stage files
+      run: |
+        set -e
+        cd examples/rfmip-clear-sky
+        source ./stage_files.sh
+    - name: Make
+      run: |
+        set -e
+        source compiler_modules
+        export RRTMGP_ROOT=$PWD
+        export FC=ftn
+        make clean
+        make libs
+    - name: Run
+      run: |
+        set -e
+        source compiler_modules
+        module load cray-python
+        export RRTMGP_ROOT=$PWD
+        make tests
+    - name: Check results
+      run: |
+        set -e
+        module load daint-gpu
+        export RRTMGP_ROOT=$PWD
+        # This module will unload some of the build modules, so do the checks separately
+        module load netcdf-python
+        make check

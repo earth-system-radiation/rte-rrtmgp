@@ -57,6 +57,8 @@ jobs:
     - name: Stage files
       run: |
         set -e
+        pwd -P
+        ls -l
         cd examples/rfmip-clear-sky
         source ./stage_files.sh
     - name: Make

@@ -37,7 +37,9 @@ jobs:
       RTE_KERNELS: ${{ matrix.RTE_KERNELS }}
       RUN_CMD: ${{ matrix.RUN_CMD }}
     steps:
-    - name: Create modlue environment
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Create module environment
       run: |
         set -e
         echo '
@@ -54,8 +56,6 @@ jobs:
         echo LD_LIBRARY_PATH is:
         echo $LD_LIBRARY_PATH
         ' > compiler_modules
-    - name: Check out code
-      uses: actions/checkout@v2
     - name: Stage files
       run: |
         set -e

@@ -85,6 +85,8 @@ contains
     ngpt  = k_dist%get_ngpt()
     nband = k_dist%get_nband()
 
+    !$acc update if_present host(p_lay(1,1), p_lay(1,nlay:nlay))
+    !$omp target update from(p_lay(1,1), p_lay(1,nlay:nlay))
     top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
 
     ! ------------------------------------------------------------------------------------
@@ -214,6 +216,8 @@ contains
     ngpt  = k_dist%get_ngpt()
     nband = k_dist%get_nband()
 
+    !$acc update if_present host(p_lay(1,1), p_lay(1,nlay:nlay))
+    !$omp target update from(p_lay(1,1), p_lay(1,nlay:nlay))
     top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
 
     ! ------------------------------------------------------------------------------------

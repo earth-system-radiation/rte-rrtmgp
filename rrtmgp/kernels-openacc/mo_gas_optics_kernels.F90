@@ -229,6 +229,9 @@ contains
     ! ---------------------
     ! Layer limits of upper, lower atmospheres
     ! ---------------------
+
+    !$acc update if_present host(play(1,1), play(1,nlay:nlay))
+    !$omp target update from(play(1,1), play(1,nlay:nlay))
     top_at_1 = play(1,1) < play(1, nlay)
     if(top_at_1) then
       !$acc parallel loop

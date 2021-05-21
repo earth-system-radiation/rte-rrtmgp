@@ -67,14 +67,14 @@ contains
     ! local indexes
     integer :: icol, ilay, iflav, igases(2), itropo, itemp
 
-    !$acc enter data copyin(flavor,press_ref_log,temp_ref,vmr_ref,play,tlay,col_gas)
+    !$acc data copyin(flavor,press_ref_log,temp_ref,vmr_ref,play,tlay,col_gas) &
+    !$acc      copyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor) &
+    !$acc      create(ftemp,fpress)
     !$omp target enter data map(to:flavor, press_ref_log, temp_ref, vmr_ref, play, tlay, col_gas)
-    !$acc enter data create(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor)
     !$omp target enter data map(alloc:jtemp, jpress, tropo, jeta, col_mix, fmajor, fminor)
-    !$acc enter data create(ftemp,fpress)
     !$omp target enter data map(alloc:ftemp, fpress)
 
-    !$acc parallel loop gang vector collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(none)
     !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -96,7 +96,7 @@ contains
     ! loop over implemented combinations of major species
     ! PGI BUG WORKAROUND: if present(vmr_ref) isn't there, OpenACC runtime
     ! thinks it isn't present.
-    !$acc parallel loop gang vector collapse(4) private(igases) present(vmr_ref)
+    !$acc parallel loop gang vector collapse(4) default(none) private(igases) present(vmr_ref)
     !$omp target teams distribute parallel do simd collapse(4) private(igases)
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -132,11 +132,9 @@ contains
       end do ! icol,ilay
     end do
 
-    !$acc exit data delete(flavor,press_ref_log,temp_ref,vmr_ref,play,tlay,col_gas)
+    !$acc end data
     !$omp target exit data map(release:flavor, press_ref_log, temp_ref, vmr_ref, play, tlay, col_gas)
-    !$acc exit data copyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor)
     !$omp target exit data map(from:jtemp, jpress, tropo, jeta, col_mix, fmajor, fminor)
-    !$acc exit data delete(ftemp,fpress)
     !$omp target exit data map(release:ftemp, fpress)
 
   end subroutine interpolation
@@ -671,7 +669,7 @@ contains
     ! Explicitly unroll a time-consuming loop here to increase instruction-level parallelism on a GPU
     ! Helps to achieve higher bandwidth
     !
-    !$acc parallel loop collapse(3)
+    !$acc parallel loop present(planck_function) collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
     do icol = 1, ncol, 2
       do ilay = 1, nlay
@@ -703,7 +701,7 @@ contains
     !
     ! Same unrolling as mentioned before
     !
-    !$acc parallel loop collapse(3)
+    !$acc parallel loop present(planck_function) collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
     do icol = 1, ncol, 2
       do ilay = 1, nlay

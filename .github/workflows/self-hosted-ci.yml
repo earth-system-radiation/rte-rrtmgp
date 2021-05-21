@@ -15,7 +15,6 @@ jobs:
           # Generic accelerator flag
           FCFLAGS: "-O3 -acc -Mallocatable=03 -gopt"
           RTE_KERNELS: openacc
-          RUN_CMD: "srun -C gpu -A pr55 -p cscsci"
         - config_name: cce-cpu-icon-production
           compiler_base: cray
           compiler_module: cce-icon/11.0.0
@@ -23,7 +22,6 @@ jobs:
           # Production flags for Icon model
           RTE_KERNELS: default
           FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
-          RUN_CMD: "srun -C gpu -A pr55 -p cscsci"
         - config_name: cce-openmp
           compiler_base: cray
           compiler_module: cce/11.0.0
@@ -31,11 +29,10 @@ jobs:
           # OpenMP flags from Nichols Romero (Argonne)
           FCFLAGS: "-hnoacc -homp -O0"
           RTE_KERNELS: openacc
-          RUN_CMD: "srun -C gpu -A pr55 -p cscsci"
     env:
       FCFLAGS: ${{ matrix.FCFLAGS }}
       RTE_KERNELS: ${{ matrix.RTE_KERNELS }}
-      RUN_CMD: ${{ matrix.RUN_CMD }}
+      RUN_CMD: "srun -C gpu -A pr55 -p cscsci -t 15:00"
     steps:
     - name: Check out code
       uses: actions/checkout@v2

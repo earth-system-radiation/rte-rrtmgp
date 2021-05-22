@@ -4,6 +4,7 @@ source $MODULESHOME/init/bash
 module purge
 module load cmake netcdf
 
+export NCINCLUDE="`ncxx4-config --includedir`;`nc-config --includedir`" # must be semi-colon seperated
 export NCFLAGS="`ncxx4-config --libs`"
 export CC=gcc
 export CXX=g++

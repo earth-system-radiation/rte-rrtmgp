@@ -4,7 +4,8 @@ source $MODULESHOME/init/bash
 module purge
 module load DefApps gcc cmake cuda netcdf-cxx4 netcdf nco
 
-export NCFLAGS="`ncxx4-config --libs`"
+export NCINCLUDE="`ncxx4-config --includedir`;`nc-config --includedir`" # must be semi-colon seperated
+export NCFLAGS="`ncxx4-config --libs` `nc-config --libs`"
 export CC=gcc
 export CXX=g++
 export CXXFLAGS="-O3"

@@ -18,34 +18,6 @@
 !   These are only accessed if cloud_fraction(icol,ilay) > 0 so many values don't need to be filled in
 !
 ! -------------------------------------------------------------------------------------------------
-! The following macros are supporting the use of Fortran 2008 intrinsic findloc. By today this has
-! only limited compiler support so we provide a workaround, which hopefully can be removed soon.
-! The implemented workaround does support only the cases required by this module and is by far not
-! a full implementation.
-
-#define USE_F2008_FINDLOC 1
-
-#ifdef NAGFOR
-#undef USE_F2008_FINDLOC
-#endif
-
-#ifdef __GFORTRAN__ 
-#if __GNUC__ < 9
-#undef USE_F2008_FINDLOC
-#endif
-#endif
-
-#ifdef __INTEL_COMPILER
-#if __INTEL_COMPILER < 1800
-#undef USE_F2008_FINDLOC
-#endif
-#endif
-
-#ifdef __PGIC__
-#undef USE_F2008_FINDLOC
-#endif
-
-! -------------------------------------------------------------------------------------------------
 module mo_cloud_sampling
   use mo_rte_kind,      only: wp, wl
   use mo_optical_props, only: ty_optical_props_arry, &
@@ -193,13 +165,8 @@ contains
         cloud_mask(icol,1:nlay,1:ngpt) = .false.
         cycle
       end if
-#ifdef USE_F2008_FINDLOC      
       cloud_lay_fst = findloc(cloud_mask_layer, .true., dim=1)
       cloud_lay_lst = findloc(cloud_mask_layer, .true., dim=1, back = .true.)
-#else
-      cloud_lay_fst = my_findloc(cloud_mask_layer, .true., dim=1)
-      cloud_lay_lst = my_findloc(cloud_mask_layer, .true., dim=1, back = .true.)
-#endif
       cloud_mask(icol,1:cloud_lay_fst,1:ngpt) = .false.
 
       ilay = cloud_lay_fst
@@ -283,13 +250,8 @@ contains
         cloud_mask(icol,1:nlay,1:ngpt) = .false.
         cycle
       end if
-#ifdef USE_F2008_FINDLOC      
       cloud_lay_fst = findloc(cloud_mask_layer, .true., dim=1)
       cloud_lay_lst = findloc(cloud_mask_layer, .true., dim=1, back = .true.)
-#else
-      cloud_lay_fst = my_findloc(cloud_mask_layer, .true., dim=1)
-      cloud_lay_lst = my_findloc(cloud_mask_layer, .true., dim=1, back = .true.)
-#endif
       cloud_mask(icol,1:cloud_lay_fst,1:ngpt) = .false.
 
       ilay = cloud_lay_fst
@@ -343,34 +305,4 @@ contains
       end do
     end do
   end subroutine apply_cloud_mask
-
-#ifndef USE_F2008_FINDLOC
-  function my_findloc(array, val, dim, back) result(idx)
-    logical, intent(in) :: array(:)
-    logical, intent(in) :: val
-    integer, intent(in), optional :: dim
-    logical, intent(in), optional :: back
-    integer :: i, idx, lb, ub, step
-
-    lb = 1
-    ub = size(array)
-    step = 1
-    if (present(back)) then
-      if (back) then
-        lb = size(array)
-        ub = 1
-        step = -1
-      endif
-    endif
-
-    do i = lb, ub, step
-      if (array(i)) then
-        idx = i
-        exit
-      endif
-    enddo
-
-  end function my_findloc
-#endif
-
 end module mo_cloud_sampling

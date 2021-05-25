@@ -22,7 +22,6 @@ module mo_rte_config
   logical(wl), protected, public :: check_extents = .true.
   logical(wl), protected, public :: check_values  = .true.
 
-  logical(wl), parameter, public :: compute_Jac = .false.
   interface rte_config_checks
     module procedure rte_config_checks_each, rte_config_checks_all
   end interface

@@ -39,22 +39,4 @@ module mo_rte_kind
   integer, parameter :: wl = kind(.true.)
 #endif
 
-contains
-
-  function rte_host_kind_check(host_sp, host_dp, host_i4, host_i8) result(matches)
-    logical :: matches 
-    integer, intent(in) :: host_sp
-    integer, intent(in) :: host_dp
-    integer, intent(in) :: host_i4
-    integer, intent(in) :: host_i8
-
-    matches = .true.
-
-    if (host_sp /= sp) matches = .false.
-    if (host_dp /= dp) matches = .false.
-    if (host_i4 /= i4) matches = .false.
-    if (host_i8 /= i8) matches = .false.    
-
-  end function rte_host_kind_check
-    
 end module mo_rte_kind

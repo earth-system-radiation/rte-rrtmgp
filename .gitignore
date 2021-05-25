@@ -22,11 +22,11 @@ __pycache__
 /mod/*
 
 # Test stage files:
+/.testcache/*
 /examples/**/*.test.log
 /examples/all-sky/ref/rrtmgp-allsky.nc
 /examples/all-sky/rrtmgp-allsky.nc
 /examples/rfmip-clear-sky/**/*_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
-/examples/rfmip-clear-sky/generate-output-file-templates.py
 /examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
 /examples/rfmip-clear-sky/timing.*
 /tests/**/*.test.log

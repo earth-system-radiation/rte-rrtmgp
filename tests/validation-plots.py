@@ -36,11 +36,12 @@ def make_comparison_plot(variants, labels, reference, vscale, col_dim="site", la
         # Reverse vertical ordering
         plt.ylim(vscale.max(), vscale.min())
 
-def construct_lbl_esgf_name(var):
+def construct_lbl_esgf_name(var, esgf_node="llnl"):
     #
     # For a given variable name, provide the OpenDAP URL for the LBLRM line-by-line results
     #
     prefix = "http://esgf3.dkrz.de/thredds/dodsC/cmip6/RFMIP/AER/LBLRTM-12-8/rad-irf/r1i1p1f1/Efx/"
+    if(esgf_node == "llnl"): prefix = "http://esgf-data1.llnl.gov/thredds/dodsC/css03_data/CMIP6/RFMIP/AER/LBLRTM-12-8/rad-irf/r1i1p1f1/Efx/"
     return(prefix + var + "/gn/v20190514/" + var + "_Efx_LBLRTM-12-8_rad-irf_r1i1p1f1_gn.nc")
 
 ########################################################################
@@ -68,6 +69,9 @@ if __name__ == '__main__':
                                       reset_coords().swap_dims({"level":"plev"}).interp(plev=plev) for i in np.arange(0,  gp.site.size)], dim = 'site')
 
     cols = cc.glasbey_dark
+    plev.load()
+    gpi.load()
+    lbli.load()
     with PdfPages('validation-figures.pdf') as pdf:
         ########################################################################
         # Longwave

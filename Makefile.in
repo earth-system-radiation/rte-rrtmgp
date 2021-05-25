@@ -4,6 +4,9 @@ srcdir:= @srcdir@
 # Path to the directory with the Fortran module files:
 moddir:= mod
 
+# Path to the directory with the cached files for testing:
+testcachedir:= @testcachedir@
+
 # Paths to the installation directories:
 prefix:= @prefix@
 exec_prefix:= @exec_prefix@
@@ -57,23 +60,21 @@ endif
 lib_LIBRARIES= librrtmgp.a librte.a
 
 librte_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rte -name '*.F90'))
-# If OpenACC is disabled, simply filter-out OpenACC source files:
-@OPENACC_DISABLED@librte_a_SOURCES:= $(filter-out rte/kernels/openacc/%,$(librte_a_SOURCES))
-# Otherwise, filter-out non-OpenACC files that have OpenACC versions and keep
-# the rest:
-@OPENACC_ENABLED@librte_a_SOURCES:= $(filter-out $(patsubst rte/kernels/openacc/%,rte/kernels/default/%,$(filter rte/kernels/openacc/%,$(librte_a_SOURCES))),$(librte_a_SOURCES))
+# If GPU kernels are disabled, simply filter-out the respective source files:
+@GPU_DISABLED@librte_a_SOURCES:= $(filter-out rte/kernels-openacc/%,$(librte_a_SOURCES))
+# Otherwise, filter-out non-GPU files that have GPU versions and keep the rest:
+@GPU_ENABLED@librte_a_SOURCES:= $(filter-out $(patsubst rte/kernels-openacc/%,rte/kernels/%,$(filter rte/kernels-openacc/%,$(librte_a_SOURCES))),$(librte_a_SOURCES))
 
 librrtmgp_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rrtmgp -name '*.F90'))
-# If OpenACC is disabled, simply filter-out the related source files:
-@OPENACC_DISABLED@librrtmgp_a_SOURCES:= $(filter-out rrtmgp/kernels/openacc/%,$(librrtmgp_a_SOURCES))
-# Otherwise, filter-out non-OpenACC files that have OpenACC versions and keep
-# the rest:
-@OPENACC_ENABLED@librrtmgp_a_SOURCES:= $(filter-out $(patsubst rrtmgp/kernels/openacc/%,rrtmgp/kernels/default/%,$(filter rrtmgp/kernels/openacc/%,$(librrtmgp_a_SOURCES))),$(librrtmgp_a_SOURCES))
+# If GPU kernels are disabled, simply filter-out the respective source files:
+@GPU_DISABLED@librrtmgp_a_SOURCES:= $(filter-out rrtmgp/kernels-openacc/%,$(librrtmgp_a_SOURCES))
+# Otherwise, filter-out non-GPU files that have GPU versions and keep the rest:
+@GPU_ENABLED@librrtmgp_a_SOURCES:= $(filter-out $(patsubst rrtmgp/kernels-openacc/%,rrtmgp/kernels/%,$(filter rrtmgp/kernels-openacc/%,$(librrtmgp_a_SOURCES))),$(librrtmgp_a_SOURCES))
 
 # Dependency files of the libraries:
 lib_dep_files= $(addsuffix .d,$(librte_a_SOURCES) $(librrtmgp_a_SOURCES))
 
-# Programs that are built by default time:
+# Programs that are built by default:
 noinst_PROGRAMS=
 # Programs that are built only when 'make check':
 check_PROGRAMS=
@@ -129,36 +130,26 @@ mostlyclean:
 
 # Delete files generated at the building stage:
 clean: mostlyclean
+	rm -rf examples/all-sky/all-sky.test.log \
+	       examples/all-sky/ref \
+	       examples/all-sky/rrtmgp-allsky.nc \
+	       examples/rfmip-clear-sky/reference \
+	       examples/rfmip-clear-sky/rfmip-clear-sky.test.log \
+	       examples/rfmip-clear-sky/timing.* \
+	       tests/clear_sky_regression.test.log \
+	       tests/test_atmospheres.nc \
+	       $(testcachedir)
+	find examples/rfmip-clear-sky -type l -delete
+	find . -name '*.pyc' -delete -o -name '*.pyo' -delete -o -name '__pycache__' -delete
 
 # Delete everything generated at the configure stage (and clean the created
 # directories if they are empty):
 distclean: clean
-	find . -name '*.pyc' -delete -o -name '*.pyo' -delete -o -name '__pycache__' -delete
 	rm -f $(lib_dep_files) $(prog_dep_files)
 	rm -f $(dir_files)
 	rm -rf examples/all-sky/all-sky.test \
-	       examples/all-sky/all-sky.test.log \
-	       examples/all-sky/ref \
-	       examples/all-sky/rrtmgp-allsky.nc \
-	       examples/rfmip-clear-sky/generate-output-file-templates.py \
-	       examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc \
-	       examples/rfmip-clear-sky/reference \
 	       examples/rfmip-clear-sky/rfmip-clear-sky.test \
-	       examples/rfmip-clear-sky/rfmip-clear-sky.test.log \
-	       examples/rfmip-clear-sky/rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
-	       examples/rfmip-clear-sky/rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
-	       examples/rfmip-clear-sky/rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
-	       examples/rfmip-clear-sky/rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
-	       examples/rfmip-clear-sky/timing.* \
-	       tests/clear_sky_regression.test \
-	       tests/clear_sky_regression.test.log \
-	       tests/test_atmospheres.nc
-	test '.' = '$(srcdir)' || \
-	  rm -f examples/all-sky/garand-atmos-1.nc \
-	        extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc \
-	        extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc \
-	        rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc \
-	        rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+	       tests/clear_sky_regression.test
 	@for dir in $(moddir); do \
           if test -d "$$dir"; then \
             echo "find '$$dir' -type d -empty -delete"; \
@@ -178,7 +169,7 @@ distclean: clean
 install: install-libs install-mods
 
 # Check rule:
-check: all $(check_PROGRAMS)
+check: all $(check_PROGRAMS) @TESTS_ENABLED@ $(testcachedir)/.cache
 	@fail=; \
 	for dir in 'examples/all-sky' 'examples/rfmip-clear-sky' 'tests'; do \
 	  (dir_fail=; cd "$$dir" && \
@@ -237,6 +228,15 @@ sanitize-mod-proxies:
 # Directory creation rule:
 %/.dirstamp:
 	$(silent_MKDIR)@MKDIR_P@ $(@D) && touch $@
+
+# We try not to depend on the contents of 'stage_files.sh'. Therefore, we
+# introduce the following sentinel file, which gets created once the script is
+# run successfully inside the test cache directory. The drawback is that we
+# cannot recover in case one of the downloaded files is accidentally deleted:
+$(testcachedir)/.cache:| $(testcachedir)/.dirstamp
+	@cd $(@D) && \
+	. @abs_top_srcdir@/examples/rfmip-clear-sky/stage_files.sh && \
+	touch $(@F)
 
 # Fortran dependency generation rule:
 %.F90.d: %.F90 Makefile | $(dir_files)

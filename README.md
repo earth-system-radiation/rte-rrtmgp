@@ -18,7 +18,7 @@ Example programs and documentation are evolving - please see examples/ in the re
 Relative to commit `69d36c9` to `master` on Apr 20, 2020, the required arguments to both the longwave and shortwave versions of `ty_gas_optics_rrtmgp%load()`have changed.
 
 
-## Building the libraries.
+## Building the libraries, examples, and unit-testing codes.
 
 This branch contains a version of the library for [ICON](https://code.mpimet.mpg.de/projects/iconpublic) with an [Autoconf](https://www.gnu.org/software/autoconf/)-based building system from [autoconf](https://github.com/RobertPincus/rte-rrtmgp/tree/autoconf).
 The libraries can be configured, built, tested and installed following the standard workflow:
@@ -51,4 +51,4 @@ The configure scripts supports the following use cases:
 
 ## Examples
 
-Two [examples](./examples) are provided, one for [clear skies](./examples/rfmip-clear-sky) and one [including clouds](./examples/all-sky). See the README file and codes in each directory for further information.
+Two [examples](./examples) are provided, one for [clear skies](./examples/rfmip-clear-sky) and one [including clouds](./examples/all-sky). The [tests](./tests) contains regression testing (e.g. to ensure that answers are independent of orientation) and unit testing (to be sure all the code paths are tested). See the README file and codes in each directory for further information.

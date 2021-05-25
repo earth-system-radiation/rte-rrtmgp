@@ -25,8 +25,6 @@ module mo_fluxes
                          only: sum_broadband, net_broadband
   implicit none
   private
-  public :: are_desired_broadband
-  public :: reduce_broadband
   ! -----------------------------------------------------------------------------------------------
   !
   ! Abstract base class

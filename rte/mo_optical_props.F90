@@ -164,6 +164,7 @@ module mo_optical_props
     procedure, public  :: validate => validate_1scalar
     procedure, public  :: get_subset => subset_1scl_range
     procedure, public  :: delta_scale => delta_scale_1scl
+    procedure, public  :: finalize_1scl
 
     procedure, private :: alloc_only_1scl
     procedure, private :: init_and_alloc_1scl
@@ -179,6 +180,7 @@ module mo_optical_props
     procedure, public  :: validate => validate_2stream
     procedure, public  :: get_subset => subset_2str_range
     procedure, public  :: delta_scale => delta_scale_2str
+    procedure, public  :: finalize_2str
 
     procedure, private :: alloc_only_2str
     procedure, private :: init_and_alloc_2str
@@ -195,6 +197,7 @@ module mo_optical_props
     procedure, public :: get_subset => subset_nstr_range
     procedure, public :: delta_scale => delta_scale_nstr
     procedure, public :: get_nmom
+    procedure, public :: finalize_nstr
 
     procedure, private :: alloc_only_nstr
     procedure, private :: init_and_alloc_nstr
@@ -350,16 +353,14 @@ contains
     character(len=128)              :: err_message
 
     err_message = ""
-    if(.not. this%is_initialized()) then
+    if(.not. this%is_initialized()) &
       err_message = "optical_props%alloc: spectral discretization hasn't been provided"
-      return
-    end if
-    if(any([ncol, nlay] <= 0)) then
+    if(any([ncol, nlay] <= 0)) &
       err_message = "optical_props%alloc: must provide positive extents for ncol, nlay"
-    else
-      if(allocated(this%tau)) deallocate(this%tau)
-      allocate(this%tau(ncol,nlay,this%get_ngpt()))
-    end if
+    if(err_message /= "") return
+
+    if(allocated(this%tau)) deallocate(this%tau)
+    allocate(this%tau(ncol,nlay,this%get_ngpt()))
     if(allocated(this%ssa)) deallocate(this%ssa)
     if(allocated(this%g  )) deallocate(this%g  )
     allocate(this%ssa(ncol,nlay,this%get_ngpt()), this%g(ncol,nlay,this%get_ngpt()))
@@ -373,16 +374,14 @@ contains
     character(len=128)              :: err_message
 
     err_message = ""
-    if(.not. this%is_initialized()) then
+    if(.not. this%is_initialized()) &
       err_message = "optical_props%alloc: spectral discretization hasn't been provided"
-      return
-    end if
-    if(any([ncol, nlay] <= 0)) then
+    if(any([ncol, nlay] <= 0)) &
       err_message = "optical_props%alloc: must provide positive extents for ncol, nlay"
-    else
-      if(allocated(this%tau)) deallocate(this%tau)
-      allocate(this%tau(ncol,nlay,this%get_ngpt()))
-    end if
+    if(err_message /= "") return
+
+    if(allocated(this%tau)) deallocate(this%tau)
+    allocate(this%tau(ncol,nlay,this%get_ngpt()))
     if(allocated(this%ssa)) deallocate(this%ssa)
     if(allocated(this%p  )) deallocate(this%p  )
     allocate(this%ssa(ncol,nlay,this%get_ngpt()), this%p(nmom,ncol,nlay,this%get_ngpt()))
@@ -491,6 +490,38 @@ contains
   end function copy_and_alloc_nstr
   ! ------------------------------------------------------------------------------------------
   !
+  ! Finalize routines
+  !
+  ! ------------------------------------------------------------------------------------------
+  function finalize_1scl(this) result(err_message)
+    class(ty_optical_props_1scl) :: this
+    character(len=128)           :: err_message
+
+    if(allocated(this%tau)) deallocate(this%tau)
+    err_message = ""
+  end function finalize_1scl
+  ! ---------------------------------------------------------------------------
+  function finalize_2str(this) result(err_message)
+    class(ty_optical_props_2str) :: this
+    character(len=128)           :: err_message
+
+    if(allocated(this%tau)) deallocate(this%tau)
+    if(allocated(this%ssa)) deallocate(this%ssa)
+    if(allocated(this%g  )) deallocate(this%g  )
+    err_message = ""
+  end function finalize_2str
+  ! ---------------------------------------------------------------------------
+  function finalize_nstr(this) result(err_message)
+    class(ty_optical_props_nstr) :: this
+    character(len=128)           :: err_message
+
+    if(allocated(this%tau)) deallocate(this%tau)
+    if(allocated(this%ssa)) deallocate(this%ssa)
+    if(allocated(this%p  )) deallocate(this%p  )
+    err_message = ""
+  end function finalize_nstr
+  ! ------------------------------------------------------------------------------------------
+  !
   !  Routines for array classes: delta-scaling, validation (ensuring all values can be used )
   !
   ! ------------------------------------------------------------------------------------------
@@ -524,16 +555,16 @@ contains
     if(present(for)) then
       if (check_extents) then
         if(.not. extents_are(for, ncol, nlay, ngpt)) then
-          err_message = "delta_scale: dimension of 'for' don't match optical properties arrays"
-          return
-        end if
+        err_message = "delta_scale: dimension of 'for' don't match optical properties arrays"
+        return
       end if
-      if (check_values) then
-        if(any_vals_outside(for, 0._wp, 1._wp)) then
-          err_message = "delta_scale: values of 'for' out of bounds [0,1]"
-          return
-        end if
+    end if
+    if (check_values) then
+      if(any_vals_outside(for, 0._wp, 1._wp)) then
+        err_message = "delta_scale: values of 'for' out of bounds [0,1]"
+        return
       end if
+    end if
       call delta_scale_2str_kernel(ncol, nlay, ngpt, this%tau, this%ssa, this%g, for)
     else
       call delta_scale_2str_kernel(ncol, nlay, ngpt, this%tau, this%ssa, this%g)
@@ -565,7 +596,7 @@ contains
     end if
     if (check_values) then
       if(any_vals_less_than(this%tau, 0._wp)) &
-        err_message = "validate: tau values out of range"
+      err_message = "validate: tau values out of range"
     end if
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
       err_message = trim(this%get_name()) // ': ' // trim(err_message)
@@ -650,7 +681,7 @@ contains
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
         err_message = trim(this%get_name()) // ': ' // trim(err_message)
   end function validate_nstream
-
+  
   ! ------------------------------------------------------------------------------------------
   !
   !  Routines for array classes: subsetting of optical properties arrays along x (col) direction
@@ -829,6 +860,12 @@ contains
     integer :: ncol, nlay, ngpt, nmom
     ! -----
     err_message = ""
+    if(.not. op_in%is_initialized()) &
+      err_message = "ty_optical_props%increment: Incrementing optical properties aren't initialized"
+    if(.not. op_in%is_initialized()) &
+      err_message = "ty_optical_props%increment: optical properties to be incremented aren't initialized"
+    if(err_message /= "")  return
+
     ncol = op_io%get_ncol()
     nlay = op_io%get_nlay()
     ngpt = op_io%get_ngpt()

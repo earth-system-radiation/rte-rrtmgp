@@ -12,11 +12,22 @@ except ImportError:
 
 def parse_args():
     class ArgumentParser(argparse.ArgumentParser):
-        # Allow for comments in the argument file:
         def convert_arg_line_to_args(self, arg_line):
-            if arg_line.startswith('#'):
-                return []
-            return arg_line.split()
+            try:
+                # Drop everything after the first occurrence of #:
+                arg_line = arg_line[:arg_line.index('#')]
+            except ValueError:
+                pass
+
+            result = []
+            # Do not regard consecutive whitespaces as a single separator:
+            for arg in arg_line.split(' '):
+                if arg:
+                    result.append(arg)
+                elif result:
+                    # The previous argument has a significant whitespace:
+                    result[-1] += ' '
+            return result
 
     parser = ArgumentParser(
         fromfile_prefix_chars='@',

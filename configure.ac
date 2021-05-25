@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
-AC_INIT([rte+rrtmgp], [1.2.1], [], [],
-  [https://github.com/RobertPincus/rte-rrtmgp])
+AC_INIT([rte+rrtmgp], [1.3], [], [],
+  [https://github.com/earth-system-radiation/rte-rrtmgp])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([rte/mo_rte_sw.F90])
@@ -13,6 +13,8 @@ ACX_FC_PP_SRCEXT([F90])
 
 ACX_COMPILER_FC_VENDOR_SIMPLE
 AC_SUBST([FC_VENDOR], [$acx_cv_fc_compiler_vendor])
+ACX_COMPILER_FC_VERSION_SIMPLE
+AC_SUBST([FC_VERSION], [$acx_cv_fc_compiler_version])
 
 ACX_FC_LINE_LENGTH([unlimited])
 
@@ -92,41 +94,84 @@ AS_VAR_IF([enable_rpaths], [yes],
    done
    ACX_SHLIB_RPATH_FLAGS_CHECK])
 
-dnl Check OpenACC support:
-AC_ARG_ENABLE([openacc],
-  [AC_HELP_STRING([--enable-openacc],
-     [enable OpenACC kernels @<:@default=no@:>@])],
-  [AS_IF([test x"$enableval" != xno], [enable_openacc=yes])],
-  [enable_openacc=no])
+AC_ARG_ENABLE([gpu],
+[  --enable-gpu            enable GPU kernels. The value of the argument must
+                          be one of the following @<:@default=no@:>@:
+                            acc|yes  enable OpenACC support
+                            mp       enable OpenMP support
+                            no       disable GPU offload],
+[AS_CASE(["$enableval"],
+   [yes], [enable_gpu=acc],
+   [acc|mp|no], [],
+   [AC_MSG_ERROR([unexpected value for the argument
+--enable-gpu='$enableval'; valid values are 'acc', 'mp', dnl
+'yes' (same as 'acc'), 'no'])])],
+[enable_gpu=no])
 
-AS_VAR_IF([enable_openacc], [yes],
+AS_CASE(["$enable_gpu"],
+  [acc],
   [ACX_LANG_OPENACC_FLAG(
      [AS_VAR_APPEND([FCFLAGS], [" $acx_cv_fc_openacc_flag"])])
-   AC_SUBST([OPENACC_ENABLED], [''])
-   AC_SUBST([OPENACC_DISABLED], ['#'])],
+   acx_cv_fc_macro__OPENACC_defined=${acx_cv_fc_macro__OPENACC_defined-yes}
+   ACX_LANG_MACRO_CHECK_DEFINED([_OPENMP])
+   AS_VAR_IF([acx_macro_defined], [yes],
+     [AC_MSG_ERROR([Fortran compiler enables OpenMP support by default: dnl
+either enable GPU kernels with OpenMP support (--enable-gpu=mp) or set dnl
+FCFLAGS accordingly to disable OpenMP])])],
+dnl
+  [mp],
+  [ACX_LANG_OPENMP_FLAG(
+     [AS_VAR_APPEND([FCFLAGS], [" $acx_cv_fc_openmp_flag"])])
+   acx_cv_fc_macro__OPENMP_defined=${acx_cv_fc_macro__OPENMP_defined-yes}
+   ACX_LANG_MACRO_CHECK_DEFINED([_OPENACC])
+   AS_VAR_IF([acx_macro_defined], [yes],
+     [AC_MSG_ERROR([Fortran compiler enables OpenACC support by default: dnl
+either enable GPU kernels with OpenACC support (--enable-gpu=acc) or set dnl
+FCFLAGS accordingly to disable OpenACC])])],
+dnl
   [ACX_LANG_MACRO_CHECK_DEFINED([_OPENACC])
-   AC_SUBST([OPENACC_ENABLED], ['#'])
-   AC_SUBST([OPENACC_DISABLED], [''])])
+   ACX_LANG_MACRO_CHECK_DEFINED([_OPENMP])])
 
-AS_IF([test x"$enable_openacc" = xyes || dnl
-test x"$acx_cv_fc_macro__OPENACC_defined" = xyes],
+AS_VAR_IF([acx_cv_fc_macro__OPENACC_defined], [yes],
   [ACX_LANG_MACRO_CHECK_VALUE([_OPENACC], [201711 201510 201308 201306 201111])
    AS_VAR_IF([acx_macro_value], [unknown],
      [AS_VAR_APPEND([DEPGEN_FCFLAGS], [" ${FCDEF_PP}_OPENACC"])],
      [AS_VAR_APPEND([DEPGEN_FCFLAGS],
-        [" ${FCDEF_PP}_OPENACC=$acx_macro_value"])])])
-
-AS_VAR_IF([enable_openacc], [yes],
-  [AS_IF([test x"$acx_cv_fc_macro__OPENACC_value" = xunknown],
-     [AC_MSG_WARN([unable to detect supported OpenACC version (at least dnl
-version 2.6 is required): the compilation of the OpenACC kernels might fail])],
+        [" ${FCDEF_PP}_OPENACC=$acx_macro_value"])])
+   AS_VAR_IF([enable_gpu], [no],
+     [AC_MSG_WARN([GPU kernels are disabled but Fortran compiler defines dnl
+_OPENACC macro: the compilation might be inconsistent])],
+     [AS_IF([test x"$acx_cv_fc_macro__OPENACC_value" = xunknown],
+        [AC_MSG_WARN([unable to detect supported OpenACC version (at least dnl
+version 2.6 is required): the compilation of GPU kernels might fail])],
      [test "$acx_cv_fc_macro__OPENACC_value" -lt 201711 dnl
 >&AS_MESSAGE_LOG_FD 2>&1],
      [AC_MSG_WARN([Fortran compiler does not support OpenACC 2.6 (201711): dnl
-the compilation of the OpenACC kernels might fail])])],
-  [AS_VAR_IF([acx_cv_fc_macro__OPENACC_defined], [yes],
-     [AC_MSG_WARN([OpenACC kernels are disabled but Fortran compiler dnl
-defines _OPENACC macro: the compilation might be inconsistent])])])
+the compilation of GPU kernels might fail])])])])
+
+AS_VAR_IF([acx_cv_fc_macro__OPENMP_defined], [yes],
+  [ACX_LANG_MACRO_CHECK_VALUE([_OPENMP],
+     [201511 201307 201107 200805 200505 200011 199911 199710])
+   AS_VAR_IF([acx_macro_value], [unknown],
+     [AS_VAR_APPEND([DEPGEN_FCFLAGS], [" ${FCDEF_PP}_OPENMP"])],
+     [AS_VAR_APPEND([DEPGEN_FCFLAGS],
+        [" ${FCDEF_PP}_OPENMP=$acx_macro_value"])])
+   AS_VAR_IF([enable_gpu], [no],
+     [AC_MSG_WARN([GPU kernels are disabled but Fortran compiler defines dnl
+_OPENMP macro: the compilation might be inconsistent])],
+     [AS_IF([test x"$acx_cv_fc_macro__OPENMP_value" = xunknown],
+        [AC_MSG_WARN([unable to detect supported OpenMP version (at least dnl
+version 4.0 is required): the compilation of GPU kernels might fail])],
+     [test "$acx_cv_fc_macro__OPENMP_value" -lt 201307 dnl
+>&AS_MESSAGE_LOG_FD 2>&1],
+     [AC_MSG_WARN([Fortran compiler does not support OpenMP 4.0 (201307): dnl
+the compilation of GPU kernels might fail])])])])
+
+AS_VAR_IF([enable_gpu], [no],
+  [AC_SUBST([GPU_ENABLED], ['#'])
+   AC_SUBST([GPU_DISABLED], [''])],
+  [AC_SUBST([GPU_ENABLED], [''])
+   AC_SUBST([GPU_DISABLED], ['#'])])
 
 AC_ARG_ENABLE([examples],
   [AC_HELP_STRING([--enable-examples],
@@ -303,6 +348,7 @@ AS_VAR_IF([enable_tests], [no],
    AC_SUBST([TESTS_DISABLED], [''])],
   [AC_SUBST([TESTS_ENABLED], [''])
    AC_SUBST([TESTS_DISABLED], ['#'])])
+AC_SUBST([testcachedir], ['.testcache'])
 
 AC_ARG_VAR([LAUNCH_PREFIX], [execution prefix for the tests ]dnl
 [(e.g. interactive job submission command)])
@@ -316,14 +362,6 @@ AC_CONFIG_FILES([
    examples/rfmip-clear-sky/rfmip-clear-sky.test
    tests/clear_sky_regression.test
 ], [chmod a+x "$ac_file"])
-
-AC_CONFIG_LINKS([
-   examples/all-sky/garand-atmos-1.nc:examples/all-sky/garand-atmos-1.nc
-   extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc:extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc
-   extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc:extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc
-   rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc:rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
-   rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc:rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
-])
 
 AC_CONFIG_FILES([Makefile])
 

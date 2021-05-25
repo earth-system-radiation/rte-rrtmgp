@@ -157,16 +157,31 @@ AS_VAR_TEST_SET([acx_cv_fc_module_naming_ext])],
       subroutine conftest_routine
       end subroutine
       end module]])],
-        [acx_cv_fc_module_naming_ext=`ls | sed -n 's,conftest_module\.,,p'`
-         AS_VAR_IF([acx_cv_fc_module_naming_ext], [],
-           [acx_cv_fc_module_naming_ext=`ls | sed -n 's,CONFTEST_MODULE\.,,p'`
-            AS_VAR_IF([acx_cv_fc_module_naming_ext], [],
-              [acx_cv_fc_module_naming_ext=unknown
+        [AS_CASE(["$acx_cv_fc_module_naming_upper"],
+           [yes],
+           [acx_tmp='CONFTEST_MODULE.*'
+            acx_cv_fc_module_naming_ext=unknown],
+           [no],
+           [acx_tmp='conftest_module.*'
+            acx_cv_fc_module_naming_ext=unknown],
+           [AS_VAR_SET_IF([acx_cv_fc_module_naming_ext],
+              [acx_tmp="CONFTEST_MODULE.$acx_cv_fc_module_naming_ext dnl
+conftest_module.$acx_cv_fc_module_naming_ext"
                acx_cv_fc_module_naming_upper=unknown],
-              [acx_cv_fc_module_naming_upper=yes])],
-           [acx_cv_fc_module_naming_upper=no])],
-        [acx_cv_fc_module_naming_ext=unknown
-         acx_cv_fc_module_naming_upper=unknown])
+              [acx_tmp='CONFTEST_MODULE.* conftest_module.*'
+               acx_cv_fc_module_naming_upper=unknown
+               acx_cv_fc_module_naming_ext=unknown])])
+         acx_tmp=`ls $acx_tmp 2>/dev/null`
+         AS_IF([test 1 -eq `AS_ECHO(["$acx_tmp"]) | wc -l` 2>/dev/null],
+           [AS_CASE(["$acx_tmp"],
+              [CONFTEST_MODULE.*],
+              [acx_cv_fc_module_naming_upper=yes
+               acx_cv_fc_module_naming_ext=`echo $acx_tmp | dnl
+sed -n 's,CONFTEST_MODULE\.,,p'`],
+              [conftest_module.*],
+              [acx_cv_fc_module_naming_upper=no
+               acx_cv_fc_module_naming_ext=`echo $acx_tmp | dnl
+sed -n 's,conftest_module\.,,p'`])])])
       cd ..
       rm -rf conftest.dir])
    AS_IF([test x"$acx_cv_fc_module_naming_upper" = xunknown || dnl

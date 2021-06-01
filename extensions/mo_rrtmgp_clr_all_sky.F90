@@ -85,9 +85,11 @@ contains
     ngpt  = k_dist%get_ngpt()
     nband = k_dist%get_nband()
 
-    !$acc update if_present host(p_lay(1,1), p_lay(1,nlay:nlay))
-    !$omp target update from(p_lay(1,1), p_lay(1,nlay:nlay))
+    !$acc kernels copyout(top_at_1)
+    !$omp target map(from:top_at_1)
     top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
+    !$acc end kernels
+    !$omp end target
 
     ! ------------------------------------------------------------------------------------
     !  Error checking
@@ -216,9 +218,11 @@ contains
     ngpt  = k_dist%get_ngpt()
     nband = k_dist%get_nband()
 
-    !$acc update if_present host(p_lay(1,1), p_lay(1,nlay:nlay))
-    !$omp target update from(p_lay(1,1), p_lay(1,nlay:nlay))
+    !$acc kernels copyout(top_at_1)
+    !$omp target map(from:top_at_1)
     top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
+    !$acc end kernels
+    !$omp end target
 
     ! ------------------------------------------------------------------------------------
     !  Error checking

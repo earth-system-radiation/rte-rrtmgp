@@ -228,9 +228,12 @@ contains
     ! Layer limits of upper, lower atmospheres
     ! ---------------------
 
-    !$acc update if_present host(play(1,1), play(1,nlay:nlay))
-    !$omp target update from(play(1,1), play(1,nlay:nlay))
+    !$acc kernels copyout(top_at_1)
+    !$omp target map(from:top_at_1)
     top_at_1 = play(1,1) < play(1, nlay)
+    !$acc end kernels
+    !$omp end target
+
     if(top_at_1) then
       !$acc parallel loop
       !$omp target teams distribute parallel do simd

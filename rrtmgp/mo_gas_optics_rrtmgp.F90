@@ -1607,7 +1607,7 @@ contains
     enddo
 
     !$acc enter data copyin(idx_minor_atm)
-    !$omp target enter data map(alloc:idx_minor_atm)
+    !$omp target enter data map(to:idx_minor_atm)
   end subroutine create_idx_minor
 
   ! ---------------------------------------------------------------------------------------

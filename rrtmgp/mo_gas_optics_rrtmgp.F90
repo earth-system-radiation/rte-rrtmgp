@@ -1228,7 +1228,7 @@ contains
       this%krayl(:,:,:,1) = rayl_lower
       this%krayl(:,:,:,2) = rayl_upper
       !$acc enter data copyin(this%krayl)
-      !$omp target enter data map(alloc:this%krayl)
+      !$omp target enter data map(to:this%krayl)
     end if
 
     ! ---- post processing ----

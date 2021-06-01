@@ -70,9 +70,9 @@ contains
     !$acc data copyin(flavor,press_ref_log,temp_ref,vmr_ref,play,tlay,col_gas) &
     !$acc      copyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor) &
     !$acc      create(ftemp,fpress)
-    !$omp target enter data map(to:flavor, press_ref_log, temp_ref, vmr_ref, play, tlay, col_gas)
-    !$omp target enter data map(alloc:jtemp, jpress, tropo, jeta, col_mix, fmajor, fminor)
-    !$omp target enter data map(alloc:ftemp, fpress)
+    !$omp target data map(to:flavor, press_ref_log, temp_ref, vmr_ref, play, tlay, col_gas) &
+    !$omp             map(alloc:jtemp, jpress, tropo, jeta, col_mix, fmajor, fminor) &
+    !$omp             map(alloc:ftemp, fpress)
 
     !$acc parallel loop gang vector collapse(2) default(none)
     !$omp target teams distribute parallel do simd collapse(2)
@@ -133,9 +133,7 @@ contains
     end do
 
     !$acc end data
-    !$omp target exit data map(release:flavor, press_ref_log, temp_ref, vmr_ref, play, tlay, col_gas)
-    !$omp target exit data map(from:jtemp, jpress, tropo, jeta, col_mix, fmajor, fminor)
-    !$omp target exit data map(release:ftemp, fpress)
+    !$omp end target data
 
   end subroutine interpolation
   ! --------------------------------------------------------------------------------------

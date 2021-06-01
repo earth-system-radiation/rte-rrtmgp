@@ -127,8 +127,6 @@ contains
 
     !$acc        enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn)
     !$omp target enter data map(to:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, radn_dn)
-    !$acc        enter data attach(lev_source_up,lev_source_dn)
-    !$omp target enter data map(to:lev_source_up, lev_source_dn)
     !$acc        enter data create(   tau_loc,trans,source_dn,source_up,radn_up)
     !$omp target enter data map(alloc:tau_loc,trans,source_dn,source_up,radn_up)
 
@@ -198,7 +196,7 @@ contains
     !
     ! Surface reflection and emission
     !
-    !$acc parallel loop collapse(2)
+    !$acc parallel loop collapse(2) no_create(gpt_Jac)
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
@@ -265,8 +263,6 @@ contains
     !$omp target exit data map(from:radn_dn,radn_up)
     !$acc        exit data delete(     d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up)
     !$omp target exit data map(release:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, tau_loc, trans, source_dn, source_up)
-    !$acc        exit data detach(  lev_source_up,lev_source_dn)
-    !$omp target exit data map(from:lev_source_up, lev_source_dn)
     !$acc        exit data delete(     An, Cn) if(do_rescaling)
     !$omp target exit data map(release:An, Cn) if(do_rescaling)
 
@@ -371,7 +367,7 @@ contains
                             radn_up, radn_dn, &
                             do_Jacobians, sfc_srcJac, radn_upJac, &
                             do_rescaling, ssa, g)
-      !$acc  parallel loop collapse(3)
+      !$acc  parallel loop collapse(3) no_create(flux_upJac)
       !$omp target teams distribute parallel do simd collapse(3)
       do igpt = 1, ngpt
         do ilev = 1, nlay+1
@@ -726,7 +722,7 @@ contains
       !
       ! Top of domain is index 1
       !
-      !$acc  parallel loop collapse(2)
+      !$acc  parallel loop collapse(2) no_create(radn_upJac)
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -745,7 +741,7 @@ contains
       !
       ! Top of domain is index nlay+1
       !
-      !$acc  parallel loop collapse(2)
+      !$acc  parallel loop collapse(2) no_create(radn_upJac)
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -1418,7 +1414,7 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
       ! Top of domain is index 1
       !
       ! Downward propagation
-      !$acc  parallel loop collapse(2)
+      !$acc  parallel loop collapse(2) no_create(radn_up_Jac)
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -1453,7 +1449,7 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
         enddo
       enddo
     else
-      !$acc  parallel loop collapse(2)
+      !$acc  parallel loop collapse(2) no_create(radn_up_Jac)
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol

@@ -7,6 +7,13 @@
 # Object files
 *.o
 
+# Dependency files
+*.d
+
+# Fortran module files
+*.mod
+*.mod.proxy
+
 # Intel vectorization reports
 *.optrpt
 

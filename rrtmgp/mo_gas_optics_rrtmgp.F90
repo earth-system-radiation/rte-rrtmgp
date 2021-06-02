@@ -547,7 +547,7 @@ contains
     !$omp target enter data map(alloc:col_gas)
     if (present(col_dry)) then
       !$acc enter data copyin(col_dry)
-      !$omp target enter data map(to:col_dry)      
+      !$omp target enter data map(to:col_dry)
       col_dry_wk => col_dry
     else
       !$acc enter data create(col_dry_arr)

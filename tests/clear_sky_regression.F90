@@ -200,6 +200,8 @@ program rte_clear_sky_regression
   fluxes%flux_dn => flux_dn(:,:)
   if(is_lw) then
     call make_optical_props_1scl
+    call atmos%finalize()
+    call make_optical_props_1scl
     call atmos%set_name("gas only atmosphere")
     call lw_clear_sky_default
     call lw_clear_sky_notlev
@@ -212,6 +214,8 @@ program rte_clear_sky_regression
     call make_optical_props_2str
     call lw_clear_sky_2str
   else
+    call make_optical_props_2str
+    call atmos%finalize()
     call make_optical_props_2str
     call sw_clear_sky_default
     call sw_clear_sky_tsi

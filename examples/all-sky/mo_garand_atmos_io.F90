@@ -24,7 +24,6 @@ module mo_garand_atmos_io
   !
   use mo_rte_kind,           only: wp
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_rrtmgp_util_reorder,only: reorder123x312
   use mo_optical_props,      only: ty_optical_props
   !
   ! NetCDF I/O routines, shared with other RTE+RRTMGP examples
@@ -148,7 +147,7 @@ contains
     character(len=*), intent(in) :: msg
     if(len_trim(msg) > 0) then
       write(error_unit,*) trim(msg)
-      stop
+      error stop 1
     end if
   end subroutine
   !--------------------------------------------------------------------------------------------------------------------

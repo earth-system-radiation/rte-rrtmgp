@@ -19,11 +19,11 @@ module mo_rrtmgp_util_reorder_kernels
   public
 contains
   ! ----------------------------------------------------------------------------
-  subroutine reorder_123x312_kernel(d1, d2, d3, array_in, array_out) &
-      bind(C, name = "reorder_123x312_kernel")
+  subroutine reorder_123x321_kernel(d1, d2, d3, array_in, array_out) &
+      bind(C, name="reorder_123x321_kernel")
     integer,                         intent( in) :: d1, d2, d3
     real(wp), dimension(d1, d2, d3), intent( in) :: array_in
-    real(wp), dimension(d3, d1, d2), intent(out) :: array_out
+    real(wp), dimension(d3, d2, d1), intent(out) :: array_out
 
     integer :: i1, i2, i3, i10, i30, i1diff, i3diff
     integer, parameter :: tile = 32
@@ -36,44 +36,6 @@ contains
     !  Tile size of 32x32 is empirical: big enough to read from the whole
     !  cache line, and small enough to fit into cache. Other numbers
     !  may give slightly better performance on different hardware.
-    !
-    !$acc parallel vector_length(tile*tile) &
-    !$acc&     copyout(array_out) &
-    !$acc&     copyin(array_in)
-    !$acc loop gang collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3) map(to:array_in) map(from:array_out)
-    do i2 = 1, d2
-      do i10 = 1, d1, tile
-        do i30 = 1, d3, tile
-
-          !$acc loop vector collapse(2)
-          do i1diff = 0, tile-1
-            do i3diff = 0, tile-1
-              i1 = i10 + i1diff
-              i3 = i30 + i3diff
-              if (i1 > d1 .or. i3 > d3) cycle
-
-              array_out(i3,i1,i2) = array_in(i1,i2,i3)
-            end do
-          end do
-
-        end do
-      end do
-    end do
-    !$acc end parallel
-
-  end subroutine reorder_123x312_kernel
-  ! ----------------------------------------------------------------------------
-  subroutine reorder_123x321_kernel(d1, d2, d3, array_in, array_out) &
-      bind(C, name="reorder_123x321_kernel")
-    integer,                         intent( in) :: d1, d2, d3
-    real(wp), dimension(d1, d2, d3), intent( in) :: array_in
-    real(wp), dimension(d3, d2, d1), intent(out) :: array_out
-
-    integer :: i1, i2, i3, i10, i30, i1diff, i3diff, idiff
-    integer, parameter :: tile = 32
-
-    ! See the comment above
     !
     !$acc parallel vector_length(tile*tile) &
     !$acc&     copyout(array_out) &

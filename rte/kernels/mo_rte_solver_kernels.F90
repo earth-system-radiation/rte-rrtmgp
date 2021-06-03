@@ -387,7 +387,7 @@ contains
     real(wp), dimension(ncol            ), intent( in) :: mu0          ! cosine of solar zenith angle
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
                                                                        ! Top level must contain incident flux boundary condition
-    integer :: icol, ilev, igpt
+    integer :: ilev, igpt
     real(wp) :: mu0_inv(ncol)
 
     ! ------------------------------------
@@ -562,7 +562,7 @@ contains
     real(wp), dimension(ncol,nlay  ), intent(in   ) :: source_up  ! Diffuse radiation emitted by the layer
     real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_up    ! Radiances [W/m2-str] Top level must contain incident flux boundary condition
     logical(wl),                      intent(in   ) :: do_Jacobians
-    real(wp), dimension(ncol,nlay+1), intent(  out) :: radn_upJac       ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_upJac       ! surface temperature Jacobian of Radiances [W/m2-str / K]
 
     ! ---------------------------------------------------
     ! Local variables

@@ -34,7 +34,6 @@ jobs:
     #
     # Configuration
     #
-
     - name: Configure
       env:
         RTE_KERNELS: ${{ matrix.rte-kernels }}

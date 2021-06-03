@@ -1,0 +1,99 @@
+name: Self-hosted CI
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  CI:
+    runs-on: daint
+    strategy:
+      matrix:
+        include:
+        - config_name: pgi-gpu-acc
+          compiler_modules: "PrgEnv-pgi pgi craype-accel-nvidia60"
+          # Generic accelerator flag
+          #   -acc is removed as it should be detected by the configure script
+          fcflags: "-O3 -Mallocatable=03 -gopt"
+          enable_gpu: acc
+        - config_name: cce-cpu-icon-production
+          compiler_modules: "PrgEnv-cray cce/11.0.0"
+          # Production flags for Icon model
+          fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
+          enable_gpu: no
+        - config_name: cce-gpu-openmp
+          compiler_modules: "PrgEnv-cray cce/11.0.0 craype-accel-nvidia60"
+          # OpenMP flags from Nichols Romero (Argonne)
+          #   -homp is removed as it should be detected by the configure script
+          #   (in fact, the configure script detects -fopenmp)
+          fcflags: "-hnoacc -O0"
+          enable_gpu: mp
+    env:
+      MODULE_SWITCHER: ${{ github.workspace }}/.github/workflows/module_switcher
+      MODULES: "daint-gpu ${{ matrix.compiler_modules }} cray-netcdf cray-hdf5"
+      PYTHON_CACHEDIR: ${{ github.workspace }}/.python
+      RFMIP_CACHEDIR: ${{ github.workspace }}/.testcache
+    steps:
+    #
+    # Checks-out repository under $GITHUB_WORKSPACE
+    #
+    - uses: actions/checkout@v2
+    #
+    # Check whether Python virtual environment is cached
+    #
+    - uses: actions/cache@v2
+      id: cache-python-venv
+      with:
+        path: ${{ env.PYTHON_CACHEDIR }}
+        key: python-venv-autoconf
+    #
+    # Create Python virtual environment if it is not in the cache
+    #
+    - name: Create Python virtual environment
+      if: steps.cache-python-venv.outputs.cache-hit != 'true'
+      run: |
+        . ${MODULE_SWITCHER} && switch_for_module cray-python
+        python3 -m venv ${PYTHON_CACHEDIR}
+        ${PYTHON_CACHEDIR}/bin/pip3 install --upgrade pip
+        ${PYTHON_CACHEDIR}/bin/pip3 install netCDF4 xarray dask[array]
+    #
+    # Configuration
+    #
+    - name: Configure
+      env:
+        FC: "ftn"
+        FCFLAGS: ${{ matrix.fcflags }}
+        PYTHON: ${{ env.PYTHON_CACHEDIR }}/bin/python3
+        LAUNCH_PREFIX: "srun -C gpu -A pr55 -p cscsci -t 15:00"
+      run: |
+        . ${MODULE_SWITCHER} && switch_for_module ${MODULES}
+        ./configure --enable-tests --disable-silent-rules --enable-gpu=${{ matrix.enable_gpu }} || { cat ./config.log; exit 1; }
+    #
+    # Build the library
+    #
+    - name: Build
+      run: |
+        . ${MODULE_SWITCHER} && switch_for_module ${MODULES}
+        make -j8
+    #
+    # Check whether RFMIP files are cached
+    #
+    - uses: actions/cache@v2
+      id: cache-rfmip-files
+      with:
+        path: ${{ env.RFMIP_CACHEDIR }}
+        key: rfmip-files-autoconf
+    #
+    # Stage RFMIP files if they are not in the cache
+    #
+    - name: Stage RFMIP files
+      if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ${RFMIP_CACHEDIR} && cd ${RFMIP_CACHEDIR}
+        ${PYTHON_CACHEDIR}/bin/python3 ${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py
+        touch ${RFMIP_CACHEDIR}/.cache
+    #
+    # Check the library
+    #
+    - name: Check
+      run: |
+        . ${MODULE_SWITCHER} && switch_for_module ${MODULES}
+        make -j8 check
+

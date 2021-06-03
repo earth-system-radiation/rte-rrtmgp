@@ -17,21 +17,11 @@
 module mo_rrtmgp_util_reorder
   use mo_rte_kind, only: wp
   use mo_rrtmgp_util_reorder_kernels, &
-                   only: reorder_123x312_kernel, reorder_123x321_kernel
+                   only:  reorder_123x321_kernel
   implicit none
   private
-  public :: reorder123x312, reorder123x321
+  public :: reorder123x321
 contains
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! (x,y,z) -> (z,x,y)
-  !
-  subroutine reorder123x312(array, array_out)
-    real(wp), dimension(:,:,:), intent(in ) :: array
-    real(wp), dimension(:,:,:), intent(out) :: array_out
-
-    call reorder_123x312_kernel(size(array,dim=1), size(array,dim=2), size(array,dim=3), array, array_out)
-  end subroutine reorder123x312
   ! -------------------------------------------------------------------------------------------------
   !
   ! (x,y,z) -> (z,y,x)

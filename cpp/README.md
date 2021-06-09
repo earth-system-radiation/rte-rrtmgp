@@ -32,7 +32,6 @@ To build and test the code on your local GPU, please do the following:
 * `git clone https://github.com/NVlabs/cub.git`
 * `git clone https://github.com/E3SM-Project/rte-rrtmgp.git`
 * `cd rte-rrtmgp/cpp/test/build`
-* `export NETCDF_PATH=/path/to/netcdf`
 * edit `thatchroof_gpu.sh` to match your GPU's architecture
 * `source thatchroof_gpu.sh`
 * `./get_data.sh`
@@ -46,7 +45,6 @@ To build and test the code on your local CPU, please do the following:
 * `git clone https://github.com/mrnorman/YAKL.git`
 * `git clone https://github.com/E3SM-Project/rte-rrtmgp.git`
 * `cd rte-rrtmgp/cpp/test/build`
-* `export NETCDF_PATH=/path/to/netcdf`
 * `source thatchroof_cpu.sh`
 * `./get_data.sh`
 * `./cmakescript.sh`

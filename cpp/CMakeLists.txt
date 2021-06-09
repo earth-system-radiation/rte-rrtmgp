@@ -15,7 +15,7 @@ set(CXX_SRC
 )
 
 # Add RRTMGP as a library and make sure we link against YAKL
-add_library(rrtmgp ${CXX_SRC})
+add_library(rrtmgp STATIC ${CXX_SRC})
 target_link_libraries(rrtmgp yakl)
 
 # Special compile flags for C++ source
@@ -23,7 +23,6 @@ set_source_files_properties(${CXX_SRC} PROPERTIES COMPILE_FLAGS "${CPPDEFS} ${YA
 if ("${ARCH}" STREQUAL "CUDA")
   enable_language(CUDA)
   set_source_files_properties(${CXX_SRC} PROPERTIES LANGUAGE CUDA)
-  set_source_files_properties(${CXX_SRC} PROPERTIES COMPILE_FLAGS "${CUDA_FLAGS}")
   set_target_properties(rrtmgp PROPERTIES LINKER_LANGUAGE CUDA CUDA_SEPARABLE_COMPILATION OFF CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 endif()
 target_include_directories(rrtmgp PUBLIC ${YAKL_HOME})

@@ -12,8 +12,8 @@ endif()
 # but that does not seem to be working for GPU builds on summit right now for
 # some reason (leads to segfaults). So instead, the allsky build will just pull
 # in all the RRTMGP source and build and link all at once.
-#add_subdirectory(../ ./rrtmgp)
 add_subdirectory(${YAKL_HOME} ./yakl)
+add_subdirectory(../ ./rrtmgp)
 add_subdirectory(../examples/all-sky ./allsky)
 
 # Add unit test script commands

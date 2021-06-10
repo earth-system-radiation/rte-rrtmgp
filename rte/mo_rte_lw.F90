@@ -84,8 +84,6 @@ contains
     !
     integer  :: ncol, nlay, ngpt, nband
     integer  :: n_quad_angs
-    integer  :: icol, iband, igpt
-    real(wp) :: lw_Ds_wt
     logical  :: using_2stream, do_Jacobians
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
@@ -222,7 +220,7 @@ contains
     !
     ! Ensure values of tau, ssa, and g are reasonable if using scattering
     !
-    if(check_values) error_msg =  optical_props%validate()
+    error_msg =  optical_props%validate()
 
     if(len_trim(error_msg) > 0) then
       if(len_trim(optical_props%get_name()) > 0) &
@@ -241,7 +239,7 @@ contains
     !$omp target enter data map(alloc:gpt_flux_dn, gpt_flux_up)
     !$acc        enter data create(   sfc_emis_gpt)
     !$omp target enter data map(alloc:sfc_emis_gpt)
-    !$omp        enter data create(   flux_up_Jac) if(do_Jacobians)
+    !$acc        enter data create(   flux_up_Jac) if(do_Jacobians)
     !$omp target enter data map(alloc:flux_up_Jac) if(do_Jacobians)
 
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
@@ -355,7 +353,7 @@ contains
     !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, sfc_emis_gpt)
     !$acc        exit data delete(optical_props)
     !!$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source,sources)
-    !$omp        exit data copyout( flux_up_Jac) if(do_Jacobians)
+    !$acc        exit data copyout( flux_up_Jac) if(do_Jacobians)
     !$omp target exit data map(from:flux_up_Jac) if(do_Jacobians)
 
   end function rte_lw

@@ -150,15 +150,23 @@ contains
         do ilay = 1, nlay
           do icol = 1, ncol
             ssal = ssa(icol, ilay, igpt)
+
+            ! w is the layer single scattering albedo
+            ! b is phase function parameter (Eq.13 of the paper)
+            ! for the similarity principle scaling scheme 
+            ! b = (1-g)/2 (where g is phase function avergae cosine)
             wb = ssal*(1._wp - g(icol, ilay, igpt)) * 0.5_wp
+
+            ! scaleTau=1-w(1-b) is a scaling factor of the optical thickness representing 
+            ! the radiative transfer equation in a nonscattering form Eq(14) of the paper
             scaleTau = (1._wp - ssal + wb)
-            ! here wb/scaleTau is parameter wb/(1-w(1-b)) of Eq.21 of the Tang paper
-            ! actually it is in line of parameter rescaling defined in Eq.7
-            ! potentialy if g=ssa=1  then  wb/scaleTau = NaN
-            ! it should not happen because g is never 1 in atmospheres
-            ! explanation of factor 0.4 note A of Table
+
+            ! Cn = 0.5*wb/(1-w(1-b)) is parameter of Eq.21-22 of the Tang paper
+            ! Tang paper, p.2222 advises to replace 0.5 with 0.4 based on simulations
             Cn(icol,ilay) = 0.4_wp*wb/scaleTau
-            ! Eq.15 of the paper, multiplied by path length
+
+            ! Eqs.15, 18ab and 19 of the paper, 
+            ! rescaling of the optical depth multiplied by path length
             tau_loc(icol,ilay) = tau(icol,ilay,igpt)*D(icol,igpt)*scaleTau
           end do
           trans  (:,ilay) = exp(-tau_loc(:,ilay))
@@ -1097,7 +1105,9 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     !
     ! Top of domain is index 1
     !
-    ! 1st Upward propagation
+    ! Upward propagation
+    ! adjustment factor is obtained as a solution of 18b of the Tang paper
+    ! eqvivalent to Eq.20 of the Tang paper but for linear-in-tau source
     do ilev = nlay, 1, -1
       do icol=1,ncol
         adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev) - &
@@ -1108,8 +1118,10 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
       if(do_Jacobians) &
         radn_up_Jac(:,ilev) = trans(:,ilev)*radn_up_Jac(:,ilev+1)
     end do
-    ! 2nd Downward propagation
+    ! Downward propagation
     ! radn_dn_Jac(:,1) = 0._wp
+    ! adjustment factor is obtained as a solution of 19 of the Tang paper
+    ! eqvivalent to Eq.21 of the Tang paper but for linear-in-tau source
     do ilev = 1, nlay
       ! radn_dn_Jac(:,ilev+1) = trans(:,ilev)*radn_dn_Jac(:,ilev)
       do icol=1,ncol
@@ -1126,6 +1138,8 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     ! Top of domain is index nlay+1
     !
     ! Upward propagation
+    ! adjustment factor is obtained as a solution of 18b of the Tang paper
+    ! eqvivalent to Eq.20 of the Tang paper but for linear-in-tau source
     do ilev = 1, nlay
       radn_up      (:,ilev+1) = trans(:,ilev) * radn_up    (:,ilev) +  source_up(:,ilev)
       do icol=1,ncol
@@ -1138,7 +1152,9 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
         radn_up_Jac(:,ilev+1) = trans(:,ilev) * radn_up_Jac(:,ilev)
     end do
 
-    ! 2st Downward propagation
+    ! Downward propagation
+    ! adjustment factor is obtained as a solution of 19 of the Tang paper
+    ! eqvivalent to Eq.21 of the Tang paper but for linear-in-tau source
     ! radn_dn_Jac(:,nlay+1) = 0._wp
     do ilev = nlay, 1, -1
       ! radn_dn_Jac(:,ilev) = trans(:,ilev)*radn_dn_Jac(:,ilev+1)

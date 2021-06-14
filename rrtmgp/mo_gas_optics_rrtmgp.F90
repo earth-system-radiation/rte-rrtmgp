@@ -27,8 +27,7 @@ module mo_gas_optics_rrtmgp
   use mo_optical_props,      only: ty_optical_props
   use mo_source_functions,   only: ty_source_func_lw
   use mo_gas_optics_kernels, only: interpolation,                                                       &
-                                   compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source, &
-                                   combine_and_reorder_2str, combine_and_reorder_nstr
+                                   compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source
   use mo_rrtmgp_constants,   only: avogad, m_dry, m_h2o, grav
   use mo_rrtmgp_util_string, only: lower_case, string_in_array, string_loc_in_array
   use mo_gas_concentrations, only: ty_gas_concs
@@ -435,7 +434,7 @@ contains
                            optional, target :: col_dry ! Column dry amount; dim(ncol,nlay)
     ! ----------------------------------------------------------
     ! Local variables
-    real(wp), dimension(ngpt,nlay,ncol) :: tau, tau_rayleigh  ! absorption, Rayleigh scattering optical depths
+    real(wp), dimension(ncol,nlay,ngpt) :: tau, tau_rayleigh  ! absorption, Rayleigh scattering optical depths
     ! Number of molecules per cm^2
     real(wp), dimension(ncol,nlay), target  :: col_dry_arr
     real(wp), dimension(:,:),       pointer :: col_dry_wk
@@ -778,10 +777,9 @@ contains
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     integer                                      :: icol, ilay, igpt
-    real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
-    real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
-    real(wp), dimension(ngpt,     ncol)          :: sfc_source_Jac
-
+    real(wp), dimension(ncol,nlay,ngpt)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
+    real(wp), dimension(ncol,     ngpt)          :: sfc_source_t
+    real(wp), dimension(ncol,     ngpt)          :: sfc_source_Jac
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
     real(wp), dimension(:,:),            pointer :: tlev_wk
@@ -839,16 +837,20 @@ contains
                 sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t, &
                 sfc_source_Jac)
     !$acc parallel loop collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
-    do igpt = 1, ngpt
-      do icol = 1, ncol
-        sources%sfc_source    (icol,igpt) = sfc_source_t  (igpt,icol)
-        sources%sfc_source_Jac(icol,igpt) = sfc_source_Jac(igpt,icol)
-      end do
-    end do
-    call reorder123x321(lay_source_t, sources%lay_source)
-    call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
-    call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
+!    do igpt = 1, ngpt
+!      do icol = 1, ncol
+!        sources%sfc_source    (icol,igpt) = sfc_source_t  (igpt,icol)
+!        sources%sfc_source_Jac(icol,igpt) = sfc_source_Jac(igpt,icol)
+!      end do
+!    end do
+    sources%sfc_source = sfc_source_t
+    sources%sfc_source_Jac = sfc_source_Jac
+    sources%lay_source = lay_source_t
+    sources%lev_source_inc = lev_source_inc_t
+    sources%lev_source_dec = lev_source_dec_t
+!    call reorder123x321(lay_source_t, sources%lay_source)
+!    call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
+!    call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
     !
     ! Transposition of a 2D array, for which we don't have a routine in mo_rrtmgp_util_reorder.
     !
@@ -1838,10 +1840,11 @@ contains
     class(ty_optical_props_arry), intent(inout) :: optical_props
 
     integer :: ncol, nlay, ngpt, nmom
+    integer ::  icol, ilay, igpt, imom
 
-    ncol = size(tau, 3)
+    ncol = size(tau, 1)
     nlay = size(tau, 2)
-    ngpt = size(tau, 1)
+    ngpt = size(tau, 3)
     !$acc enter data copyin(optical_props)
     if (.not. has_rayleigh) then
       ! index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
@@ -1849,7 +1852,8 @@ contains
       !$omp target enter data map(to:tau)
       !$acc enter data create(optical_props%tau)
       !$omp target enter data map(alloc:optical_props%tau)
-      call reorder123x321(tau, optical_props%tau)
+      !call reorder123x321(tau, optical_props%tau)
+      optical_props%tau = tau
       select type(optical_props)
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%ssa, optical_props%g)
@@ -1880,22 +1884,32 @@ contains
           ! User is asking for absorption optical depth
           !$acc enter data create(optical_props%tau)
           !$omp target enter data map(alloc:optical_props%tau)
-          call reorder123x321(tau, optical_props%tau)
+          optical_props%tau = tau
+          !call reorder123x321(tau, optical_props%tau)
           !$acc exit data copyout(optical_props%tau)
           !$omp target exit data map(from:optical_props%tau)
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
-          call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
-                                        optical_props%tau, optical_props%ssa, optical_props%g)
+          !call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
+          !                              optical_props%tau, optical_props%ssa, optical_props%g)
+          optical_props%tau = tau_rayleigh + tau 
+          optical_props%g   = 0._wp
+          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
+
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
           !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%p)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
-          call combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau, tau_rayleigh, &
-                                        optical_props%tau, optical_props%ssa, optical_props%p)
+          !call combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau, tau_rayleigh, &
+          !                              optical_props%tau, optical_props%ssa, optical_props%p)
+          optical_props%tau = tau_rayleigh + tau
+          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
+          optical_props%p = 0.0_wp
+          if(nmom >= 2) optical_props%p(2,:,:,:) = 0.1_wp
+
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%p)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
@@ -1939,7 +1953,7 @@ contains
     class(ty_gas_optics_rrtmgp), intent(in) :: this
     integer                          :: get_ntemp
 
-    get_ntemp = size(this%kmajor,dim=4)
+    get_ntemp = size(this%kmajor,dim=1)
   end function get_ntemp
   ! --------------------------------------------------------------------------------------
   !

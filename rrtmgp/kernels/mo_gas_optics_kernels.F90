@@ -442,7 +442,7 @@ contains
     integer,                                     intent(in ) :: ngas,nflav,neta,npres,ntemp
     integer,     dimension(2,ngpt),              intent(in ) :: gpoint_flavor
     integer,     dimension(2,nbnd),              intent(in ) :: band_lims_gpt ! start and end g-point for each band
-    real(wp),    dimension(ngpt,neta,ntemp,2),   intent(in ) :: krayl
+    real(wp),    dimension(ntemp,neta,ngpt,2),   intent(in ) :: krayl
     integer,                                     intent(in ) :: idx_h2o
     real(wp),    dimension(ncol,nlay),           intent(in ) :: col_dry
     real(wp),    dimension(ncol,nlay,0:ngas),    intent(in ) :: col_gas

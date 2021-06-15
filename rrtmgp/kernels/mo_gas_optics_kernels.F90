@@ -556,8 +556,8 @@ contains
         do igpt = gptS, gptE
           sfc_src(icol,igpt) = pfrac(icol,sfc_lay,igpt) * planck_function(icol,1,ibnd)
 !pa
-          sfc_source_Jac(igpt, icol) = pfrac(igpt,sfc_lay,icol) * &
-                                (planck_function(ibnd, 2, icol) - planck_function(ibnd,1,icol))
+          sfc_source_Jac(icol, igpt) = pfrac(icol,sfc_lay,igpt) * &
+                                (planck_function(icol, 2, ibnd) - planck_function(icol,1,ibnd))
         end do
       end do
     end do ! icol

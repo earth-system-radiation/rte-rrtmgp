@@ -520,9 +520,9 @@ contains
     ntemp = this%get_ntemp()
     ! number of minor contributors, total num absorption coeffs
     nminorlower  = size(this%minor_scales_with_density_lower)
-    nminorklower = size(this%kminor_lower, 1)
+    nminorklower = size(this%kminor_lower, 3)
     nminorupper  = size(this%minor_scales_with_density_upper)
-    nminorkupper = size(this%kminor_upper, 1)
+    nminorkupper = size(this%kminor_upper, 3)
     !
     ! Fill out the array of volume mixing ratios
     !

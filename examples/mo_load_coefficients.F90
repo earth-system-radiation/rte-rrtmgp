@@ -75,6 +75,7 @@ contains
     real(wp), dimension(:,:,:),       allocatable :: kminor_lower,                    kminor_upper
     real(wp), dimension(:,:,:),       allocatable :: kminor_lower_t,                  kminor_upper_t
 
+    real(wp), dimension(:,:,:  ), allocatable :: rayl_lower_t, rayl_upper_t
     real(wp), dimension(:,:,:  ), allocatable :: rayl_lower, rayl_upper
     real(wp), dimension(:      ), allocatable :: solar_quiet, solar_facular, solar_sunspot
     real(wp)                                  :: tsi_default, mg_default, sb_default
@@ -182,10 +183,18 @@ contains
 
     kmajor_t            = read_field(ncid, 'kmajor',  ngpts, nmixingfracs,  npress+1, ntemps)
     kmajor = RESHAPE(kmajor_t,(/ntemps,nmixingfracs,  npress+1,ngpts/), ORDER = (/4,2,3,1/))
+!    if(var_exists(ncid, 'rayl_lower')) then
+!      rayl_lower = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,            ntemps)
+!      rayl_upper = read_field(ncid, 'rayl_upper',   ngpts, nmixingfracs,            ntemps)
+!    end if
     if(var_exists(ncid, 'rayl_lower')) then
-      rayl_lower = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,            ntemps)
-      rayl_upper = read_field(ncid, 'rayl_upper',   ngpts, nmixingfracs,            ntemps)
+      rayl_lower_t = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,ntemps)
+      rayl_lower = RESHAPE(rayl_lower_t,(/ntemps,nmixingfracs,ngpts/), ORDER = (/3,2,1/))
+      rayl_upper_t = read_field(ncid, 'rayl_upper',   ngpts, nmixingfracs,ntemps)
+      rayl_upper = RESHAPE(rayl_upper_t,(/ntemps,nmixingfracs,ngpts/), ORDER = (/3,2,1/))
     end if
+
+
     ! --------------------------------------------------
     !
     ! Initialize the gas optics class with data. The calls look slightly different depending

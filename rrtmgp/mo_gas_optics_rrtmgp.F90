@@ -1741,7 +1741,7 @@ contains
              scale_by_complement_atm_red      (red_nm), &
              kminor_start_atm_red             (red_nm))
     allocate(minor_limits_gpt_atm_red(2, red_nm))
-    allocate(kminor_atm_red(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
+    allocate(kminor_atm_red(size(kminor_atm,1), size(kminor_atm,2), tot_g))
 
     if ((red_nm .eq. nm)) then
       ! Character data not allowed in OpenACC regions?
@@ -1775,8 +1775,8 @@ contains
           kminor_start_atm_red(icnt) = kminor_start_atm(i)-n_elim
           ks = kminor_start_atm_red(icnt)
           do j = 1, ng
-            kminor_atm_red(kminor_start_atm_red(icnt)+j-1,:,:) = &
-              kminor_atm(kminor_start_atm(i)+j-1,:,:)
+            kminor_atm_red(:,:,kminor_start_atm_red(icnt)+j-1) = &
+              kminor_atm(:,:,kminor_start_atm(i)+j-1)
           enddo
         else
           n_elim = n_elim + ng
@@ -1840,7 +1840,10 @@ contains
     class(ty_optical_props_arry), intent(inout) :: optical_props
 
     integer :: ncol, nlay, ngpt, nmom
-    integer ::  icol, ilay, igpt, imom
+    integer :: icol, ilay, igpt
+
+!!!!!!!!!!!!!!!!!
+    real(wp) :: t
 
     ncol = size(tau, 1)
     nlay = size(tau, 2)
@@ -1893,9 +1896,26 @@ contains
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
           !call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
           !                              optical_props%tau, optical_props%ssa, optical_props%g)
-          optical_props%tau = tau_rayleigh + tau 
+
+
+!!          optical_props%tau = tau_rayleigh + tau 
           optical_props%g   = 0._wp
-          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
+!!          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
+  
+          do ilay = 1, nlay
+            do igpt = 1, ngpt
+              do icol = 1, ncol
+                 t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
+                 optical_props%tau(icol,ilay,igpt) = t
+                 if(t > 2._wp * tiny(t)) then
+                   optical_props%ssa(icol,ilay,igpt) = tau_rayleigh(icol,ilay,igpt) / t
+                 else
+                   optical_props%ssa(icol,ilay,igpt) = 0._wp
+                 end if
+              end do
+            end do
+          end do
+
 
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)

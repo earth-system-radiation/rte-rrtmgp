@@ -140,7 +140,7 @@ program rte_clear_sky_regression
   is_lw = .not. is_sw
   print *, "k-distribution is for the " // merge("longwave ", "shortwave", is_lw)
   print *, "  pressure    limits (Pa):", k_dist%get_press_min(), k_dist%get_press_max()
-  print *, "  temperature limits (Pa):", k_dist%get_temp_min(),  k_dist%get_temp_max()
+  print *, "  temperature limits (K):", k_dist%get_temp_min(),  k_dist%get_temp_max()
   !
   ! Problem sizes
   !

@@ -639,6 +639,7 @@ contains
     if (allocated(this%krayl)) then
       !$acc enter data copyin(this%krayl)
       !$omp target enter data map(to:this%krayl)
+
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
@@ -650,6 +651,7 @@ contains
             tau_rayleigh)
       !$acc exit data delete(this%krayl)
       !$omp target exit data map(release:this%krayl)
+
     end if
     if (error_msg /= '') return
 
@@ -1898,12 +1900,12 @@ contains
           !                              optical_props%tau, optical_props%ssa, optical_props%g)
 
 
-!!          optical_props%tau = tau_rayleigh + tau 
+!          optical_props%tau = tau_rayleigh + tau 
           optical_props%g   = 0._wp
-!!          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
+!          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
   
-          do ilay = 1, nlay
-            do igpt = 1, ngpt
+          do igpt = 1, ngpt
+            do ilay = 1, nlay
               do icol = 1, ncol
                  t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
                  optical_props%tau(icol,ilay,igpt) = t
@@ -1915,7 +1917,6 @@ contains
               end do
             end do
           end do
-
 
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)

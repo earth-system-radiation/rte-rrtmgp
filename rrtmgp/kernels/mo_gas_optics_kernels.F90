@@ -303,16 +303,14 @@ contains
     integer :: icol, ilay, iflav, ibnd, itropo
     integer :: gptS, gptE
 
-    ! -----------------
-
-    do icol = 1, ncol
+    ! optical depth calculation for major species
+    do ibnd = 1, nbnd
+      gptS = band_lims_gpt(1, ibnd)
+      gptE = band_lims_gpt(2, ibnd)
       do ilay = 1, nlay
-        ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        itropo = merge(1,2,tropo(icol,ilay))
-        ! optical depth calculation for major species
-        do ibnd = 1, nbnd
-          gptS = band_lims_gpt(1, ibnd)
-          gptE = band_lims_gpt(2, ibnd)
+        do icol = 1, ncol
+          ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+          itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           tau_major(gptS:gptE) = &
             ! interpolation in temperature, pressure, and eta
@@ -320,10 +318,11 @@ contains
                                  fmajor(:,:,:,iflav,icol,ilay), kmajor,                          &
                                  band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                                  jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
-           tau(icol,ilay,gptS:gptE) = tau(icol,ilay,gptS:gptE) + tau_major(gptS:gptE)
-        end do ! igpt
+            tau(icol,ilay,gptS:gptE) = tau(icol,ilay,gptS:gptE) + tau_major(gptS:gptE)
+        end do
       end do
-    end do ! ilay
+    end do
+
   end subroutine gas_optical_depths_major
 
   ! ----------------------------------------------------------
@@ -458,12 +457,13 @@ contains
     integer  :: icol, ilay, iflav, ibnd, igpt, gptS, gptE
     integer  :: itropo
     ! -----------------
-    do ilay = 1, nlay
-      do icol = 1, ncol
-        itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        do ibnd = 1, nbnd
-          gptS = band_lims_gpt(1, ibnd)
-          gptE = band_lims_gpt(2, ibnd)
+
+    do ibnd = 1, nbnd
+      gptS = band_lims_gpt(1, ibnd)
+      gptE = band_lims_gpt(2, ibnd)
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere;itropo = 2 upper atmosphere
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           k(gptS:gptE) = interpolate2D_byflav(fminor(:,:,iflav,icol,ilay), &
                                               krayl(:,:,:,itropo),      &
@@ -473,6 +473,7 @@ contains
         end do
       end do
     end do
+
   end subroutine compute_tau_rayleigh
 
   ! ----------------------------------------------------------
@@ -520,23 +521,25 @@ contains
     real(wp) :: planck_function(ncol,nlay+1,nbnd)
     ! -----------------
 
+
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
-    do icol = 1, ncol
+    do ibnd = 1, nbnd
+      gptS = band_lims_gpt(1, ibnd)
+      gptE = band_lims_gpt(2, ibnd)
       do ilay = 1, nlay
-        ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        itropo = merge(1,2,tropo(icol,ilay))
-        do ibnd = 1, nbnd
-          gptS = band_lims_gpt(1, ibnd)
-          gptE = band_lims_gpt(2, ibnd)
+        do icol = 1, ncol
+          ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+          itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           pfrac(icol,ilay,gptS:gptE) = &
-            ! interpolation in temperature, pressure, and eta
+            ! interpolation in temp-m64 -O3 -g -traceback -heap-arrays -assume
+            ! realloc_lhs -extend-source 132erature, pressure, and eta
             interpolate3D_byflav(one, fmajor(:,:,:,iflav,icol,ilay), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                           jeta(:,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
-        end do ! band
+        end do ! column
       end do   ! layer
-    end do     ! column
+    end do     ! band
 
     !
     ! Planck function by band for the surface
@@ -554,49 +557,59 @@ contains
         gptS = band_lims_gpt(1, ibnd)
         gptE = band_lims_gpt(2, ibnd)
         do igpt = gptS, gptE
-          sfc_src(icol,igpt) = pfrac(icol,sfc_lay,igpt) * planck_function(icol,1,ibnd)
+            sfc_src(icol,igpt) = pfrac(icol,sfc_lay,igpt) * planck_function(icol,1,ibnd)
 !pa
-          sfc_source_Jac(icol, igpt) = pfrac(icol,sfc_lay,igpt) * &
+            sfc_source_Jac(icol, igpt) = pfrac(icol,sfc_lay,igpt) * &
                                 (planck_function(icol, 2, ibnd) - planck_function(icol,1,ibnd))
         end do
       end do
-    end do ! icol
+    end do !icol 
 
-    do icol = 1, ncol
-      do ilay = 1, nlay
+    do ilay = 1, nlay
+      do icol = 1, ncol
         ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
         planck_function(icol,ilay,1:nbnd) = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk)
-        !
-        ! Map to g-points
-        !
-        do ibnd = 1, nbnd
-          gptS = band_lims_gpt(1, ibnd)
-          gptE = band_lims_gpt(2, ibnd)
-          do igpt = gptS, gptE
+      end do
+    end do
+
+    !
+    ! Map to g-points
+    !
+    do ibnd = 1, nbnd
+      gptS = band_lims_gpt(1, ibnd)
+      gptE = band_lims_gpt(2, ibnd)
+      do igpt = gptS, gptE
+        do ilay = 1, nlay
+          do icol = 1, ncol    
             lay_src(icol,ilay,igpt) = pfrac(icol,ilay,igpt) * planck_function(icol,ilay,ibnd)
           end do
         end do
-      end do ! ilay
-    end do ! icol
+      end do
+    end do
 
     ! compute level source irradiances for each g-point, one each for upward and downward paths
-    do icol = 1, ncol
-      planck_function(icol,       1,1:nbnd) = interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk)
-      do ilay = 1, nlay
-        planck_function(icol,ilay+1,1:nbnd) = interpolate1D(tlev(icol,ilay+1), temp_ref_min, totplnk_delta, totplnk)
-        !
-        ! Map to g-points
-        !
-        do ibnd = 1, nbnd
-          gptS = band_lims_gpt(1, ibnd)
-          gptE = band_lims_gpt(2, ibnd)
-          do igpt = gptS, gptE
-            lev_src_inc(icol,ilay,igpt) = pfrac(icol,ilay,igpt) * planck_function(icol,ilay+1,ibnd)
-            lev_src_dec(icol,ilay,igpt) = pfrac(icol,ilay,igpt) * planck_function(icol,ilay  ,ibnd)
+    do ilay = 1, nlay
+      do icol = 1, ncol
+      planck_function(icol,     1,1:nbnd) = interpolate1D(tlev(icol,     1),temp_ref_min, totplnk_delta, totplnk)
+      planck_function(icol,ilay+1,1:nbnd) = interpolate1D(tlev(icol,ilay+1),temp_ref_min, totplnk_delta, totplnk)
+      end do
+    end do
+    
+    !
+    ! Map to g-points
+    !
+    do ibnd = 1, nbnd
+      gptS = band_lims_gpt(1, ibnd)
+      gptE = band_lims_gpt(2, ibnd)
+      do igpt = gptS, gptE
+        do ilay = 1, nlay
+          do icol = 1, ncol
+            lev_src_inc(icol,ilay,igpt) = pfrac(icol,ilay,igpt) *planck_function(icol,ilay+1,ibnd)
+            lev_src_dec(icol,ilay,igpt) = pfrac(icol,ilay,igpt) *planck_function(icol,ilay  ,ibnd)
           end do
         end do
-      end do ! ilay
-    end do ! icol
+      end do
+    end do
 
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------
@@ -723,3 +736,4 @@ contains
   end function interpolate3D_byflav
 
 end module mo_gas_optics_kernels
+

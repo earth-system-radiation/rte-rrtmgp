@@ -19,16 +19,17 @@ YAKL_INLINE void lw_source_noscat_stencil(int ncol, int nlay, int ngpt, int icol
   //   Thanks to Peter Blossey
   const auto term1 = trans(icol,ilay,igpt);
   const auto term2 = tau(icol,ilay,igpt);
-  if (term2 != 0) {
-    real fact = merge((1._wp - term1)/term2 - term1, 
-                      term2 * ( 0.5_wp - 1._wp/3._wp*term2 ), 
-                      term2 > tau_thresh);
-    // Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
-    source_dn(icol,ilay,igpt) = (1._wp - term1) * lev_source_dn(icol,ilay,igpt) + 
-                                2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_dn(icol,ilay,igpt));
-    source_up(icol,ilay,igpt) = (1._wp - term1) * lev_source_up(icol,ilay,igpt) + 
-                                2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_up(icol,ilay,igpt));
+  real fact;
+  if (term2 > tau_thresh) {
+    fact = (1._wp - term1) / term2 - term1;
+  } else {
+    fact = term2 * ( 0.5_wp - 1._wp/3._wp*term2 );
   }
+  // Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
+  source_dn(icol,ilay,igpt) = (1._wp - term1) * lev_source_dn(icol,ilay,igpt) +
+                              2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_dn(icol,ilay,igpt));
+  source_up(icol,ilay,igpt) = (1._wp - term1) * lev_source_up(icol,ilay,igpt) +
+                              2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_up(icol,ilay,igpt));
 }
 
 

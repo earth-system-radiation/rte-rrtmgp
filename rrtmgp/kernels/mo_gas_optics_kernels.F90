@@ -547,9 +547,7 @@ contains
     !
     do icol = 1, ncol
       planck_function(icol,1,1:nbnd) = interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk)
-!pa
       planck_function(icol,2,1:nbnd) = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk) 
-!pa
       !
       ! Map to g-points
       !
@@ -558,7 +556,6 @@ contains
         gptE = band_lims_gpt(2, ibnd)
         do igpt = gptS, gptE
             sfc_src(icol,igpt) = pfrac(icol,sfc_lay,igpt) * planck_function(icol,1,ibnd)
-!pa
             sfc_source_Jac(icol, igpt) = pfrac(icol,sfc_lay,igpt) * &
                                 (planck_function(icol, 2, ibnd) - planck_function(icol,1,ibnd))
         end do

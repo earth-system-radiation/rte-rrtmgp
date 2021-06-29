@@ -1898,25 +1898,28 @@ contains
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
           !call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
           !                              optical_props%tau, optical_props%ssa, optical_props%g)
-
-
-!          optical_props%tau = tau_rayleigh + tau 
+!pa
+          optical_props%tau = tau + tau_rayleigh 
           optical_props%g   = 0._wp
-!          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
-  
-          do igpt = 1, ngpt
-            do ilay = 1, nlay
-              do icol = 1, ncol
-                 t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
-                 optical_props%tau(icol,ilay,igpt) = t
-                 if(t > 2._wp * tiny(t)) then
-                   optical_props%ssa(icol,ilay,igpt) = tau_rayleigh(icol,ilay,igpt) / t
-                 else
-                   optical_props%ssa(icol,ilay,igpt) = 0._wp
-                 end if
-              end do
-            end do
-          end do
+          where (optical_props%tau > 2._wp*tiny(optical_props%tau)) 
+            optical_props%ssa =  tau_rayleigh/optical_props%tau
+          else where
+            optical_props%ssa = 0._wp
+          end where
+! 
+!          do igpt = 1, ngpt
+!            do ilay = 1, nlay
+!              do icol = 1, ncol
+!                 t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
+!                 optical_props%tau(icol,ilay,igpt) = t
+!                 if(t > 2._wp * tiny(t)) then
+!                   optical_props%ssa(icol,ilay,igpt) = tau_rayleigh(icol,ilay,igpt) / t
+!                 else
+!                   optical_props%ssa(icol,ilay,igpt) = 0._wp
+!                 end if
+!              end do
+!            end do
+!          end do
 
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)
@@ -1926,8 +1929,13 @@ contains
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
           !call combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau, tau_rayleigh, &
           !                              optical_props%tau, optical_props%ssa, optical_props%p)
-          optical_props%tau = tau_rayleigh + tau
-          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
+          optical_props%tau = tau + tau_rayleigh
+!pa          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
+          where (optical_props%tau > 2._wp*tiny(optical_props%tau))
+             optical_props%ssa = tau_rayleigh/optical_props%tau
+          else where
+             optical_props%ssa = 0._wp
+          end where
           optical_props%p = 0.0_wp
           if(nmom >= 2) optical_props%p(2,:,:,:) = 0.1_wp
 

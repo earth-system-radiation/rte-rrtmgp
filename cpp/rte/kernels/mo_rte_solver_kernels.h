@@ -17,13 +17,18 @@ YAKL_INLINE void lw_source_noscat_stencil(int ncol, int nlay, int ngpt, int icol
   // Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
   //   is of order epsilon (smallest difference from 1. in working precision)
   //   Thanks to Peter Blossey
-  real fact = merge((1._wp - trans(icol,ilay,igpt))/tau(icol,ilay,igpt) - trans(icol,ilay,igpt), 
-                        tau(icol,ilay,igpt) * ( 0.5_wp - 1._wp/3._wp*tau(icol,ilay,igpt) ), 
-                        tau(icol,ilay,igpt) > tau_thresh);
+  const auto term1 = trans(icol,ilay,igpt);
+  const auto term2 = tau(icol,ilay,igpt);
+  real fact;
+  if (term2 > tau_thresh) {
+    fact = (1._wp - term1) / term2 - term1;
+  } else {
+    fact = term2 * ( 0.5_wp - 1._wp/3._wp*term2 );
+  }
   // Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
-  source_dn(icol,ilay,igpt) = (1._wp - trans(icol,ilay,igpt)) * lev_source_dn(icol,ilay,igpt) + 
+  source_dn(icol,ilay,igpt) = (1._wp - term1) * lev_source_dn(icol,ilay,igpt) +
                               2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_dn(icol,ilay,igpt));
-  source_up(icol,ilay,igpt) = (1._wp - trans(icol,ilay,igpt)) * lev_source_up(icol,ilay,igpt) + 
+  source_up(icol,ilay,igpt) = (1._wp - term1) * lev_source_up(icol,ilay,igpt) +
                               2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_up(icol,ilay,igpt));
 }
 

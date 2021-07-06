@@ -116,8 +116,7 @@ jobs:
         python-version: 3.7
     - name: Install python packages
       run:
-        conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
-        conda env list
+        conda env create -f environment.yml
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files

@@ -1,0 +1,10 @@
+name: base
+dependencies:
+  - urllib3
+  - netcdf4
+  - xarray
+  - dask
+  - scipy
+  - matplotlib
+  - seaborn
+  - colorcet

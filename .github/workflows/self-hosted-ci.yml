@@ -66,6 +66,7 @@ jobs:
         export FC=ftn
         make clean
         make libs
+        make -C separate-libs
     - name: Run
       run: |
         set -e

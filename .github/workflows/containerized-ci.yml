@@ -53,7 +53,6 @@ jobs:
         mkdir -p ${RFMIP_DIR}
         cd ${RFMIP_DIR}
         python ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
-        conda env list
     ############################################################################
     - name: Run examples, tests
       shell: bash

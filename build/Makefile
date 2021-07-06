@@ -16,8 +16,8 @@ VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
 # Compiler variables FC, FCFLAGS must be set in the environment
 #
 # Make all the libraries though we'll only use the interface + kernels
-all:           librte.a                        librrtmgp.a
-separate-libs: librtekernels.a librteinfacef.a librrtmgp.a
+all:           librte.a                           librrtmgp.a
+separate-libs: librtekernels.a librteinterfacef.a librrtmgpkernels.a librrtmgpinterfacef.a
 
 COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c
 %.o: %.F90
@@ -32,11 +32,17 @@ librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
 librtekernels.a: $(RTE_FORTRAN_KERNELS)
 	ar -rvs librtekernels.a $(RTE_FORTRAN_KERNELS)
 
-librteinfacef.a: $(RTE_FORTRAN_INTERFACE)
-	ar -rvs librteinfacef.a $(RTE_FORTRAN_INTERFACE)
+librteinterfacef.a: $(RTE_FORTRAN_INTERFACE)
+	ar -rvs librteinterfacef.a $(RTE_FORTRAN_INTERFACE)
 
-librrtmgp.a: $(RRTMGP_SRC)
-	ar -rvs librrtmgp.a $(RRTMGP_SRC)
+librrtmgp.a: $(RRTMGP_FORTRAN_KERNELS)  $(RRTMGP_FORTRAN_INTERFACE)
+	ar -rvs librrtmgp.a $(RRTMGP_FORTRAN_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
+
+librrtmgpkernels.a: $(RRTMGP_FORTRAN_KERNELS)
+	ar -rvs librtekernels.a $(RRTMGP_FORTRAN_KERNELS)
+
+librrtmgpinterfacef.a: $(RRTMGP_FORTRAN_INTERFACE)
+	ar -rvs librteinterfacef.a $(RRTMGP_FORTRAN_INTERFACE)
 
 clean:
-	rm -f *.optrpt *.mod *.o librrtmgp.a librte.a
+	rm -f *.optrpt *.mod *.o lib*.a

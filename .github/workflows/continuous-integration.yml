@@ -6,13 +6,11 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        fortran-compiler:  [gfortran-8, gfortran-9, gfortran-10, ifort, nvfortran]
-        # I'd like to add gfortran-10 to this list but have version issues with netcdf as below
+        fortran-compiler:  [gfortran-9, gfortran-10]
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
-      # Defaults for gfortran, over-ridden below
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DUSE_CBOOL"
       CC: gcc
       NCHOME: /home/runner/netcdf-c
       NFHOME: /home/runner/netcdf-fortran
@@ -31,54 +29,7 @@ jobs:
       run: |
         sudo apt-get install gfortran-10 gcc-10
         echo "CC=gcc-10" >> $GITHUB_ENV
-    #
-    # Intel compilers and libraries if needed
-    #   https://software.intel.com/content/www/us/en/develop/articles/oneapi-repo-instructions.html#aptpkg
-    #   Trying list of packages from https://github.com/intel/oneapi-containers/blob/master/images/docker/hpckit-devel-ubuntu18.04/Dockerfile
-    #   Better examples are probably at https://github.com/oneapi-src/oneapi-ci
-    #
-    - name: Intel setup compilers, environment
-      if: contains(matrix.fortran-compiler, 'ifort')
-      run: |
-        wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
-        sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
-        sudo add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
-        sudo apt-get update
-        sudo apt-get install intel-hpckit-getting-started intel-oneapi-clck
-        sudo apt-get install intel-oneapi-common-licensing intel-oneapi-common-vars
-        sudo apt-get install intel-oneapi-dev-utilities  intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
-        sudo apt-get install intel-oneapi-compiler-fortran intel-oneapi-inspector intel-oneapi-itac
-        echo "FC=ifort" >> $GITHUB_ENV
-        echo "CC=icx"  >> $GITHUB_ENV
-        echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
 
-    # Caching cribbed from https://github.com/NCAR/ParallelIO/blob/3a77973ad5e09d354257045bf3d53827ae36a86b/.github/workflows/a3.yml#L1
-    - name: cache-nvidia-compilers
-      id: cache-nvidia-compilers
-      if: contains(matrix.fortran-compiler, 'nvfortran')
-      uses: actions/cache@v2
-      with:
-        path: /opt/nvidia/hpc_sdk/
-        key: nvhpc-${{ runner.os }}-2020-20.11
-    #
-    # Nvidia compilers
-    #
-    - name: Nvidia setup compilers
-      env:
-        NVCOMPILERS: /opt/nvidia/hpc_sdk
-      if: contains(matrix.fortran-compiler, 'nvfortran') && steps.cache-nvidia-compilers.outputs.cache-hit != 'true'
-      run: |
-        wget -q https://developer.download.nvidia.com/hpc-sdk/20.11/nvhpc-20-11_20.11_amd64.deb https://developer.download.nvidia.com/hpc-sdk/20.11/nvhpc-2020_20.11_amd64.deb
-        sudo apt-get install ./nvhpc-20-11_20.11_amd64.deb ./nvhpc-2020_20.11_amd64.deb
-    - name: Nvidia environment
-      env:
-        NVCOMPILERS: /opt/nvidia/hpc_sdk
-      if: contains(matrix.fortran-compiler, 'nvfortran')
-      run: |
-        echo "FC=nvfortran" >> $GITHUB_ENV
-        echo "CC=nvc"       >> $GITHUB_ENV
-        echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
-        echo "${NVCOMPILERS}/Linux_x86_64/20.11/compilers/bin" >> $GITHUB_PATH
     ############################################################################
     #
     # Netcdf C and Fortran
@@ -102,7 +53,6 @@ jobs:
         CPPFLAGS: -I/usr/include/hdf5/serial
         LDFLAGS: -L/usr/lib/x86_64-linux-gnu/hdf5/serial/
       run: |
-        source /opt/intel/oneapi/setvars.sh || true
         ${CC} --version
         git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
         cd netcdf-c
@@ -120,7 +70,6 @@ jobs:
         key: netcdf-fortran-4.5.3-${{ runner.os }}-${{ matrix.fortran-compiler }}
 
     - name: Build NetCDF Fortran library
-      # Unset any Fortran flags
       # Here too it would be nice to use the environment to specify netcdf-c location
       env:
         CPPFLAGS: -I/home/runner/netcdf-c/include
@@ -130,7 +79,6 @@ jobs:
       if: steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
       run: |
         echo ${TEST}
-        source /opt/intel/oneapi/setvars.sh || true
         ${FC} --version
         git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.3
         cd netcdf-fortran
@@ -144,21 +92,16 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Environmental variables
-      run: |
-        echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
-        echo "RRTMGP_BUILD=${GITHUB_WORKSPACE}/build" >> $GITHUB_ENV
+      run: echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
 
     - name: Make library, examples, tests
       env:
         RTE_KERNELS: ${{ matrix.rte-kernels }}
       run: |
-        source /opt/intel/oneapi/setvars.sh || true
         cd ${RRTMGP_ROOT}
         ${FC} --version
-        make -C build -j 2
-        make -C tests -j 1
-        make -C examples/all-sky -j 2
-        make -C examples/rfmip-clear-sky -j 2
+        make libs
+        make -C build separate-libs
 
     ############################################################################
     # Set up Python and packages
@@ -193,34 +136,8 @@ jobs:
       env:
         LD_LIBRARY_PATH: /home/runner/netcdf-c/lib
       run: |
-        source /opt/intel/oneapi/setvars.sh || true
         export LD_LIBRARY_PATH=${NFHOME}/lib:${LD_LIBRARY_PATH}
-        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-        cp ${RFMIP_DIR}/* .
-        python ./run-rfmip-examples.py --block_size 8
-        cd  ${RRTMGP_ROOT}/examples/all-sky
-        python ./run-allsky-example.py
-        cd  ${RRTMGP_ROOT}/tests
-        cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
-        ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
-        ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+        make tests
     - name: Comparison
       run: |
-        cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky
-        python ./compare-to-reference.py --fail=7.e-4
-        cd ${RRTMGP_ROOT}/examples/all-sky
-        python ./compare-to-reference.py
-        cd ${RRTMGP_ROOT}/tests
-        python verification.py
-    ############################################################################
-    - name: Validation plots
-      if: contains(matrix.fortran-compiler, 'ifort') && contains(matrix.rte-kernels, 'default')
-      run: |
-        cd ${RRTMGP_ROOT}/tests
-        python validation-plots.py
-    - name: Upload plots
-      if: contains(matrix.fortran-compiler, 'ifort') && contains(matrix.rte-kernels, 'default')
-      uses: actions/upload-artifact@v2
-      with:
-        name: valdiation-plot
-        path: tests/validation-figures.pdf
+        make check

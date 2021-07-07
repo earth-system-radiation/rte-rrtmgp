@@ -300,7 +300,7 @@ contains
     ! local variables
     real(wp) :: tau_major(ngpt) ! major species optical depth
     ! local index
-    integer :: icol, ilay, iflav, ibnd, igpt, itropo
+    integer :: icol, ilay, iflav, ibnd, itropo
     integer :: gptS, gptE
 
     ! -----------------
@@ -365,10 +365,10 @@ contains
     real(wp),    dimension(ngpt,nlay,ncol),      intent(inout) :: tau
     ! -----------------
     ! local variables
-    real(wp), parameter :: PaTohPa = 0.01
+    real(wp), parameter :: PaTohPa = 0.01_wp
     real(wp) :: vmr_fact, dry_fact             ! conversion from column abundance to dry vol. mixing ratio;
-    real(wp) :: scaling, kminor_loc            ! minor species absorption coefficient, optical depth
-    integer  :: icol, ilay, iflav, igpt, imnr
+    real(wp) :: scaling                        ! optical depth
+    integer  :: icol, ilay, iflav, imnr
     integer  :: gptS, gptE
     real(wp), dimension(ngpt) :: tau_minor
     ! -----------------
@@ -455,7 +455,7 @@ contains
     ! -----------------
     ! local variables
     real(wp) :: k(ngpt) ! rayleigh scattering coefficient
-    integer  :: icol, ilay, iflav, ibnd, igpt, gptS, gptE
+    integer  :: icol, ilay, iflav, ibnd, gptS, gptE
     integer  :: itropo
     ! -----------------
     do ilay = 1, nlay

@@ -29,7 +29,7 @@ subroutine stop_on_err(error_msg)
   if(error_msg /= "") then
     write (error_unit,*) trim(error_msg)
     write (error_unit,*) "rrtmgp_rfmip_lw stopping"
-    stop
+    error stop 1
   end if
 end subroutine stop_on_err
 ! -------------------------------------------------------------------------------------------------

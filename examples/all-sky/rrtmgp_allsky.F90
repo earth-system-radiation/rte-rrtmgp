@@ -5,7 +5,7 @@ subroutine stop_on_err(error_msg)
   if(error_msg /= "") then
     write (error_unit,*) trim(error_msg)
     write (error_unit,*) "rte_rrtmgp_clouds stopping"
-    stop
+    error stop 1
   end if
 end subroutine stop_on_err
 
@@ -119,7 +119,7 @@ program rte_rrtmgp_clouds
   integer(kind=i8)              :: start, finish, start_all, finish_all, clock_rate
   real(wp)                      :: avg
   integer(kind=i8), allocatable :: elapsed(:)
-  ! NAR OpenMP CPU directives in compatible with OpenMP GPU directives  
+  ! NAR OpenMP CPU directives in compatible with OpenMP GPU directives
   !!$omp threadprivate( lw_sources, toa_flux, flux_up, flux_dn, flux_dir )
   ! ----------------------------------------------------------------------------------
   ! Code

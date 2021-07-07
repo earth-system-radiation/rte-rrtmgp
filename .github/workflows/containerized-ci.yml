@@ -1,0 +1,78 @@
+name: Continuous integration in a box
+on: [push, pull_request]
+
+jobs:
+  Containerized-CI:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        rte-kernels: [default, openacc]
+        container: ["earthsystemradiation/rte-rrtmgp-ci:ifort","earthsystemradiation/rte-rrtmgp-ci:nvfortran"]
+    container:
+      image: ${{ matrix.container }}
+    env:
+      NCHOME: /home/runner/netcdf-c
+      NFHOME: /home/runner/netcdf-fortran
+      RFMIP_DIR: /home/runner/rfmip-files
+    steps:
+    ############################################################################
+    # Checks out repository under $GITHUB_WORKSPACE
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Environmental variables
+      # This might be able to be set in the ENV section above
+      run: echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
+    - name: Environmental variables - ifort
+      if: contains(matrix.container, 'ifort')
+      run: echo "FCFLAGS=-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08" >> $GITHUB_ENV
+    - name: Environmental variables - nvfortran
+      if: contains(matrix.container, 'nvfortran')
+      run: echo "FCFLAGS=-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk" >> $GITHUB_ENV
+
+    - name: Make library, examples, tests
+      shell: bash
+      env:
+        RTE_KERNELS: ${{ matrix.rte-kernels }}
+      run: |
+        source /opt/intel/oneapi/setvars.sh || true
+        cd ${RRTMGP_ROOT}
+        ${FC} --version
+        make libs
+        make -C build separate-libs
+    ############################################################################
+    - name: Cache RFMIP files
+      id: cache-rfmip-files
+      uses: actions/cache@v2
+      with:
+        path: /home/runner/rfmip-files # Same as #{RFMIP_DIR}
+        key: rfmip-files
+
+    - name: Stage RFMIP files
+      if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ${RFMIP_DIR}
+        cd ${RFMIP_DIR}
+        python ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
+    ############################################################################
+    - name: Run examples, tests
+      shell: bash
+      env:
+        LD_LIBRARY_PATH: /home/runner/netcdf-c/lib
+      run: |
+        source /opt/intel/oneapi/setvars.sh || true
+        export LD_LIBRARY_PATH=${NFHOME}/lib:${LD_LIBRARY_PATH}
+        make tests
+    - name: Comparison
+      run: make check
+    ############################################################################
+    - name: Validation plots
+      if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
+      run: |
+        cd ${RRTMGP_ROOT}/tests
+        python validation-plots.py
+    - name: Upload plots
+      if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
+      uses: actions/upload-artifact@v2
+      with:
+        name: valdiation-plot
+        path: tests/validation-figures.pdf

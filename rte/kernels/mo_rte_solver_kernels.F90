@@ -928,7 +928,8 @@ contains
     logical(wl),                      intent(in   ) :: top_at_1
     real(wp), dimension(ncol       ), intent(in   ) :: mu0, sfc_albedo          ! surface albedo for direct radiation
     real(wp), dimension(ncol,nlay  ), intent(in   ) :: tau, w0, g
-    real(wp), dimension(ncol,nlay  ), intent(  out) :: source_dn, source_up
+    real(wp), dimension(ncol,nlay  ), target, &
+                                      intent(  out) :: source_dn, source_up
     real(wp), dimension(ncol       ), intent(  out) :: source_sfc ! Source function for upward radation at surface
     real(wp), dimension(ncol,nlay+1), target, &
                                       intent(inout) :: flux_dn_dir ! Direct beam flux
@@ -939,34 +940,44 @@ contains
     ! Variables used in Meador and Weaver
     real(wp) :: gamma1, gamma2, gamma3, gamma4, alpha1, alpha2
 
+
     ! Ancillary variables
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat(ncol)
-    real(wp), pointer, dimension(:) :: dir_flux_inc, dir_flux_trans
+    real(wp), pointer, dimension(:) :: dir_flux_inc, dir_flux_trans, src_up, src_dn
+    integer  :: lay_index
+    real(wp) :: tau_s, w0_s, g_s
     ! ---------------------------------
 
-    do j = merge(1, nlay, top_at_1), merge(nlay, 1, top_at_1), merge(1, -1, top_at_1)
+    do j = 1, nlay
+      if(top_at_1) then
+        lay_index      =  j
+        dir_flux_inc   => flux_dn_dir(:,lay_index  )
+        dir_flux_trans => flux_dn_dir(:,lay_index+1)
+      else
+        lay_index      =  nlay-j+1
+        dir_flux_inc   => flux_dn_dir(:,lay_index+1)
+        dir_flux_trans => flux_dn_dir(:,lay_index  )
+      end if
+      src_up         => source_up(:,lay_index)
+      src_dn         => source_dn(:,lay_index)
       !
       ! Transmittance of direct, unscattered beam.
       !
-      Tnoscat(1:ncol) = exp(-tau(1:ncol,j)/mu0(1:ncol))
+      Tnoscat(1:ncol) = exp(-tau(1:ncol,lay_index)/mu0(1:ncol))
 
-      if(top_at_1) then
-        dir_flux_inc   => flux_dn_dir(:,j)
-        dir_flux_trans => flux_dn_dir(:,j+1)
-      else
-        dir_flux_inc   => flux_dn_dir(:,j+1)
-        dir_flux_trans => flux_dn_dir(:,j)
-      end if
       do i = 1, ncol
+        tau_s = tau(i, lay_index)
+        w0_s  = w0 (i, lay_index)
+        g_s   = g  (i, lay_index)
         !
         ! Zdunkowski Practical Improved Flux Method "PIFM"
         !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
         !
-        gamma1 = (8._wp - w0(i,j) * (5._wp + 3._wp * g(i,j))) * .25_wp
-        gamma2 =  3._wp *(w0(i,j) * (1._wp -         g(i,j))) * .25_wp
-        gamma3 = (2._wp - 3._wp * mu0(i) *           g(i,j) ) * .25_wp
+        gamma1 = (8._wp - w0_s * (5._wp + 3._wp * g_s)) * .25_wp
+        gamma2 =  3._wp *(w0_s * (1._wp -         g_s)) * .25_wp
+        gamma3 = (2._wp - 3._wp * mu0(i) *        g_s ) * .25_wp
         gamma4 =  1._wp - gamma3
         alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
         alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
@@ -981,7 +992,7 @@ contains
         k_mu     = k * mu0(i)
         k_gamma3 = k * gamma3
         k_gamma4 = k * gamma4
-        exp_minusktau = exp(-tau(i,j)*k)
+        exp_minusktau = exp(-tau_s*k)
         exp_minus2ktau = exp_minusktau * exp_minusktau
 
         ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
@@ -991,9 +1002,9 @@ contains
         ! Equation 14, multiplying top and bottom by exp(-k*tau)
         !   and rearranging to avoid div by 0.
         !
-        RT_term =  w0(i,j) * RT_term/merge(1._wp - k_mu*k_mu, &
-                                           epsilon(1._wp),    &
-                                           abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
+        RT_term =  w0_s * RT_term/merge(1._wp - k_mu*k_mu, &
+                                        epsilon(1._wp),    &
+                                        abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
 
         Rdir = RT_term  *                                            &
             ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
@@ -1009,8 +1020,8 @@ contains
               ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat(i) - &
                (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat(i) - &
                2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
-        source_up  (i,j)  =       Rdir * dir_flux_inc(i)
-        source_dn  (i,j)  =       Tdir * dir_flux_inc(i)
+        src_up        (i) =       Rdir * dir_flux_inc(i)
+        src_dn        (i) =       Tdir * dir_flux_inc(i)
         dir_flux_trans(i) = Tnoscat(i) * dir_flux_inc(i)
       end do
     end do

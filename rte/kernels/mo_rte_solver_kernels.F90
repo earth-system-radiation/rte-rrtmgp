@@ -453,10 +453,10 @@ contains
       ! Cell properties: transmittance and reflectance for diffuse radiation
       !   Direct-beam and source for diffuse radiation
       !
-      call sw_source_dir(ncol, nlay, top_at_1, mu0, sfc_alb_dif(:,igpt), &
-                         tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt),      &
-                         Rdif, Tdif, source_dn, source_up, source_srf,  & 
-                         flux_dir(:,:,igpt))
+      call sw_dif_and_source(ncol, nlay, top_at_1, mu0, sfc_alb_dif(:,igpt), &
+                             tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt),      &
+                             Rdif, Tdif, source_dn, source_up, source_srf,  &
+                             flux_dir(:,:,igpt))
       !
       ! Transport
       !
@@ -750,65 +750,20 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Two-stream solutions to direct and diffuse reflectance and transmittance for a layer
+  ! Two-stream solutions to diffuse reflectance and transmittance for a layer
   !    with optical depth tau, single scattering albedo w0, and asymmetery parameter g.
+  ! Direct reflectance and transmittance used to compute direct beam source for diffuse radiation
+  !   in layers and at surface; report direct beam as a byproduct
+  ! Computing the direct-beam source for diffuse radiation at the same time as R and T for
+  !   direct radiation reduces memory traffic and use. 
   !
   ! Equations are developed in Meador and Weaver, 1980,
   !    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
   !
   ! -------------------------------------------------------------------------------------------------
-  pure subroutine sw_two_stream_dif(ncol, nlay, tau, w0, g, Rdif, Tdif) bind (C, name="sw_two_stream_dif")
-    integer,                        intent(in)  :: ncol, nlay
-    real(wp), dimension(ncol,nlay), intent(in)  :: tau, w0, g
-    real(wp), dimension(ncol,nlay), intent(out) :: Rdif, Tdif
-
-    ! -----------------------
-    integer  :: i, j
-
-    ! Ancillary variables
-    real(wp) :: gamma1, gamma2, k, exp_minusktau, exp_minus2ktau
-    real(wp) :: RT_term
-    ! ---------------------------------
-    do j = 1, nlay
-      do i = 1, ncol
-        !
-        ! Zdunkowski Practical Improved Flux Method "PIFM"
-        !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
-        !
-        gamma1 = (8._wp - w0(i,j) * (5._wp + 3._wp * g(i,j))) * .25_wp
-        gamma2 =  3._wp *(w0(i,j) * (1._wp -         g(i,j))) * .25_wp
-        ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
-        !   k = 0 for isotropic, conservative scattering; this lower limit on k
-        !   gives relative error with respect to conservative solution
-        !   of < 0.1% in Rdif down to tau = 10^-9
-        k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
-        exp_minusktau = exp(-tau(i,j)*k)
-        exp_minus2ktau = exp_minusktau * exp_minusktau
-        !
-        ! Diffuse reflection and transmission
-        !
-        ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
-        RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + &
-                           gamma1 * (1._wp - exp_minus2ktau) )
-
-        ! Equation 25
-        Rdif(i,j) = RT_term * gamma2 * (1._wp - exp_minus2ktau)
-
-        ! Equation 26
-        Tdif(i,j) = RT_term * 2._wp * k * exp_minusktau
-      end do
-    end do
-
-  end subroutine sw_two_stream_dif
-  ! ---------------------------------------------------------------
-  !
-  ! Direct beam source for diffuse radiation in layers and at surface;
-  !   report direct beam as a byproduct
-  !
-  ! -------------------------------------------------------------------------------------------------
-  pure subroutine sw_source_dir(ncol, nlay, top_at_1, mu0, sfc_albedo, &
-                                tau, w0, g,  &
-                                Rdif, Tdif, source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="sw_source_dir")
+  pure subroutine sw_dif_and_source(ncol, nlay, top_at_1, mu0, sfc_albedo, &
+                                    tau, w0, g,  &
+                                    Rdif, Tdif, source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="sw_source_dir")
     integer,                          intent(in   ) :: ncol, nlay
     logical(wl),                      intent(in   ) :: top_at_1
     real(wp), dimension(ncol       ), intent(in   ) :: mu0, sfc_albedo          ! surface albedo for direct radiation
@@ -919,7 +874,7 @@ contains
     end do
     source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)
 
-  end subroutine sw_source_dir
+  end subroutine sw_dif_and_source
 ! ---------------------------------------------------------------
 !
 ! Transport of diffuse radiation through a vertically layered atmosphere.

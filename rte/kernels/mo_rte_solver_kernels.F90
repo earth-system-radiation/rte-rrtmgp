@@ -451,15 +451,12 @@ contains
     do igpt = 1, ngpt
       !
       ! Cell properties: transmittance and reflectance for diffuse radiation
-      !
-      call sw_two_stream_dif(ncol, nlay, tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt), &
-                             Rdif, Tdif)
-      !
-      ! Direct-beam and source for diffuse radiation
+      !   Direct-beam and source for diffuse radiation
       !
       call sw_source_dir(ncol, nlay, top_at_1, mu0, sfc_alb_dif(:,igpt), &
                          tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt),      &
-                         source_dn, source_up, source_srf, flux_dir(:,:,igpt))
+                         Rdif, Tdif, source_dn, source_up, source_srf,  & 
+                         flux_dir(:,:,igpt))
       !
       ! Transport
       !
@@ -811,13 +808,12 @@ contains
   ! -------------------------------------------------------------------------------------------------
   pure subroutine sw_source_dir(ncol, nlay, top_at_1, mu0, sfc_albedo, &
                                 tau, w0, g,  &
-                                source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="sw_source_dir")
+                                Rdif, Tdif, source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="sw_source_dir")
     integer,                          intent(in   ) :: ncol, nlay
     logical(wl),                      intent(in   ) :: top_at_1
     real(wp), dimension(ncol       ), intent(in   ) :: mu0, sfc_albedo          ! surface albedo for direct radiation
     real(wp), dimension(ncol,nlay  ), intent(in   ) :: tau, w0, g
-    real(wp), dimension(ncol,nlay  ), target, &
-                                      intent(  out) :: source_dn, source_up
+    real(wp), dimension(ncol,nlay  ), intent(  out) :: Rdif, Tdif, source_dn, source_up
     real(wp), dimension(ncol       ), intent(  out) :: source_sfc ! Source function for upward radation at surface
     real(wp), dimension(ncol,nlay+1), target, &
                                       intent(inout) :: flux_dn_dir ! Direct beam flux
@@ -833,7 +829,7 @@ contains
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat
-    real(wp), pointer, dimension(:) :: dir_flux_inc, dir_flux_trans, src_up, src_dn
+    real(wp), pointer, dimension(:) :: dir_flux_inc, dir_flux_trans
     integer  :: lay_index
     real(wp) :: tau_s, w0_s, g_s, mu0_s
     ! ---------------------------------
@@ -848,8 +844,6 @@ contains
         dir_flux_inc   => flux_dn_dir(:,lay_index+1)
         dir_flux_trans => flux_dn_dir(:,lay_index  )
       end if
-      src_up         => source_up(:,lay_index)
-      src_dn         => source_dn(:,lay_index)
 
       do i = 1, ncol
         !
@@ -886,6 +880,12 @@ contains
         ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
         RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + &
                            gamma1 * (1._wp - exp_minus2ktau) )
+        ! Equation 25
+        Rdif(i,lay_index) = RT_term * gamma2 * (1._wp - exp_minus2ktau)
+
+        ! Equation 26
+        Tdif(i,lay_index) = RT_term * 2._wp * k * exp_minusktau
+
         !
         ! Equation 14, multiplying top and bottom by exp(-k*tau)
         !   and rearranging to avoid div by 0.
@@ -912,9 +912,9 @@ contains
               ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
                (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
                2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
-        src_up        (i) =    Rdir * dir_flux_inc(i)
-        src_dn        (i) =    Tdir * dir_flux_inc(i)
-        dir_flux_trans(i) = Tnoscat * dir_flux_inc(i)
+        source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
+        source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
+        dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
       end do
     end do
     source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)

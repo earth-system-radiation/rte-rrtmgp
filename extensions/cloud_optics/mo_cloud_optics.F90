@@ -374,8 +374,8 @@ contains
                         optical_props) result(error_msg)
     class(ty_cloud_optics), &
               intent(in   ) :: this
-    real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud ice water path    (units?)
-                               ciwp  (:,:), &   ! cloud liquid water path (units?)
+    real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud ice water path    (g/m2)
+                               ciwp  (:,:), &   ! cloud liquid water path (g/m2)
                                reliq (:,:), &   ! cloud ice particle effective size (microns)
                                reice (:,:)      ! cloud liquid particle effective radius (microns)
     class(ty_optical_props_arry), &
@@ -558,7 +558,7 @@ contains
       type is (ty_optical_props_nstr)
         error_msg = "cloud optics: n-stream calculations not yet supported"
       end select
-    end if 
+    end if
     !$acc end data
     !$omp end target data
   end function cloud_optics

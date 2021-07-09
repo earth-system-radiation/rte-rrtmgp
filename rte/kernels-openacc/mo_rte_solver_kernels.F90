@@ -570,12 +570,9 @@ contains
     real(wp), dimension(ncol,nlay,ngpt) :: source_up, source_dn
     real(wp), dimension(ncol     ,ngpt) :: source_srf
     ! ------------------------------------
-    !
-    ! Cell properties: transmittance and reflectance for direct and diffuse radiation
-    !
-    !$acc enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_dn, flux_dir)
+    !$acc        enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_dn, flux_dir)
     !$omp target enter data map(to:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, flux_dn, flux_dir)
-    !$acc enter data create(Rdif, Tdif, source_up, source_dn, source_srf, flux_up)
+    !$acc        enter data create(   Rdif, Tdif, source_up, source_dn, source_srf, flux_up)
     !$omp target enter data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf, flux_up)
     !
     ! Cell properties: transmittance and reflectance for diffuse radiation
@@ -600,9 +597,9 @@ contains
         end do
       end do
     end do
-    !$acc exit data copyout(flux_up, flux_dn, flux_dir)
+    !$acc        exit data copyout( flux_up, flux_dn, flux_dir)
     !$omp target exit data map(from:flux_up, flux_dn, flux_dir)
-    !$acc exit data delete (tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, source_up, source_dn, source_srf)
+    !$acc        exit data delete (    tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, source_up, source_dn, source_srf)
     !$omp target exit data map(release:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, source_up, source_dn, source_srf)
 
   end subroutine sw_solver_2stream

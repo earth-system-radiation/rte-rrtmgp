@@ -967,7 +967,7 @@ contains
   !   report direct beam as a byproduct
   !
   ! -------------------------------------------------------------------------------------------------
-  pure subroutine sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_albedo, &
+  subroutine sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_albedo, &
                                 tau, w0, g,                                      &
                                 Rdif, Tdif, source_dn, source_up, source_sfc,    &
                                 flux_dn_dir) bind (C, name="sw_source_dir")

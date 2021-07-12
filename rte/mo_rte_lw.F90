@@ -87,8 +87,10 @@ contains
     logical  :: using_2stream, do_Jacobians
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
-    real(wp), dimension(1,1), target        :: decoy
     real(wp), dimension(:,:), pointer       :: jacobian
+    real(wp), dimension(optical_props%get_ncol(),           &
+                        optical_props%get_nlay()+1), target &
+                                            :: decoy
     ! --------------------------------------------------
     !
     ! Weights and angle secants for first order (k=1) Gaussian quadrature.

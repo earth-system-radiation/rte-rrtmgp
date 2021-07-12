@@ -390,7 +390,7 @@ contains
     real(wp), dimension(ncol            ), intent(in ) :: mu0          ! cosine of solar zenith angle
     real(wp), dimension(ncol,       ngpt), intent(in ) :: inc_flux_dir ! Direct beam incident flux
     real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
-                                                                       ! Top level must contain incident flux boundary condition
+
     integer :: ilev, igpt
     real(wp) :: mu0_inv(ncol)
 
@@ -488,14 +488,14 @@ contains
       !
       ! Boundary conditions direct beam...
       !
-      call apply_BC(ncol, nlay,   top_at_1, inc_flux_dir(:,igpt), mu0, gpt_flux_dir)
+      call apply_BC  (ncol, nlay+1, top_at_1, inc_flux_dir(:,igpt), mu0, gpt_flux_dir)
       !
       ! ... and diffuse field, using 0 if no BC is provided
       !
       if(has_dif_bc) then
-        call apply_BC(ncol, nlay, top_at_1, inc_flux_dif(:,igpt),      gpt_flux_dn )
+        call apply_BC(ncol, nlay+1, top_at_1, inc_flux_dif(:,igpt),      gpt_flux_dn )
       else
-        call apply_BC(ncol, nlay, top_at_1,                            gpt_flux_dn )
+        call apply_BC(ncol, nlay+1, top_at_1,                            gpt_flux_dn )
       end if
       !
       ! Cell properties: transmittance and reflectance for diffuse radiation
@@ -514,11 +514,12 @@ contains
       !
       ! adding() computes only diffuse flux; flux_dn is total
       !
-      gpt_flux_dn(:,:) = gpt_flux_dn(:,:) + gpt_flux_dir(:,:)
       if(do_broadband) then
-        broadband_up (:,:) = broadband_up (:,:) + gpt_flux_up(:,:)
-        broadband_dn (:,:) = broadband_dn (:,:) + gpt_flux_up(:,:)
-        broadband_dir(:,:) = broadband_dir(:,:) + gpt_flux_up(:,:)
+        broadband_up (:,:) = broadband_up (:,:) + gpt_flux_up (:,:)
+        broadband_dn (:,:) = broadband_dn (:,:) + gpt_flux_dn (:,:) + gpt_flux_dir(:,:)
+        broadband_dir(:,:) = broadband_dir(:,:) + gpt_flux_dir(:,:)
+      else
+        gpt_flux_dn(:,:) = gpt_flux_dn(:,:) + gpt_flux_dir(:,:)
       end if
     end do
 

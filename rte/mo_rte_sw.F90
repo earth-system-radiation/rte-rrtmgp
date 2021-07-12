@@ -183,6 +183,8 @@ contains
     !   and switch dimension ordering
     call expand_and_transpose(atmos, sfc_alb_dir, sfc_alb_dir_gpt)
     call expand_and_transpose(atmos, sfc_alb_dif, sfc_alb_dif_gpt)
+    !$acc        exit data delete(     inc_flux, sfc_alb_dir, sfc_alb_dif)
+    !$omp target exit data map(release:inc_flux, sfc_alb_dir, sfc_alb_dif)
     ! ------------------------------------------------------------------------------------
     !
     ! Compute the radiative transfer...
@@ -251,6 +253,9 @@ contains
         !
         error_msg = 'sw_solver(...ty_optical_props_nstr...) not yet implemented'
     end select
+    !$acc        exit data delete(     mu0)
+    !$omp target exit data map(release:mu0)
+
     if(.not. has_dif_bc) then
       !
       ! Explicitly deallocate temp variable so we can also delete in OpenACC/MP
@@ -270,31 +275,37 @@ contains
     !
     select type(fluxes)
       type is (ty_fluxes_broadband)
-        !
-        ! Components of ty_fluxes already contain spectral integral
-        !
+        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         if(.not. associated(fluxes%flux_up)) then
           !$acc        exit data delete(     flux_up_loc)
           !$omp target exit data map(release:flux_up_loc)
           deallocate(flux_up_loc)
+        else
+          !$acc        exit data copyoout(flux_up_loc)
+          !$omp target exit data map(from:flux_up_loc)
         end if
         if(.not. associated(fluxes%flux_dn)) then
           !$acc        exit data delete(     flux_dn_loc)
           !$omp target exit data map(release:flux_dn_loc)
           deallocate(flux_dn_loc)
+        else
+          !$acc        exit data copyoout(flux_dn_loc)
+          !$omp target exit data map(from:flux_dn_loc)
         end if
         if(.not. associated(fluxes%flux_dn_dir)) then
           !$acc        exit data delete(     flux_dir_loc)
           !$omp target exit data map(release:flux_dir_loc)
           deallocate(flux_dir_loc)
+        else
+          !$acc        exit data copyoout(flux_dn_loc)
+          !$omp target exit data map(from:flux_dn_loc)
         end if
       class default
         error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
         !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
-    !$acc        enter data delete(     mu0, inc_flux, sfc_alb_dir, sfc_alb_dif)
-    !$omp target enter data map(release:mu0, inc_flux, sfc_alb_dir, sfc_alb_dif)
   end function rte_sw
   !--------------------------------------------------------------------------------------------------------------------
   !

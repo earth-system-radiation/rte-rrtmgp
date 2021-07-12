@@ -487,8 +487,8 @@ contains
   !   Extinction-only i.e. solar direct beam
   !
   ! -------------------------------------------------------------------------------------------------
-  pure subroutine sw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
-                                   tau, mu0, inc_flux_dir, flux_dir) bind(C, name="sw_solver_noscat")
+  subroutine sw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
+                              tau, mu0, inc_flux_dir, flux_dir) bind(C, name="sw_solver_noscat")
     integer,                               intent(in ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in ) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent(in ) :: tau          ! Absorption optical thickness []

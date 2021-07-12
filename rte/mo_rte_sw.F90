@@ -141,7 +141,6 @@ contains
         ! Broadband, spectrally integrated profiles get their own solvers that integrate in place
         !   Fluxes class has three possible outputs; allocate memory for local use if one or
         !   more haven't been requested
-        !   OpenMP and OpenACC directives needed here
         !
         if(associated(fluxes%flux_up)) then
           flux_up_loc => fluxes%flux_up
@@ -166,12 +165,16 @@ contains
         end if
       class default
         do_broadband = .false.
-        allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
-                 gpt_flux_dn (ncol, nlay+1, ngpt), &
-                 gpt_flux_dir(ncol, nlay+1, ngpt))
-        !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-        !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
+    !
+    ! FIXME: We need valid addresses for these arrays to pass to solvers below, but not All The Memory
+    !
+    allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
+             gpt_flux_dn (ncol, nlay+1, ngpt), &
+             gpt_flux_dir(ncol, nlay+1, ngpt))
+    !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
     !$acc        enter data create(   sfc_alb_dir_gpt, sfc_alb_dif_gpt)
     !$omp target enter data map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)

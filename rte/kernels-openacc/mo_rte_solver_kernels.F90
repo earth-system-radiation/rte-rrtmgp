@@ -569,23 +569,18 @@ contains
                                                             ! Spectral albedo of surface to direct and diffuse radiation
     real(wp), dimension(ncol,       ngpt), intent(in ) :: sfc_alb_dir, sfc_alb_dif, &
                                                           inc_flux_dir ! Direct beam incident flux
-    real(wp), dimension(ncol,nlay+1,ngpt), target, &
-                                           intent(out) :: flux_up, flux_dn, flux_dir! Fluxes [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_up, flux_dn, flux_dir! Fluxes [W/m2]
     logical(wl),                           intent(in ) :: has_dif_bc   ! Is a boundary condition for diffuse flux supplied?
     real(wp), dimension(ncol,       ngpt), intent(in ) :: inc_flux_dif ! Boundary condition for diffuse flux
     logical(wl),                           intent(in ) :: do_broadband ! Provide broadband-integrated, not spectrally-resolved, fluxes?
     real(wp), dimension(ncol,nlay+1     ), intent(out) :: broadband_up, broadband_dn, broadband_dir
     ! -------------------------------------------
-    integer  :: icol, ilay, igpt
+    integer  :: icol, ilay, igpt, top_level
     real(wp) :: bb_flux_s, bb_dir_s
     real(wp), dimension(ncol,nlay,ngpt) :: Rdif, Tdif
     real(wp), dimension(ncol,nlay,ngpt) :: source_up, source_dn
     real(wp), dimension(ncol     ,ngpt) :: source_srf
     ! ------------------------------------
-    !$acc        enter data copyin(tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif)
-    !$omp target enter data map(to:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif)
-    !$acc        enter data create(   Rdif, Tdif, source_up, source_dn, source_srf, flux_up, flux_dn, flux_dir)
-    !$omp target enter data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf, flux_up, flux_dn, flux_dir)
     if(do_broadband) then
       !$acc        enter data create(   broadband_up, broadband_dn, broadband_dir)
       !$omp target enter data map(alloc:broadband_up, broadband_dn, broadband_dir)
@@ -593,22 +588,50 @@ contains
       call zero_array(ncol, nlay+1, broadband_dn)
       call zero_array(ncol, nlay+1, broadband_dir)
     end if
+    top_level = nlay+1
+    if(top_at_1) top_level = 1
     !
     ! Boundary conditions direct beam...
     !
-    call apply_BC  (ncol, nlay+1, ngpt, top_at_1, inc_flux_dir, mu0, flux_dir)
+    !$acc        enter data create(   flux_up, flux_dn, flux_dir)
+    !$omp target enter data map(alloc:flux_up, flux_dn, flux_dir)
+    !$acc        enter data copyin(mu0)
+    !$omp target enter data map(to:mu0)
+
+    !$acc  parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do igpt = 1, ngpt
+      do icol = 1, ncol
+        flux_dir(icol, top_level, igpt)  = inc_flux_dir(icol,igpt) * mu0(icol)
+      end do
+    end do
+
     !
     ! ... and diffuse field, using 0 if no BC is provided
     !
     if(has_dif_bc) then
-      call apply_BC(ncol, nlay+1, ngpt, top_at_1, inc_flux_dif,      flux_dn )
+      !$acc                         parallel loop    collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          flux_dn(icol, top_level, igpt)  = inc_flux_dif(icol,igpt)
+        end do
+      end do
     else
-      call apply_BC(ncol, nlay+1, ngpt, top_at_1,                    flux_dn )
+      !$acc                         parallel loop    collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do igpt = 1, ngpt
+        do icol = 1, ncol
+          flux_dn(icol, top_level, igpt)  = 0._wp
+        end do
+      end do
     end if
     !
     ! Cell properties: transmittance and reflectance for diffuse radiation
     ! Direct-beam radiation and source for diffuse radiation
     !
+    !$acc        enter data create(   Rdif, Tdif, source_up, source_dn, source_srf)
+    !$omp target enter data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf)
     call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dif, &
                            tau, ssa, g,                                  &
                            Rdif, Tdif, source_dn, source_up, source_srf, flux_dir)
@@ -616,12 +639,15 @@ contains
     call adding(ncol, nlay, ngpt, top_at_1,   &
                 sfc_alb_dif, Rdif, Tdif,      &
                 source_dn, source_up, source_srf, flux_up, flux_dn)
-    !
-    ! adding computes only diffuse flux; flux_dn is total
-    !
+    !$acc        exit data delete (    mu0, Rdif, Tdif, source_up, source_dn, source_srf)
+    !$omp target exit data map(release:mu0, Rdif, Tdif, source_up, source_dn, source_srf)
+
     if(do_broadband) then
-      !$acc parallel loop gang vector collapse(2)
-      !$omp target teams distribute parallel do simd collapse(2)
+      !
+      ! Broadband integration
+      !
+      !$acc                         parallel loop gang vector collapse(2)
+      !$omp target teams distribute parallel do simd          collapse(2)
       do ilay = 1, nlay+1
         do icol = 1, ncol
 
@@ -632,7 +658,7 @@ contains
           broadband_up(icol, ilay) = bb_flux_s
         end do
       end do
-      !$acc parallel loop gang vector collapse(2)
+      !$acc              parallel loop gang vector   collapse(2)
       !$omp target teams distribute parallel do simd collapse(2)
       do ilay = 1, nlay+1
         do icol = 1, ncol
@@ -641,10 +667,13 @@ contains
           bb_dir_s  = 0._wp
           do igpt = 1, ngpt
             bb_dir_s  = bb_dir_s  + flux_dir(icol, ilay, igpt)
-            bb_flux_s = bb_flux_s + flux_up (icol, ilay, igpt)
+            bb_flux_s = bb_flux_s + flux_dn (icol, ilay, igpt)
           end do
+          !
+          ! adding computes only diffuse flux; flux_dn is total
+          !
           broadband_dir(icol, ilay) = bb_dir_s
-          broadband_up (icol, ilay) = bb_dir_s + bb_flux_s
+          broadband_dn (icol, ilay) = bb_dir_s + bb_flux_s
         end do
       end do
       !$acc        exit data copyout( broadband_up, broadband_dn, broadband_dir)
@@ -652,7 +681,10 @@ contains
       !$acc        exit data delete(     flux_up, flux_dn, flux_dir)
       !$omp target exit data map(release:flux_up, flux_dn, flux_dir)
     else
-      !$acc  parallel loop collapse(3)
+      !
+      ! adding computes only diffuse flux; flux_dn is total
+      !
+      !$acc                         parallel loop    collapse(3)
       !$omp target teams distribute parallel do simd collapse(3)
       do igpt = 1, ngpt
         do ilay = 1, nlay+1
@@ -664,9 +696,6 @@ contains
       !$acc        exit data copyout( flux_up, flux_dn, flux_dir)
       !$omp target exit data map(from:flux_up, flux_dn, flux_dir)
     end if
-
-    !$acc        exit data delete (    tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, source_up, source_dn, source_srf)
-    !$omp target exit data map(release:tau, ssa, g, mu0, sfc_alb_dir, sfc_alb_dif, Rdif, Tdif, source_up, source_dn, source_srf)
 
   end subroutine sw_solver_2stream
   ! -------------------------------------------------------------------------------------------------
@@ -1303,7 +1332,7 @@ contains
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux         ! Flux at top of domain
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_dn          ! Flux to be used as input to solvers below
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn          ! Flux to be used as input to solvers below
 
     integer :: icol, igpt
     ! --------------
@@ -1333,7 +1362,7 @@ contains
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux         ! Flux at top of domain
     real(wp), dimension(ncol            ), intent(in   ) :: factor           ! Factor to multiply incoming flux
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out  ) :: flux_dn          ! Flux to be used as input to solvers below
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn          ! Flux to be used as input to solvers below
 
     integer :: icol, igpt
     ! --------------
@@ -1362,7 +1391,7 @@ contains
   subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="apply_BC_0")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_dn          ! Flux to be used as input to solvers below
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn          ! Flux to be used as input to solvers below
 
     integer :: icol, igpt
     ! --------------

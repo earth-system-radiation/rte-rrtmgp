@@ -465,11 +465,8 @@ contains
     ! gpt_fluxes point to calculations for the current g-point
     real(wp), dimension(:,:), pointer :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     ! ------------------------------------
-    if(top_at_1) then
-      top_level = 1
-    else
-      top_level = nlay+1
-    end if
+    top_level = nlay+1
+    if(top_at_1) top_level = 1
     !
     ! Integrated fluxes need zeroing
     !

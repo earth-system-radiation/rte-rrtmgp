@@ -172,7 +172,8 @@ contains
         flux_dir_loc => decoy
     end select
     !
-    ! FIXME: We need valid addresses for these arrays to pass to solvers below, but not All The Memory
+    ! Rethink? Below are three big arrays. They aren't needed for the CPU implementation
+    !   but provide working space for the current GPU implementation
     !
     allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
              gpt_flux_dn (ncol, nlay+1, ngpt), &
@@ -288,21 +289,21 @@ contains
           !$acc        exit data delete(     flux_up_loc)
           !$omp target exit data map(release:flux_up_loc)
         else
-          !$acc        exit data copyoout(flux_up_loc)
+          !$acc        exit data copyout(flux_up_loc)
           !$omp target exit data map(from:flux_up_loc)
         end if
         if(.not. associated(fluxes%flux_dn)) then
           !$acc        exit data delete(     flux_dn_loc)
           !$omp target exit data map(release:flux_dn_loc)
         else
-          !$acc        exit data copyoout(flux_dn_loc)
+          !$acc        exit data copyout(flux_dn_loc)
           !$omp target exit data map(from:flux_dn_loc)
         end if
         if(.not. associated(fluxes%flux_dn_dir)) then
           !$acc        exit data delete(     flux_dir_loc)
           !$omp target exit data map(release:flux_dir_loc)
         else
-          !$acc        exit data copyoout(flux_dn_loc)
+          !$acc        exit data copyout(flux_dn_loc)
           !$omp target exit data map(from:flux_dn_loc)
         end if
       class default

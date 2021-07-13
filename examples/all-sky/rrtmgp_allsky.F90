@@ -363,7 +363,7 @@ program rte_rrtmgp_clouds
       !$acc exit data delete(lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source, lw_sources)
       !$omp target exit data map(release:lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source)
     else
-      !$acc enter data create(toa_flux)
+      !$acc        enter data create(   toa_flux)
       !$omp target enter data map(alloc:toa_flux)
       fluxes%flux_dn_dir => flux_dir(:,:)
 
@@ -379,7 +379,8 @@ program rte_rrtmgp_clouds
                               mu0,   toa_flux, &
                               sfc_alb_dir, sfc_alb_dif, &
                               fluxes))
-      !$acc exit data delete(toa_flux)
+      print *, "fluxes%flux_dn_dir", maxval(fluxes%flux_dn_dir), minval(fluxes%flux_dn_dir)
+      !$acc        exit data delete(     toa_flux)
       !$omp target exit data map(release:toa_flux)
     end if
     !print *, "******************************************************************"

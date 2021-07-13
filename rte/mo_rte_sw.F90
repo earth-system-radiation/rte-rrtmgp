@@ -75,7 +75,6 @@ contains
     ngpt  = atmos%get_ngpt()
     nband = atmos%get_nband()
     error_msg = ""
-    print *, "got sizes"
     ! ------------------------------------------------------------------------------------
     !
     ! Error checking -- consistency of sizes and validity of values
@@ -107,7 +106,6 @@ contains
           error_msg = "rte_sw: inc_flux_dif inconsistently sized"
       end if
     end if
-    print *, "Done checking extents"
     !
     ! Values of input arrays
     !
@@ -125,7 +123,6 @@ contains
           error_msg = "rte_sw: one or more inc_flux_dif < 0"
       end if
     end if
-    print *, "Done checking extents"
 
 
     if(len_trim(error_msg) > 0) then
@@ -190,8 +187,8 @@ contains
     !   and switch dimension ordering
     call expand_and_transpose(atmos, sfc_alb_dir, sfc_alb_dir_gpt)
     call expand_and_transpose(atmos, sfc_alb_dif, sfc_alb_dif_gpt)
-    !$acc        exit data delete(     inc_flux, sfc_alb_dir, sfc_alb_dif)
-    !$omp target exit data map(release:inc_flux, sfc_alb_dir, sfc_alb_dif)
+    !$acc        exit data delete(     sfc_alb_dir, sfc_alb_dif)
+    !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif)
     ! ------------------------------------------------------------------------------------
     !
     ! Compute the radiative transfer...
@@ -248,6 +245,7 @@ contains
                                gpt_flux_up, gpt_flux_dn, gpt_flux_dir,  &
                                has_dif_bc, inc_flux_diffuse,            &
                                do_broadband, flux_up_loc, flux_dn_loc, flux_dir_loc)
+        print *, "flux_dir_loc", minval(flux_dir_loc), maxval(flux_dir_loc)
         !$acc        exit data delete(     atmos%tau, atmos%ssa, atmos%g, atmos)
         !$omp target exit data map(release:atmos%tau, atmos%ssa, atmos%g)
         !$acc        exit data delete(     sfc_alb_dir_gpt, sfc_alb_dif_gpt)

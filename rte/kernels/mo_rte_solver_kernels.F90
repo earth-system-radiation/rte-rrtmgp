@@ -470,8 +470,8 @@ contains
     ! Integrated fluxes need zeroing
     !
     if(do_broadband) then
-      call zero_array(ncol, nlay+1, broadband_up)
-      call zero_array(ncol, nlay+1, broadband_dn)
+      call zero_array(ncol, nlay+1, broadband_up )
+      call zero_array(ncol, nlay+1, broadband_dn )
       call zero_array(ncol, nlay+1, broadband_dir)
     end if
 
@@ -517,9 +517,9 @@ contains
       if(do_broadband) then
         broadband_up (:,:) = broadband_up (:,:) + gpt_flux_up (:,:)
         broadband_dn (:,:) = broadband_dn (:,:) + gpt_flux_dn (:,:) + gpt_flux_dir(:,:)
-        broadband_dir(:,:) = broadband_dir(:,:) + gpt_flux_dir(:,:)
+        broadband_dir(:,:) = broadband_dir(:,:)                     + gpt_flux_dir(:,:)
       else
-        gpt_flux_dn(:,:) = gpt_flux_dn(:,:) + gpt_flux_dir(:,:)
+        gpt_flux_dn(:,:) =                        gpt_flux_dn (:,:) + gpt_flux_dir(:,:)
       end if
     end do
 

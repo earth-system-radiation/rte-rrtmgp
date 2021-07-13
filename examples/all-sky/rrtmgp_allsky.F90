@@ -374,6 +374,7 @@ program rte_rrtmgp_clouds
                                          toa_flux))
       call stop_on_err(clouds%delta_scale())
       call stop_on_err(clouds%increment(atmos))
+      print *, "Gonna call the SW, you just watch me"
       call stop_on_err(rte_sw(atmos, top_at_1, &
                               mu0,   toa_flux, &
                               sfc_alb_dir, sfc_alb_dif, &

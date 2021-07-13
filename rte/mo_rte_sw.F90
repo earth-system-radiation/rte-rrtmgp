@@ -68,14 +68,14 @@ contains
 
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     real(wp), dimension(:,:),   allocatable :: sfc_alb_dir_gpt, sfc_alb_dif_gpt
-    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_dir_loc, inc_flux_diffuse
+    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_dir_loc, inc_flux_diffuse, decoy
     ! ------------------------------------------------------------------------------------
     ncol  = atmos%get_ncol()
     nlay  = atmos%get_nlay()
     ngpt  = atmos%get_ngpt()
     nband = atmos%get_nband()
     error_msg = ""
-
+    print *, "got sizes"
     ! ------------------------------------------------------------------------------------
     !
     ! Error checking -- consistency of sizes and validity of values
@@ -107,7 +107,7 @@ contains
           error_msg = "rte_sw: inc_flux_dif inconsistently sized"
       end if
     end if
-
+    print *, "Done checking extents"
     !
     ! Values of input arrays
     !
@@ -125,6 +125,7 @@ contains
           error_msg = "rte_sw: one or more inc_flux_dif < 0"
       end if
     end if
+    print *, "Done checking extents"
 
 
     if(len_trim(error_msg) > 0) then
@@ -165,6 +166,12 @@ contains
         end if
       class default
         do_broadband = .false.
+        allocate(decoy(ncol, nlay+1))
+        !$acc        enter data create(   decoy)
+        !$omp target enter data map(alloc:decoy)
+        flux_up_loc  => decoy
+        flux_dn_loc  => decoy
+        flux_dir_loc => decoy
     end select
     !
     ! FIXME: We need valid addresses for these arrays to pass to solvers below, but not All The Memory
@@ -270,17 +277,17 @@ contains
         error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
       return
     end if
-    !
-    ! ...and reduce spectral fluxes to desired output quantities
-    !
+
     select type(fluxes)
+      !
+      ! Tidy up memory for broadband fluxes on GPUs
+      !
       type is (ty_fluxes_broadband)
         !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         if(.not. associated(fluxes%flux_up)) then
           !$acc        exit data delete(     flux_up_loc)
           !$omp target exit data map(release:flux_up_loc)
-          deallocate(flux_up_loc)
         else
           !$acc        exit data copyoout(flux_up_loc)
           !$omp target exit data map(from:flux_up_loc)
@@ -288,7 +295,6 @@ contains
         if(.not. associated(fluxes%flux_dn)) then
           !$acc        exit data delete(     flux_dn_loc)
           !$omp target exit data map(release:flux_dn_loc)
-          deallocate(flux_dn_loc)
         else
           !$acc        exit data copyoout(flux_dn_loc)
           !$omp target exit data map(from:flux_dn_loc)
@@ -296,12 +302,14 @@ contains
         if(.not. associated(fluxes%flux_dn_dir)) then
           !$acc        exit data delete(     flux_dir_loc)
           !$omp target exit data map(release:flux_dir_loc)
-          deallocate(flux_dir_loc)
         else
           !$acc        exit data copyoout(flux_dn_loc)
           !$omp target exit data map(from:flux_dn_loc)
         end if
       class default
+        !
+        ! ...or reduce spectral fluxes to desired output quantities
+        !
         error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
         !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
         !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)

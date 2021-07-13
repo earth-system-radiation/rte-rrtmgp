@@ -649,7 +649,7 @@ contains
       end do
       !$acc        exit data copyout( broadband_up, broadband_dn, broadband_dir)
       !$omp target exit data map(from:broadband_up, broadband_dn, broadband_dir)
-      !$acc        exit data delete      flux_up, flux_dn, flux_dir)
+      !$acc        exit data delete(     flux_up, flux_dn, flux_dir)
       !$omp target exit data map(release:flux_up, flux_dn, flux_dir)
     else
       !$acc  parallel loop collapse(3)

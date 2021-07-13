@@ -68,7 +68,8 @@ contains
 
     real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     real(wp), dimension(:,:),   allocatable :: sfc_alb_dir_gpt, sfc_alb_dif_gpt
-    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_dir_loc, inc_flux_diffuse, decoy
+    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_dir_loc
+    real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse=>NULL(), decoy
     ! ------------------------------------------------------------------------------------
     ncol  = atmos%get_ncol()
     nlay  = atmos%get_nlay()
@@ -134,7 +135,7 @@ contains
     ! ------------------------------------------------------------------------------------
     select type(fluxes)
       type is (ty_fluxes_broadband)
-        do_broadband = .true.
+        do_broadband = .true._wl
         !
         ! Broadband, spectrally integrated profiles get their own solvers that integrate in place
         !   Fluxes class has three possible outputs; allocate memory for local use if one or
@@ -162,7 +163,7 @@ contains
           !$omp target enter data map(alloc:flux_dir_loc)
         end if
       class default
-        do_broadband = .false.
+        do_broadband = .false._wl
         allocate(decoy(ncol, nlay+1))
         !$acc        enter data create(   decoy)
         !$omp target enter data map(alloc:decoy)
@@ -196,8 +197,9 @@ contains
     !
     ! Diffuse flux boundary condition - will use values in optional arg or be set to 0
     !
-    has_dif_bc = present(inc_flux_dif)
-    if(has_dif_bc) then
+    has_dif_bc = logical(present(inc_flux_dif), wl)
+
+    if (has_dif_bc) then
       ! Is this sufficient to put pointer and data on device?
       !  inc_flux_dif might have been copied-in before, when checking extents/values,
       !  in which case no copying will occur here
@@ -245,7 +247,6 @@ contains
                                gpt_flux_up, gpt_flux_dn, gpt_flux_dir,  &
                                has_dif_bc, inc_flux_diffuse,            &
                                do_broadband, flux_up_loc, flux_dn_loc, flux_dir_loc)
-        print *, "flux_dir_loc", minval(flux_dir_loc), maxval(flux_dir_loc)
         !$acc        exit data delete(     atmos%tau, atmos%ssa, atmos%g, atmos)
         !$omp target exit data map(release:atmos%tau, atmos%ssa, atmos%g)
         !$acc        exit data delete(     sfc_alb_dir_gpt, sfc_alb_dif_gpt)

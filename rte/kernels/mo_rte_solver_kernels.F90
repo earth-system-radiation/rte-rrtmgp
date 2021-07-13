@@ -34,7 +34,6 @@ module mo_rte_solver_kernels
 
   interface apply_BC
     module procedure apply_BC_gpt, apply_BC_factor, apply_BC_0
-    module procedure apply_BC_2D,  apply_BC_factor_2D, apply_BC_0_2D
   end interface apply_BC
 
   public :: apply_BC, &
@@ -407,7 +406,7 @@ contains
       ! layer index = level index - 1
       ! previous level is up (-1)
       do igpt = 1, ngpt
-        call apply_BC(ncol, nlay,   top_at_1, inc_flux_dir(:, igpt), mu0, flux_dir(:,:,igpt))
+        flux_dir(:,    1,igpt) = inc_flux_dir(:,igpt) * mu0(:)
         do ilev = 2, nlay+1
           flux_dir(:,ilev,igpt) = flux_dir(:,ilev-1,igpt) * exp(-tau(:,ilev-1,igpt)*mu0_inv(:))
         end do
@@ -416,7 +415,7 @@ contains
       ! layer index = level index
       ! previous level is up (+1)
       do igpt = 1, ngpt
-        call apply_BC(ncol, nlay,   top_at_1, inc_flux_dir(:, igpt), mu0, flux_dir(:,:,igpt))
+        flux_dir(:,nlay+1,igpt) = inc_flux_dir(:,igpt) * mu0(:)
         do ilev = nlay, 1, -1
           flux_dir(:,ilev,igpt) = flux_dir(:,ilev+1,igpt) * exp(-tau(:,ilev,igpt)*mu0_inv(:))
         end do
@@ -453,9 +452,9 @@ contains
     logical(wl),                           intent(in   ) :: has_dif_bc   ! Is a boundary condition for diffuse flux supplied?
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux_dif ! Boundary condition for diffuse flux
     logical(wl),                           intent(in   ) :: do_broadband ! Provide broadband-integrated, not spectrally-resolved, fluxes?
-    real(wp), dimension(ncol,nlay+1     ), intent(out  ) :: broadband_up, broadband_dn, broadband_dir
+    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_up, broadband_dn, broadband_dir
     ! -------------------------------------------           ! Broadband integrated fluxes
-    integer :: igpt
+    integer :: igpt, top_level
     real(wp), dimension(ncol,nlay  )  :: Rdif, Tdif
     real(wp), dimension(ncol,nlay  )  :: source_up, source_dn
     real(wp), dimension(ncol       )  :: source_srf
@@ -466,6 +465,11 @@ contains
     ! gpt_fluxes point to calculations for the current g-point
     real(wp), dimension(:,:), pointer :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     ! ------------------------------------
+    if(top_at_1) then
+      top_level = 1
+    else
+      top_level = nlay+1
+    end if
     !
     ! Integrated fluxes need zeroing
     !
@@ -488,14 +492,14 @@ contains
       !
       ! Boundary conditions direct beam...
       !
-      call apply_BC  (ncol, nlay+1, top_at_1, inc_flux_dir(:,igpt), mu0, gpt_flux_dir)
+      gpt_flux_dir(:,top_level) = inc_flux_dir(:,igpt) * mu0(:)
       !
       ! ... and diffuse field, using 0 if no BC is provided
       !
       if(has_dif_bc) then
-        call apply_BC(ncol, nlay+1, top_at_1, inc_flux_dif(:,igpt),      gpt_flux_dn )
+        gpt_flux_dn(:,top_level) = inc_flux_dif(:,igpt)
       else
-        call apply_BC(ncol, nlay+1, top_at_1,                            gpt_flux_dn )
+        gpt_flux_dn(:,top_level) = 0._wp
       end if
       !
       ! Cell properties: transmittance and reflectance for diffuse radiation
@@ -509,8 +513,8 @@ contains
       ! Transport
       !
       call adding(ncol, nlay, top_at_1,            &
-                     sfc_alb_dif(:,igpt), Rdif, Tdif, &
-                     source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
+                  sfc_alb_dif(:,igpt), Rdif, Tdif, &
+                  source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
       !
       ! adding() computes only diffuse flux; flux_dn is total
       !
@@ -522,7 +526,6 @@ contains
         gpt_flux_dn(:,:) =                        gpt_flux_dn (:,:) + gpt_flux_dir(:,:)
       end if
     end do
-
   end subroutine sw_solver_2stream
   ! -------------------------------------------------------------------------------------------------
   !
@@ -1192,46 +1195,5 @@ pure subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="a
     flux_dn(1:ncol, nlay+1, 1:ngpt)  = 0._wp
   end if
 end subroutine apply_BC_0
-! -------------------------------------------------------------------------------------------------
-pure subroutine apply_BC_2D(ncol, nlay, top_at_1, inc_flux, flux_dn) bind (C, name="apply_BC_gpt_2D")
-  integer,                          intent( in) :: ncol, nlay ! Number of columns, layers, g-points
-  logical(wl),                      intent( in) :: top_at_1
-  real(wp), dimension(ncol       ), intent( in) :: inc_flux         ! Flux at top of domain
-  real(wp), dimension(ncol,nlay+1), intent(out) :: flux_dn          ! Flux to be used as input to solvers below
 
-  !   Upper boundary condition
-  if(top_at_1) then
-    flux_dn(1:ncol,      1)  = inc_flux(1:ncol)
-  else
-    flux_dn(1:ncol, nlay+1)  = inc_flux(1:ncol)
-  end if
-end subroutine apply_BC_2D
-! ---------------------
-pure subroutine apply_BC_factor_2D(ncol, nlay, top_at_1, inc_flux, factor, flux_dn) bind (C, name="apply_BC_factor_2D")
-  integer,                          intent( in) :: ncol, nlay ! Number of columns, layers, g-points
-  logical(wl),                      intent( in) :: top_at_1
-  real(wp), dimension(ncol       ), intent( in) :: inc_flux         ! Flux at top of domain
-  real(wp), dimension(ncol       ), intent( in) :: factor           ! Factor to multiply incoming flux
-  real(wp), dimension(ncol,nlay+1), intent(out) :: flux_dn          ! Flux to be used as input to solvers below
-
-  !   Upper boundary condition
-  if(top_at_1) then
-    flux_dn(1:ncol,      1)  = inc_flux(1:ncol) * factor
-  else
-    flux_dn(1:ncol, nlay+1)  = inc_flux(1:ncol) * factor
-  end if
-end subroutine apply_BC_factor_2D
-! ---------------------
-pure subroutine apply_BC_0_2D(ncol, nlay, top_at_1, flux_dn) bind (C, name="apply_BC_0_2D")
-  integer,                          intent( in) :: ncol, nlay ! Number of columns, layers, g-points
-  logical(wl),                      intent( in) :: top_at_1
-  real(wp), dimension(ncol,nlay+1), intent(out) :: flux_dn          ! Flux to be used as input to solvers below
-
-  !   Upper boundary condition
-  if(top_at_1) then
-    flux_dn(1:ncol,      1)  = 0._wp
-  else
-    flux_dn(1:ncol, nlay+1)  = 0._wp
-  end if
-end subroutine apply_BC_0_2D
 end module mo_rte_solver_kernels

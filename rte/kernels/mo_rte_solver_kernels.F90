@@ -3,8 +3,8 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-2021,  Atmospheric and Environmental Research,
+! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
@@ -51,8 +51,9 @@ contains
   subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                              &
                               tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                               incident_flux,    &
-                              radn_up, radn_dn, &
-                              do_Jacobians, sfc_srcJac, radn_upJac, &
+                              flux_up, flux_dn, &
+                              do_broadband, broadband_up, broadband_dn, &
+                              do_Jacobians, sfc_srcJac, flux_upJac,               &
                               do_rescaling, ssa, g) bind(C, name="lw_solver_noscat")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
@@ -68,20 +69,25 @@ contains
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: incident_flux! Boundary condition for flux [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up, radn_dn
+    real(wp), dimension(ncol,nlay+1,ngpt), target, &
+                                           intent(  out) :: flux_up, flux_dn
                                                                          ! Fluxes [W/m2]
 
     !
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
     !
+    logical(wl),                           intent(in   ) :: do_broadband
+    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_up, broadband_dn ! Spectrally-integrated fluxes [W/m2]
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     logical(wl),                           intent(in   ) :: do_rescaling
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g    ! single-scattering albedo, asymmetry parameter
     ! ------------------------------------
     ! Local variables, no g-point dependency
     !
+    integer                        :: icol, ilay, igpt
+    integer                        :: top_level, sfc_level
     real(wp), dimension(ncol,nlay) :: tau_loc, &  ! path length (tau/mu)
                                       trans       ! transmissivity  = exp(-tau)
     real(wp), dimension(ncol,nlay) :: source_dn, source_up
@@ -90,7 +96,12 @@ contains
     real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
     real(wp), parameter :: pi = acos(-1._wp)
-    integer             :: icol, ilay, igpt, top_level, sfc_level
+    ! loc_fluxes hold a single g-point flux if fluxes are being integrated instead of returned
+    !   with spectral detail
+    real(wp), dimension(ncol,nlay+1), &
+                              target  :: loc_flux_up, loc_flux_dn
+    ! gpt_fluxes point to calculations for the current g-point
+    real(wp), dimension(:,:), pointer :: gpt_flux_up, gpt_flux_dn
     ! -------------------------------------------------------------------------------------------------
     ! Optionally, use an approximate treatment of scattering using rescaling
     !   Implemented based on the paper
@@ -123,12 +134,29 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
+    !
+    ! Integrated fluxes need zeroing
+    !
+    if(do_broadband) then
+      call zero_array(ncol, nlay+1, broadband_up )
+      call zero_array(ncol, nlay+1, broadband_dn )
+    end if
+    if(do_Jacobians) &
+      call zero_array(ncol, nlay+1, flux_upJac )
+
     do igpt = 1, ngpt
+      if(do_broadband) then
+        gpt_flux_up  => loc_flux_up
+        gpt_flux_dn  => loc_flux_dn
+      else
+        gpt_flux_up  => flux_up (:,:,igpt)
+        gpt_flux_dn  => flux_dn (:,:,igpt)
+      end if
       !
       ! Transport is for intensity
       !   convert flux at top of domain to intensity assuming azimuthal isotropy
       !
-      radn_dn(:,top_level,igpt) = incident_flux(:,igpt)/(2._wp * pi * weight)
+      gpt_flux_dn(:,top_level) = incident_flux(:,igpt)/(2._wp * pi * weight)
       !
       ! Optical path and transmission, used in source function and transport calculations
       !
@@ -178,13 +206,13 @@ contains
       !
       ! Transport down
       !
-      call lw_transport_noscat_dn(ncol, nlay, top_at_1, trans, source_dn, radn_dn(:,:,igpt))
+      call lw_transport_noscat_dn(ncol, nlay, top_at_1, trans, source_dn, gpt_flux_dn)
       !
       ! Surface albedo, surface source function, reflection and emission
       !
       sfc_albedo(:)    = 1._wp - sfc_emis(:,igpt)
-      radn_up   (:,sfc_level,igpt) = radn_dn(:,sfc_level,igpt)*sfc_albedo(:) + &
-                                     sfc_emis(:,igpt) * sfc_src   (:,igpt)
+      gpt_flux_up   (:,sfc_level) = gpt_flux_dn(:,sfc_level)*sfc_albedo(:) + &
+                                    sfc_emis(:,igpt) * sfc_src   (:,igpt)
       if(do_Jacobians) &
         gpt_flux_Jac(:,sfc_level)  = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
       !
@@ -193,30 +221,36 @@ contains
       if(do_rescaling) then
         call lw_transport_1rescl(ncol, nlay, top_at_1, trans,                  &
                                  source_dn, source_up,                         &
-                                 radn_up(:,:,igpt), radn_dn(:,:,igpt), An, Cn, &
+                                 gpt_flux_up, gpt_flux_dn, An, Cn, &
                                  do_Jacobians, gpt_flux_Jac) ! Standing in for Jacobian, i.e. rad_up_Jac(:,:,igpt), rad_dn_Jac(:,:,igpt))
       else
-        call lw_transport_noscat_up(ncol, nlay, top_at_1, trans, source_up, radn_up(:,:,igpt), &
+        call lw_transport_noscat_up(ncol, nlay, top_at_1, trans, source_up, gpt_flux_up, &
                                     do_Jacobians, gpt_flux_Jac)
       end if
 
-      !
-      ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
-      !
-      radn_dn   (:,:,igpt) = 2._wp * pi * weight * radn_dn   (:,:,igpt)
-      radn_up   (:,:,igpt) = 2._wp * pi * weight * radn_up   (:,:,igpt)
+      if(do_broadband) then
+        broadband_up(:,:) = broadband_up(:,:) + gpt_flux_up(:,:)
+        broadband_dn(:,:) = broadband_dn(:,:) + gpt_flux_dn(:,:)
+      else
+        !
+        ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
+        !
+        gpt_flux_dn    = 2._wp * pi * weight * gpt_flux_dn
+        gpt_flux_up    = 2._wp * pi * weight * gpt_flux_up
+      end if
       !
       ! Only broadband-integrated Jacobians are provided
       !
-      if(do_Jacobians) then
-        if(igpt == 1) then
-          radn_upJac(:,:) =                    gpt_flux_Jac(:,:)
-        else
-          radn_upJac(:,:) =  radn_upJac(:,:) + gpt_flux_Jac(:,:)
-        end if
-      end if
+      if(do_Jacobians) &
+          flux_upJac(:,:) =  flux_upJac(:,:) + gpt_flux_Jac(:,:)
     end do  ! g point loop
-    if(do_Jacobians) radn_upJac(:,:) = 2._wp * pi * weight * radn_upJac(:,:)
+
+    if(do_broadband) then
+      broadband_up(:,:) = 2._wp * pi * weight* broadband_up(:,:)
+      broadband_dn(:,:) = 2._wp * pi * weight* broadband_dn(:,:)
+    end if
+    if(do_Jacobians) &
+      flux_upJac(:,:)   = 2._wp * pi * weight * flux_upJac(:,:)
 
   end subroutine lw_solver_noscat
   ! -------------------------------------------------------------------------------------------------
@@ -233,7 +267,7 @@ contains
                                         sfc_emis, sfc_src,          &
                                         inc_flux,                   &
                                         flux_up, flux_dn,           &
-                                        do_broadband, broadband_flux_up, broadband_flux_dn, &
+                                        do_broadband, broadband_up, broadband_dn, &
                                         do_Jacobians, sfc_srcJac, flux_upJac,               &
                                         do_rescaling, ssa, g) bind(C, name="lw_solver_noscat_GaussQuad")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
@@ -256,7 +290,7 @@ contains
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
     !
     logical(wl),                           intent(in   ) :: do_broadband
-    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_flux_up, broadband_flux_dn
+    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_up, broadband_dn
                                                             ! Spectrally-integrated fluxes [W/m2]
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac
@@ -269,9 +303,10 @@ contains
     !
     ! Local variables
     !
-    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up ! Fluxes per quad angle
+    real(wp), dimension(ncol,nlay+1,ngpt) :: one_flux_dn,      one_flux_up ! Fluxes per quad angle
+    real(wp), dimension(ncol,nlay+1     ) :: one_broadband_dn, one_broadband_up ! Fluxes per quad angle
     real(wp), dimension(ncol,       ngpt) :: Ds_ncol
-    real(wp), dimension(ncol,nlay+1     ) :: radn_upJac ! perturbed Fluxes per quad angle
+    real(wp), dimension(ncol,nlay+1     ) :: one_flux_upJac ! perturbed Fluxes per quad angle
 
     integer :: imu, top_level
     ! ------------------------------------
@@ -284,25 +319,31 @@ contains
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           inc_flux,         &
                           flux_up, flux_dn, &
-                          do_Jacobians, sfc_srcJac, flux_upJac, &
+                          do_broadband, broadband_up, broadband_dn, &
+                          do_Jacobians, sfc_srcJac, flux_upJac,     &
                           do_rescaling, ssa, g)
     !
     ! For more than one angle use local arrays
     !
-    top_level = MERGE(1, nlay+1, top_at_1)
     do imu = 2, nmus
       Ds_ncol(:,:) = Ds(imu)
       call lw_solver_noscat(ncol, nlay, ngpt, &
                             top_at_1, Ds_ncol, weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             inc_flux,         &
-                            radn_up, radn_dn, &
-                            do_Jacobians, sfc_srcJac, radn_upJac, &
+                            one_flux_up,  one_flux_dn, &
+                            do_broadband, one_broadband_up, one_broadband_dn, &
+                            do_Jacobians, sfc_srcJac, one_flux_upJac,         &
                             do_rescaling, ssa, g)
-      flux_up   (:,:,:) = flux_up   (:,:,:) + radn_up   (:,:,:)
-      flux_dn   (:,:,:) = flux_dn   (:,:,:) + radn_dn   (:,:,:)
+      if(do_broadband) then
+        broadband_up(:,:) = broadband_up(:,:) + one_broadband_up(:,:)
+        broadband_up(:,:) = broadband_dn(:,:) + one_broadband_dn(:,:)
+      else
+        flux_up   (:,:,:) = flux_up   (:,:,:) + one_flux_up   (:,:,:)
+        flux_dn   (:,:,:) = flux_dn   (:,:,:) + one_flux_dn   (:,:,:)
+      end if
       if (do_Jacobians) &
-        flux_upJac(:,:) = flux_upJac(:,:  ) + radn_upJac(:,:  )
+        flux_upJac(:,:)  = flux_upJac(:,:  ) + flux_upJac(:,:  )
 
     end do
   end subroutine lw_solver_noscat_GaussQuad

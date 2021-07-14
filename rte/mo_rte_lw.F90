@@ -3,8 +3,8 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-2021,  Atmospheric and Environmental Research,
+! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
@@ -93,7 +93,7 @@ contains
     real(wp), dimension(1,1,1)              :: empty3D ! Used for optional inputs - size is irrelevant
 
     real(wp), dimension(:,:,:), pointer     :: gpt_flux_up, gpt_flux_dn, decoy3D
-    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc
+    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_net_loc
     real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse
     ! --------------------------------------------------
     !
@@ -322,6 +322,7 @@ contains
                                 sfc_emis_gpt, sources%sfc_source,  &
                                 inc_flux_diffuse,                  &
                                 gpt_flux_up, gpt_flux_dn,          &
+                                do_broadband, flux_up_loc, flux_dn_loc,     &
                                 logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
                                 logical(.false., wl),  empty3D, empty3D)
         else
@@ -388,15 +389,45 @@ contains
     end select
 
     if (error_msg /= '') return
-    !
-    ! ...and reduce spectral fluxes to desired output quantities
-    !
-    error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
 
-    !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, sfc_emis_gpt)
-    !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, sfc_emis_gpt)
+    select type(fluxes)
+      !
+      ! Tidy up memory for broadband fluxes on GPUs
+      !
+      type is (ty_fluxes_broadband)
+        !$acc        exit data delete(     decoy3D)
+        !$omp target exit data map(release:decoy3D)
+        if(associated(fluxes%flux_net)) then
+          !
+          ! Make this OpenACC/MP friendly
+          !
+          fluxes%flux_net(:,:) = flux_dn_loc(:,:) - flux_up_loc(:,:)
+        end if
+        if(associated(fluxes%flux_up)) then
+          !$acc        exit data copyout( flux_up_loc)
+          !$omp target exit data map(from:flux_up_loc)
+        else
+          !$acc        exit data delete(     flux_up_loc)
+          !$omp target exit data map(release:flux_up_loc)
+        end if
+        if(associated(fluxes%flux_dn)) then
+          !$acc        exit data copyout( flux_dn_loc)
+          !$omp target exit data map(from:flux_dn_loc)
+        else
+          !$acc        exit data delete(     flux_dn_loc)
+          !$omp target exit data map(release:flux_dn_loc)
+        end if
+      class default
+        !
+        ! ...or reduce spectral fluxes to desired output quantities
+        !
+        error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
+        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
+        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
+    end select
+    !$acc        exit data delete(     sfc_emis_gpt)
+    !$omp target exit data map(release:sfc_emis_gpt)
     !$acc        exit data delete(optical_props)
-    !!$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source,sources)
     !$acc        exit data copyout( flux_up_Jac) if(do_Jacobians)
     !$omp target exit data map(from:flux_up_Jac) if(do_Jacobians)
 

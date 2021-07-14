@@ -3,8 +3,8 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-2021,  Atmospheric and Environmental Research,
+! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
@@ -294,7 +294,13 @@ contains
       type is (ty_fluxes_broadband)
         !$acc        exit data delete(     decoy3D)
         !$omp target exit data map(release:decoy3D)
-        if(associated(fluxes%flux_up)) then
+        if(associated(fluxes%flux_net)) then
+          !
+          ! Make this OpenACC/MP friendly
+          !
+          fluxes%flux_net(:,:) = flux_dn_loc(:,:) - flux_up_loc(:,:)
+        end if
+      if(associated(fluxes%flux_up)) then
           !$acc        exit data copyout( flux_up_loc)
           !$omp target exit data map(from:flux_up_loc)
         else

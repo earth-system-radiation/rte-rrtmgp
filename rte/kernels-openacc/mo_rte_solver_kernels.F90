@@ -587,8 +587,8 @@ contains
       allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
                gpt_flux_dn (ncol,nlay+1,ngpt), &
                gpt_flux_dir(ncol,nlay+1,ngpt))
-      !$acc        enter data create(   gpt_flux_up. gpt_flux_dn, gpt_flux_dir)
-      !$omp target enter data map(alloc:gpt_flux_up. gpt_flux_dn, gpt_flux_dir)
+      !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+      !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
 
       !$acc        enter data create(   broadband_up, broadband_dn, broadband_dir)
       !$omp target enter data map(alloc:broadband_up, broadband_dn, broadband_dir)
@@ -596,8 +596,8 @@ contains
       call zero_array(ncol, nlay+1, broadband_dn)
       call zero_array(ncol, nlay+1, broadband_dir)
     else
-      !$acc        enter data create(   flux_up. flux_dn, flux_dir)
-      !$omp target enter data map(alloc:flux_up. flux_dn, flux_dir)
+      !$acc        enter data create(   flux_up, flux_dn, flux_dir)
+      !$omp target enter data map(alloc:flux_up, flux_dn, flux_dir)
       gpt_flux_up  => flux_up
       gpt_flux_dn  => flux_dn
       gpt_flux_dir => flux_dir

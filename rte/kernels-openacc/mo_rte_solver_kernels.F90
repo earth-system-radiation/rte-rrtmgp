@@ -569,7 +569,8 @@ contains
                                                             ! Spectral albedo of surface to direct and diffuse radiation
     real(wp), dimension(ncol,       ngpt), intent(in ) :: sfc_alb_dir, sfc_alb_dif, &
                                                           inc_flux_dir ! Direct beam incident flux
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_up, flux_dn, flux_dir! Fluxes [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), target, &
+                                           intent(out) :: flux_up, flux_dn, flux_dir! Fluxes [W/m2]
     logical(wl),                           intent(in ) :: has_dif_bc   ! Is a boundary condition for diffuse flux supplied?
     real(wp), dimension(ncol,       ngpt), intent(in ) :: inc_flux_dif ! Boundary condition for diffuse flux
     logical(wl),                           intent(in ) :: do_broadband ! Provide broadband-integrated, not spectrally-resolved, fluxes?
@@ -580,13 +581,26 @@ contains
     real(wp), dimension(ncol,nlay,ngpt) :: Rdif, Tdif
     real(wp), dimension(ncol,nlay,ngpt) :: source_up, source_dn
     real(wp), dimension(ncol     ,ngpt) :: source_srf
+    real(wp), dimension(:,:,:), pointer :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     ! ------------------------------------
     if(do_broadband) then
+      allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
+               gpt_flux_dn (ncol,nlay+1,ngpt), &
+               gpt_flux_dir(ncol,nlay+1,ngpt))
+      !$acc        enter data create(   gpt_flux_up. gpt_flux_dn, gpt_flux_dir)
+      !$omp target enter data map(alloc:gpt_flux_up. gpt_flux_dn, gpt_flux_dir)
+
       !$acc        enter data create(   broadband_up, broadband_dn, broadband_dir)
       !$omp target enter data map(alloc:broadband_up, broadband_dn, broadband_dir)
       call zero_array(ncol, nlay+1, broadband_up)
       call zero_array(ncol, nlay+1, broadband_dn)
       call zero_array(ncol, nlay+1, broadband_dir)
+    else
+      !$acc        enter data create(   flux_up. flux_dn, flux_dir)
+      !$omp target enter data map(alloc:flux_up. flux_dn, flux_dir)
+      gpt_flux_up  => flux_up
+      gpt_flux_dn  => flux_dn
+      gpt_flux_dir => flux_dir
     end if
     top_level = nlay+1
     if(top_at_1) top_level = 1
@@ -602,7 +616,7 @@ contains
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
-        flux_dir(icol, top_level, igpt)  = inc_flux_dir(icol,igpt) * mu0(icol)
+        gpt_flux_dir(icol, top_level, igpt)  = inc_flux_dir(icol,igpt) * mu0(icol)
       end do
     end do
 
@@ -614,7 +628,7 @@ contains
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
-          flux_dn(icol, top_level, igpt)  = inc_flux_dif(icol,igpt)
+          gpt_flux_dn(icol, top_level, igpt)  = inc_flux_dif(icol,igpt)
         end do
       end do
     else
@@ -622,7 +636,7 @@ contains
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
-          flux_dn(icol, top_level, igpt)  = 0._wp
+          gpt_flux_dn(icol, top_level, igpt)  = 0._wp
         end do
       end do
     end if
@@ -634,11 +648,11 @@ contains
     !$omp target enter data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf)
     call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dif, &
                            tau, ssa, g,                                  &
-                           Rdif, Tdif, source_dn, source_up, source_srf, flux_dir)
+                           Rdif, Tdif, source_dn, source_up, source_srf, gpt_flux_dir)
 
     call adding(ncol, nlay, ngpt, top_at_1,   &
                 sfc_alb_dif, Rdif, Tdif,      &
-                source_dn, source_up, source_srf, flux_up, flux_dn)
+                source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
     !$acc        exit data delete (    mu0, Rdif, Tdif, source_up, source_dn, source_srf)
     !$omp target exit data map(release:mu0, Rdif, Tdif, source_up, source_dn, source_srf)
 
@@ -653,7 +667,7 @@ contains
 
           bb_flux_s = 0.0_wp
           do igpt = 1, ngpt
-            bb_flux_s = bb_flux_s + flux_up(icol, ilay, igpt)
+            bb_flux_s = bb_flux_s + gpt_flux_up(icol, ilay, igpt)
           end do
           broadband_up(icol, ilay) = bb_flux_s
         end do
@@ -666,8 +680,8 @@ contains
           bb_flux_s = 0.0_wp
           bb_dir_s  = 0._wp
           do igpt = 1, ngpt
-            bb_dir_s  = bb_dir_s  + flux_dir(icol, ilay, igpt)
-            bb_flux_s = bb_flux_s + flux_dn (icol, ilay, igpt)
+            bb_dir_s  = bb_dir_s  + gpt_flux_dir(icol, ilay, igpt)
+            bb_flux_s = bb_flux_s + gpt_flux_dn (icol, ilay, igpt)
           end do
           !
           ! adding computes only diffuse flux; flux_dn is total
@@ -678,8 +692,8 @@ contains
       end do
       !$acc        exit data copyout( broadband_up, broadband_dn, broadband_dir)
       !$omp target exit data map(from:broadband_up, broadband_dn, broadband_dir)
-      !$acc        exit data delete(     flux_up, flux_dn, flux_dir)
-      !$omp target exit data map(release:flux_up, flux_dn, flux_dir)
+      !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+      !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     else
       !
       ! adding computes only diffuse flux; flux_dn is total

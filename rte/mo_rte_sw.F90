@@ -66,10 +66,10 @@ contains
     integer     :: icol, igpt
     logical(wl) :: has_dif_bc, do_broadband
 
-    real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
+    real(wp), dimension(:,:,:), pointer     :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy3D
     real(wp), dimension(:,:),   allocatable :: sfc_alb_dir_gpt, sfc_alb_dif_gpt
     real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_dir_loc
-    real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse=>NULL(), decoy
+    real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse, decoy2D
     ! ------------------------------------------------------------------------------------
     ncol  = atmos%get_ncol()
     nlay  = atmos%get_nlay()
@@ -137,9 +137,18 @@ contains
       type is (ty_fluxes_broadband)
         do_broadband = .true._wl
         !
-        ! Broadband, spectrally integrated profiles get their own solvers that integrate in place
-        !   Fluxes class has three possible outputs; allocate memory for local use if one or
-        !   more haven't been requested
+        ! Solvers will integrate in place (one g-point at a time on CPUs)
+        !   so won't need big working arrays
+        !
+        allocate(decoy3D(ncol, nlay+1, ngpt))
+        !$acc        enter data create(   decoy3D)
+        !$omp target enter data map(alloc:decoy3D)
+        gpt_flux_up  => decoy3D
+        gpt_flux_dn  => decoy3D
+        gpt_flux_dir => decoy3D
+        !
+        ! Broadband fluxes class has three possible outputs; allocate memory for local use
+        !   if one or more haven't been requested
         !
         if(associated(fluxes%flux_up)) then
           flux_up_loc => fluxes%flux_up
@@ -163,23 +172,23 @@ contains
           !$omp target enter data map(alloc:flux_dir_loc)
         end if
       class default
+        !
+        ! If broadband integrals aren't being computed, allocate working space
+        !   and decoy addresses for spectrally-integrated fields
+        !
         do_broadband = .false._wl
-        allocate(decoy(ncol, nlay+1))
-        !$acc        enter data create(   decoy)
-        !$omp target enter data map(alloc:decoy)
-        flux_up_loc  => decoy
-        flux_dn_loc  => decoy
-        flux_dir_loc => decoy
+        allocate(decoy2D(ncol, nlay+1))
+        !$acc        enter data create(   decoy2D)
+        !$omp target enter data map(alloc:decoy2D)
+        flux_up_loc  => decoy2D
+        flux_dn_loc  => decoy2D
+        flux_dir_loc => decoy2D
+        allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
+                 gpt_flux_dn (ncol,nlay+1,ngpt), &
+                 gpt_flux_dir(ncol,nlay+1,ngpt))
+        !$acc        enter data create(   gpt_flux_up. gpt_flux_dn, gpt_flux_dir)
+        !$omp target enter data map(alloc:gpt_flux_up. gpt_flux_dn, gpt_flux_dir)
     end select
-    !
-    ! Rethink? Below are three big arrays. They aren't needed for the CPU implementation
-    !   but provide working space for the current GPU implementation
-    !
-    allocate(gpt_flux_up (ncol, nlay+1, ngpt), &
-             gpt_flux_dn (ncol, nlay+1, ngpt), &
-             gpt_flux_dir(ncol, nlay+1, ngpt))
-    !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-    !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
 
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
     !$acc        enter data create(   sfc_alb_dir_gpt, sfc_alb_dif_gpt)
@@ -283,36 +292,36 @@ contains
       ! Tidy up memory for broadband fluxes on GPUs
       !
       type is (ty_fluxes_broadband)
-        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-        if(.not. associated(fluxes%flux_up)) then
+        !$acc        exit data delete(     decoy3D)
+        !$omp target exit data map(release:decoy3D)
+        if(associated(fluxes%flux_up)) then
+          !$acc        exit data copyout( flux_up_loc)
+          !$omp target exit data map(from:flux_up_loc)
+        else
           !$acc        exit data delete(     flux_up_loc)
           !$omp target exit data map(release:flux_up_loc)
-        else
-          !$acc        exit data copyout(flux_up_loc)
-          !$omp target exit data map(from:flux_up_loc)
         end if
-        if(.not. associated(fluxes%flux_dn)) then
+        if(associated(fluxes%flux_dn)) then
+          !$acc        exit data copyout( flux_dn_loc)
+          !$omp target exit data map(from:flux_dn_loc)
+        else
           !$acc        exit data delete(     flux_dn_loc)
           !$omp target exit data map(release:flux_dn_loc)
-        else
-          !$acc        exit data copyout(flux_dn_loc)
-          !$omp target exit data map(from:flux_dn_loc)
         end if
-        if(.not. associated(fluxes%flux_dn_dir)) then
+        if(associated(fluxes%flux_dn_dir)) then
+          !$acc        exit data copyout( flux_dn_loc)
+          !$omp target exit data map(from:flux_dn_loc)
+        else
           !$acc        exit data delete(     flux_dir_loc)
           !$omp target exit data map(release:flux_dir_loc)
-        else
-          !$acc        exit data copyout(flux_dn_loc)
-          !$omp target exit data map(from:flux_dn_loc)
         end if
       class default
         !
         ! ...or reduce spectral fluxes to desired output quantities
         !
         error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
-        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
+        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
     end select
   end function rte_sw
   !--------------------------------------------------------------------------------------------------------------------

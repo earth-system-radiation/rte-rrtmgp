@@ -273,7 +273,9 @@ contains
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     integer,                               intent(in   ) :: nmus         ! number of quadrature angles
-    real(wp), dimension(nmus),             intent(in   ) :: Ds, weights  ! quadrature secants, weights
+    real(wp), dimension (ncol,      ngpt, &
+                                    nmus), intent(in   ) :: Ds
+    real(wp), dimension(nmus),             intent(in   ) :: weights  ! quadrature secants, weights
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
@@ -305,7 +307,6 @@ contains
     !
     real(wp), dimension(ncol,nlay+1,ngpt) :: one_flux_dn,      one_flux_up ! Fluxes per quad angle
     real(wp), dimension(ncol,nlay+1     ) :: one_broadband_dn, one_broadband_up ! Fluxes per quad angle
-    real(wp), dimension(ncol,       ngpt) :: Ds_ncol
     real(wp), dimension(ncol,nlay+1     ) :: one_flux_upJac ! perturbed Fluxes per quad angle
 
     integer :: imu, top_level
@@ -313,9 +314,8 @@ contains
     !
     ! For the first angle output arrays store total flux
     !
-    Ds_ncol(:,:) = Ds(1)
     call lw_solver_noscat(ncol, nlay, ngpt, &
-                          top_at_1, Ds_ncol, weights(1), tau, &
+                          top_at_1, Ds(:,:,1), weights(1), tau, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           inc_flux,         &
                           flux_up, flux_dn, &
@@ -326,9 +326,8 @@ contains
     ! For more than one angle use local arrays
     !
     do imu = 2, nmus
-      Ds_ncol(:,:) = Ds(imu)
       call lw_solver_noscat(ncol, nlay, ngpt, &
-                            top_at_1, Ds_ncol, weights(imu), tau, &
+                            top_at_1, Ds(:,:,imu), weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             inc_flux,         &
                             one_flux_up,  one_flux_dn, &

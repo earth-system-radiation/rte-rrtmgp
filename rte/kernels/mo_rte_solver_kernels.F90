@@ -286,28 +286,29 @@ contains
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux     ! Incident diffuse flux, probably 0 [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up      ! Radiances [W/m2-str]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_dn      ! Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol,nlay+1,ngpt), target, &
+                                           intent(  out) :: flux_up, flux_dn ! Fluxes [W/m2]
     !
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
     !
     logical(wl),                           intent(in   ) :: do_broadband
-    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_up, broadband_dn
+    real(wp), dimension(ncol,nlay+1     ), target, &
+                                           intent(  out) :: broadband_up, broadband_dn
                                                             ! Spectrally-integrated fluxes [W/m2]
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac
                                                             ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: flux_upJac
+    real(wp), dimension(ncol,nlay+1     ), target, &
+                                           intent(  out) :: flux_upJac
                                                             ! surface temperature Jacobian of Radiances [W/m2-str / K]
     logical(wl),                           intent(in   ) :: do_rescaling
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g    ! single-scattering albedo, asymmetry parameter
     ! ------------------------------------
     !
-    ! Local variables
+    ! Local variables - used for a single quadrature angle
     !
-    real(wp), dimension(ncol,nlay+1,ngpt) :: one_flux_dn,      one_flux_up ! Fluxes per quad angle
-    real(wp), dimension(ncol,nlay+1     ) :: one_broadband_dn, one_broadband_up ! Fluxes per quad angle
-    real(wp), dimension(ncol,nlay+1     ) :: one_flux_upJac ! perturbed Fluxes per quad angle
+    real(wp), dimension(:,:,:), pointer :: this_flux_up,      this_flux_dn
+    real(wp), dimension(:,:),   pointer :: this_broadband_up, this_broadband_dn, this_flux_upJac
 
     integer :: imu, top_level
     ! ------------------------------------
@@ -326,24 +327,40 @@ contains
     ! For more than one angle use local arrays
     !
     do imu = 2, nmus
+      if(do_broadband) then
+        allocate(this_broadband_up(ncol,nlay+1), this_broadband_dn(ncol,nlay+1))
+        ! Spectrally-resolved fluxes won't be filled in so can point to caller-supplied memory
+        this_flux_up => flux_up
+        this_flux_dn => flux_dn
+      else
+        allocate(this_flux_up(ncol,nlay+1,ngpt), this_flux_dn(ncol,nlay+1,ngpt))
+        ! Spectrally-integrated fluxes won't be filled in so can point to caller-supplied memory
+        this_broadband_up => broadband_up
+        this_broadband_dn => broadband_dn
+      end if
+      if(do_Jacobians) then
+        allocate(this_flux_upJac(ncol,nlay+1))
+      else
+        this_flux_upJac => flux_upJac
+      end if
+
       call lw_solver_noscat(ncol, nlay, ngpt, &
                             top_at_1, Ds(:,:,imu), weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             inc_flux,         &
-                            one_flux_up,  one_flux_dn, &
-                            do_broadband, one_broadband_up, one_broadband_dn, &
-                            do_Jacobians, sfc_srcJac, one_flux_upJac,         &
+                            this_flux_up,  this_flux_dn, &
+                            do_broadband, this_broadband_up, this_broadband_dn, &
+                            do_Jacobians, sfc_srcJac, this_flux_upJac,         &
                             do_rescaling, ssa, g)
       if(do_broadband) then
-        broadband_up(:,:) = broadband_up(:,:) + one_broadband_up(:,:)
-        broadband_up(:,:) = broadband_dn(:,:) + one_broadband_dn(:,:)
+        broadband_up(:,:) = broadband_up(:,:) + this_broadband_up(:,:)
+        broadband_up(:,:) = broadband_dn(:,:) + this_broadband_dn(:,:)
       else
-        flux_up   (:,:,:) = flux_up   (:,:,:) + one_flux_up   (:,:,:)
-        flux_dn   (:,:,:) = flux_dn   (:,:,:) + one_flux_dn   (:,:,:)
+        flux_up   (:,:,:) = flux_up   (:,:,:) + this_flux_up   (:,:,:)
+        flux_dn   (:,:,:) = flux_dn   (:,:,:) + this_flux_dn   (:,:,:)
       end if
       if (do_Jacobians) &
-        flux_upJac(:,:)  = flux_upJac(:,:  ) + flux_upJac(:,:  )
-
+        flux_upJac(:,:)  = flux_upJac(:,:  ) + this_flux_upJac(:,:  )
     end do
   end subroutine lw_solver_noscat_GaussQuad
   ! -------------------------------------------------------------------------------------------------

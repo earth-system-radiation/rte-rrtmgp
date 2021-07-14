@@ -35,7 +35,7 @@ module mo_rte_sw
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_rte_solver_kernels, &
-                        only: apply_BC, sw_solver_noscat, sw_solver_2stream
+                        only: sw_solver_noscat, sw_solver_2stream
   implicit none
   private
 

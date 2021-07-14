@@ -32,12 +32,7 @@ module mo_rte_solver_kernels
   implicit none
   private
 
-  interface apply_BC
-    module procedure apply_BC_gpt, apply_BC_factor, apply_BC_0
-  end interface apply_BC
-
-  public :: apply_BC, &
-            lw_solver_noscat, lw_solver_noscat_GaussQuad,  lw_solver_2stream, &
+  public :: lw_solver_noscat, lw_solver_noscat_GaussQuad,  lw_solver_2stream, &
             sw_solver_noscat,                              sw_solver_2stream
 
   real(wp), parameter :: pi = acos(-1._wp)
@@ -53,8 +48,9 @@ contains
   !   using user-supplied weights
   !
   ! ---------------------------------------------------------------
-  subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                             &
+  subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                              &
                               tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                              incident_flux,    &
                               radn_up, radn_dn, &
                               do_Jacobians, sfc_srcJac, radn_upJac, &
                               do_rescaling, ssa, g) bind(C, name="lw_solver_noscat")
@@ -71,8 +67,9 @@ contains
                                            intent(in   ) :: lev_source_inc, lev_source_dec
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up      ! Radiances [W/m2-str]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_dn      ! Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: incident_flux! Boundary condition for flux [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up, radn_dn
+                                                                         ! Fluxes [W/m2]
 
     !
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
@@ -131,7 +128,7 @@ contains
       ! Transport is for intensity
       !   convert flux at top of domain to intensity assuming azimuthal isotropy
       !
-      radn_dn(:,top_level,igpt) = radn_dn(:,top_level,igpt)/(2._wp * pi * weight)
+      radn_dn(:,top_level,igpt) = incident_flux(:,igpt)/(2._wp * pi * weight)
       !
       ! Optical path and transmission, used in source function and transport calculations
       !
@@ -187,9 +184,9 @@ contains
       !
       sfc_albedo(:)    = 1._wp - sfc_emis(:,igpt)
       radn_up   (:,sfc_level,igpt) = radn_dn(:,sfc_level,igpt)*sfc_albedo(:) + &
-                                     sfc_emis(:,igpt) * sfc_src(:,igpt)
+                                     sfc_emis(:,igpt) * sfc_src   (:,igpt)
       if(do_Jacobians) &
-        gpt_flux_Jac(:,sfc_level)    = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
+        gpt_flux_Jac(:,sfc_level)  = sfc_emis(:,igpt) * sfc_srcJac(:,igpt)
       !
       ! Transport up, or up and down again if using rescaling
       !
@@ -229,11 +226,16 @@ contains
   !   Routine sums over single-angle solutions for each sets of angles/weights
   !
   ! ---------------------------------------------------------------
-  subroutine lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, &
-                                   tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_up, flux_dn,&
-                                   do_Jacobians, sfc_srcJac, flux_upJac, &
-                                   do_rescaling, ssa, g) &
-                                   bind(C, name="lw_solver_noscat_GaussQuad")
+  subroutine lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, &
+                                        nmus, Ds, weights,          &
+                                        tau,                        &
+                                        lay_source, lev_source_inc, lev_source_dec,         &
+                                        sfc_emis, sfc_src,          &
+                                        inc_flux,                   &
+                                        flux_up, flux_dn,           &
+                                        do_broadband, broadband_flux_up, broadband_flux_dn, &
+                                        do_Jacobians, sfc_srcJac, flux_upJac,               &
+                                        do_rescaling, ssa, g) bind(C, name="lw_solver_noscat_GaussQuad")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     integer,                               intent(in   ) :: nmus         ! number of quadrature angles
@@ -244,18 +246,23 @@ contains
                                         ! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
                                         ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
-                                               ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
+                                        ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux     ! Incident diffuse flux, probably 0 [W/m2]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up      ! Radiances [W/m2-str]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dn      ! Top level must contain incident flux boundary condition
-
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_dn      ! Top level must contain incident flux boundary condition
     !
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
     !
+    logical(wl),                           intent(in   ) :: do_broadband
+    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_flux_up, broadband_flux_dn
+                                                            ! Spectrally-integrated fluxes [W/m2]
     logical(wl),                           intent(in   ) :: do_Jacobians
-    real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1     ), intent(out  ) :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac
+                                                            ! surface temperature Jacobian of surface source function [W/m2/K]
+    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: flux_upJac
+                                                            ! surface temperature Jacobian of Radiances [W/m2-str / K]
     logical(wl),                           intent(in   ) :: do_rescaling
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g    ! single-scattering albedo, asymmetry parameter
     ! ------------------------------------
@@ -275,6 +282,7 @@ contains
     call lw_solver_noscat(ncol, nlay, ngpt, &
                           top_at_1, Ds_ncol, weights(1), tau, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                          inc_flux,         &
                           flux_up, flux_dn, &
                           do_Jacobians, sfc_srcJac, flux_upJac, &
                           do_rescaling, ssa, g)
@@ -282,12 +290,12 @@ contains
     ! For more than one angle use local arrays
     !
     top_level = MERGE(1, nlay+1, top_at_1)
-    call apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn(:,top_level,:), radn_dn)
     do imu = 2, nmus
       Ds_ncol(:,:) = Ds(imu)
       call lw_solver_noscat(ncol, nlay, ngpt, &
                             top_at_1, Ds_ncol, weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                            inc_flux,         &
                             radn_up, radn_dn, &
                             do_Jacobians, sfc_srcJac, radn_upJac, &
                             do_rescaling, ssa, g)
@@ -310,33 +318,32 @@ contains
    subroutine lw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
                                  tau, ssa, g,                &
                                  lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                                 inc_flux,                   &
                                  flux_up, flux_dn) bind(C, name="lw_solver_2stream")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &  ! Optical thickness,
-                                                            ssa, &  ! single-scattering albedo,
-                                                            g       ! asymmetry parameter []
-    real(wp), dimension(ncol,nlay,ngpt),   intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &     ! Optical thickness,
+                                                            ssa, &     ! single-scattering albedo,
+                                                            g          ! asymmetry parameter []
+    real(wp), dimension(ncol,nlay,ngpt),   intent(in   ) :: lay_source ! Planck source at layer average temperature [W/m2]
     real(wp), dimension(ncol,nlay,ngpt), target, &
                                            intent(in   ) :: lev_source_inc, lev_source_dec
                                         ! Planck source at layer edge for radiation in increasing/decreasing ilay direction [W/m2]
                                         ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis         ! Surface emissivity      []
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src          ! Surface source function [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), &
-                                           intent(  out) :: flux_up   ! Fluxes [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), &
-                                           intent(inout) :: flux_dn   ! Top level (= merge(1, nlay+1, top_at_1)
-                                                                      ! must contain incident flux boundary condition
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis   ! Surface emissivity      []
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src    ! Surface source function [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux   ! Incident diffuse flux, probably 0 [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up, flux_dn ! Fluxes [W/m2]
     ! ----------------------------------------------------------------------
-    integer :: igpt
+    integer :: igpt, top_level
     real(wp), dimension(ncol,nlay  ) :: Rdif, Tdif, gamma1, gamma2
     real(wp), dimension(ncol       ) :: sfc_albedo
     real(wp), dimension(ncol,nlay+1) :: lev_source
     real(wp), dimension(ncol,nlay  ) :: source_dn, source_up
     real(wp), dimension(ncol       ) :: source_sfc
     ! ------------------------------------
-
+    top_level = nlay+1
+    if(top_at_1) top_level = 1
     do igpt = 1, ngpt
       !
       ! RRTMGP provides source functions at each level using the spectral mapping
@@ -364,6 +371,10 @@ contains
       ! Transport
       !
       sfc_albedo(1:ncol) = 1._wp - sfc_emis(:,igpt)
+      !
+      ! Boundary condition
+      !
+      flux_dn(:,top_level,igpt) = inc_flux(:,igpt)
       call adding(ncol, nlay, top_at_1,              &
                   sfc_albedo,                        &
                   Rdif, Tdif,                        &
@@ -1146,51 +1157,4 @@ subroutine adding(ncol, nlay, top_at_1, &
     end do
   end if
 end subroutine adding
-! -------------------------------------------------------------------------------------------------
-!
-! Upper boundary condition
-!
-! -------------------------------------------------------------------------------------------------
-pure subroutine apply_BC_gpt(ncol, nlay, ngpt, top_at_1, inc_flux, flux_dn) bind (C, name="apply_BC_gpt")
-  integer,                               intent( in) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
-  logical(wl),                           intent( in) :: top_at_1
-  real(wp), dimension(ncol,       ngpt), intent( in) :: inc_flux         ! Flux at top of domain
-  real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dn          ! Flux to be used as input to solvers below
-
-  !   Upper boundary condition
-  if(top_at_1) then
-    flux_dn(1:ncol,      1, 1:ngpt)  = inc_flux(1:ncol,1:ngpt)
-  else
-    flux_dn(1:ncol, nlay+1, 1:ngpt)  = inc_flux(1:ncol,1:ngpt)
-  end if
-end subroutine apply_BC_gpt
-! ---------------------
-pure subroutine apply_BC_factor(ncol, nlay, ngpt, top_at_1, inc_flux, factor, flux_dn) bind (C, name="apply_BC_factor")
-  integer,                               intent( in) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
-  logical(wl),                           intent( in) :: top_at_1
-  real(wp), dimension(ncol,       ngpt), intent( in) :: inc_flux         ! Flux at top of domain
-  real(wp), dimension(ncol            ), intent( in) :: factor           ! Factor to multiply incoming flux
-  real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dn          ! Flux to be used as input to solvers below
-
-  !   Upper boundary condition
-  if(top_at_1) then
-    flux_dn(1:ncol,      1, 1:ngpt)  = inc_flux(1:ncol,1:ngpt) * spread(factor, 2, ngpt)
-  else
-    flux_dn(1:ncol, nlay+1, 1:ngpt)  = inc_flux(1:ncol,1:ngpt) * spread(factor, 2, ngpt)
-  end if
-end subroutine apply_BC_factor
-! ---------------------
-pure subroutine apply_BC_0(ncol, nlay, ngpt, top_at_1, flux_dn) bind (C, name="apply_BC_0")
-  integer,                               intent( in) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
-  logical(wl),                           intent( in) :: top_at_1
-  real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dn          ! Flux to be used as input to solvers below
-
-  !   Upper boundary condition
-  if(top_at_1) then
-    flux_dn(1:ncol,      1, 1:ngpt)  = 0._wp
-  else
-    flux_dn(1:ncol, nlay+1, 1:ngpt)  = 0._wp
-  end if
-end subroutine apply_BC_0
-
 end module mo_rte_solver_kernels

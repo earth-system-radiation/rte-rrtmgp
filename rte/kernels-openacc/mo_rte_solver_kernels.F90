@@ -51,8 +51,9 @@ contains
   subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                              &
                               tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                               incident_flux,    &
-                              radn_up, radn_dn, &
-                              do_Jacobians, sfc_srcJac, radn_upJac, &
+                              flux_up, flux_dn, &
+                              do_broadband, broadband_up, broadband_dn, &
+                              do_Jacobians, sfc_srcJac, flux_upJac,               &
                               do_rescaling, ssa, g) bind(C, name="lw_solver_noscat")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
@@ -68,19 +69,24 @@ contains
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: incident_flux! Boundary condition for flux [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up, radn_dn
+    real(wp), dimension(ncol,nlay+1,ngpt), target, &
+                                           intent(  out) :: flux_up, flux_dn
                                                                          ! Fluxes [W/m2]
 
     !
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
     !
+    logical(wl),                           intent(in   ) :: do_broadband
+    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_up, broadband_dn ! Spectrally-integrated fluxes [W/m2]
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac    ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: flux_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     logical(wl),                           intent(in   ) :: do_rescaling
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g    ! single-scattering albedo, asymmetry parameter
     ! -------------------------------------------------------------------------------------------------
     ! Local variables
+    integer :: icol, ilay, ilev, igpt
+    integer :: top_level, sfc_level
     real(wp), dimension(ncol,nlay,ngpt) :: tau_loc, &  ! path length (tau/mu)
                                            trans       ! transmissivity  = exp(-tau)
     real(wp), dimension(ncol,nlay,ngpt) :: source_dn, source_up
@@ -88,15 +94,12 @@ contains
     real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
 
     real(wp), parameter :: pi = acos(-1._wp)
-    integer             :: icol, ilay, ilev, igpt, top_level, sfc_level
 
-    real(wp)            :: fact
-    real(wp), parameter :: tau_thresh = sqrt(epsilon(tau_loc))
     !
     ! For Jacobians
     !
     real(wp), dimension(ncol,nlay+1,ngpt) :: gpt_Jac
-    real(wp)                              :: scalar_Jac ! Temp variable for reduction
+    real(wp)                              :: scalar ! Temp variable for reduction
     !
     ! Used when approximating scattering
     !
@@ -107,6 +110,9 @@ contains
     ! Level Planck sources for upward and downward radiation
     ! When top_at_1, lev_source_up => lev_source_dec
     !                lev_source_dn => lev_source_inc, and vice-versa
+
+    !$acc        enter data copyin(lev_source_dec, lev_source_inc, lay_source)
+    !$omp target enter data map(to:lev_source_dec, lev_source_inc, lay_source)
     if(top_at_1) then
       top_level = 1
       sfc_level = nlay+1
@@ -119,20 +125,9 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
-    !$acc        enter data copyin(d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,radn_dn)
-    !$omp target enter data map(to:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, radn_dn)
-    !$acc        enter data create(   tau_loc,trans,source_dn,source_up,radn_up)
-    !$omp target enter data map(alloc:tau_loc,trans,source_dn,source_up,radn_up)
-
-    !$acc        enter data copyin(sfc_srcJac)             if(do_Jacobians)
-    !$omp target enter data map(to:sfc_srcJac)             if(do_Jacobians)
-    !$acc        enter data create(   radn_upJac, gpt_Jac) if(do_Jacobians)
-    !$omp target enter data map(alloc:radn_upJac, gpt_Jac) if(do_Jacobians)
-
-    !$acc        enter data create(   An, Cn) if(do_rescaling)
-    !$omp target enter data map(alloc:An, Cn) if(do_rescaling)
-
-    !$acc parallel loop collapse(2)
+    !$acc        enter data create(   tau_loc,trans,source_dn,source_up,flux_up,flux_dx)
+    !$omp target enter data map(alloc:tau_loc,trans,source_dn,source_up,flux_up,flux_dx)
+    !$acc                         parallel loop    collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
@@ -140,9 +135,18 @@ contains
         ! Transport is for intensity
         !   convert flux at top of domain to intensity assuming azimuthal isotropy
         !
-        radn_dn(icol,top_level,igpt) = incident_flux(icol,igpt)/(2._wp * pi * weight)
+        flux_dn(icol,top_level,igpt) = incident_flux(icol,igpt)/(2._wp * pi * weight)
       end do
     end do
+
+    !$acc        enter data copyin(d, tau, sfc_src, sfc_emis)
+    !$omp target enter data map(to:d, tau, sfc_src, sfc_emis)
+    !$acc        enter data create(   An, Cn)              if(do_rescaling)
+    !$omp target enter data map(alloc:An, Cn)              if(do_rescaling)
+    !$acc        enter data copyin(sfc_srcJac)             if(do_Jacobians)
+    !$omp target enter data map(to:sfc_srcJac)             if(do_Jacobians)
+    !$acc        enter data create(   flux_upJac, gpt_Jac) if(do_Jacobians)
+    !$omp target enter data map(alloc:flux_upJac, gpt_Jac) if(do_Jacobians)
 
     !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
@@ -182,22 +186,24 @@ contains
         end do
       end do
     end do
+    !$acc        exit data delete(     D, tau, tau_loc, lev_source_dec, lev_source_inc, lay_source)
+    !$omp target exit data map(release:D, tau, tau_loc, lev_source_dec, lev_source_inc, lay_source)
 
     !
     ! Transport down
     !
-    call lw_transport_noscat_dn(ncol, nlay, ngpt, top_at_1, trans, source_dn, radn_dn)
+    call lw_transport_noscat_dn(ncol, nlay, ngpt, top_at_1, trans, source_dn, flux_dn)
     !
     ! Surface reflection and emission
     !
-    !$acc parallel loop collapse(2) no_create(gpt_Jac)
+    !$acc                         parallel loop    collapse(2) no_create(gpt_Jac)
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
         !
         ! Surface albedo, surface source function
         !
-        radn_up   (icol,sfc_level,igpt) = radn_dn(icol,sfc_level,igpt)*(1._wp - sfc_emis(icol,igpt)) + &
+        flux_up   (icol,sfc_level,igpt) = flux_dn(icol,sfc_level,igpt)*(1._wp - sfc_emis(icol,igpt)) + &
                                           sfc_src(icol,          igpt)*         sfc_emis(icol,igpt)
         if(do_Jacobians) &
           gpt_Jac(icol,sfc_level,igpt) = sfc_srcJac(icol,        igpt)*         sfc_emis(icol,igpt)
@@ -209,56 +215,99 @@ contains
     if(do_rescaling) then
       call lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, trans, &
                                source_dn, source_up,              &
-                               radn_up, radn_dn, An, Cn,          &
-                               do_Jacobians, gpt_Jac) ! Standing in for Jacobian, i.e. rad_up_Jac, rad_dn_Jac)
+                               flux_up, flux_dn, An, Cn,          &
+                               do_Jacobians, gpt_Jac)
     else
-      call lw_transport_noscat_up(ncol, nlay, ngpt, top_at_1, trans, source_up, radn_up, &
+      call lw_transport_noscat_up(ncol, nlay, ngpt, top_at_1, trans, source_up, flux_up, &
                                   do_Jacobians, gpt_Jac)
     end if
-    !
-    ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
-    !
-    !$acc parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
+    !$acc        exit data delete(     sfc_src, sfc_emis, trans, source_dn, source_up)
+    !$omp target exit data map(release:sfc_src, sfc_emis, trans, source_dn, source_up)
+    !$acc        exit data delete(     An, Cn) if(do_rescaling)
+    !$omp target exit data map(release:An, Cn) if(do_rescaling)
+
+    if(do_broadband) then
+      !$acc        exit data delete(     flux_up,flux_dn)
+      !$omp target exit data map(release:flux_up,flux_dn)
+      !
+      ! Broadband reduction including conversion from intensity to flux
+      !
+      ! Two separate loops (up/down) to keep memory access coherent
+      !
+      !$acc                         parallel loop gang vector collapse(2)
+      !$omp target teams distribute parallel do simd          collapse(2)
       do ilev = 1, nlay+1
         do icol = 1, ncol
-          radn_dn   (icol,ilev,igpt) = 2._wp * pi * weight * radn_dn   (icol,ilev,igpt)
-          radn_up   (icol,ilev,igpt) = 2._wp * pi * weight * radn_up   (icol,ilev,igpt)
+          scalar = 0.0_wp
+          do igpt = 1, ngpt
+            scalar = scalar + flux_dn(icol, ilev, igpt)
+          end do
+          broadband_dn(icol, ilev) = 2._wp * pi * weight * scalar
         end do
       end do
-    end do
-    !
-    ! Only broadband-integrated Jacobians are provided
-    !
-    if (do_Jacobians) then
-      !
-      ! Reduce by summing along g-point dimension
-      !
       !$acc parallel loop gang vector collapse(2)
       !$omp target teams distribute parallel do simd collapse(2)
       do ilev = 1, nlay+1
         do icol = 1, ncol
-          scalar_Jac = 0.0_wp
+          scalar = 0.0_wp
           do igpt = 1, ngpt
-            scalar_Jac = scalar_Jac + gpt_Jac(icol, ilev, igpt)
+            scalar = scalar + flux_up(icol, ilev, igpt)
           end do
-          radn_upJac(icol, ilev) = 2._wp * pi * weight * scalar_Jac
+          broadband_up(icol, ilev) = 2._wp * pi * weight * scalar
         end do
       end do
+      !$acc        exit data copyout( broadband_dn,broadband_up)
+      !$omp target exit data map(from:broadband_dn,broadband_up)
+    else
+      !$acc        exit data delete(     broadband_dn,broadband_up)
+      !$omp target exit data map(release:broadband_dn,broadband_up)
+      !
+      ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
+      !
+      ! Two separate loops (up/down) to keep memory access coherent
+      !
+      !$acc                         parallel loop    collapse(3)
+      !$omp target teams distribute parallel do simd collapse(3)
+      do igpt = 1, ngpt
+        do ilev = 1, nlay+1
+          do icol = 1, ncol
+            flux_dn(icol,ilev,igpt) = 2._wp * pi * weight * flux_dn(icol,ilev,igpt)
+          end do
+        end do
+      end do
+      !$acc parallel loop collapse(3)
+      !$omp target teams distribute parallel do simd collapse(3)
+      do igpt = 1, ngpt
+        do ilev = 1, nlay+1
+          do icol = 1, ncol
+            flux_up(icol,ilev,igpt) = 2._wp * pi * weight * flux_up(icol,ilev,igpt)
+          end do
+        end do
+      end do
+      !$acc        exit data copyout( flux_dn,flux_up)
+      !$omp target exit data map(from:flux_dn,flux_up)
+    end if
+    !
+    ! Only broadband-integrated Jacobians are provided
+    !
+    if (do_Jacobians) then
+      !$acc                         parallel loop gang vector collapse(2)
+      !$omp target teams distribute parallel do simd          collapse(2)
+      do ilev = 1, nlay+1
+        do icol = 1, ncol
+          scalar = 0.0_wp
+          do igpt = 1, ngpt
+            scalar = scalar + gpt_Jac(icol, ilev, igpt)
+          end do
+          flux_upJac(icol, ilev) = 2._wp * pi * weight * scalar
+        end do
+      end do
+      !$acc        exit data delete(     sfc_srcJac, gpt_Jac) if(do_Jacobians)
+      !$omp target exit data map(release:sfc_srcJac, gpt_Jac) if(do_Jacobians)
+      !$acc        exit data copyout( flux_upJac)             if(do_Jacobians)
+      !$omp target exit data map(from:flux_upJac)             if(do_Jacobians)
     end if
 
-    !$acc        exit data delete(     sfc_srcJac, gpt_Jac) if(do_Jacobians)
-    !$omp target exit data map(release:sfc_srcJac, gpt_Jac) if(do_Jacobians)
-    !$acc        exit data copyout( radn_upJac)             if(do_Jacobians)
-    !$omp target exit data map(from:radn_upJac)             if(do_Jacobians)
-
-    !$acc        exit data copyout( radn_dn,radn_up)
-    !$omp target exit data map(from:radn_dn,radn_up)
-    !$acc        exit data delete(     d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up)
-    !$omp target exit data map(release:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, tau_loc, trans, source_dn, source_up)
-    !$acc        exit data delete(     An, Cn) if(do_rescaling)
-    !$omp target exit data map(release:An, Cn) if(do_rescaling)
 
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------
@@ -275,13 +324,15 @@ contains
                                         sfc_emis, sfc_src,          &
                                         inc_flux,                   &
                                         flux_up, flux_dn,           &
-                                        do_broadband, broadband_flux_up, broadband_flux_dn, &
+                                        do_broadband, broadband_up, broadband_dn, &
                                         do_Jacobians, sfc_srcJac, flux_upJac,               &
                                         do_rescaling, ssa, g) bind(C, name="lw_solver_noscat_GaussQuad")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     integer,                               intent(in   ) :: nmus         ! number of quadrature angles
-    real(wp), dimension(nmus),             intent(in   ) :: Ds, weights  ! quadrature secants, weights
+    real(wp), dimension (ncol,      ngpt, &
+                                    nmus), intent(in   ) :: Ds
+    real(wp), dimension(nmus),             intent(in   ) :: weights  ! quadrature secants, weights
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
@@ -292,18 +343,20 @@ contains
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux     ! Incident diffuse flux, probably 0 [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up      ! Radiances [W/m2-str]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_dn      ! Top level must contain incident flux boundary condition
+    real(wp), dimension(ncol,nlay+1,ngpt), target, &
+                                           intent(  out) :: flux_up, flux_dn ! Fluxes [W/m2]
     !
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
     !
     logical(wl),                           intent(in   ) :: do_broadband
-    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_flux_up, broadband_flux_dn
+    real(wp), dimension(ncol,nlay+1     ), target, &
+                                           intent(  out) :: broadband_up, broadband_dn
                                                             ! Spectrally-integrated fluxes [W/m2]
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac
                                                             ! surface temperature Jacobian of surface source function [W/m2/K]
-    real(wp), dimension(ncol,nlay+1     ), intent(  out) :: flux_upJac
+    real(wp), dimension(ncol,nlay+1     ), target, &
+                                           intent(  out) :: flux_upJac
                                                             ! surface temperature Jacobian of Radiances [W/m2-str / K]
     logical(wl),                           intent(in   ) :: do_rescaling
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g    ! single-scattering albedo, asymmetry parameter
@@ -311,12 +364,9 @@ contains
     !
     ! Local variables
     !
-    real(wp), dimension(ncol,nlay+1,ngpt) :: radn_dn, radn_up
-    real(wp), dimension(ncol,nlay+1     ) :: radn_upJac ! Fluxes per quad angle
-    real(wp), dimension(ncol,       ngpt) :: Ds_ncol
-    real(wp), dimension(ncol,       ngpt) :: flux_top
-
-    integer :: imu, top_level
+    real(wp), dimension(:,:,:), pointer :: this_flux_up,      this_flux_dn
+    real(wp), dimension(:,:),   pointer :: this_broadband_up, this_broadband_dn, this_flux_upJac
+    integer :: imu
     integer :: icol, ilev, igpt
 
     !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn)
@@ -331,62 +381,58 @@ contains
 
     ! ------------------------------------
     ! ------------------------------------
-    !$acc  parallel loop collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
-    do igpt = 1, ngpt
-      do icol = 1, ncol
-        Ds_ncol(icol, igpt) = Ds(1)
-      end do
-    end do
-
     call lw_solver_noscat(ncol, nlay, ngpt, &
-                          top_at_1, Ds_ncol, weights(1), tau, &
+                          top_at_1, Ds(:,:,1), weights(1), tau, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           inc_flux,         &
                           flux_up, flux_dn, &
-                          do_Jacobians, sfc_srcJac, flux_upJac, &
+                          do_broadband, broadband_up, broadband_dn, &
+                          do_Jacobians, sfc_srcJac, flux_upJac,     &
                           do_rescaling, ssa, g)
     !
     ! For more than one angle use local arrays
     !
-    top_level = MERGE(1, nlay+1, top_at_1)
-    !$acc parallel loop collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
-    do igpt = 1,ngpt
-      do icol = 1,ncol
-        flux_top(icol,igpt) = flux_dn(icol,top_level,igpt)
-      end do
-    end do
 
+    !
+    ! For more than one angle use local arrays
+    !
+    if(nmus > 1) then
+      if(do_broadband) then
+        allocate(this_broadband_up(ncol,nlay+1), this_broadband_dn(ncol,nlay+1))
+        ! Spectrally-resolved fluxes won't be filled in so can point to caller-supplied memory
+        this_flux_up => flux_up
+        this_flux_dn => flux_dn
+      else
+        allocate(this_flux_up(ncol,nlay+1,ngpt), this_flux_dn(ncol,nlay+1,ngpt))
+        ! Spectrally-integrated fluxes won't be filled in so can point to caller-supplied memory
+        this_broadband_up => broadband_up
+        this_broadband_dn => broadband_dn
+      end if
+      if(do_Jacobians) then
+        allocate(this_flux_upJac(ncol,nlay+1))
+      else
+        this_flux_upJac => flux_upJac
+      end if
+    end if
     do imu = 2, nmus
-      !$acc  parallel loop collapse(2)
-      !$omp target teams distribute parallel do simd collapse(2)
-      do igpt = 1, ngpt
-        do icol = 1, ncol
-          Ds_ncol(icol, igpt) = Ds(imu)
-        end do
-      end do
       call lw_solver_noscat(ncol, nlay, ngpt, &
-                            top_at_1, Ds_ncol, weights(imu), tau, &
+                            top_at_1, Ds(:,:,imu), weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             inc_flux,         &
-                            radn_up, radn_dn, &
-                            do_Jacobians, sfc_srcJac, radn_upJac, &
+                            this_flux_up,  this_flux_dn, &
+                            do_broadband, this_broadband_up, this_broadband_dn, &
+                            do_Jacobians, sfc_srcJac, this_flux_upJac,         &
                             do_rescaling, ssa, g)
-      !$acc  parallel loop collapse(3) no_create(flux_upJac)
-      !$omp target teams distribute parallel do simd collapse(3)
-      do igpt = 1, ngpt
-        do ilev = 1, nlay+1
-          do icol = 1, ncol
-            flux_up(icol,ilev,igpt) = flux_up(icol,ilev,igpt) + radn_up(icol,ilev,igpt)
-            flux_dn(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) + radn_dn(icol,ilev,igpt)
-            if(do_Jacobians .and. igpt == 1) &
-              flux_upJac(icol,ilev) = flux_upJac(icol,ilev  ) + radn_upJac(icol,ilev  )
-          end do
-        end do
-      end do
-
-    end do ! imu loop
+      if(do_broadband) then
+        broadband_up(:,:) = broadband_up(:,:) + this_broadband_up(:,:)
+        broadband_up(:,:) = broadband_dn(:,:) + this_broadband_dn(:,:)
+      else
+        flux_up   (:,:,:) = flux_up   (:,:,:) + this_flux_up   (:,:,:)
+        flux_dn   (:,:,:) = flux_dn   (:,:,:) + this_flux_dn   (:,:,:)
+      end if
+      if (do_Jacobians) &
+        flux_upJac(:,:)  = flux_upJac(:,:  ) + this_flux_upJac(:,:  )
+    end do
     !$acc        exit data delete(     sfc_srcJac, radn_upJac) if(do_Jacobians)
     !$omp target exit data map(release:sfc_srcJac, radn_upJac) if(do_Jacobians)
     !$acc        exit data copyout( flux_upJac)                if(do_Jacobians)

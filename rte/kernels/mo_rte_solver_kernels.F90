@@ -326,7 +326,7 @@ contains
     !
     ! For more than one angle use local arrays
     !
-    do imu = 2, nmus
+    if(nmus > 1) then
       if(do_broadband) then
         allocate(this_broadband_up(ncol,nlay+1), this_broadband_dn(ncol,nlay+1))
         ! Spectrally-resolved fluxes won't be filled in so can point to caller-supplied memory
@@ -343,7 +343,8 @@ contains
       else
         this_flux_upJac => flux_upJac
       end if
-
+    end if
+    do imu = 2, nmus
       call lw_solver_noscat(ncol, nlay, ngpt, &
                             top_at_1, Ds(:,:,imu), weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &

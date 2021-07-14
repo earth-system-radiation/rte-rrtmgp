@@ -320,7 +320,7 @@ contains
         if(len_trim(error_msg) > 0) return
         !
         ! Secant of radiation angle - either user-supplied, one per g-point, or
-        !   taken from first-order Gaussian quadrate  and applied to all columns a g-points
+        !   taken from first-order Gaussian quadrate and applied to all columns a g-points
         !
         allocate(secants(ncol, ngpt, n_quad_angs))
         !$acc        enter data create(   secants)

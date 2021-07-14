@@ -186,8 +186,8 @@ contains
         allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
                  gpt_flux_dn (ncol,nlay+1,ngpt), &
                  gpt_flux_dir(ncol,nlay+1,ngpt))
-        !$acc        enter data create(   gpt_flux_up. gpt_flux_dn, gpt_flux_dir)
-        !$omp target enter data map(alloc:gpt_flux_up. gpt_flux_dn, gpt_flux_dir)
+        !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
 
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))

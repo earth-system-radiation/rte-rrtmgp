@@ -300,27 +300,20 @@ contains
           !
           fluxes%flux_net(:,:) = flux_dn_loc(:,:) - flux_up_loc(:,:)
         end if
-      if(associated(fluxes%flux_up)) then
-          !$acc        exit data copyout( flux_up_loc)
-          !$omp target exit data map(from:flux_up_loc)
-        else
-          !$acc        exit data delete(     flux_up_loc)
-          !$omp target exit data map(release:flux_up_loc)
-        end if
-        if(associated(fluxes%flux_dn)) then
-          !$acc        exit data copyout( flux_dn_loc)
-          !$omp target exit data map(from:flux_dn_loc)
-        else
-          !$acc        exit data delete(     flux_dn_loc)
-          !$omp target exit data map(release:flux_dn_loc)
-        end if
-        if(associated(fluxes%flux_dn_dir)) then
-          !$acc        exit data copyout( flux_dn_loc)
-          !$omp target exit data map(from:flux_dn_loc)
-        else
-          !$acc        exit data delete(     flux_dir_loc)
-          !$omp target exit data map(release:flux_dir_loc)
-        end if
+        !$acc        exit data copyout(    flux_up_loc) if(      associated(fluxes%flux_up))
+        !$omp target exit data map(from:   flux_up_loc) if(      associated(fluxes%flux_up))
+        !$acc        exit data delete(     flux_up_loc) if(.not. associated(fluxes%flux_up))
+        !$omp target exit data map(release:flux_up_loc) if(.not. associated(fluxes%flux_up))
+
+        !$acc        exit data copyout(    flux_dn_loc) if(      associated(fluxes%flux_dn))
+        !$omp target exit data map(from:   flux_dn_loc) if(      associated(fluxes%flux_dn))
+        !$acc        exit data delete(     flux_dn_loc) if(.not. associated(fluxes%flux_dn))
+        !$omp target exit data map(release:flux_dn_loc) if(.not. associated(fluxes%flux_dn))
+
+        !$acc        exit data copyout(    flux_dir_loc) if(      associated(fluxes%flux_dn_dir))
+        !$omp target exit data map(from:   flux_dir_loc) if(      associated(fluxes%flux_dn_dir))
+        !$acc        exit data delete(     flux_dir_loc) if(.not. associated(fluxes%flux_dn_dir))
+        !$omp target exit data map(release:flux_dir_loc) if(.not. associated(fluxes%flux_dn_dir))
       class default
         !
         ! ...or reduce spectral fluxes to desired output quantities

@@ -127,11 +127,6 @@ contains
     ngpt  = optical_props%get_ngpt()
     nband = optical_props%get_nband()
     do_Jacobians = present(flux_up_Jac)
-    if(do_Jacobians) then
-      jacobian => flux_up_Jac
-    else
-      jacobian => decoy2D
-    end if
     error_msg = ""
     ! ------------------------------------------------------------------------------------
     !
@@ -240,6 +235,9 @@ contains
       end if
     end if
     ! ------------------------------------------------------------------------------------
+    ! Used in one or more places below...
+    !$acc        enter data create(   decoy2D)
+    !$omp target enter data map(alloc:decoy2D)
     !
     !    Lower boundary condition -- expand surface emissivity by band to gpoints
     !
@@ -248,8 +246,13 @@ contains
     !$omp target enter data map(alloc:sfc_emis_gpt)
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
 
-    !$acc        enter data create(   flux_up_Jac) if(do_Jacobians)
-    !$omp target enter data map(alloc:flux_up_Jac) if(do_Jacobians)
+    if(do_Jacobians) then
+      !$acc        enter data create(   flux_up_Jac)
+      !$omp target enter data map(alloc:flux_up_Jac)
+      jacobian => flux_up_Jac
+    else
+      jacobian => decoy2D
+    end if
 
     select type(fluxes)
       type is (ty_fluxes_broadband)
@@ -278,8 +281,6 @@ contains
         !   and decoy addresses for spectrally-integrated fields
         !
         do_broadband = .false._wl
-        !$acc        enter data create(   decoy2D)
-        !$omp target enter data map(alloc:decoy2D)
         flux_up_loc  => decoy2D
         flux_dn_loc  => decoy2D
     end select
@@ -336,7 +337,7 @@ contains
           end do
         else
           !$acc                         parallel loop    collapse(3)
-          !$omp target teams distribute parallel do simd collapse(3) 
+          !$omp target teams distribute parallel do simd collapse(3)
           do imu = 1, n_quad_angs
             do igpt = 1, ngpt
               do icol = 1, ncol
@@ -416,20 +417,20 @@ contains
           !
           fluxes%flux_net(:,:) = flux_dn_loc(:,:) - flux_up_loc(:,:)
         end if
-        if(associated(fluxes%flux_up)) then
-          !$acc        exit data copyout( flux_up_loc)
-          !$omp target exit data map(from:flux_up_loc)
-        else
-          !$acc        exit data delete(     flux_up_loc)
-          !$omp target exit data map(release:flux_up_loc)
-        end if
-        if(associated(fluxes%flux_dn)) then
-          !$acc        exit data copyout( flux_dn_loc)
-          !$omp target exit data map(from:flux_dn_loc)
-        else
-          !$acc        exit data delete(     flux_dn_loc)
-          !$omp target exit data map(release:flux_dn_loc)
-        end if
+        !$acc        exit data copyout(    flux_up_loc) if(      associated(fluxes%flux_up))
+        !$omp target exit data map(from:   flux_up_loc) if(      associated(fluxes%flux_up))
+        !$acc        exit data delete(     flux_up_loc) if(.not. associated(fluxes%flux_up))
+        !$omp target exit data map(release:flux_up_loc) if(.not. associated(fluxes%flux_up))
+
+        !$acc        exit data copyout(    flux_dn_loc) if(      associated(fluxes%flux_dn))
+        !$omp target exit data map(from:   flux_dn_loc) if(      associated(fluxes%flux_dn))
+        !$acc        exit data delete(     flux_dn_loc) if(.not. associated(fluxes%flux_dn))
+        !$omp target exit data map(release:flux_dn_loc) if(.not. associated(fluxes%flux_dn))
+
+        !$acc        exit data copyout(    flux_dir_loc) if(      associated(fluxes%flux_dn_dir))
+        !$omp target exit data map(from:   flux_dir_loc) if(      associated(fluxes%flux_dn_dir))
+        !$acc        exit data delete(     flux_dir_loc) if(.not. associated(fluxes%flux_dn_dir))
+        !$omp target exit data map(release:flux_dir_loc) if(.not. associated(fluxes%flux_dn_dir))
       class default
         !
         ! ...or reduce spectral fluxes to desired output quantities

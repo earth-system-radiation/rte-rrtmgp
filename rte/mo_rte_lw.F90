@@ -426,11 +426,6 @@ contains
         !$omp target exit data map(from:   flux_dn_loc) if(      associated(fluxes%flux_dn))
         !$acc        exit data delete(     flux_dn_loc) if(.not. associated(fluxes%flux_dn))
         !$omp target exit data map(release:flux_dn_loc) if(.not. associated(fluxes%flux_dn))
-
-        !$acc        exit data copyout(    flux_dir_loc) if(      associated(fluxes%flux_dn_dir))
-        !$omp target exit data map(from:   flux_dir_loc) if(      associated(fluxes%flux_dn_dir))
-        !$acc        exit data delete(     flux_dir_loc) if(.not. associated(fluxes%flux_dn_dir))
-        !$omp target exit data map(release:flux_dir_loc) if(.not. associated(fluxes%flux_dn_dir))
       class default
         !
         ! ...or reduce spectral fluxes to desired output quantities

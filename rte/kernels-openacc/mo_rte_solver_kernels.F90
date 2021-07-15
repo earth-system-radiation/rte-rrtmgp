@@ -230,32 +230,11 @@ contains
       !$acc        exit data delete(     flux_up,flux_dn)
       !$omp target exit data map(release:flux_up,flux_dn)
       !
-      ! Broadband reduction including conversion from intensity to flux
+      ! Broadband reduction including
+      !   conversion from intensity to flux assuming azimuthal isotropy and quadrature weight
       !
-      ! Two separate loops (up/down) to keep memory access coherent
-      !
-      !$acc                         parallel loop gang vector collapse(2)
-      !$omp target teams distribute parallel do simd          collapse(2)
-      do ilev = 1, nlay+1
-        do icol = 1, ncol
-          scalar = 0.0_wp
-          do igpt = 1, ngpt
-            scalar = scalar + flux_dn(icol, ilev, igpt)
-          end do
-          broadband_dn(icol, ilev) = 2._wp * pi * weight * scalar
-        end do
-      end do
-      !$acc parallel loop gang vector collapse(2)
-      !$omp target teams distribute parallel do simd collapse(2)
-      do ilev = 1, nlay+1
-        do icol = 1, ncol
-          scalar = 0.0_wp
-          do igpt = 1, ngpt
-            scalar = scalar + flux_up(icol, ilev, igpt)
-          end do
-          broadband_up(icol, ilev) = 2._wp * pi * weight * scalar
-        end do
-      end do
+      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, flux_dn, broadband_dn)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, flux_up, broadband_up)
       !$acc        exit data copyout( broadband_dn,broadband_up)
       !$omp target exit data map(from:broadband_dn,broadband_up)
     else
@@ -291,17 +270,7 @@ contains
     ! Only broadband-integrated Jacobians are provided
     !
     if (do_Jacobians) then
-      !$acc                         parallel loop gang vector collapse(2)
-      !$omp target teams distribute parallel do simd          collapse(2)
-      do ilev = 1, nlay+1
-        do icol = 1, ncol
-          scalar = 0.0_wp
-          do igpt = 1, ngpt
-            scalar = scalar + gpt_Jac(icol, ilev, igpt)
-          end do
-          flux_upJac(icol, ilev) = 2._wp * pi * weight * scalar
-        end do
-      end do
+      call sum_broadband_factor(ncol, nlay, ngpt, 2._wp * pi * weight, gpt_Jac, flux_upJac)
       !$acc        exit data delete(     sfc_srcJac, gpt_Jac) if(do_Jacobians)
       !$omp target exit data map(release:sfc_srcJac, gpt_Jac) if(do_Jacobians)
       !$acc        exit data copyout( flux_upJac)             if(do_Jacobians)
@@ -366,11 +335,10 @@ contains
     !
     real(wp), dimension(:,:,:), pointer :: this_flux_up,      this_flux_dn
     real(wp), dimension(:,:),   pointer :: this_broadband_up, this_broadband_dn, this_flux_upJac
-    integer :: imu
-    integer :: icol, ilev, igpt
+    integer :: icol, ilev, igpt, imu
 
-    !$acc enter data copyin(Ds,weights,tau,lay_source,lev_source_inc,lev_source_dec,sfc_emis,sfc_src,flux_dn)
-    !$omp target enter data map(to:Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_dn)
+    !$acc        enter data copyin(Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
+    !$omp target enter data map(to:Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
     !$acc enter data create(flux_up,radn_dn,radn_up,Ds_ncol,flux_top)
     !$omp target enter data map(alloc:flux_up, radn_dn, radn_up, Ds_ncol, flux_top)
     !$acc        enter data copyin(sfc_srcJac) if(do_Jacobians)
@@ -378,8 +346,6 @@ contains
     !$acc        enter data create(   flux_upJac, radn_upJac) if(do_Jacobians)
     !$omp target enter data map(alloc:flux_upJac, radn_upJac) if(do_Jacobians)
     ! radn_upJac is needed only if do_Jacobians is true .and. nmus > 1
-
-    ! ------------------------------------
     ! ------------------------------------
     call lw_solver_noscat(ncol, nlay, ngpt, &
                           top_at_1, Ds(:,:,1), weights(1), tau, &
@@ -414,6 +380,9 @@ contains
         this_flux_upJac => flux_upJac
       end if
     end if
+    !
+    ! For more than one angle use local arrays
+    !
     do imu = 2, nmus
       call lw_solver_noscat(ncol, nlay, ngpt, &
                             top_at_1, Ds(:,:,imu), weights(imu), tau, &
@@ -424,14 +393,35 @@ contains
                             do_Jacobians, sfc_srcJac, this_flux_upJac,         &
                             do_rescaling, ssa, g)
       if(do_broadband) then
-        broadband_up(:,:) = broadband_up(:,:) + this_broadband_up(:,:)
-        broadband_up(:,:) = broadband_dn(:,:) + this_broadband_dn(:,:)
+        !$acc                         parallel loop    collapse(2)
+        !$omp target teams distribute parallel do simd collapse(2)
+        do ilev = 1, nlay+1
+          do icol = 1, ncol
+            broadband_up(icol,ilev) = broadband_up(icol,ilev) + this_broadband_up(icol,ilev)
+            broadband_up(icol,ilev) = broadband_dn(icol,ilev) + this_broadband_dn(icol,ilev)
+          end do
+        end do
       else
-        flux_up   (:,:,:) = flux_up   (:,:,:) + this_flux_up   (:,:,:)
-        flux_dn   (:,:,:) = flux_dn   (:,:,:) + this_flux_dn   (:,:,:)
+        !$acc                         parallel loop    collapse(3)
+        !$omp target teams distribute parallel do simd collapse(3)
+        do igpt = 1, ngpt
+          do ilev = 1, nlay+1
+            do icol = 1, ncol
+              flux_up(icol,ilev,igpt) = flux_up(icol,ilev,igpt) + this_flux_up(icol,ilev,igpt)
+              flux_dn(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) + this_flux_dn(icol,ilev,igpt)
+            end do
+          end do
+        end do
       end if
-      if (do_Jacobians) &
-        flux_upJac(:,:)  = flux_upJac(:,:  ) + this_flux_upJac(:,:  )
+      if (do_Jacobians) then
+        !$acc                         parallel loop    collapse(2)
+        !$omp target teams distribute parallel do simd collapse(2)
+        do ilev = 1, nlay+1
+          do icol = 1, ncol
+            flux_upJac(icol,ilev)  = flux_upJac(icol,ilev) + this_flux_upJac(icol,ilev)
+          end do
+        end do
+      end if
     end do
     !$acc        exit data delete(     sfc_srcJac, radn_upJac) if(do_Jacobians)
     !$omp target exit data map(release:sfc_srcJac, radn_upJac) if(do_Jacobians)
@@ -1496,4 +1486,37 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
       enddo
     end if
   end subroutine lw_transport_1rescl
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Spectral reduction over all points
+  !
+  subroutine sum_broadband_factor(ncol, nlev, ngpt, factor, spectral_flux, broadband_flux) bind(C, name="sum_broadband_factor")
+  integer,                               intent(in ) :: ncol, nlev, ngpt
+  real(wp),                              intent(in ) :: factor
+  real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux
+  real(wp), dimension(ncol, nlev),       intent(out) :: broadband_flux
+
+  integer  :: icol, ilev, igpt
+  real(wp) :: scalar ! local scalar version
+
+  !$acc        enter data copyin(spectral_flux)    create(broadband_flux)
+  !$omp target enter data map(to:spectral_flux) map(alloc:broadband_flux)
+  !$acc                         parallel loop gang vector collapse(2)
+  !$omp target teams distribute parallel do simd          collapse(2)
+  do ilev = 1, nlev
+    do icol = 1, ncol
+
+      scalar = 0.0_wp
+
+      do igpt = 1, ngpt
+        scalar = scalar + spectral_flux(icol, ilev, igpt)
+      end do
+
+      broadband_flux(icol, ilev) = factor * scalar
+    end do
+  end do
+  !$acc        exit data delete(     spectral_flux) copyout( broadband_flux)
+  !$omp target exit data map(release:spectral_flux) map(from:broadband_flux)
+  end subroutine sum_broadband_factor
+  ! -------------------------------------------------------------------------------------------------
 end module mo_rte_solver_kernels

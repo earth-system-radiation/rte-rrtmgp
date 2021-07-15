@@ -125,8 +125,8 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
-    !$acc        enter data create(   tau_loc,trans,source_dn,source_up,flux_up,flux_dx)
-    !$omp target enter data map(alloc:tau_loc,trans,source_dn,source_up,flux_up,flux_dx)
+    !$acc        enter data create(   tau_loc,trans,source_dn,source_up,flux_up,flux_dn)
+    !$omp target enter data map(alloc:tau_loc,trans,source_dn,source_up,flux_up,flux_dn)
     !$acc                         parallel loop    collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
@@ -367,7 +367,7 @@ contains
       if(do_broadband) then
         allocate(this_broadband_up(ncol,nlay+1), this_broadband_dn(ncol,nlay+1))
         !$acc        enter data create(   this_broadband_up, this_broadband_dn)
-        !$omp target enter data map(alloc:this_broadband_up, this_broadband_dn) i
+        !$omp target enter data map(alloc:this_broadband_up, this_broadband_dn)
         ! Spectrally-resolved fluxes won't be filled in so can point to caller-supplied memory
         this_flux_up => flux_up
         this_flux_dn => flux_dn

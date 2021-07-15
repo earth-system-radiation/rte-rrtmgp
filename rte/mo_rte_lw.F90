@@ -295,8 +295,8 @@ contains
     if (present(inc_flux)) then
       !  inc_flux_dif might have been copied-in before, when checking extents/values,
       !  in which case no copying will occur here
-      !$acc        enter data copyin(inc_flux_dif)
-      !$omp target enter data map(to:inc_flux_dif)
+      !$acc        enter data copyin(inc_flux)
+      !$omp target enter data map(to:inc_flux)
       inc_flux_diffuse => inc_flux
     else
       allocate(inc_flux_diffuse(ncol, ngpt))
@@ -335,8 +335,8 @@ contains
             end do
           end do
         else
-          !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
-          !$omp target teams distribute parallel do simd collapse(3) map(to:gauss_Ds)
+          !$acc                         parallel loop    collapse(3)
+          !$omp target teams distribute parallel do simd collapse(3) 
           do imu = 1, n_quad_angs
             do igpt = 1, ngpt
               do icol = 1, ncol
@@ -435,8 +435,8 @@ contains
         ! ...or reduce spectral fluxes to desired output quantities
         !
         error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
-        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
-        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
+        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, decoy2D)
+        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, decoy2D)
     end select
     !$acc        exit data delete(     sfc_emis_gpt)
     !$omp target exit data map(release:sfc_emis_gpt)

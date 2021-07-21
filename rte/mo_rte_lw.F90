@@ -358,8 +358,8 @@ contains
                               do_broadband, flux_up_loc, flux_dn_loc,     &
                               logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
                               logical(.false., wl),  empty3D, empty3D)
-        !$acc        exit data delete(     optical_props%tau)
-        !$omp target exit data map(release:optical_props%tau)
+        !$acc        exit data delete(     optical_props%tau, secants)
+        !$omp target exit data map(release:optical_props%tau, secants)
       class is (ty_optical_props_2str)
         !$acc        enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
         !$omp target enter data map(to:optical_props%tau, optical_props%ssa, optical_props%g)
@@ -376,6 +376,18 @@ contains
                                  inc_flux_diffuse,                       &
                                  gpt_flux_up, gpt_flux_dn)
         else
+          allocate(secants(ncol, ngpt, n_quad_angs))
+          !$acc        enter data create(   secants)
+          !$omp target enter data map(alloc:secants)
+          !$acc                         parallel loop    collapse(3)
+          !$omp target teams distribute parallel do simd collapse(3)
+          do imu = 1, n_quad_angs
+            do igpt = 1, ngpt
+              do icol = 1, ncol
+                secants(icol,igpt,imu) = gauss_Ds(imu,n_quad_angs)
+              end do
+            end do
+          end do
           !
           ! Re-scaled solution to account for scattering
           !
@@ -391,6 +403,8 @@ contains
                                 do_broadband, flux_up_loc, flux_dn_loc,     &
                                 logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
                                 logical(.true., wl),  optical_props%ssa, optical_props%g)
+          !$acc        exit data delete(     secants)
+          !$omp target exit data map(release:secants)
         endif
         !$acc        exit data delete(     optical_props%tau, optical_props%ssa, optical_props%g)
         !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)

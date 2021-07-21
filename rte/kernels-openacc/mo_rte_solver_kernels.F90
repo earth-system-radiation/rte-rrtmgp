@@ -35,6 +35,10 @@ module mo_rte_solver_kernels
   public :: lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
             sw_solver_noscat,                             sw_solver_2stream
 
+  interface add_arrays
+    module procedure add_arrays_2D, add_arrays_3D
+  end interface
+
   real(wp), parameter :: pi = acos(-1._wp)
 contains
   ! -------------------------------------------------------------------------------------------------
@@ -243,26 +247,8 @@ contains
       !
       ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
       !
-      ! Two separate loops (up/down) to keep memory access coherent
-      !
-      !$acc                         parallel loop    collapse(3)
-      !$omp target teams distribute parallel do simd collapse(3)
-      do igpt = 1, ngpt
-        do ilev = 1, nlay+1
-          do icol = 1, ncol
-            flux_dn(icol,ilev,igpt) = 2._wp * pi * weight * flux_dn(icol,ilev,igpt)
-          end do
-        end do
-      end do
-      !$acc parallel loop collapse(3)
-      !$omp target teams distribute parallel do simd collapse(3)
-      do igpt = 1, ngpt
-        do ilev = 1, nlay+1
-          do icol = 1, ncol
-            flux_up(icol,ilev,igpt) = 2._wp * pi * weight * flux_up(icol,ilev,igpt)
-          end do
-        end do
-      end do
+      call apply_factor_3D(ncol, nlay+1, ngpt, 2._wp*pi*weight, flux_dn)
+      call apply_factor_3D(ncol, nlay+1, ngpt, 2._wp*pi*weight, flux_up)
       !$acc        exit data copyout( flux_dn,flux_up)
       !$omp target exit data map(from:flux_dn,flux_up)
     end if
@@ -399,34 +385,14 @@ contains
                               do_Jacobians, sfc_srcJac, this_flux_upJac,         &
                               do_rescaling, ssa, g)
         if(do_broadband) then
-          !$acc                         parallel loop    collapse(2)
-          !$omp target teams distribute parallel do simd collapse(2)
-          do ilev = 1, nlay+1
-            do icol = 1, ncol
-              broadband_up(icol,ilev) = broadband_up(icol,ilev) + this_broadband_up(icol,ilev)
-              broadband_dn(icol,ilev) = broadband_dn(icol,ilev) + this_broadband_dn(icol,ilev)
-            end do
-          end do
+          call add_arrays(ncol, nlay+1, this_broadband_up, broadband_up)
+          call add_arrays(ncol, nlay+1, this_broadband_dn, broadband_dn)
         else
-          !$acc                         parallel loop    collapse(3)
-          !$omp target teams distribute parallel do simd collapse(3)
-          do igpt = 1, ngpt
-            do ilev = 1, nlay+1
-              do icol = 1, ncol
-                flux_up(icol,ilev,igpt) = flux_up(icol,ilev,igpt) + this_flux_up(icol,ilev,igpt)
-                flux_dn(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) + this_flux_dn(icol,ilev,igpt)
-              end do
-            end do
-          end do
+          call add_arrays(ncol, nlay+1, ngpt, flux_up, this_flux_up)
+          call add_arrays(ncol, nlay+1, ngpt, flux_dn, this_flux_dn)
         end if
         if (do_Jacobians) then
-          !$acc                         parallel loop    collapse(2)
-          !$omp target teams distribute parallel do simd collapse(2)
-          do ilev = 1, nlay+1
-            do icol = 1, ncol
-              flux_upJac(icol,ilev)  = flux_upJac(icol,ilev) + this_flux_upJac(icol,ilev)
-            end do
-          end do
+          call add_arrays(ncol, nlay+1, this_flux_upJac, flux_upJac)
         end if
       end do
       !$acc        exit data delete(     this_flux_up,     this_flux_dn)      if(.not. do_broadband)
@@ -726,53 +692,22 @@ contains
       !
       ! Broadband integration
       !
-      !$acc                         parallel loop gang vector collapse(2)
-      !$omp target teams distribute parallel do simd          collapse(2)
-      do ilay = 1, nlay+1
-        do icol = 1, ncol
-
-          bb_flux_s = 0.0_wp
-          do igpt = 1, ngpt
-            bb_flux_s = bb_flux_s + gpt_flux_up(icol, ilay, igpt)
-          end do
-          broadband_up(icol, ilay) = bb_flux_s
-        end do
-      end do
-      !$acc              parallel loop gang vector   collapse(2)
-      !$omp target teams distribute parallel do simd collapse(2)
-      do ilay = 1, nlay+1
-        do icol = 1, ncol
-
-          bb_flux_s = 0.0_wp
-          bb_dir_s  = 0._wp
-          do igpt = 1, ngpt
-            bb_dir_s  = bb_dir_s  + gpt_flux_dir(icol, ilay, igpt)
-            bb_flux_s = bb_flux_s + gpt_flux_dn (icol, ilay, igpt)
-          end do
-          !
-          ! adding computes only diffuse flux; flux_dn is total
-          !
-          broadband_dir(icol, ilay) = bb_dir_s
-          broadband_dn (icol, ilay) = bb_dir_s + bb_flux_s
-        end do
-      end do
-      !$acc        exit data copyout( broadband_up, broadband_dn, broadband_dir)
-      !$omp target exit data map(from:broadband_up, broadband_dn, broadband_dir)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, 1._wp, gpt_flux_up,  broadband_up)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, 1._wp, gpt_flux_dn,  broadband_dn)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, 1._wp, gpt_flux_dir, broadband_dir)
       !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
       !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+      !
+      ! adding computes only diffuse flux; flux_dn is total
+      !
+      call add_arrays          (ncol, nlay+1, broadband_dir, broadband_dn)
+      !$acc        exit data copyout( broadband_up, broadband_dn, broadband_dir)
+      !$omp target exit data map(from:broadband_up, broadband_dn, broadband_dir)
     else
       !
       ! adding computes only diffuse flux; flux_dn is total
       !
-      !$acc                         parallel loop    collapse(3)
-      !$omp target teams distribute parallel do simd collapse(3)
-      do igpt = 1, ngpt
-        do ilay = 1, nlay+1
-          do icol = 1, ncol
-            flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt)
-          end do
-        end do
-      end do
+      call add_arrays(ncol, nlay+1, ngpt, flux_dir, flux_dn)
       !$acc        exit data copyout( flux_up, flux_dn, flux_dir)
       !$omp target exit data map(from:flux_up, flux_dn, flux_dir)
     end if
@@ -1511,7 +1446,7 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
   !
   ! Spectral reduction over all points
   !
-  subroutine sum_broadband_factor(ncol, nlev, ngpt, factor, spectral_flux, broadband_flux) bind(C, name="sum_broadband_factor")
+  subroutine sum_broadband_factor(ncol, nlev, ngpt, factor, spectral_flux, broadband_flux)
   integer,                               intent(in ) :: ncol, nlev, ngpt
   real(wp),                              intent(in ) :: factor
   real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux
@@ -1539,5 +1474,63 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
   !$acc        exit data delete(     spectral_flux) copyout( broadband_flux)
   !$omp target exit data map(release:spectral_flux) map(from:broadband_flux)
   end subroutine sum_broadband_factor
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Apply a scalar weight to every element of an array
+  !
+  subroutine apply_factor_3D(ncol, nlev, ngpt, factor, array)
+    integer,                               intent(in   ) :: ncol, nlev, ngpt
+    real(wp),                              intent(in   ) :: factor
+    real(wp), dimension(ncol, nlev, ngpt), intent(inout) :: array
+
+    integer  :: icol, ilev, igpt
+
+    !$acc                         parallel loop gang vector present(array) collapse(3)
+    !$omp target teams distribute parallel do simd          present(array) collapse(3)
+    do igpt = 1, ngpt
+      do ilev = 1, nlev
+        do icol = 1, ncol
+          array(icol, ilev, igpt) = factor * array(icol, ilev, igpt)
+        end do
+      end do
+    end do
+  end subroutine apply_factor_3D
+  ! -------------------------------------------------------------------------------------------------
+  !
+  ! Add an array to an existing array
+  !
+  subroutine add_arrays_3D(ncol, nlev, ngpt, increment, array)
+    integer,                               intent(in   ) :: ncol, nlev, ngpt
+    real(wp), dimension(ncol, nlev, ngpt), intent(in   ) :: increment
+    real(wp), dimension(ncol, nlev, ngpt), intent(inout) :: array
+
+    integer  :: icol, ilev, igpt
+
+    !$acc                         parallel loop gang vector present(array,increment) collapse(3)
+    !$omp target teams distribute parallel do simd          present(array,increment) collapse(3)
+    do igpt = 1, ngpt
+      do ilev = 1, nlev
+        do icol = 1, ncol
+          array(icol, ilev, igpt) = array(icol, ilev, igpt) + increment(icol, ilev, igpt)
+        end do
+      end do
+    end do
+  end subroutine add_arrays_3D
+  ! -------------------------------------------------------------------------------------------------
+  subroutine add_arrays_2D(ncol, nlev, increment, array)
+    integer,                         intent(in   ) :: ncol, nlev
+    real(wp), dimension(ncol, nlev), intent(in   ) :: increment
+    real(wp), dimension(ncol, nlev), intent(inout) :: array
+
+    integer  :: icol, ilev
+
+    !$acc                         parallel loop gang vector present(array,increment) collapse(2)
+    !$omp target teams distribute parallel do simd          present(array,increment) collapse(2)
+    do ilev = 1, nlev
+      do icol = 1, ncol
+        array(icol, ilev) = array(icol, ilev) + increment(icol, ilev)
+      end do
+    end do
+  end subroutine add_arrays_2D
   ! -------------------------------------------------------------------------------------------------
 end module mo_rte_solver_kernels

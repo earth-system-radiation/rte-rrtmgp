@@ -7,10 +7,10 @@ def assert_equal(variants, reference):
     # Computes difference between reference and each variant, reports if differences
     #   exceed a threshold
     #
-    passed = True
     if type(variants) is not list:
-        assert_equal([variants], reference)
+        return(assert_equal([variants], reference))
     else:
+        passed = True
         print('Using %s as reference:'%(reference.description))
         for v in variants:
             diff = xr.ufuncs.fabs(v - reference)
@@ -19,7 +19,8 @@ def assert_equal(variants, reference):
                 print('      differs from reference by as much as %e'%(diff.max()))
             passed = passed and diff.max() <= failure_threshold
         print('')
-    return(passed)
+        return(passed)
+
 
 
 ########################################################################
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     gp.lw_flux_net_from_updn.attrs = {"description":"LW flux net, computed externally from dn-up"}
 
     passed = assert_equal([gp.lw_flux_dn_vr, gp.lw_flux_dn_jaco, gp.lw_flux_dn_subset], gp.lw_flux_dn)
-    passed = assert_equal([gp.lw_flux_up_vr, gp.lw_flux_up_jaco, gp.lw_flux_up_subset], gp.lw_flux_up)  and passed
+    passed = assert_equal([gp.lw_flux_up_vr, gp.lw_flux_up_jaco, gp.lw_flux_up_subset], gp.lw_flux_up)            and passed
     passed = assert_equal([gp.lw_flux_net,  gp.lw_flux_net_2],                          gp.lw_flux_net_from_updn) and passed
     #
     # Does the flux plus the Jacobian equal a calculation with perturbed surface temperature?
@@ -68,10 +69,8 @@ if __name__ == '__main__':
                           gp.lw_flux_up) and passed
     # passed = assert_equal(gp.lw_flux_dn_inc_2str_with_1scl,                            gp.lw_flux_dn_2str) and passed
     # passed = assert_equal(gp.lw_flux_up_inc_2str_with_1scl,                            gp.lw_flux_up_2str) and passed
-    passed = assert_equal([gp.sw_flux_dn_incr],
-                 gp.sw_flux_dn) and passed
-    passed = assert_equal([gp.sw_flux_up_incr],
-                 gp.sw_flux_up) and passed
+    passed = assert_equal([gp.sw_flux_dn_incr], gp.sw_flux_dn) and passed
+    passed = assert_equal([gp.sw_flux_up_incr], gp.sw_flux_up) and passed
 
     if not passed: print("Something is terribly, terribly wrong")
     sys.exit(0) if passed else sys.exit(1)

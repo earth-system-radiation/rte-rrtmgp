@@ -83,7 +83,7 @@ contains
     ! Local variables
     !
     integer      :: ncol, nlay, ngpt, nband
-    integer      :: icol,       igpt, imu
+    integer      :: icol, ilev, igpt,       imu
     integer      :: n_quad_angs
     logical(wl)  :: using_2stream, do_Jacobians, has_dif_bc, do_broadband
     real(wp), dimension(:,:),   allocatable   :: sfc_emis_gpt
@@ -425,18 +425,23 @@ contains
         !$acc        exit data delete(     decoy3D)
         !$omp target exit data map(release:decoy3D)
         if(associated(fluxes%flux_net)) then
-          !
-          ! Make this OpenACC/MP friendly
-          !
-          fluxes%flux_net(:,:) = flux_dn_loc(:,:) - flux_up_loc(:,:)
+          !$acc                         parallel loop    collapse(2) create(fluxes%flux_net)
+          !$omp target teams distribute parallel do simd collapse(2) create(fluxes%flux_net)
+          do ilev = 1, nlay+1
+            do icol = 1, ncol
+              fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
+            end do
+          end do
+          !$acc        exit data copyout( fluxes%flux_net)
+          !$omp target exit data map(from:fluxes%flux_net)
         end if
-        !$acc        exit data copyout(    flux_up_loc) if(      associated(fluxes%flux_up))
-        !$omp target exit data map(from:   flux_up_loc) if(      associated(fluxes%flux_up))
+        !$acc        exit data copyout( fluxes%flux_up) if(      associated(fluxes%flux_up))
+        !$omp target exit data map(from:fluxes%flux_up) if(      associated(fluxes%flux_up))
         !$acc        exit data delete(     flux_up_loc) if(.not. associated(fluxes%flux_up))
         !$omp target exit data map(release:flux_up_loc) if(.not. associated(fluxes%flux_up))
 
-        !$acc        exit data copyout(    flux_dn_loc) if(      associated(fluxes%flux_dn))
-        !$omp target exit data map(from:   flux_dn_loc) if(      associated(fluxes%flux_dn))
+        !$acc        exit data copyout( fluxes%flux_dn) if(      associated(fluxes%flux_dn))
+        !$omp target exit data map(from:fluxes%flux_dn) if(      associated(fluxes%flux_dn))
         !$acc        exit data delete(     flux_dn_loc) if(.not. associated(fluxes%flux_dn))
         !$omp target exit data map(release:flux_dn_loc) if(.not. associated(fluxes%flux_dn))
       class default

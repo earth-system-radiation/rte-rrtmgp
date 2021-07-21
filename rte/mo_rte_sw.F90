@@ -63,7 +63,7 @@ contains
     ! Local variables
     !
     integer     :: ncol, nlay, ngpt, nband
-    integer     :: icol, igpt
+    integer     :: icol, ilev, igpt
     logical(wl) :: has_dif_bc, do_broadband
 
     real(wp), dimension(:,:,:), pointer     :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy3D
@@ -295,10 +295,15 @@ contains
         !$acc        exit data delete(     decoy3D)
         !$omp target exit data map(release:decoy3D)
         if(associated(fluxes%flux_net)) then
-          !
-          ! Make this OpenACC/MP friendly
-          !
-          fluxes%flux_net(:,:) = flux_dn_loc(:,:) - flux_up_loc(:,:)
+          !$acc                         parallel loop    collapse(2) create(fluxes%flux_net)
+          !$omp target teams distribute parallel do simd collapse(2) create(fluxes%flux_net)
+          do ilev = 1, nlay+1
+            do icol = 1, ncol
+              fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
+            end do
+          end do
+          !$acc        exit data copyout( fluxes%flux_net)
+          !$omp target exit data map(from:fluxes%flux_net)
         end if
         !$acc        exit data copyout(    flux_up_loc) if(      associated(fluxes%flux_up))
         !$omp target exit data map(from:   flux_up_loc) if(      associated(fluxes%flux_up))

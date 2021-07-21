@@ -381,8 +381,7 @@ contains
           !
           call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
                                 logical(top_at_1, wl), n_quad_angs,         &
-                                gauss_Ds(1:n_quad_angs,n_quad_angs),        &
-                                gauss_wts(1:n_quad_angs,n_quad_angs),       &
+                                secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                 optical_props%tau,                 &
                                 sources%lay_source, sources%lev_source_inc, &
                                 sources%lev_source_dec,            &

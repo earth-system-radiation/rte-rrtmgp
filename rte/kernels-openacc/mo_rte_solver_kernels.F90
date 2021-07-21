@@ -203,10 +203,10 @@ contains
         !
         ! Surface albedo, surface source function
         !
-        flux_up   (icol,sfc_level,igpt) = flux_dn(icol,sfc_level,igpt)*(1._wp - sfc_emis(icol,igpt)) + &
-                                          sfc_src(icol,          igpt)*         sfc_emis(icol,igpt)
+        flux_up  (icol,sfc_level,igpt) = flux_dn   (icol,sfc_level,igpt)*(1._wp - sfc_emis(icol,igpt)) + &
+                                         sfc_src   (icol,          igpt)*         sfc_emis(icol,igpt)
         if(do_Jacobians) &
-          gpt_Jac(icol,sfc_level,igpt) = sfc_srcJac(icol,        igpt)*         sfc_emis(icol,igpt)
+          gpt_Jac(icol,sfc_level,igpt) = sfc_srcJac(icol,          igpt)*         sfc_emis(icol,igpt)
       end do
     end do
     !
@@ -270,7 +270,7 @@ contains
     ! Only broadband-integrated Jacobians are provided
     !
     if (do_Jacobians) then
-      call sum_broadband_factor(ncol, nlay, ngpt, 2._wp * pi * weight, gpt_Jac, flux_upJac)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, gpt_Jac, flux_upJac)
       !$acc        exit data delete(     sfc_srcJac, gpt_Jac) if(do_Jacobians)
       !$omp target exit data map(release:sfc_srcJac, gpt_Jac) if(do_Jacobians)
       !$acc        exit data copyout( flux_upJac)             if(do_Jacobians)

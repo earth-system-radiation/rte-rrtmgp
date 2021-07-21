@@ -186,6 +186,10 @@ contains
 
             ! Eqs.15, 18ab and 19 of the paper,
             ! rescaling of the optical depth multiplied by path length
+            print *, "icol,ilay,igpt", icol,ilay,igpt
+            print *, "tau(icol,ilay,igpt)", tau(icol,ilay,igpt)
+            print *, "D(icol,igpt)", D(icol,igpt)
+            print *, "scaleTau", scaleTau
             tau_loc(icol,ilay) = tau(icol,ilay,igpt)*D(icol,igpt)*scaleTau
           end do
           trans  (:,ilay) = exp(-tau_loc(:,ilay))

@@ -348,10 +348,10 @@ contains
     !$acc        enter data create(   broadband_up, broadband_dn) if(do_broadband)
     !$omp target enter data map(alloc:broadband_up, broadband_dn) if(do_broadband)
 
-    !$acc        enter data copyin(sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
-    !$omp target enter data map(to:sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
     !$acc        enter data create(   flux_upJac) if(do_Jacobians)
     !$omp target enter data map(alloc:flux_upJac) if(do_Jacobians)
+    !$acc        enter data copyin(sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
+    !$omp target enter data map(to:sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
     call lw_solver_noscat(ncol, nlay, ngpt, &
                           top_at_1, Ds(:,:,1), weights(1), tau, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
@@ -448,10 +448,10 @@ contains
     !$acc        exit data  copyout(broadband_up,broadband_dn) if(do_broadband)
     !$omp target exit data map(from:broadband_up,broadband_dn) if(do_broadband)
 
-    !$acc        exit data delete(     sfc_srcJac) if(do_Jacobians .and. nmus > 1)
-    !$omp target exit data map(release:sfc_srcJac) if(do_Jacobians .and. nmus > 1)
     !$acc        exit data copyout( flux_upJac)    if(do_Jacobians)
     !$omp target exit data map(from:flux_upJac)    if(do_Jacobians)
+    !$acc        exit data delete(     sfc_srcJac) if(do_Jacobians .and. nmus > 1)
+    !$omp target exit data map(release:sfc_srcJac) if(do_Jacobians .and. nmus > 1)
 
   end subroutine lw_solver_noscat_GaussQuad
   ! -------------------------------------------------------------------------------------------------
@@ -1436,7 +1436,7 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
       ! Top of domain is index 1
       !
       ! Downward propagation
-      !$acc  parallel loop collapse(2) no_create(radn_up_Jac)
+      !$acc                         parallel loop    collapse(2) no_create(radn_up_Jac)
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol

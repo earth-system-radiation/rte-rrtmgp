@@ -69,10 +69,8 @@ contains
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: incident_flux! Boundary condition for flux [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), target, &
+    real(wp), dimension(ncol,nlay+1,ngpt), target, &                     ! Fluxes [W/m2]
                                            intent(  out) :: flux_up, flux_dn
-                                                                         ! Fluxes [W/m2]
-
     !
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
     !
@@ -235,8 +233,8 @@ contains
         !
         ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
         !
-        gpt_flux_dn    = 2._wp * pi * weight * gpt_flux_dn
-        gpt_flux_up    = 2._wp * pi * weight * gpt_flux_up
+        gpt_flux_dn(:,:)    = 2._wp * pi * weight * gpt_flux_dn(:,:)
+        gpt_flux_up(:,:)    = 2._wp * pi * weight * gpt_flux_up(:,:)
       end if
       !
       ! Only broadband-integrated Jacobians are provided

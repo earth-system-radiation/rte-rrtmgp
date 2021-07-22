@@ -202,7 +202,7 @@ contains
     if(present(use_2stream)) using_2stream = use_2stream
 
     !
-    ! Checking that optional arguements are consistent with one another and with optical properties
+    ! Checking that optional arguments are consistent with one another and with optical properties
     !
     select type (optical_props)
       class is (ty_optical_props_1scl)
@@ -220,19 +220,11 @@ contains
       class default
         error_msg =  "rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented"
     end select
-    if(len_trim(error_msg) > 0) return
 
-    !
-    ! Ensure values of tau, ssa, and g are reasonable if using scattering
-    !
-    !$acc enter data copyin(optical_props)
-    if(check_values)  then
-      error_msg =  optical_props%validate()
-      if(len_trim(error_msg) > 0) then
-        if(len_trim(optical_props%get_name()) > 0) &
-          error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
-        return
-      end if
+    if(len_trim(error_msg) > 0) then
+      if(len_trim(optical_props%get_name()) > 0) &
+        error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
+      return
     end if
     ! ------------------------------------------------------------------------------------
     ! Used in one or more places below...
@@ -284,7 +276,12 @@ contains
         flux_up_loc  => decoy2D
         flux_dn_loc  => decoy2D
     end select
-    ! Move the below to the default case later
+    !
+    ! FIXME: Currently the GPU kernels use the gpt_flux_up/dn fields as working
+    !   memory even if broadband fluxes are requested. The GPU kernel might manage
+    !   this memory instead so the fields don't have to be allocated for the CPU kernels
+    !   OTOH these are intent(out) arguments to the kernel so might need to be full sized
+    !
     allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
              gpt_flux_dn (ncol,nlay+1,ngpt))
     !$acc        enter data create(   gpt_flux_up, gpt_flux_dn)
@@ -310,6 +307,9 @@ contains
     !
     ! Compute the radiative transfer...
     !
+    !
+    ! FIXME: Do we need this copyin and its matching delete?
+    !$acc enter data copyin(optical_props)
     select type (optical_props)
       class is (ty_optical_props_1scl)
         !
@@ -327,8 +327,8 @@ contains
         !$acc        enter data create(   secants)
         !$omp target enter data map(alloc:secants)
         if (present(lw_Ds)) then
-          !$acc                         parallel loop     collapse(2) copyin(lw_Ds)
-          !$omp target teams distribute parallel do simd collapse(2)  map(to:lw_Ds)
+          !$acc                         parallel loop    collapse(2) copyin(lw_Ds)
+          !$omp target teams distribute parallel do simd collapse(2) map(to:lw_Ds)
           ! nmu is 1
           do igpt = 1, ngpt
             do icol = 1, ncol
@@ -336,8 +336,12 @@ contains
             end do
           end do
         else
-          !$acc                         parallel loop    collapse(3)
-          !$omp target teams distribute parallel do simd collapse(3)
+          !
+          ! FIXME: Do we need to expliclty copyin the array?
+          !   Is there an alternative to making ncol x ngpt copies of each value?
+          !
+          !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
+          !$omp target teams distribute parallel do simd collapse(3) map(to:gauss_Ds)
           do imu = 1, n_quad_angs
             do igpt = 1, ngpt
               do icol = 1, ncol
@@ -379,8 +383,8 @@ contains
           allocate(secants(ncol, ngpt, n_quad_angs))
           !$acc        enter data create(   secants)
           !$omp target enter data map(alloc:secants)
-          !$acc                         parallel loop    collapse(3)
-          !$omp target teams distribute parallel do simd collapse(3)
+          !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
+          !$omp target teams distribute parallel do simd collapse(3) map(to:gauss_Ds)
           do imu = 1, n_quad_angs
             do igpt = 1, ngpt
               do icol = 1, ncol
@@ -425,6 +429,9 @@ contains
         !$acc        exit data delete(     decoy3D)
         !$omp target exit data map(release:decoy3D)
         if(associated(fluxes%flux_net)) then
+          !
+          ! FIXME: Do we need the create/copyout here?
+          !
           !$acc                         parallel loop    collapse(2) create(fluxes%flux_net)
           !$omp target teams distribute parallel do simd collapse(2) create(fluxes%flux_net)
           do ilev = 1, nlay+1
@@ -476,7 +483,7 @@ contains
     nband = ops%get_nband()
     ngpt  = ops%get_ngpt()
     limits = ops%get_band_lims_gpoint()
-    !$acc parallel loop collapse(2) copyin(arr_in, limits)
+    !$acc                         parallel loop    collapse(2) copyin(arr_in, limits)
     !$omp target teams distribute parallel do simd collapse(2) map(to:arr_in, limits)
     do iband = 1, nband
       do icol = 1, ncol

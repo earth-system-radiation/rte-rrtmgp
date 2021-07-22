@@ -103,7 +103,6 @@ contains
     ! For Jacobians
     !
     real(wp), dimension(ncol,nlay+1,ngpt) :: gpt_Jac
-    real(wp)                              :: scalar ! Temp variable for reduction
     !
     ! Used when approximating scattering
     !
@@ -183,10 +182,10 @@ contains
             tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt)
             trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt))
           end if
-          call lw_source_noscat(lay_source(icol,ilay,igpt), &
+          call lw_source_noscat(lay_source   (icol,ilay,igpt), &
                                 lev_source_up(icol,ilay,igpt), lev_source_dn(icol,ilay,igpt),  &
-                                tau_loc(icol,ilay,igpt), trans(icol,ilay,igpt),                &
-                                source_dn(icol,ilay,igpt), source_up(icol,ilay,igpt))
+                                tau_loc      (icol,ilay,igpt), trans        (icol,ilay,igpt),  &
+                                source_dn    (icol,ilay,igpt), source_up    (icol,ilay,igpt))
         end do
       end do
     end do
@@ -325,25 +324,37 @@ contains
     ! ------------------------------------
     !$acc        enter data copyin(Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src) if(nmus > 1)
     !$omp target enter data map(to:Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src) if(nmus > 1)
-    !
-    ! lw_solver_noscat will use these arrays to work in parallel even if they aren't copied out
-    !
-    !$acc        enter data create(   flux_up, flux_dn)
-    !$omp target enter data map(alloc:flux_up, flux_dn)
-
-    !$acc        enter data create(   broadband_up, broadband_dn) if(do_broadband)
-    !$omp target enter data map(alloc:broadband_up, broadband_dn) if(do_broadband)
+    !$acc        enter data copyin(sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
+    !$omp target enter data map(to:sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
 
     !$acc        enter data create(   flux_upJac) if(do_Jacobians)
     !$omp target enter data map(alloc:flux_upJac) if(do_Jacobians)
-    !$acc        enter data copyin(sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
-    !$omp target enter data map(to:sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
+
+    if(do_broadband) then
+      !$acc        enter data create(   broadband_up, broadband_dn)
+      !$omp target enter data map(alloc:broadband_up, broadband_dn)
+      this_broadband_up => broadband_up
+      this_broadband_dn => broadband_dn
+      allocate(this_flux_up(ncol, nlay+1, ngpt), this_flux_dn(ncol, nlay+1, ngpt))
+      !$acc        enter data create(   this_flux_up, this_flux_dn)
+      !$omp target enter data map(alloc:this_flux_up, this_flux_dn)
+    else
+      !$acc        enter data create(   flux_up, flux_dn)
+      !$omp target enter data map(alloc:flux_up, flux_dn)
+      this_flux_up => flux_up
+      this_flux_dn => flux_dn
+      ! Spectrally-integrated fluxes won't be filled in
+      allocate(this_broadband_up(ncol,nlay+1), this_broadband_dn(ncol,nlay+1))
+      !$acc        enter data create(   this_broadband_up, this_broadband_dn)
+      !$omp target enter data map(alloc:this_broadband_up, this_broadband_dn)
+    end if
+
     call lw_solver_noscat(ncol, nlay, ngpt, &
                           top_at_1, Ds(:,:,1), weights(1), tau, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           inc_flux,         &
-                          flux_up, flux_dn, &
-                          do_broadband, broadband_up, broadband_dn, &
+                          this_flux_up, this_flux_dn, &
+                          do_broadband, this_broadband_up, this_broadband_dn, &
                           do_Jacobians, sfc_srcJac, flux_upJac,     &
                           do_rescaling, ssa, g)
     if(nmus > 1) then
@@ -351,20 +362,17 @@ contains
       ! For more than one angle use local arrays
       !
       if(do_broadband) then
+        nullify( this_broadband_up,              this_broadband_dn)
         allocate(this_broadband_up(ncol,nlay+1), this_broadband_dn(ncol,nlay+1))
         !$acc        enter data create(   this_broadband_up, this_broadband_dn)
         !$omp target enter data map(alloc:this_broadband_up, this_broadband_dn)
-        ! Spectrally-resolved fluxes won't be filled in so can point to caller-supplied memory
-        this_flux_up => flux_up
-        this_flux_dn => flux_dn
       else
+        nullify( this_flux_up,                   this_flux_dn)
         allocate(this_flux_up(ncol,nlay+1,ngpt), this_flux_dn(ncol,nlay+1,ngpt))
         !$acc        enter data create(   this_flux_up, this_flux_dn)
         !$omp target enter data map(alloc:this_flux_up, this_flux_dn)
-        ! Spectrally-integrated fluxes won't be filled in so can point to caller-supplied memory
-        this_broadband_up => broadband_up
-        this_broadband_dn => broadband_dn
       end if
+
       if(do_Jacobians) then
         allocate(this_flux_upJac(ncol,nlay+1))
         !$acc        enter data create(   this_flux_upJac)
@@ -395,15 +403,18 @@ contains
           call add_arrays(ncol, nlay+1, this_flux_upJac, flux_upJac)
         end if
       end do
-      !$acc        exit data delete(     this_flux_up,     this_flux_dn)      if(.not. do_broadband)
-      !$omp target exit data map(release:this_flux_up,     this_flux_dn)      if(.not. do_broadband)
-      !$acc        exit data delete(     this_broadband_up,this_broadband_dn) if(      do_broadband)
-      !$omp target exit data map(release:this_broadband_up,this_broadband_dn) if(      do_broadband)
       !$acc        exit data delete(     this_flux_upJac)                     if(do_Jacobians)
       !$omp target exit data map(release:this_flux_upJac)                     if(do_Jacobians)
     end if
     !$acc        exit data delete(     Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src) if(nmus > 1)
     !$omp target exit data map(release:Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src) if(nmus > 1)
+    !
+    ! Arrays are allocated locally if the caller hasn't supplied the memory or if multiple angles are used
+    !
+    !$acc        exit data delete(     this_flux_up,     this_flux_dn)      if(.not. do_broadband .or. nmus > 1)
+    !$omp target exit data map(release:this_flux_up,     this_flux_dn)      if(.not. do_broadband .or. nmus > 1)
+    !$acc        exit data delete(     this_broadband_up,this_broadband_dn) if(      do_broadband .or. nmus > 1)
+    !$omp target exit data map(release:this_broadband_up,this_broadband_dn) if(      do_broadband .or. nmus > 1)
     !
     ! Spectrally-integrated fluxes are copied out if requested, deallocated if only broadband fluxes are requested
     !

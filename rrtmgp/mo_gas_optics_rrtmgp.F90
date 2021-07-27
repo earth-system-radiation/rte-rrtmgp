@@ -1554,8 +1554,8 @@ contains
     integer :: ibnd, iatm, i, iflavor
     ! prepare list of key_species
     i = 1
-    do ibnd=1,size(key_species,3)
-      do iatm=1,size(key_species,1)
+    do ibnd=1,size(key_species,3)   ! bands
+      do iatm=1,size(key_species,2) ! upper/lower atmosphere
         key_species_list(:,i) = key_species(:,iatm,ibnd)
         i = i + 1
       end do

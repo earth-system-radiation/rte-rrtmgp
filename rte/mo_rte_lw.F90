@@ -339,7 +339,7 @@ contains
           !   Is there an alternative to making ncol x ngpt copies of each value?
           !
           !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
-          !$omp target teams distribute parallel do simd collapse(3) map(to:gauss_Ds)
+          !$omp target teams distribute parallel do simd collapse(3)
           do imu = 1, n_quad_angs
             do igpt = 1, ngpt
               do icol = 1, ncol
@@ -384,7 +384,7 @@ contains
           !$acc        enter data create(   secants)
           !$omp target enter data map(alloc:secants)
           !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
-          !$omp target teams distribute parallel do simd collapse(3) map(to:gauss_Ds)
+          !$omp target teams distribute parallel do simd collapse(3)
           do imu = 1, n_quad_angs
             do igpt = 1, ngpt
               do icol = 1, ncol
@@ -431,7 +431,7 @@ contains
           ! FIXME: Do we need the create/copyout here?
           !
           !$acc                         parallel loop    collapse(2) create(fluxes%flux_net)
-          !$omp target teams distribute parallel do simd collapse(2) create(fluxes%flux_net)
+          !$omp target teams distribute parallel do simd collapse(2)
           do ilev = 1, nlay+1
             do icol = 1, ncol
               fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)

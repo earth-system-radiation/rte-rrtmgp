@@ -85,7 +85,7 @@ contains
     integer      :: ncol, nlay, ngpt, nband
     integer      :: icol, ilev, igpt,       imu
     integer      :: n_quad_angs
-    logical(wl)  :: using_2stream, do_Jacobians, has_dif_bc, do_broadband
+    logical(wl)  :: using_2stream, do_Jacobians, do_broadband
     real(wp), dimension(:,:),   allocatable   :: sfc_emis_gpt
     real(wp), dimension(:,:),   pointer       :: jacobian
     real(wp), dimension(:,:,:), allocatable   :: secants
@@ -94,7 +94,7 @@ contains
                                             :: decoy2D ! Used for optional outputs - needs to be full size.
     real(wp), dimension(1,1,1)              :: empty3D ! Used for optional inputs - size is irrelevant
 
-    real(wp), dimension(:,:,:), pointer     :: gpt_flux_up, gpt_flux_dn, decoy3D
+    real(wp), dimension(:,:,:), pointer     :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_net_loc
     real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse
     ! --------------------------------------------------
@@ -426,8 +426,6 @@ contains
       ! Tidy up memory for broadband fluxes on GPUs
       !
       type is (ty_fluxes_broadband)
-        !$acc        exit data delete(     decoy3D)
-        !$omp target exit data map(release:decoy3D)
         if(associated(fluxes%flux_net)) then
           !
           ! FIXME: Do we need the create/copyout here?
@@ -464,7 +462,13 @@ contains
     !$acc        exit data delete(optical_props)
     !$acc        exit data copyout( flux_up_Jac) if(do_Jacobians)
     !$omp target exit data map(from:flux_up_Jac) if(do_Jacobians)
-
+    if(.not. present(inc_flux)) deallocate(inc_flux_diffuse)
+    deallocate(gpt_flux_up, gpt_flux_dn)
+    select type(fluxes)
+      type is (ty_fluxes_broadband)
+        if(.not. associated(fluxes%flux_up    )) deallocate(flux_up_loc)
+        if(.not. associated(fluxes%flux_dn    )) deallocate(flux_dn_loc)
+    end select
   end function rte_lw
   !--------------------------------------------------------------------------------------------------------------------
   !

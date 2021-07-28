@@ -327,6 +327,20 @@ contains
         !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
         !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
     end select
+    !
+    ! Deallocate any memory allocated locally to pointer variables
+    !
+    select type(fluxes)
+      type is (ty_fluxes_broadband)
+        deallocate(decoy3D)
+        if(.not. associated(fluxes%flux_up    )) deallocate(flux_up_loc)
+        if(.not. associated(fluxes%flux_dn    )) deallocate(flux_dn_loc)
+        if(.not. associated(fluxes%flux_dn_dir)) deallocate(flux_dir_loc)
+      class default
+        deallocate(decoy2D, gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    end select
+    if(.not. has_dif_bc) deallocate(inc_flux_diffuse)
+
   end function rte_sw
   !--------------------------------------------------------------------------------------------------------------------
   !

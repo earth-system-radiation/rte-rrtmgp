@@ -361,6 +361,11 @@ contains
       if (do_Jacobians) &
         flux_upJac(:,:)  = flux_upJac(:,:  ) + this_flux_upJac(:,:  )
     end do
+    if(nmus > 1) then
+      if(      do_broadband) deallocate(this_broadband_up, this_broadband_dn)
+      if(.not. do_broadband) deallocate(this_flux_up,        this_flux_dn)
+      if(      do_Jacobians) deallocate(this_flux_upJac)
+    end if
   end subroutine lw_solver_noscat_GaussQuad
   ! -------------------------------------------------------------------------------------------------
   !

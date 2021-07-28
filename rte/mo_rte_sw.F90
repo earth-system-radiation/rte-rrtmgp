@@ -293,7 +293,7 @@ contains
         !$omp target exit data map(release:decoy3D)
         if(associated(fluxes%flux_net)) then
           !$acc                         parallel loop    collapse(2) create(fluxes%flux_net)
-          !$omp target teams distribute parallel do simd collapse(2) create(fluxes%flux_net)
+          !$omp target teams distribute parallel do simd collapse(2)
           do ilev = 1, nlay+1
             do icol = 1, ncol
               fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
@@ -337,7 +337,8 @@ contains
         if(.not. associated(fluxes%flux_dn    )) deallocate(flux_dn_loc)
         if(.not. associated(fluxes%flux_dn_dir)) deallocate(flux_dir_loc)
       class default
-        deallocate(decoy2D, gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+        deallocate(decoy2D)
+        deallocate(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
     if(.not. has_dif_bc) deallocate(inc_flux_diffuse)
 

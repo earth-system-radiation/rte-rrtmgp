@@ -87,8 +87,8 @@ contains
     integer      :: n_quad_angs
     logical(wl)  :: using_2stream, do_Jacobians, do_broadband
     real(wp), dimension(:,:),   allocatable   :: sfc_emis_gpt
-    real(wp), dimension(:,:),   pointer       :: jacobian
     real(wp), dimension(:,:,:), allocatable   :: secants
+    real(wp), dimension(:,:),   pointer       :: jacobian
     real(wp), dimension(optical_props%get_ncol(),           &
                         optical_props%get_nlay()+1), target &
                                             :: decoy2D ! Used for optional outputs - needs to be full size.

@@ -106,8 +106,8 @@ contains
     !
     ! Used when approximating scattering
     !
-    real(wp)            :: ssal, wb, scaleTau, scaling
-    real(wp), dimension(ncol,nlay,  ngpt) :: An, Cn
+    real(wp)                            :: ssal, wb, scaleTau, scaling
+    real(wp), dimension(ncol,nlay,ngpt) :: An, Cn
     ! ------------------------------------
     ! Which way is up?
     ! Level Planck sources for upward and downward radiation

@@ -70,7 +70,7 @@ check:
 	cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky && python ./compare-to-reference.py --fail=7.e-4
 
 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc:
-	bash ./stage_files.sh
+	python stage_files.py #bash ./stage_files.sh
 
 clean:
 	-rm rrtmgp_rfmip_sw rrtmgp_rfmip_lw *.o *.mod *.optrpt *.nc

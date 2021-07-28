@@ -1496,8 +1496,8 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
 
     integer  :: icol, ilev, igpt
 
-    !$acc                         parallel loop gang vector present(array) collapse(3)
-    !$omp target teams distribute parallel do simd          present(array) collapse(3)
+    !$acc                         parallel loop gang vector collapse(3)
+    !$omp target teams distribute parallel do simd          collapse(3)
     do igpt = 1, ngpt
       do ilev = 1, nlev
         do icol = 1, ncol
@@ -1517,8 +1517,8 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
 
     integer  :: icol, ilev, igpt
 
-    !$acc                         parallel loop gang vector present(array,increment) collapse(3)
-    !$omp target teams distribute parallel do simd          present(array,increment) collapse(3)
+    !$acc                         parallel loop gang vector collapse(3)
+    !$omp target teams distribute parallel do simd          collapse(3)
     do igpt = 1, ngpt
       do ilev = 1, nlev
         do icol = 1, ncol
@@ -1535,8 +1535,8 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
 
     integer  :: icol, ilev
 
-    !$acc                         parallel loop gang vector present(array,increment) collapse(2)
-    !$omp target teams distribute parallel do simd          present(array,increment) collapse(2)
+    !$acc                         parallel loop gang vector collapse(2)
+    !$omp target teams distribute parallel do simd          collapse(2)
     do ilev = 1, nlev
       do icol = 1, ncol
         array(icol, ilev) = array(icol, ilev) + increment(icol, ilev)

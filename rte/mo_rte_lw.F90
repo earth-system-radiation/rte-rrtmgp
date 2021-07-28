@@ -92,8 +92,6 @@ contains
     real(wp), dimension(optical_props%get_ncol(),           &
                         optical_props%get_nlay()+1), target &
                                             :: decoy2D ! Used for optional outputs - needs to be full size.
-    real(wp), dimension(1,1,1)              :: empty3D ! Used for optional inputs - size is irrelevant
-
     real(wp), dimension(:,:,:), pointer     :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_net_loc
     real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse
@@ -361,7 +359,9 @@ contains
                               gpt_flux_up, gpt_flux_dn,          &
                               do_broadband, flux_up_loc, flux_dn_loc,     &
                               logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
-                              logical(.false., wl),  empty3D, empty3D)
+                              logical(.false., wl),  optical_props%tau, optical_props%tau)
+                                                    ! The last two arguments won't be used since the
+                                                    ! third-to-last is .false. but need valid addresses
         !$acc        exit data delete(     optical_props%tau, secants)
         !$omp target exit data map(release:optical_props%tau, secants)
       class is (ty_optical_props_2str)

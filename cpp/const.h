@@ -2,7 +2,7 @@
 #pragma once
 
 #include "YAKL.h"
-#include "Array.h"
+#include "YAKL_Array.h"
 #include <iostream>
 #include <cmath>
 

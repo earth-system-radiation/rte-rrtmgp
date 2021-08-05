@@ -35,7 +35,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
 end subroutine vmr_2d_to_1d
 ! ----------------------------------------------------------------------------------
 program rte_rrtmgp_clouds
-  use mo_rte_kind,           only: wp, i8
+  use mo_rte_kind,           only: wp, i8, wl
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
@@ -340,7 +340,7 @@ program rte_rrtmgp_clouds
   !!$omp parallel do firstprivate(fluxes)
   do iloop = 1, nloops
     ! Omit the checks starting with the second iteration
-    if (iloop == 2) call rte_config_checks(.false.)
+    if (iloop == 2) call rte_config_checks(logical(.false., wl))
 
     call system_clock(start)
     call stop_on_err(                                      &

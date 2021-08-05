@@ -66,10 +66,13 @@ contains
     integer     :: icol, ilev, igpt
     logical(wl) :: has_dif_bc, do_broadband
 
-    real(wp), dimension(:,:,:), pointer     :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy3D
-    real(wp), dimension(:,:),   allocatable :: sfc_alb_dir_gpt, sfc_alb_dif_gpt
-    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_dir_loc
-    real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse, decoy2D
+    real(wp), dimension(:,:,:), pointer             :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
+    real(wp), dimension(:,:),   allocatable         :: sfc_alb_dir_gpt, sfc_alb_dif_gpt
+    real(wp), dimension(:,:),   pointer             :: flux_dn_loc, flux_up_loc, flux_dir_loc
+    real(wp), dimension(:,:),   pointer             :: inc_flux_diffuse
+    real(wp), dimension(:,:,:), allocatable, target :: decoy3D
+    real(wp), dimension(:,:),   allocatable, target :: decoy2D
+
     ! ------------------------------------------------------------------------------------
     ncol  = atmos%get_ncol()
     nlay  = atmos%get_nlay()
@@ -84,13 +87,17 @@ contains
     if(.not. fluxes%are_desired()) &
       error_msg = "rte_sw: no space allocated for fluxes"
 
+    has_dif_bc = logical(present(inc_flux_dif), wl)
+
     !
     ! Sizes of input arrays
     !
     ! Copy variables whose sizes and values are checked to the GPU so the checks can happen there.
     !   No harm done if checks are not performed  (?)
-    !$acc        enter data copyin(mu0, inc_flux, sfc_alb_dir, sfc_alb_dif)
-    !$omp target enter data map(to:mu0, inc_flux, sfc_alb_dir, sfc_alb_dif)
+    !$acc        data copyin(mu0, inc_flux, sfc_alb_dir, sfc_alb_dif)
+    !$omp target data map(to:mu0, inc_flux, sfc_alb_dir, sfc_alb_dif)
+    !$acc        data copyin(inc_flux_dif) if (has_dif_bc)
+    !$omp target data map(to:inc_flux_dif) if (has_dif_bc)
     if(check_extents) then
       if(.not. extents_are(mu0, ncol)) &
         error_msg = "rte_sw: mu0 inconsistently sized"
@@ -100,9 +107,7 @@ contains
         error_msg = "rte_sw: sfc_alb_dir inconsistently sized"
       if(.not. extents_are(sfc_alb_dif, nband, ncol)) &
         error_msg = "rte_sw: sfc_alb_dif inconsistently sized"
-      if(present(inc_flux_dif)) then
-        !$acc        enter data copyin(inc_flux_dif)
-        !$omp target enter data map(to:inc_flux_dif)
+      if(has_dif_bc) then
         if(.not. extents_are(inc_flux_dif, ncol, ngpt)) &
           error_msg = "rte_sw: inc_flux_dif inconsistently sized"
       end if
@@ -119,17 +124,10 @@ contains
         error_msg = "rte_sw: sfc_alb_dir out of bounds [0,1]"
       if(any_vals_outside(sfc_alb_dif,  0._wp, 1._wp)) &
         error_msg = "rte_sw: sfc_alb_dif out of bounds [0,1]"
-      if(present(inc_flux_dif)) then
+      if(has_dif_bc) then
         if(any_vals_less_than(inc_flux_dif, 0._wp)) &
           error_msg = "rte_sw: one or more inc_flux_dif < 0"
       end if
-    end if
-
-
-    if(len_trim(error_msg) > 0) then
-      if(len_trim(atmos%get_name()) > 0) &
-        error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
-      return
     end if
 
     ! ------------------------------------------------------------------------------------
@@ -141,8 +139,6 @@ contains
         !   so won't need big working arrays
         !
         allocate(decoy3D(ncol, nlay+1, ngpt))
-        !$acc        enter data create(   decoy3D)
-        !$omp target enter data map(alloc:decoy3D)
         gpt_flux_up  => decoy3D
         gpt_flux_dn  => decoy3D
         gpt_flux_dir => decoy3D
@@ -154,22 +150,16 @@ contains
           flux_up_loc => fluxes%flux_up
         else
           allocate(flux_up_loc(ncol, nlay+1))
-          !$acc        enter data create(   flux_up_loc)
-          !$omp target enter data map(alloc:flux_up_loc)
         end if
         if(associated(fluxes%flux_dn)) then
           flux_dn_loc => fluxes%flux_dn
         else
           allocate(flux_dn_loc(ncol, nlay+1))
-          !$acc        enter data create(   flux_dn_loc)
-          !$omp target enter data map(alloc:flux_dn_loc)
         end if
         if(associated(fluxes%flux_dn_dir)) then
           flux_dir_loc => fluxes%flux_dn_dir
         else
           allocate(flux_dir_loc(ncol, nlay+1))
-          !$acc        enter data create(   flux_dir_loc)
-          !$omp target enter data map(alloc:flux_dir_loc)
         end if
       class default
         !
@@ -178,28 +168,38 @@ contains
         !
         do_broadband = .false._wl
         allocate(decoy2D(ncol, nlay+1))
-        !$acc        enter data create(   decoy2D)
-        !$omp target enter data map(alloc:decoy2D)
         flux_up_loc  => decoy2D
         flux_dn_loc  => decoy2D
         flux_dir_loc => decoy2D
         allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
                  gpt_flux_dn (ncol,nlay+1,ngpt), &
                  gpt_flux_dir(ncol,nlay+1,ngpt))
-        !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-        !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
+
+    allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
+
+    ! Fluxes need to be copied out only if do_broadband is .true.
+    !$acc        data copyin(   flux_up_loc,flux_dn_loc,flux_dir_loc) if (      do_broadband)
+    !$omp target data map(to:   flux_up_loc,flux_dn_loc,flux_dir_loc) if (      do_broadband)
+    !$acc        data create(   flux_up_loc,flux_dn_loc,flux_dir_loc) if (.not. do_broadband)
+    !$omp target data map(alloc:flux_up_loc,flux_dn_loc,flux_dir_loc) if (.not. do_broadband)
+
+    !$acc        data create(   gpt_flux_up,gpt_flux_dn,gpt_flux_dir) &
+    !$acc             create(   sfc_alb_dir_gpt, sfc_alb_dif_gpt)
+    !$omp target data map(alloc:gpt_flux_up,gpt_flux_dn,gpt_flux_dir) &
+    !$omp             map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
+
+    if(len_trim(error_msg) > 0) then
+      if(len_trim(atmos%get_name()) > 0) &
+        error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
+        goto 1000
+    end if
+
     ! ------------------------------------------------------------------------------------
     ! Lower boundary condition -- expand surface albedos by band to gpoints
     !   and switch dimension ordering
-    allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
-    !$acc        enter data create(   sfc_alb_dir_gpt, sfc_alb_dif_gpt)
-    !$omp target enter data map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
-
     call expand_and_transpose(atmos, sfc_alb_dir, sfc_alb_dir_gpt)
     call expand_and_transpose(atmos, sfc_alb_dif, sfc_alb_dif_gpt)
-    !$acc        exit data delete(     sfc_alb_dir, sfc_alb_dif)
-    !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif)
     ! ------------------------------------------------------------------------------------
     !
     ! Compute the radiative transfer...
@@ -207,15 +207,10 @@ contains
     !
     ! Diffuse flux boundary condition - will use values in optional arg or be set to 0
     !
-    has_dif_bc = logical(present(inc_flux_dif), wl)
-
     if (has_dif_bc) then
-      ! FIXME: Is this sufficient to put pointer and data on device?
-      !  inc_flux_dif might have been copied-in before, when checking extents/values,
-      !  in which case no copying will occur here
-      !$acc        enter data copyin(inc_flux_dif)
-      !$omp target enter data map(to:inc_flux_dif)
       inc_flux_diffuse => inc_flux_dif
+      !$acc        enter data create(   inc_flux_diffuse)
+      !$omp target enter data map(alloc:inc_flux_diffuse)
     else
       allocate(inc_flux_diffuse(ncol, ngpt))
       !$acc        enter data create(   inc_flux_diffuse)
@@ -223,37 +218,31 @@ contains
       call zero_array(ncol, ngpt, inc_flux_diffuse)
     end if
 
-    ! FIXME: Do we need this copyin and its matching copyout?
-    !$acc enter data copyin(atmos)
     select type (atmos)
       class is (ty_optical_props_1scl)
         !
         ! Direct beam only - for completeness, unlikely to be used in practice
         !
-        !$acc        enter data copyin(atmos%tau)
-        !$omp target enter data map(to:atmos%tau)
         if(check_values) error_msg =  atmos%validate()
-        if(len_trim(error_msg) > 0) return
+        if(len_trim(error_msg) > 0) goto 1000
 
         call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
                               atmos%tau, mu0, inc_flux,                &
                               gpt_flux_dir)
-        !$acc        exit data delete(     atmos%tau)
-        !$omp target exit data map(release:atmos%tau)
         call zero_array(ncol, nlay+1, ngpt, gpt_flux_up)
         !
-        ! FIXME: OpenACC (although the direct beam solution is never used)
-        !
+        !$acc kernels
+        !$omp target
         gpt_flux_dn(:,:,:) = gpt_flux_dir(:,:,:)
+        !$acc end kernels
+        !$omp end target
 
-    class is (ty_optical_props_2str)
+      class is (ty_optical_props_2str)
         !
         ! two-stream calculation with scattering
         !
-        !$acc        enter data copyin(atmos%tau, atmos%ssa, atmos%g)
-        !$omp target enter data map(to:atmos%tau, atmos%ssa, atmos%g)
         if(check_values) error_msg =  atmos%validate()
-        if(len_trim(error_msg) > 0) return
+        if(len_trim(error_msg) > 0) goto 1000
 
         call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
                                atmos%tau, atmos%ssa, atmos%g, mu0,      &
@@ -262,10 +251,6 @@ contains
                                gpt_flux_up, gpt_flux_dn, gpt_flux_dir,  &
                                has_dif_bc, inc_flux_diffuse,            &
                                do_broadband, flux_up_loc, flux_dn_loc, flux_dir_loc)
-        !$acc        exit data delete(     atmos%tau, atmos%ssa, atmos%g)
-        !$omp target exit data map(release:atmos%tau, atmos%ssa, atmos%g)
-        !$acc        exit data delete(     sfc_alb_dir_gpt, sfc_alb_dif_gpt)
-        !$omp target exit data map(release:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
       class is (ty_optical_props_nstr)
         !
         ! n-stream calculation
@@ -274,70 +259,58 @@ contains
         !
         error_msg = 'sw_solver(...ty_optical_props_nstr...) not yet implemented'
     end select
-    !$acc        exit data delete(     mu0)
-    !$omp target exit data map(release:mu0)
     !$acc        exit data delete(     inc_flux_diffuse) if(.not. has_dif_bc)
     !$omp target exit data map(release:inc_flux_diffuse) if(.not. has_dif_bc)
     if(len_trim(error_msg) > 0) then
       if(len_trim(atmos%get_name()) > 0) &
         error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
-      return
+      goto 1000
     end if
 
     select type(fluxes)
       !
-      ! Tidy up memory for broadband fluxes on GPUs
+      ! Tidy up memory for broadband fluxes
       !
       type is (ty_fluxes_broadband)
-        !$acc        exit data delete(     decoy3D)
-        !$omp target exit data map(release:decoy3D)
         if(associated(fluxes%flux_net)) then
-          !$acc                         parallel loop    collapse(2) create(fluxes%flux_net)
+          !$acc                         parallel loop    collapse(2) copyout(fluxes%flux_net)
           !$omp target teams distribute parallel do simd collapse(2)
           do ilev = 1, nlay+1
             do icol = 1, ncol
               fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
             end do
           end do
-          !$acc        exit data copyout( fluxes%flux_net)
-          !$omp target exit data map(from:fluxes%flux_net)
         end if
-        !
-        ! FIXME: Will it work to copyout the derived type component?
-        !
-        !$acc        exit data copyout( fluxes%flux_up) if(      associated(fluxes%flux_up))
-        !$omp target exit data map(from:fluxes%flux_up) if(      associated(fluxes%flux_up))
-        !$acc        exit data delete(     flux_up_loc) if(.not. associated(fluxes%flux_up))
-        !$omp target exit data map(release:flux_up_loc) if(.not. associated(fluxes%flux_up))
-
-        !$acc        exit data copyout( fluxes%flux_dn) if(      associated(fluxes%flux_dn))
-        !$omp target exit data map(from:fluxes%flux_dn) if(      associated(fluxes%flux_dn))
-        !$acc        exit data delete(     flux_dn_loc) if(.not. associated(fluxes%flux_dn))
-        !$omp target exit data map(release:flux_dn_loc) if(.not. associated(fluxes%flux_dn))
-
-        !$acc        exit data copyout( fluxes%flux_dn_dir) if(      associated(fluxes%flux_dn_dir))
-        !$omp target exit data map(from:fluxes%flux_dn_dir) if(      associated(fluxes%flux_dn_dir))
-        !$acc        exit data delete(     flux_dir_loc)    if(.not. associated(fluxes%flux_dn_dir))
-        !$omp target exit data map(release:flux_dir_loc)    if(.not. associated(fluxes%flux_dn_dir))
       class default
         !
         ! ...or reduce spectral fluxes to desired output quantities
         !
         error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
-        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
-        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir, decoy2D)
     end select
+
+    ! In case of an error we exit here
+    1000 continue
+
+    !$acc        end data
+    !$omp target end data
+    !$acc        end data
+    !$omp target end data
+    !$acc        end data
+    !$omp target end data
+    !$acc        end data
+    !$omp target end data
+    !$acc        end data
+    !$omp target end data
+
     !
     ! Deallocate any memory allocated locally to pointer variables
     !
     select type(fluxes)
       type is (ty_fluxes_broadband)
-        deallocate(decoy3D)
         if(.not. associated(fluxes%flux_up    )) deallocate(flux_up_loc)
         if(.not. associated(fluxes%flux_dn    )) deallocate(flux_dn_loc)
         if(.not. associated(fluxes%flux_dn_dir)) deallocate(flux_dir_loc)
       class default
-        deallocate(decoy2D)
         deallocate(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
     if(.not. has_dif_bc) deallocate(inc_flux_diffuse)

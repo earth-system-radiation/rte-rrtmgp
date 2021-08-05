@@ -114,8 +114,6 @@ contains
     ! When top_at_1, lev_source_up => lev_source_dec
     !                lev_source_dn => lev_source_inc, and vice-versa
 
-    !$acc        enter data copyin(lev_source_dec, lev_source_inc, lay_source)
-    !$omp target enter data map(to:lev_source_dec, lev_source_inc, lay_source)
     if(top_at_1) then
       top_level = 1
       sfc_level = nlay+1
@@ -128,8 +126,14 @@ contains
       lev_source_dn => lev_source_dec
     end if
 
-    !$acc        enter data create(   tau_loc,trans,source_dn,source_up,flux_up,flux_dn)
-    !$omp target enter data map(alloc:tau_loc,trans,source_dn,source_up,flux_up,flux_dn)
+    !$acc        data create(   tau_loc,trans,source_dn,source_up ) &
+    !$acc             copyin(   D, tau,lev_source_up,lev_source_dn)
+    !$omp target data map(alloc:tau_loc,trans,source_dn,source_up ) &
+    !$omp             map(to:   D, tau,lev_source_up,lev_source_dn)
+
+    !$acc        enter data create(   flux_dn,flux_up)
+    !$omp target enter data map(alloc:flux_dn,flux_up)
+
     !$acc                         parallel loop    collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
@@ -142,16 +146,12 @@ contains
       end do
     end do
 
-    !$acc        enter data copyin(d, tau, sfc_src, sfc_emis)
-    !$omp target enter data map(to:d, tau, sfc_src, sfc_emis)
-    !$acc        enter data create(   An, Cn)              if(do_rescaling)
-    !$omp target enter data map(alloc:An, Cn)              if(do_rescaling)
-    !$acc        enter data copyin(sfc_srcJac)             if(do_Jacobians)
-    !$omp target enter data map(to:sfc_srcJac)             if(do_Jacobians)
-    !$acc        enter data create(   flux_upJac, gpt_Jac) if(do_Jacobians)
-    !$omp target enter data map(alloc:flux_upJac, gpt_Jac) if(do_Jacobians)
+    !$acc        data create(   An, Cn)                     if(do_rescaling)
+    !$omp target data map(alloc:An, Cn)                     if(do_rescaling)
+    !$acc        data copyin(sfc_srcJac) create(   gpt_Jac) if(do_Jacobians)
+    !$omp target data map(to:sfc_srcJac) map(alloc:gpt_Jac) if(do_Jacobians)
 
-    !$acc parallel loop collapse(3)
+    !$acc parallel loop no_create(An, Cn, gpt_Jac, g) collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
@@ -189,9 +189,6 @@ contains
         end do
       end do
     end do
-    !$acc        exit data delete(     D, tau, tau_loc, lev_source_dec, lev_source_inc, lay_source)
-    !$omp target exit data map(release:D, tau, tau_loc, lev_source_dec, lev_source_inc, lay_source)
-
     !
     ! Transport down
     !
@@ -224,25 +221,17 @@ contains
       call lw_transport_noscat_up(ncol, nlay, ngpt, top_at_1, trans, source_up, flux_up, &
                                   do_Jacobians, gpt_Jac)
     end if
-    !$acc        exit data delete(     sfc_src, sfc_emis, trans, source_dn, source_up)
-    !$omp target exit data map(release:sfc_src, sfc_emis, trans, source_dn, source_up)
-    !$acc        exit data delete(     An, Cn) if(do_rescaling)
-    !$omp target exit data map(release:An, Cn) if(do_rescaling)
 
     if(do_broadband) then
-      !$acc        exit data delete(     flux_up,flux_dn)
-      !$omp target exit data map(release:flux_up,flux_dn)
       !
       ! Broadband reduction including
       !   conversion from intensity to flux assuming azimuthal isotropy and quadrature weight
       !
       call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, flux_dn, broadband_dn)
       call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, flux_up, broadband_up)
-      !$acc        exit data copyout( broadband_dn,broadband_up)
-      !$omp target exit data map(from:broadband_dn,broadband_up)
+      !$acc        exit data delete(     flux_dn,flux_up)
+      !$omp target exit data map(release:flux_dn,flux_up)
     else
-      !$acc        exit data delete(     broadband_dn,broadband_up)
-      !$omp target exit data map(release:broadband_dn,broadband_up)
       !
       ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
       !
@@ -256,13 +245,14 @@ contains
     !
     if (do_Jacobians) then
       call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, gpt_Jac, flux_upJac)
-      !$acc        exit data delete(     sfc_srcJac, gpt_Jac) if(do_Jacobians)
-      !$omp target exit data map(release:sfc_srcJac, gpt_Jac) if(do_Jacobians)
-      !$acc        exit data copyout( flux_upJac)             if(do_Jacobians)
-      !$omp target exit data map(from:flux_upJac)             if(do_Jacobians)
     end if
 
-
+    !$acc        end data
+    !$omp target end data
+    !$acc        end data
+    !$omp target end data
+    !$acc        end data
+    !$omp target end data
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------
   !
@@ -304,7 +294,7 @@ contains
     !
     logical(wl),                           intent(in   ) :: do_broadband
     real(wp), dimension(ncol,nlay+1     ), target, &
-                                           intent(  out) :: broadband_up, broadband_dn
+                                           intent(inout) :: broadband_up, broadband_dn
                                                             ! Spectrally-integrated fluxes [W/m2]
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac
@@ -322,33 +312,29 @@ contains
     real(wp), dimension(:,:),   pointer :: this_broadband_up, this_broadband_dn, this_flux_upJac
     integer :: icol, ilev, igpt, imu
     ! ------------------------------------
-    !$acc        enter data copyin(Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src) if(nmus > 1)
-    !$omp target enter data map(to:Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src) if(nmus > 1)
-    !$acc        enter data copyin(sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
-    !$omp target enter data map(to:sfc_srcJac)    if(do_Jacobians .and. nmus > 1)
 
-    !$acc        enter data create(   flux_upJac) if(do_Jacobians)
-    !$omp target enter data map(alloc:flux_upJac) if(do_Jacobians)
+    !$acc        data copyin(Ds, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
+    !$omp target data map(to:Ds, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
+    !$acc        data copyout( flux_up, flux_dn)             if (.not. do_broadband)
+    !$omp target data map(from:flux_up, flux_dn)             if (.not. do_broadband)
+    !$acc        data copyout( broadband_up, broadband_dn)   if (      do_broadband)
+    !$omp target data map(from:broadband_up, broadband_dn)   if (      do_broadband)
+    !$acc        data copyin(sfc_srcJac) copyout(flux_upJac) if (do_Jacobians)
+    !$omp target data map(to:sfc_srcJac,    from:flux_upJac) if (do_Jacobians)
 
     if(do_broadband) then
-      !$acc        enter data create(   broadband_up, broadband_dn)
-      !$omp target enter data map(alloc:broadband_up, broadband_dn)
       this_broadband_up => broadband_up
       this_broadband_dn => broadband_dn
       allocate(this_flux_up(ncol, nlay+1, ngpt), this_flux_dn(ncol, nlay+1, ngpt))
-      !$acc        enter data create(   this_flux_up, this_flux_dn)
-      !$omp target enter data map(alloc:this_flux_up, this_flux_dn)
     else
-      !$acc        enter data create(   flux_up, flux_dn)
-      !$omp target enter data map(alloc:flux_up, flux_dn)
       this_flux_up => flux_up
       this_flux_dn => flux_dn
       ! Spectrally-integrated fluxes won't be filled in
       allocate(this_broadband_up(ncol,nlay+1), this_broadband_dn(ncol,nlay+1))
-      !$acc        enter data create(   this_broadband_up, this_broadband_dn)
-      !$omp target enter data map(alloc:this_broadband_up, this_broadband_dn)
     end if
 
+    !$acc        data create(   this_broadband_up, this_broadband_dn, this_flux_up, this_flux_dn)
+    !$omp target data map(alloc:this_broadband_up, this_broadband_dn, this_flux_up, this_flux_dn)
     call lw_solver_noscat(ncol, nlay, ngpt, &
                           top_at_1, Ds(:,:,1), weights(1), tau, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
@@ -357,6 +343,9 @@ contains
                           do_broadband, this_broadband_up, this_broadband_dn, &
                           do_Jacobians, sfc_srcJac, flux_upJac,     &
                           do_rescaling, ssa, g)
+    !$acc end data
+    !$omp end target data
+
     if(nmus > 1) then
       !
       ! For more than one angle use local arrays
@@ -364,25 +353,21 @@ contains
       if(do_broadband) then
         nullify( this_broadband_up,              this_broadband_dn)
         allocate(this_broadband_up(ncol,nlay+1), this_broadband_dn(ncol,nlay+1))
-        !$acc        enter data create(   this_broadband_up, this_broadband_dn)
-        !$omp target enter data map(alloc:this_broadband_up, this_broadband_dn)
       else
         nullify( this_flux_up,                   this_flux_dn)
         allocate(this_flux_up(ncol,nlay+1,ngpt), this_flux_dn(ncol,nlay+1,ngpt))
-        !$acc        enter data create(   this_flux_up, this_flux_dn)
-        !$omp target enter data map(alloc:this_flux_up, this_flux_dn)
       end if
 
       if(do_Jacobians) then
         allocate(this_flux_upJac(ncol,nlay+1))
-        !$acc        enter data create(   this_flux_upJac)
-        !$omp target enter data map(alloc:this_flux_upJac)
       else
         this_flux_upJac => flux_upJac
       end if
       !
       ! For more than one angle use local arrays
       !
+      !$acc        data create(   this_broadband_up, this_broadband_dn, this_flux_up, this_flux_dn)
+      !$omp target data map(alloc:this_broadband_up, this_broadband_dn, this_flux_up, this_flux_dn)
       do imu = 2, nmus
         call lw_solver_noscat(ncol, nlay, ngpt, &
                               top_at_1, Ds(:,:,imu), weights(imu), tau, &
@@ -403,33 +388,29 @@ contains
           call add_arrays(ncol, nlay+1, this_flux_upJac, flux_upJac)
         end if
       end do
-      !$acc        exit data delete(     this_flux_upJac)                     if(do_Jacobians)
-      !$omp target exit data map(release:this_flux_upJac)                     if(do_Jacobians)
+      !$acc end data
+      !$omp end target data
     end if
-    !$acc        exit data delete(     Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src) if(nmus > 1)
-    !$omp target exit data map(release:Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src) if(nmus > 1)
-    !
-    ! Arrays are allocated locally if the caller hasn't supplied the memory or if multiple angles are used
-    !
-    !$acc        exit data delete(     this_flux_up,     this_flux_dn)      if(.not. do_broadband .or. nmus > 1)
-    !$omp target exit data map(release:this_flux_up,     this_flux_dn)      if(.not. do_broadband .or. nmus > 1)
-    !$acc        exit data delete(     this_broadband_up,this_broadband_dn) if(      do_broadband .or. nmus > 1)
-    !$omp target exit data map(release:this_broadband_up,this_broadband_dn) if(      do_broadband .or. nmus > 1)
-    !
-    ! Spectrally-integrated fluxes are copied out if requested, deallocated if only broadband fluxes are requested
-    !
-    !$acc        exit data copyout(    flux_up,flux_dn)  if(.not. do_broadband)
-    !$omp target exit data map(from:   flux_up,flux_dn)  if(.not. do_broadband)
-    !$acc        exit data delete(     flux_up,flux_dn)  if(      do_broadband)
-    !$omp target exit data map(release:flux_up,flux_dn)  if(      do_broadband)
-    !$acc        exit data  copyout(broadband_up,broadband_dn) if(do_broadband)
-    !$omp target exit data map(from:broadband_up,broadband_dn) if(do_broadband)
+    
+    !$acc end data
+    !$omp end target data
+    !$acc end data
+    !$omp end target data
+    !$acc end data
+    !$omp end target data
+    !$acc end data
+    !$omp end target data
 
-    !$acc        exit data copyout( flux_upJac)    if(do_Jacobians)
-    !$omp target exit data map(from:flux_upJac)    if(do_Jacobians)
-    !$acc        exit data delete(     sfc_srcJac) if(do_Jacobians .and. nmus > 1)
-    !$omp target exit data map(release:sfc_srcJac) if(do_Jacobians .and. nmus > 1)
-
+    ! Cleanup
+    if (.not. associated(this_broadband_up, broadband_up)) then
+      deallocate(this_broadband_up, this_broadband_dn)
+    end if
+    if (.not. associated(this_flux_up, flux_up)) then
+      deallocate(this_flux_up, this_flux_dn)
+    end if
+    if (.not. associated(this_flux_upJac, flux_upJac) .and. associated(this_flux_upJac)) then
+      deallocate(this_flux_upJac)
+    end if
   end subroutine lw_solver_noscat_GaussQuad
   ! -------------------------------------------------------------------------------------------------
   !
@@ -630,17 +611,7 @@ contains
       allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
                gpt_flux_dn (ncol,nlay+1,ngpt), &
                gpt_flux_dir(ncol,nlay+1,ngpt))
-      !$acc        enter data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-      !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-
-      !$acc        enter data create(   broadband_up, broadband_dn, broadband_dir)
-      !$omp target enter data map(alloc:broadband_up, broadband_dn, broadband_dir)
-      call zero_array(ncol, nlay+1, broadband_up)
-      call zero_array(ncol, nlay+1, broadband_dn)
-      call zero_array(ncol, nlay+1, broadband_dir)
     else
-      !$acc        enter data create(   flux_up, flux_dn, flux_dir)
-      !$omp target enter data map(alloc:flux_up, flux_dn, flux_dir)
       gpt_flux_up  => flux_up
       gpt_flux_dn  => flux_dn
       gpt_flux_dir => flux_dir
@@ -650,10 +621,13 @@ contains
     !
     ! Boundary conditions direct beam...
     !
-    !$acc        enter data create(   flux_up, flux_dn, flux_dir)
-    !$omp target enter data map(alloc:flux_up, flux_dn, flux_dir)
-    !$acc        enter data copyin(mu0)
-    !$omp target enter data map(to:mu0)
+    !$acc        data create(   gpt_flux_up, gpt_flux_dn, gpt_flux_dir) &
+    !$acc             copyin(   mu0)
+    !$omp target data map(alloc:gpt_flux_up, gpt_flux_dn, gpt_flux_dir) &
+    !$omp             map(to:   mu0)
+
+    !$acc        data copyout(flux_up, flux_dn, flux_dir) if (.not. do_broadband)
+    !$omp target data map(to: flux_up, flux_dn, flux_dir) if (.not. do_broadband)
 
     !$acc  parallel loop collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
@@ -687,8 +661,8 @@ contains
     ! Cell properties: transmittance and reflectance for diffuse radiation
     ! Direct-beam radiation and source for diffuse radiation
     !
-    !$acc        enter data create(   Rdif, Tdif, source_up, source_dn, source_srf)
-    !$omp target enter data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf)
+    !$acc        data create(   Rdif, Tdif, source_up, source_dn, source_srf)
+    !$omp target data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf)
     call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dif, &
                            tau, ssa, g,                                  &
                            Rdif, Tdif, source_dn, source_up, source_srf, gpt_flux_dir)
@@ -696,33 +670,39 @@ contains
     call adding(ncol, nlay, ngpt, top_at_1,   &
                 sfc_alb_dif, Rdif, Tdif,      &
                 source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
-    !$acc        exit data delete (    mu0, Rdif, Tdif, source_up, source_dn, source_srf)
-    !$omp target exit data map(release:mu0, Rdif, Tdif, source_up, source_dn, source_srf)
+    !$acc        end data
+    !$omp target end data
 
     if(do_broadband) then
       !
       ! Broadband integration
       !
+      !$acc        data copyout( broadband_up, broadband_dn, broadband_dir)
+      !$omp target data map(from:broadband_up, broadband_dn, broadband_dir)
       call sum_broadband_factor(ncol, nlay+1, ngpt, 1._wp, gpt_flux_up,  broadband_up)
       call sum_broadband_factor(ncol, nlay+1, ngpt, 1._wp, gpt_flux_dn,  broadband_dn)
       call sum_broadband_factor(ncol, nlay+1, ngpt, 1._wp, gpt_flux_dir, broadband_dir)
-      !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
-      !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
       !
       ! adding computes only diffuse flux; flux_dn is total
       !
       call add_arrays          (ncol, nlay+1, broadband_dir, broadband_dn)
-      !$acc        exit data copyout( broadband_up, broadband_dn, broadband_dir)
-      !$omp target exit data map(from:broadband_up, broadband_dn, broadband_dir)
+      !$acc        end data
+      !$omp target end data
     else
       !
       ! adding computes only diffuse flux; flux_dn is total
       !
       call add_arrays(ncol, nlay+1, ngpt, flux_dir, flux_dn)
-      !$acc        exit data copyout( flux_up, flux_dn, flux_dir)
-      !$omp target exit data map(from:flux_up, flux_dn, flux_dir)
     end if
 
+    !$acc        end data
+    !$omp target end data
+    !$acc        end data
+    !$omp target end data
+
+    if (do_broadband) then
+      deallocate(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
+    end if
   end subroutine sw_solver_2stream
   ! -------------------------------------------------------------------------------------------------
   !
@@ -1466,8 +1446,6 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
   integer  :: icol, ilev, igpt
   real(wp) :: scalar ! local scalar version
 
-  !$acc        enter data copyin(spectral_flux)    create(broadband_flux)
-  !$omp target enter data map(to:spectral_flux) map(alloc:broadband_flux)
   !$acc                         parallel loop gang vector collapse(2)
   !$omp target teams distribute parallel do simd          collapse(2)
   do ilev = 1, nlev
@@ -1482,8 +1460,6 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
       broadband_flux(icol, ilev) = factor * scalar
     end do
   end do
-  !$acc        exit data delete(     spectral_flux) copyout( broadband_flux)
-  !$omp target exit data map(release:spectral_flux) map(from:broadband_flux)
   end subroutine sum_broadband_factor
   ! -------------------------------------------------------------------------------------------------
   !

@@ -92,8 +92,8 @@ contains
     real(wp), dimension(optical_props%get_ncol(),           &
                         optical_props%get_nlay()+1), target &
                                             :: decoy2D ! Used for optional outputs - needs to be full size.
-    real(wp), dimension(:,:,:), pointer     :: gpt_flux_up, gpt_flux_dn
-    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_net_loc
+    real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
+    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc
     real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse
     ! --------------------------------------------------
     !
@@ -224,21 +224,12 @@ contains
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
       return
     end if
-    ! ------------------------------------------------------------------------------------
-    ! Used in one or more places below...
-    !$acc        enter data create(   decoy2D)
-    !$omp target enter data map(alloc:decoy2D)
     !
     !    Lower boundary condition -- expand surface emissivity by band to gpoints
     !
     allocate(sfc_emis_gpt(ncol,         ngpt))
-    !$acc        enter data create(   sfc_emis_gpt)
-    !$omp target enter data map(alloc:sfc_emis_gpt)
-    call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
 
     if(do_Jacobians) then
-      !$acc        enter data create(   flux_up_Jac)
-      !$omp target enter data map(alloc:flux_up_Jac)
       jacobian => flux_up_Jac
     else
       jacobian => decoy2D
@@ -255,15 +246,11 @@ contains
           flux_up_loc => fluxes%flux_up
         else
           allocate(flux_up_loc(ncol, nlay+1))
-          !$acc        enter data create(   flux_up_loc)
-          !$omp target enter data map(alloc:flux_up_loc)
         end if
         if(associated(fluxes%flux_dn)) then
           flux_dn_loc => fluxes%flux_dn
         else
           allocate(flux_dn_loc(ncol, nlay+1))
-          !$acc        enter data create(   flux_dn_loc)
-          !$omp target enter data map(alloc:flux_dn_loc)
         end if
       class default
         !
@@ -282,51 +269,38 @@ contains
     !
     allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
              gpt_flux_dn (ncol,nlay+1,ngpt))
-    !$acc        enter data create(   gpt_flux_up, gpt_flux_dn)
-    !$omp target enter data map(alloc:gpt_flux_up, gpt_flux_dn)
-
     !
     !   Upper boundary condition -  use values in optional arg or be set to 0
     !
     if (present(inc_flux)) then
-      !  inc_flux_dif might have been copied-in before, when checking extents/values,
-      !  in which case no copying will occur here
-      !$acc        enter data copyin(inc_flux)
-      !$omp target enter data map(to:inc_flux)
       inc_flux_diffuse => inc_flux
     else
       allocate(inc_flux_diffuse(ncol, ngpt))
-      !$acc        enter data create(   inc_flux_diffuse)
-      !$omp target enter data map(alloc:inc_flux_diffuse)
       call zero_array(ncol, ngpt, inc_flux_diffuse)
     end if
-
-
     !
     ! Compute the radiative transfer...
     !
-    !
-    ! FIXME: Do we need this copyin and its matching delete?
-    !$acc enter data copyin(optical_props)
+    !$acc        data create(   sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
+    !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
+    call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     select type (optical_props)
       class is (ty_optical_props_1scl)
         !
         ! No scattering two-stream calculation
         !
-        !$acc        enter data copyin(optical_props%tau)
-        !$omp target enter data map(to:optical_props%tau)
         if(check_values) error_msg =  optical_props%validate()
-        if(len_trim(error_msg) > 0) return
+        if(len_trim(error_msg) > 0) goto 1000
         !
         ! Secant of radiation angle - either user-supplied, one per g-point, or
         !   taken from first-order Gaussian quadrate and applied to all columns a g-points
         !
         allocate(secants(ncol, ngpt, n_quad_angs))
-        !$acc        enter data create(   secants)
-        !$omp target enter data map(alloc:secants)
+        !$acc        data create(   secants)
+        !$omp target data map(alloc:secants)
         if (present(lw_Ds)) then
           !$acc                         parallel loop    collapse(2) copyin(lw_Ds)
-          !$omp target teams distribute parallel do simd collapse(2) map(to:lw_Ds)
+          !$omp target teams distribute parallel do simd collapse(2)
           ! nmu is 1
           do igpt = 1, ngpt
             do icol = 1, ncol
@@ -335,7 +309,6 @@ contains
           end do
         else
           !
-          ! FIXME: Do we need to expliclty copyin the array?
           !   Is there an alternative to making ncol x ngpt copies of each value?
           !
           !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
@@ -362,13 +335,11 @@ contains
                               logical(.false., wl),  optical_props%tau, optical_props%tau)
                                                     ! The last two arguments won't be used since the
                                                     ! third-to-last is .false. but need valid addresses
-        !$acc        exit data delete(     optical_props%tau, secants)
-        !$omp target exit data map(release:optical_props%tau, secants)
+        !$acc        end data
+        !$omp target end data
       class is (ty_optical_props_2str)
-        !$acc        enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
-        !$omp target enter data map(to:optical_props%tau, optical_props%ssa, optical_props%g)
         if(check_values) error_msg =  optical_props%validate()
-        if(len_trim(error_msg) > 0) return
+        if(len_trim(error_msg) > 0) goto 1000
         if (using_2stream) then
           !
           ! two-stream calculation with scattering
@@ -381,8 +352,8 @@ contains
                                  gpt_flux_up, gpt_flux_dn)
         else
           allocate(secants(ncol, ngpt, n_quad_angs))
-          !$acc        enter data create(   secants)
-          !$omp target enter data map(alloc:secants)
+          !$acc        data create(   secants)
+          !$omp target data map(alloc:secants)
           !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
           !$omp target teams distribute parallel do simd collapse(3)
           do imu = 1, n_quad_angs
@@ -407,11 +378,9 @@ contains
                                 do_broadband, flux_up_loc, flux_dn_loc,     &
                                 logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
                                 logical(.true., wl),  optical_props%ssa, optical_props%g)
-          !$acc        exit data delete(     secants)
-          !$omp target exit data map(release:secants)
+          !$acc        end data
+          !$omp target end data
         endif
-        !$acc        exit data delete(     optical_props%tau, optical_props%ssa, optical_props%g)
-        !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)
       class is (ty_optical_props_nstr)
         !
         ! n-stream calculation
@@ -419,7 +388,7 @@ contains
         error_msg = 'lw_solver(...ty_optical_props_nstr...) not yet implemented'
     end select
 
-    if (error_msg /= '') return
+    if (error_msg /= '') goto 1000
 
     select type(fluxes)
       !
@@ -430,44 +399,32 @@ contains
           !
           ! FIXME: Do we need the create/copyout here?
           !
-          !$acc                         parallel loop    collapse(2) create(fluxes%flux_net)
-          !$omp target teams distribute parallel do simd collapse(2)
+          !$acc                         parallel loop    collapse(2) copyout( fluxes%flux_net)
+          !$omp target teams distribute parallel do simd collapse(2) map(from:fluxes%flux_net)
           do ilev = 1, nlay+1
             do icol = 1, ncol
               fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
             end do
           end do
-          !$acc        exit data copyout( fluxes%flux_net)
-          !$omp target exit data map(from:fluxes%flux_net)
         end if
-        !$acc        exit data copyout( fluxes%flux_up) if(      associated(fluxes%flux_up))
-        !$omp target exit data map(from:fluxes%flux_up) if(      associated(fluxes%flux_up))
-        !$acc        exit data delete(     flux_up_loc) if(.not. associated(fluxes%flux_up))
-        !$omp target exit data map(release:flux_up_loc) if(.not. associated(fluxes%flux_up))
-
-        !$acc        exit data copyout( fluxes%flux_dn) if(      associated(fluxes%flux_dn))
-        !$omp target exit data map(from:fluxes%flux_dn) if(      associated(fluxes%flux_dn))
-        !$acc        exit data delete(     flux_dn_loc) if(.not. associated(fluxes%flux_dn))
-        !$omp target exit data map(release:flux_dn_loc) if(.not. associated(fluxes%flux_dn))
       class default
         !
         ! ...or reduce spectral fluxes to desired output quantities
         !
         error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
-        !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, decoy2D)
-        !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, decoy2D)
     end select
-    !$acc        exit data delete(     sfc_emis_gpt)
-    !$omp target exit data map(release:sfc_emis_gpt)
-    !$acc        exit data delete(optical_props)
-    !$acc        exit data copyout( flux_up_Jac) if(do_Jacobians)
-    !$omp target exit data map(from:flux_up_Jac) if(do_Jacobians)
+
+    ! In case of an error we exit here
+    1000 continue
+
+    !$acc        end data
+    !$omp target end data
+
     if(.not. present(inc_flux)) deallocate(inc_flux_diffuse)
-    deallocate(gpt_flux_up, gpt_flux_dn)
     select type(fluxes)
       type is (ty_fluxes_broadband)
-        if(.not. associated(fluxes%flux_up    )) deallocate(flux_up_loc)
-        if(.not. associated(fluxes%flux_dn    )) deallocate(flux_dn_loc)
+        if(.not. associated(flux_up_loc, fluxes%flux_up)) deallocate(flux_up_loc)
+        if(.not. associated(flux_dn_loc, fluxes%flux_dn)) deallocate(flux_dn_loc)
     end select
   end function rte_lw
   !--------------------------------------------------------------------------------------------------------------------

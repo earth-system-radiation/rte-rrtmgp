@@ -408,7 +408,7 @@ contains
     if (.not. associated(this_flux_up, flux_up)) then
       deallocate(this_flux_up, this_flux_dn)
     end if
-    if (.not. associated(this_flux_upJac, flux_upJac) .and. associated(this_flux_upJac)) then
+    if (nmus > 1 .and. do_Jacobians) then
       deallocate(this_flux_upJac)
     end if
   end subroutine lw_solver_noscat_GaussQuad

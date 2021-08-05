@@ -290,15 +290,15 @@ contains
     1000 continue
 
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
 
     !
     ! Deallocate any memory allocated locally to pointer variables

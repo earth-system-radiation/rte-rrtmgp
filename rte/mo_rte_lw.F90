@@ -340,7 +340,7 @@ contains
                                                     ! The last two arguments won't be used since the
                                                     ! third-to-last is .false. but need valid addresses
         !$acc        end data
-        !$omp target end data
+        !$omp end target data
       class is (ty_optical_props_2str)
         if(check_values) error_msg =  optical_props%validate()
         if(len_trim(error_msg) > 0) goto 1000
@@ -383,7 +383,7 @@ contains
                                 logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
                                 logical(.true., wl),  optical_props%ssa, optical_props%g)
           !$acc        end data
-          !$omp target end data
+          !$omp end target data
         endif
       class is (ty_optical_props_nstr)
         !
@@ -422,7 +422,7 @@ contains
     1000 continue
 
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
 
     if(.not. present(inc_flux)) then 
       !$acc        exit data delete(     inc_flux_diffuse)

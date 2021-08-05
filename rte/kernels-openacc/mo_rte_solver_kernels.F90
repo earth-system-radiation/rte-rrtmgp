@@ -248,11 +248,11 @@ contains
     end if
 
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
   end subroutine lw_solver_noscat
   ! ---------------------------------------------------------------
   !
@@ -671,7 +671,7 @@ contains
                 sfc_alb_dif, Rdif, Tdif,      &
                 source_dn, source_up, source_srf, gpt_flux_up, gpt_flux_dn)
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
 
     if(do_broadband) then
       !
@@ -687,7 +687,7 @@ contains
       !
       call add_arrays          (ncol, nlay+1, broadband_dir, broadband_dn)
       !$acc        end data
-      !$omp target end data
+      !$omp end target data
     else
       !
       ! adding computes only diffuse flux; flux_dn is total
@@ -696,9 +696,9 @@ contains
     end if
 
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
     !$acc        end data
-    !$omp target end data
+    !$omp end target data
 
     if (do_broadband) then
       deallocate(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)

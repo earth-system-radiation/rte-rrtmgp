@@ -367,7 +367,7 @@ program rte_rrtmgp_clouds
                               emis_sfc,        &
                               fluxes))
       !$acc        end data
-      !$omp target end data
+      !$omp end target data
 
     else
       !$acc        enter data create(   toa_flux)

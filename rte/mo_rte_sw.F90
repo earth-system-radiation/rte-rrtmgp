@@ -209,8 +209,8 @@ contains
     !
     if (has_dif_bc) then
       inc_flux_diffuse => inc_flux_dif
-      !$acc        enter data create(   inc_flux_diffuse)
-      !$omp target enter data map(alloc:inc_flux_diffuse)
+      !$acc        enter data copyin(   inc_flux_diffuse)
+      !$omp target enter data map(to:   inc_flux_diffuse)
     else
       allocate(inc_flux_diffuse(ncol, ngpt))
       !$acc        enter data create(   inc_flux_diffuse)
@@ -259,8 +259,6 @@ contains
         !
         error_msg = 'sw_solver(...ty_optical_props_nstr...) not yet implemented'
     end select
-    !$acc        exit data delete(     inc_flux_diffuse) if(.not. has_dif_bc)
-    !$omp target exit data map(release:inc_flux_diffuse) if(.not. has_dif_bc)
     if(len_trim(error_msg) > 0) then
       if(len_trim(atmos%get_name()) > 0) &
         error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
@@ -313,7 +311,11 @@ contains
       class default
         deallocate(gpt_flux_up, gpt_flux_dn, gpt_flux_dir)
     end select
-    if(.not. has_dif_bc) deallocate(inc_flux_diffuse)
+    if(.not. has_dif_bc) then
+      !$acc        exit data delete(     inc_flux_diffuse)
+      !$omp target exit data map(release:inc_flux_diffuse)
+      deallocate(inc_flux_diffuse)
+    end if
 
   end function rte_sw
   !--------------------------------------------------------------------------------------------------------------------

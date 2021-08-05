@@ -274,8 +274,12 @@ contains
     !
     if (present(inc_flux)) then
       inc_flux_diffuse => inc_flux
+      !$acc        enter data copyin(   inc_flux_diffuse)
+      !$omp target enter data map(to:   inc_flux_diffuse)
     else
       allocate(inc_flux_diffuse(ncol, ngpt))
+      !$acc        enter data create(   inc_flux_diffuse)
+      !$omp target enter data map(alloc:inc_flux_diffuse)
       call zero_array(ncol, ngpt, inc_flux_diffuse)
     end if
     !
@@ -420,7 +424,11 @@ contains
     !$acc        end data
     !$omp target end data
 
-    if(.not. present(inc_flux)) deallocate(inc_flux_diffuse)
+    if(.not. present(inc_flux)) then 
+      !$acc        exit data delete(     inc_flux_diffuse)
+      !$omp target exit data map(release:inc_flux_diffuse)
+      deallocate(inc_flux_diffuse)
+    end if
     select type(fluxes)
       type is (ty_fluxes_broadband)
         if(.not. associated(flux_up_loc, fluxes%flux_up)) deallocate(flux_up_loc)

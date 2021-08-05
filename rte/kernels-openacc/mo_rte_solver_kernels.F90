@@ -319,8 +319,8 @@ contains
     !$omp target data map(from:flux_up, flux_dn)             if (.not. do_broadband)
     !$acc        data copyout( broadband_up, broadband_dn)   if (      do_broadband)
     !$omp target data map(from:broadband_up, broadband_dn)   if (      do_broadband)
-    !$acc        data copyin(sfc_srcJac) copyout(flux_upJac) if (do_Jacobians)
-    !$omp target data map(to:sfc_srcJac,    from:flux_upJac) if (do_Jacobians)
+    !$acc        data copyin(sfc_srcJac)   copyout(flux_upJac) if (do_Jacobians)
+    !$omp target data map(to:sfc_srcJac), map(from:flux_upJac) if (do_Jacobians)
 
     if(do_broadband) then
       this_broadband_up => broadband_up
@@ -391,7 +391,7 @@ contains
       !$acc end data
       !$omp end target data
     end if
-    
+
     !$acc end data
     !$omp end target data
     !$acc end data

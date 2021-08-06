@@ -218,7 +218,7 @@ contains
     end if
 
     if(check_values) error_msg =  atmos%validate()
-    if(len_trim(error_msg) > 0) then
+    if(len_trim(error_msg) == 0) then
       select type (atmos)
         class is (ty_optical_props_1scl)
           !

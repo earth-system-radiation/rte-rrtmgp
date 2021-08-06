@@ -177,6 +177,10 @@ contains
     end select
 
     allocate(sfc_alb_dir_gpt(ncol, ngpt), sfc_alb_dif_gpt(ncol, ngpt))
+    if(len_trim(error_msg) > 0) then
+      if(len_trim(atmos%get_name()) > 0) &
+        error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
+    end if
 
     ! Fluxes need to be copied out only if do_broadband is .true.
     !$acc        data copyin(   flux_up_loc,flux_dn_loc,flux_dir_loc) if (      do_broadband)
@@ -189,11 +193,6 @@ contains
     !$omp target data map(alloc:gpt_flux_up,gpt_flux_dn,gpt_flux_dir) &
     !$omp             map(alloc:sfc_alb_dir_gpt, sfc_alb_dif_gpt)
 
-    if(len_trim(error_msg) > 0) then
-      if(len_trim(atmos%get_name()) > 0) &
-        error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
-        goto 1000
-    end if
 
     ! ------------------------------------------------------------------------------------
     ! Lower boundary condition -- expand surface albedos by band to gpoints
@@ -218,76 +217,69 @@ contains
       call zero_array(ncol, ngpt, inc_flux_diffuse)
     end if
 
-    select type (atmos)
-      class is (ty_optical_props_1scl)
-        !
-        ! Direct beam only - for completeness, unlikely to be used in practice
-        !
-        if(check_values) error_msg =  atmos%validate()
-        if(len_trim(error_msg) > 0) goto 1000
-
-        call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                              atmos%tau, mu0, inc_flux,                &
-                              gpt_flux_dir)
-        call zero_array(ncol, nlay+1, ngpt, gpt_flux_up)
-        !
-        !$acc kernels
-        !$omp target
-        gpt_flux_dn(:,:,:) = gpt_flux_dir(:,:,:)
-        !$acc end kernels
-        !$omp end target
-
-      class is (ty_optical_props_2str)
-        !
-        ! two-stream calculation with scattering
-        !
-        if(check_values) error_msg =  atmos%validate()
-        if(len_trim(error_msg) > 0) goto 1000
-
-        call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                               atmos%tau, atmos%ssa, atmos%g, mu0,      &
-                               sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
-                                           inc_flux,                    &
-                               gpt_flux_up, gpt_flux_dn, gpt_flux_dir,  &
-                               has_dif_bc, inc_flux_diffuse,            &
-                               do_broadband, flux_up_loc, flux_dn_loc, flux_dir_loc)
-      class is (ty_optical_props_nstr)
-        !
-        ! n-stream calculation
-        !
-        ! not yet implemented so fail
-        !
-        error_msg = 'sw_solver(...ty_optical_props_nstr...) not yet implemented'
-    end select
+    if(check_values) error_msg =  atmos%validate()
     if(len_trim(error_msg) > 0) then
-      if(len_trim(atmos%get_name()) > 0) &
-        error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
-      goto 1000
-    end if
+      select type (atmos)
+        class is (ty_optical_props_1scl)
+          !
+          ! Direct beam only - for completeness, unlikely to be used in practice
+          !
+          call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                atmos%tau, mu0, inc_flux,                &
+                                gpt_flux_dir)
+          call zero_array(ncol, nlay+1, ngpt, gpt_flux_up)
+          !
+          !$acc kernels
+          !$omp target
+          gpt_flux_dn(:,:,:) = gpt_flux_dir(:,:,:)
+          !$acc end kernels
+          !$omp end target
 
-    select type(fluxes)
-      !
-      ! Tidy up memory for broadband fluxes
-      !
-      type is (ty_fluxes_broadband)
-        if(associated(fluxes%flux_net)) then
-          !$acc                         parallel loop    collapse(2) copyout(fluxes%flux_net)
-          !$omp target teams distribute parallel do simd collapse(2)
-          do ilev = 1, nlay+1
-            do icol = 1, ncol
-              fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
+        class is (ty_optical_props_2str)
+          !
+          ! two-stream calculation with scattering
+          !
+          call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                 atmos%tau, atmos%ssa, atmos%g, mu0,      &
+                                 sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
+                                             inc_flux,                    &
+                                 gpt_flux_up, gpt_flux_dn, gpt_flux_dir,  &
+                                 has_dif_bc, inc_flux_diffuse,            &
+                                 do_broadband, flux_up_loc, flux_dn_loc, flux_dir_loc)
+        class is (ty_optical_props_nstr)
+          !
+          ! n-stream calculation
+          !
+          ! not yet implemented so fail
+          !
+          error_msg = 'sw_solver(...ty_optical_props_nstr...) not yet implemented'
+      end select
+      if(len_trim(error_msg) > 0) then
+        if(len_trim(atmos%get_name()) > 0) &
+          error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
+      end if
+
+      select type(fluxes)
+        !
+        ! Tidy up memory for broadband fluxes
+        !
+        type is (ty_fluxes_broadband)
+          if(associated(fluxes%flux_net)) then
+            !$acc                         parallel loop    collapse(2) copyout(fluxes%flux_net)
+            !$omp target teams distribute parallel do simd collapse(2)
+            do ilev = 1, nlay+1
+              do icol = 1, ncol
+                fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
+              end do
             end do
-          end do
-        end if
-      class default
-        !
-        ! ...or reduce spectral fluxes to desired output quantities
-        !
-        error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
-    end select
-
-    ! In case of an error we exit here
-    1000 continue
+          end if
+        class default
+          !
+          ! ...or reduce spectral fluxes to desired output quantities
+          !
+          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
+      end select
+    end if ! In case of an error we exit here
 
     !$acc        end data
     !$omp end target data

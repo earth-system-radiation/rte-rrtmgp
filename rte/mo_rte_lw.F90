@@ -288,88 +288,43 @@ contains
     !$acc        data create(   sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
     !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
-    select type (optical_props)
-      class is (ty_optical_props_1scl)
-        !
-        ! No scattering two-stream calculation
-        !
-        if(check_values) error_msg =  optical_props%validate()
-        if(len_trim(error_msg) > 0) goto 1000
-        !
-        ! Secant of radiation angle - either user-supplied, one per g-point, or
-        !   taken from first-order Gaussian quadrate and applied to all columns a g-points
-        !
-        allocate(secants(ncol, ngpt, n_quad_angs))
-        !$acc        data create(   secants)
-        !$omp target data map(alloc:secants)
-        if (present(lw_Ds)) then
-          !$acc                         parallel loop    collapse(2) copyin(lw_Ds)
-          !$omp target teams distribute parallel do simd collapse(2)
-          ! nmu is 1
-          do igpt = 1, ngpt
-            do icol = 1, ncol
-              secants(icol,igpt,1) = lw_Ds(icol,igpt)
-            end do
-          end do
-        else
+    if(check_values) error_msg =  optical_props%validate()
+    if(len_trim(error_msg) == 0) then ! Can't do an early return within OpenACC/MP data regions
+      select type (optical_props)
+        class is (ty_optical_props_1scl)
           !
-          !   Is there an alternative to making ncol x ngpt copies of each value?
+          ! No scattering two-stream calculation
           !
-          !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
-          !$omp target teams distribute parallel do simd collapse(3)
-          do imu = 1, n_quad_angs
-            do igpt = 1, ngpt
-              do icol = 1, ncol
-                secants(icol,igpt,imu) = gauss_Ds(imu,n_quad_angs)
-              end do
-            end do
-          end do
-        end if
-        call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
-                              logical(top_at_1, wl), n_quad_angs,         &
-                              secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
-                              optical_props%tau,                 &
-                              sources%lay_source, sources%lev_source_inc, &
-                              sources%lev_source_dec,            &
-                              sfc_emis_gpt, sources%sfc_source,  &
-                              inc_flux_diffuse,                  &
-                              gpt_flux_up, gpt_flux_dn,          &
-                              do_broadband, flux_up_loc, flux_dn_loc,     &
-                              logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
-                              logical(.false., wl),  optical_props%tau, optical_props%tau)
-                                                    ! The last two arguments won't be used since the
-                                                    ! third-to-last is .false. but need valid addresses
-        !$acc        end data
-        !$omp end target data
-      class is (ty_optical_props_2str)
-        if(check_values) error_msg =  optical_props%validate()
-        if(len_trim(error_msg) > 0) goto 1000
-        if (using_2stream) then
           !
-          ! two-stream calculation with scattering
+          ! Secant of radiation angle - either user-supplied, one per g-point, or
+          !   taken from first-order Gaussian quadrate and applied to all columns a g-points
           !
-          call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                                 optical_props%tau, optical_props%ssa, optical_props%g,              &
-                                 sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
-                                 sfc_emis_gpt, sources%sfc_source,       &
-                                 inc_flux_diffuse,                       &
-                                 gpt_flux_up, gpt_flux_dn)
-        else
           allocate(secants(ncol, ngpt, n_quad_angs))
           !$acc        data create(   secants)
           !$omp target data map(alloc:secants)
-          !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
-          !$omp target teams distribute parallel do simd collapse(3)
-          do imu = 1, n_quad_angs
+          if (present(lw_Ds)) then
+            !$acc                         parallel loop    collapse(2) copyin(lw_Ds)
+            !$omp target teams distribute parallel do simd collapse(2)
+            ! nmu is 1
             do igpt = 1, ngpt
               do icol = 1, ncol
-                secants(icol,igpt,imu) = gauss_Ds(imu,n_quad_angs)
+                secants(icol,igpt,1) = lw_Ds(icol,igpt)
               end do
             end do
-          end do
-          !
-          ! Re-scaled solution to account for scattering
-          !
+          else
+            !
+            !   Is there an alternative to making ncol x ngpt copies of each value?
+            !
+            !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
+            !$omp target teams distribute parallel do simd collapse(3)
+            do imu = 1, n_quad_angs
+              do igpt = 1, ngpt
+                do icol = 1, ncol
+                  secants(icol,igpt,imu) = gauss_Ds(imu,n_quad_angs)
+                end do
+              end do
+            end do
+          end if
           call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
                                 logical(top_at_1, wl), n_quad_angs,         &
                                 secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
@@ -381,50 +336,88 @@ contains
                                 gpt_flux_up, gpt_flux_dn,          &
                                 do_broadband, flux_up_loc, flux_dn_loc,     &
                                 logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
-                                logical(.true., wl),  optical_props%ssa, optical_props%g)
+                                logical(.false., wl),  optical_props%tau, optical_props%tau)
+                                                      ! The last two arguments won't be used since the
+                                                      ! third-to-last is .false. but need valid addresses
           !$acc        end data
           !$omp end target data
-        endif
-      class is (ty_optical_props_nstr)
-        !
-        ! n-stream calculation
-        !
-        error_msg = 'lw_solver(...ty_optical_props_nstr...) not yet implemented'
-    end select
-
-    if (error_msg /= '') goto 1000
-
-    select type(fluxes)
-      !
-      ! Tidy up memory for broadband fluxes on GPUs
-      !
-      type is (ty_fluxes_broadband)
-        if(associated(fluxes%flux_net)) then
-          !
-          ! FIXME: Do we need the create/copyout here?
-          !
-          !$acc                         parallel loop    collapse(2) copyout( fluxes%flux_net)
-          !$omp target teams distribute parallel do simd collapse(2) map(from:fluxes%flux_net)
-          do ilev = 1, nlay+1
-            do icol = 1, ncol
-              fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
+        class is (ty_optical_props_2str)
+          if (using_2stream) then
+            !
+            ! two-stream calculation with scattering
+            !
+            call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                   optical_props%tau, optical_props%ssa, optical_props%g,              &
+                                   sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                                   sfc_emis_gpt, sources%sfc_source,       &
+                                   inc_flux_diffuse,                       &
+                                   gpt_flux_up, gpt_flux_dn)
+          else
+            allocate(secants(ncol, ngpt, n_quad_angs))
+            !$acc        data create(   secants)
+            !$omp target data map(alloc:secants)
+            !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
+            !$omp target teams distribute parallel do simd collapse(3)
+            do imu = 1, n_quad_angs
+              do igpt = 1, ngpt
+                do icol = 1, ncol
+                  secants(icol,igpt,imu) = gauss_Ds(imu,n_quad_angs)
+                end do
+              end do
             end do
-          end do
-        end if
-      class default
-        !
-        ! ...or reduce spectral fluxes to desired output quantities
-        !
-        error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
-    end select
+            !
+            ! Re-scaled solution to account for scattering
+            !
+            call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
+                                  logical(top_at_1, wl), n_quad_angs,         &
+                                  secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
+                                  optical_props%tau,                 &
+                                  sources%lay_source, sources%lev_source_inc, &
+                                  sources%lev_source_dec,            &
+                                  sfc_emis_gpt, sources%sfc_source,  &
+                                  inc_flux_diffuse,                  &
+                                  gpt_flux_up, gpt_flux_dn,          &
+                                  do_broadband, flux_up_loc, flux_dn_loc,     &
+                                  logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
+                                  logical(.true., wl),  optical_props%ssa, optical_props%g)
+            !$acc        end data
+            !$omp end target data
+          endif
+        class is (ty_optical_props_nstr)
+          !
+          ! n-stream calculation
+          !
+          error_msg = 'lw_solver(...ty_optical_props_nstr...) not yet implemented'
+      end select
 
-    ! In case of an error we exit here
-    1000 continue
-
+      select type(fluxes)
+        !
+        ! Tidy up memory for broadband fluxes on GPUs
+        !
+        type is (ty_fluxes_broadband)
+          if(associated(fluxes%flux_net)) then
+            !
+            ! FIXME: Do we need the create/copyout here?
+            !
+            !$acc                         parallel loop    collapse(2) copyout( fluxes%flux_net)
+            !$omp target teams distribute parallel do simd collapse(2) map(from:fluxes%flux_net)
+            do ilev = 1, nlay+1
+              do icol = 1, ncol
+                fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
+              end do
+            end do
+          end if
+        class default
+          !
+          ! ...or reduce spectral fluxes to desired output quantities
+          !
+          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
+      end select
+    end if ! no error message from validation 
     !$acc        end data
     !$omp end target data
 
-    if(.not. present(inc_flux)) then 
+    if(.not. present(inc_flux)) then
       !$acc        exit data delete(     inc_flux_diffuse)
       !$omp target exit data map(release:inc_flux_diffuse)
       deallocate(inc_flux_diffuse)

@@ -39,12 +39,6 @@ module mo_rte_solver_kernels
             lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream, &
             sw_solver_noscat,                             sw_solver_2stream
 
-  ! These routines don't really need to be visible but making them so is useful for testing.
-  public :: lw_source_noscat, lw_combine_sources, &
-            lw_source_2str, sw_source_2str, &
-            lw_two_stream, sw_two_stream, &
-            adding
-
   real(wp), parameter :: pi = acos(-1._wp)
 contains
   ! -------------------------------------------------------------------------------------------------
@@ -137,7 +131,6 @@ contains
       !   convert flux at top of domain to intensity assuming azimuthal isotropy
       !
       radn_dn(:,top_level,igpt) = radn_dn(:,top_level,igpt)/(2._wp * pi * weight)
-
       !
       ! Optical path and transmission, used in source function and transport calculations
       !
@@ -150,15 +143,23 @@ contains
         do ilay = 1, nlay
           do icol = 1, ncol
             ssal = ssa(icol, ilay, igpt)
+
+            ! w is the layer single scattering albedo
+            ! b is phase function parameter (Eq.13 of the paper)
+            ! for the similarity principle scaling scheme
+            ! b = (1-g)/2 (where g is phase function avergae cosine)
             wb = ssal*(1._wp - g(icol, ilay, igpt)) * 0.5_wp
+
+            ! scaleTau=1-w(1-b) is a scaling factor of the optical thickness representing
+            ! the radiative transfer equation in a nonscattering form Eq(14) of the paper
             scaleTau = (1._wp - ssal + wb)
-            ! here wb/scaleTau is parameter wb/(1-w(1-b)) of Eq.21 of the Tang paper
-            ! actually it is in line of parameter rescaling defined in Eq.7
-            ! potentialy if g=ssa=1  then  wb/scaleTau = NaN
-            ! it should not happen because g is never 1 in atmospheres
-            ! explanation of factor 0.4 note A of Table
+
+            ! Cn = 0.5*wb/(1-w(1-b)) is parameter of Eq.21-22 of the Tang paper
+            ! Tang paper, p.2222 advises to replace 0.5 with 0.4 based on simulations
             Cn(icol,ilay) = 0.4_wp*wb/scaleTau
-            ! Eq.15 of the paper, multiplied by path length
+
+            ! Eqs.15, 18ab and 19 of the paper,
+            ! rescaling of the optical depth multiplied by path length
             tau_loc(icol,ilay) = tau(icol,ilay,igpt)*D(icol,igpt)*scaleTau
           end do
           trans  (:,ilay) = exp(-tau_loc(:,ilay))
@@ -387,7 +388,7 @@ contains
     real(wp), dimension(ncol            ), intent( in) :: mu0          ! cosine of solar zenith angle
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
                                                                        ! Top level must contain incident flux boundary condition
-    integer :: icol, ilev, igpt
+    integer :: ilev, igpt
     real(wp) :: mu0_inv(ncol)
 
     ! ------------------------------------
@@ -443,22 +444,19 @@ contains
                                            intent(inout) :: flux_dn, flux_dir
     ! -------------------------------------------
     integer :: igpt
-    real(wp), dimension(ncol,nlay) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
+    real(wp), dimension(ncol,nlay) :: Rdif, Tdif
     real(wp), dimension(ncol,nlay) :: source_up, source_dn
     real(wp), dimension(ncol     ) :: source_srf
     ! ------------------------------------
     do igpt = 1, ngpt
       !
-      ! Cell properties: transmittance and reflectance for direct and diffuse radiation
+      ! Cell properties: transmittance and reflectance for diffuse radiation
+      !   Direct-beam and source for diffuse radiation
       !
-      call sw_two_stream(ncol, nlay, mu0,                                &
-                         tau (:,:,igpt), ssa (:,:,igpt), g   (:,:,igpt), &
-                         Rdif, Tdif, Rdir, Tdir, Tnoscat)
-      !
-      ! Direct-beam and source for diffuse radiation
-      !
-      call sw_source_2str(ncol, nlay, top_at_1, Rdir, Tdir, Tnoscat, sfc_alb_dir(:,igpt),&
-                          source_up, source_dn, source_srf, flux_dir(:,:,igpt))
+      call sw_dif_and_source(ncol, nlay, top_at_1, mu0, sfc_alb_dif(:,igpt), &
+                             tau(:,:,igpt), ssa(:,:,igpt), g(:,:,igpt),      &
+                             Rdif, Tdif, source_dn, source_up, source_srf,  &
+                             flux_dir(:,:,igpt))
       !
       ! Transport
       !
@@ -562,7 +560,7 @@ contains
     real(wp), dimension(ncol,nlay  ), intent(in   ) :: source_up  ! Diffuse radiation emitted by the layer
     real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_up    ! Radiances [W/m2-str] Top level must contain incident flux boundary condition
     logical(wl),                      intent(in   ) :: do_Jacobians
-    real(wp), dimension(ncol,nlay+1), intent(  out) :: radn_upJac       ! surface temperature Jacobian of Radiances [W/m2-str / K]
+    real(wp), dimension(ncol,nlay+1), intent(inout) :: radn_upJac       ! surface temperature Jacobian of Radiances [W/m2-str / K]
 
     ! ---------------------------------------------------
     ! Local variables
@@ -752,150 +750,131 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Two-stream solutions to direct and diffuse reflectance and transmittance for a layer
+  ! Two-stream solutions to diffuse reflectance and transmittance for a layer
   !    with optical depth tau, single scattering albedo w0, and asymmetery parameter g.
+  ! Direct reflectance and transmittance used to compute direct beam source for diffuse radiation
+  !   in layers and at surface; report direct beam as a byproduct
+  ! Computing the direct-beam source for diffuse radiation at the same time as R and T for
+  !   direct radiation reduces memory traffic and use. 
   !
   ! Equations are developed in Meador and Weaver, 1980,
   !    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
   !
   ! -------------------------------------------------------------------------------------------------
-  pure subroutine sw_two_stream(ncol, nlay, mu0, tau, w0, g, &
-                                Rdif, Tdif, Rdir, Tdir, Tnoscat) bind (C, name="sw_two_stream")
-    integer,                        intent(in)  :: ncol, nlay
-    real(wp), dimension(ncol),      intent(in)  :: mu0
-    real(wp), dimension(ncol,nlay), intent(in)  :: tau, w0, g
-    real(wp), dimension(ncol,nlay), intent(out) :: Rdif, Tdif, Rdir, Tdir, Tnoscat
+  pure subroutine sw_dif_and_source(ncol, nlay, top_at_1, mu0, sfc_albedo, &
+                                    tau, w0, g,  &
+                                    Rdif, Tdif, source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="sw_source_dir")
+    integer,                          intent(in   ) :: ncol, nlay
+    logical(wl),                      intent(in   ) :: top_at_1
+    real(wp), dimension(ncol       ), intent(in   ) :: mu0, sfc_albedo          ! surface albedo for direct radiation
+    real(wp), dimension(ncol,nlay  ), intent(in   ) :: tau, w0, g
+    real(wp), dimension(ncol,nlay  ), intent(  out) :: Rdif, Tdif, source_dn, source_up
+    real(wp), dimension(ncol       ), intent(  out) :: source_sfc ! Source function for upward radation at surface
+    real(wp), dimension(ncol,nlay+1), target, &
+                                      intent(inout) :: flux_dn_dir ! Direct beam flux
 
     ! -----------------------
     integer  :: i, j
 
     ! Variables used in Meador and Weaver
-    real(wp) :: gamma1(ncol), gamma2(ncol), gamma3(ncol), gamma4(ncol)
-    real(wp) :: alpha1(ncol), alpha2(ncol), k(ncol)
+    real(wp) :: gamma1, gamma2, gamma3, gamma4, alpha1, alpha2
+
 
     ! Ancillary variables
-    real(wp) :: RT_term(ncol)
-    real(wp) :: exp_minusktau(ncol), exp_minus2ktau(ncol)
-    real(WP) :: k_mu, k_gamma3, k_gamma4
-    real(wp) :: mu0_inv(ncol)
+    real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
+    real(wp) :: RT_term, exp_minus2ktau
+    real(wp) :: Rdir, Tdir, Tnoscat
+    real(wp), pointer, dimension(:) :: dir_flux_inc, dir_flux_trans
+    integer  :: lay_index
+    real(wp) :: tau_s, w0_s, g_s, mu0_s
     ! ---------------------------------
-    mu0_inv(1:ncol) = 1._wp/mu0(1:ncol)
+
     do j = 1, nlay
+      if(top_at_1) then
+        lay_index      =  j
+        dir_flux_inc   => flux_dn_dir(:,lay_index  )
+        dir_flux_trans => flux_dn_dir(:,lay_index+1)
+      else
+        lay_index      =  nlay-j+1
+        dir_flux_inc   => flux_dn_dir(:,lay_index+1)
+        dir_flux_trans => flux_dn_dir(:,lay_index  )
+      end if
+
       do i = 1, ncol
+        !
+        ! Scalars
+        !
+        tau_s = tau(i, lay_index)
+        w0_s  = w0 (i, lay_index)
+        g_s   = g  (i, lay_index)
+        mu0_s = mu0(i)
+        !
         ! Zdunkowski Practical Improved Flux Method "PIFM"
         !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
         !
-        gamma1(i)= (8._wp - w0(i,j) * (5._wp + 3._wp * g(i,j))) * .25_wp
-        gamma2(i)=  3._wp *(w0(i,j) * (1._wp -         g(i,j))) * .25_wp
-        gamma3(i)= (2._wp - 3._wp * mu0(i) *           g(i,j) ) * .25_wp
-        gamma4(i)=  1._wp - gamma3(i)
-
-        alpha1(i) = gamma1(i) * gamma4(i) + gamma2(i) * gamma3(i)           ! Eq. 16
-        alpha2(i) = gamma1(i) * gamma3(i) + gamma2(i) * gamma4(i)           ! Eq. 17
+        gamma1 = (8._wp - w0_s * (5._wp + 3._wp * g_s)) * .25_wp
+        gamma2 =  3._wp *(w0_s * (1._wp -         g_s)) * .25_wp
+        gamma3 = (2._wp - 3._wp * mu0_s *         g_s ) * .25_wp
+        gamma4 =  1._wp - gamma3
+        alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
+        alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
+        !
+        ! Direct reflect and transmission
+        !
         ! Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
         !   k = 0 for isotropic, conservative scattering; this lower limit on k
         !   gives relative error with respect to conservative solution
         !   of < 0.1% in Rdif down to tau = 10^-9
-        k(i) = sqrt(max((gamma1(i) - gamma2(i)) * (gamma1(i) + gamma2(i)), 1.e-12_wp))
-      end do
-
-      ! Written to encourage vectorization of exponential
-      exp_minusktau(1:ncol) = exp(-tau(1:ncol,j)*k(1:ncol))
-
-      !
-      ! Diffuse reflection and transmission
-      !
-      do i = 1, ncol
-        exp_minus2ktau(i) = exp_minusktau(i) * exp_minusktau(i)
+        k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
+        k_mu     = k * mu0_s
+        k_gamma3 = k * gamma3
+        k_gamma4 = k * gamma4
+        exp_minusktau = exp(-tau_s*k)
+        exp_minus2ktau = exp_minusktau * exp_minusktau
 
         ! Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
-        RT_term(i) = 1._wp / (k     (i) * (1._wp + exp_minus2ktau(i))  + &
-                              gamma1(i) * (1._wp - exp_minus2ktau(i)) )
-
+        RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + &
+                           gamma1 * (1._wp - exp_minus2ktau) )
         ! Equation 25
-        Rdif(i,j) = RT_term(i) * gamma2(i) * (1._wp - exp_minus2ktau(i))
+        Rdif(i,lay_index) = RT_term * gamma2 * (1._wp - exp_minus2ktau)
 
         ! Equation 26
-        Tdif(i,j) = RT_term(i) * 2._wp * k(i) * exp_minusktau(i)
-      end do
-
-      !
-      ! Transmittance of direct, unscattered beam. Also used below
-      !
-      Tnoscat(1:ncol,j) = exp(-tau(1:ncol,j)*mu0_inv(1:ncol))
-
-      !
-      ! Direct reflect and transmission
-      !
-      do i = 1, ncol
-        k_mu     = k(i) * mu0(i)
-        k_gamma3 = k(i) * gamma3(i)
-        k_gamma4 = k(i) * gamma4(i)
+        Tdif(i,lay_index) = RT_term * 2._wp * k * exp_minusktau
 
         !
         ! Equation 14, multiplying top and bottom by exp(-k*tau)
         !   and rearranging to avoid div by 0.
         !
-        RT_term(i) =  w0(i,j) * RT_term(i)/merge(1._wp - k_mu*k_mu, &
-                                                 epsilon(1._wp),    &
-                                                 abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
+        RT_term =  w0_s * RT_term/merge(1._wp - k_mu*k_mu, &
+                                        epsilon(1._wp),    &
+                                        abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
 
-        Rdir(i,j) = RT_term(i)  *                                        &
-            ((1._wp - k_mu) * (alpha2(i) + k_gamma3)                     - &
-             (1._wp + k_mu) * (alpha2(i) - k_gamma3) * exp_minus2ktau(i) - &
-             2.0_wp * (k_gamma3 - alpha2(i) * k_mu)  * exp_minusktau (i) * Tnoscat(i,j))
-
+        !
+        ! Transmittance of direct, unscattered beam.
+        !
+        Tnoscat = exp(-tau_s/mu0_s)
+        Rdir = RT_term  *                                            &
+            ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
+             (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
+             2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau * Tnoscat)
         !
         ! Equation 15, multiplying top and bottom by exp(-k*tau),
         !   multiplying through by exp(-tau/mu0) to
         !   prefer underflow to overflow
         ! Omitting direct transmittance
         !
-        Tdir(i,j) = -RT_term(i) *                                                                 &
-                    ((1._wp + k_mu) * (alpha1(i) + k_gamma4)                     * Tnoscat(i,j) - &
-                     (1._wp - k_mu) * (alpha1(i) - k_gamma4) * exp_minus2ktau(i) * Tnoscat(i,j) - &
-                     2.0_wp * (k_gamma4 + alpha1(i) * k_mu)  * exp_minusktau (i))
-
+        Tdir = -RT_term *                                                             &
+              ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
+               (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
+               2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
+        source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
+        source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
+        dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
       end do
     end do
-  end subroutine sw_two_stream
-  ! ---------------------------------------------------------------
-  !
-  ! Direct beam source for diffuse radiation in layers and at surface;
-  !   report direct beam as a byproduct
-  !
-  ! -------------------------------------------------------------------------------------------------
-  subroutine sw_source_2str(ncol, nlay, top_at_1, Rdir, Tdir, Tnoscat, sfc_albedo, &
-                            source_up, source_dn, source_sfc, flux_dn_dir) bind(C, name="sw_source_2str")
-    integer,                           intent(in   ) :: ncol, nlay
-    logical(wl),                       intent(in   ) :: top_at_1
-    real(wp), dimension(ncol, nlay  ), intent(in   ) :: Rdir, Tdir, Tnoscat ! Layer reflectance, transmittance for diffuse radiation
-    real(wp), dimension(ncol        ), intent(in   ) :: sfc_albedo          ! surface albedo for direct radiation
-    real(wp), dimension(ncol, nlay  ), intent(  out) :: source_dn, source_up
-    real(wp), dimension(ncol        ), intent(  out) :: source_sfc          ! Source function for upward radation at surface
-    real(wp), dimension(ncol, nlay+1), intent(inout) :: flux_dn_dir ! Direct beam flux
-                                                                    ! intent(inout) because top layer includes incident flux
+    source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)
 
-    integer :: ilev
-
-    if(top_at_1) then
-      do ilev = 1, nlay
-        source_up(:,ilev) =        Rdir(:,ilev) * flux_dn_dir(:,ilev)
-        source_dn(:,ilev) =        Tdir(:,ilev) * flux_dn_dir(:,ilev)
-        flux_dn_dir(:,ilev+1) = Tnoscat(:,ilev) * flux_dn_dir(:,ilev)
-      end do
-      source_sfc(:) = flux_dn_dir(:,nlay+1)*sfc_albedo(:)
-    else
-      ! layer index = level index
-      ! previous level is up (+1)
-      do ilev = nlay, 1, -1
-        source_up(:,ilev)   =    Rdir(:,ilev) * flux_dn_dir(:,ilev+1)
-        source_dn(:,ilev)   =    Tdir(:,ilev) * flux_dn_dir(:,ilev+1)
-        flux_dn_dir(:,ilev) = Tnoscat(:,ilev) * flux_dn_dir(:,ilev+1)
-      end do
-      source_sfc(:) = flux_dn_dir(:,     1)*sfc_albedo(:)
-    end if
-end subroutine sw_source_2str
+  end subroutine sw_dif_and_source
 ! ---------------------------------------------------------------
 !
 ! Transport of diffuse radiation through a vertically layered atmosphere.
@@ -1097,7 +1076,9 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     !
     ! Top of domain is index 1
     !
-    ! 1st Upward propagation
+    ! Upward propagation
+    ! adjustment factor is obtained as a solution of 18b of the Tang paper
+    ! eqvivalent to Eq.20 of the Tang paper but for linear-in-tau source
     do ilev = nlay, 1, -1
       do icol=1,ncol
         adjustmentFactor = Cn(icol,ilev)*( An(icol,ilev)*radn_dn(icol,ilev) - &
@@ -1108,8 +1089,10 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
       if(do_Jacobians) &
         radn_up_Jac(:,ilev) = trans(:,ilev)*radn_up_Jac(:,ilev+1)
     end do
-    ! 2nd Downward propagation
+    ! Downward propagation
     ! radn_dn_Jac(:,1) = 0._wp
+    ! adjustment factor is obtained as a solution of 19 of the Tang paper
+    ! eqvivalent to Eq.21 of the Tang paper but for linear-in-tau source
     do ilev = 1, nlay
       ! radn_dn_Jac(:,ilev+1) = trans(:,ilev)*radn_dn_Jac(:,ilev)
       do icol=1,ncol
@@ -1126,6 +1109,8 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
     ! Top of domain is index nlay+1
     !
     ! Upward propagation
+    ! adjustment factor is obtained as a solution of 18b of the Tang paper
+    ! eqvivalent to Eq.20 of the Tang paper but for linear-in-tau source
     do ilev = 1, nlay
       radn_up      (:,ilev+1) = trans(:,ilev) * radn_up    (:,ilev) +  source_up(:,ilev)
       do icol=1,ncol
@@ -1138,7 +1123,9 @@ subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
         radn_up_Jac(:,ilev+1) = trans(:,ilev) * radn_up_Jac(:,ilev)
     end do
 
-    ! 2st Downward propagation
+    ! Downward propagation
+    ! adjustment factor is obtained as a solution of 19 of the Tang paper
+    ! eqvivalent to Eq.21 of the Tang paper but for linear-in-tau source
     ! radn_dn_Jac(:,nlay+1) = 0._wp
     do ilev = nlay, 1, -1
       ! radn_dn_Jac(:,ilev) = trans(:,ilev)*radn_dn_Jac(:,ilev+1)

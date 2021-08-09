@@ -1,0 +1,13 @@
+#
+# Python modules below are needed to run tests and check results 
+#
+name: rte_rrtmgp
+dependencies:
+  - urllib3
+  - netcdf4
+  - xarray
+  - dask
+  - scipy
+  - matplotlib
+  - seaborn
+  - colorcet

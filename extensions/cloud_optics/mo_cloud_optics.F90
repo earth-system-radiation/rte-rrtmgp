@@ -19,6 +19,11 @@
 ! -------------------------------------------------------------------------------------------------
 
 module mo_cloud_optics
+
+!! \section arg_table_mo_cloud_optics
+!! \htmlinclude mo_cloud_optics.html
+!!
+
   use mo_rte_kind,      only: wp, wl
   use mo_rte_config,    only: check_values, check_extents
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
@@ -33,11 +38,10 @@ module mo_cloud_optics
   end interface pade_eval
   private
   ! -----------------------------------------------------------------------------------
-#if 0
-!! \section arg_table_mo_cloud_optics
-!! \htmlinclude mo_cloud_optics.html
+
+!! \section arg_table_ty_cloud_optics Argument Table
+!! \htmlinclude ty_cloud_optics.html
 !!
-#endif
   type, extends(ty_optical_props), public :: ty_cloud_optics
     private
     !

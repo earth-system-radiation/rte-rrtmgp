@@ -1,4 +1,15 @@
 [ccpp-table-properties]
+  name = ty_gas_optics_rrtmgp
+  type = ddt
+  dependencies =
+
+[ccpp-arg-table]
+  name = ty_gas_optics_rrtmgp
+  type = ddt
+
+########################################################################
+
+[ccpp-table-properties]
   name = mo_gas_optics_rrtmgp
   type = module
   dependencies = ../rte/mo_rte_kind.F90,mo_rrtmgp_constants.F90,../rte/mo_rte_util_array.F90,../rte/mo_optical_props.F90,../rte/mo_source_functions.F90,kernels/mo_gas_optics_kernels.F90
@@ -7,9 +18,10 @@
 [ccpp-arg-table]
   name = mo_gas_optics_rrtmgp
   type = module
+
 [ty_gas_optics_rrtmgp]
   standard_name = ty_gas_optics_rrtmgp
   long_name = definition of type ty_gas_optics_rrtmgp
-  units = DDT
+  units = ddt
   dimensions = ()
   type = ty_gas_optics_rrtmgp

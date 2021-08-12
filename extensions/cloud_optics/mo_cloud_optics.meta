@@ -1,4 +1,15 @@
 [ccpp-table-properties]
+  name = ty_cloud_optics
+  type = ddt
+  dependencies =
+
+[ccpp-arg-table]
+  name = ty_cloud_optics
+  type = ddt
+
+########################################################################
+
+[ccpp-table-properties]
   name = mo_cloud_optics
   type = module
   relative_path = ../../rte

@@ -1,4 +1,15 @@
 [ccpp-table-properties]
+  name = ty_source_func_lw
+  type = ddt
+  dependencies =
+
+[ccpp-arg-table]
+  name = ty_source_func_lw
+  type = ddt
+
+########################################################################
+
+[ccpp-table-properties]
   name = mo_source_functions
   type = module
   dependencies = mo_rte_kind.F90,mo_optical_props.F90

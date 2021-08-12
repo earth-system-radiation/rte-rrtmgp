@@ -1,4 +1,15 @@
 [ccpp-table-properties]
+  name = ty_gas_concs
+  type = ddt
+  dependencies =
+
+[ccpp-arg-table]
+  name = ty_gas_concs
+  type = ddt
+
+########################################################################
+
+[ccpp-table-properties]
   name = mo_gas_concentrations
   type = module
   dependencies = ../rte/mo_rte_kind.F90,../rte/mo_rte_util_array.F90,mo_rrtmgp_util_string.F90

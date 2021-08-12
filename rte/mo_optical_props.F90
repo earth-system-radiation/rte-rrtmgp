@@ -39,6 +39,11 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_optical_props
+
+!! \section arg_table_mo_optical_props Argument Table
+!! \htmlinclude mo_optical_props.html
+!!
+
   use mo_rte_kind,              only: wp
   use mo_rte_util_array,        only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props_kernels, only: &
@@ -159,10 +164,9 @@ module mo_optical_props
   !
   ! -------------------------------------------------------------------------------------------------
 
-!! \section arg_table_mo_optical_props Argument Table
-!! \htmlinclude mo_optical_props.html
+!! \section arg_table_ty_optical_props_1scl Argument Table
+!! \htmlinclude ty_optical_props_1scl.html
 !!
-
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_1scl
 
   contains
@@ -178,6 +182,9 @@ module mo_optical_props
   end type
 
   ! --- 2 stream ------------------------------------------------------------------------
+!! \section arg_table_ty_optical_props_2str Argument Table
+!! \htmlinclude ty_optical_props_2str.html
+!!
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_2str
     real(wp), dimension(:,:,:), allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
     real(wp), dimension(:,:,:), allocatable :: g   ! asymmetry parameter (ncol, nlay, ngpt)
@@ -194,6 +201,9 @@ module mo_optical_props
   end type
 
   ! --- n stream ------------------------------------------------------------------------
+!! \section arg_table_ty_optical_props_nstr Argument Table
+!! \htmlinclude ty_optical_props_nstr.html
+!!
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_nstr
     real(wp), dimension(:,:,:),   allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
     real(wp), dimension(:,:,:,:), allocatable :: p   ! phase-function moments (nmom, ncol, nlay, ngpt)

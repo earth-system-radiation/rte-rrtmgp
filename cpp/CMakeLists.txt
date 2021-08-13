@@ -19,12 +19,7 @@ add_library(rrtmgp STATIC ${CXX_SRC})
 target_link_libraries(rrtmgp yakl)
 
 # Special compile flags for C++ source
-set_source_files_properties(${CXX_SRC} PROPERTIES COMPILE_FLAGS "${CPPDEFS} ${YAKL_CXX_FLAGS}")
-if ("${ARCH}" STREQUAL "CUDA")
-  enable_language(CUDA)
-  set_source_files_properties(${CXX_SRC} PROPERTIES LANGUAGE CUDA)
-  set_target_properties(rrtmgp PROPERTIES LINKER_LANGUAGE CUDA CUDA_SEPARABLE_COMPILATION OFF CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-endif()
+process_cxx_source_files("${CXX_SRC}")
 target_include_directories(rrtmgp PUBLIC ${YAKL_HOME})
 target_include_directories(rrtmgp PUBLIC ./)
 target_include_directories(rrtmgp PUBLIC rte)

@@ -13,7 +13,7 @@ export NCFLAGS="`ncxx4-config --libs` `nc-config --libs`"
 export CC=gcc
 export CXX=g++
 export CXXFLAGS="-O3"
-export YAKL_CUDA_FLAGS="-arch sm_70 --std=c++14 --use_fast_math -O3"
+export YAKL_CUDA_FLAGS=""
 export YAKLHOME="/ccs/home/$USER/YAKL"
 
 # Set to jsrun, nvprof, or empty depending on how you want to run the tests

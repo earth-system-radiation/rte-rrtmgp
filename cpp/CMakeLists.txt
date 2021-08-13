@@ -19,7 +19,9 @@ add_library(rrtmgp STATIC ${CXX_SRC})
 target_link_libraries(rrtmgp yakl)
 
 # Special compile flags for C++ source
+include(${YAKL_HOME}/process_cxx_source_files.cmake)
 process_cxx_source_files("${CXX_SRC}")
+message(STATUS "YAKL Flags: ${YAKL_COMPILER_FLAGS}")
 target_include_directories(rrtmgp PUBLIC ${YAKL_HOME})
 target_include_directories(rrtmgp PUBLIC ./)
 target_include_directories(rrtmgp PUBLIC rte)

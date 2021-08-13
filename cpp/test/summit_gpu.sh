@@ -10,6 +10,9 @@ export CC=gcc
 export CXX=g++
 export CXXFLAGS="-O3"
 export ARCH="CUDA"
-export CUDA_ARCH="-arch sm_70 --std=c++14 --use_fast_math -O3"
+export YAKL_CUDA_FLAGS="-arch sm_70 --use_fast_math -O3"
 export CUBHOME="/ccs/home/$USER/cub"
 export YAKLHOME="/ccs/home/$USER/YAKL"
+
+# Set to jsrun, nvprof, or empty depending on how you want to run the tests
+export RUNCMD="jsrun -n 1 -a 1 -c 1 -g 1"

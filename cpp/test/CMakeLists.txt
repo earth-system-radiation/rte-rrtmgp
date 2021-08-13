@@ -3,7 +3,7 @@ project(standalone)
 
 enable_testing()
 
-if ("${ARCH}" STREQUAL "CUDA")
+if ("${YAKL_ARCH}" STREQUAL "CUDA")
   enable_language(CUDA)
 endif()
 

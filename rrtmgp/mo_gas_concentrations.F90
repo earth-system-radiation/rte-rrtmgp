@@ -30,6 +30,11 @@
 ! -------------------------------------------------------------------------------------------------
 
 module mo_gas_concentrations
+
+!! \section arg_table_mo_gas_concentrations Argument Table
+!! \htmlinclude mo_gas_concentrations.html
+!!
+
   use mo_rte_kind,           only: wp
   use mo_rte_config,         only: check_values
   use mo_rrtmgp_util_string, only: lower_case
@@ -41,8 +46,8 @@ module mo_gas_concentrations
     real(wp), dimension(:,:), pointer :: conc => NULL()
   end type conc_field
 
-!! \section arg_table_mo_gas_concentrations
-!! \htmlinclude mo_gas_concentrations.html
+!! \section arg_table_ty_gas_concs Argument Table
+!! \htmlinclude ty_gas_concs.html
 !!
   type, public :: ty_gas_concs
     !

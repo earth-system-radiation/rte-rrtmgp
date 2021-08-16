@@ -15,12 +15,17 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_source_functions
+
+!! \section arg_table_mo_source_functions Argument Table
+!! \htmlinclude mo_source_functions.html
+!!
+
   use mo_rte_kind,      only: wp
   use mo_optical_props, only: ty_optical_props
   implicit none
 
-!! \section arg_table_mo_source_functions Argument Table
-!! \htmlinclude mo_source_functions.html
+!! \section arg_table_ty_source_func_lw Argument Table
+!! \htmlinclude ty_source_func_lw.html
 !!
   ! -------------------------------------------------------------------------------------------------
   !

@@ -21,6 +21,10 @@
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_gas_optics_rrtmgp
+
+!! \section arg_table_mo_gas_optics_rrtmgp Argument Table
+!! \htmlinclude mo_gas_optics.html
+!!
   use mo_rte_kind,           only: wp, wl
   use mo_rte_config,         only: check_extents, check_values
   use mo_rte_util_array,     only: zero_array, any_vals_less_than, any_vals_outside, extents_are
@@ -39,11 +43,9 @@ module mo_gas_optics_rrtmgp
   private
   real(wp), parameter :: pi = acos(-1._wp)
 
-#if 0
-!! \section arg_table_mo_gas_optics_rrtmgp
-!! \htmlinclude mo_gas_optics.html
+!! \section arg_table_ty_gas_optics_rrtmgp Argument Table
+!! \htmlinclude ty_gas_optics_rrtmgp.html
 !!
-#endif
   type, extends(ty_gas_optics), public :: ty_gas_optics_rrtmgp
     private
     !

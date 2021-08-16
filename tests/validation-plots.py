@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sb
@@ -69,6 +70,7 @@ if __name__ == '__main__':
                                       reset_coords().swap_dims({"level":"plev"}).interp(plev=plev) for i in np.arange(0,  gp.site.size)], dim = 'site')
 
     cols = cc.glasbey_dark
+    mpl.rcParams["legend.frameon"] = False
     plev.load()
     gpi.load()
     lbli.load()
@@ -79,9 +81,10 @@ if __name__ == '__main__':
         #
         # Accuracy - 3-angle and single-angle
         #
-        variants = [[gpi.lw_flux_dn, gpi.lw_flux_dn_optang, gpi.lw_flux_dn_3ang, gpi.lw_flux_dn_2str],
-                    [gpi.lw_flux_up, gpi.lw_flux_up_optang, gpi.lw_flux_up_3ang, gpi.lw_flux_up_2str],
+        variants = [[gpi.lw_flux_dn, gpi.lw_flux_dn_alt, gpi.lw_flux_dn_optang, gpi.lw_flux_dn_3ang, gpi.lw_flux_dn_2str],
+                    [gpi.lw_flux_up, gpi.lw_flux_up_alt, gpi.lw_flux_up_optang, gpi.lw_flux_up_3ang, gpi.lw_flux_up_2str],
                     [gpi.lw_flux_net,
+                    gpi.lw_flux_net_alt,
                     gpi.lw_flux_dn_optang - gpi.lw_flux_up_optang,
                     gpi.lw_flux_dn_3ang   - gpi.lw_flux_up_3ang,
                     gpi.lw_flux_dn_2str   - gpi.lw_flux_up_2str]]
@@ -89,11 +92,11 @@ if __name__ == '__main__':
         titles = ["Accuracy wrt LBLRTM: LW down", "Accuracy wrt LBLRTM: LW up", "Accuracy: LW net"]
         for v, r, t in zip(variants, refs, titles):
             make_comparison_plot(v, \
-                                 labels = ["default", "optimal-angle", "3-angle", "2-stream"], \
+                                 labels = ["default","fewer-g-points", "optimal-angle", "3-angle", "2-stream"], \
                                  reference = r,            \
                                  vscale = plev/100.)
             plt.ylabel("Pressure (Pa)")
-            plt.xlabel("Error (W/m2), solid=mean, dash=RMS")
+            plt.xlabel("Error (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
             pdf.savefig()
             plt.close()
@@ -115,7 +118,7 @@ if __name__ == '__main__':
                                  reference = r,            \
                                  vscale = plev/100.)
             plt.ylabel("Pressure (Pa)")
-            plt.xlabel("Difference (W/m2), solid=mean, dash=RMS")
+            plt.xlabel("Difference (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
             pdf.savefig()
             plt.close()
@@ -127,16 +130,17 @@ if __name__ == '__main__':
         #
         # Accuracy comparison
         #
-        variants = [gpi.sw_flux_dn, gpi.sw_flux_up]
+        variants = [[gpi.sw_flux_dn, gpi.sw_flux_dn_alt],
+                    [gpi.sw_flux_up, gpi.sw_flux_up_alt]]
         refs =     [lbli.rsd,       lbli.rsu]
         titles = ["Accuracy: SW down", "Accuracy: SW up"]
         for v, r, t in zip(variants, refs, titles):
             make_comparison_plot(v, \
-                                 labels = "default", \
+                                 labels = ["default", "fewer-g-points"],\
                                  reference = r, \
                                  vscale = plev/100.)
             plt.ylabel("Pressure (Pa)")
-            plt.xlabel("Error (W/m2), solid=mean, dash=RMS")
+            plt.xlabel("Error (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
             pdf.savefig()
             plt.close()

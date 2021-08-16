@@ -1,3 +1,5 @@
 # About spectral data
 
-This directory contains _k_-distributions for use with RRTMGP. Files with names ending in `2018-12-04` are recommended for current scientific use. We are developing alternative _k_-distributions, using smaller numbers of _g_-points to reduce computational cost and memory usage, targeted to specific applications. Files with the `prototype` tag are a first iteration but are not meant for scientific application at this time.
+This directory contains _k_-distributions for use with RRTMGP. Files with names ending in `2018-12-04` use the full spectral resolution of 16 g-points in each band. Files ending with
+`210809` have half the spectral resolution (and hence take roughly half as much time to execute) but have somewhat larger errors. A more complete description of how the spectral
+resolution was reduced and what the error characteristics are is included in a forthcoming manuscript. 

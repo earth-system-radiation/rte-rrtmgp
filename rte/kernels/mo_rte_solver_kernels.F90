@@ -871,8 +871,10 @@ contains
         source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
         dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
       end do
+      if (j==nlay) then
+        source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)
+      endif
     end do
-    source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)
 
   end subroutine sw_dif_and_source
 ! ---------------------------------------------------------------

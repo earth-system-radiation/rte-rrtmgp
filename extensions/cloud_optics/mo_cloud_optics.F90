@@ -374,10 +374,10 @@ contains
                         optical_props) result(error_msg)
     class(ty_cloud_optics), &
               intent(in   ) :: this
-    real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud ice water path    (g/m2)
-                               ciwp  (:,:), &   ! cloud liquid water path (g/m2)
-                               reliq (:,:), &   ! cloud ice particle effective size (microns)
-                               reice (:,:)      ! cloud liquid particle effective radius (microns)
+    real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud liquid water path (g/m2)
+                               ciwp  (:,:), &   ! cloud ice water path    (g/m2)
+                               reliq (:,:), &   ! cloud liquid particle effective size (microns)
+                               reice (:,:)      ! cloud ice particle effective radius  (microns)
     class(ty_optical_props_arry), &
               intent(inout) :: optical_props
                                                ! Dimensions: (ncol,nlay,nbnd)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export NCFLAGS="`ncxx4-config --libs`"
+export NCFLAGS="`nc-config --libs`"
 export CC=gcc
 export CXX=g++
 export CXXFLAGS="-O3"

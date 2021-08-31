@@ -8,8 +8,8 @@ unset ARCH
 unset CUDA_ARCH
 unset CUBHOME
 
-export NCINCLUDE="`ncxx4-config --includedir`;`nc-config --includedir`" # must be semi-colon seperated
-export NCFLAGS="`ncxx4-config --libs` `nc-config --libs`"
+export NCINCLUDE="`nc-config --includedir`"
+export NCFLAGS="`nc-config --libs`"
 export CC=gcc
 export CXX=g++
 export CXXFLAGS="-O3"

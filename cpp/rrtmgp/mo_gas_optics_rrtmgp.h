@@ -941,7 +941,7 @@ public:
       // Get vmr if  gas is provided in ty_gas_concs
       for (int igas2 = lbound(gas_desc.gas_name,1) ; igas2 <= ubound(gas_desc.gas_name,1) ; igas2++) {
         if ( lower_case(this->gas_names(igas)) == lower_case(gas_desc.gas_name(igas2)) ) {
-           auto vmr_slice = vmr.slice<2>({COLON,COLON,igas});
+           real2d vmr_slice = vmr.slice<2>(COLON,COLON,igas);
            gas_desc.get_vmr(this->gas_names(igas), vmr_slice);
         }
       }
@@ -952,7 +952,7 @@ public:
     if (allocated(col_dry)) {
       col_dry_wk = col_dry;
     } else {
-      real2d col_dry_arr = this->get_col_dry(vmr.slice<2>({COLON,COLON,idx_h2o}),plev); // dry air column amounts computation
+      real2d col_dry_arr = this->get_col_dry(vmr.slice<2>(COLON,COLON,idx_h2o),plev); // dry air column amounts computation
       col_dry_wk = col_dry_arr;
     }
     // compute column gas amounts [molec/cm^2]

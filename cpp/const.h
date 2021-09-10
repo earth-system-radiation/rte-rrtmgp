@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cmath>
 
-template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
+template <class T, int rank, int myMem, int myAttr = yakl::attrManaged> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran,myAttr>;
 
 typedef double real;
 
@@ -27,15 +27,17 @@ using yakl::intrinsics::count;
 using yakl::intrinsics::allocated;
 using yakl::memHost;
 using yakl::memDevice;
+using yakl::attrManaged;
+using yakl::attrUnmanaged;
 
 
-typedef FArray<real,1,yakl::memDevice> umgReal1d;
-typedef FArray<real,2,yakl::memDevice> umgReal2d;
-typedef FArray<real,3,yakl::memDevice> umgReal3d;
-typedef FArray<real,4,yakl::memDevice> umgReal4d;
-typedef FArray<real,5,yakl::memDevice> umgReal5d;
-typedef FArray<real,6,yakl::memDevice> umgReal6d;
-typedef FArray<real,7,yakl::memDevice> umgReal7d;
+typedef FArray<real,1,yakl::memDevice,attrUnmanaged> umgReal1d;
+typedef FArray<real,2,yakl::memDevice,attrUnmanaged> umgReal2d;
+typedef FArray<real,3,yakl::memDevice,attrUnmanaged> umgReal3d;
+typedef FArray<real,4,yakl::memDevice,attrUnmanaged> umgReal4d;
+typedef FArray<real,5,yakl::memDevice,attrUnmanaged> umgReal5d;
+typedef FArray<real,6,yakl::memDevice,attrUnmanaged> umgReal6d;
+typedef FArray<real,7,yakl::memDevice,attrUnmanaged> umgReal7d;
 
 typedef FArray<real,1,yakl::memDevice> real1d;
 typedef FArray<real,2,yakl::memDevice> real2d;
@@ -53,13 +55,13 @@ typedef FArray<real,5,yakl::memHost> realHost5d;
 typedef FArray<real,6,yakl::memHost> realHost6d;
 typedef FArray<real,7,yakl::memHost> realHost7d;
 
-typedef FArray<int,1,yakl::memDevice> umgInt1d;
-typedef FArray<int,2,yakl::memDevice> umgInt2d;
-typedef FArray<int,3,yakl::memDevice> umgInt3d;
-typedef FArray<int,4,yakl::memDevice> umgInt4d;
-typedef FArray<int,5,yakl::memDevice> umgInt5d;
-typedef FArray<int,6,yakl::memDevice> umgInt6d;
-typedef FArray<int,7,yakl::memDevice> umgInt7d;
+typedef FArray<int,1,yakl::memDevice,attrUnmanaged> umgInt1d;
+typedef FArray<int,2,yakl::memDevice,attrUnmanaged> umgInt2d;
+typedef FArray<int,3,yakl::memDevice,attrUnmanaged> umgInt3d;
+typedef FArray<int,4,yakl::memDevice,attrUnmanaged> umgInt4d;
+typedef FArray<int,5,yakl::memDevice,attrUnmanaged> umgInt5d;
+typedef FArray<int,6,yakl::memDevice,attrUnmanaged> umgInt6d;
+typedef FArray<int,7,yakl::memDevice,attrUnmanaged> umgInt7d;
 
 typedef FArray<int,1,yakl::memDevice> int1d;
 typedef FArray<int,2,yakl::memDevice> int2d;
@@ -77,13 +79,13 @@ typedef FArray<int,5,yakl::memHost> intHost5d;
 typedef FArray<int,6,yakl::memHost> intHost6d;
 typedef FArray<int,7,yakl::memHost> intHost7d;
 
-typedef FArray<bool,1,yakl::memDevice> umgBool1d;
-typedef FArray<bool,2,yakl::memDevice> umgBool2d;
-typedef FArray<bool,3,yakl::memDevice> umgBool3d;
-typedef FArray<bool,4,yakl::memDevice> umgBool4d;
-typedef FArray<bool,5,yakl::memDevice> umgBool5d;
-typedef FArray<bool,6,yakl::memDevice> umgBool6d;
-typedef FArray<bool,7,yakl::memDevice> umgBool7d;
+typedef FArray<bool,1,yakl::memDevice,attrUnmanaged> umgBool1d;
+typedef FArray<bool,2,yakl::memDevice,attrUnmanaged> umgBool2d;
+typedef FArray<bool,3,yakl::memDevice,attrUnmanaged> umgBool3d;
+typedef FArray<bool,4,yakl::memDevice,attrUnmanaged> umgBool4d;
+typedef FArray<bool,5,yakl::memDevice,attrUnmanaged> umgBool5d;
+typedef FArray<bool,6,yakl::memDevice,attrUnmanaged> umgBool6d;
+typedef FArray<bool,7,yakl::memDevice,attrUnmanaged> umgBool7d;
 
 typedef FArray<bool,1,yakl::memDevice> bool1d;
 typedef FArray<bool,2,yakl::memDevice> bool2d;

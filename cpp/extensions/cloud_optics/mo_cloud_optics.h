@@ -304,9 +304,9 @@ public:
                              this->lut_extliq, this->lut_ssaliq, this->lut_asyliq, ltau, ltaussa, ltaussag);
       // Ice
       compute_all_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, this->ice_nsteps,this->ice_step_size,this->radice_lwr,
-                             this->lut_extice.slice<2>({COLON,COLON,this->icergh}),
-                             this->lut_ssaice.slice<2>({COLON,COLON,this->icergh}),
-                             this->lut_asyice.slice<2>({COLON,COLON,this->icergh}),
+                             this->lut_extice.slice<2>(COLON,COLON,this->icergh),
+                             this->lut_ssaice.slice<2>(COLON,COLON,this->icergh),
+                             this->lut_asyice.slice<2>(COLON,COLON,this->icergh),
                              itau, itaussa, itaussag);
     } else {
       // Cloud optical properties from Pade coefficient method
@@ -318,9 +318,9 @@ public:
                             2, 2, this->pade_sizreg_asyliq, this->pade_asyliq,
                             ltau, ltaussa, ltaussag);
       compute_all_from_pade(ncol, nlay, nbnd, nsizereg, icemsk, ciwp, reice,
-                           2, 3, this->pade_sizreg_extice, this->pade_extice.slice<3>({COLON,COLON,COLON,this->icergh}),
-                           2, 2, this->pade_sizreg_ssaice, this->pade_ssaice.slice<3>({COLON,COLON,COLON,this->icergh}),
-                           2, 2, this->pade_sizreg_asyice, this->pade_asyice.slice<3>({COLON,COLON,COLON,this->icergh}),
+                           2, 3, this->pade_sizreg_extice, this->pade_extice.slice<3>(COLON,COLON,COLON,this->icergh),
+                           2, 2, this->pade_sizreg_ssaice, this->pade_ssaice.slice<3>(COLON,COLON,COLON,this->icergh),
+                           2, 2, this->pade_sizreg_asyice, this->pade_asyice.slice<3>(COLON,COLON,COLON,this->icergh),
                            itau, itaussa, itaussag);
     }
 

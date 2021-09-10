@@ -12,6 +12,7 @@ cmake                                    \
   -DCMAKE_CXX_FLAGS="$CXXFLAGS"          \
   -DNCINCLUDE="$NCINCLUDE"               \
   -DNCFLAGS="$NCFLAGS"                   \
+  -DYAKL_CXX_FLAGS="${YAKL_CXX_FLAGS}"   \
   -DYAKL_CUDA_FLAGS="${YAKL_CUDA_FLAGS}" \
   -DYAKL_ARCH="$ARCH"                    \
   -DYAKL_HOME="$YAKLHOME"                \

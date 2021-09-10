@@ -2,15 +2,15 @@
 
 source $MODULESHOME/init/bash
 module purge
-module load DefApps gcc cmake cuda netcdf-cxx4 netcdf nco
+module load DefApps gcc cmake cuda netcdf-c nco
 
-export NCINCLUDE="`ncxx4-config --includedir`;`nc-config --includedir`" # must be semi-colon seperated
-export NCFLAGS="`ncxx4-config --libs` `nc-config --libs`"
+export NCINCLUDE="`nc-config --includedir`"
+export NCFLAGS="`nc-config --libs`"
 export CC=gcc
 export CXX=g++
 export CXXFLAGS="-O3"
 export ARCH="CUDA"
-export YAKL_CUDA_FLAGS="-arch sm_70 --use_fast_math -O3"
+export YAKL_CUDA_FLAGS="-arch sm_70 --use_fast_math -O3 -DTHRUST_IGNORE_CUB_VERSION_CHECK"
 export CUBHOME="/ccs/home/$USER/cub"
 export YAKLHOME="/ccs/home/$USER/YAKL"
 

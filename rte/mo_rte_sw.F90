@@ -161,6 +161,8 @@ contains
         else
           allocate(flux_dir_loc(ncol, nlay+1))
         end if
+        !$acc        enter data create(   flux_up_loc, flux_dn_loc, flux_dir_loc)
+        !$omp target enter data map(alloc:flux_up_loc, flux_dn_loc, flux_dir_loc)
       class default
         !
         ! If broadband integrals aren't being computed, allocate working space
@@ -297,6 +299,8 @@ contains
     !
     select type(fluxes)
       type is (ty_fluxes_broadband)
+        !$acc        exit data copyout( flux_up_loc, flux_dn_loc, flux_dir_loc)
+        !$omp target exit data map(from:flux_up_loc, flux_dn_loc, flux_dir_loc)
         if(.not. associated(fluxes%flux_up    )) deallocate(flux_up_loc)
         if(.not. associated(fluxes%flux_dn    )) deallocate(flux_dn_loc)
         if(.not. associated(fluxes%flux_dn_dir)) deallocate(flux_dir_loc)

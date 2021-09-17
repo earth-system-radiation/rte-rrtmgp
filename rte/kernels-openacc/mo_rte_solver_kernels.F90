@@ -146,8 +146,8 @@ contains
       end do
     end do
 
-    !$acc        data create(   An, Cn)                     if(do_rescaling)
-    !$omp target data map(alloc:An, Cn)                     if(do_rescaling)
+    !$acc        data create(   An, Cn)  copyin(g)          if(do_rescaling)
+    !$omp target data map(alloc:An, Cn)  map(to:g)          if(do_rescaling)
     !$acc        data copyin(sfc_srcJac) create(   gpt_Jac) if(do_Jacobians)
     !$omp target data map(to:sfc_srcJac) map(alloc:gpt_Jac) if(do_Jacobians)
 

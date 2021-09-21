@@ -92,7 +92,14 @@ contains
     real(wp), dimension(optical_props%get_ncol(),           &
                         optical_props%get_nlay()+1), target &
                                             :: decoy2D ! Used for optional outputs - needs to be full size.
-    real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
+    ! Memory needs to be allocated for the full g-point fluxes even if they aren't
+    !    used later because a) the GPU kernels use this memory to work in parallel and
+    !    b) the fluxes are intent(out) in the solvers
+    ! Shortwave solver takes a different approach since three fields are needed 
+    real(wp), dimension(optical_props%get_ncol(),   &
+                        optical_props%get_nlay()+1, &
+                        optical_props%get_ngpt())   &
+                                            :: gpt_flux_up, gpt_flux_dn
     real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc
     real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse
     ! --------------------------------------------------
@@ -115,22 +122,16 @@ contains
                              0.1355069134_wp, 0.2034645680_wp, 0.1298475476_wp, 0.0311809710_wp], &
                              [max_gauss_pts, max_gauss_pts])
     ! ------------------------------------------------------------------------------------
-    !
-    ! Error checking
-    !   if inc_flux is present it has the right dimensions, is positive definite
-    !
-    ! --------------------------------
     ncol  = optical_props%get_ncol()
     nlay  = optical_props%get_nlay()
     ngpt  = optical_props%get_ngpt()
     nband = optical_props%get_nband()
     do_Jacobians = present(flux_up_Jac)
     error_msg = ""
+
     ! ------------------------------------------------------------------------------------
     !
     ! Error checking -- input consistency of sizes and validity of values
-    !
-    ! --------------------------------
 
     if(.not. fluxes%are_desired()) &
       error_msg = "rte_lw: no space allocated for fluxes"
@@ -139,7 +140,6 @@ contains
       if( .not. extents_are(flux_up_Jac, ncol, nlay+1)) &
         error_msg = "rte_lw: flux Jacobian inconsistently sized"
     endif
-
 
     if (check_extents) then
       !
@@ -224,11 +224,27 @@ contains
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
       return
     end if
-    !
+
+    ! ------------------------------------------------------------------------------------
+    !  Boundary conditions
     !    Lower boundary condition -- expand surface emissivity by band to gpoints
     !
     allocate(sfc_emis_gpt(ncol,         ngpt))
 
+    !   Upper boundary condition -  use values in optional arg or be set to 0
+    !
+    if (present(inc_flux)) then
+      inc_flux_diffuse => inc_flux
+      !$acc        enter data copyin(   inc_flux_diffuse)
+      !$omp target enter data map(to:   inc_flux_diffuse)
+    else
+      allocate(inc_flux_diffuse(ncol, ngpt))
+      !$acc        enter data create(   inc_flux_diffuse)
+      !$omp target enter data map(alloc:inc_flux_diffuse)
+      call zero_array(ncol, ngpt, inc_flux_diffuse)
+    end if
+
+    ! ------------------------------------------------------------------------------------
     if(do_Jacobians) then
       jacobian => flux_up_Jac
     else
@@ -236,6 +252,11 @@ contains
     end if
 
     select type(fluxes)
+      !
+      ! Broadband fluxes are treated as a special case within the solvers; memory
+      !   for both up and down fluxes needs to be available even if the user doesn't
+      !   want one of them
+      !
       type is (ty_fluxes_broadband)
         do_broadband = .true._wl
         !
@@ -263,27 +284,7 @@ contains
         flux_up_loc  => decoy2D
         flux_dn_loc  => decoy2D
     end select
-    !
-    ! FIXME: Currently the GPU kernels use the gpt_flux_up/dn fields as working
-    !   memory even if broadband fluxes are requested. The GPU kernel might manage
-    !   this memory instead so the fields don't have to be allocated for the CPU kernels
-    !   OTOH these are intent(out) arguments to the kernel so might need to be full sized
-    !
-    allocate(gpt_flux_up (ncol,nlay+1,ngpt), &
-             gpt_flux_dn (ncol,nlay+1,ngpt))
-    !
-    !   Upper boundary condition -  use values in optional arg or be set to 0
-    !
-    if (present(inc_flux)) then
-      inc_flux_diffuse => inc_flux
-      !$acc        enter data copyin(   inc_flux_diffuse)
-      !$omp target enter data map(to:   inc_flux_diffuse)
-    else
-      allocate(inc_flux_diffuse(ncol, ngpt))
-      !$acc        enter data create(   inc_flux_diffuse)
-      !$omp target enter data map(alloc:inc_flux_diffuse)
-      call zero_array(ncol, ngpt, inc_flux_diffuse)
-    end if
+
     !
     ! Compute the radiative transfer...
     !
@@ -415,7 +416,7 @@ contains
           !
           error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
       end select
-    end if ! no error message from validation 
+    end if ! no error message from validation
     !$acc        end data
     !$omp end target data
 

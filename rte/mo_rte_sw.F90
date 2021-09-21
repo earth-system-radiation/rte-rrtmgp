@@ -197,16 +197,13 @@ contains
 
 
     ! ------------------------------------------------------------------------------------
-    ! Lower boundary condition -- expand surface albedos by band to gpoints
-    !   and switch dimension ordering
+    ! Boundary conditions
+    !   Lower boundary condition -- expand surface albedos by band to gpoints
+    !     and switch dimension ordering
     call expand_and_transpose(atmos, sfc_alb_dir, sfc_alb_dir_gpt)
     call expand_and_transpose(atmos, sfc_alb_dif, sfc_alb_dif_gpt)
-    ! ------------------------------------------------------------------------------------
     !
-    ! Compute the radiative transfer...
-    !
-    !
-    ! Diffuse flux boundary condition - will use values in optional arg or be set to 0
+    !   Diffuse flux boundary condition - will use values in optional arg or be set to 0
     !
     if (has_dif_bc) then
       inc_flux_diffuse => inc_flux_dif
@@ -218,8 +215,11 @@ contains
       !$omp target enter data map(alloc:inc_flux_diffuse)
       call zero_array(ncol, ngpt, inc_flux_diffuse)
     end if
-
+    ! ------------------------------------------------------------------------------------
     if(check_values) error_msg =  atmos%validate()
+    !
+    ! Compute the radiative transfer...
+    !
     if(len_trim(error_msg) == 0) then
       select type (atmos)
         class is (ty_optical_props_1scl)
@@ -260,7 +260,9 @@ contains
         if(len_trim(atmos%get_name()) > 0) &
           error_msg = trim(atmos%get_name()) // ': ' // trim(error_msg)
       end if
-
+      !
+      ! Flux reduction (summarizing for output)
+      !
       select type(fluxes)
         !
         ! Tidy up memory for broadband fluxes

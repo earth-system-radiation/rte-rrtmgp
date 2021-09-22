@@ -374,10 +374,10 @@ contains
                         optical_props) result(error_msg)
     class(ty_cloud_optics), &
               intent(in   ) :: this
-    real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud ice water path    (units?)
-                               ciwp  (:,:), &   ! cloud liquid water path (units?)
-                               reliq (:,:), &   ! cloud ice particle effective size (microns)
-                               reice (:,:)      ! cloud liquid particle effective radius (microns)
+    real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud liquid water path (g/m2)
+                               ciwp  (:,:), &   ! cloud ice water path    (g/m2)
+                               reliq (:,:), &   ! cloud liquid particle effective size (microns)
+                               reice (:,:)      ! cloud ice particle effective radius  (microns)
     class(ty_optical_props_arry), &
               intent(inout) :: optical_props
                                                ! Dimensions: (ncol,nlay,nbnd)
@@ -558,7 +558,7 @@ contains
       type is (ty_optical_props_nstr)
         error_msg = "cloud optics: n-stream calculations not yet supported"
       end select
-    end if 
+    end if
     !$acc end data
     !$omp end target data
   end function cloud_optics
@@ -643,7 +643,7 @@ contains
     integer  :: icol, ilay, ibnd
     integer  :: index
     real(wp) :: fint
-    real(wp) :: t, ts, tsg  ! tau, tau*ssa, tau*ssa*g
+    real(wp) :: t, ts  ! tau, tau*ssa, tau*ssa*g
     ! ---------------------------
     !$acc parallel loop gang vector default(present) collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
@@ -697,7 +697,7 @@ contains
                                     intent(in) :: coeffs_asy
     real(wp), dimension(ncol,nlay,nbnd)        :: tau, taussa, taussag
     ! ---------------------------
-    integer  :: icol, ilay, ibnd, irad, count
+    integer  :: icol, ilay, ibnd, irad
     real(wp) :: t, ts
 
     !$acc parallel loop gang vector default(present) collapse(3)

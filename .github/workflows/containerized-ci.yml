@@ -38,6 +38,7 @@ jobs:
         cd ${RRTMGP_ROOT}
         ${FC} --version
         make libs
+        make -C build separate-libs
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files

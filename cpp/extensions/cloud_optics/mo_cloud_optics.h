@@ -333,12 +333,13 @@ public:
 
   void combine( int nbnd, int nlay, int ncol, real3d const &ltau, real3d const &itau, real3d const &ltaussa, real3d const &itaussa,
                 real3d const &ltaussag, real3d const &itaussag, OpticalProps1scl &optical_props ) {
+    auto &optical_props_tau = optical_props.tau;
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
     parallel_for( Bounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       // Absorption optical depth  = (1-ssa) * tau = tau - taussa
-      optical_props.tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) +
+      optical_props_tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) +
                                           (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd));
     });
   }
@@ -347,15 +348,18 @@ public:
 
   void combine( int nbnd, int nlay, int ncol, real3d const &ltau, real3d const &itau, real3d const &ltaussa, real3d const &itaussa,
                 real3d const &ltaussag, real3d const &itaussag, OpticalProps2str &optical_props ) {
+    auto &optical_props_g   = optical_props.g  ;
+    auto &optical_props_ssa = optical_props.ssa;
+    auto &optical_props_tau = optical_props.tau;
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
     parallel_for( Bounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       real tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd);
       real taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd);
-      optical_props.g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / max(epsilon(tau), taussa);
-      optical_props.ssa(icol,ilay,ibnd) = taussa / max(epsilon(tau), tau);
-      optical_props.tau(icol,ilay,ibnd) = tau;
+      optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / max(epsilon(tau), taussa);
+      optical_props_ssa(icol,ilay,ibnd) = taussa / max(epsilon(tau), tau);
+      optical_props_tau(icol,ilay,ibnd) = tau;
     });
   }
 

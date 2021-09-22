@@ -80,7 +80,7 @@ public:
   }
 
 
-  YAKL_INLINE bool is_initialized() const { return allocated(this->band2gpt); }
+  bool is_initialized() const { return allocated(this->band2gpt); }
 
 
   // Base class: finalize (deallocate memory)
@@ -93,14 +93,14 @@ public:
 
 
   // Number of bands
-  YAKL_INLINE int get_nband() const {
+  int get_nband() const {
     if (this->is_initialized()) { return size(this->band2gpt,2); }
     return 0;
   }
 
 
   // Number of g-points
-  YAKL_INLINE int get_ngpt() const {
+  int get_ngpt() const {
     if (this->is_initialized()) { return this->ngpt; }
     return 0;
   }
@@ -164,8 +164,9 @@ public:
     // for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
     //   for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
     auto &this_band_lims_wvn = this->band_lims_wvn;
+    auto &rhs_band_lims_wvn  = rhs.band_lims_wvn;
     parallel_for( Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-      if ( abs( this_band_lims_wvn(i,j) - rhs.band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
+      if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
         ret = false;
       }
     });
@@ -180,8 +181,9 @@ public:
     yakl::ScalarLiveOut<bool> ret(true);
     // for (int i=1; i <= size(this->gpt2bnd,1); i++) {
     auto &this_gpt2band = this->gpt2band;
+    auto &rhs_gpt2band  = rhs.gpt2band;
     parallel_for( Bounds<1>(size(this->gpt2band,1)) , YAKL_LAMBDA (int i) {
-      if ( this_gpt2band(i) != rhs.gpt2band(i) ) { ret = false; }
+      if ( this_gpt2band(i) != rhs_gpt2band(i) ) { ret = false; }
     });
     return ret.hostRead();
   }
@@ -193,8 +195,9 @@ public:
     // do iband=1,this->get_nband()
     // TODO: I don't know if this needs to be serialize or not at first glance. Need to look at it more.
     auto &this_band2gpt = this->gpt2band;
+    int nband = get_nband();
     parallel_for( Bounds<1>(1) , YAKL_LAMBDA (int dummy) {
-      for (int iband = 1 ; iband <= get_nband() ; iband++) {
+      for (int iband = 1 ; iband <= nband ; iband++) {
         for (int i=this_band2gpt(1,iband) ; i <= this_band2gpt(2,iband) ; i++) {
           ret(i) = arr_in(iband);
         }
@@ -216,8 +219,8 @@ class OpticalPropsArry : public OpticalProps {
 public:
   real3d tau; // optical depth (ncol, nlay, ngpt)
 
-  YAKL_INLINE int get_ncol() const { if (allocated(tau)) { return size(this->tau,1); } else { return 0; } }
-  YAKL_INLINE int get_nlay() const { if (allocated(tau)) { return size(this->tau,2); } else { return 0; } }
+  int get_ncol() const { if (allocated(tau)) { return size(this->tau,1); } else { return 0; } }
+  int get_nlay() const { if (allocated(tau)) { return size(this->tau,2); } else { return 0; } }
 };
 
 

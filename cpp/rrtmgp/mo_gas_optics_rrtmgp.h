@@ -1037,10 +1037,11 @@ public:
                           this->get_gpoint_bands(), this->get_band_lims_gpoint(), this->planck_frac, this->temp_ref_min,
                           this->totplnk_delta, this->totplnk, this->gpoint_flavor, sfc_source_t, lay_source_t, lev_source_inc_t,
                           lev_source_dec_t);
+    auto &sources_sfc_source = sources.sfc_source;
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
     parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
-      sources.sfc_source(icol,igpt) = sfc_source_t(igpt,icol);
+      sources_sfc_source(icol,igpt) = sfc_source_t(igpt,icol);
     });
     reorder123x321(ngpt, nlay, ncol, lay_source_t    , sources.lay_source    );
     reorder123x321(ngpt, nlay, ncol, lev_source_inc_t, sources.lev_source_inc);

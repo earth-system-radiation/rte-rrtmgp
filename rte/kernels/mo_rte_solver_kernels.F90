@@ -308,7 +308,7 @@ contains
     real(wp), dimension(:,:,:), pointer :: this_flux_up,      this_flux_dn
     real(wp), dimension(:,:),   pointer :: this_broadband_up, this_broadband_dn, this_flux_upJac
 
-    integer :: imu, top_level
+    integer :: imu
     ! ------------------------------------
     !
     ! For the first angle output arrays store total flux

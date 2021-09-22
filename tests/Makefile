@@ -67,4 +67,4 @@ check:
 	python verification.py
 
 clean:
-	-rm clear_sky_regression *.o *.optrpt
+	-rm clear_sky_regression *.o *.optrpt *.mod

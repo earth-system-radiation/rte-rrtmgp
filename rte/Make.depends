@@ -39,7 +39,7 @@ mo_fluxes.o:                    mo_rte_kind.o mo_fluxes_broadband_kernels.o mo_r
 #
 # Radiative transfer
 #
-mo_rte_solver_kernels.o:        mo_rte_kind.o mo_rte_solver_kernels.F90
+mo_rte_solver_kernels.o:        mo_rte_kind.o mo_rte_util_array.o mo_rte_solver_kernels.F90
 
 mo_rte_lw.o: mo_rte_kind.o \
   mo_rte_config.o \
@@ -56,4 +56,5 @@ mo_rte_sw.o: mo_rte_kind.o \
 	mo_optical_props.o  \
   mo_source_functions.o \
 	mo_fluxes.o \
+  mo_rte_solver_kernels.o \
 	mo_rte_sw.F90

@@ -15,7 +15,7 @@ rrtmgp_suffix = "_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"
 def construct_esgf_remote_name(var):
     #
     # For a given variable name, provide the OpenDAP URL for the RTE+RRTMGP RFMIP results
-    #   This doesn't seem to work on CSCS Piz Daint within the netcdf-python module 
+    #   This doesn't seem to work on CSCS Piz Daint within the netcdf-python module
     #
     esgf_url_base = "http://esgf3.dkrz.de/thredds/dodsC/cmip6/RFMIP/RTE-RRTMGP-Consortium/RTE-RRTMGP-181204/rad-irf/r1i1p1f1/Efx/"
     # DKRZ server has been unstable - better to try the other if one fails
@@ -61,9 +61,9 @@ if __name__ == '__main__':
     failed = False
     for v in vars:
       if np.all(np.isnan(tst.variables[v].values)):
-        raise Exception(var + ": all test values are missing. Were the tests run?")
+        raise Exception(v + ": all test values are missing. Were the tests run?")
       if np.any(np.isnan(tst.variables[v].values)):
-        raise Exception(var + ": some test values are missing. Now that is strange.")
+        raise Exception(v + ": some test values are missing. Now that is strange.")
 
       diff = abs((tst-ref).variables[v].values)
       avg  = 0.5*(tst+ref).variables[v].values

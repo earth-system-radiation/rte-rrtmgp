@@ -170,14 +170,17 @@ contains
     character(len=128)                   :: err_msg
 
     integer :: varid
+    integer :: stat
 
     err_msg = ""
     if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) then
       err_msg = "write_field: can't find variable " // trim(varName)
       return
     end if
-    if(nf90_put_var(ncid, varid, var)  /= NF90_NOERR) &
-      err_msg = "write_field: can't write variable " // trim(varName)
+    stat = nf90_put_var(ncid, varid, var)
+    if(stat /= NF90_NOERR) &
+      err_msg = "write_field: can't write variable " // trim(varName) // &
+      " netcdf err: " // nf90_strerror(stat)
 
   end function write_2d_field
   !--------------------------------------------------------------------------------------------------------------------
@@ -188,14 +191,17 @@ contains
     character(len=128)                     :: err_msg
 
     integer :: varid
+    integer :: stat
 
     err_msg = ""
     if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) then
       err_msg = "write_field: can't find variable " // trim(varName)
       return
     end if
-    if(nf90_put_var(ncid, varid, var)  /= NF90_NOERR) &
-      err_msg = "write_field: can't write variable " // trim(varName)
+    stat = nf90_put_var(ncid, varid, var)
+    if(stat /= NF90_NOERR) &
+      err_msg = "write_field: can't write variable " // trim(varName) // &
+      " netcdf err: " // nf90_strerror(stat)
 
   end function write_3d_field
   !--------------------------------------------------------------------------------------------------------------------
@@ -206,14 +212,17 @@ contains
     character(len=128)                     :: err_msg
 
     integer :: varid
+    integer :: stat
 
     err_msg = ""
     if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) then
       err_msg = "write_field: can't find variable " // trim(varName)
       return
     end if
-    if(nf90_put_var(ncid, varid, var)  /= NF90_NOERR) &
-      err_msg = "write_field: can't write variable " // trim(varName)
+    stat = nf90_put_var(ncid, varid, var)
+    if(stat /= NF90_NOERR) &
+      err_msg = "write_field: can't write variable " // trim(varName) // &
+      " netcdf err: " // nf90_strerror(stat)
 
   end function write_4d_field
   !--------------------------------------------------------------------------------------------------------------------

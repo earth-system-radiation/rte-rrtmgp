@@ -35,7 +35,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
 end subroutine vmr_2d_to_1d
 ! ----------------------------------------------------------------------------------
 program rte_rrtmgp_clouds
-  use mo_rte_kind,           only: wp, i8
+  use mo_rte_kind,           only: wp, i8, wl
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
@@ -49,6 +49,7 @@ program rte_rrtmgp_clouds
   use mo_load_cloud_coefficients, &
                              only: load_cld_lutcoeff, load_cld_padecoeff
   use mo_garand_atmos_io,    only: read_atmos, write_lw_fluxes, write_sw_fluxes
+  use mo_rte_config,         only: rte_config_checks
   implicit none
   ! ----------------------------------------------------------------------------------
   ! Variables
@@ -338,6 +339,9 @@ program rte_rrtmgp_clouds
   !
   !!$omp parallel do firstprivate(fluxes)
   do iloop = 1, nloops
+    ! Omit the checks starting with the second iteration
+    if (iloop == 2) call rte_config_checks(logical(.false., wl))
+
     call system_clock(start)
     call stop_on_err(                                      &
       cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
@@ -347,8 +351,10 @@ program rte_rrtmgp_clouds
     fluxes%flux_up => flux_up(:,:)
     fluxes%flux_dn => flux_dn(:,:)
     if(is_lw) then
-      !$acc enter data create(lw_sources, lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source)
-      !$omp target enter data map(alloc:lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source)
+      !$acc        data create(   lw_sources, lw_sources%lay_source,     lw_sources%lev_source_inc) &
+      !$acc             create(               lw_sources%lev_source_dec, lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
+      !$omp target data map(alloc:            lw_sources%lay_source,     lw_sources%lev_source_inc) &
+      !$omp             map(alloc:            lw_sources%lev_source_dec, lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
       call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
                                          t_lay, t_sfc, &
                                          gas_concs,    &
@@ -360,10 +366,11 @@ program rte_rrtmgp_clouds
                               lw_sources,      &
                               emis_sfc,        &
                               fluxes))
-      !$acc exit data delete(lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source, lw_sources)
-      !$omp target exit data map(release:lw_sources%lay_source, lw_sources%lev_source_inc, lw_sources%lev_source_dec, lw_sources%sfc_source)
+      !$acc        end data
+      !$omp end target data
+
     else
-      !$acc enter data create(toa_flux)
+      !$acc        enter data create(   toa_flux)
       !$omp target enter data map(alloc:toa_flux)
       fluxes%flux_dn_dir => flux_dir(:,:)
 
@@ -378,7 +385,7 @@ program rte_rrtmgp_clouds
                               mu0,   toa_flux, &
                               sfc_alb_dir, sfc_alb_dif, &
                               fluxes))
-      !$acc exit data delete(toa_flux)
+      !$acc        exit data delete(     toa_flux)
       !$omp target exit data map(release:toa_flux)
     end if
     !print *, "******************************************************************"

@@ -1,10 +1,12 @@
-RRTMGP_SRC = \
+RRTMGP_FORTRAN_KERNELS = \
+  mo_rrtmgp_util_reorder_kernels.o \
+  mo_gas_optics_kernels.o
+
+RRTMGP_FORTRAN_INTERFACE = \
   mo_rrtmgp_util_string.o \
 	mo_rrtmgp_constants.o \
-  mo_rrtmgp_util_reorder_kernels.o \
   mo_rrtmgp_util_reorder.o \
   mo_gas_concentrations.o \
-  mo_gas_optics_kernels.o \
   mo_gas_optics.o \
   mo_gas_optics_rrtmgp.o
 

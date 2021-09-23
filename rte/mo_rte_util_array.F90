@@ -84,7 +84,7 @@ contains
     dim1 = size(array,1)
     dim2 = size(array,2)
     dim3 = size(array,3)
-    minValue = array(1,1,1) ! initialize to some value
+    minValue = check_value + epsilon(check_value) ! initialize to some value
     !$omp target teams map(to:array) &
     !$omp defaultmap(tofrom:scalar) reduction(min:minValue)
     !$omp distribute parallel do simd reduction(min:minValue)
@@ -207,8 +207,8 @@ contains
     dim1 = size(array,1)
     dim2 = size(array,2)
     dim3 = size(array,3)
-    minValue = array(1,1,1) ! initialize to some value
-    maxValue = array(1,1,1) ! initialize to some value
+    minValue = checkMin + epsilon(checkMin) ! initialize to some value
+    maxValue = checkMax - epsilon(checkMax) ! initialize to some value
     !$omp target teams map(to:array) &
     !$omp defaultmap(tofrom:scalar) reduction(min:minValue) reduction(max:maxValue)
     !$omp distribute parallel do simd reduction(min:minValue) reduction(max:maxValue)
@@ -370,7 +370,7 @@ contains
     integer :: i
     ! -----------------------
     !$acc parallel loop copyout(array)
-    !$omp target teams distribute parallel do simd map(from:array) 
+    !$omp target teams distribute parallel do simd map(from:array)
     do i = 1, ni
       array(i) = 0.0_wp
     end do

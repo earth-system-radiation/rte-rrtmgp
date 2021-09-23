@@ -253,7 +253,7 @@ contains
     real(wp),    dimension(2,2,2,get_nflav(this),size(play,dim=1), size(play,dim=2)) :: fmajor
     integer,     dimension(2,    get_nflav(this),size(play,dim=1), size(play,dim=2)) :: jeta
 
-    integer :: ncol, nlay, ngpt, nband, ngas, nflav
+    integer :: ncol, nlay, ngpt, nband
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)
@@ -549,12 +549,15 @@ contains
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
-    col_dry_wk => col_dry_arr
-    !$acc enter data create(col_dry_wk, col_dry_arr, col_gas)
-    !$omp target enter data map(alloc:col_dry_wk, col_dry_arr, col_gas)
+    !$acc enter data create(col_gas)
+    !$omp target enter data map(alloc:col_gas)
     if (present(col_dry)) then
+      !$acc enter data copyin(col_dry)
+      !$omp target enter data map(to:col_dry)
       col_dry_wk => col_dry
     else
+      !$acc enter data create(col_dry_arr)
+      !$omp target enter data map(alloc:col_dry_arr)
       col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
       col_dry_wk => col_dry_arr
     end if
@@ -641,8 +644,8 @@ contains
             jeta,jtemp,jpress,                       &
             tau)
     if (allocated(this%krayl)) then
-      !$acc enter data attach(col_dry_wk) copyin(this%krayl)
-      !$omp target enter data map(to:col_dry_wk) map(to:this%krayl)
+      !$acc enter data copyin(this%krayl)
+      !$omp target enter data map(to:this%krayl)
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
@@ -652,8 +655,8 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
-      !$acc exit data detach(col_dry_wk) delete(this%krayl)
-      !$omp target exit data map(from:col_dry_wk) map(release:this%krayl)
+      !$acc exit data delete(this%krayl)
+      !$omp target exit data map(release:this%krayl)
     end if
     if (error_msg /= '') return
 
@@ -663,8 +666,8 @@ contains
     !$omp target exit data map(release:play, tlay, plev)
     !$acc exit data delete(tau, tau_rayleigh)
     !$omp target exit data map(release:tau, tau_rayleigh)
-    !$acc exit data delete(col_dry_wk, col_dry_arr, col_gas, col_mix, fminor)
-    !$omp target exit data map(release:col_dry_wk, col_dry_arr, col_gas, col_mix, fminor)
+    !$acc exit data delete(col_dry_wk, col_gas, col_mix, fminor)
+    !$omp target exit data map(release:col_dry_wk, col_gas, col_mix, fminor)
     !$acc exit data delete(this%gpoint_flavor)
     !$omp target exit data map(release:this%gpoint_flavor)
     !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
@@ -827,8 +830,8 @@ contains
     !$acc enter data copyin(sources)
     !$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
     !$omp target enter data map(alloc:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) attach(tlev_wk)
-    !$omp target enter data map(alloc:sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) map(to:tlev_wk)
+    !$acc enter data create(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
+    !$omp target enter data map(alloc:sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
     !$acc enter data create(sfc_source_Jac)
     !$omp target enter data map(alloc:sfc_source_Jac)
     !$acc enter data create(sources%sfc_source_Jac)
@@ -857,8 +860,8 @@ contains
     !
     !$acc exit data delete(sfc_source_Jac)
     !$omp target exit data map(release:sfc_source_Jac)
-    !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) detach(tlev_wk)
-    !$omp target exit data map(release:sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t) map(from:tlev_wk)
+    !$acc exit data delete(sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
+    !$omp target exit data map(release:sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t)
     !$acc exit data copyout(sources%sfc_source_Jac)
     !$omp target exit data map(from:sources%sfc_source_Jac)
     !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
@@ -1230,6 +1233,8 @@ contains
       allocate(this%krayl(size(rayl_lower,dim=1),size(rayl_lower,dim=2),size(rayl_lower,dim=3),2))
       this%krayl(:,:,:,1) = rayl_lower
       this%krayl(:,:,:,2) = rayl_upper
+      !$acc enter data copyin(this%krayl)
+      !$omp target enter data map(to:this%krayl)
     end if
 
     ! ---- post processing ----
@@ -1555,8 +1560,8 @@ contains
     integer :: ibnd, iatm, i, iflavor
     ! prepare list of key_species
     i = 1
-    do ibnd=1,size(key_species,3)
-      do iatm=1,size(key_species,1)
+    do ibnd=1,size(key_species,3)   ! bands
+      do iatm=1,size(key_species,2) ! upper/lower atmosphere
         key_species_list(:,i) = key_species(:,iatm,ibnd)
         i = i + 1
       end do
@@ -1607,6 +1612,8 @@ contains
           idx_minor_atm(imnr) = string_loc_in_array(gas_minor(idx_mnr),    gas_names)
     enddo
 
+    !$acc enter data copyin(idx_minor_atm)
+    !$omp target enter data map(to:idx_minor_atm)
   end subroutine create_idx_minor
 
   ! ---------------------------------------------------------------------------------------
@@ -1628,6 +1635,8 @@ contains
           idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm(imnr), gas_names)
     enddo
 
+    !$acc enter data copyin(idx_minor_scaling_atm)
+    !$omp target enter data map(to:idx_minor_scaling_atm)
   end subroutine create_idx_minor_scaling
   ! ---------------------------------------------------------------------------------------
   subroutine create_key_species_reduce(gas_names,gas_names_red, &
@@ -1778,9 +1787,10 @@ contains
         endif
       enddo
     endif
-    !$acc enter data copyin(kminor_atm_red)
-    !$omp target enter data map(to:kminor_atm_red)
-
+    !$acc enter data copyin(kminor_atm_red, kminor_start_atm_red, minor_limits_gpt_atm_red, &
+    !$acc                   minor_scales_with_density_atm_red, scale_by_complement_atm_red)
+    !$omp target enter data map(to:kminor_atm_red, kminor_start_atm_red, minor_limits_gpt_atm_red, &
+    !$omp                   minor_scales_with_density_atm_red, scale_by_complement_atm_red)
   end subroutine reduce_minor_arrays
 
 ! ---------------------------------------------------------------------------------------

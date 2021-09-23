@@ -170,14 +170,17 @@ contains
     character(len=128)                   :: err_msg
 
     integer :: varid
+    integer :: stat
 
     err_msg = ""
     if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) then
       err_msg = "write_field: can't find variable " // trim(varName)
       return
     end if
-    if(nf90_put_var(ncid, varid, var)  /= NF90_NOERR) &
-      err_msg = "write_field: can't write variable " // trim(varName)
+    stat = nf90_put_var(ncid, varid, var)
+    if(stat /= NF90_NOERR) &
+      err_msg = "write_field: can't write variable " // trim(varName) // &
+      " netcdf err: " // nf90_strerror(stat)
 
   end function write_2d_field
   !--------------------------------------------------------------------------------------------------------------------
@@ -188,14 +191,17 @@ contains
     character(len=128)                     :: err_msg
 
     integer :: varid
+    integer :: stat
 
     err_msg = ""
     if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) then
       err_msg = "write_field: can't find variable " // trim(varName)
       return
     end if
-    if(nf90_put_var(ncid, varid, var)  /= NF90_NOERR) &
-      err_msg = "write_field: can't write variable " // trim(varName)
+    stat = nf90_put_var(ncid, varid, var)
+    if(stat /= NF90_NOERR) &
+      err_msg = "write_field: can't write variable " // trim(varName) // &
+      " netcdf err: " // nf90_strerror(stat)
 
   end function write_3d_field
   !--------------------------------------------------------------------------------------------------------------------
@@ -206,34 +212,19 @@ contains
     character(len=128)                     :: err_msg
 
     integer :: varid
+    integer :: stat
 
     err_msg = ""
     if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) then
       err_msg = "write_field: can't find variable " // trim(varName)
       return
     end if
-    if(nf90_put_var(ncid, varid, var)  /= NF90_NOERR) &
-      err_msg = "write_field: can't write variable " // trim(varName)
+    stat = nf90_put_var(ncid, varid, var)
+    if(stat /= NF90_NOERR) &
+      err_msg = "write_field: can't write variable " // trim(varName) // &
+      " netcdf err: " // nf90_strerror(stat)
 
   end function write_4d_field
-  !--------------------------------------------------------------------------------------------------------------------
-  function write_string(ncid, varName, var) result(err_msg)
-    integer,                    intent(in) :: ncid
-    character(len=*),           intent(in) :: varName
-    character(len=*),           intent(in) :: var
-    character(len=128)                     :: err_msg
-
-    integer :: varid
-
-    err_msg = ""
-    if(nf90_inq_varid(ncid, trim(varName), varid) /= NF90_NOERR) then
-      err_msg = "write_field: can't find variable " // trim(varName)
-      return
-    end if
-    if(nf90_put_var(ncid, varid, var)  /= NF90_NOERR) &
-      err_msg = "write_field: can't write variable " // trim(varName)
-
-  end function write_string
   !--------------------------------------------------------------------------------------------------------------------
   function read_logical_vec(ncid, varName, nx)
     integer,          intent(in) :: ncid
@@ -308,7 +299,7 @@ contains
     character(len=*), intent(in) :: dimName
     integer,          intent(in) :: dimLength
 
-    integer                 :: i, dimid
+    integer                 :: dimid
 
     if(dim_exists(ncid, dimName)) then
       if (dimLength /= get_dim_size(ncid, trim(dimName))) &
@@ -415,7 +406,7 @@ contains
     character(len=*), intent(in) :: msg
     if(len_trim(msg) > 0) then
       write(error_unit,*) trim(msg)
-      stop
+      error stop 1
     end if
   end subroutine
   !--------------------------------------------------------------------------------------------------------------------

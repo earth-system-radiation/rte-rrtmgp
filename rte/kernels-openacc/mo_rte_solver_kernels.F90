@@ -246,14 +246,7 @@ contains
     if (do_Jacobians) then
       call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, gpt_Jac, flux_upJac)
     end if
-    !$acc        exit data copyout( radn_dn,radn_up)
-    !$omp target exit data map(from:radn_dn,radn_up)
-    !$acc        exit data delete(     d,tau,sfc_src,sfc_emis,lev_source_dec,lev_source_inc,lay_source,tau_loc,trans,source_dn,source_up)
-    !$omp target exit data map(release:d, tau, sfc_src, sfc_emis, lev_source_dec, lev_source_inc, lay_source, tau_loc, trans, source_dn, source_up)
-    !$acc        exit data detach(  lev_source_up,lev_source_dn)
-    !$omp target exit data map(from:lev_source_up, lev_source_dn)
-    !$acc        exit data delete(     An, Cn) if(do_rescaling)
-    !$omp target exit data map(release:An, Cn) if(do_rescaling)
+
     !$acc        end data
     !$omp end target data
     !$acc        end data

@@ -43,6 +43,7 @@ module mo_gas_optics_rrtmgp
   private
   real(wp), parameter :: pi = acos(-1._wp)
 
+  ! -------------------------------------------------------------------------------------------------
 !! \section arg_table_ty_gas_optics_rrtmgp Argument Table
 !! \htmlinclude ty_gas_optics_rrtmgp.html
 !!

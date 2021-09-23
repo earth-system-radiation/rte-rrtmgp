@@ -218,24 +218,24 @@ contains
     nlay = size(randoms, 2)
     ngpt = size(randoms, 1)
     if(any([ncol,nlay] /= [size(cloud_frac, 1),size(cloud_frac, 2)]))  then
-      error_msg = "sampled_mask_exp_ran: sizes of randoms(ngpt,nlay,ncol) and cloud_frac(ncol,nlay) are inconsistent"
+      error_msg = "sampled_mask_max_ran: sizes of randoms(ngpt,nlay,ncol) and cloud_frac(ncol,nlay) are inconsistent"
       return
     end if
     if(any([ncol,nlay-1] /= [size(overlap_param, 1),size(overlap_param, 2)]))  then
-      error_msg = "sampled_mask_exp_ran: sizes of randoms(ngpt,nlay,ncol) and overlap_param(ncol,nlay-1) are inconsistent"
+      error_msg = "sampled_mask_max_ran: sizes of randoms(ngpt,nlay,ncol) and overlap_param(ncol,nlay-1) are inconsistent"
       return
     end if
     if(any([ncol,nlay,ngpt] /= [size(cloud_mask, 1),size(cloud_mask, 2), size(cloud_mask,3)]))  then
-      error_msg = "sampled_mask_exp_ran: sizes of randoms(ngpt,nlay,ncol) and cloud_mask(ncol,nlay,ngpt) are inconsistent"
+      error_msg = "sampled_mask_max_ran: sizes of randoms(ngpt,nlay,ncol) and cloud_mask(ncol,nlay,ngpt) are inconsistent"
       return
     end if
 
     if(any(cloud_frac > 1._wp) .or. any(cloud_frac < 0._wp)) then
-      error_msg = "sampled_mask_exp_ran: cloud fraction values out of range [0,1]"
+      error_msg = "sampled_mask_max_ran: cloud fraction values out of range [0,1]"
       return
     end if
     if(any(overlap_param > 1._wp) .or. any(overlap_param < -1._wp)) then
-      error_msg = "sampled_mask_exp_ran: overlap_param values out of range [-1,1]"
+      error_msg = "sampled_mask_max_ran: overlap_param values out of range [-1,1]"
       return
     end if
     !

@@ -21,8 +21,6 @@ module mo_fluxes_byband
   use mo_rte_util_array,only: extents_are
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_optical_props, only: ty_optical_props
-  use mo_fluxes_byband_kernels, &
-                        only: sum_byband, net_byband
   implicit none
 
   ! Output from radiation calculations
@@ -37,6 +35,11 @@ module mo_fluxes_byband
     procedure :: reduce => reduce_byband
     procedure :: are_desired => are_desired_byband
   end type ty_fluxes_byband
+
+  interface net_byband
+    module procedure net_byband_full, net_byband_precalc
+  end interface net_byband
+
 contains
   ! --------------------------------------------------------------------------------------
   function reduce_byband(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
@@ -87,7 +90,7 @@ contains
         if(.not. extents_are(this%bnd_flux_net, ncol, nlev, nbnd)) &
           error_msg = "reduce: bnd_flux_net array incorrectly sized (can't compute net flux either)"
       end if
-      if(error_msg /= "") return 
+      if(error_msg /= "") return
     end if
     !
     ! Self-consistency -- shouldn't be asking for direct beam flux if it isn't supplied
@@ -145,5 +148,71 @@ contains
                               associated(this%bnd_flux_net),    &
                               this%ty_fluxes_broadband%are_desired()])
   end function are_desired_byband
+
+  ! ----------------------------------------------------------------------------
+  ! Kernels (private to this module) 
+  ! ----------------------------------------------------------------------------
+  !
+  ! Spectral reduction over all points
+  !
+  subroutine sum_byband(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux, byband_flux) bind (C)
+    integer,                               intent(in ) :: ncol, nlev, ngpt, nbnd
+    integer,  dimension(2,          nbnd), intent(in ) :: band_lims
+    real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux
+    real(wp), dimension(ncol, nlev, nbnd), intent(out) :: byband_flux
+
+    integer :: icol, ilev, igpt, ibnd
+    !$acc parallel loop collapse(3) copyin(spectral_flux, band_lims) copyout(byband_flux)
+    !$omp target teams distribute parallel do collapse(3) map(to:spectral_flux, band_lims) map(from:byband_flux)
+    do ibnd = 1, nbnd
+      do ilev = 1, nlev
+        do icol = 1, ncol
+          byband_flux(icol, ilev, ibnd) =  spectral_flux(icol, ilev, band_lims(1, ibnd))
+          do igpt = band_lims(1,ibnd)+1, band_lims(2,ibnd)
+            byband_flux(icol, ilev, ibnd) = byband_flux(icol, ilev, ibnd) + &
+                                            spectral_flux(icol, ilev, igpt)
+          end do
+        end do
+      end do
+    enddo
+  end subroutine sum_byband
+  ! ----------------------------------------------------------------------------
+  !
+  ! Net flux: Spectral reduction over all points
+  !
+  subroutine net_byband_full(ncol, nlev, ngpt, nbnd, band_lims, spectral_flux_dn, spectral_flux_up, byband_flux_net) bind (C)
+    integer,                               intent(in ) :: ncol, nlev, ngpt, nbnd
+    integer,  dimension(2,          nbnd), intent(in ) :: band_lims
+    real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux_dn, spectral_flux_up
+    real(wp), dimension(ncol, nlev, nbnd), intent(out) :: byband_flux_net
+
+    integer :: icol, ilev, igpt, ibnd
+
+    !$acc parallel loop collapse(3) copyin(spectral_flux_dn, spectral_flux_up, band_lims) copyout(byband_flux_net)
+    !$omp target teams distribute parallel do collapse(3) map(to:spectral_flux_dn, spectral_flux_up, band_lims) map(from:byband_flux_net)
+    do ibnd = 1, nbnd
+      do ilev = 1, nlev
+        do icol = 1, ncol
+          igpt = band_lims(1,ibnd)
+          byband_flux_net(icol, ilev, ibnd) = spectral_flux_dn(icol, ilev, igpt) - &
+                                              spectral_flux_up(icol, ilev, igpt)
+          do igpt = band_lims(1,ibnd)+1, band_lims(2,ibnd)
+            byband_flux_net(icol, ilev, ibnd) = byband_flux_net(icol, ilev, ibnd) + &
+                                                spectral_flux_dn(icol, ilev, igpt) - &
+                                                spectral_flux_up(icol, ilev, igpt)
+          end do
+        end do
+      end do
+    end do
+  end subroutine net_byband_full
+  ! ----------------------------------------------------------------------------
+  subroutine net_byband_precalc(ncol, nlev, nbnd, byband_flux_dn, byband_flux_up, byband_flux_net) bind (C)
+    integer,                               intent(in ) :: ncol, nlev, nbnd
+    real(wp), dimension(ncol, nlev, nbnd), intent(in ) :: byband_flux_dn, byband_flux_up
+    real(wp), dimension(ncol, nlev, nbnd), intent(out) :: byband_flux_net
+
+    byband_flux_net(1:ncol,1:nlev,1:nbnd) = byband_flux_dn(1:ncol,1:nlev,1:nbnd) - byband_flux_up(1:ncol,1:nlev,1:nbnd)
+  end subroutine net_byband_precalc
+  ! ----------------------------------------------------------------------------
 
 end module mo_fluxes_byband

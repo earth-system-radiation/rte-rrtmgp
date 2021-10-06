@@ -159,18 +159,31 @@ public:
 
   // Are the bands of two objects the same? (same number, same wavelength limits)
   bool bands_are_equal(OpticalProps const &rhs) const {
-    if ( this->get_nband() != rhs.get_nband() || this->get_nband() == 0) { return false; }
-    yakl::ScalarLiveOut<bool> ret(true);
-    // for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
-    //   for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
-    auto &this_band_lims_wvn = this->band_lims_wvn;
-    auto &rhs_band_lims_wvn  = rhs.band_lims_wvn;
-    parallel_for( Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-      if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
-        ret = false;
+    // if ( this->get_nband() != rhs.get_nband() || this->get_nband() == 0) { return false; }
+    // yakl::ScalarLiveOut<bool> ret(true);
+    // // for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
+    // //   for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
+    // auto &this_band_lims_wvn = this->band_lims_wvn;
+    // auto &rhs_band_lims_wvn  = rhs.band_lims_wvn;
+    // parallel_for( Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
+    //   if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
+    //     ret = false;
+    //   }
+    // });
+    // return ret.hostRead();
+
+
+    bool ret = true;
+    auto this_band_lims_wvn = this->band_lims_wvn.createHostCopy();
+    auto rhs_band_lims_wvn  = rhs.band_lims_wvn  .createHostCopy();
+    for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
+      for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
+        if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
+          ret = false;
+        }
       }
-    });
-    return ret.hostRead();
+    }
+    return ret;
   }
 
 
@@ -178,14 +191,23 @@ public:
   //   (same bands, same number of g-points, same mapping between bands and g-points)
   bool gpoints_are_equal(OpticalProps const &rhs) const {
     if ( ! this->bands_are_equal(rhs) || this->get_ngpt() != rhs.get_ngpt() ) { return false; }
-    yakl::ScalarLiveOut<bool> ret(true);
-    // for (int i=1; i <= size(this->gpt2bnd,1); i++) {
-    auto &this_gpt2band = this->gpt2band;
-    auto &rhs_gpt2band  = rhs.gpt2band;
-    parallel_for( Bounds<1>(size(this->gpt2band,1)) , YAKL_LAMBDA (int i) {
+    // yakl::ScalarLiveOut<bool> ret(true);
+    // // for (int i=1; i <= size(this->gpt2bnd,1); i++) {
+    // auto &this_gpt2band = this->gpt2band;
+    // auto &rhs_gpt2band  = rhs.gpt2band;
+    // parallel_for( Bounds<1>(size(this->gpt2band,1)) , YAKL_LAMBDA (int i) {
+    //   if ( this_gpt2band(i) != rhs_gpt2band(i) ) { ret = false; }
+    // });
+    // return ret.hostRead();
+
+
+    bool ret = true;
+    auto this_gpt2band = this->gpt2band.createHostCopy();
+    auto rhs_gpt2band  = rhs.gpt2band  .createHostCopy();
+    for (int i=1; i <= size(this->gpt2band,1); i++) {
       if ( this_gpt2band(i) != rhs_gpt2band(i) ) { ret = false; }
-    });
-    return ret.hostRead();
+    }
+    return ret;
   }
 
 

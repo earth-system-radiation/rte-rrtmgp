@@ -173,6 +173,8 @@ public:
     // return ret.hostRead();
 
 
+    // This is working around an issue that arises in E3SM's rrtmgpxx integration.
+    // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
     bool ret = true;
     auto this_band_lims_wvn = this->band_lims_wvn.createHostCopy();
     auto rhs_band_lims_wvn  = rhs.band_lims_wvn  .createHostCopy();
@@ -201,6 +203,8 @@ public:
     // return ret.hostRead();
 
 
+    // This is working around an issue that arises in E3SM's rrtmgpxx integration.
+    // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
     bool ret = true;
     auto this_gpt2band = this->gpt2band.createHostCopy();
     auto rhs_gpt2band  = rhs.gpt2band  .createHostCopy();

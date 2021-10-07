@@ -243,8 +243,8 @@ contains
     ! Interpolation coefficients for use in source function
     integer,     dimension(size(play,dim=1), size(play,dim=2)) :: jtemp, jpress
     logical(wl), dimension(size(play,dim=1), size(play,dim=2)) :: tropo
-    real(wp),    dimension(2,2,2,get_nflav(this),size(play,dim=1), size(play,dim=2)) :: fmajor
-    integer,     dimension(2,    get_nflav(this),size(play,dim=1), size(play,dim=2)) :: jeta
+    real(wp),    dimension(2,2,2,size(play,dim=1),size(play,dim=2), get_nflav(this)) :: fmajor
+    integer,     dimension(2,    size(play,dim=1),size(play,dim=2), get_nflav(this)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband
     ! ----------------------------------------------------------
@@ -354,8 +354,8 @@ contains
     ! Interpolation coefficients for use in source function
     integer,     dimension(size(play,dim=1), size(play,dim=2)) :: jtemp, jpress
     logical(wl), dimension(size(play,dim=1), size(play,dim=2)) :: tropo
-    real(wp),    dimension(2,2,2,get_nflav(this),size(play,dim=1), size(play,dim=2)) :: fmajor
-    integer,     dimension(2,    get_nflav(this),size(play,dim=1), size(play,dim=2)) :: jeta
+    real(wp),    dimension(2,2,2,size(play,dim=1),size(play,dim=2), get_nflav(this)) :: fmajor
+    integer,     dimension(2,    size(play,dim=1),size(play,dim=2), get_nflav(this)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband, ngas, nflav
     integer :: igpt, icol
@@ -424,9 +424,9 @@ contains
     class(ty_optical_props_arry),     intent(inout) :: optical_props !inout because components are allocated
     ! Interpolation coefficients for use in internal source function
     integer,     dimension(                      ncol, nlay), intent(  out) :: jtemp, jpress
-    integer,     dimension(2,    get_nflav(this),ncol, nlay), intent(  out) :: jeta
+    integer,     dimension(2,    ncol, nlay,get_nflav(this)), intent(  out) :: jeta
     logical(wl), dimension(                      ncol, nlay), intent(  out) :: tropo
-    real(wp),    dimension(2,2,2,get_nflav(this),ncol, nlay), intent(  out) :: fmajor
+    real(wp),    dimension(2,2,2,ncol, nlay,get_nflav(this)), intent(  out) :: fmajor
     character(len=128)                                         :: error_msg
 
     ! Optional inputs
@@ -443,11 +443,11 @@ contains
     !
     real(wp), dimension(ncol,nlay,  this%get_ngas()) :: vmr     ! volume mixing ratios
     real(wp), dimension(ncol,nlay,0:this%get_ngas()) :: col_gas ! column amounts for each gas, plus col_dry
-    real(wp), dimension(2,    get_nflav(this),ncol,nlay) :: col_mix ! combination of major species's column amounts
+    real(wp), dimension(2,    ncol,nlay,get_nflav(this)) :: col_mix ! combination of major species's column amounts
                                                          ! index(1) : reference temperature level
                                                          ! index(2) : flavor
                                                          ! index(3) : layer
-    real(wp), dimension(2,2,  get_nflav(this),ncol,nlay) :: fminor ! interpolation fractions for minor species
+    real(wp), dimension(2,2,  ncol,nlay,get_nflav(this)) :: fminor ! interpolation fractions for minor species
                                                           ! index(1) : reference eta level (temperature dependent)
                                                           ! index(2) : reference temperature level
                                                           ! index(3) : flavor
@@ -461,6 +461,9 @@ contains
     !
     ! Error checking
     !
+
+    
+
     use_rayl = allocated(this%krayl)
     error_msg = ''
     ! Check for initialization
@@ -769,9 +772,9 @@ contains
     ! Interplation coefficients
     integer,     dimension(ncol,nlay),     intent(in   ) :: jtemp, jpress
     logical(wl), dimension(ncol,nlay),     intent(in   ) :: tropo
-    real(wp),    dimension(2,2,2,get_nflav(this),ncol,nlay),  &
+    real(wp),    dimension(2,2,2,ncol,nlay,get_nflav(this)),  &
                                            intent(in   ) :: fmajor
-    integer,     dimension(2,    get_nflav(this),ncol,nlay),  &
+    integer,     dimension(2,    ncol,nlay,get_nflav(this)),  &
                                            intent(in   ) :: jeta
     class(ty_source_func_lw    ),          intent(inout) :: sources
     real(wp), dimension(ncol,nlay+1),      intent(in   ), &
@@ -1842,10 +1845,6 @@ contains
     class(ty_optical_props_arry), intent(inout) :: optical_props
 
     integer :: ncol, nlay, ngpt, nmom
-    integer :: icol, ilay, igpt
-
-!!!!!!!!!!!!!!!!!
-    real(wp) :: t
 
     ncol = size(tau, 1)
     nlay = size(tau, 2)
@@ -1896,41 +1895,20 @@ contains
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
-          !call combine_and_reorder_2str(ncol, nlay, ngpt,       tau, tau_rayleigh, &
-          !                              optical_props%tau, optical_props%ssa, optical_props%g)
-!pa
-          optical_props%tau = tau + tau_rayleigh 
+          optical_props%tau = tau_rayleigh + tau 
           optical_props%g   = 0._wp
           where (optical_props%tau > 2._wp*tiny(optical_props%tau)) 
             optical_props%ssa =  tau_rayleigh/optical_props%tau
           else where
             optical_props%ssa = 0._wp
-          end where
-! 
-!          do igpt = 1, ngpt
-!            do ilay = 1, nlay
-!              do icol = 1, ncol
-!                 t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
-!                 optical_props%tau(icol,ilay,igpt) = t
-!                 if(t > 2._wp * tiny(t)) then
-!                   optical_props%ssa(icol,ilay,igpt) = tau_rayleigh(icol,ilay,igpt) / t
-!                 else
-!                   optical_props%ssa(icol,ilay,igpt) = 0._wp
-!                 end if
-!              end do
-!            end do
-!          end do
-
+          end where  
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
           !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%p)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
-          !call combine_and_reorder_nstr(ncol, nlay, ngpt, nmom, tau, tau_rayleigh, &
-          !                              optical_props%tau, optical_props%ssa, optical_props%p)
-          optical_props%tau = tau + tau_rayleigh
-!pa          optical_props%ssa = (optical_props%tau > 2._wp*tiny(optical_props%tau))*tau_rayleigh/optical_props%tau
+          optical_props%tau = tau_rayleigh + tau
           where (optical_props%tau > 2._wp*tiny(optical_props%tau))
              optical_props%ssa = tau_rayleigh/optical_props%tau
           else where
@@ -1938,7 +1916,6 @@ contains
           end where
           optical_props%p = 0.0_wp
           if(nmom >= 2) optical_props%p(2,:,:,:) = 0.1_wp
-
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%p)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
@@ -1946,6 +1923,7 @@ contains
       !$omp target exit data map(release:tau, tau_rayleigh)
     end if
     !$acc exit data copyout(optical_props)
+
   end subroutine combine_and_reorder
 
   !--------------------------------------------------------------------------------------------------------------------

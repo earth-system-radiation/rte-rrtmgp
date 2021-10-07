@@ -1,6 +1,6 @@
 
 #pragma once
-#include "const.h"
+#include "rrtmgp_const.h"
 #include "YAKL.h"
 #include "YAKL_netcdf.h"
 #include "mo_gas_concentrations.h"

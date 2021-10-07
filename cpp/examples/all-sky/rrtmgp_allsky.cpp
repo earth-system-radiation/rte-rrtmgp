@@ -6,7 +6,7 @@
 #include "mo_gas_concentrations.h"
 #include "mo_garand_atmos_io.h"
 #include "mo_gas_optics_rrtmgp.h"
-#include "const.h"
+#include "rrtmgp_const.h"
 #include "mo_load_coefficients.h"
 #include "mo_load_cloud_coefficients.h"
 #include "mo_fluxes.h"

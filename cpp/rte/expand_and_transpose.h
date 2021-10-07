@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "const.h"
+#include "rrtmgp_const.h"
 #include "mo_optical_props.h"
 
 // Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)

@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "const.h"
+#include "rrtmgp_const.h"
 
 
 inline void reorder_123x321_kernel(int d1, int d2, int d3, real3d const &array_in, real3d &array_out) {

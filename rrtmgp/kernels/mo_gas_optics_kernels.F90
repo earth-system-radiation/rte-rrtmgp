@@ -67,8 +67,6 @@ contains
     ! local indexes
     integer :: icol, ilay, iflav, igases(2), itropo, itemp
 
-    !call likwid_markerStartRegion("Inter")
-
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -119,8 +117,6 @@ contains
         end do ! icol
       end do ! ilay
     end do ! iflav
-
-    !call likwid_markerStopRegion("Inter")
 
   end subroutine interpolation
   ! --------------------------------------------------------------------------------------
@@ -307,8 +303,6 @@ contains
     integer :: icol, ilay, iflav, ibnd, itropo
     integer :: gptS, gptE
 
-    !call likwid_markerStartRegion("GODMajor")
-
     ! optical depth calculation for major species
     do ibnd = 1, nbnd
       gptS = band_lims_gpt(1, ibnd)
@@ -328,8 +322,6 @@ contains
         end do
       end do
     end do
-
-    !call likwid_markerStopRegion("GODMajor")
 
   end subroutine gas_optical_depths_major
 
@@ -385,8 +377,6 @@ contains
     ! First check skips the routine entirely if all columns are out of bounds...
     !
 
-    !call likwid_markerStartRegion("GODMinor")
-
     if(any(layer_limits(:,1) > 0)) then
       do imnr = 1, size(scale_by_complement,dim=1) ! loop over minor absorbers in each band
         do icol = 1, ncol
@@ -437,8 +427,6 @@ contains
       enddo
     end if
 
-    !call likwid_markerStopRegion("GODMinor")
-
   end subroutine gas_optical_depths_minor
   ! ----------------------------------------------------------
   !
@@ -479,15 +467,9 @@ contains
         do icol = 1, ncol
           itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere;itropo = 2 upper atmosphere
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
-
-          !call likwid_markerStartRegion("CTR_2DByflav")
-
           k(gptS:gptE) = interpolate2D_byflav(fminor(:,:,icol,ilay,iflav), &
                                               krayl(:,:,:,itropo),      &
                                               gptS, gptE, jeta(:,icol,ilay,iflav), jtemp(icol,ilay))
-
-          !call likwid_markerStopRegion("CTR_2DByflav")
-
           tau_rayleigh(icol,ilay,gptS:gptE) = k(gptS:gptE) * &
                                               (col_gas(icol,ilay,idx_h2o)+col_dry(icol,ilay))
         end do
@@ -538,8 +520,6 @@ contains
     real(wp) :: pfrac          (ncol,nlay  ,ngpt)
     real(wp) :: planck_function(ncol,nlay+1,nbnd)
     ! -----------------
-
-    !call likwid_markerStartRegion("CPS")
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
     do ibnd = 1, nbnd
@@ -626,8 +606,6 @@ contains
         end do
       end do
     end do
-
-    !call likwid_markerStopRegion("CPS")
 
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------

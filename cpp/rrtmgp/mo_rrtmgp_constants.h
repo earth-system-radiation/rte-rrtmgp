@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "const.h"
+#include "rrtmgp_const.h"
 
 // -----------------------------------------
 // Physical constants, 2018 SI defintion of metric system

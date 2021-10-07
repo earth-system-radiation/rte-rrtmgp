@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "const.h"
+#include "rrtmgp_const.h"
 #include "mo_optical_props_kernels.h"
 
 using yakl::intrinsics::anyLT;

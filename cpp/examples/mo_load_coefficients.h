@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "const.h"
+#include "rrtmgp_const.h"
 #include "mo_gas_concentrations.h"
 #include "mo_gas_optics_rrtmgp.h"
 #include <string>

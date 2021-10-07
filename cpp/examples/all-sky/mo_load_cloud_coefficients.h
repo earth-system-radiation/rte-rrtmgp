@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "const.h"
+#include "rrtmgp_const.h"
 #include "mo_optical_props.h"
 #include "mo_cloud_optics.h"
 #include "YAKL_netcdf.h"

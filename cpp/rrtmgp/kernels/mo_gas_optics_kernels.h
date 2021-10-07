@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "const.h"
+#include "rrtmgp_const.h"
 
 // This code is part of
 // RRTM for GCM Applications - Parallel (RRTMGP)

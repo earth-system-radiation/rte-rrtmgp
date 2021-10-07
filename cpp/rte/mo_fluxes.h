@@ -1,6 +1,6 @@
 #pragma once
 
-#include "const.h"
+#include "rrtmgp_const.h"
 #include "mo_fluxes_broadband_kernels.h"
 #include <iomanip>
 

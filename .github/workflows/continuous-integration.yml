@@ -51,7 +51,7 @@ jobs:
     - name: Configure (in-source)
       if: contains(matrix.rte-kernels, 'default')
       run: |
-        echo "RRTMGP_BUILD_DIR=$(pwd)" >> $GITHUB_ENV
+        echo "RRTMGP_BUILD_DIR=$(pwd)" >> "${GITHUB_ENV}"
         ./configure --disable-silent-rules --enable-tests --with-netcdf-fortran --disable-gpu || { cat ./config.log; exit 1; }
     #
     # Out-of-source (as an example) configuration with GPU kernels
@@ -63,8 +63,8 @@ jobs:
     - name: Configure (out-of-source)
       if: contains(matrix.rte-kernels, 'openacc')
       run: |
-        mkdir test_build && cd test_build && ln -s ${RFMIP_CACHEDIR} ./
-        echo "RRTMGP_BUILD_DIR=$(pwd)" >> $GITHUB_ENV
+        mkdir test_build && cd test_build && ln -s "${RFMIP_CACHEDIR}" ./
+        echo "RRTMGP_BUILD_DIR=$(pwd)" >> "${GITHUB_ENV}"
         ../configure --disable-silent-rules --enable-tests --with-netcdf-fortran --enable-gpu acx_cv_fc_openacc_flag= || { cat ./config.log; exit 1; }
     #
     # Build the library
@@ -85,14 +85,16 @@ jobs:
     - name: Stage RFMIP files
       if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
       run: |
-        mkdir -p ${RFMIP_CACHEDIR} && cd ${RFMIP_CACHEDIR}
-        python ${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py
-        touch ${RFMIP_CACHEDIR}/.cache
+        mkdir -p "${RFMIP_CACHEDIR}" && cd "${RFMIP_CACHEDIR}"
+        . "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.sh"
+        touch "${RFMIP_CACHEDIR}/.cache"
     #
     # Check the library
     #
     - name: Check
-      run: cd "$RRTMGP_BUILD_DIR" && make check
+      run: |
+        cd "$RRTMGP_BUILD_DIR" && make check
+        find . -name '*.test.log' -print -exec cat {} ';'
     #
     # Check the installation procedure
     #
@@ -106,5 +108,6 @@ jobs:
     #
     - name: Distclean (out-of-source)
       if: contains(matrix.rte-kernels, 'openacc')
-      run: cd "$RRTMGP_BUILD_DIR" && make distclean
-
+      run: |
+        cd "$RRTMGP_BUILD_DIR" && make distclean
+        test "x$(ls -A .)" = x || { find .; exit 1; }

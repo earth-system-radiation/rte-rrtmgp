@@ -29,7 +29,6 @@ jobs:
       MODULE_SWITCHER: ${{ github.workspace }}/.github/workflows/module_switcher
       MODULES: "daint-gpu ${{ matrix.compiler_modules }} cray-netcdf cray-hdf5"
       PYTHON_CACHEDIR: ${{ github.workspace }}/.python
-      RFMIP_CACHEDIR: ${{ github.workspace }}/.testcache
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -49,10 +48,16 @@ jobs:
     - name: Create Python virtual environment
       if: steps.cache-python-venv.outputs.cache-hit != 'true'
       run: |
-        . ${MODULE_SWITCHER} && switch_for_module cray-python
-        python3 -m venv ${PYTHON_CACHEDIR}
-        ${PYTHON_CACHEDIR}/bin/pip3 install --upgrade pip
-        ${PYTHON_CACHEDIR}/bin/pip3 install netCDF4 xarray dask[array]
+        . "${MODULE_SWITCHER}" && switch_for_module cray-python
+        python3 -m venv "${PYTHON_CACHEDIR}"
+        "${PYTHON_CACHEDIR}/bin/pip3" install --upgrade pip
+        "${PYTHON_CACHEDIR}/bin/pip3" install netCDF4 xarray dask[array]
+    #
+    # Create TMPDIR for building
+    #   Compiler needs more temporary space than normally available
+    #
+    - name: Create TMPDIR for building
+      run: mkdir tmp && cd tmp && echo "TMPDIR=$(pwd)" >> "${GITHUB_ENV}"
     #
     # Configuration
     #
@@ -61,16 +66,16 @@ jobs:
         FC: "ftn"
         FCFLAGS: ${{ matrix.fcflags }}
         PYTHON: ${{ env.PYTHON_CACHEDIR }}/bin/python3
-        LAUNCH_PREFIX: "srun -C gpu -A pr55 -p cscsci -t 15:00"
+        LAUNCH_PREFIX: "srun -C gpu -A d56 -p cscsci -t 15:00"
       run: |
-        . ${MODULE_SWITCHER} && switch_for_module ${MODULES}
+        . "${MODULE_SWITCHER}" && switch_for_module ${MODULES}
         ./configure --enable-tests --disable-silent-rules --enable-gpu=${{ matrix.enable_gpu }} || { cat ./config.log; exit 1; }
     #
     # Build the library
     #
     - name: Build
       run: |
-        . ${MODULE_SWITCHER} && switch_for_module ${MODULES}
+        . "${MODULE_SWITCHER}" && switch_for_module ${MODULES}
         make -j8
     #
     # Check whether RFMIP files are cached
@@ -78,22 +83,13 @@ jobs:
     - uses: actions/cache@v2
       id: cache-rfmip-files
       with:
-        path: ${{ env.RFMIP_CACHEDIR }}
+        path: ${{ github.workspace }}/.testcache
         key: rfmip-files-autoconf
-    #
-    # Stage RFMIP files if they are not in the cache
-    #
-    - name: Stage RFMIP files
-      if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p ${RFMIP_CACHEDIR} && cd ${RFMIP_CACHEDIR}
-        ${PYTHON_CACHEDIR}/bin/python3 ${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py
-        touch ${RFMIP_CACHEDIR}/.cache
     #
     # Check the library
     #
     - name: Check
       run: |
-        . ${MODULE_SWITCHER} && switch_for_module ${MODULES}
+        . "${MODULE_SWITCHER}" && switch_for_module ${MODULES}
         make -j8 check
-
+        find . -name '*.test.log' -print -exec cat {} ';'

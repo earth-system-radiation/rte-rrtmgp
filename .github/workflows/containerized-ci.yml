@@ -15,7 +15,6 @@ jobs:
     container:
       image: ${{ matrix.container }}
     env:
-      RFMIP_CACHEDIR: ${{ github.workspace }}/.testcache
       NFHOME: /home/runner/netcdf-fortran
     steps:
     #
@@ -39,9 +38,9 @@ jobs:
         RTE_KERNELS: ${{ matrix.rte-kernels }}
       run: |
         test ! -f /opt/intel/oneapi/setvars.sh || . /opt/intel/oneapi/setvars.sh
-        test "x$RTE_KERNELS" = xopenacc && enable_gpu=yes || enable_gpu=no
-        test "x$FC" != xifort || export acx_cv_fc_openacc_flag=
-        ./configure --disable-silent-rules --enable-tests --with-netcdf-fortran=$NFHOME --enable-gpu=$enable_gpu || { cat ./config.log; exit 1; }
+        test "x${RTE_KERNELS}" = xopenacc && enable_gpu=yes || enable_gpu=no
+        test "x${FC}" != xifort || export acx_cv_fc_openacc_flag=
+        ./configure --disable-silent-rules --enable-tests --with-netcdf-fortran="${NFHOME}" --enable-gpu=$enable_gpu || { cat ./config.log; exit 1; }
     #
     # Build the library
     #
@@ -55,17 +54,8 @@ jobs:
     - uses: actions/cache@v2
       id: cache-rfmip-files
       with:
-        path: ${{ env.RFMIP_CACHEDIR }}
+        path: ${{ github.workspace }}/.testcache
         key: rfmip-files-autoconf
-    #
-    # Stage RFMIP files if they are not in the cache
-    #
-    - name: Stage RFMIP files
-      if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p ${RFMIP_CACHEDIR} && cd ${RFMIP_CACHEDIR}
-        python ${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py
-        touch ${RFMIP_CACHEDIR}/.cache
     #
     # Check the library
     #
@@ -73,13 +63,14 @@ jobs:
       run: |
         test ! -f /opt/intel/oneapi/setvars.sh || . /opt/intel/oneapi/setvars.sh
         make check
+        find . -name '*.test.log' -print -exec cat {} ';'
     #
     # Generate validation plots
     #
     - name: Generate validation plots
       if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
       run: |
-        cd ${GITHUB_WORKSPACE}/tests
+        cd "${GITHUB_WORKSPACE}/tests"
         python validation-plots.py
     #
     # Upload validation plots
@@ -90,4 +81,3 @@ jobs:
       with:
         name: valdiation-plot
         path: ${{ github.workspace }}/tests/validation-figures.pdf
-

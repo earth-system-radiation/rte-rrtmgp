@@ -176,11 +176,13 @@ def parse_args():
         help='equivalent to the `--pp-inc-order` argument, only for the '
              'Fortran `INCLUDE` statement and FC_INC_FLAG (default: '
              '`%(default)s`)')
+    fc_intrisic_mods_default = ('iso_c_binding,iso_fortran_env,ieee_exceptions,'
+                                'ieee_arithmetic,ieee_features,omp_lib,'
+                                'omp_lib_kinds,openacc')
     fc_arg_group.add_argument(
         '--fc-intrinsic-mods', metavar='INTRINSIC_MODS_LIST',
         type=comma_splitter,
-        default='iso_c_binding,iso_fortran_env,ieee_exceptions,'
-                'ieee_arithmetic,ieee_features,omp_lib,omp_lib_kinds,openacc',
+        action='append',
         help='comma-separated list of Fortran intrinsic modules. Fortran '
              'modules that are explicitly specified as intrinsic in the '
              'source file (i.e. `USE, INTRINSIC :: MODULENAME`) are ignored '
@@ -190,10 +192,11 @@ def parse_args():
              'specified in the source file at all (i.e. `USE :: MODULENAME`). '
              'Fortran modules that need to be ignored unconditionally must '
              'be put on the EXTERNAL_MODS_LIST (see `--fc-external-mods`). '
-             'Default: `%(default)s`.')
+             'Default: `{0}`.'.format(fc_intrisic_mods_default))
     fc_arg_group.add_argument(
         '--fc-external-mods', metavar='EXTERNAL_MODS_LIST',
         type=comma_splitter,
+        action='append',
         help='comma-separated list of external (to the project) Fortran '
              'modules that need to be unconditionally ignored when generating '
              'dependency rules (see also `--fc-intrinsic-mods`)')
@@ -303,10 +306,17 @@ def parse_args():
 
     if args.fc_enable:
         args.fc_mod_upper = (args.fc_mod_upper == 'yes')
-        if args.fc_mod_dir:
-            args.fc_mod_dir = args.fc_mod_dir[-1]
+        args.fc_mod_dir = args.fc_mod_dir[-1] if args.fc_mod_dir else None
+
+        if args.fc_intrinsic_mods:
+            args.fc_intrinsic_mods = [m for sublist in args.fc_intrinsic_mods
+                                      for m in sublist]
         else:
-            args.fc_mod_dir = None
+            args.fc_intrinsic_mods = comma_splitter(fc_intrisic_mods_default)
+
+        if args.fc_external_mods:
+            args.fc_external_mods = [m for sublist in args.fc_external_mods
+                                     for m in sublist]
 
     return args
 

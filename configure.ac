@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([rte+rrtmgp], [1.3.1], [], [],
+AC_INIT([rte+rrtmgp], [1.4], [], [],
   [https://github.com/earth-system-radiation/rte-rrtmgp])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([config])
@@ -321,21 +321,26 @@ AS_IF([test x"$enable_tests" != xno],
 
 dnl We need some additional Python modules for the tests:
 AS_IF([test x"$enable_tests" != xno],
-  [for acx_python_mod in 'netCDF4' 'xarray' 'dask.array'; do
-     AC_MSG_CHECKING([whether Python module '$acx_python_mod' is available])
-     acx_python_try="$PYTHON -c 'import $acx_python_mod' >&AS_MESSAGE_LOG_FD"
+  [set 'netCDF4'           'import netCDF4' \
+       'xarray (v0.12.2+)' 'import xarray; exit(tuple(map(int, xarray.__version__.split("."))) < (0, 12, 2))' \
+       'dask.array'        'import dask.array'
+   while test $[]@%:@ -gt 1; do
+     AC_MSG_CHECKING([whether Python module '$[]1' is available])
+     acx_python_try="$PYTHON -c '$[]2' >&AS_MESSAGE_LOG_FD"
      _AC_DO_VAR([acx_python_try])
      AS_IF([test $? -eq 0],
        [AC_MSG_RESULT([yes])],
        [AC_MSG_RESULT([no])
         AS_VAR_IF([enable_tests], [auto],
-        [AC_MSG_WARN([Python module '$acx_python_mod' is not available: dnl
+          [AC_MSG_WARN([Python module '$[]1' is not available: dnl
 unable to run the tests])
-         enable_tests=no],
-        [AC_MSG_FAILURE([Python module '$acx_python_mod' is not available: dnl
+           enable_tests=no],
+          [AC_MSG_FAILURE([Python module '$[]1' is not available: dnl
 unable to run the tests])])
         break])
-   done])
+     shift; shift
+   done
+   set dummy; shift])
 
 AS_VAR_IF([enable_examples], [no],
   [AC_SUBST([EXAMPLES_ENABLED], ['#'])

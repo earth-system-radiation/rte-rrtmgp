@@ -131,15 +131,13 @@ mostlyclean:
 # Delete files generated at the building stage:
 clean: mostlyclean
 	rm -rf examples/all-sky/all-sky.test.log \
-	       examples/all-sky/ref \
 	       examples/all-sky/rrtmgp-allsky.nc \
-	       examples/rfmip-clear-sky/reference \
+	       examples/rfmip-clear-sky/*.nc \
 	       examples/rfmip-clear-sky/rfmip-clear-sky.test.log \
 	       examples/rfmip-clear-sky/timing.* \
 	       tests/clear_sky_regression.test.log \
 	       tests/test_atmospheres.nc \
 	       $(testcachedir)
-	find examples/rfmip-clear-sky -type l -delete
 	find . -name '*.pyc' -delete -o -name '*.pyo' -delete -o -name '__pycache__' -delete
 
 # Delete everything generated at the configure stage (and clean the created

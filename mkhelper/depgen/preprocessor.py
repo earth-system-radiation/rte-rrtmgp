@@ -5,16 +5,16 @@ from depgen import IncludeFinder, StreamStack, file_in_dir, open23, \
 
 
 class Preprocessor:
-    _re_ifdef = re.compile(r'^#\s*if(n)?def\s+([a-zA-Z_]\w*)')
-    _re_if_expr = re.compile(r'^#\s*if((?:\s|\().*)')
+    _re_ifdef = re.compile(r'^\s*#\s*if(n)?def\s+([a-zA-Z_]\w*)')
+    _re_if_expr = re.compile(r'^\s*#\s*if((?:\s|\().*)')
 
-    _re_elif = re.compile(r'^#\s*elif((?:\s|\().*)')
-    _re_else = re.compile(r'^#\s*else(?:\s.*)')
-    _re_endif = re.compile(r'^#\s*endif(?:\s.*)')
+    _re_elif = re.compile(r'^\s*#\s*elif((?:\s|\().*)')
+    _re_else = re.compile(r'^\s*#\s*else(?:\s.*)')
+    _re_endif = re.compile(r'^\s*#\s*endif(?:\s.*)')
 
-    _re_include = re.compile(r'^#\s*include\s+(?:"(.*?)"|<(.*?)>)')
-    _re_define = re.compile(r'^#\s*define\s+([a-zA-Z_]\w*)(\(.*\))?\s+(.*)$')
-    _re_undef = re.compile(r'^#\s*undef\s+([a-zA-Z_]\w*)')
+    _re_include = re.compile(r'^\s*#\s*include\s+(?:"(.*?)"|<(.*?)>)')
+    _re_define = re.compile(r'^\s*#\s*define\s+([a-zA-Z_]\w*)(\(.*\))?\s+(.*)$')
+    _re_undef = re.compile(r'^\s*#\s*undef\s+([a-zA-Z_]\w*)')
 
     # matches "defined MACRO_NAME" and "defined (MACRO_NAME)"
     _re_defined_call = re.compile(
@@ -66,6 +66,10 @@ class Preprocessor:
     def readline(self):
         while 1:
             line = self._include_stack.readline()
+
+            if not line:
+                return line
+
             line = self._replace_continuation(line)
             line = self._remove_block_comments(line)
 
@@ -80,8 +84,7 @@ class Preprocessor:
                     state = 1 if bool(macro in self._macros) ^ negate else -1
                     if self.debug_callback:
                         self.debug_callback(
-                            line, 'evaluated to ' +
-                                  ('True' if state > 0 else 'False'))
+                            line, 'evaluated to {0}'.format(state > 0))
                 elif self.debug_callback:
                     self.debug_callback(
                         line, 'was not evaluated (dead branch)')
@@ -97,10 +100,9 @@ class Preprocessor:
                         state = self._evaluate_expr_to_state(expr)
                         if self.debug_callback:
                             self.debug_callback(
-                                line, 'evaluated to ' +
-                                      ('True' if state > 0 else
-                                       ('False' if state < 0 else
-                                        'Unknown (evaluation failed)')))
+                                line, 'evaluated to {0}'.format(
+                                    'Unknown (evaluation failed)'
+                                    if state == 0 else state > 0))
                     elif self.debug_callback:
                         self.debug_callback(
                             line, 'was not evaluated (evaluation disabled)')
@@ -120,10 +122,9 @@ class Preprocessor:
                         state = self._evaluate_expr_to_state(expr)
                         if self.debug_callback:
                             self.debug_callback(
-                                line, 'evaluated to ' +
-                                      ('True' if state > 0 else
-                                       ('False' if state < 0 else
-                                        'Unknown (evaluation failed)')))
+                                line, 'evaluated to {0}'.format(
+                                    'Unknown (evaluation failed)'
+                                    if state == 0 else state > 0))
                     elif self.debug_callback:
                         self.debug_callback(
                             line, 'was not evaluated (evaluation disabled)')
@@ -206,12 +207,13 @@ class Preprocessor:
                                 self.include_callback(filepath)
                             if self.debug_callback:
                                 self.debug_callback(
-                                    line, 'included file \'%s\'' % filepath)
+                                    line,
+                                    "included file '{0}'".format(filepath))
                         elif self.debug_callback:
                             self.debug_callback(
                                 line,
-                                'ignored (file \'%s\' '
-                                'is not in the source roots)' % filepath)
+                                "ignored (file '{0}' "
+                                "is not in the source roots)".format(filepath))
                     elif self.debug_callback:
                         self.debug_callback(line, 'ignored (file not found)')
                 elif self.debug_callback:

@@ -1013,13 +1013,13 @@ contains
     do igpt = 1, ngpt
       do ilay = 1, nlay
         do icol = 1, ncol
-          if (tau(icol,ilay,ngpt) > 1.0e-8_wp) then
+          if (tau(icol,ilay,igpt) > 1.0e-8_wp) then
             if(top_at_1) then
-              lev_source_top = lev_source(icol,ilay  ,ngpt)
-              lev_source_bot = lev_source(icol,ilay+1,ngpt)
+              lev_source_top = lev_source(icol,ilay  ,igpt)
+              lev_source_bot = lev_source(icol,ilay+1,igpt)
             else
-              lev_source_top = lev_source(icol,ilay+1,ngpt)
-              lev_source_bot = lev_source(icol,ilay  ,ngpt)
+              lev_source_top = lev_source(icol,ilay+1,igpt)
+              lev_source_bot = lev_source(icol,ilay  ,igpt)
             end if
             !
             ! Toon et al. (JGR 1989) Eqs 26-27

@@ -17,6 +17,11 @@ rfmip_dir       = os.path.join(rte_rrtmgp_dir, "examples", "rfmip-clear-sky")
 conds_file      = "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
 conds_url       = "http://aims3.llnl.gov/thredds/fileServer/user_pub_work/input4MIPs/CMIP6/RFMIP/UColorado/UColorado-RFMIP-1-2/" + \
                   "atmos/fx/multiple/none/v20190401/" + conds_file
+#
+# The official RFMIP conditions are available from the ESFG, as above, but this fails from time to time, so
+#   we use the copy at NOAA PSL where the server is more robust
+#
+conds_url       = "https://psl.noaa.gov/thredds/fileServer/Datasets/rte-rrtmgp/continuous-integration/" + conds_file
 templ_scr       = "generate-output-file-templates.py"
 templ_scr_url   = "https://raw.githubusercontent.com/RobertPincus/RFMIP-IRF-Scripts/master/" + templ_scr
 #

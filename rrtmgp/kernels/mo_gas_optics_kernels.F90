@@ -17,6 +17,7 @@
 module mo_gas_optics_kernels
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array
+
   implicit none
   public
 contains
@@ -50,6 +51,7 @@ contains
     ! outputs
     integer,     dimension(ncol,nlay), intent(out) :: jtemp, jpress
     logical(wl), dimension(ncol,nlay), intent(out) :: tropo
+    integer,     dimension(ncol,nlay)              :: ntropo
     integer,     dimension(2,    ncol,nlay,nflav), intent(out) :: jeta
     real(wp),    dimension(2,    ncol,nlay,nflav), intent(out) :: col_mix
     real(wp),    dimension(2,2,2,ncol,nlay,nflav), intent(out) :: fmajor
@@ -65,7 +67,7 @@ contains
     real(wp) :: ftemp_term
     ! -----------------
     ! local indexes
-    integer :: icol, ilay, iflav, igases(2), itropo, itemp
+    integer :: icol, ilay, iflav, igases(2), itemp
 
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -81,6 +83,7 @@ contains
 
         ! determine if in lower or upper part of atmosphere
         tropo(icol,ilay) = log(play(icol,ilay)) > press_ref_trop_log
+        ntropo(icol,ilay) = merge(1,2,tropo(icol,ilay))
       end do
     end do
 
@@ -89,14 +92,13 @@ contains
       do ilay = 1, nlay
         do icol = 1, ncol
         ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        itropo = merge(1,2,tropo(icol,ilay))
         ! loop over implemented combinations of major species
           do itemp = 1, 2
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors
-            ratio_eta_half = vmr_ref(itropo,igases(1),(jtemp(icol,ilay)+itemp-1)) / &
-                             vmr_ref(itropo,igases(2),(jtemp(icol,ilay)+itemp-1))
+            ratio_eta_half = vmr_ref(ntropo(icol,ilay),igases(1),(jtemp(icol,ilay)+itemp-1)) / &
+                             vmr_ref(ntropo(icol,ilay),igases(2),(jtemp(icol,ilay)+itemp-1))
             col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igases(1)) + ratio_eta_half * col_gas(icol,ilay,igases(2))
             eta = merge(col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
                         col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix))
@@ -293,6 +295,7 @@ contains
     integer,     dimension(2,    ncol,nlay,nflav), intent(in) :: jeta
     logical(wl), dimension(ncol,nlay), intent(in) :: tropo
     integer,     dimension(ncol,nlay), intent(in) :: jtemp, jpress
+    integer,     dimension(ncol,nlay)             :: ntropo
 
     ! outputs
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau
@@ -300,8 +303,14 @@ contains
     ! local variables
     real(wp) :: tau_major(ngpt) ! major species optical depth
     ! local index
-    integer :: icol, ilay, iflav, ibnd, itropo
+    integer :: icol, ilay, iflav, ibnd
     integer :: gptS, gptE
+
+    do ilay = 1, nlay
+      do icol = 1, ncol
+      ntropo(icol,ilay) = merge(1,2,tropo(icol,ilay))
+      end do
+    end do
 
     ! optical depth calculation for major species
     do ibnd = 1, nbnd
@@ -309,15 +318,13 @@ contains
       gptE = band_lims_gpt(2, ibnd)
       do ilay = 1, nlay
         do icol = 1, ncol
-          ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-          itropo = merge(1,2,tropo(icol,ilay))
-          iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
+          iflav = gpoint_flavor(ntropo(icol,ilay), gptS) !eta interpolation depends on band's flavor
           tau_major(gptS:gptE) = &
             ! interpolation in temperature, pressure, and eta
             interpolate3D_byflav(col_mix(:,icol,ilay,iflav),                                     &
                                  fmajor(:,:,:,icol,ilay,iflav), kmajor,                          &
                                  band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
-                                 jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
+                                 jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+ntropo(icol,ilay))
             tau(icol,ilay,gptS:gptE) = tau(icol,ilay,gptS:gptE) + tau_major(gptS:gptE)
         end do
       end do
@@ -376,7 +383,6 @@ contains
     !   layers with pressures in the upper or lower atmosphere respectively
     ! First check skips the routine entirely if all columns are out of bounds...
     !
-
     if(any(layer_limits(:,1) > 0)) then
       do imnr = 1, size(scale_by_complement,dim=1) ! loop over minor absorbers in each band
         do icol = 1, ncol
@@ -453,22 +459,28 @@ contains
     integer,     dimension(ncol,nlay),           intent(in ) :: jtemp
     ! outputs
     real(wp),    dimension(ncol,nlay,ngpt),      intent(out) :: tau_rayleigh
+    integer,     dimension(ncol,nlay)                        :: ntropo
+
     ! -----------------
     ! local variables
     real(wp) :: k(ngpt) ! rayleigh scattering coefficient
     integer  :: icol, ilay, iflav, ibnd, igpt, gptS, gptE
-    integer  :: itropo
     ! -----------------
+
+    do ilay = 1, nlay
+      do icol = 1, ncol
+      ntropo(icol,ilay) = merge(1,2,tropo(icol,ilay))
+      end do
+    end do
 
     do ibnd = 1, nbnd
       gptS = band_lims_gpt(1, ibnd)
       gptE = band_lims_gpt(2, ibnd)
       do ilay = 1, nlay
         do icol = 1, ncol
-          itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere;itropo = 2 upper atmosphere
-          iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
+          iflav = gpoint_flavor(ntropo(icol,ilay), gptS) !eta interpolation depends on band's flavor
           k(gptS:gptE) = interpolate2D_byflav(fminor(:,:,icol,ilay,iflav), &
-                                              krayl(:,:,:,itropo),      &
+                                              krayl(:,:,:,ntropo(icol,ilay)),      &
                                               gptS, gptE, jeta(:,icol,ilay,iflav), jtemp(icol,ilay))
           tau_rayleigh(icol,ilay,gptS:gptE) = k(gptS:gptE) * &
                                               (col_gas(icol,ilay,idx_h2o)+col_dry(icol,ilay))
@@ -512,14 +524,21 @@ contains
     real(wp), dimension(ncol,     ngpt), intent(out) :: sfc_source_Jac
     ! -----------------
     ! local
-    real(wp), parameter                             :: delta_Tsurf = 1.0_wp
+    real(wp), parameter                              :: delta_Tsurf = 1.0_wp
 
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
     integer  :: gptS, gptE
     real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
     real(wp) :: pfrac          (ncol,nlay  ,ngpt)
     real(wp) :: planck_function(ncol,nlay+1,nbnd)
+    integer,     dimension(ncol,nlay)                :: ntropo
+
     ! -----------------
+    do ilay = 1, nlay
+      do icol = 1, ncol
+      ntropo(icol,ilay) = merge(1,2,tropo(icol,ilay))
+      end do
+    end do
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
     do ibnd = 1, nbnd
@@ -528,14 +547,13 @@ contains
       do ilay = 1, nlay
         do icol = 1, ncol
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-          itropo = merge(1,2,tropo(icol,ilay))
-          iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
+          iflav = gpoint_flavor(ntropo(icol,ilay), gptS) !eta interpolation depends on band's flavor
           pfrac(icol,ilay,gptS:gptE) = &
             ! interpolation in temp-m64 -O3 -g -traceback -heap-arrays -assume
             ! realloc_lhs -extend-source 132erature, pressure, and eta
             interpolate3D_byflav(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
-                          jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
+                          jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+ntropo(icol,ilay))
         end do ! column
       end do   ! layer
     end do     ! band
@@ -638,7 +656,8 @@ contains
   pure function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
     real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species
                                        ! index(1) : reference eta level (temperature dependent)
-                                       ! index(2) : reference temperature level
+                                       ! index(2) : reference temperature
+                                       ! level
     real(wp), dimension(:,:,:), intent(in) :: k ! (g-point, eta, temp)
     integer,                    intent(in) :: igpt, jtemp ! interpolation index for temperature
     integer, dimension(2),      intent(in) :: jeta ! interpolation index for binary species parameter (eta)

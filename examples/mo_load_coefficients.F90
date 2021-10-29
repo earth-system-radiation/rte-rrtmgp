@@ -63,7 +63,7 @@ contains
     real(wp), dimension(:      ),    allocatable :: temp_ref
     real(wp), dimension(:,:,:  ),    allocatable :: vmr_ref
     real(wp), dimension(:,:,:,:),    allocatable :: kmajor
-    real(wp), dimension(:,:,:,:),    allocatable :: kmajor_t
+   ! real(wp), dimension(:,:,:,:),    allocatable :: kmajor_t
 
     character(len=32), dimension(:),  allocatable :: gas_minor, identifier_minor
     character(len=32), dimension(:),  allocatable :: minor_gases_lower,               minor_gases_upper
@@ -73,15 +73,15 @@ contains
     logical(wl), dimension(:),        allocatable :: scale_by_complement_lower,       scale_by_complement_upper
     integer, dimension(:),            allocatable :: kminor_start_lower,              kminor_start_upper
     real(wp), dimension(:,:,:),       allocatable :: kminor_lower,                    kminor_upper
-    real(wp), dimension(:,:,:),       allocatable :: kminor_lower_t,                  kminor_upper_t
+  !  real(wp), dimension(:,:,:),       allocatable :: kminor_lower_t,                  kminor_upper_t
 
-    real(wp), dimension(:,:,:  ), allocatable :: rayl_lower_t, rayl_upper_t
+ !   real(wp), dimension(:,:,:  ), allocatable :: rayl_lower_t, rayl_upper_t
     real(wp), dimension(:,:,:  ), allocatable :: rayl_lower, rayl_upper
     real(wp), dimension(:      ), allocatable :: solar_quiet, solar_facular, solar_sunspot
     real(wp)                                  :: tsi_default, mg_default, sb_default
     real(wp), dimension(:,:    ), allocatable :: totplnk
     real(wp), dimension(:,:,:,:), allocatable :: planck_frac
-    real(wp), dimension(:,:,:,:), allocatable :: planck_frac_t
+ !   real(wp), dimension(:,:,:,:), allocatable :: planck_frac_t
     real(wp), dimension(:,:)    , allocatable :: optimal_angle_fit
 
     ! -----------------
@@ -145,16 +145,10 @@ contains
     temp_ref_p        = read_field(ncid, 'absorption_coefficient_ref_P')
     temp_ref_t        = read_field(ncid, 'absorption_coefficient_ref_T')
     press_ref_trop    = read_field(ncid, 'press_ref_trop')
-!    call read_double_3('kminor_lower', ntemps, nmixingfracs, ncontributors_lower, &
-!      kminor_lower, nf_status)
-    kminor_lower_t      = read_field(ncid, 'kminor_lower', &
-!        ntemps, nmixingfracs, ncontributors_lower)
+    kminor_lower      = read_field(ncid, 'kminor_lower', &
         ncontributors_lower, nmixingfracs, ntemps)
-    kminor_lower = RESHAPE(kminor_lower_t, (/ntemps, nmixingfracs,ncontributors_lower/), ORDER = (/3,2,1/))
-    kminor_upper_t      = read_field(ncid, 'kminor_upper', &
-!        ntemps,nmixingfracs,ncontributors_upper)
+    kminor_upper      = read_field(ncid, 'kminor_upper', &
         ncontributors_upper, nmixingfracs, ntemps)
-    kminor_upper = RESHAPE(kminor_upper_t, (/ntemps,nmixingfracs,ncontributors_upper/), ORDER = (/3,2,1/))
     gas_minor = read_char_vec(ncid, 'gas_minor', nminorabsorbers)
     identifier_minor = read_char_vec(ncid, 'identifier_minor', nminorabsorbers)
     minor_gases_lower = read_char_vec(ncid, 'minor_gases_lower', nminor_absorber_intervals_lower)
@@ -181,17 +175,10 @@ contains
                       = int(read_field(ncid, 'kminor_start_upper', nminor_absorber_intervals_upper))
     vmr_ref           = read_field(ncid, 'vmr_ref', nlayers, nextabsorbers, ntemps)
 
-    kmajor_t            = read_field(ncid, 'kmajor',  ngpts, nmixingfracs,  npress+1, ntemps)
-    kmajor = RESHAPE(kmajor_t,(/ntemps,nmixingfracs,  npress+1,ngpts/), ORDER = (/4,2,3,1/))
-!    if(var_exists(ncid, 'rayl_lower')) then
-!      rayl_lower = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,            ntemps)
-!      rayl_upper = read_field(ncid, 'rayl_upper',   ngpts, nmixingfracs,            ntemps)
-!    end if
+    kmajor            = read_field(ncid, 'kmajor',  ngpts, nmixingfracs,  npress+1, ntemps)
     if(var_exists(ncid, 'rayl_lower')) then
-      rayl_lower_t = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,ntemps)
-      rayl_lower = RESHAPE(rayl_lower_t,(/ntemps,nmixingfracs,ngpts/), ORDER = (/3,2,1/))
-      rayl_upper_t = read_field(ncid, 'rayl_upper',   ngpts, nmixingfracs,ntemps)
-      rayl_upper = RESHAPE(rayl_upper_t,(/ntemps,nmixingfracs,ngpts/), ORDER = (/3,2,1/))
+      rayl_lower = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,ntemps)
+      rayl_upper = read_field(ncid, 'rayl_upper',   ngpts, nmixingfracs,ntemps)
     end if
 
 
@@ -206,9 +193,7 @@ contains
       ! If there's a totplnk variable in the file it's a longwave (internal sources) type
       !
       totplnk     = read_field(ncid, 'totplnk', ninternalSourcetemps, nbnds)
-!      planck_frac = read_field(ncid, 'plank_fraction', ngpts, nmixingfracs, npress+1, ntemps)
-      planck_frac_t = read_field(ncid, 'plank_fraction', ngpts, nmixingfracs,npress+1, ntemps)
-      planck_frac = RESHAPE(planck_frac_t,(/ntemps,nmixingfracs,  npress+1,ngpts/), ORDER =(/4,2,3,1/))
+      planck_frac = read_field(ncid, 'plank_fraction', ngpts, nmixingfracs,npress+1, ntemps)
       optimal_angle_fit = read_field(ncid, 'optimal_angle_fit', nfit_coeffs, nbnds)
       call stop_on_err(kdist%load(available_gases, &
                                   gas_names,   &

@@ -461,9 +461,6 @@ contains
     !
     ! Error checking
     !
-
-    
-
     use_rayl = allocated(this%krayl)
     error_msg = ''
     ! Check for initialization
@@ -782,8 +779,8 @@ contains
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     integer                                      :: icol, ilay, igpt
-    real(wp), dimension(ncol,nlay,ngpt)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
-    real(wp), dimension(ncol,     ngpt)          :: sfc_source_t
+    real(wp), dimension(ncol,nlay,ngpt)          :: lay_source, lev_source_inc, lev_source_dec
+    real(wp), dimension(ncol,     ngpt)          :: sfc_source
     real(wp), dimension(ncol,     ngpt)          :: sfc_source_Jac
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
@@ -839,7 +836,7 @@ contains
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sfc_source_t, lay_source_t, lev_source_inc_t, lev_source_dec_t, &
+                sfc_source, lay_source, lev_source_inc, lev_source_dec, &
                 sfc_source_Jac)
     !$acc parallel loop collapse(2)
 !    do igpt = 1, ngpt
@@ -848,11 +845,11 @@ contains
 !        sources%sfc_source_Jac(icol,igpt) = sfc_source_Jac(igpt,icol)
 !      end do
 !    end do
-    sources%sfc_source = sfc_source_t
+    sources%sfc_source = sfc_source
     sources%sfc_source_Jac = sfc_source_Jac
-    sources%lay_source = lay_source_t
-    sources%lev_source_inc = lev_source_inc_t
-    sources%lev_source_dec = lev_source_dec_t
+    sources%lay_source = lay_source
+    sources%lev_source_inc = lev_source_inc
+    sources%lev_source_dec = lev_source_dec
 !    call reorder123x321(lay_source_t, sources%lay_source)
 !    call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
 !    call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
@@ -951,14 +948,16 @@ contains
     ! Planck function tables
     !
     allocate(this%totplnk          (size(totplnk,    1), size(totplnk,   2)), &
-             this%planck_frac      (size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)), &
+!             this%planck_frac      (size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)), &
+             this%planck_frac      (size(planck_frac,4), size(planck_frac,2),size(planck_frac,3), size(planck_frac,1)), &
              this%optimal_angle_fit(size(optimal_angle_fit,    1), size(optimal_angle_fit,   2)))
     !$acc enter data create(this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$omp target enter data map(alloc:this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$acc kernels
     !$omp target
     this%totplnk = totplnk
-    this%planck_frac = planck_frac
+!    this%planck_frac = planck_frac
+    this%planck_frac = RESHAPE(planck_frac,(/size(planck_frac,4), size(planck_frac,2), size(planck_frac,3), size(planck_frac,1)/),ORDER =(/4,2,3,1/))
     this%optimal_angle_fit = optimal_angle_fit
     !$acc end kernels
     !$omp end target
@@ -1113,6 +1112,7 @@ contains
     real(wp), dimension(:,:,:),   intent(in) :: vmr_ref
     real(wp), dimension(:,:,:,:), intent(in) :: kmajor
     real(wp), dimension(:,:,:),   intent(in) :: kminor_lower, kminor_upper
+    real(wp), dimension(:,:,:), allocatable  :: kminor_lower_t, kminor_upper_t
     character(len=*),   dimension(:), &
                                   intent(in) :: gas_minor, &
                                                 identifier_minor
@@ -1192,6 +1192,7 @@ contains
                              scale_by_complement_lower, &
                              kminor_start_lower, &
                              this%kminor_lower, &
+     !                        kminor_lower_t, &
                              minor_gases_lower_red, &
                              this%minor_limits_gpt_lower, &
                              this%minor_scales_with_density_lower, &
@@ -1209,6 +1210,7 @@ contains
                              scale_by_complement_upper, &
                              kminor_start_upper, &
                              this%kminor_upper, &
+      !                       kminor_upper_t, &
                              minor_gases_upper_red, &
                              this%minor_limits_gpt_upper, &
                              this%minor_scales_with_density_upper, &
@@ -1218,10 +1220,12 @@ contains
 
     ! Arrays not reduced by the presence, or lack thereof, of a gas
     allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
-             this%kmajor(size(kmajor,1),size(kmajor,2),size(kmajor,3),size(kmajor,4)))
+!             this%kmajor(size(kmajor,1),size(kmajor,2),size(kmajor,3),size(kmajor,4)))
+             this%kmajor(size(kmajor,4),size(kmajor,2),size(kmajor,3),size(kmajor,1)))
     this%press_ref = press_ref
     this%temp_ref  = temp_ref
-    this%kmajor    = kmajor
+!    this%kmajor    = kmajor
+    this%kmajor = RESHAPE(kmajor,(/size(kmajor,4),size(kmajor,2),size(kmajor,3),size(kmajor,1)/), ORDER= (/4,2,3,1/))
     !$acc enter data copyin(this%kmajor)
     !$omp target enter data map(to:this%kmajor)
 
@@ -1231,9 +1235,12 @@ contains
       return
     end if
     if (allocated(rayl_lower)) then
-      allocate(this%krayl(size(rayl_lower,dim=1),size(rayl_lower,dim=2),size(rayl_lower,dim=3),2))
-      this%krayl(:,:,:,1) = rayl_lower
-      this%krayl(:,:,:,2) = rayl_upper
+!      allocate(this%krayl(size(rayl_lower,dim=1),size(rayl_lower,dim=2),size(rayl_lower,dim=3),2))
+      allocate(this%krayl(size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1),2))
+!      this%krayl(:,:,:,1) = rayl_lower
+      this%krayl(:,:,:,1) = RESHAPE(rayl_lower,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
+!      this%krayl(:,:,:,2) = rayl_upper
+      this%krayl(:,:,:,2) = RESHAPE(rayl_upper,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
       !$acc enter data copyin(this%krayl)
       !$omp target enter data map(to:this%krayl)
     end if
@@ -1293,6 +1300,18 @@ contains
         if (this%flavor(i,j) /= 0) this%is_key(this%flavor(i,j)) = .true.
       end do
     end do
+
+    kminor_lower_t = this%kminor_lower
+    kminor_upper_t = this%kminor_upper
+    deallocate(this%kminor_lower)
+    deallocate(this%kminor_upper)
+    allocate(this%kminor_lower(size(kminor_lower_t,dim=3),size(kminor_lower_t,dim=2),size(kminor_lower_t,dim=1)))
+    allocate(this%kminor_upper(size(kminor_upper_t,dim=3),size(kminor_upper_t,dim=2),size(kminor_upper_t,dim=1)))
+    this%kminor_lower = RESHAPE(kminor_lower_t,(/size(kminor_lower_t,dim=3),size(kminor_lower_t,dim=2), &
+      size(kminor_lower_t,dim=1)/),ORDER = (/3,2,1/))
+    this%kminor_upper = RESHAPE(kminor_upper_t,(/size(kminor_upper_t,dim=3),size(kminor_upper_t,dim=2), &
+      size(kminor_upper_t,dim=1)/),ORDER = (/3,2,1/))
+
 
   end function init_abs_coeffs
   ! ----------------------------------------------------------------------------------------------------
@@ -1677,6 +1696,7 @@ contains
   end subroutine create_key_species_reduce
 
 ! ---------------------------------------------------------------------------------------
+
   subroutine reduce_minor_arrays(available_gases, &
                            gas_names, &
                            gas_minor,identifier_minor,&
@@ -1706,8 +1726,8 @@ contains
     character(len=*), dimension(:),     intent(in) :: scaling_gas_atm
     logical(wl),      dimension(:),     intent(in) :: scale_by_complement_atm
     integer,          dimension(:),     intent(in) :: kminor_start_atm
-    real(wp),         dimension(:,:,:), allocatable, &
-                                        intent(out) :: kminor_atm_red
+    real(wp),         dimension(:,:,:), allocatable, & 
+                                     intent(inout) :: kminor_atm_red
     character(len=*), dimension(:), allocatable, &
                                         intent(out) :: minor_gases_atm_red
     integer,          dimension(:,:), allocatable, &
@@ -1746,7 +1766,7 @@ contains
              scale_by_complement_atm_red      (red_nm), &
              kminor_start_atm_red             (red_nm))
     allocate(minor_limits_gpt_atm_red(2, red_nm))
-    allocate(kminor_atm_red(size(kminor_atm,1), size(kminor_atm,2), tot_g))
+    allocate(kminor_atm_red(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
 
     if ((red_nm .eq. nm)) then
       ! Character data not allowed in OpenACC regions?
@@ -1780,18 +1800,18 @@ contains
           kminor_start_atm_red(icnt) = kminor_start_atm(i)-n_elim
           ks = kminor_start_atm_red(icnt)
           do j = 1, ng
-            kminor_atm_red(:,:,kminor_start_atm_red(icnt)+j-1) = &
-              kminor_atm(:,:,kminor_start_atm(i)+j-1)
+            kminor_atm_red(kminor_start_atm_red(icnt)+j-1,:,:) = &
+              kminor_atm(kminor_start_atm(i)+j-1,:,:)
           enddo
         else
           n_elim = n_elim + ng
         endif
       enddo
     endif
-    !$acc enter data copyin(kminor_atm_red, kminor_start_atm_red, minor_limits_gpt_atm_red, &
-    !$acc                   minor_scales_with_density_atm_red, scale_by_complement_atm_red)
-    !$omp target enter data map(to:kminor_atm_red, kminor_start_atm_red, minor_limits_gpt_atm_red, &
-    !$omp                   minor_scales_with_density_atm_red, scale_by_complement_atm_red)
+    !$acc enter data copyin(kminor_atm_red, kminor_start_atm_red,
+    !minor_limits_gpt_atm_red, &
+    !$acc                   minor_scales_with_density_atm_red,
+    !scale_by_complement_atm_red)
   end subroutine reduce_minor_arrays
 
 ! ---------------------------------------------------------------------------------------
@@ -1923,7 +1943,6 @@ contains
       !$omp target exit data map(release:tau, tau_rayleigh)
     end if
     !$acc exit data copyout(optical_props)
-
   end subroutine combine_and_reorder
 
   !--------------------------------------------------------------------------------------------------------------------

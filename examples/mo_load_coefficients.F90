@@ -63,7 +63,6 @@ contains
     real(wp), dimension(:      ),    allocatable :: temp_ref
     real(wp), dimension(:,:,:  ),    allocatable :: vmr_ref
     real(wp), dimension(:,:,:,:),    allocatable :: kmajor
-   ! real(wp), dimension(:,:,:,:),    allocatable :: kmajor_t
 
     character(len=32), dimension(:),  allocatable :: gas_minor, identifier_minor
     character(len=32), dimension(:),  allocatable :: minor_gases_lower,               minor_gases_upper
@@ -73,15 +72,12 @@ contains
     logical(wl), dimension(:),        allocatable :: scale_by_complement_lower,       scale_by_complement_upper
     integer, dimension(:),            allocatable :: kminor_start_lower,              kminor_start_upper
     real(wp), dimension(:,:,:),       allocatable :: kminor_lower,                    kminor_upper
-  !  real(wp), dimension(:,:,:),       allocatable :: kminor_lower_t,                  kminor_upper_t
 
- !   real(wp), dimension(:,:,:  ), allocatable :: rayl_lower_t, rayl_upper_t
     real(wp), dimension(:,:,:  ), allocatable :: rayl_lower, rayl_upper
     real(wp), dimension(:      ), allocatable :: solar_quiet, solar_facular, solar_sunspot
     real(wp)                                  :: tsi_default, mg_default, sb_default
     real(wp), dimension(:,:    ), allocatable :: totplnk
     real(wp), dimension(:,:,:,:), allocatable :: planck_frac
- !   real(wp), dimension(:,:,:,:), allocatable :: planck_frac_t
     real(wp), dimension(:,:)    , allocatable :: optimal_angle_fit
 
     ! -----------------

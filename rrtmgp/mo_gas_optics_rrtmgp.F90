@@ -839,20 +839,11 @@ contains
                 sfc_source, lay_source, lev_source_inc, lev_source_dec, &
                 sfc_source_Jac)
     !$acc parallel loop collapse(2)
-!    do igpt = 1, ngpt
-!      do icol = 1, ncol
-!        sources%sfc_source    (icol,igpt) = sfc_source_t  (igpt,icol)
-!        sources%sfc_source_Jac(icol,igpt) = sfc_source_Jac(igpt,icol)
-!      end do
-!    end do
     sources%sfc_source = sfc_source
     sources%sfc_source_Jac = sfc_source_Jac
     sources%lay_source = lay_source
     sources%lev_source_inc = lev_source_inc
     sources%lev_source_dec = lev_source_dec
-!    call reorder123x321(lay_source_t, sources%lay_source)
-!    call reorder123x321(lev_source_inc_t, sources%lev_source_inc)
-!    call reorder123x321(lev_source_dec_t, sources%lev_source_dec)
     !
     ! Transposition of a 2D array, for which we don't have a routine in mo_rrtmgp_util_reorder.
     !
@@ -1727,7 +1718,7 @@ contains
     logical(wl),      dimension(:),     intent(in) :: scale_by_complement_atm
     integer,          dimension(:),     intent(in) :: kminor_start_atm
     real(wp),         dimension(:,:,:), allocatable, & 
-                                     intent(inout) :: kminor_atm_red
+                                        intent(out) :: kminor_atm_red
     character(len=*), dimension(:), allocatable, &
                                         intent(out) :: minor_gases_atm_red
     integer,          dimension(:,:), allocatable, &
@@ -1871,27 +1862,25 @@ contains
     ngpt = size(tau, 3)
     !$acc enter data copyin(optical_props)
     if (.not. has_rayleigh) then
-      ! index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
       !$acc enter data copyin(tau)
       !$omp target enter data map(to:tau)
       !$acc enter data create(optical_props%tau)
       !$omp target enter data map(alloc:optical_props%tau)
-      !call reorder123x321(tau, optical_props%tau)
       optical_props%tau = tau
       select type(optical_props)
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%ssa, optical_props%g)
           !!$omp target enter data map(alloc:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
-          call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
-          call zero_array(     ncol,nlay,ngpt,optical_props%g  )
+          optical_props%ssa = 0._wp
+          optical_props%g = 0._wp
           !$acc exit data copyout(optical_props%ssa, optical_props%g)
           !!$omp target exit data map(from:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
           nmom = size(optical_props%p, 1)
           !$acc enter data create(optical_props%ssa, optical_props%p)
           !$omp target enter data map(alloc:optical_props%ssa, optical_props%p)
-          call zero_array(     ncol,nlay,ngpt,optical_props%ssa)
-          call zero_array(nmom,ncol,nlay,ngpt,optical_props%p  )
+          optical_props%ssa = 0._wp
+          optical_props%p = 0._wp
           !$acc exit data copyout(optical_props%ssa, optical_props%p)
           !$omp target exit data map(from:optical_props%ssa, optical_props%p)
         end select
@@ -1909,7 +1898,6 @@ contains
           !$acc enter data create(optical_props%tau)
           !$omp target enter data map(alloc:optical_props%tau)
           optical_props%tau = tau
-          !call reorder123x321(tau, optical_props%tau)
           !$acc exit data copyout(optical_props%tau)
           !$omp target exit data map(from:optical_props%tau)
         type is (ty_optical_props_2str)

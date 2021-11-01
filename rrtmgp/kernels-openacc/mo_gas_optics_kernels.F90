@@ -99,13 +99,13 @@ contains
     !$acc parallel loop gang vector collapse(4) default(none) private(igases) present(vmr_ref)
     !$omp target teams distribute parallel do simd collapse(4) private(igases)
     do iflav = 1, nflav
-      igases(:) = flavor(:,iflav)
       do ilay = 1, nlay
         ! loop over implemented combinations of major species
         do icol = 1, ncol
-        ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        itropo = merge(1,2,tropo(icol,ilay))
           do itemp = 1, 2
+            igases(:) = flavor(:,iflav)
+            ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+            itropo = merge(1,2,tropo(icol,ilay))
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors

@@ -26,18 +26,15 @@ module mo_load_coefficients
   ! --------------------------------------------------
   use mo_simple_netcdf, only: read_field, read_char_vec, read_logical_vec, var_exists, get_dim_size
   use netcdf
-
   implicit none
   private
-
-  integer :: fid
-
   public :: load_and_init
 
 contains
   subroutine stop_on_err(msg)
     use iso_fortran_env, only : error_unit
     character(len=*), intent(in) :: msg
+
 
     if(msg /= "") then
       write(error_unit, *) msg
@@ -84,7 +81,6 @@ contains
     !
     ! Book-keeping variables
     !
-!    integer :: nf_status
     integer :: ncid
     integer :: ntemps,          &
                npress,          &
@@ -173,11 +169,9 @@ contains
 
     kmajor            = read_field(ncid, 'kmajor',  ngpts, nmixingfracs,  npress+1, ntemps)
     if(var_exists(ncid, 'rayl_lower')) then
-      rayl_lower = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,ntemps)
-      rayl_upper = read_field(ncid, 'rayl_upper',   ngpts, nmixingfracs,ntemps)
+      rayl_lower = read_field(ncid, 'rayl_lower',   ngpts, nmixingfracs,            ntemps)
+      rayl_upper = read_field(ncid, 'rayl_upper',   ngpts, nmixingfracs,            ntemps)
     end if
-
-
     ! --------------------------------------------------
     !
     ! Initialize the gas optics class with data. The calls look slightly different depending
@@ -189,7 +183,7 @@ contains
       ! If there's a totplnk variable in the file it's a longwave (internal sources) type
       !
       totplnk     = read_field(ncid, 'totplnk', ninternalSourcetemps, nbnds)
-      planck_frac = read_field(ncid, 'plank_fraction', ngpts, nmixingfracs,npress+1, ntemps)
+      planck_frac = read_field(ncid, 'plank_fraction', ngpts, nmixingfracs, npress+1, ntemps)
       optimal_angle_fit = read_field(ncid, 'optimal_angle_fit', nfit_coeffs, nbnds)
       call stop_on_err(kdist%load(available_gases, &
                                   gas_names,   &
@@ -255,35 +249,4 @@ contains
     ! --------------------------------------------------
     ncid = nf90_close(ncid)
   end subroutine load_and_init
-
-!  subroutine read_double_3(name, nx, ny, nz, ret, status)
-!    character(len=*), intent(in) :: name
-!    integer, intent(in) :: nx, ny, nz
-!    real(wp), allocatable, intent(out) :: ret(:,:,:)
-!    integer, intent(out) :: status
-!
-!    integer :: varid
-!
-!    status = p_nf_inq_varid(fid, trim(name), varid)
-!    if (status /= nf_noerr) return
-!    allocate(ret(nx,ny,nz))
-!    status = p_nf_get_vara_double(fid, varid, [1,1,1], [nx,ny,nz], ret)
-!
-!  end subroutine read_double_3
-!
-!  subroutine read_double_4(name, nx, ny, nz, nt, ret, status)
-!    character(len=*), intent(in) :: name
-!    integer, intent(in) :: nx, ny, nz, nt
-!    real(wp), allocatable, intent(out) :: ret(:,:,:,:)
-!    integer, intent(out) :: status
-!
-!    integer :: varid
-!
-!    status = p_nf_inq_varid(fid, trim(name), varid)
-!    if (status /= nf_noerr) return
-!    allocate(ret(nx,ny,nz,nt))
-!    status = p_nf_get_vara_double(fid, varid, [1,1,1,1], [nx,ny,nz,nt], ret)
-!
-!  end subroutine read_double_4
-
 end module

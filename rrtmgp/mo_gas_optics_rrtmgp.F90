@@ -779,9 +779,6 @@ contains
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     integer                                      :: icol, ilay, igpt
-    real(wp), dimension(ncol,nlay,ngpt)          :: lay_source, lev_source_inc, lev_source_dec
-    real(wp), dimension(ncol,     ngpt)          :: sfc_source
-    real(wp), dimension(ncol,     ngpt)          :: sfc_source_Jac
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
     real(wp), dimension(:,:),            pointer :: tlev_wk
@@ -822,13 +819,9 @@ contains
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
     !$acc enter data copyin(sources)
-    !$acc enter data create(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$omp target enter data map(alloc:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$acc enter data create(sfc_source, lay_source, lev_source_inc, lev_source_dec) attach(tlev_wk)
-    !$omp target enter data map(alloc:sfc_source, lay_source, lev_source_inc, lev_source_dec) map(to:tlev_wk)
-    !$acc enter data create(sfc_source_Jac)
-    !$omp target enter data map(alloc:sfc_source_Jac)
-    !$acc enter data create(sources%sfc_source_Jac)
+    !$acc        enter data create(   sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) attach(tlev_wk)
+    !$omp target enter data map(alloc:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) map(to:tlev_wk)
+    !$acc        enter data create(   sources%sfc_source_Jac)
     !$omp target enter data map(alloc:sources%sfc_source_Jac)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
@@ -836,25 +829,10 @@ contains
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sfc_source, lay_source, lev_source_inc, lev_source_dec, &
-                sfc_source_Jac)
-    !$acc parallel loop collapse(2)
-    sources%sfc_source = sfc_source
-    sources%sfc_source_Jac = sfc_source_Jac
-    sources%lay_source = lay_source
-    sources%lev_source_inc = lev_source_inc
-    sources%lev_source_dec = lev_source_dec
-    !
-    ! Transposition of a 2D array, for which we don't have a routine in mo_rrtmgp_util_reorder.
-    !
-    !$acc exit data delete(sfc_source_Jac)
-    !$omp target exit data map(release:sfc_source_Jac)
-    !$acc exit data delete(sfc_source, lay_source, lev_source_inc, lev_source_dec) detach(tlev_wk)
-    !$omp target exit data map(release:sfc_source, lay_source, lev_source_inc, lev_source_dec) map(from:tlev_wk)
-    !$acc exit data copyout(sources%sfc_source_Jac)
-    !$omp target exit data map(from:sources%sfc_source_Jac)
-    !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$omp target exit data map(from:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
+                sources%sfc_source, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                sources%sfc_source_Jac)
+    !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) detach(tlev_wk)
+    !$omp target exit data map(from:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) map(from:tlev_wk)
     !$acc exit data copyout(sources)
   end function source
   !--------------------------------------------------------------------------------------------------------------------
@@ -1717,7 +1695,7 @@ contains
     character(len=*), dimension(:),     intent(in) :: scaling_gas_atm
     logical(wl),      dimension(:),     intent(in) :: scale_by_complement_atm
     integer,          dimension(:),     intent(in) :: kminor_start_atm
-    real(wp),         dimension(:,:,:), allocatable, & 
+    real(wp),         dimension(:,:,:), allocatable, &
                                         intent(out) :: kminor_atm_red
     character(len=*), dimension(:), allocatable, &
                                         intent(out) :: minor_gases_atm_red
@@ -1903,13 +1881,13 @@ contains
         type is (ty_optical_props_2str)
           !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
-          optical_props%tau = tau_rayleigh + tau 
+          optical_props%tau = tau_rayleigh + tau
           optical_props%g   = 0._wp
-          where (optical_props%tau > 2._wp*tiny(optical_props%tau)) 
+          where (optical_props%tau > 2._wp*tiny(optical_props%tau))
             optical_props%ssa =  tau_rayleigh/optical_props%tau
           else where
             optical_props%ssa = 0._wp
-          end where  
+          end where
           !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr) ! We ought to be able to combine this with above

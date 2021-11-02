@@ -3,8 +3,8 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-2021,  Atmospheric and Environmental Research,
+! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
@@ -36,14 +36,14 @@
 module mo_rte_lw
   use mo_rte_kind,      only: wp, wl
   use mo_rte_config,    only: check_extents, check_values
-  use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
+  use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are, zero_array
   use mo_optical_props, only: ty_optical_props, &
                               ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_source_functions,   &
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_rte_solver_kernels, &
-                        only: apply_BC, lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream
+                        only: lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream
   implicit none
   private
 
@@ -82,13 +82,26 @@ contains
     !
     ! Local variables
     !
-    integer  :: ncol, nlay, ngpt, nband
-    integer  :: n_quad_angs
-    logical  :: using_2stream, do_Jacobians
-    real(wp), dimension(:,:,:), allocatable :: gpt_flux_up, gpt_flux_dn
-    real(wp), dimension(:,:),   allocatable :: sfc_emis_gpt
-    real(wp), dimension(1,1), target        :: decoy
-    real(wp), dimension(:,:), pointer       :: jacobian
+    integer      :: ncol, nlay, ngpt, nband
+    integer      :: icol, ilev, igpt,       imu
+    integer      :: n_quad_angs
+    logical(wl)  :: using_2stream, do_Jacobians, do_broadband
+    real(wp), dimension(:,:),   allocatable   :: sfc_emis_gpt
+    real(wp), dimension(:,:,:), allocatable   :: secants
+    real(wp), dimension(:,:),   pointer       :: jacobian
+    real(wp), dimension(optical_props%get_ncol(),           &
+                        optical_props%get_nlay()+1), target &
+                                            :: decoy2D ! Used for optional outputs - needs to be full size.
+    ! Memory needs to be allocated for the full g-point fluxes even if they aren't
+    !    used later because a) the GPU kernels use this memory to work in parallel and
+    !    b) the fluxes are intent(out) in the solvers
+    ! Shortwave solver takes a different approach since three fields are needed 
+    real(wp), dimension(optical_props%get_ncol(),   &
+                        optical_props%get_nlay()+1, &
+                        optical_props%get_ngpt())   &
+                                            :: gpt_flux_up, gpt_flux_dn
+    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc
+    real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse
     ! --------------------------------------------------
     !
     ! Weights and angle secants for first order (k=1) Gaussian quadrature.
@@ -109,27 +122,16 @@ contains
                              0.1355069134_wp, 0.2034645680_wp, 0.1298475476_wp, 0.0311809710_wp], &
                              [max_gauss_pts, max_gauss_pts])
     ! ------------------------------------------------------------------------------------
-    !
-    ! Error checking
-    !   if inc_flux is present it has the right dimensions, is positive definite
-    !
-    ! --------------------------------
     ncol  = optical_props%get_ncol()
     nlay  = optical_props%get_nlay()
     ngpt  = optical_props%get_ngpt()
     nband = optical_props%get_nband()
     do_Jacobians = present(flux_up_Jac)
-    if(do_Jacobians) then
-      jacobian => flux_up_Jac
-    else
-      jacobian => decoy
-    end if
     error_msg = ""
+
     ! ------------------------------------------------------------------------------------
     !
     ! Error checking -- input consistency of sizes and validity of values
-    !
-    ! --------------------------------
 
     if(.not. fluxes%are_desired()) &
       error_msg = "rte_lw: no space allocated for fluxes"
@@ -139,16 +141,12 @@ contains
         error_msg = "rte_lw: flux Jacobian inconsistently sized"
     endif
 
-    !
-    ! Source functions
-    !
     if (check_extents) then
+      !
+      ! Source functions
+      !
       if(any([sources%get_ncol(), sources%get_nlay(), sources%get_ngpt()]  /= [ncol, nlay, ngpt])) &
         error_msg = "rte_lw: sources and optical properties inconsistently sized"
-    end if
-    ! Also need to validate
-
-    if (check_extents) then
       !
       ! Surface emissivity
       !
@@ -161,15 +159,26 @@ contains
         if(.not. extents_are(inc_flux, ncol, ngpt)) &
           error_msg = "rte_lw: inc_flux inconsistently sized"
       end if
+      if (present(lw_Ds)) then
+        if(.not. extents_are(lw_Ds, ncol, ngpt)) &
+          error_msg = "rte_lw: lw_Ds inconsistently sized"
+      end if
     end if
 
     if(check_values) then
       if(any_vals_outside(sfc_emis, 0._wp, 1._wp)) &
         error_msg = "rte_lw: sfc_emis has values < 0 or > 1"
+
       if(present(inc_flux)) then
         if(any_vals_less_than(inc_flux, 0._wp)) &
           error_msg = "rte_lw: inc_flux has values < 0"
       end if
+
+      if (present(lw_Ds)) then
+        if(any_vals_less_than(lw_Ds, 1._wp)) &
+          error_msg = "rte_lw: one or more values of lw_Ds < 1."
+      end if
+
       if(present(n_gauss_angles)) then
         if(n_gauss_angles > max_gauss_pts) &
           error_msg = "rte_lw: asking for too many quadrature points for no-scattering calculation"
@@ -191,20 +200,14 @@ contains
     if(present(use_2stream)) using_2stream = use_2stream
 
     !
-    ! Checking that optional arguements are consistent with one another and with optical properties
+    ! Checking that optional arguments are consistent with one another and with optical properties
     !
     select type (optical_props)
       class is (ty_optical_props_1scl)
         if (using_2stream) &
           error_msg = "rte_lw: can't use two-stream methods with only absorption optical depth"
-        if (present(lw_Ds)) then
-          if(.not. extents_are(lw_Ds, ncol, ngpt)) &
-            error_msg = "rte_lw: lw_Ds inconsistently sized"
-          if(any_vals_less_than(lw_Ds, 1._wp)) &
-            error_msg = "rte_lw: one or more values of lw_Ds < 1."
-          if(n_quad_angs /= 1) &
+        if(present(lw_Ds) .and. n_quad_angs /= 1) &
             error_msg = "rte_lw: providing lw_Ds incompatible with specifying n_gauss_angles"
-        end if
       class is (ty_optical_props_2str)
         if (present(lw_Ds)) &
           error_msg = "rte_lw: lw_Ds not valid when providing scattering optical properties"
@@ -215,147 +218,220 @@ contains
       class default
         error_msg =  "rte_lw: lw_solver(...ty_optical_props_nstr...) not yet implemented"
     end select
-    if(len_trim(error_msg) > 0) return
-
-    !
-    ! Ensure values of tau, ssa, and g are reasonable if using scattering
-    !
-    error_msg =  optical_props%validate()
 
     if(len_trim(error_msg) > 0) then
       if(len_trim(optical_props%get_name()) > 0) &
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
       return
     end if
+
     ! ------------------------------------------------------------------------------------
-    !
+    !  Boundary conditions
     !    Lower boundary condition -- expand surface emissivity by band to gpoints
     !
-    allocate(gpt_flux_up (ncol, nlay+1, ngpt), gpt_flux_dn(ncol, nlay+1, ngpt))
     allocate(sfc_emis_gpt(ncol,         ngpt))
-    !!$acc enter data copyin(sources, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source)
-    !$acc enter data copyin(optical_props)
-    !$acc        enter data create(   gpt_flux_dn, gpt_flux_up)
-    !$omp target enter data map(alloc:gpt_flux_dn, gpt_flux_up)
-    !$acc        enter data create(   sfc_emis_gpt)
-    !$omp target enter data map(alloc:sfc_emis_gpt)
-    !$acc        enter data create(   flux_up_Jac) if(do_Jacobians)
-    !$omp target enter data map(alloc:flux_up_Jac) if(do_Jacobians)
 
-    call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
+    !   Upper boundary condition -  use values in optional arg or be set to 0
     !
-    !   Upper boundary condition
-    !
-    if(present(inc_flux)) then
-      !$acc        enter data copyin(inc_flux)
-      !$omp target enter data map(to:inc_flux)
-      call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl), inc_flux, gpt_flux_dn)
-      !$acc        exit data delete(     inc_flux)
-      !$omp target exit data map(release:inc_flux)
+    if (present(inc_flux)) then
+      inc_flux_diffuse => inc_flux
+      !$acc        enter data copyin(   inc_flux_diffuse)
+      !$omp target enter data map(to:   inc_flux_diffuse)
     else
-      !
-      ! Default is zero incident diffuse flux
-      !
-      call apply_BC(ncol, nlay, ngpt, logical(top_at_1, wl),           gpt_flux_dn)
+      allocate(inc_flux_diffuse(ncol, ngpt))
+      !$acc        enter data create(   inc_flux_diffuse)
+      !$omp target enter data map(alloc:inc_flux_diffuse)
+      call zero_array(ncol, ngpt, inc_flux_diffuse)
     end if
 
+    ! ------------------------------------------------------------------------------------
+    if(do_Jacobians) then
+      jacobian => flux_up_Jac
+    else
+      jacobian => decoy2D
+    end if
+
+    select type(fluxes)
+      !
+      ! Broadband fluxes are treated as a special case within the solvers; memory
+      !   for both up and down fluxes needs to be available even if the user doesn't
+      !   want one of them
+      !
+      type is (ty_fluxes_broadband)
+        do_broadband = .true._wl
+        !
+        ! Broadband fluxes class has three possible outputs; allocate memory for local use
+        !   if one or more haven't been requested
+        !
+        if(associated(fluxes%flux_up)) then
+          flux_up_loc => fluxes%flux_up
+        else
+          allocate(flux_up_loc(ncol, nlay+1))
+        end if
+        if(associated(fluxes%flux_dn)) then
+          flux_dn_loc => fluxes%flux_dn
+        else
+          allocate(flux_dn_loc(ncol, nlay+1))
+        end if
+        !$acc        enter data create(   flux_up_loc, flux_dn_loc)
+        !$omp target enter data map(alloc:flux_up_loc, flux_dn_loc)
+      class default
+        !
+        ! If broadband integrals aren't being computed, allocate working space
+        !   and decoy addresses for spectrally-integrated fields
+        !
+        do_broadband = .false._wl
+        flux_up_loc  => decoy2D
+        flux_dn_loc  => decoy2D
+    end select
 
     !
     ! Compute the radiative transfer...
     !
-    select type (optical_props)
-      class is (ty_optical_props_1scl)
-        !
-        ! No scattering two-stream calculation
-        !
-        !$acc        enter data copyin(optical_props%tau)
-        !$omp target enter data map(to:optical_props%tau)
-        error_msg =  optical_props%validate()
-        if(len_trim(error_msg) > 0) return
+    !$acc        data create(   sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
+    !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
+    call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
+    if(check_values) error_msg =  optical_props%validate()
+    if(len_trim(error_msg) == 0) then ! Can't do an early return within OpenACC/MP data regions
+      select type (optical_props)
+        class is (ty_optical_props_1scl)
+          !
+          ! No scattering two-stream calculation
+          !
+          !
+          ! Secant of radiation angle - either user-supplied, one per g-point, or
+          !   taken from first-order Gaussian quadrate and applied to all columns a g-points
+          !
+          allocate(secants(ncol, ngpt, n_quad_angs))
+          !$acc        data create(   secants)
+          !$omp target data map(alloc:secants)
+          if (present(lw_Ds)) then
+            !$acc                         parallel loop    collapse(2) copyin(lw_Ds)
+            !$omp target teams distribute parallel do simd collapse(2)
+            ! nmu is 1
+            do igpt = 1, ngpt
+              do icol = 1, ncol
+                secants(icol,igpt,1) = lw_Ds(icol,igpt)
+              end do
+            end do
+          else
+            !
+            !   Is there an alternative to making ncol x ngpt copies of each value?
+            !
+            !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
+            !$omp target teams distribute parallel do simd collapse(3)
+            do imu = 1, n_quad_angs
+              do igpt = 1, ngpt
+                do icol = 1, ncol
+                  secants(icol,igpt,imu) = gauss_Ds(imu,n_quad_angs)
+                end do
+              end do
+            end do
+          end if
+          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
+                                logical(top_at_1, wl), n_quad_angs,         &
+                                secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
+                                optical_props%tau,                 &
+                                sources%lay_source, sources%lev_source_inc, &
+                                sources%lev_source_dec,            &
+                                sfc_emis_gpt, sources%sfc_source,  &
+                                inc_flux_diffuse,                  &
+                                gpt_flux_up, gpt_flux_dn,          &
+                                do_broadband, flux_up_loc, flux_dn_loc,     &
+                                logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
+                                logical(.false., wl),  optical_props%tau, optical_props%tau)
+                                                      ! The last two arguments won't be used since the
+                                                      ! third-to-last is .false. but need valid addresses
+          !$acc        end data
+          !$omp end target data
+        class is (ty_optical_props_2str)
+          if (using_2stream) then
+            !
+            ! two-stream calculation with scattering
+            !
+            call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
+                                   optical_props%tau, optical_props%ssa, optical_props%g,              &
+                                   sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                                   sfc_emis_gpt, sources%sfc_source,       &
+                                   inc_flux_diffuse,                       &
+                                   gpt_flux_up, gpt_flux_dn)
+          else
+            allocate(secants(ncol, ngpt, n_quad_angs))
+            !$acc        data create(   secants)
+            !$omp target data map(alloc:secants)
+            !$acc                         parallel loop    collapse(3) copyin(gauss_Ds)
+            !$omp target teams distribute parallel do simd collapse(3)
+            do imu = 1, n_quad_angs
+              do igpt = 1, ngpt
+                do icol = 1, ncol
+                  secants(icol,igpt,imu) = gauss_Ds(imu,n_quad_angs)
+                end do
+              end do
+            end do
+            !
+            ! Re-scaled solution to account for scattering
+            !
+            call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
+                                  logical(top_at_1, wl), n_quad_angs,         &
+                                  secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
+                                  optical_props%tau,                 &
+                                  sources%lay_source, sources%lev_source_inc, &
+                                  sources%lev_source_dec,            &
+                                  sfc_emis_gpt, sources%sfc_source,  &
+                                  inc_flux_diffuse,                  &
+                                  gpt_flux_up, gpt_flux_dn,          &
+                                  do_broadband, flux_up_loc, flux_dn_loc,     &
+                                  logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
+                                  logical(.true., wl),  optical_props%ssa, optical_props%g)
+            !$acc        end data
+            !$omp end target data
+          endif
+        class is (ty_optical_props_nstr)
+          !
+          ! n-stream calculation
+          !
+          error_msg = 'lw_solver(...ty_optical_props_nstr...) not yet implemented'
+      end select
 
-        if (present(lw_Ds)) then
-          call lw_solver_noscat(ncol, nlay, ngpt, &
-                                logical(top_at_1, wl), &
-                                lw_Ds, gauss_wts(1,1), &
-                                optical_props%tau, &
-                                sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
-                                sfc_emis_gpt, sources%sfc_source,  &
-                                gpt_flux_up, gpt_flux_dn,          &
-                                logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
-                                logical(.false., wl),  optical_props%tau, optical_props%tau)
-        else
-          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, &
-                                logical(top_at_1, wl), &
-                                n_quad_angs, &
-                                gauss_Ds(1:n_quad_angs,n_quad_angs), &
-                                gauss_wts(1:n_quad_angs,n_quad_angs), &
-                                optical_props%tau, &
-                                sources%lay_source, sources%lev_source_inc, &
-                                sources%lev_source_dec, &
-                                sfc_emis_gpt, sources%sfc_source,  &
-                                gpt_flux_up, gpt_flux_dn,          &
-                                logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
-                                logical(.false., wl),  optical_props%tau, optical_props%tau)
-        end if
-        !$acc        exit data delete(     optical_props%tau)
-        !$omp target exit data map(release:optical_props%tau)
-      class is (ty_optical_props_2str)
-        if (using_2stream) then
-          !
-          ! two-stream calculation with scattering
-          !
-          !$acc        enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
-          !$omp target enter data map(to:optical_props%tau, optical_props%ssa, optical_props%g)
-          error_msg =  optical_props%validate()
-          if(len_trim(error_msg) > 0) return
-          call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                                 optical_props%tau, optical_props%ssa, optical_props%g,              &
-                                 sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
-                                 sfc_emis_gpt, sources%sfc_source,       &
-                                 gpt_flux_up, gpt_flux_dn)
-          !$acc        exit data delete(     optical_props%tau, optical_props%ssa, optical_props%g)
-          !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)
-        else
-          !
-          ! Re-scaled solution to account for scattering
-          !
-          !$acc        enter data copyin(optical_props%tau, optical_props%ssa, optical_props%g)
-          !$omp target enter data map(to:optical_props%tau, optical_props%ssa, optical_props%g)
-          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, &
-                                logical(top_at_1, wl), &
-                                n_quad_angs, &
-                                gauss_Ds(1:n_quad_angs,n_quad_angs), &
-                                gauss_wts(1:n_quad_angs,n_quad_angs), &
-                                optical_props%tau, &
-                                sources%lay_source, sources%lev_source_inc, &
-                                sources%lev_source_dec, &
-                                sfc_emis_gpt, sources%sfc_source,  &
-                                gpt_flux_up, gpt_flux_dn, &
-                                logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
-                                logical(.true., wl),  optical_props%ssa, optical_props%g)
-          !$acc        exit data delete(     optical_props%tau, optical_props%ssa, optical_props%g)
-          !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)
-        endif
-      class is (ty_optical_props_nstr)
+      select type(fluxes)
         !
-        ! n-stream calculation
+        ! Tidy up memory for broadband fluxes on GPUs
         !
-        error_msg = 'lw_solver(...ty_optical_props_nstr...) not yet implemented'
+        type is (ty_fluxes_broadband)
+          if(associated(fluxes%flux_net)) then
+            !
+            ! FIXME: Do we need the create/copyout here?
+            !
+            !$acc                         parallel loop    collapse(2) copyin(fluxes) copyout( fluxes%flux_net)
+            !$omp target teams distribute parallel do simd collapse(2) map(from:fluxes%flux_net)
+            do ilev = 1, nlay+1
+              do icol = 1, ncol
+                fluxes%flux_net(icol,ilev) = flux_dn_loc(icol,ilev) - flux_up_loc(icol,ilev)
+              end do
+            end do
+          end if
+        class default
+          !
+          ! ...or reduce spectral fluxes to desired output quantities
+          !
+          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
+      end select
+    end if ! no error message from validation
+    !$acc        end data
+    !$omp end target data
+
+    if(.not. present(inc_flux)) then
+      !$acc        exit data delete(     inc_flux_diffuse)
+      !$omp target exit data map(release:inc_flux_diffuse)
+      deallocate(inc_flux_diffuse)
+    end if
+    select type(fluxes)
+      type is (ty_fluxes_broadband)
+        !$acc        exit data copyout( flux_up_loc, flux_dn_loc)
+        !$omp target exit data map(from:flux_up_loc, flux_dn_loc)
+        if(.not. associated(flux_up_loc, fluxes%flux_up)) deallocate(flux_up_loc)
+        if(.not. associated(flux_dn_loc, fluxes%flux_dn)) deallocate(flux_dn_loc)
     end select
-
-    if (error_msg /= '') return
-    !
-    ! ...and reduce spectral fluxes to desired output quantities
-    !
-    error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
-
-    !$acc        exit data delete(     gpt_flux_up, gpt_flux_dn, sfc_emis_gpt)
-    !$omp target exit data map(release:gpt_flux_up, gpt_flux_dn, sfc_emis_gpt)
-    !$acc        exit data delete(optical_props)
-    !!$acc exit data delete(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source,sources)
-    !$acc        exit data copyout( flux_up_Jac) if(do_Jacobians)
-    !$omp target exit data map(from:flux_up_Jac) if(do_Jacobians)
-
   end function rte_lw
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -374,7 +450,7 @@ contains
     nband = ops%get_nband()
     ngpt  = ops%get_ngpt()
     limits = ops%get_band_lims_gpoint()
-    !$acc parallel loop collapse(2) copyin(arr_in, limits)
+    !$acc                         parallel loop    collapse(2) copyin(arr_in, limits)
     !$omp target teams distribute parallel do simd collapse(2) map(to:arr_in, limits)
     do iband = 1, nband
       do icol = 1, ncol

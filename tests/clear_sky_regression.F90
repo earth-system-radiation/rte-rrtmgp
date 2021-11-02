@@ -68,7 +68,7 @@ program rte_clear_sky_regression
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
-  type(ty_gas_optics_rrtmgp) :: k_dist
+  type(ty_gas_optics_rrtmgp) :: k_dist, k_dist_2
   type(ty_gas_concs)         :: gas_concs
   type(ty_gas_concs), dimension(:), allocatable &
                              :: gas_conc_array
@@ -89,7 +89,7 @@ program rte_clear_sky_regression
   character(len=32 ), &
             dimension(:), allocatable :: kdist_gas_names, rfmip_gas_games
 
-  character(len=256) :: input_file, k_dist_file
+  character(len=256) :: input_file = "", k_dist_file = "", k_dist_file_2 = ""
   ! ----------------------------------------------------------------------------------
   ! Code
   ! ----------------------------------------------------------------------------------
@@ -97,10 +97,11 @@ program rte_clear_sky_regression
   ! Parse command line for any file names, block size
   !
   nUserArgs = command_argument_count()
-  if (nUserArgs <  2) call stop_on_err("Need to supply input_file k_distribution_file")
+  if (nUserArgs <  2) call stop_on_err("Need to supply input_file k_distribution_file [k_dist_file_2]")
   if (nUserArgs >= 1) call get_command_argument(1,input_file)
   if (nUserArgs >= 2) call get_command_argument(2,k_dist_file)
-  if (nUserArgs >  3) print *, "Ignoring command line arguments beyond the first three..."
+  if (nUserArgs >= 3) call get_command_argument(3,k_dist_file_2)
+  if (nUserArgs >  4) print *, "Ignoring command line arguments beyond the first four..."
   if(trim(input_file) == '-h' .or. trim(input_file) == "--help") then
     call stop_on_err("clear_sky_regression input_file absorption_coefficients_file")
   end if
@@ -108,9 +109,9 @@ program rte_clear_sky_regression
   ! Read temperature, pressure, gas concentrations.
   !   Arrays are allocated as they are read
   !
-  call read_size(input_file, ncol, nlay, nexp)
+  call read_size          (input_file, ncol, nlay, nexp)
   call determine_gas_names(input_file, k_dist_file, 1, kdist_gas_names, rfmip_gas_games)
-  call read_and_block_pt(input_file, ncol, p_lay_3d, p_lev_3d, t_lay_3d, t_lev_3d)
+  call read_and_block_pt  (input_file, ncol, p_lay_3d, p_lev_3d, t_lay_3d, t_lev_3d)
   !
   ! Only do the first RFMIP experiment
   !
@@ -199,9 +200,9 @@ program rte_clear_sky_regression
   fluxes%flux_up => flux_up(:,:)
   fluxes%flux_dn => flux_dn(:,:)
   if(is_lw) then
-    call make_optical_props_1scl
+    call make_optical_props_1scl(k_dist)
     call atmos%finalize()
-    call make_optical_props_1scl
+    call make_optical_props_1scl(k_dist)
     call atmos%set_name("gas only atmosphere")
     call lw_clear_sky_default
     call lw_clear_sky_notlev
@@ -211,15 +212,34 @@ program rte_clear_sky_regression
     call lw_clear_sky_subset
     call lw_clear_sky_vr
     call lw_clear_sky_incr
-    call make_optical_props_2str
+    call make_optical_props_2str(k_dist)
     call lw_clear_sky_2str
+    if(len_trim(k_dist_file_2) > 0) then
+      call load_and_init(k_dist_2, k_dist_file_2, gas_concs)
+      print *, "Alternate k-distribution is for the " // merge("longwave ", "shortwave", .not. k_dist_2%source_is_external())
+      print *, "  Resolution :", k_dist_2%get_nband(), k_dist_2%get_ngpt()
+      call atmos%finalize()
+      call make_optical_props_1scl(k_dist_2)
+      call stop_on_err(lw_sources%alloc(ncol, nlay, k_dist_2))
+      call lw_clear_sky_alt
+    end if
   else
-    call make_optical_props_2str
+    call make_optical_props_2str(k_dist)
     call atmos%finalize()
-    call make_optical_props_2str
+    call make_optical_props_2str(k_dist)
     call sw_clear_sky_default
     call sw_clear_sky_tsi
     call sw_clear_sky_vr
+    if(len_trim(k_dist_file_2) > 0) then
+      call load_and_init(k_dist_2, k_dist_file_2, gas_concs)
+      print *, "Alternate k-distribution is for the " // merge("longwave ", "shortwave", .not. k_dist_2%source_is_external())
+      print *, "  Resolution :", k_dist_2%get_nband(), k_dist_2%get_ngpt()
+      call atmos%finalize()
+      call make_optical_props_2str(k_dist_2)
+      deallocate(toa_flux)
+      allocate(toa_flux(ncol, k_dist_2%get_ngpt()))
+      call sw_clear_sky_alt
+    end if
   end if
 contains
   ! ----------------------------------------------------------------------------
@@ -543,6 +563,31 @@ contains
 
   end subroutine lw_clear_sky_incr
   ! ----------------------------------------------------------------------------
+  subroutine lw_clear_sky_alt
+    real(wp), dimension(ncol, nlay+1), target :: flux_net
+    real(wp), dimension(ncol, nlay)           :: heating_rate
+
+    fluxes%flux_net => flux_net
+    call stop_on_err(k_dist_2%gas_optics(p_lay, p_lev, &
+                                         t_lay, sfc_t, &
+                                         gas_concs,    &
+                                         atmos,        &
+                                         lw_sources,   &
+                                         tlev = t_lev))
+    call stop_on_err(rte_lw(atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    call write_broadband_field(input_file, flux_up,  "lw_flux_up_alt",  "LW flux up, fewer g-points")
+    call write_broadband_field(input_file, flux_dn,  "lw_flux_dn_alt",  "LW flux dn, fewer g-points")
+    call write_broadband_field(input_file, flux_net, "lw_flux_net_alt", "LW flux ne, fewer g-pointst")
+
+    call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
+    call write_broadband_field(input_file, heating_rate,  &
+                                                     "lw_flux_hr_alt",  "LW heating rate, fewer g-points", vert_dim_name = "layer")
+    call k_dist_2%finalize()
+  end subroutine lw_clear_sky_alt
+  ! ----------------------------------------------------------------------------
   !
   ! Shortwave tests
   !
@@ -719,8 +764,44 @@ contains
   top_at_1 = .not. top_at_1
 end subroutine sw_clear_sky_vr
   ! ----------------------------------------------------------------------------
-  subroutine make_optical_props_1scl
-    if(allocated(atmos )) deallocate(atmos)
+  subroutine sw_clear_sky_alt
+    real(wp), dimension(ncol, k_dist_2%get_ngpt()) &
+                                    :: rfmip_tsi_scale
+    real(wp)                        :: rrtmgp_tsi
+    call stop_on_err(k_dist_2%gas_optics(p_lay, p_lev, &
+                                       t_lay,        &
+                                       gas_concs,    &
+                                       atmos,        &
+                                       toa_flux))
+    !
+    ! Scaling factor for column dependence of TSI in RFMIP
+    !
+    rrtmgp_tsi = sum(toa_flux(1,:))
+    rfmip_tsi_scale(:,:) = spread(tsi_3d(:,1)/rrtmgp_tsi, dim=2, ncopies=k_dist_2%get_ngpt())
+    toa_flux(:,:) = toa_flux(:,:) * rfmip_tsi_scale(:,:)
+
+    call stop_on_err(rte_sw(atmos, top_at_1, &
+                            mu0,   toa_flux, &
+                            sfc_alb_dir, sfc_alb_dif, &
+                            fluxes))
+    !
+    ! Fluxes were computed for all columns; here mask where sun is down
+    !
+    where(spread(.not. sun_up, dim=2, ncopies=nlay+1))
+      flux_up  = 0._wp
+      flux_dn  = 0._wp
+    end where
+    call write_broadband_field(input_file, flux_up,  "sw_flux_up_alt",  "SW flux up, fewer g-points")
+    call write_broadband_field(input_file, flux_dn,  "sw_flux_dn_alt",  "SW flux dn, fewer g-points")
+  end subroutine sw_clear_sky_alt
+    ! ----------------------------------------------------------------------------
+  subroutine make_optical_props_1scl(k_dist)
+    class (ty_optical_props), intent(in) :: k_dist
+
+    if(allocated(atmos)) then
+       call atmos%finalize()
+       deallocate(atmos)
+     end if
     allocate(ty_optical_props_1scl::atmos)
     ! Clouds optical props are defined by band
     !
@@ -734,8 +815,12 @@ end subroutine sw_clear_sky_vr
     end select
   end subroutine make_optical_props_1scl
   ! ----------------------------------------------------------------------------
-  subroutine make_optical_props_2str
-    if(allocated(atmos )) deallocate(atmos)
+  subroutine make_optical_props_2str(k_dist)
+    class (ty_optical_props), intent(in) :: k_dist
+    if(allocated(atmos)) then
+       call atmos%finalize()
+       deallocate(atmos)
+     end if
     allocate(ty_optical_props_2str::atmos)
     ! Clouds optical props are defined by band
     !

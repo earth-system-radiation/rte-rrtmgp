@@ -205,25 +205,25 @@ contains
     character(len=32), dimension(11) :: &
       chem_name = ['co   ', &
                    'ch4  ', &
-        				   'o2   ', &
-        				   'n2o  ', &
-        				   'n2   ', &
-        				   'co2  ', &
-        				   'CCl4 ', &
-        				   'ch4  ', &
-        				   'CH3Br', &
-   			           'CH3Cl', &
+                   'o2   ', &
+                   'n2o  ', &
+                   'n2   ', &
+                   'co2  ', &
+                   'CCl4 ', &
+                   'ch4  ', &
+                   'CH3Br', &
+                   'CH3Cl', &
                    'cfc22'], &
       conc_name = ['carbon_monoxide     ', &
                    'methane             ', &
                    'oxygen              ', &
-          			   'nitrous_oxide       ', &
-          			   'nitrogen            ', &
-        				   'carbon_dioxide      ', &
-        				   'carbon_tetrachloride', &
-        				   'methane             ', &
-        				   'methyl_bromide      ', &
-        				   'methyl_chloride     ', &
+                   'nitrous_oxide       ', &
+                   'nitrogen            ', &
+                   'carbon_dioxide      ', &
+                   'carbon_tetrachloride', &
+                   'methane             ', &
+                   'methyl_bromide      ', &
+                   'methyl_chloride     ', &
                    'hcfc22              ']
     ! ----------------
     select case (forcing_index)

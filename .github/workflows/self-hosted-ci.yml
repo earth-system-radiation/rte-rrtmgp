@@ -32,7 +32,7 @@ jobs:
     env:
       FCFLAGS: ${{ matrix.FCFLAGS }}
       RTE_KERNELS: ${{ matrix.RTE_KERNELS }}
-      RUN_CMD: "srun -C gpu -A pr55 -p cscsci -t 15:00"
+      RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -64,11 +64,16 @@ jobs:
         source compiler_modules
         export RRTMGP_ROOT=$PWD
         export FC=ftn
+        # Compiler needs more temporary space than normally available 
+        mkdir -p $PWD/tmp
+        export TMPDIR=$PWD/tmp
         make clean
         make libs
+        make -C build separate-libs
     - name: Run
       run: |
         set -e
+        export TMPDIR=$PWD/tmp
         source compiler_modules
         module load cray-python
         export RRTMGP_ROOT=$PWD

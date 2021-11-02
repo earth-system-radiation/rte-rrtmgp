@@ -23,8 +23,8 @@ Relative to commit `69d36c9` to `master` on Apr 20, 2020, the required arguments
 1. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Examples are provided in the `Compiler-flags.md` file.
 2. Set environment variables `RRTMGP_ROOT` to the top-level RTE+RRTMGP directory and `RTE_KERNELS` to `openacc` if you want the OpenACC/OpenMP kernels rather than the default.
 3. `make libs` in the top-level directory will make the RTE and RRTMGP libraries.
-4. The examples and testing codes use netCDF. Set the variables `NCHOME` and `NFHOME` to the roots of the C and Fortran netCDF installations, then `make tests` to build and run these. (A few files need to be downloaded for `examples/rfmaip-clear-sky`. The default is to download these with `wget` but a Python script is also available.)
-5. Evaluating the results of the tests requires `Python` with the `xarray` package and its depdencies installed. Comparisons can be made with `make check` in the top level directory.
+4. The examples and testing codes use netCDF. Set the variables `NCHOME` and `NFHOME` to the roots of the C and Fortran netCDF installations, then `make tests` to build and run these. (A few files need to be downloaded for `examples/rfmip-clear-sky`. The default is to download these with `wget` but a Python script is also available.)
+5. Evaluating the results of the tests requires `Python` with the `xarray` package and its dependencies installed. Comparisons can be made with `make check` in the top level directory.
 6. `make` invoked without a target in the top level attempts all three steps.
 
 ## Examples

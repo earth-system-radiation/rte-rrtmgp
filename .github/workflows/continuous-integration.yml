@@ -101,6 +101,7 @@ jobs:
         cd ${RRTMGP_ROOT}
         ${FC} --version
         make libs
+        make -C build separate-libs
 
     ############################################################################
     # Set up Python and packages

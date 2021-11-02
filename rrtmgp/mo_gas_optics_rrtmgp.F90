@@ -831,7 +831,7 @@ contains
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
                 sources%sfc_source, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                 sources%sfc_source_Jac)
-    !$acc exit data copyout(sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) detach(tlev_wk)
+    !$acc        exit data copyout( sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) detach(tlev_wk)
     !$omp target exit data map(from:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) map(from:tlev_wk)
     !$acc exit data copyout(sources)
   end function source
@@ -1549,8 +1549,8 @@ contains
     integer :: ibnd, iatm, i, iflavor
     ! prepare list of key_species
     i = 1
-    do ibnd=1,size(key_species,3)
-      do iatm=1,size(key_species,1)
+    do ibnd=1,size(key_species,3)   ! bands
+      do iatm=1,size(key_species,2) ! upper/lower atmosphere
         key_species_list(:,i) = key_species(:,iatm,ibnd)
         i = i + 1
       end do

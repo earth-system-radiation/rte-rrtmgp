@@ -917,19 +917,14 @@ contains
     ! Planck function tables
     !
     allocate(this%totplnk          (size(totplnk,    1), size(totplnk,   2)), &
-!             this%planck_frac      (size(planck_frac,1), size(planck_frac,2), size(planck_frac,3), size(planck_frac,4)), &
              this%planck_frac      (size(planck_frac,4), size(planck_frac,2),size(planck_frac,3), size(planck_frac,1)), &
              this%optimal_angle_fit(size(optimal_angle_fit,    1), size(optimal_angle_fit,   2)))
-    !$acc enter data create(this%totplnk, this%planck_frac, this%optimal_angle_fit)
-    !$omp target enter data map(alloc:this%totplnk, this%planck_frac, this%optimal_angle_fit)
-    !$acc kernels
-    !$omp target
     this%totplnk = totplnk
 !    this%planck_frac = planck_frac
     this%planck_frac = RESHAPE(planck_frac,(/size(planck_frac,4), size(planck_frac,2), size(planck_frac,3), size(planck_frac,1)/),ORDER =(/4,2,3,1/))
     this%optimal_angle_fit = optimal_angle_fit
-    !$acc end kernels
-    !$omp end target
+    !$acc        enter data copyin(this%totplnk, this%planck_frac, this%optimal_angle_fit)
+    !$omp target enter data map(to:this%totplnk, this%planck_frac, this%optimal_angle_fit)
 
     ! Temperature steps for Planck function interpolation
     !   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the

@@ -1777,10 +1777,8 @@ contains
         endif
       enddo
     endif
-    !$acc enter data copyin(kminor_atm_red, kminor_start_atm_red,
-    !minor_limits_gpt_atm_red, &
-    !$acc                   minor_scales_with_density_atm_red,
-    !scale_by_complement_atm_red)
+    !$acc enter data copyin(kminor_atm_red, kminor_start_atm_red,minor_limits_gpt_atm_red, &
+    !$acc                   minor_scales_with_density_atm_red, scale_by_complement_atm_red)
   end subroutine reduce_minor_arrays
 
 ! ---------------------------------------------------------------------------------------

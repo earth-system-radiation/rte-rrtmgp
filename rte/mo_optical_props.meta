@@ -45,21 +45,15 @@
   units = DDT
   dimensions = ()
   type = ty_optical_props_1scl
-  intent = in
-  optional = F
 [ty_optical_props_2str]
   standard_name = ty_optical_props_2str
   long_name = Fortran DDT containing RRTMGP optical properties
   units = DDT
   dimensions = ()
   type = ty_optical_props_2str
-  intent = in
-  optional = F
 [ty_optical_props_nstr]
   standard_name = ty_optical_props_nstr
   long_name = Fortran DDT containing RRTMGP optical properties
   units = DDT
   dimensions = ()
   type = ty_optical_props_nstr
-  intent = in
-  optional = F

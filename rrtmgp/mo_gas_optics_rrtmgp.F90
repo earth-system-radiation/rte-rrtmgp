@@ -1184,11 +1184,9 @@ contains
 
     ! Arrays not reduced by the presence, or lack thereof, of a gas
     allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
-!             this%kmajor(size(kmajor,1),size(kmajor,2),size(kmajor,3),size(kmajor,4)))
              this%kmajor(size(kmajor,4),size(kmajor,2),size(kmajor,3),size(kmajor,1)))
     this%press_ref = press_ref
     this%temp_ref  = temp_ref
-!    this%kmajor    = kmajor
     this%kmajor = RESHAPE(kmajor,(/size(kmajor,4),size(kmajor,2),size(kmajor,3),size(kmajor,1)/), ORDER= (/4,2,3,1/))
     !$acc enter data copyin(this%kmajor)
     !$omp target enter data map(to:this%kmajor)
@@ -1199,11 +1197,8 @@ contains
       return
     end if
     if (allocated(rayl_lower)) then
-!      allocate(this%krayl(size(rayl_lower,dim=1),size(rayl_lower,dim=2),size(rayl_lower,dim=3),2))
       allocate(this%krayl(size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1),2))
-!      this%krayl(:,:,:,1) = rayl_lower
       this%krayl(:,:,:,1) = RESHAPE(rayl_lower,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
-!      this%krayl(:,:,:,2) = rayl_upper
       this%krayl(:,:,:,2) = RESHAPE(rayl_upper,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
       !$acc enter data copyin(this%krayl)
       !$omp target enter data map(to:this%krayl)
@@ -1275,6 +1270,8 @@ contains
       size(kminor_lower_t,dim=1)/),ORDER = (/3,2,1/))
     this%kminor_upper = RESHAPE(kminor_upper_t,(/size(kminor_upper_t,dim=3),size(kminor_upper_t,dim=2), &
       size(kminor_upper_t,dim=1)/),ORDER = (/3,2,1/))
+    !$acc        enter data copyin(this%kminor_lower, this%kminor_upper)
+    !$omp target enter data map(to:this%kminor_lower, this%kminor_upper)
 
 
   end function init_abs_coeffs

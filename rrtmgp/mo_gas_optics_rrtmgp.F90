@@ -1156,7 +1156,6 @@ contains
                              scale_by_complement_lower, &
                              kminor_start_lower, &
                              this%kminor_lower, &
-     !                        kminor_lower_t, &
                              minor_gases_lower_red, &
                              this%minor_limits_gpt_lower, &
                              this%minor_scales_with_density_lower, &
@@ -1174,13 +1173,20 @@ contains
                              scale_by_complement_upper, &
                              kminor_start_upper, &
                              this%kminor_upper, &
-      !                       kminor_upper_t, &
                              minor_gases_upper_red, &
                              this%minor_limits_gpt_upper, &
                              this%minor_scales_with_density_upper, &
                              scaling_gas_upper_red, &
                              this%scale_by_complement_upper, &
                              this%kminor_start_upper)
+   !$acc        enter data copyin(this%minor_limits_gpt_lower, this%minor_limits_gpt_upper)
+   !$omp target enter data map(to:this%minor_limits_gpt_lower, this%minor_limits_gpt_upper)
+   !$acc        enter data copyin(this%minor_scales_with_density_lower, this%minor_scales_with_density_upper)
+   !$omp target enter data map(to:this%minor_scales_with_density_lower, this%minor_scales_with_density_upper)
+   !$acc        enter data copyin(this%scale_by_complement_lower, this%scale_by_complement_upper)
+   !$omp target enter data map(to:this%scale_by_complement_lower, this%scale_by_complement_upper)
+   !$acc        enter data copyin(this%kminor_start_lower, this%kminor_start_upper)
+   !$omp target enter data map(to:this%kminor_start_lower, this%kminor_start_upper)
 
     ! Arrays not reduced by the presence, or lack thereof, of a gas
     allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
@@ -1208,7 +1214,7 @@ contains
     ! creates log reference pressure
     allocate(this%press_ref_log(size(this%press_ref)))
     this%press_ref_log(:) = log(this%press_ref(:))
-    !$acc enter data copyin(this%press_ref_log)
+    !$acc        enter data copyin(this%press_ref_log)
     !$omp target enter data map(to:this%press_ref_log)
 
 
@@ -1225,6 +1231,8 @@ contains
       this%idx_minor_scaling_lower)
     call create_idx_minor_scaling(this%gas_names, scaling_gas_upper_red, &
       this%idx_minor_scaling_upper)
+    !$acc        enter data copyin(this%idx_minor_scaling_lower, this%idx_minor_scaling_upper)
+    !$omp target enter data map(to:this%idx_minor_scaling_lower, this%idx_minor_scaling_upper)
 
     ! create flavor list
     ! Reduce (remap) key_species list; checks that all key gases are present in incoming
@@ -1475,8 +1483,8 @@ contains
     !
     ! column transmissivity
     !
-    !$acc parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
-    !$omp target teams distribute parallel do simd collapse(2) map(to: optical_props%tau, optical_props%gpt2band) map(from:optimal_angles)
+    !$acc                parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:optical_props%tau, optical_props%gpt2band) map(from:optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !
@@ -1587,14 +1595,11 @@ contains
     integer :: idx_mnr
     allocate(idx_minor_atm(size(minor_gases_atm,dim=1)))
     do imnr = 1, size(minor_gases_atm,dim=1) ! loop over minor absorbers in each band
-          ! Find identifying string for minor species in list of possible identifiers (e.g. h2o_slf)
-          idx_mnr     = string_loc_in_array(minor_gases_atm(imnr), identifier_minor)
-          ! Find name of gas associated with minor species identifier (e.g. h2o)
-          idx_minor_atm(imnr) = string_loc_in_array(gas_minor(idx_mnr),    gas_names)
+      ! Find identifying string for minor species in list of possible identifiers (e.g. h2o_slf)
+      idx_mnr     = string_loc_in_array(minor_gases_atm(imnr), identifier_minor)
+      ! Find name of gas associated with minor species identifier (e.g. h2o)
+      idx_minor_atm(imnr) = string_loc_in_array(gas_minor(idx_mnr),    gas_names)
     enddo
-
-    !$acc enter data copyin(idx_minor_atm)
-    !$omp target enter data map(to:idx_minor_atm)
   end subroutine create_idx_minor
 
   ! ---------------------------------------------------------------------------------------
@@ -1612,12 +1617,9 @@ contains
     integer :: imnr
     allocate(idx_minor_scaling_atm(size(scaling_gas_atm,dim=1)))
     do imnr = 1, size(scaling_gas_atm,dim=1) ! loop over minor absorbers in each band
-          ! This will be -1 if there's no interacting gas
-          idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm(imnr), gas_names)
+      ! This will be -1 if there's no interacting gas
+      idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm(imnr), gas_names)
     enddo
-
-    !$acc enter data copyin(idx_minor_scaling_atm)
-    !$omp target enter data map(to:idx_minor_scaling_atm)
   end subroutine create_idx_minor_scaling
   ! ---------------------------------------------------------------------------------------
   subroutine create_key_species_reduce(gas_names,gas_names_red, &
@@ -1769,8 +1771,6 @@ contains
         endif
       enddo
     endif
-    !$acc enter data copyin(kminor_atm_red, kminor_start_atm_red,minor_limits_gpt_atm_red, &
-    !$acc                   minor_scales_with_density_atm_red, scale_by_complement_atm_red)
   end subroutine reduce_minor_arrays
 
 ! ---------------------------------------------------------------------------------------

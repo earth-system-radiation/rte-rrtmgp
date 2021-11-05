@@ -1194,7 +1194,7 @@ contains
     this%press_ref = press_ref
     this%temp_ref  = temp_ref
     this%kmajor = RESHAPE(kmajor,(/size(kmajor,4),size(kmajor,2),size(kmajor,3),size(kmajor,1)/), ORDER= (/4,2,3,1/))
-    !$acc enter data copyin(this%kmajor)
+    !$acc        enter data copyin(this%kmajor)
     !$omp target enter data map(to:this%kmajor)
 
 
@@ -1217,7 +1217,6 @@ contains
     !$acc        enter data copyin(this%press_ref_log)
     !$omp target enter data map(to:this%press_ref_log)
 
-
     ! log scale of reference pressure
     this%press_ref_trop_log = log(press_ref_trop)
 
@@ -1231,6 +1230,8 @@ contains
       this%idx_minor_scaling_lower)
     call create_idx_minor_scaling(this%gas_names, scaling_gas_upper_red, &
       this%idx_minor_scaling_upper)
+      !$acc        enter data copyin(this%idx_minor_lower, this%idx_minor_upper)
+      !$omp target enter data map(to:this%idx_minor_lower, this%idx_minor_upper)
     !$acc        enter data copyin(this%idx_minor_scaling_lower, this%idx_minor_scaling_upper)
     !$omp target enter data map(to:this%idx_minor_scaling_lower, this%idx_minor_scaling_upper)
 
@@ -1423,8 +1424,8 @@ contains
     ! ------------------------------------------------
     ncol = size(plev, dim=1)
     nlev = size(plev, dim=2)
-    !$acc enter data create(g0)
-    !$omp target enter data map(alloc:g0)
+    !$acc        data    create(g0)
+    !$omp target data map(alloc:g0)
     if(present(latitude)) then
       ! A purely OpenACC implementation would probably compute g0 within the kernel below
       !$acc parallel loop
@@ -1440,8 +1441,8 @@ contains
       end do
     end if
 
-    !$acc parallel loop gang vector collapse(2) copyin(plev,vmr_h2o) copyout(col_dry)
-    !$omp target teams distribute parallel do simd collapse(2) map(to:plev, vmr_h2o) map(from:col_dry)
+    !$acc                parallel loop gang vector collapse(2) copyin(plev,vmr_h2o)  copyout(col_dry)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:plev,vmr_h2o) map(from:col_dry)
     do ilev = 1, nlev-1
       do icol = 1, ncol
         delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1))
@@ -1451,8 +1452,8 @@ contains
         col_dry(icol,ilev) = 10._wp * delta_plev * avogad * fact/(1000._wp*m_air*100._wp*g0(icol))
       end do
     end do
-    !$acc exit data delete (g0)
-    !$omp target exit data map(release:g0)
+    !$acc end        data
+    !$omp end target data
   end function get_col_dry
   !--------------------------------------------------------------------------------------------------------------------
   !

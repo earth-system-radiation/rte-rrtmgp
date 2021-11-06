@@ -578,8 +578,8 @@ contains
     !
     ! ---- calculate gas optical depths ----
     !
-    !$acc        data create(   jtemp, jpress, jeta, tropo, fmajor, col_mix, fminor)
-    !$omp target data map(alloc:jtemp, jpress, jeta, tropo, fmajor, col_mix, fminor)
+    !$acc enter data create(   jtemp, jpress, jeta, tropo, fmajor, col_mix, fminor)
+    !$omp enter target data map(alloc:jtemp, jpress, jeta, tropo, fmajor, col_mix, fminor)
     !$acc enter data copyin(this)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
@@ -687,8 +687,8 @@ contains
     if (error_msg /= '') return
     ! Exit is for the copyin(this)
     !$acc exit data
-    !$acc end        data copyout( jtemp, jpress, jeta, tropo, fmajor)
-    !$omp end target data map(from:jtemp, jpress, jeta, tropo, fmajor)
+    !$acc exit        data copyout( jtemp, jpress, jeta, tropo, fmajor)
+    !$omp exit target data map(from:jtemp, jpress, jeta, tropo, fmajor)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !

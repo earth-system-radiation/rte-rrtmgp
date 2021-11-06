@@ -685,8 +685,7 @@ contains
       end select
     end if
     if (error_msg /= '') return
-    ! Exit is for the copyin(this)
-    !$acc exit data
+    !$acc exit        data copyout(this)
     !$acc exit        data copyout( jtemp, jpress, jeta, tropo, fmajor)
     !$omp exit target data map(from:jtemp, jpress, jeta, tropo, fmajor)
   end function compute_gas_taus

@@ -264,7 +264,6 @@ contains
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
     if(error_msg  /= '') return
-
     ! ----------------------------------------------------------
     !
     ! External source -- check arrays sizes and values
@@ -579,16 +578,9 @@ contains
     !
     ! ---- calculate gas optical depths ----
     !
-    !$acc enter data create(jtemp, jpress, jeta, tropo, fmajor)
-    !$omp target enter data map(alloc:jtemp, jpress, jeta, tropo, fmajor)
-    !$acc enter data create(tau, tau_rayleigh)
-    !$omp target enter data map(alloc:tau, tau_rayleigh)
-    !$acc enter data create(col_mix, fminor)
-    !$omp target enter data map(alloc:col_mix, fminor)
+    !$acc        data create(   jtemp, jpress, jeta, tropo, fmajor, col_mix, fminor)
+    !$omp target data map(alloc:jtemp, jpress, jeta, tropo, fmajor, col_mix, fminor)
     !$acc enter data copyin(this)
-    !$acc enter data copyin(this%gpoint_flavor)
-    !$omp target enter data map(to:this%gpoint_flavor)
-    call zero_array(ngpt, nlay, ncol, tau)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
             ngas, nflav, neta, npres, ntemp, & ! interpolation dimensions
@@ -608,38 +600,38 @@ contains
             col_mix,      &
             tropo,        &
             jeta,jpress)
-    call compute_tau_absorption(                     &
-            ncol,nlay,nband,ngpt,                    &  ! dimensions
-            ngas,nflav,neta,npres,ntemp,             &
-            nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
-            nminorupper, nminorkupper,               &
-            idx_h2o,                                 &
-            this%gpoint_flavor,                      &
-            this%get_band_lims_gpoint(),             &
-            this%kmajor,                             &
-            this%kminor_lower,                       &
-            this%kminor_upper,                       &
-            this%minor_limits_gpt_lower,             &
-            this%minor_limits_gpt_upper,             &
-            this%minor_scales_with_density_lower,    &
-            this%minor_scales_with_density_upper,    &
-            this%scale_by_complement_lower,          &
-            this%scale_by_complement_upper,          &
-            this%idx_minor_lower,                    &
-            this%idx_minor_upper,                    &
-            this%idx_minor_scaling_lower,            &
-            this%idx_minor_scaling_upper,            &
-            this%kminor_start_lower,                 &
-            this%kminor_start_upper,                 &
-            tropo,                                   &
-            col_mix,fmajor,fminor,                   &
-            play,tlay,col_gas,                       &
-            jeta,jtemp,jpress,                       &
-            tau)
     if (allocated(this%krayl)) then
-      !$acc enter data copyin(this%krayl)
-      !$omp target enter data map(to:this%krayl)
-
+      !$acc        data copyin(this%gpoint_flavor)    create(tau, tau_rayleigh)
+      !$omp target data map(to:this%gpoint_flavor) map(alloc:tau, tau_rayleigh)
+      call zero_array(ngpt, nlay, ncol, tau)
+      call compute_tau_absorption(                     &
+              ncol,nlay,nband,ngpt,                    &  ! dimensions
+              ngas,nflav,neta,npres,ntemp,             &
+              nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
+              nminorupper, nminorkupper,               &
+              idx_h2o,                                 &
+              this%gpoint_flavor,                      &
+              this%get_band_lims_gpoint(),             &
+              this%kmajor,                             &
+              this%kminor_lower,                       &
+              this%kminor_upper,                       &
+              this%minor_limits_gpt_lower,             &
+              this%minor_limits_gpt_upper,             &
+              this%minor_scales_with_density_lower,    &
+              this%minor_scales_with_density_upper,    &
+              this%scale_by_complement_lower,          &
+              this%scale_by_complement_upper,          &
+              this%idx_minor_lower,                    &
+              this%idx_minor_upper,                    &
+              this%idx_minor_scaling_lower,            &
+              this%idx_minor_scaling_upper,            &
+              this%kminor_start_lower,                 &
+              this%kminor_start_upper,                 &
+              tropo,                                   &
+              col_mix,fmajor,fminor,                   &
+              play,tlay,col_gas,                       &
+              jeta,jtemp,jpress,                       &
+              tau)
       call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
@@ -649,24 +641,54 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
-      !$acc exit data delete(this%krayl)
-      !$omp target exit data map(release:this%krayl)
-
+      call combine_abs_and_rayleigh(tau, tau_rayleigh, optical_props)
+      !$acc end        data
+      !$omp end target data
+    else
+      call zero_array(ngpt, nlay, ncol, optical_props%tau)
+      call compute_tau_absorption(                     &
+              ncol,nlay,nband,ngpt,                    &  ! dimensions
+              ngas,nflav,neta,npres,ntemp,             &
+              nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
+              nminorupper, nminorkupper,               &
+              idx_h2o,                                 &
+              this%gpoint_flavor,                      &
+              this%get_band_lims_gpoint(),             &
+              this%kmajor,                             &
+              this%kminor_lower,                       &
+              this%kminor_upper,                       &
+              this%minor_limits_gpt_lower,             &
+              this%minor_limits_gpt_upper,             &
+              this%minor_scales_with_density_lower,    &
+              this%minor_scales_with_density_upper,    &
+              this%scale_by_complement_lower,          &
+              this%scale_by_complement_upper,          &
+              this%idx_minor_lower,                    &
+              this%idx_minor_upper,                    &
+              this%idx_minor_scaling_lower,            &
+              this%idx_minor_scaling_upper,            &
+              this%kminor_start_lower,                 &
+              this%kminor_start_upper,                 &
+              tropo,                                   &
+              col_mix,fmajor,fminor,                   &
+              play,tlay,col_gas,                       &
+              jeta,jtemp,jpress,                       &
+              optical_props%tau)  !
+      select type(optical_props)
+        type is (ty_optical_props_2str)
+          call zero_array(ncol, nlay, ngpt, optical_props%ssa)
+          call zero_array(ncol, nlay, ngpt, optical_props%g)
+        type is (ty_optical_props_nstr)
+          call zero_array(ncol, nlay, ngpt, optical_props%ssa)
+          call zero_array(optical_props%get_nmom(), &
+                          ncol, nlay, ngpt, optical_props%p)
+      end select
     end if
     if (error_msg /= '') return
-
-    ! Combine optical depths and reorder for radiative transfer solver.
-    call combine_and_reorder(tau, tau_rayleigh, allocated(this%krayl), optical_props)
-    !$acc exit data delete(play, tlay, plev)
-    !$omp target exit data map(release:play, tlay, plev)
-    !$acc exit data delete(tau, tau_rayleigh)
-    !$omp target exit data map(release:tau, tau_rayleigh)
-    !$acc exit data delete(col_dry_wk, col_gas, col_mix, fminor)
-    !$omp target exit data map(release:col_dry_wk, col_gas, col_mix, fminor)
-    !$acc exit data delete(this%gpoint_flavor)
-    !$omp target exit data map(release:this%gpoint_flavor)
-    !$acc exit data copyout(jtemp, jpress, jeta, tropo, fmajor)
-    !$omp target exit data map(from:jtemp, jpress, jeta, tropo, fmajor)
+    ! Exit is for the copyin(this)
+    !$acc exit data
+    !$acc end        data copyout( jtemp, jpress, jeta, tropo, fmajor)
+    !$omp end target data map(from:jtemp, jpress, jeta, tropo, fmajor)
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
@@ -1818,89 +1840,91 @@ contains
  ! Utility function to combine optical depths from gas absorption and Rayleigh scattering
  !   (and reorder them for convenience, while we're at it)
  !
- subroutine combine_and_reorder(tau, tau_rayleigh, has_rayleigh, optical_props)
-    real(wp), dimension(:,:,:),   intent(in) :: tau
-    real(wp), dimension(:,:,:),   intent(in) :: tau_rayleigh
-    logical,                      intent(in) :: has_rayleigh
+ subroutine combine_abs_and_rayleigh(tau, tau_rayleigh, optical_props)
+    real(wp), dimension(:,:,:),   intent(in   ) :: tau
+    real(wp), dimension(:,:,:),   intent(in   ) :: tau_rayleigh
     class(ty_optical_props_arry), intent(inout) :: optical_props
 
-    integer :: ncol, nlay, ngpt, nmom
+    integer :: icol, ilay, igpt, ncol, nlay, ngpt, nmom
+    real(wp) :: t
 
     ncol = size(tau, 1)
     nlay = size(tau, 2)
     ngpt = size(tau, 3)
     !$acc enter data copyin(optical_props)
-    if (.not. has_rayleigh) then
-      !$acc enter data copyin(tau)
-      !$omp target enter data map(to:tau)
-      !$acc enter data create(optical_props%tau)
-      !$omp target enter data map(alloc:optical_props%tau)
-      optical_props%tau = tau
-      select type(optical_props)
-        type is (ty_optical_props_2str)
-          !$acc enter data create(optical_props%ssa, optical_props%g)
-          !!$omp target enter data map(alloc:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
-          optical_props%ssa = 0._wp
-          optical_props%g = 0._wp
-          !$acc exit data copyout(optical_props%ssa, optical_props%g)
-          !!$omp target exit data map(from:optical_props%ssa, optical_props%g) ! Not needed with Cray compiler
-        type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
-          nmom = size(optical_props%p, 1)
-          !$acc enter data create(optical_props%ssa, optical_props%p)
-          !$omp target enter data map(alloc:optical_props%ssa, optical_props%p)
-          optical_props%ssa = 0._wp
-          optical_props%p = 0._wp
-          !$acc exit data copyout(optical_props%ssa, optical_props%p)
-          !$omp target exit data map(from:optical_props%ssa, optical_props%p)
-        end select
-      !$acc exit data copyout(optical_props%tau)
-      !$omp target exit data map(from:optical_props%tau)
-      !$acc exit data delete(tau)
-      !$omp target exit data map(release:tau)
-    else
-      ! combine optical depth and rayleigh scattering
-      !$acc enter data copyin(tau, tau_rayleigh)
-      !$omp target enter data map(to:tau, tau_rayleigh)
-      select type(optical_props)
-        type is (ty_optical_props_1scl)
-          ! User is asking for absorption optical depth
-          !$acc enter data create(optical_props%tau)
-          !$omp target enter data map(alloc:optical_props%tau)
-          optical_props%tau = tau
-          !$acc exit data copyout(optical_props%tau)
-          !$omp target exit data map(from:optical_props%tau)
-        type is (ty_optical_props_2str)
-          !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%g)
-          !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
-          optical_props%tau = tau_rayleigh + tau
-          optical_props%g   = 0._wp
-          where (optical_props%tau > 2._wp*tiny(optical_props%tau))
-            optical_props%ssa =  tau_rayleigh/optical_props%tau
-          else where
-            optical_props%ssa = 0._wp
-          end where
-          !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%g)
-          !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)
-        type is (ty_optical_props_nstr) ! We ought to be able to combine this with above
-          nmom = size(optical_props%p, 1)
-          !$acc enter data create(optical_props%tau, optical_props%ssa, optical_props%p)
-          !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
-          optical_props%tau = tau_rayleigh + tau
-          where (optical_props%tau > 2._wp*tiny(optical_props%tau))
-             optical_props%ssa = tau_rayleigh/optical_props%tau
-          else where
-             optical_props%ssa = 0._wp
-          end where
-          optical_props%p = 0.0_wp
-          if(nmom >= 2) optical_props%p(2,:,:,:) = 0.1_wp
-          !$acc exit data copyout(optical_props%tau, optical_props%ssa, optical_props%p)
-          !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%p)
+    select type(optical_props)
+      type is (ty_optical_props_1scl)
+        !
+        ! Extinction optical depth
+        !
+        !$acc parallel loop gang vector                collapse(3)
+        !$omp target teams distribute parallel do simd collapse(3)
+        do igpt = 1, ngpt
+          do ilay = 1, nlay
+            do icol = 1, ncol
+              optical_props%tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + &
+                                         tau_rayleigh(icol,ilay,igpt)
+            end do
+          end do
+        end do
+      !
+      ! asymmetry factor or phase function moments
+      !
+      type is (ty_optical_props_2str)
+        !
+        ! Extinction optical depth and single scattering albedo
+        !
+        !$acc parallel loop gang vector                collapse(3)
+        !$omp target teams distribute parallel do simd collapse(3)
+        do igpt = 1, ngpt
+          do ilay = 1, nlay
+            do icol = 1, ncol
+              t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
+              if(t > 2._wp * tiny(t)) then
+                 optical_props%ssa(icol,ilay,igpt) = tau_rayleigh(icol,ilay,igpt) / t
+               else
+                 optical_props%ssa(icol,ilay,igpt) = 0._wp
+               end if
+               optical_props%tau(icol,ilay,igpt) = t
+             end do
+          end do
+        end do
+        call zero_array(ncol, nlay, ngpt, optical_props%g)
+      type is (ty_optical_props_nstr)
+        !
+        ! Extinction optical depth and single scattering albedo
+        !
+        !$acc parallel loop gang vector                collapse(3)
+        !$omp target teams distribute parallel do simd collapse(3)
+        do igpt = 1, ngpt
+          do ilay = 1, nlay
+            do icol = 1, ncol
+              t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
+              if(t > 2._wp * tiny(t)) then
+                 optical_props%ssa(icol,ilay,igpt) = tau_rayleigh(icol,ilay,igpt) / t
+               else
+                 optical_props%ssa(icol,ilay,igpt) = 0._wp
+               end if
+               optical_props%tau(icol,ilay,igpt) = t
+             end do
+          end do
+        end do
+        nmom = size(optical_props%p, 1)
+        call zero_array(nmom, ncol, nlay, ngpt, optical_props%p)
+        if(nmom >= 2) then
+          !$acc parallel loop gang vector                collapse(3)
+          !$omp target teams distribute parallel do simd collapse(3)
+          do igpt = 1, ngpt
+            do ilay = 1, nlay
+              do icol = 1, ncol
+                optical_props%p(2,icol,ilay,igpt) = 0.1_wp
+              end do
+            end do
+          end do
+        end if
       end select
-      !$acc exit data delete(tau, tau_rayleigh)
-      !$omp target exit data map(release:tau, tau_rayleigh)
-    end if
     !$acc exit data copyout(optical_props)
-  end subroutine combine_and_reorder
+  end subroutine combine_abs_and_rayleigh
 
   !--------------------------------------------------------------------------------------------------------------------
   ! Sizes of tables: pressure, temperate, eta (mixing fraction)

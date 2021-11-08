@@ -1208,6 +1208,8 @@ contains
    !$omp target enter data map(to:this%scale_by_complement_lower, this%scale_by_complement_upper)
    !$acc        enter data copyin(this%kminor_start_lower, this%kminor_start_upper)
    !$omp target enter data map(to:this%kminor_start_lower, this%kminor_start_upper)
+   !$acc        enter data copyin(this%kminor_lower, this%kminor_upper)
+   !$omp target enter data map(to:this%kminor_lower, this%kminor_upper)
 
     ! Arrays not reduced by the presence, or lack thereof, of a gas
     allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
@@ -1289,20 +1291,6 @@ contains
         if (this%flavor(i,j) /= 0) this%is_key(this%flavor(i,j)) = .true.
       end do
     end do
-
-    kminor_lower_t = this%kminor_lower
-    kminor_upper_t = this%kminor_upper
-    deallocate(this%kminor_lower)
-    deallocate(this%kminor_upper)
-    allocate(this%kminor_lower(size(kminor_lower_t,dim=3),size(kminor_lower_t,dim=2),size(kminor_lower_t,dim=1)))
-    allocate(this%kminor_upper(size(kminor_upper_t,dim=3),size(kminor_upper_t,dim=2),size(kminor_upper_t,dim=1)))
-    this%kminor_lower = RESHAPE(kminor_lower_t,(/size(kminor_lower_t,dim=3),size(kminor_lower_t,dim=2), &
-      size(kminor_lower_t,dim=1)/),ORDER = (/3,2,1/))
-    this%kminor_upper = RESHAPE(kminor_upper_t,(/size(kminor_upper_t,dim=3),size(kminor_upper_t,dim=2), &
-      size(kminor_upper_t,dim=1)/),ORDER = (/3,2,1/))
-    !$acc        enter data copyin(this%kminor_lower, this%kminor_upper)
-    !$omp target enter data map(to:this%kminor_lower, this%kminor_upper)
-
 
   end function init_abs_coeffs
   ! ----------------------------------------------------------------------------------------------------
@@ -1732,6 +1720,7 @@ contains
     integer :: icnt, n_elim, ng
     logical, dimension(:), allocatable :: gas_is_present
     integer, dimension(:), allocatable :: indexes
+    real(wp),         dimension(:,:,:), allocatable :: kminor_atm_red_t
 
     nm = size(minor_gases_atm)
     tot_g=0
@@ -1751,13 +1740,14 @@ contains
              scale_by_complement_atm_red      (red_nm), &
              kminor_start_atm_red             (red_nm))
     allocate(minor_limits_gpt_atm_red(2, red_nm))
-    allocate(kminor_atm_red(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
-
+    allocate(kminor_atm_red_t(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
+    allocate(kminor_atm_red(size(kminor_atm,3),size(kminor_atm,2),tot_g))
+    
     if ((red_nm .eq. nm)) then
       ! Character data not allowed in OpenACC regions?
       minor_gases_atm_red         = minor_gases_atm
       scaling_gas_atm_red         = scaling_gas_atm
-      kminor_atm_red              = kminor_atm
+      kminor_atm_red_t            = kminor_atm
       minor_limits_gpt_atm_red    = minor_limits_gpt_atm
       minor_scales_with_density_atm_red = minor_scales_with_density_atm
       scale_by_complement_atm_red = scale_by_complement_atm
@@ -1785,7 +1775,7 @@ contains
           kminor_start_atm_red(icnt) = kminor_start_atm(i)-n_elim
           ks = kminor_start_atm_red(icnt)
           do j = 1, ng
-            kminor_atm_red(kminor_start_atm_red(icnt)+j-1,:,:) = &
+            kminor_atm_red_t(kminor_start_atm_red(icnt)+j-1,:,:) = &
               kminor_atm(kminor_start_atm(i)+j-1,:,:)
           enddo
         else
@@ -1793,6 +1783,9 @@ contains
         endif
       enddo
     endif
+    
+    kminor_atm_red = RESHAPE(kminor_atm_red_t,(/size(kminor_atm_red_t,dim=3),size(kminor_atm_red_t,dim=2),size(kminor_atm_red_t,dim=1)/), ORDER=(/3,2,1/))
+    deallocate(kminor_atm_red_t)
   end subroutine reduce_minor_arrays
 
 ! ---------------------------------------------------------------------------------------

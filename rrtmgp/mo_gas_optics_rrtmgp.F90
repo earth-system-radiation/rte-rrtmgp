@@ -1049,7 +1049,7 @@ contains
     ngpt = size(solar_quiet)
     allocate(this%solar_source_quiet(ngpt), this%solar_source_facular(ngpt), &
              this%solar_source_sunspot(ngpt), this%solar_source(ngpt))
-    !$acc enter data create(this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
+    !$acc        enter data create(   this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
     !$omp target enter data map(alloc:this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
     !$acc kernels
     !$omp target
@@ -1152,6 +1152,7 @@ contains
     !   gas optics and also present in the host model
     !
     this%gas_names = pack(gas_names,mask=gas_is_present)
+    ! Copy-ins below
 
     allocate(vmr_ref_red(size(vmr_ref,dim=1),0:ngas, &
                          size(vmr_ref,dim=3)))
@@ -1162,6 +1163,8 @@ contains
       vmr_ref_red(:,i,:) = vmr_ref(:,idx+1,:)
     enddo
     call move_alloc(vmr_ref_red, this%vmr_ref)
+    !$acc        enter data copyin(this%vmr_ref, this%gas_names)
+    !$omp target enter data map(to:this%vmr_ref, this%gas_names)
     !
     ! Reduce minor arrays so variables only contain minor gases that are available
     ! Reduce size of minor Arrays
@@ -1214,11 +1217,11 @@ contains
     ! Arrays not reduced by the presence, or lack thereof, of a gas
     allocate(this%press_ref(size(press_ref)), this%temp_ref(size(temp_ref)), &
              this%kmajor(size(kmajor,4),size(kmajor,2),size(kmajor,3),size(kmajor,1)))
-    this%press_ref = press_ref
-    this%temp_ref  = temp_ref
+    this%press_ref(:) = press_ref(:)
+    this%temp_ref(:)  = temp_ref(:)
     this%kmajor = RESHAPE(kmajor,(/size(kmajor,4),size(kmajor,2),size(kmajor,3),size(kmajor,1)/), ORDER= (/4,2,3,1/))
-    !$acc        enter data copyin(this%kmajor)
-    !$omp target enter data map(to:this%kmajor)
+    !$acc        enter data copyin(this%press_ref, this%temp_ref, this%kmajor)
+    !$omp target enter data map(to:this%press_ref, this%temp_ref, this%kmajor)
 
 
     if(allocated(rayl_lower) .neqv. allocated(rayl_upper)) then
@@ -1229,7 +1232,7 @@ contains
       allocate(this%krayl(size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1),2))
       this%krayl(:,:,:,1) = RESHAPE(rayl_lower,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
       this%krayl(:,:,:,2) = RESHAPE(rayl_upper,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
-      !$acc enter data copyin(this%krayl)
+      !$acc        enter data copyin(this%krayl)
       !$omp target enter data map(to:this%krayl)
     end if
 
@@ -1244,17 +1247,13 @@ contains
     this%press_ref_trop_log = log(press_ref_trop)
 
     ! Get index of gas (if present) for determining col_gas
-    call create_idx_minor(this%gas_names, gas_minor, identifier_minor, minor_gases_lower_red, &
-      this%idx_minor_lower)
-    call create_idx_minor(this%gas_names, gas_minor, identifier_minor, minor_gases_upper_red, &
-      this%idx_minor_upper)
+    call create_idx_minor(this%gas_names, gas_minor, identifier_minor, minor_gases_lower_red, this%idx_minor_lower)
+    call create_idx_minor(this%gas_names, gas_minor, identifier_minor, minor_gases_upper_red, this%idx_minor_upper)
     ! Get index of gas (if present) that has special treatment in density scaling
-    call create_idx_minor_scaling(this%gas_names, scaling_gas_lower_red, &
-      this%idx_minor_scaling_lower)
-    call create_idx_minor_scaling(this%gas_names, scaling_gas_upper_red, &
-      this%idx_minor_scaling_upper)
-      !$acc        enter data copyin(this%idx_minor_lower, this%idx_minor_upper)
-      !$omp target enter data map(to:this%idx_minor_lower, this%idx_minor_upper)
+    call create_idx_minor_scaling(this%gas_names, scaling_gas_lower_red, this%idx_minor_scaling_lower)
+    call create_idx_minor_scaling(this%gas_names, scaling_gas_upper_red, this%idx_minor_scaling_upper)
+    !$acc        enter data copyin(this%idx_minor_lower, this%idx_minor_upper)
+    !$omp target enter data map(to:this%idx_minor_lower, this%idx_minor_upper)
     !$acc        enter data copyin(this%idx_minor_scaling_lower, this%idx_minor_scaling_upper)
     !$omp target enter data map(to:this%idx_minor_scaling_lower, this%idx_minor_scaling_upper)
 
@@ -1268,6 +1267,7 @@ contains
     call create_flavor(key_species_red, this%flavor)
     ! create gpoint_flavor list
     call create_gpoint_flavor(key_species_red, this%get_gpoint_bands(), this%flavor, this%gpoint_flavor)
+    !Copy-ins at end of subroutine
 
     ! minimum, maximum reference temperature, pressure -- assumes low-to-high ordering
     !   for T, high-to-low ordering for p
@@ -1291,6 +1291,8 @@ contains
         if (this%flavor(i,j) /= 0) this%is_key(this%flavor(i,j)) = .true.
       end do
     end do
+    !$acc        enter data copyin(this%flavor, this%gpoint_flavor, this%is_key)
+    !$omp target enter data map(to:this%flavor, this%gpoint_flavor, this%is_key)
 
   end function init_abs_coeffs
   ! ----------------------------------------------------------------------------------------------------
@@ -1742,7 +1744,7 @@ contains
     allocate(minor_limits_gpt_atm_red(2, red_nm))
     allocate(kminor_atm_red_t(tot_g, size(kminor_atm,2), size(kminor_atm,3)))
     allocate(kminor_atm_red(size(kminor_atm,3),size(kminor_atm,2),tot_g))
-    
+
     if ((red_nm .eq. nm)) then
       ! Character data not allowed in OpenACC regions?
       minor_gases_atm_red         = minor_gases_atm
@@ -1783,7 +1785,7 @@ contains
         endif
       enddo
     endif
-    
+
     kminor_atm_red = RESHAPE(kminor_atm_red_t,(/size(kminor_atm_red_t,dim=3),size(kminor_atm_red_t,dim=2),size(kminor_atm_red_t,dim=1)/), ORDER=(/3,2,1/))
     deallocate(kminor_atm_red_t)
   end subroutine reduce_minor_arrays

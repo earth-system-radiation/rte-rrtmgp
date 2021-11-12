@@ -959,7 +959,7 @@ contains
     !$acc kernels
     !$omp target
     this%totplnk = totplnk
-    this%planck_frac(:,:,:,:) = planck_frac(:,:,:,:)
+    this%planck_frac = planck_frac
     this%optimal_angle_fit = optimal_angle_fit
     !$acc end kernels
     !$omp end target

@@ -777,6 +777,7 @@ contains
                                       optional, target :: tlev          ! level temperatures [K]
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
+    logical(wl)                                  :: top_at_1
     integer                                      :: icol, ilay, igpt
     real(wp), dimension(ngpt,nlay,ncol)          :: lay_source_t, lev_source_inc_t, lev_source_dec_t
     real(wp), dimension(ngpt,     ncol)          :: sfc_source_t
@@ -830,9 +831,16 @@ contains
     !$omp target enter data map(alloc:sfc_source_Jac)
     !$acc enter data create(sources%sfc_source_Jac)
     !$omp target enter data map(alloc:sources%sfc_source_Jac)
+
+    !$acc kernels copyout(top_at_1)
+    !$omp target map(from:top_at_1)
+    top_at_1 = play(1,1) < play(1, nlay)
+    !$acc end kernels
+    !$omp end target
+
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
-                tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
+                tlay, tlev_wk, tsfc, merge(nlay, 1, top_at_1), &
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &

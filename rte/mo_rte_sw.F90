@@ -63,7 +63,7 @@ contains
     ! Local variables
     !
     integer     :: ncol, nlay, ngpt, nband
-    integer     :: icol, ilev, igpt
+    integer     :: icol, ilev
     logical(wl) :: has_dif_bc, do_broadband
 
     real(wp), dimension(:,:,:), pointer             :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir

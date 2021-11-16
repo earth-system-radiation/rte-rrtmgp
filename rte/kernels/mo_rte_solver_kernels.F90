@@ -308,7 +308,7 @@ contains
     real(wp), dimension(:,:,:), pointer :: this_flux_up,      this_flux_dn
     real(wp), dimension(:,:),   pointer :: this_broadband_up, this_broadband_dn, this_flux_upJac
 
-    integer :: imu, top_level
+    integer :: imu
     ! ------------------------------------
     !
     ! For the first angle output arrays store total flux
@@ -353,7 +353,7 @@ contains
                             do_rescaling, ssa, g)
       if(do_broadband) then
         broadband_up(:,:) = broadband_up(:,:) + this_broadband_up(:,:)
-        broadband_up(:,:) = broadband_dn(:,:) + this_broadband_dn(:,:)
+        broadband_dn(:,:) = broadband_dn(:,:) + this_broadband_dn(:,:)
       else
         flux_up   (:,:,:) = flux_up   (:,:,:) + this_flux_up   (:,:,:)
         flux_dn   (:,:,:) = flux_dn   (:,:,:) + this_flux_dn   (:,:,:)

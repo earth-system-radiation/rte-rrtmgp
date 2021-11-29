@@ -608,9 +608,9 @@ contains
     ! -----------------
 
     !$acc        data copyin(   tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor) &
-    !$acc             copyout(  sfc_src,lay_src,lev_src_inc,lev_src_dec) create(pfrac,planck_function,sfc_source_Jac)
+    !$acc             copyout(  sfc_src,lay_src,lev_src_inc,lev_src_dec) create(   pfrac,planck_function,sfc_source_Jac)
     !$omp target data map(   to:tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor) &
-    !$omp             map(from: sfc_src,lay_src,lev_src_inc,lev_src_dec) create(pfrac,planck_function,sfc_source_Jac)
+    !$omp             map(from: sfc_src,lay_src,lev_src_inc,lev_src_dec) map(alloc:pfrac,planck_function,sfc_source_Jac)
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
     !$acc parallel loop collapse(3)

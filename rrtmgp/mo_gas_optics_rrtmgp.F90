@@ -476,8 +476,8 @@ contains
     !
     ! Check input data sizes and values
     !
-    !$acc enter data copyin(play,plev,tlay)
-    !$omp target enter data map(to:play, plev, tlay)
+    !$acc        data copyin(play,plev,tlay) create(   vmr,col_gas)
+    !$omp target data map(to:play,plev,tlay) map(alloc:vmr,col_gas)
     if(check_extents) then
       if(.not. extents_are(play, ncol, nlay  )) &
         error_msg = "gas_optics(): array play has wrong size"
@@ -494,61 +494,70 @@ contains
           error_msg = "gas_optics(): array col_dry has wrong size"
       end if
     end if
-    if(error_msg  /= '') return
 
-    if(check_values) then
-      if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &
-        error_msg = "gas_optics(): array play has values outside range"
-      if(any_vals_less_than(plev, 0._wp)) &
-        error_msg = "gas_optics(): array plev has values outside range"
-      if(any_vals_outside(tlay, this%temp_ref_min,  this%temp_ref_max)) &
-        error_msg = "gas_optics(): array tlay has values outside range"
-      if(present(col_dry)) then
-        if(any_vals_less_than(col_dry, 0._wp)) &
-          error_msg = "gas_optics(): array col_dry has values outside range"
+    if(error_msg == '') then
+      if(check_values) then
+        if(any_vals_outside(play, this%press_ref_min,this%press_ref_max)) &
+          error_msg = "gas_optics(): array play has values outside range"
+        if(any_vals_less_than(plev, 0._wp)) &
+          error_msg = "gas_optics(): array plev has values outside range"
+        if(any_vals_outside(tlay, this%temp_ref_min,  this%temp_ref_max)) &
+          error_msg = "gas_optics(): array tlay has values outside range"
+        if(present(col_dry)) then
+          if(any_vals_less_than(col_dry, 0._wp)) &
+            error_msg = "gas_optics(): array col_dry has values outside range"
+        end if
       end if
     end if
-    if(error_msg  /= '') return
-
 
     ! ----------------------------------------------------------
-    ngas  = this%get_ngas()
-    nflav = get_nflav(this)
-    neta  = this%get_neta()
-    npres = this%get_npres()
-    ntemp = this%get_ntemp()
-    ! number of minor contributors, total num absorption coeffs
-    nminorlower  = size(this%minor_scales_with_density_lower)
-    nminorklower = size(this%kminor_lower, 3)
-    nminorupper  = size(this%minor_scales_with_density_upper)
-    nminorkupper = size(this%kminor_upper, 3)
-    !
-    ! Fill out the array of volume mixing ratios
-    !
-    !$acc enter data create(vmr)
-    !$omp target enter data map(alloc:vmr)
-    do igas = 1, ngas
+    if(error_msg == '') then
+      ngas  = this%get_ngas()
+      nflav = get_nflav(this)
+      neta  = this%get_neta()
+      npres = this%get_npres()
+      ntemp = this%get_ntemp()
+      ! number of minor contributors, total num absorption coeffs
+      nminorlower  = size(this%minor_scales_with_density_lower)
+      nminorklower = size(this%kminor_lower, 3)
+      nminorupper  = size(this%minor_scales_with_density_upper)
+      nminorkupper = size(this%kminor_upper, 3)
       !
-      ! Get vmr if  gas is provided in ty_gas_concs
+      ! Fill out the array of volume mixing ratios
       !
-      if (any (lower_case(this%gas_names(igas)) == gas_desc%gas_name(:))) then
-         error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(:,:,igas))
-         if (error_msg /= '') return
-      endif
-    end do
+      do igas = 1, ngas
+        !
+        ! Get vmr if  gas is provided in ty_gas_concs
+        !
+        if (any (lower_case(this%gas_names(igas)) == gas_desc%gas_name(:))) then
+          error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(:,:,igas))
+        endif
+      end do
+    end if
 
+    if(error_msg == '') then
+
+    select type(optical_props)
+      type is (ty_optical_props_1scl)
+        !$acc        enter data copyin(optical_props) create(   optical_props%tau)
+        !$omp target enter data                       map(alloc:optical_props%tau)
+      type is (ty_optical_props_2str)
+        !$acc        enter data copyin(optical_props) create(   optical_props%tau, optical_props%ssa, optical_props%g)
+        !$omp target enter data                       map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
+      type is (ty_optical_props_nstr)
+        !$acc        enter data copyin(optical_props) create(   optical_props%tau, optical_props%ssa, optical_props%p)
+        !$omp target enter data                       map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
+    end select
     !
     ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     !
     idx_h2o = string_loc_in_array('h2o', this%gas_names)
-    !$acc enter data create(col_gas)
-    !$omp target enter data map(alloc:col_gas)
     if (present(col_dry)) then
-      !$acc enter data copyin(col_dry)
+      !$acc        enter data copyin(col_dry)
       !$omp target enter data map(to:col_dry)
       col_dry_wk => col_dry
     else
-      !$acc enter data create(col_dry_arr)
+      !$acc        enter data create(   col_dry_arr)
       !$omp target enter data map(alloc:col_dry_arr)
       col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
       col_dry_wk => col_dry_arr
@@ -572,15 +581,11 @@ contains
         end do
       end do
     end do
-    !$acc exit data delete(vmr)
-    !$omp target exit data map(release:vmr)
-
     !
     ! ---- calculate gas optical depths ----
     !
-    !$acc enter data create(   jtemp, jpress, jeta, tropo, fmajor, col_mix, fminor)
-    !$omp enter target data map(alloc:jtemp, jpress, jeta, tropo, fmajor, col_mix, fminor)
-    !$acc enter data copyin(this)
+    !$acc        data copyout( jtemp, jpress, jeta, tropo, fmajor) create(   col_mix, fminor)
+    !$omp target data map(from:jtemp, jpress, jeta, tropo, fmajor) map(alloc:col_mix, fminor)
     call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
             ngas, nflav, neta, npres, ntemp, & ! interpolation dimensions
@@ -601,8 +606,8 @@ contains
             tropo,        &
             jeta,jpress)
     if (allocated(this%krayl)) then
-      !$acc        data copyin(this%gpoint_flavor)    create(tau, tau_rayleigh)
-      !$omp target data map(to:this%gpoint_flavor) map(alloc:tau, tau_rayleigh)
+      !$acc        data copyin(this%gpoint_flavor, this%krayl)    create(tau, tau_rayleigh)
+      !$omp target data map(to:this%gpoint_flavor, this%krayl) map(alloc:tau, tau_rayleigh)
       call zero_array(ngpt, nlay, ncol, tau)
       call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
@@ -684,10 +689,26 @@ contains
                           ncol, nlay, ngpt, optical_props%p)
       end select
     end if
-    if (error_msg /= '') return
-    !$acc exit        data copyout(this)
-    !$acc exit        data copyout( jtemp, jpress, jeta, tropo, fmajor)
-    !$omp exit target data map(from:jtemp, jpress, jeta, tropo, fmajor)
+    !$acc end        data
+    !$omp end target data
+    end if
+    !$acc end        data
+    !$omp end target data
+
+    !$acc        exit data delete(     col_dry_wk)
+    !$omp target exit data map(release:col_dry_wk)
+
+    select type(optical_props)
+      type is (ty_optical_props_1scl)
+        !$acc        exit data delete(optical_props) copyout( optical_props%tau)
+        !$omp target exit data                       map(from:optical_props%tau)
+      type is (ty_optical_props_2str)
+        !$acc        exit data delete(optical_props) copyout( optical_props%tau, optical_props%ssa, optical_props%g)
+        !$omp target exit data                       map(from:optical_props%tau, optical_props%ssa, optical_props%g)
+      type is (ty_optical_props_nstr)
+        !$acc        exit data delete(optical_props) copyout( optical_props%tau, optical_props%ssa, optical_props%p)
+        !$omp target exit data                       map(from:optical_props%tau, optical_props%ssa, optical_props%p)
+    end select
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
@@ -839,11 +860,10 @@ contains
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
-    !$acc enter data copyin(sources)
-    !$acc        enter data create(   sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) attach(tlev_wk)
-    !$omp target enter data map(alloc:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) map(to:tlev_wk)
-    !$acc        enter data create(   sources%sfc_source_Jac)
-    !$omp target enter data map(alloc:sources%sfc_source_Jac)
+    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source_inc, sources%lev_source_dec) &
+    !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac)
+    !$omp target data                 map(from:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec) &
+    !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac)
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
                 tlay, tlev_wk, tsfc, merge(1,nlay,play(1,1) > play(1,nlay)), &
@@ -852,9 +872,8 @@ contains
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
                 sources%sfc_source, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
                 sources%sfc_source_Jac)
-    !$acc        exit data copyout( sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) detach(tlev_wk)
-    !$omp target exit data map(from:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, sources%sfc_source) map(from:tlev_wk)
-    !$acc exit data copyout(sources)
+    !$acc end        data
+    !$omp end target data
   end function source
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -914,7 +933,7 @@ contains
                                                              kminor_start_upper
     character(len = 128) :: err_message
     ! ----
-    !$acc enter data create(this)
+    !$acc enter data copyin(this)
     err_message = init_abs_coeffs(this, &
                                   available_gases, &
                                   gas_names, key_species,    &
@@ -1021,7 +1040,7 @@ contains
 
     integer :: ngpt
     ! ----
-    !$acc enter data create(this)
+    !$acc enter data copyin(this)
     err_message = init_abs_coeffs(this, &
                                   available_gases, &
                                   gas_names, key_species,    &
@@ -1845,7 +1864,6 @@ contains
     ncol = size(tau, 1)
     nlay = size(tau, 2)
     ngpt = size(tau, 3)
-    !$acc enter data copyin(optical_props)
     select type(optical_props)
       type is (ty_optical_props_1scl)
         !
@@ -1917,7 +1935,6 @@ contains
           end do
         end if
       end select
-    !$acc exit data copyout(optical_props)
   end subroutine combine_abs_and_rayleigh
 
   !--------------------------------------------------------------------------------------------------------------------

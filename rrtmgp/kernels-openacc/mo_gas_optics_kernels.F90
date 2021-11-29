@@ -604,16 +604,13 @@ contains
     real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
     real(wp) :: pfrac          (ncol,nlay  ,ngpt)
     real(wp) :: planck_function(ncol,nlay+1,nbnd)
+    real(wp) :: local_planck_function(nbnd)
     ! -----------------
 
-    !$acc enter data copyin(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor)
-    !$omp target enter data map(to:tlay, tlev, tsfc, fmajor, jeta, tropo, jtemp, jpress, gpoint_bands, pfracin, totplnk, gpoint_flavor)
-    !$acc enter data create(sfc_src,lay_src,lev_src_inc,lev_src_dec)
-    !$omp target enter data map(alloc:sfc_src, lay_src, lev_src_inc, lev_src_dec)
-    !$acc enter data create(pfrac,planck_function)
-    !$omp target enter data map(alloc:pfrac, planck_function)
-    !$acc enter data create(sfc_source_Jac)
-    !$omp target enter data map(alloc:sfc_source_Jac)
+    !$acc        data copyin(   tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor) &
+    !$acc             copyout(  sfc_src,lay_src,lev_src_inc,lev_src_dec) create(pfrac,planck_function,sfc_source_Jac)
+    !$omp target data map(   to:tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor) &
+    !$omp             map(from: sfc_src,lay_src,lev_src_inc,lev_src_dec) create(pfrac,planck_function,sfc_source_Jac)
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
     !$acc parallel loop collapse(3)
@@ -636,11 +633,13 @@ contains
     ! Planck function by band for the surface
     ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
     !
-    !$acc parallel loop
-    !$omp target teams distribute parallel do simd
+    !$acc parallel loop                            private(local_planck_function)
+    !$omp target teams distribute parallel do simd private(local_planck_function)
     do icol = 1, ncol
-      call interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk, planck_function(icol,1,1:nbnd))
-      call interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk, planck_function(icol,2,1:nbnd))
+      call interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
+      planck_function(icol,1,1:nbnd) = local_planck_function(1:nbnd)
+      call interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
+      planck_function(icol,2,1:nbnd) = local_planck_function(1:nbnd)
     end do
     !
     ! Map to g-points
@@ -655,12 +654,13 @@ contains
       end do
     end do ! igpt
 
-    !$acc parallel loop collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
+    !$acc parallel loop collapse(2)                            private(local_planck_function)
+    !$omp target teams distribute parallel do simd collapse(2) private(local_planck_function)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
-        call interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function(icol,ilay,1:nbnd))
+        call interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
+        planck_function(icol,ilay,1:nbnd) = local_planck_function(1:nbnd)
       end do
     end do
     ! Map to g-points
@@ -668,7 +668,7 @@ contains
     ! Explicitly unroll a time-consuming loop here to increase instruction-level parallelism on a GPU
     ! Helps to achieve higher bandwidth
     !
-    !$acc parallel loop present(planck_function) collapse(3)
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
@@ -681,17 +681,19 @@ contains
     end do ! igpt
 
     ! compute level source irradiances for each g-point, one each for upward and downward paths
-    !$acc parallel loop
-    !$omp target teams distribute parallel do simd
+    !$acc parallel loop                            private(local_planck_function)
+    !$omp target teams distribute parallel do simd private(local_planck_function)
     do icol = 1, ncol
-      call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, planck_function(icol,1,1:nbnd))
+      call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
+      planck_function(icol,1,1:nbnd) = local_planck_function(1:nbnd)
     end do
 
-    !$acc parallel loop collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
+    !$acc parallel loop collapse(2)                            private(local_planck_function)
+    !$omp target teams distribute parallel do simd collapse(2) private(local_planck_function)
     do ilay = 2, nlay+1
       do icol = 1, ncol
-        call interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function(icol,ilay,1:nbnd))
+        call interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
+        planck_function(icol,ilay,1:nbnd) = local_planck_function(1:nbnd)
       end do
     end do
     !
@@ -714,15 +716,8 @@ contains
       end do ! ilay
     end do ! igpt
 
-    !$acc exit data delete(tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor)
-    !$omp target exit data map(release:tlay, tlev, tsfc, fmajor, jeta, tropo, jtemp, jpress, gpoint_bands, pfracin, totplnk, gpoint_flavor)
-    !$acc exit data delete(pfrac,planck_function)
-    !$omp target exit data map(release:pfrac, planck_function)
-    !$acc exit data copyout(sfc_src,lay_src,lev_src_inc,lev_src_dec)
-    !$omp target exit data map(from:sfc_src, lay_src, lev_src_inc, lev_src_dec)
-    !$acc exit data copyout(sfc_source_Jac)
-    !$omp target exit data map(from:sfc_source_Jac)
-
+    !$acc end        data
+    !$omp end target data
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------
   !

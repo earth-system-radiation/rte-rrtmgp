@@ -218,6 +218,7 @@ program rte_clear_sky_regression
       call load_and_init(k_dist_2, k_dist_file_2, gas_concs)
       print *, "Alternate k-distribution is for the " // merge("longwave ", "shortwave", .not. k_dist_2%source_is_external())
       print *, "  Resolution :", k_dist_2%get_nband(), k_dist_2%get_ngpt()
+      ngpt = k_dist_2%get_ngpt()
       call atmos%finalize()
       call make_optical_props_1scl(k_dist_2)
       call stop_on_err(lw_sources%alloc(ncol, nlay, k_dist_2))
@@ -566,6 +567,7 @@ contains
   subroutine lw_clear_sky_alt
     real(wp), dimension(ncol, nlay+1), target :: flux_net
     real(wp), dimension(ncol, nlay)           :: heating_rate
+    real(wp), dimension(ncol, ngpt)           :: lw_Ds
 
     fluxes%flux_net => flux_net
     call stop_on_err(k_dist_2%gas_optics(p_lay, p_lev, &
@@ -581,10 +583,21 @@ contains
     call write_broadband_field(input_file, flux_up,  "lw_flux_up_alt",  "LW flux up, fewer g-points")
     call write_broadband_field(input_file, flux_dn,  "lw_flux_dn_alt",  "LW flux dn, fewer g-points")
     call write_broadband_field(input_file, flux_net, "lw_flux_net_alt", "LW flux ne, fewer g-pointst")
-
     call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
     call write_broadband_field(input_file, heating_rate,  &
                                                      "lw_flux_hr_alt",  "LW heating rate, fewer g-points", vert_dim_name = "layer")
+
+    call stop_on_err(k_dist_2%compute_optimal_angles(atmos, lw_Ds))
+    call stop_on_err(rte_lw(atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes, lw_Ds=lw_Ds))
+    call write_broadband_field(input_file, flux_up,  "lw_flux_up_alt_oa",  "LW flux up, fewer g-points, opt. angle")
+    call write_broadband_field(input_file, flux_dn,  "lw_flux_dn_alt_oa",  "LW flux dn, fewer g-points, opt. angle")
+    call write_broadband_field(input_file, flux_net, "lw_flux_net_alt_oa", "LW flux ne, fewer g-points, opt. angle")
+    call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
+    call write_broadband_field(input_file, heating_rate,  &
+                                                     "lw_flux_hr_alt_oa",  "LW heating rate, fewer g-points, opt. angle", vert_dim_name = "layer")
     call k_dist_2%finalize()
   end subroutine lw_clear_sky_alt
   ! ----------------------------------------------------------------------------

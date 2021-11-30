@@ -365,12 +365,13 @@ contains
     ! -----------------
 
     ! optical depth calculation for major species
-    !$acc parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay
-        ! optical depth calculation for major species
-        do icol = 1, ncol
+    !$acc parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do ilay = 1, nlay
+      do icol = 1, ncol
+
+        !$acc loop seq
+        do igpt = 1, ngpt
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           itropo = merge(1,2,tropo(icol,ilay))  ! WS: moved inside innermost loop
 
@@ -382,9 +383,10 @@ contains
                           fmajor(:,:,:,icol,ilay,iflav), kmajor, &
                           igpt, jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
           tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + tau_major
-        end do ! icol
+        end do ! igpt
+
       end do
-    end do ! igpt
+    end do ! ilay
   end subroutine gas_optical_depths_major
 
   ! ----------------------------------------------------------
@@ -430,36 +432,37 @@ contains
     real(wp) :: vmr_fact, dry_fact             ! conversion from column abundance to dry vol. mixing ratio;
     real(wp) :: scaling, kminor_loc, tau_minor ! minor species absorption coefficient, optical depth
     integer  :: icol, ilay, iflav, igpt, imnr
-    integer  :: gptS, gptE
     integer  :: minor_start, minor_loc, extent
 
     real(wp) :: myplay, mytlay, mycol_gas_h2o, mycol_gas_imnr, mycol_gas_0
     real(wp) :: myfminor(2,2)
-    integer  :: myjtemp, myjeta(2), max_gpt_diff, igpt0
+    integer  :: myjtemp, myjeta(2)
     ! -----------------
 
     extent = size(scale_by_complement,dim=1)
 
-    ! Find the largest number of g-points per band
-    max_gpt_diff = maxval( minor_limits_gpt(2,:) - minor_limits_gpt(1,:) )
-
-    !$acc parallel loop gang vector collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
+    !$acc parallel loop gang vector collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1 , nlay
       do icol = 1, ncol
-        do igpt0 = 0, max_gpt_diff
-          !
-          ! This check skips individual columns with no pressures in range
-          !
-          if ( layer_limits(icol,1) <= 0 .or. ilay < layer_limits(icol,1) .or. ilay > layer_limits(icol,2) ) cycle
+        !
+        ! This check skips individual columns with no pressures in range
+        !
+        if ( layer_limits(icol,1) <= 0 .or. ilay < layer_limits(icol,1) .or. ilay > layer_limits(icol,2) ) cycle
 
-          myplay  = play (icol,ilay)
-          mytlay  = tlay (icol,ilay)
-          myjtemp = jtemp(icol,ilay)
-          mycol_gas_h2o = col_gas(icol,ilay,idx_h2o)
-          mycol_gas_0   = col_gas(icol,ilay,0)
+        myplay  = play (icol,ilay)
+        mytlay  = tlay (icol,ilay)
+        myjtemp = jtemp(icol,ilay)
+        mycol_gas_h2o = col_gas(icol,ilay,idx_h2o)
+        mycol_gas_0   = col_gas(icol,ilay,0)
 
-          do imnr = 1, extent
+        !$acc loop seq
+        do imnr = 1, extent
+          ! What is the starting point in the stored array of minor absorption coefficients?
+          minor_start = kminor_start(imnr)
+
+          !$acc loop seq
+          do igpt = minor_limits_gpt(1,imnr), minor_limits_gpt(2,imnr)
 
             scaling = col_gas(icol,ilay,idx_minor(imnr))
             if (minor_scales_with_density(imnr)) then
@@ -484,33 +487,16 @@ contains
             !
             ! Interpolation of absorption coefficient and calculation of optical depth
             !
-            ! Which gpoint range does this minor gas affect?
-            gptS = minor_limits_gpt(1,imnr)
-            gptE = minor_limits_gpt(2,imnr)
-
-            ! Find the actual g-point to work on
-            igpt = igpt0 + gptS
-
-            ! Proceed only if the g-point is within the correct range
-            if (igpt <= gptE) then
-              ! What is the starting point in the stored array of minor absorption coefficients?
-              minor_start = kminor_start(imnr)
-
-              tau_minor = 0._wp
-              iflav = gpt_flv(idx_tropo,igpt) ! eta interpolation depends on flavor
-              minor_loc = minor_start + (igpt - gptS) ! add offset to starting point
-              kminor_loc = interpolate2D(fminor(:,:,icol,ilay,iflav), kminor, minor_loc, &
-                                          jeta(:,icol,ilay,iflav), myjtemp)
-              tau_minor = kminor_loc * scaling
-
-              !$acc atomic update
-              !$omp atomic update
-              tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + tau_minor
-            endif
-
+            tau_minor = 0._wp
+            iflav = gpt_flv(idx_tropo,igpt) ! eta interpolation depends on flavor
+            minor_loc = minor_start + (igpt - minor_limits_gpt(1,imnr)) ! add offset to starting point
+            kminor_loc = interpolate2D(fminor(:,:,icol,ilay,iflav), kminor, minor_loc, &
+                                        jeta(:,icol,ilay,iflav), myjtemp)
+            tau_minor = kminor_loc * scaling
+            tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + tau_minor
           enddo
-
         enddo
+
       enddo
     enddo
 
@@ -547,11 +533,12 @@ contains
     integer  :: itropo
     ! -----------------
 
-    !$acc parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay
-        do icol = 1, ncol
+    !$acc parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do ilay = 1, nlay
+      do icol = 1, ncol
+        !$acc loop seq
+        do igpt = 1, ngpt
           itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           iflav = gpoint_flavor(itropo, igpt)
           k = interpolate2D(fminor(:,:,icol,ilay,iflav), &
@@ -602,138 +589,72 @@ contains
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
     integer  :: gptS, gptE
     real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
-    real(wp) :: pfrac          (ncol,nlay  ,ngpt)
-    real(wp) :: planck_function(ncol,nlay+1,nbnd)
-    real(wp) :: local_planck_function(nbnd)
+    real(wp) :: pfrac
+    real(wp) :: planck_function_1, planck_function_2
     ! -----------------
 
     !$acc        data copyin(   tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor) &
-    !$acc             copyout(  sfc_src,lay_src,lev_src_inc,lev_src_dec) create(   pfrac,planck_function,sfc_source_Jac)
+    !$acc             copyout(  sfc_src,lay_src,lev_src_inc,lev_src_dec,sfc_source_Jac)
     !$omp target data map(   to:tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor) &
-    !$omp             map(from: sfc_src,lay_src,lev_src_inc,lev_src_dec) map(alloc:pfrac,planck_function,sfc_source_Jac)
+    !$omp             map(from: sfc_src,lay_src,lev_src_inc,lev_src_dec,sfc_source_Jac) 
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
-    !$acc parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay
-        do icol = 1, ncol
+    !$acc parallel loop tile(128,2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do ilay = 1, nlay
+      do icol = 1, ncol
+
+        !$acc loop seq
+        do igpt = 1, ngpt
+          ibnd = gpoint_bands(igpt)
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           itropo = merge(1,2,tropo(icol,ilay))  !WS moved itropo inside loop for GPU
           iflav = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
-          pfrac(icol,ilay,igpt) = &
+          pfrac = &
             ! interpolation in temperature, pressure, and eta
             interpolate3D(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           igpt, jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
-        end do ! column
-      end do   ! layer
-    end do     ! igpt
+       
+          ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
+          planck_function_1 = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+          lay_src(icol,ilay,igpt) = pfrac * planck_function_1
+        
+          ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
+          planck_function_1 = interpolate1D(tlev(icol,ilay),   temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+          planck_function_2 = interpolate1D(tlev(icol,ilay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+          lev_src_dec(icol,ilay,igpt) = pfrac * planck_function_1
+          lev_src_inc(icol,ilay,igpt) = pfrac * planck_function_2
 
-    !
-    ! Planck function by band for the surface
-    ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
-    !
-    !$acc parallel loop                            private(local_planck_function)
-    !$omp target teams distribute parallel do simd private(local_planck_function)
-    do icol = 1, ncol
-      call interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
-      planck_function(icol,1,1:nbnd) = local_planck_function(1:nbnd)
-      call interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
-      planck_function(icol,2,1:nbnd) = local_planck_function(1:nbnd)
-    end do
-    !
-    ! Map to g-points
-    !
-    !$acc parallel loop collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
-    do igpt = 1, ngpt
-      do icol = 1, ncol
-        sfc_src       (icol,igpt) = pfrac(icol,sfc_lay,igpt) * planck_function(icol,1,gpoint_bands(igpt))
-        sfc_source_Jac(icol,igpt) = pfrac(icol,sfc_lay,igpt) * &
-                 (planck_function(icol,2,gpoint_bands(igpt)) - planck_function(icol,1,gpoint_bands(igpt)))
-      end do
-    end do ! igpt
-
-    !$acc parallel loop collapse(2)                            private(local_planck_function)
-    !$omp target teams distribute parallel do simd collapse(2) private(local_planck_function)
-    do ilay = 1, nlay
-      do icol = 1, ncol
-        ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
-        call interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
-        planck_function(icol,ilay,1:nbnd) = local_planck_function(1:nbnd)
-      end do
-    end do
-    ! Map to g-points
-    !
-    ! Explicitly unroll a time-consuming loop here to increase instruction-level parallelism on a GPU
-    ! Helps to achieve higher bandwidth
-    !
-    !$acc parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay
-        do icol = 1, ncol, 2
-          lay_src(icol,ilay,igpt  ) = pfrac(icol,ilay,igpt  ) * planck_function(icol,ilay,gpoint_bands(igpt))
-          if (icol < ncol) &
-          lay_src(icol+1,ilay,igpt) = pfrac(icol+1,ilay,igpt) * planck_function(icol+1,ilay,gpoint_bands(igpt))
-        end do
-      end do ! ilay
-    end do ! igpt
-
-    ! compute level source irradiances for each g-point, one each for upward and downward paths
-    !$acc parallel loop                            private(local_planck_function)
-    !$omp target teams distribute parallel do simd private(local_planck_function)
-    do icol = 1, ncol
-      call interpolate1D(tlev(icol,     1), temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
-      planck_function(icol,1,1:nbnd) = local_planck_function(1:nbnd)
-    end do
-
-    !$acc parallel loop collapse(2)                            private(local_planck_function)
-    !$omp target teams distribute parallel do simd collapse(2) private(local_planck_function)
-    do ilay = 2, nlay+1
-      do icol = 1, ncol
-        call interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, local_planck_function(1:nbnd))
-        planck_function(icol,ilay,1:nbnd) = local_planck_function(1:nbnd)
-      end do
-    end do
-    !
-    ! Map to g-points
-    !
-    ! Same unrolling as mentioned before
-    !
-    !$acc parallel loop present(planck_function) collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay
-        do icol = 1, ncol, 2
-          lev_src_dec(icol,ilay,igpt  ) = pfrac(icol,ilay,igpt  ) * planck_function(icol,ilay  ,gpoint_bands(igpt) )
-          lev_src_inc(icol,ilay,igpt  ) = pfrac(icol,ilay,igpt  ) * planck_function(icol,ilay+1,gpoint_bands(igpt) )
-          if (icol < ncol) then
-          lev_src_dec(icol+1,ilay,igpt) = pfrac(icol+1,ilay,igpt) * planck_function(icol+1,ilay,gpoint_bands(igpt))
-          lev_src_inc(icol+1,ilay,igpt) = pfrac(icol+1,ilay,igpt) * planck_function(icol+1,ilay+1,gpoint_bands(igpt))
+          if (ilay == sfc_lay) then
+            planck_function_1 = interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+            planck_function_2 = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+    
+            sfc_src       (icol,igpt) = pfrac * planck_function_1
+            sfc_source_Jac(icol,igpt) = pfrac * (planck_function_2 - planck_function_1)
           end if
-        end do ! icol
-      end do ! ilay
-    end do ! igpt
+        end do ! igpt
+
+      end do ! icol
+    end do ! ilay
 
     !$acc end        data
     !$omp end target data
   end subroutine compute_Planck_source
   ! ----------------------------------------------------------
   !
-  ! One dimensional interpolation -- return all values along second table dimension
+  ! One dimensional interpolation
   !
-  subroutine interpolate1D(val, offset, delta, table, res)
-  !$acc routine seq
-  !$omp declare target
+  function interpolate1D(val, offset, delta, table) result(res)
+    !$acc routine seq
+    !$omp declare target
     ! input
     real(wp), intent(in) :: val,    & ! axis value at which to evaluate table
                             offset, & ! minimum of table axis
                             delta     ! step size of table axis
-    real(wp), dimension(:,:), &
+    real(wp), dimension(:), &
               intent(in) :: table ! dimensions (axis, values)
     ! output
-    real(wp), intent(out) ,dimension(size(table,dim=2)) :: res
+    real(wp)             :: res
 
     ! local
     real(wp) :: val0 ! fraction index adjusted by offset and delta
@@ -743,8 +664,8 @@ contains
     val0 = (val - offset) / delta
     frac = val0 - int(val0) ! get fractional part
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
-    res(:) = table(index,:) + frac * (table(index+1,:) - table(index,:))
-  end subroutine interpolate1D
+    res = table(index) + frac * (table(index+1) - table(index))
+  end function interpolate1D
   ! ------------
   !   This function returns a single value from a subset (in gpoint) of the k table
   !

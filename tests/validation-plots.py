@@ -81,18 +81,20 @@ if __name__ == '__main__':
         #
         # Accuracy - 3-angle and single-angle
         #
-        variants = [[gpi.lw_flux_dn, gpi.lw_flux_dn_alt, gpi.lw_flux_dn_optang, gpi.lw_flux_dn_3ang, gpi.lw_flux_dn_2str],
-                    [gpi.lw_flux_up, gpi.lw_flux_up_alt, gpi.lw_flux_up_optang, gpi.lw_flux_up_3ang, gpi.lw_flux_up_2str],
+        variants = [[gpi.lw_flux_dn, gpi.lw_flux_dn_alt, gpi.lw_flux_dn_optang, gpi.lw_flux_dn_alt_oa, gpi.lw_flux_dn_3ang, gpi.lw_flux_dn_2str, gpi.lw_flux_dn_1rescl],
+                    [gpi.lw_flux_up, gpi.lw_flux_up_alt, gpi.lw_flux_up_optang, gpi.lw_flux_up_alt_oa, gpi.lw_flux_up_3ang, gpi.lw_flux_up_2str, gpi.lw_flux_up_1rescl],
                     [gpi.lw_flux_net,
                     gpi.lw_flux_net_alt,
                     gpi.lw_flux_dn_optang - gpi.lw_flux_up_optang,
+                    gpi.lw_flux_dn_alt_oa - gpi.lw_flux_up_alt_oa,
                     gpi.lw_flux_dn_3ang   - gpi.lw_flux_up_3ang,
-                    gpi.lw_flux_dn_2str   - gpi.lw_flux_up_2str]]
+                    gpi.lw_flux_dn_2str   - gpi.lw_flux_up_2str,
+                    gpi.lw_flux_dn_1rescl - gpi.lw_flux_up_1rescl]]
         refs = [lbli.rld,  lbli.rlu,  lbli.rld -  lbli.rlu]
         titles = ["Accuracy wrt LBLRTM: LW down", "Accuracy wrt LBLRTM: LW up", "Accuracy: LW net"]
         for v, r, t in zip(variants, refs, titles):
             make_comparison_plot(v, \
-                                 labels = ["default","fewer-g-points", "optimal-angle", "3-angle", "2-stream"], \
+                                 labels = ["default","fewer-g-points", "optimal-angle", "fewer points + optimal-angle", "3-angle", "2-stream", "rescaled"], \
                                  reference = r,            \
                                  vscale = plev/100.)
             plt.ylabel("Pressure (Pa)")

@@ -27,4 +27,4 @@ root of the RTE+RRTMGP installation.
 ### Debugging flags
 `FCFLAGS: "-g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mallocatable=03  -Mpreprocess"`
 ### Optimization flags:  
-`FCFLAGS: "-m64 -O3 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132"`
+`FCFLAGS: "-g -O3 -fast -Minfo -Mallocatable=03 -Mpreprocess"`

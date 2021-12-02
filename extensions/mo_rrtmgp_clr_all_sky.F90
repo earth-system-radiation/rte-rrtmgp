@@ -176,12 +176,13 @@ contains
                             inc_flux, n_gauss_angles)
 
     call sources%finalize()
+    call optical_props%finalize()
   end function rte_lw
   ! --------------------------------------------------
   function rte_sw(k_dist, gas_concs, p_lay, t_lay, p_lev, &
                                  mu0, sfc_alb_dir, sfc_alb_dif, cloud_props, &
                                  allsky_fluxes, clrsky_fluxes,           &
-                                 aer_props, col_dry, inc_flux, tsi_scaling) result(error_msg)
+                                 aer_props, col_dry, inc_flux) result(error_msg)
     class(ty_gas_optics),              intent(in   ) :: k_dist       !< derived type with spectral information
     type(ty_gas_concs),                intent(in   ) :: gas_concs    !< derived type encapsulating gas concentrations
     real(wp), dimension(:,:),          intent(in   ) :: p_lay, t_lay !< pressure [Pa], temperature [K] at layer centers (ncol,nlay)
@@ -198,7 +199,6 @@ contains
     real(wp), dimension(:,:), &
               optional,       intent(in ) :: col_dry, &  !< Molecular number density (ncol, nlay)
                                              inc_flux    !< incident flux at domain top [W/m2] (ncol, ngpts)
-    real(wp), optional,       intent(in ) :: tsi_scaling !< Optional scaling for total solar irradiance
 
     character(len=128)                    :: error_msg
     ! --------------------------------
@@ -227,20 +227,12 @@ contains
     ! ------------------------------------------------------------------------------------
     !  Error checking
     !
-    if(present(inc_flux) .and. present(tsi_scaling)) &
-      error_msg = "rrtmpg_sw: only one of inc_flux, tsi_scaling may be supplied."
-
     if(present(aer_props)) then
       if(any([aer_props%get_ncol(), &
               aer_props%get_nlay()] /= [ncol, nlay])) &
         error_msg = "rrtmpg_sw: aerosol properties inconsistently sized"
       if(.not. any(aer_props%get_ngpt() /= [ngpt, nband])) &
         error_msg = "rrtmpg_sw: aerosol properties inconsistently sized"
-    end if
-
-    if(present(tsi_scaling)) then
-      if(tsi_scaling <= 0._wp) &
-        error_msg = "rrtmpg_sw: tsi_scaling is < 0"
     end if
 
     if(present(inc_flux)) then
@@ -291,7 +283,6 @@ contains
     ! If users have supplied an incident flux, use that
     !
     if(present(inc_flux))    toa_flux(:,:) = inc_flux(:,:)
-    if(present(tsi_scaling)) toa_flux(:,:) = toa_flux(:,:) * tsi_scaling
     ! ----------------------------------------------------
     ! Clear sky is gases + aerosols (if they're supplied)
     !
@@ -315,6 +306,7 @@ contains
                                sfc_alb_dir, sfc_alb_dif,        &
                                allsky_fluxes)
 
+    call optical_props%finalize()
   end function rte_sw
 
 end module mo_rrtmgp_clr_all_sky

@@ -5,6 +5,7 @@ jobs:
   CI:
     runs-on: daint
     strategy:
+      fail-fast: false
       matrix:
         include:
         - config_name: pgi-gpu-acc

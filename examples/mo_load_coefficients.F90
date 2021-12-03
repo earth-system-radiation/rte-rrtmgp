@@ -35,6 +35,7 @@ contains
     use iso_fortran_env, only : error_unit
     character(len=*), intent(in) :: msg
 
+
     if(msg /= "") then
       write(error_unit, *) msg
       error stop 1

@@ -6,6 +6,7 @@ jobs:
   CI:
     runs-on: daint
     strategy:
+      fail-fast: false
       matrix:
         include:
         - config_name: pgi_default_gpu
@@ -64,7 +65,7 @@ jobs:
         source compiler_modules
         export RRTMGP_ROOT=$PWD
         export FC=ftn
-        # Compiler needs more temporary space than normally available 
+        # Compiler needs more temporary space than normally available
         mkdir -p $PWD/tmp
         export TMPDIR=$PWD/tmp
         make clean

@@ -1,3 +1,7 @@
+# FORD Documentation
+
+[RTE+RRTMGP's GitHub Pages site](https://sourceryinstitute.github.io/rte-rrtmgp/)
+
 # RTE+RRTMGP
 
 This is the repository for RTE+RRTMGP, a set of codes for computing radiative fluxes in planetary atmospheres. RTE+RRTMGP is described in a [paper](https://doi.org/10.1029/2019MS001621) in [Journal of Advances in Modeling Earth Systems](http://james.agu.org).

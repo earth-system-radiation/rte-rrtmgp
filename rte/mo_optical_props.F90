@@ -1,43 +1,48 @@
-! This code is part of Radiative Transfer for Energetics (RTE)
-!
-! Contacts: Robert Pincus and Eli Mlawer
-! email:  rrtmgp@aer.com
-!
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
-!
-! Use and duplication is permitted under the terms of the
-!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
-! -------------------------------------------------------------------------------------------------
-!
-! Encapsulate optical properties defined on a spectral grid of N bands.
-!   The bands are described by their limiting wavenumbers. They need not be contiguous or complete.
-!   A band may contain more than one spectral sub-point (g-point) in which case a mapping must be supplied.
-!   A name may be provided and will be prepended to error messages.
-!   The base class (ty_optical_props) encapsulates only this spectral discretization and must be initialized
-!      with the spectral information before use.
-!
-!   Optical properties may be represented as arrays with dimensions ncol, nlay, ngpt
-!   (abstract class ty_optical_props_arry).
-!   The type holds arrays depending on how much information is needed
-!   There are three possibilites
-!      ty_optical_props_1scl holds absorption optical depth tau, used in calculations accounting for extinction and emission
-!      ty_optical_props_2str holds extincion optical depth tau, single-scattering albedo ssa, and
-!        asymmetry parameter g. These fields are what's needed for two-stream calculations.
-!      ty_optical_props_nstr holds extincion optical depth tau, single-scattering albedo ssa, and
-!        phase function moments p with leading dimension nmom. These fields are what's needed for multi-stream calculations.
-!   These classes must be allocated before use. Initialization and allocation can be combined.
-!   The classes have a validate() function that checks all arrays for valid values (e.g. tau > 0.)
-!
-! Optical properties can be delta-scaled (though this is currently implemented only for two-stream arrays)
-!
-! Optical properties can increment or "add themselves to" a set of properties represented with arrays
-!   as long as both sets have the same underlying band structure. Properties defined by band
-!   may be added to properties defined by g-point; the same value is assumed for all g-points with each band.
-!
-! Subsets of optical properties held as arrays may be extracted along the column dimension.
-!
-! -------------------------------------------------------------------------------------------------
+!! This code is part of Radiative Transfer for Energetics (RTE)
+!!
+!! Contacts: Robert Pincus and Eli Mlawer
+!! email:  rrtmgp@aer.com
+!!
+!! Copyright 2015-2018,  Atmospheric and Environmental Research and
+!! Regents of the University of Colorado.  All right reserved.
+!!
+!! Use and duplication is permitted under the terms of the
+!!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
+!! -------------------------------------------------------------------------------------------------
+
+!> Encapsulate optical properties defined on a spectral grid of N bands.
+!>   The bands are described by their limiting wavenumbers. They need not be contiguous or complete.
+!>   A band may contain more than one spectral sub-point (g-point) in which case a mapping must be supplied.
+!>   A name may be provided and will be prepended to error messages.
+!>   The base class (ty_optical_props) encapsulates only this spectral discretization and must be initialized
+!>      with the spectral information before use.
+!>
+!>   Optical properties may be represented as arrays with dimensions ncol, nlay, ngpt
+!>   (abstract class ty_optical_props_arry).
+!>   The type holds arrays depending on how much information is needed
+!>   There are three possibilites
+!>      ty_optical_props_1scl holds absorption optical depth tau, used in calculations accounting for extinction and emission
+!>      ty_optical_props_2str holds extincion optical depth tau, single-scattering albedo ssa, and
+!>        asymmetry parameter g. These fields are what's needed for two-stream calculations.
+!>      ty_optical_props_nstr holds extincion optical depth tau, single-scattering albedo ssa, and
+!>        phase function moments p with leading dimension nmom. These fields are what's needed for multi-stream calculations.
+!>   These classes must be allocated before use. Initialization and allocation can be combined.
+!>   The classes have a validate() function that checks all arrays for valid values (e.g. tau > 0.)
+!>
+!> Optical properties can be delta-scaled (though this is currently implemented only for two-stream arrays)
+!>
+!> Optical properties can increment or "add themselves to" a set of properties represented with arrays
+!>   as long as both sets have the same underlying band structure. Properties defined by band
+!>   may be added to properties defined by g-point; the same value is assumed for all g-points with each band.
+!>
+!> Subsets of optical properties held as arrays may be extracted along the column dimension.
+!>@note
+!>example of a note with links to other modules and variables
+!>
+!> 1. [[mo_rte_config(module):check_extents(variable)]] in module [[mo_rte_config]]
+!>
+!>@endnote
+!> -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp
   use mo_rte_config,            only: check_extents, check_values
@@ -53,17 +58,17 @@ module mo_optical_props
         extract_subset
   implicit none
   integer, parameter :: name_len = 32
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! Base class for optical properties
-  !   Describes the spectral discretization including the wavenumber limits
-  !   of each band (spectral region) and the mapping between g-points and bands
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !> -------------------------------------------------------------------------------------------------
+  !>
+  !> Base class for optical properties
+  !>   Describes the spectral discretization including the wavenumber limits
+  !>   of each band (spectral region) and the mapping between g-points and bands
+  !>
+  !> -------------------------------------------------------------------------------------------------
   type, public :: ty_optical_props
-    integer,  dimension(:,:), allocatable :: band2gpt       ! (begin g-point, end g-point) = band2gpt(2,band)
-    integer,  dimension(:),   allocatable :: gpt2band       ! band = gpt2band(g-point)
-    real(wp), dimension(:,:), allocatable :: band_lims_wvn  ! (upper and lower wavenumber by band) = band_lims_wvn(2,band)
+    integer,  dimension(:,:), allocatable :: band2gpt       !! (begin g-point, end g-point) = band2gpt(2,band)
+    integer,  dimension(:),   allocatable :: gpt2band       !! band = gpt2band(g-point)
+    real(wp), dimension(:,:), allocatable :: band_lims_wvn  !! (upper and lower wavenumber by band) = band_lims_wvn(2,band)
     character(len=name_len)               :: name = ""
   contains
     generic,   public  :: init => init_base, init_base_from_copy
@@ -87,61 +92,61 @@ module mo_optical_props
     procedure, public  :: set_name
     procedure, public  :: get_name
   end type
-  !----------------------------------------------------------------------------------------
-  !
-  ! Optical properties as arrays, normally dimensioned ncol, nlay, ngpt/nbnd
-  !   The abstract base class for arrays defines what procedures will be available
-  !   The optical depth field is also part of the abstract base class, since
-  !    any representation of values as arrays needs an optical depth field
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !>----------------------------------------------------------------------------------------
+  !>
+  !> Optical properties as arrays, normally dimensioned ncol, nlay, ngpt/nbnd
+  !>   The abstract base class for arrays defines what procedures will be available
+  !>   The optical depth field is also part of the abstract base class, since
+  !>    any representation of values as arrays needs an optical depth field
+  !>
+  !> -------------------------------------------------------------------------------------------------
   type, extends(ty_optical_props), abstract, public :: ty_optical_props_arry
-    real(wp), dimension(:,:,:), allocatable :: tau ! optical depth (ncol, nlay, ngpt)
+    real(wp), dimension(:,:,:), allocatable :: tau !! optical depth (ncol, nlay, ngpt)
   contains
     procedure, public  :: get_ncol
     procedure, public  :: get_nlay
-    !
-    ! Increment another set of values
-    !
+    !>
+    !> Increment another set of values
+    !>
     procedure, public  :: increment
 
-    !
-    ! Deferred procedures -- each must be implemented in each child class with
-    !   arguments following the abstract interface (defined below)
-    !
+    !>
+    !> Deferred procedures -- each must be implemented in each child class with
+    !>   arguments following the abstract interface (defined below)
+    !>
     procedure(validate_abstract),     deferred, public  :: validate
     procedure(delta_scale_abstract),  deferred, public  :: delta_scale
     procedure(subset_range_abstract), deferred, public  :: get_subset
   end type
-  !
-  ! Interfaces for the methods to be implemented
-  !
+  !>
+  !> Interfaces for the methods to be implemented
+  !>
   abstract interface
-    !
-    ! Validation function looks only at internal data
-    !
+    !>
+    !> Validation function looks only at internal data
+    !>
     function validate_abstract(this) result(err_message)
       import ty_optical_props_arry
       class(ty_optical_props_arry),  intent(in) :: this
       character(len=128)  :: err_message
     end function validate_abstract
 
-    !
-    ! Delta-scaling
-    !
+    !>
+    !> Delta-scaling
+    !>
     function delta_scale_abstract(this, for) result(err_message)
       import ty_optical_props_arry
       import wp
       class(ty_optical_props_arry),  intent(inout) :: this
       real(wp), dimension(:,:,:), optional, &
                                      intent(in   ) :: for
-      ! Forward scattering fraction; g**2 if not provided
+      !> Forward scattering fraction; g**2 if not provided
       character(len=128)  :: err_message
     end function delta_scale_abstract
 
-    !
-    ! Subsetting -- currently there are only routines with start col and count
-    !
+    !>
+    !> Subsetting -- currently there are only routines with start col and count
+    !>
     function subset_range_abstract(full, start, n, subset) result(err_message)
       import ty_optical_props_arry
       class(ty_optical_props_arry), intent(inout) :: full
@@ -150,15 +155,15 @@ module mo_optical_props
       character(128)                              :: err_message
     end function subset_range_abstract
   end interface
-  !----------------------------------------------------------------------------------------
-  !
-  !   ty_optical_props_arry  includes only (extinction) optical depth
-  !   Class two-stream adds arrays for single scattering albedo ssa and
-  !     asymmetry parameter needed in two-stream methods
-  !   Class n-stream adds arrays for single scattering albedo ssa and
-  !     phase function moments (index 1 = g) for use with discrete ordinate methods
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !>----------------------------------------------------------------------------------------
+  !>
+  !>   ty_optical_props_arry  includes only (extinction) optical depth
+  !>   Class two-stream adds arrays for single scattering albedo ssa and
+  !>     asymmetry parameter needed in two-stream methods
+  !>   Class n-stream adds arrays for single scattering albedo ssa and
+  !>     phase function moments (index 1 = g) for use with discrete ordinate methods
+  !>
+  !> -------------------------------------------------------------------------------------------------
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_1scl
   contains
     procedure, public  :: validate => validate_1scalar
@@ -174,8 +179,8 @@ module mo_optical_props
 
   ! --- 2 stream ------------------------------------------------------------------------
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_2str
-    real(wp), dimension(:,:,:), allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
-    real(wp), dimension(:,:,:), allocatable :: g   ! asymmetry parameter (ncol, nlay, ngpt)
+    real(wp), dimension(:,:,:), allocatable :: ssa !! single-scattering albedo (ncol, nlay, ngpt)
+    real(wp), dimension(:,:,:), allocatable :: g   !! asymmetry parameter (ncol, nlay, ngpt)
   contains
     procedure, public  :: validate => validate_2stream
     procedure, public  :: get_subset => subset_2str_range
@@ -190,8 +195,8 @@ module mo_optical_props
 
   ! --- n stream ------------------------------------------------------------------------
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_nstr
-    real(wp), dimension(:,:,:),   allocatable :: ssa ! single-scattering albedo (ncol, nlay, ngpt)
-    real(wp), dimension(:,:,:,:), allocatable :: p   ! phase-function moments (nmom, ncol, nlay, ngpt)
+    real(wp), dimension(:,:,:),   allocatable :: ssa !! single-scattering albedo (ncol, nlay, ngpt)
+    real(wp), dimension(:,:,:,:), allocatable :: p   !! phase-function moments (nmom, ncol, nlay, ngpt)
   contains
     procedure, public :: validate => validate_nstream
     procedure, public :: get_subset => subset_nstr_range
@@ -210,12 +215,12 @@ contains
   !
   !  Routines for the base class: initialization, validity checking, finalization
   !
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! Base class: Initialization
-  !   Values are assumed to be defined in bands a mapping between bands and g-points is provided
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !> -------------------------------------------------------------------------------------------------
+  !>
+  !> Base class: Initialization
+  !>   Values are assumed to be defined in bands a mapping between bands and g-points is provided
+  !>
+  !> -------------------------------------------------------------------------------------------------
   function init_base(this, band_lims_wvn, band_lims_gpt, name) result(err_message)
     class(ty_optical_props),    intent(inout) :: this
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn
@@ -293,22 +298,22 @@ contains
                               spectral_desc%get_band_lims_gpoint())
     end if
   end function init_base_from_copy
-  !-------------------------------------------------------------------------------------------------
-  !
-  ! Base class: return true if initialized, false otherwise
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !>-------------------------------------------------------------------------------------------------
+  !>
+  !> Base class: return true if initialized, false otherwise
+  !>
+  !> -------------------------------------------------------------------------------------------------
   pure function is_initialized_base(this)
     class(ty_optical_props), intent(in) :: this
     logical                             :: is_initialized_base
 
     is_initialized_base = allocated(this%band2gpt)
   end function is_initialized_base
-  !-------------------------------------------------------------------------------------------------
-  !
-  ! Base class: finalize (deallocate memory)
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !>-------------------------------------------------------------------------------------------------
+  !>
+  !> Base class: finalize (deallocate memory)
+  !>
+  !> -------------------------------------------------------------------------------------------------
   subroutine finalize_base(this)
     class(ty_optical_props),    intent(inout) :: this
 
@@ -323,11 +328,11 @@ contains
   !  Routines for array classes: initialization, allocation, and finalization
   !    Initialization and allocation can be combined by supplying either
   !
-  ! ------------------------------------------------------------------------------------------
-  !
-  ! Straight allocation routines
-  !
-  ! --- 1 scalar ------------------------------------------------------------------------
+  !> ------------------------------------------------------------------------------------------
+  !>
+  !> Straight allocation routines
+  !>
+  !> --- 1 scalar ------------------------------------------------------------------------
   function alloc_only_1scl(this, ncol, nlay) result(err_message)
     class(ty_optical_props_1scl) :: this
     integer,          intent(in) :: ncol, nlay
@@ -346,7 +351,7 @@ contains
     end if
   end function alloc_only_1scl
 
-  ! --- 2 stream ------------------------------------------------------------------------
+  !> --- 2 stream ------------------------------------------------------------------------
   function alloc_only_2str(this, ncol, nlay) result(err_message)
     class(ty_optical_props_2str)    :: this
     integer,             intent(in) :: ncol, nlay
@@ -366,7 +371,7 @@ contains
     allocate(this%ssa(ncol,nlay,this%get_ngpt()), this%g(ncol,nlay,this%get_ngpt()))
   end function alloc_only_2str
 
-  ! --- n stream ------------------------------------------------------------------------
+  !> --- n stream ------------------------------------------------------------------------
   function alloc_only_nstr(this, nmom, ncol, nlay) result(err_message)
     class(ty_optical_props_nstr)    :: this
     integer,             intent(in) :: nmom ! number of moments
@@ -390,11 +395,11 @@ contains
   !
   ! Combined allocation/initialization routines
   !
-  ! ------------------------------------------------------------------------------------------
-  !
-  ! Initialization by specifying band limits and possibly g-point/band mapping
-  !
-  ! ---------------------------------------------------------------------------
+  !> ------------------------------------------------------------------------------------------
+  !>
+  !> Initialization by specifying band limits and possibly g-point/band mapping
+  !>
+  !> ---------------------------------------------------------------------------
   function init_and_alloc_1scl(this, ncol, nlay, band_lims_wvn, band_lims_gpt, name) result(err_message)
     class(ty_optical_props_1scl)             :: this
     integer,                      intent(in) :: ncol, nlay
@@ -439,11 +444,11 @@ contains
     if(err_message /= "") return
     err_message = this%alloc_nstr(nmom, ncol, nlay)
   end function init_and_alloc_nstr
-  !-------------------------------------------------------------------------------------------------
-  !
-  ! Initialization from an existing spectral discretization/ty_optical_props
-  !
-  !-------------------------------------------------------------------------------------------------
+  !>-------------------------------------------------------------------------------------------------
+  !>
+  !> Initialization from an existing spectral discretization/ty_optical_props
+  !>
+  !>-------------------------------------------------------------------------------------------------
   function copy_and_alloc_1scl(this, ncol, nlay, spectral_desc, name) result(err_message)
     class(ty_optical_props_1scl)             :: this
     integer,                      intent(in) :: ncol, nlay
@@ -488,11 +493,11 @@ contains
     if(err_message /= "") return
     err_message = this%alloc_nstr(nmom, ncol, nlay)
   end function copy_and_alloc_nstr
-  ! ------------------------------------------------------------------------------------------
-  !
-  ! Finalize routines
-  !
-  ! ------------------------------------------------------------------------------------------
+  !> ------------------------------------------------------------------------------------------
+  !>
+  !> Finalize routines
+  !>
+  !> ------------------------------------------------------------------------------------------
   function finalize_1scl(this) result(err_message)
     class(ty_optical_props_1scl) :: this
     character(len=128)           :: err_message
@@ -524,9 +529,9 @@ contains
   !
   !  Routines for array classes: delta-scaling, validation (ensuring all values can be used )
   !
-  ! ------------------------------------------------------------------------------------------
-  ! --- delta scaling
-  ! ------------------------------------------------------------------------------------------
+  !> ------------------------------------------------------------------------------------------
+  !> --- delta scaling
+  !> ------------------------------------------------------------------------------------------
   function delta_scale_1scl(this, for) result(err_message)
     class(ty_optical_props_1scl), intent(inout) :: this
     real(wp), dimension(:,:,:), optional, &
@@ -542,7 +547,7 @@ contains
     class(ty_optical_props_2str), intent(inout) :: this
     real(wp), dimension(:,:,:), optional, &
                                   intent(in   ) :: for
-    ! Forward scattering fraction; g**2 if not provided
+    !! Forward scattering fraction; g**2 if not provided
     character(128)                              :: err_message
 
     integer :: ncol, nlay, ngpt
@@ -580,11 +585,11 @@ contains
 
     err_message = 'delta_scale_nstr: Not yet implemented'
   end function delta_scale_nstr
-  ! ------------------------------------------------------------------------------------------
-  !
-  ! --- Validation
-  !
-  ! ------------------------------------------------------------------------------------------
+  !> ------------------------------------------------------------------------------------------
+  !>
+  !> --- Validation
+  !>
+  !> ------------------------------------------------------------------------------------------
   function validate_1scalar(this) result(err_message)
     class(ty_optical_props_1scl), intent(in) :: this
     character(len=128)                       :: err_message
@@ -682,16 +687,16 @@ contains
         err_message = trim(this%get_name()) // ': ' // trim(err_message)
   end function validate_nstream
   
-  ! ------------------------------------------------------------------------------------------
-  !
-  !  Routines for array classes: subsetting of optical properties arrays along x (col) direction
-  !
-  ! Allocate class, then arrays; copy. Could probably be more efficient if
-  !   classes used pointers internally.
-  !
-  ! This set takes start position and number as scalars
-  !
-  ! ------------------------------------------------------------------------------------------
+  !> ------------------------------------------------------------------------------------------
+  !>
+  !>  Routines for array classes: subsetting of optical properties arrays along x (col) direction
+  !>
+  !> Allocate class, then arrays; copy. Could probably be more efficient if
+  !>   classes used pointers internally.
+  !>
+  !> This set takes start position and number as scalars
+  !>
+  !> ------------------------------------------------------------------------------------------
 
   function subset_1scl_range(full, start, n, subset) result(err_message)
     class(ty_optical_props_1scl), intent(inout) :: full
@@ -846,12 +851,12 @@ contains
     end select
   end function subset_nstr_range
 
-  ! ------------------------------------------------------------------------------------------
-  !
-  !  Routines for array classes: incrementing
-  !   a%increment(b) adds the values of a to b, changing b and leaving a untouched
-  !
-  ! -----------------------------------------------------------------------------------------
+  !> ------------------------------------------------------------------------------------------
+  !>
+  !>  Routines for array classes: incrementing
+  !>   a%increment(b) adds the values of a to b, changing b and leaving a untouched
+  !>
+  !> -----------------------------------------------------------------------------------------
   function increment(op_in, op_io) result(err_message)
     class(ty_optical_props_arry), intent(in   ) :: op_in
     class(ty_optical_props_arry), intent(inout) :: op_io
@@ -1002,11 +1007,11 @@ contains
       end select
     end if
   end function increment
-  ! -----------------------------------------------------------------------------------------------
-  !
-  !  Routines for array classes: problem sizes
-  !
-  ! -----------------------------------------------------------------------------------------------
+  !> -----------------------------------------------------------------------------------------------
+  !>
+  !>  Routines for array classes: problem sizes
+  !>
+  !> -----------------------------------------------------------------------------------------------
   pure function get_arry_extent(this, dim)
     class(ty_optical_props_arry), intent(in   ) :: this
     integer,                      intent(in   ) :: dim
@@ -1047,10 +1052,10 @@ contains
   !
   !  Routines for base class: spectral discretization
   !
-  ! -----------------------------------------------------------------------------------------------
-  !
-  ! Number of bands
-  !
+  !> -----------------------------------------------------------------------------------------------
+  !>
+  !> Number of bands
+  !>
   pure function get_nband(this)
     class(ty_optical_props), intent(in) :: this
     integer                             :: get_nband
@@ -1061,10 +1066,10 @@ contains
       get_nband = 0
     end if
   end function get_nband
-  ! -----------------------------------------------------------------------------------------------
-  !
-  ! Number of g-points
-  !
+  !> -----------------------------------------------------------------------------------------------
+  !>
+  !> Number of g-points
+  !>
   pure function get_ngpt(this)
     class(ty_optical_props), intent(in) :: this
     integer                             :: get_ngpt
@@ -1075,11 +1080,11 @@ contains
       get_ngpt = 0
     end if
   end function get_ngpt
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! The first and last g-point of all bands at once
-  ! dimension (2, nbands)
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !>
+  !> The first and last g-point of all bands at once
+  !> dimension (2, nbands)
+  !>
   pure function get_band_lims_gpoint(this)
     class(ty_optical_props), intent(in) :: this
     integer, dimension(size(this%band2gpt,dim=1), size(this%band2gpt,dim=2)) &
@@ -1087,10 +1092,10 @@ contains
 
     get_band_lims_gpoint = this%band2gpt
   end function get_band_lims_gpoint
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! First and last g-point of a specific band
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !>
+  !> First and last g-point of a specific band
+  !>
   pure function convert_band2gpt(this, band)
     class(ty_optical_props), intent(in) :: this
     integer,                 intent(in) :: band
@@ -1102,11 +1107,11 @@ contains
       convert_band2gpt(:) = 0
     end if
   end function convert_band2gpt
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Lower and upper wavenumber of all bands
-  ! (upper and lower wavenumber by band) = band_lims_wvn(2,band)
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !>
+  !> Lower and upper wavenumber of all bands
+  !> (upper and lower wavenumber by band) = band_lims_wvn(2,band)
+  !>
   pure function get_band_lims_wavenumber(this)
     class(ty_optical_props), intent(in) :: this
     real(wp), dimension(size(this%band_lims_wvn,1), size(this%band_lims_wvn,2)) &
@@ -1118,10 +1123,10 @@ contains
       get_band_lims_wavenumber(:,:) = 0._wp
     end if
   end function get_band_lims_wavenumber
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Lower and upper wavelength of all bands
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !>
+  !> Lower and upper wavelength of all bands
+  !>
   pure function get_band_lims_wavelength(this)
     class(ty_optical_props), intent(in) :: this
     real(wp), dimension(size(this%band_lims_wvn,1), size(this%band_lims_wvn,2)) &
@@ -1133,10 +1138,10 @@ contains
       get_band_lims_wavelength(:,:) = 0._wp
     end if
   end function get_band_lims_wavelength
-  !--------------------------------------------------------------------------------------------------------------------
-  ! Bands for all the g-points at once
-  ! dimension (ngpt)
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !> Bands for all the g-points at once
+  !> dimension (ngpt)
+  !>
   pure function get_gpoint_bands(this)
     class(ty_optical_props), intent(in) :: this
     integer, dimension(size(this%gpt2band,dim=1)) &
@@ -1148,10 +1153,10 @@ contains
       get_gpoint_bands(:) = 0
     end if
   end function get_gpoint_bands
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Band associated with a specific g-point
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !>
+  !> Band associated with a specific g-point
+  !>
   pure function convert_gpt2band(this, gpt)
     class(ty_optical_props), intent(in) :: this
     integer,                            intent(in) :: gpt
@@ -1163,10 +1168,10 @@ contains
       convert_gpt2band = 0
     end if
   end function convert_gpt2band
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Expand an array of dimension arr_in(nband) to dimension arr_out(ngpt)
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !>
+  !> Expand an array of dimension arr_in(nband) to dimension arr_out(ngpt)
+  !>
   pure function expand(this, arr_in) result(arr_out)
     class(ty_optical_props), intent(in) :: this
     real(wp), dimension(:),  intent(in) :: arr_in ! (nband)
@@ -1178,10 +1183,10 @@ contains
       arr_out(this%band2gpt(1,iband):this%band2gpt(2,iband)) = arr_in(iband)
     end do
   end function expand
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Are the bands of two objects the same? (same number, same wavelength limits)
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !>
+  !> Are the bands of two objects the same? (same number, same wavelength limits)
+  !>
   pure function bands_are_equal(this, that)
     class(ty_optical_props), intent(in) :: this, that
     logical                             :: bands_are_equal
@@ -1193,11 +1198,11 @@ contains
       all(abs(this%get_band_lims_wavenumber() - that%get_band_lims_wavenumber()) < &
           5._wp * spacing(this%get_band_lims_wavenumber()))
   end function bands_are_equal
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  ! Is the g-point structure of two objects the same?
-  !   (same bands, same number of g-points, same mapping between bands and g-points)
-  !
+  !>--------------------------------------------------------------------------------------------------------------------
+  !>
+  !> Is the g-point structure of two objects the same?
+  !>   (same bands, same number of g-points, same mapping between bands and g-points)
+  !>
   pure function gpoints_are_equal(this, that)
     class(ty_optical_props), intent(in) :: this, that
     logical                             :: gpoints_are_equal
@@ -1208,11 +1213,11 @@ contains
     gpoints_are_equal = &
       all(this%get_gpoint_bands() == that%get_gpoint_bands())
   end function gpoints_are_equal
-  ! -----------------------------------------------------------------------------------------------
-  !
-  ! --- Setting/getting the name
-  !
-  ! -----------------------------------------------------------------------------------------------
+  !> -----------------------------------------------------------------------------------------------
+  !>
+  !> --- Setting/getting the name
+  !>
+  !> -----------------------------------------------------------------------------------------------
   subroutine set_name(this, name)
     class(ty_optical_props),  intent(inout) :: this
     character(len=*),         intent(in   ) :: name

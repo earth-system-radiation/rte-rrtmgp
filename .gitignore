@@ -29,3 +29,6 @@ Makefile.conf
 *.HTML
 *.html
 *.gif
+
+# gh-pages directory
+public

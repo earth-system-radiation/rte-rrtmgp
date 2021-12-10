@@ -34,14 +34,14 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: documentation
-        path: doc/
+        path: doc/pages
         if-no-files-found: error    
 
     - name: Broken Link Check
       if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v1
       with:
-        TARGET: file://${{ github.workspace }}/doc/index.html
+        TARGET: file://${{ github.workspace }}/doc/pages/index.html
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
 
@@ -50,4 +50,4 @@ jobs:
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages
-        folder: doc/
+        folder: doc/pages

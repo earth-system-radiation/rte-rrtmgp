@@ -28,7 +28,14 @@ jobs:
       run: |
         cd doc
         ford front-matter.md 
-        
+
+    - name: Upload Documentation
+      uses: actions/upload-artifact@v2
+      with:
+        name: documentation
+        path: doc/
+        if-no-files-found: error    
+
     - name: Broken Link Check
       if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v1

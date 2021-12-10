@@ -27,8 +27,7 @@ jobs:
     - name: Build Developer Documenation
       run: |
         cd doc
-        ford front-matter.md 
-        cd ..
+        ford front-matter.md
 
     - name: Upload Documentation
       uses: actions/upload-artifact@v2
@@ -50,4 +49,4 @@ jobs:
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages
-        folder: doc/pages
+        folder: public/

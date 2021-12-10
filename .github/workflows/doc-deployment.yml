@@ -28,6 +28,7 @@ jobs:
       run: |
         cd doc
         ford front-matter.md 
+        cd ..
 
     - name: Upload Documentation
       uses: actions/upload-artifact@v2

@@ -27,13 +27,12 @@ jobs:
     - name: Build Developer Documenation
       run: |
         cd doc
-        ford front-matter.md
-    - name: Upload Documentation
-      uses: actions/upload-artifact@v2
-      with:
-        name: documentation
-        path: doc/html
-        if-no-files-found: error
+        # Turn warnings into errors
+        ford front-matter.md > ford_output.txt
+        cat ford_output.txt; if grep -q -i Warning ford_output.txt; then exit 1; fi  
+        mkdir pages-dir
+        mv API-doc pages-dir/docs
+        cp ../README.md pages-dir/.
 
     - name: Broken Link Check
       if: ${{ github.ref == 'refs/heads/main'}}

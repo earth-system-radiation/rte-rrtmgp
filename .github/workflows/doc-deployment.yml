@@ -28,10 +28,7 @@ jobs:
       run: |
         cd doc
         ford front-matter.md 
-        mkdir pages-dir
-        mv front-matter pages-dir/docs
-        cp ../README.md pages-dir/.
-
+        
     - name: Broken Link Check
       if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v1

@@ -1,0 +1,57 @@
+name: Build and Deploy Documentation
+
+on: [push, pull_request]
+
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    env:
+      FC: gfortran
+      GCC_V: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Install Dependencies Ubuntu
+      run: |
+        sudo apt-get update
+        sudo apt install -y gfortran-${GCC_V} cmake wget python-dev python build-essential numdiff graphviz
+        wget -P . "https://bootstrap.pypa.io/get-pip.py" && sudo python get-pip.py && rm get-pip.py
+        sudo pip install ford
+
+    - name: Build Developer Documenation
+      run: |
+        cd doc
+        # Turn warnings into errors
+        ford API-doc-FORD-file-github.md > ford_output.txt
+        cat ford_output.txt; if grep -q -i Warning ford_output.txt; then exit 1; fi  
+        mkdir pages-dir
+        mv API-doc pages-dir/docs
+        cp ../README.md pages-dir/.
+
+    - name: Upload Documentation
+      uses: actions/upload-artifact@v2
+      with:
+        name: documentation
+        path: doc/pages-dir/docs
+        if-no-files-found: error
+
+    - name: Broken Link Check
+      if: ${{ github.ref == 'refs/heads/develop'}}
+      uses: technote-space/broken-link-checker-action@v1
+      with:
+        TARGET: file://${{ github.workspace }}/API-doc/index.html
+        RECURSIVE: true
+        ASSIGNEES: ${{ github.actor }}
+
+    - name: Deploy API Documentation
+      uses: JamesIves/github-pages-deploy-action@4.1.0
+      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/develop' }}
+      with:
+        branch: gh-pages
+        folder: doc/pages-dir

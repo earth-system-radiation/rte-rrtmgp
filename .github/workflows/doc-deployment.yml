@@ -49,4 +49,4 @@ jobs:
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages
-        folder: doc/html
+        folder: doc/

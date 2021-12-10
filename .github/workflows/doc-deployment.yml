@@ -27,11 +27,9 @@ jobs:
     - name: Build Developer Documenation
       run: |
         cd doc
-        # Turn warnings into errors
-        ford front-matter.md > ford_output.txt
-        cat ford_output.txt; if grep -q -i Warning ford_output.txt; then exit 1; fi  
+        ford front-matter.md 
         mkdir pages-dir
-        mv API-doc pages-dir/docs
+        mv front-matter pages-dir/docs
         cp ../README.md pages-dir/.
 
     - name: Broken Link Check

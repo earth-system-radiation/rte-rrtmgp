@@ -27,31 +27,25 @@ jobs:
     - name: Build Developer Documenation
       run: |
         cd doc
-        # Turn warnings into errors
-        ford API-doc-FORD-file-github.md > ford_output.txt
-        cat ford_output.txt; if grep -q -i Warning ford_output.txt; then exit 1; fi  
-        mkdir pages-dir
-        mv API-doc pages-dir/docs
-        cp ../README.md pages-dir/.
-
+        ford ford-documentation.md
     - name: Upload Documentation
       uses: actions/upload-artifact@v2
       with:
         name: documentation
-        path: doc/pages-dir/docs
+        path: doc/html
         if-no-files-found: error
 
     - name: Broken Link Check
-      if: ${{ github.ref == 'refs/heads/develop'}}
+      if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v1
       with:
-        TARGET: file://${{ github.workspace }}/API-doc/index.html
+        TARGET: file://${{ github.workspace }}/doc/html/index.html
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
 
     - name: Deploy API Documentation
       uses: JamesIves/github-pages-deploy-action@4.1.0
-      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/develop' }}
+      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages
-        folder: doc/pages-dir
+        folder: doc/html

@@ -608,7 +608,7 @@ contains
     if (allocated(this%krayl)) then
       !$acc        data copyin(this%gpoint_flavor, this%krayl)    create(tau, tau_rayleigh)
       !$omp target data map(to:this%gpoint_flavor, this%krayl) map(alloc:tau, tau_rayleigh)
-      call zero_array(ngpt, nlay, ncol, tau)
+      call zero_array(ncol, nlay, ngpt, tau)
       call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
@@ -650,7 +650,7 @@ contains
       !$acc end        data
       !$omp end target data
     else
-      call zero_array(ngpt, nlay, ncol, optical_props%tau)
+      call zero_array(ncol, nlay, ngpt, optical_props%tau)
       call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &

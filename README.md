@@ -1,5 +1,6 @@
 # FORD Documentation
-[RTE+RRTMGP's GitHub Pages site]: https://sourceryinstitute.github.io/RTE+RRTMGP/
+
+[RTE+RRTMGP's GitHub Pages site](https://sourceryinstitute.github.io/rte-rrtmgp/)
 
 # RTE+RRTMGP
 

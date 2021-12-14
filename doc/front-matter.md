@@ -10,8 +10,7 @@ page_dir: ../doc/pages
 preprocessor: gfortran -E
 display: public
          protected
-         private
-sort: permission-alpha
+sort: type-alpha
 output_dir: ../public
 graph: true
 md_extensions: markdown.extensions.toc

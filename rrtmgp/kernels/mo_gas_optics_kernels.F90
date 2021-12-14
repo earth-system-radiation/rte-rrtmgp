@@ -713,23 +713,23 @@ contains
     integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
     integer,                     intent(in) :: jtemp ! interpolation index for temperature
     integer,                     intent(in) :: jpress ! interpolation index for pressure
-    real(wp), dimension(gptE-gptS+1)        :: res ! the result
+    real(wp), dimension(gptS:gptE)          :: res ! the result
 
     ! Local variable
     integer :: igpt
     ! each code block is for a different reference temperature
-    do igpt = 1, gptE-gptS+1
+    do igpt = gptS, gptE
       res(igpt) =  &
         scaling(1) * &
-        ( fmajor(1,1,1) * k(jtemp, jeta(1)  , jpress-1, gptS+igpt-1 ) + &
-          fmajor(2,1,1) * k(jtemp, jeta(1)+1, jpress-1, gptS+igpt-1 ) + &
-          fmajor(1,2,1) * k(jtemp, jeta(1)  , jpress  , gptS+igpt-1 ) + &
-          fmajor(2,2,1) * k(jtemp, jeta(1)+1, jpress  , gptS+igpt-1 ) ) + &
+        ( fmajor(1,1,1) * k(jtemp, jeta(1)  , jpress-1, igpt) + &
+          fmajor(2,1,1) * k(jtemp, jeta(1)+1, jpress-1, igpt) + &
+          fmajor(1,2,1) * k(jtemp, jeta(1)  , jpress  , igpt) + &
+          fmajor(2,2,1) * k(jtemp, jeta(1)+1, jpress  , igpt) ) + &
         scaling(2) * &
-        ( fmajor(1,1,2) * k(jtemp+1, jeta(2)  , jpress-1, gptS+igpt-1) + &
-          fmajor(2,1,2) * k(jtemp+1, jeta(2)+1, jpress-1, gptS+igpt-1) + &
-          fmajor(1,2,2) * k(jtemp+1, jeta(2)  , jpress  , gptS+igpt-1) + &
-          fmajor(2,2,2) * k(jtemp+1, jeta(2)+1, jpress  , gptS+igpt-1) )
+        ( fmajor(1,1,2) * k(jtemp+1, jeta(2)  , jpress-1, igpt) + &
+          fmajor(2,1,2) * k(jtemp+1, jeta(2)+1, jpress-1, igpt) + &
+          fmajor(1,2,2) * k(jtemp+1, jeta(2)  , jpress  , igpt) + &
+          fmajor(2,2,2) * k(jtemp+1, jeta(2)+1, jpress  , igpt) )
     end do
   end function interpolate3D_byflav
 

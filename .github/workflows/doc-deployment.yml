@@ -26,8 +26,7 @@ jobs:
 
     - name: Build Developer Documenation
       run: |
-        cd doc
-        ford front-matter.md
+        ford doc/front-matter.md
 
     - name: Upload Documentation
       uses: actions/upload-artifact@v2

@@ -1,4 +1,4 @@
-! This code is part of Radiative Transfer for Energetics (RTE)
+!> This code is part of Radiative Transfer for Energetics (RTE)
 !
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
@@ -53,7 +53,7 @@ module mo_optical_props
         extract_subset
   implicit none
   integer, parameter :: name_len = 32
-  ! -------------------------------------------------------------------------------------------------
+  !> -------------------------------------------------------------------------------------------------
   !
   ! Base class for optical properties
   !   Describes the spectral discretization including the wavenumber limits

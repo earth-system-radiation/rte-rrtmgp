@@ -1,4 +1,4 @@
-!!> This code is part of Radiative Transfer for Energetics (RTE)
+!! This code is part of Radiative Transfer for Energetics (RTE)
 !!
 !! Contacts: Robert Pincus and Eli Mlawer
 !! email:  rrtmgp@aer.com
@@ -10,34 +10,34 @@
 !!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 !! -------------------------------------------------------------------------------------------------
 !!
-!! Encapsulate optical properties defined on a spectral grid of N bands.
-!!   The bands are described by their limiting wavenumbers. They need not be contiguous or complete.
-!!   A band may contain more than one spectral sub-point (g-point) in which case a mapping must be supplied.
-!!   A name may be provided and will be prepended to error messages.
-!!   The base class (ty_optical_props) encapsulates only this spectral discretization and must be initialized
-!!      with the spectral information before use.
-!!
-!!   Optical properties may be represented as arrays with dimensions ncol, nlay, ngpt
-!!   (abstract class ty_optical_props_arry).
-!!   The type holds arrays depending on how much information is needed
-!!   There are three possibilites
-!!      ty_optical_props_1scl holds absorption optical depth tau, used in calculations accounting for extinction and emission
-!!      ty_optical_props_2str holds extincion optical depth tau, single-scattering albedo ssa, and
-!!        asymmetry parameter g. These fields are what's needed for two-stream calculations.
-!!      ty_optical_props_nstr holds extincion optical depth tau, single-scattering albedo ssa, and
-!!        phase function moments p with leading dimension nmom. These fields are what's needed for multi-stream calculations.
-!!   These classes must be allocated before use. Initialization and allocation can be combined.
-!!   The classes have a validate() function that checks all arrays for valid values (e.g. tau > 0.)
-!!
-!! Optical properties can be delta-scaled (though this is currently implemented only for two-stream arrays)
-!!
-!! Optical properties can increment or "add themselves to" a set of properties represented with arrays
-!!   as long as both sets have the same underlying band structure. Properties defined by band
-!!   may be added to properties defined by g-point; the same value is assumed for all g-points with each band.
-!!
-!! Subsets of optical properties held as arrays may be extracted along the column dimension.
-!!
-!! -------------------------------------------------------------------------------------------------
+!> Encapsulate optical properties defined on a spectral grid of N bands.
+!>   The bands are described by their limiting wavenumbers. They need not be contiguous or complete.
+!>   A band may contain more than one spectral sub-point (g-point) in which case a mapping must be supplied.
+!>   A name may be provided and will be prepended to error messages.
+!>   The base class (ty_optical_props) encapsulates only this spectral discretization and must be initialized
+!>      with the spectral information before use.
+!>
+!>   Optical properties may be represented as arrays with dimensions ncol, nlay, ngpt
+!>   (abstract class ty_optical_props_arry).
+!>   The type holds arrays depending on how much information is needed
+!>   There are three possibilites
+!>      ty_optical_props_1scl holds absorption optical depth tau, used in calculations accounting for extinction and emission
+!>      ty_optical_props_2str holds extincion optical depth tau, single-scattering albedo ssa, and
+!>        asymmetry parameter g. These fields are what's needed for two-stream calculations.
+!>      ty_optical_props_nstr holds extincion optical depth tau, single-scattering albedo ssa, and
+!>        phase function moments p with leading dimension nmom. These fields are what's needed for multi-stream calculations.
+!>   These classes must be allocated before use. Initialization and allocation can be combined.
+!>   The classes have a validate() function that checks all arrays for valid values (e.g. tau > 0.)
+!>
+!> Optical properties can be delta-scaled (though this is currently implemented only for two-stream arrays)
+!>
+!> Optical properties can increment or "add themselves to" a set of properties represented with arrays
+!>   as long as both sets have the same underlying band structure. Properties defined by band
+!>   may be added to properties defined by g-point; the same value is assumed for all g-points with each band.
+!>
+!> Subsets of optical properties held as arrays may be extracted along the column dimension.
+!>
+!> -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp
   use mo_rte_config,            only: check_extents, check_values
@@ -54,12 +54,12 @@ module mo_optical_props
   implicit none
   integer, parameter :: name_len = 32
   !> -------------------------------------------------------------------------------------------------
-  !
-  ! Base class for optical properties
-  !   Describes the spectral discretization including the wavenumber limits
-  !   of each band (spectral region) and the mapping between g-points and bands
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !>
+  !> Base class for optical properties
+  !>   Describes the spectral discretization including the wavenumber limits
+  !>   of each band (spectral region) and the mapping between g-points and bands
+  !>
+  !> -------------------------------------------------------------------------------------------------
   type, public :: ty_optical_props
     integer,  dimension(:,:), allocatable :: band2gpt       ! (begin g-point, end g-point) = band2gpt(2,band)
     integer,  dimension(:),   allocatable :: gpt2band       ! band = gpt2band(g-point)
@@ -87,61 +87,61 @@ module mo_optical_props
     procedure, public  :: set_name
     procedure, public  :: get_name
   end type
-  !----------------------------------------------------------------------------------------
-  !
-  ! Optical properties as arrays, normally dimensioned ncol, nlay, ngpt/nbnd
-  !   The abstract base class for arrays defines what procedures will be available
-  !   The optical depth field is also part of the abstract base class, since
-  !    any representation of values as arrays needs an optical depth field
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !>----------------------------------------------------------------------------------------
+  !>
+  !> Optical properties as arrays, normally dimensioned ncol, nlay, ngpt/nbnd
+  !>   The abstract base class for arrays defines what procedures will be available
+  !>   The optical depth field is also part of the abstract base class, since
+  !>    any representation of values as arrays needs an optical depth field
+  !>
+  !> -------------------------------------------------------------------------------------------------
   type, extends(ty_optical_props), abstract, public :: ty_optical_props_arry
     real(wp), dimension(:,:,:), allocatable :: tau ! optical depth (ncol, nlay, ngpt)
   contains
     procedure, public  :: get_ncol
     procedure, public  :: get_nlay
-    !
-    ! Increment another set of values
-    !
+    !>
+    !> Increment another set of values
+    !>
     procedure, public  :: increment
 
-    !
-    ! Deferred procedures -- each must be implemented in each child class with
-    !   arguments following the abstract interface (defined below)
-    !
+    !>
+    !> Deferred procedures -- each must be implemented in each child class with
+    !>   arguments following the abstract interface (defined below)
+    !>
     procedure(validate_abstract),     deferred, public  :: validate
     procedure(delta_scale_abstract),  deferred, public  :: delta_scale
     procedure(subset_range_abstract), deferred, public  :: get_subset
   end type
-  !
-  ! Interfaces for the methods to be implemented
-  !
+  !>
+  !> Interfaces for the methods to be implemented
+  !>
   abstract interface
-    !
-    ! Validation function looks only at internal data
-    !
+    !>
+    !> Validation function looks only at internal data
+    !>
     function validate_abstract(this) result(err_message)
       import ty_optical_props_arry
       class(ty_optical_props_arry),  intent(in) :: this
       character(len=128)  :: err_message
     end function validate_abstract
 
-    !
-    ! Delta-scaling
-    !
+    !>
+    !> Delta-scaling
+    !>
     function delta_scale_abstract(this, for) result(err_message)
       import ty_optical_props_arry
       import wp
       class(ty_optical_props_arry),  intent(inout) :: this
       real(wp), dimension(:,:,:), optional, &
                                      intent(in   ) :: for
-      ! Forward scattering fraction; g**2 if not provided
+      !> Forward scattering fraction; g**2 if not provided
       character(len=128)  :: err_message
     end function delta_scale_abstract
 
-    !
-    ! Subsetting -- currently there are only routines with start col and count
-    !
+    !>
+    !> Subsetting -- currently there are only routines with start col and count
+    !>
     function subset_range_abstract(full, start, n, subset) result(err_message)
       import ty_optical_props_arry
       class(ty_optical_props_arry), intent(inout) :: full
@@ -150,15 +150,15 @@ module mo_optical_props
       character(128)                              :: err_message
     end function subset_range_abstract
   end interface
-  !----------------------------------------------------------------------------------------
-  !
-  !   ty_optical_props_arry  includes only (extinction) optical depth
-  !   Class two-stream adds arrays for single scattering albedo ssa and
-  !     asymmetry parameter needed in two-stream methods
-  !   Class n-stream adds arrays for single scattering albedo ssa and
-  !     phase function moments (index 1 = g) for use with discrete ordinate methods
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !>----------------------------------------------------------------------------------------
+  !>
+  !>   ty_optical_props_arry  includes only (extinction) optical depth
+  !>   Class two-stream adds arrays for single scattering albedo ssa and
+  !>     asymmetry parameter needed in two-stream methods
+  !>   Class n-stream adds arrays for single scattering albedo ssa and
+  !>     phase function moments (index 1 = g) for use with discrete ordinate methods
+  !>
+  !> -------------------------------------------------------------------------------------------------
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_1scl
   contains
     procedure, public  :: validate => validate_1scalar
@@ -206,16 +206,16 @@ module mo_optical_props
   end type
   ! -------------------------------------------------------------------------------------------------
 contains
-  ! -------------------------------------------------------------------------------------------------
-  !
-  !  Routines for the base class: initialization, validity checking, finalization
-  !
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! Base class: Initialization
-  !   Values are assumed to be defined in bands a mapping between bands and g-points is provided
-  !
-  ! -------------------------------------------------------------------------------------------------
+  !> -------------------------------------------------------------------------------------------------
+  !>
+  !>  Routines for the base class: initialization, validity checking, finalization
+  !>
+  !> -------------------------------------------------------------------------------------------------
+  !>
+  !> Base class: Initialization
+  !>   Values are assumed to be defined in bands a mapping between bands and g-points is provided
+  !>
+  !> -------------------------------------------------------------------------------------------------
   function init_base(this, band_lims_wvn, band_lims_gpt, name) result(err_message)
     class(ty_optical_props),    intent(inout) :: this
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn

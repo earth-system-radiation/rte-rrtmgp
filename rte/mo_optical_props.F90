@@ -1,4 +1,4 @@
-!! > This code is part of Radiative Transfer for Energetics (RTE)
+!!> This code is part of Radiative Transfer for Energetics (RTE)
 !!
 !! Contacts: Robert Pincus and Eli Mlawer
 !! email:  rrtmgp@aer.com

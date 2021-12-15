@@ -37,6 +37,12 @@
 !>
 !> Subsets of optical properties held as arrays may be extracted along the column dimension.
 !>
+!>@note
+!>example of a note with links to other modules and variables
+!>
+!> 1. [[mo_rte_config(module):check_extents(variable)]] in module [[mo_rte_config]]
+!>
+!>@endnote
 !> -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp

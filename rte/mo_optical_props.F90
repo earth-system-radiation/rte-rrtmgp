@@ -36,13 +36,7 @@
 !>   may be added to properties defined by g-point; the same value is assumed for all g-points with each band.
 !>
 !> Subsets of optical properties held as arrays may be extracted along the column dimension.
-!>
-!>@note
-!>example of a note with links to other modules and variables
-!>
-!> 1. [[mo_rte_config(module):check_extents(variable)]] in module [[mo_rte_config]]
-!>
-!>@endnote
+!>---
 !><img src="https://www.plantuml.com
 !>/plantuml/png/
 !>bPBFRi8m3CRlUGfV9fLfvG6GDY4Dte1Z9MHIjusKfbNYRlmPxpw7bWAYE-mMEx_FzkTa6HWzTxLL6yEMuDDY21J0EE2AO4NUV56URWwj10PBrmGs6bR82EizrgqbfIgJ4r3TyW5ggdVaWr8w5eB0NL5i
@@ -50,6 +44,13 @@
 !>CtW2jRRHiL-HYH4tNlLjhVxnp3__j0izZ9qEn1_5ZxyjmqrVmckRDjqkl8qaHB4jF9JA5FqNphft_V3pF8ceJNwicn_AlbkHo-Qw_"
 !>alt="test"
 !>style="float: left; margin-right: 10px;" />
+!>---
+!>@note
+!>example of a note with links to other modules and variables
+!>
+!> 1. [[mo_rte_config(module):check_extents(variable)]] in module [[mo_rte_config]]
+!>
+!>@endnote
 !> -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp

@@ -43,6 +43,13 @@
 !> 1. [[mo_rte_config(module):check_extents(variable)]] in module [[mo_rte_config]]
 !>
 !>@endnote
+!><img src="https://www.plantuml.com
+!>/plantuml/png/
+!>bPBFRi8m3CRlUGfV9fLfvG6GDY4Dte1Z9MHIjusKfbNYRlmPxpw7bWAYE-mMEx_FzkTa6HWzTxLL6yEMuDDY21J0EE2AO4NUV56URWwj10PBrmGs6bR82EizrgqbfIgJ4r3TyW5ggdVaWr8w5eB0NL5i
+!>-QG0ZbjOW6wYOYzXJeLnbCUaRKgZqKA4ajaKTSaEc6I7gidnnaPWIAkpSWqJU5DM7077jET9KUPQyJCgNyPscSlSLHXd4j2JS6IB6wIKmbrWZvgXjwihZ94ixOWxIxtnqnKw0uRjYFHEnyYIUr_
+!>CtW2jRRHiL-HYH4tNlLjhVxnp3__j0izZ9qEn1_5ZxyjmqrVmckRDjqkl8qaHB4jF9JA5FqNphft_V3pF8ceJNwicn_AlbkHo-Qw_"
+!>alt="test"
+!>style="float: left; margin-right: 10px;" />
 !> -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp

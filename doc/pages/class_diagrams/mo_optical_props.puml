@@ -1,0 +1,29 @@
+@startuml
+Title Classes in the Derived-Type Diagnostic Data Example
+
+hide empty members
+
+class stuff_t{
+  z_ : complex
+  defined_ : logical 
+  z() : complex
+  defined() : logical
+  stuff_t(z : complex) : stuff_t
+}
+note right: context stuff_t(z : complex)\npost: stuff_t%defined()\n\ncontext z() \npre: self%defined()
+
+
+abstract class characterizable_t{
+  {abstract} as_character() : character(len=:), allocatable
+}
+
+class characterizable_stuff_t{
+  stuff_ : stuff_t
+  as_character() : character(len=:), allocatable
+  characterizable_t(stuff_t) : characterizable_stuff_t
+}
+
+characterizable_stuff_t *-down- stuff_t : aggregates
+characterizable_stuff_t .up.|> characterizable_t : implements
+
+@enduml

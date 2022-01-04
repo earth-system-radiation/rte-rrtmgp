@@ -6,10 +6,14 @@ email: rrtmgp@aer.com
 src_dir: ../rrtmgp
 src_dir: ../rte
 src_dir: ../extensions
-exclude: ../rte/kernels/
-exclude: ../rte/kernels-openacc/
-exclude: ../rrtmgp/kernels/
-exclude: ../rrtmgp/kernels-openacc/
+exclude: mo_gas_optics_kernels.F90
+exclude: mo_rrtmgp_util_reorder_kernels.F90
+exclude: mo_gas_optics_kernels.F90
+exclude: mo_fluxes_broadband_kernels.F90
+exclude: mo_optical_props_kernels.F90
+exclude: mo_rte_solver_kernels.F90
+exclude: mo_optical_props_kernels.F90
+exclude: mo_rte_solver_kernels.F90
 page_dir: ../doc/pages
 preprocessor: gfortran -E
 display: public

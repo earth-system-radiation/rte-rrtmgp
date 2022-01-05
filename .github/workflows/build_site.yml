@@ -51,8 +51,6 @@ jobs:
       run: |
         cd ${{env.SRC_DIR}}/doc/site
         bundle exec jekyll build 
-# cp -r _site/* ../${{env.PUBLISH_DIR}}/
-# touch ../${{env.PUBLISH_DIR}}/.nojekyll
         
     # Commit and push changes to remote/gh-pages
     - name: Commit and push to gh-pages

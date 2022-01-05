@@ -5,7 +5,9 @@
 
 name: Jekyll Build
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
 
 env:
   SRC_DIR: src
@@ -38,7 +40,7 @@ jobs:
     # Setup Jekyll in SRC_DIR
     - name: Setup Jekyll
       run: |
-        cd ${{env.SRC_DIR}}/doc/site
+        cd ${{env.SRC_DIR}}
         sudo gem install bundler
         bundle config path .bundle
         bundle install

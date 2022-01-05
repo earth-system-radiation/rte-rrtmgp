@@ -1,7 +1,4 @@
-name: Build and Deploy Documentation
-
-on: [push, pull_request]
-
+name: Build and Deploy Ford Documentation
 
 jobs:
   Build:

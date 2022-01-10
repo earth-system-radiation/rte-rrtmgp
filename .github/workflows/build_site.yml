@@ -5,9 +5,7 @@
 
 name: Build Jekyll Site
 
-on:
-  push:
-    branches: [ main ]
+on: [push, pull_request]
 
 env:
   SRC_DIR: src
@@ -49,9 +47,9 @@ jobs:
       run: |
         cd ${{env.SRC_DIR}}/doc/site
         bundle exec jekyll build --incremental
-        sudo mkdir /${{env.PUBLISH_DIR}}/
-        sudo cp -r _site/* /${{env.PUBLISH_DIR}}/
-        sudo touch /${{env.PUBLISH_DIR}}/.nojekyll
+        sudo mkdir /${{env.PUBLISH_DIR}}/public/
+        sudo cp -r _site/* /${{env.PUBLISH_DIR}}/public/
+        sudo touch /${{env.PUBLISH_DIR}}/public/.nojekyll
         
     # Commit and push changes to remote/gh-pages
     - name: Commit and push to gh-pages

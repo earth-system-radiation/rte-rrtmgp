@@ -45,11 +45,11 @@ jobs:
     # Run Jekyll build and copy output to PUBLISH_DIR
     - name: Build Jekyll Site
       run: |
-        cd ${{env.SRC_DIR}}/doc/site
-        bundle exec jekyll build --incremental
         sudo mkdir /${{env.PUBLISH_DIR}}/
         cd /${{env.PUBLISH_DIR}}/
         sudo mkdir public/
+        cd /${{env.SRC_DIR}}/doc/site
+        bundle exec jekyll build --incremental
         sudo cp -r _site/* /${{env.PUBLISH_DIR}}/public/
         sudo touch /${{env.PUBLISH_DIR}}/public/.nojekyll
         

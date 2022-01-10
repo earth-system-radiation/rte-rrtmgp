@@ -48,8 +48,10 @@ jobs:
         cd ${{env.SRC_DIR}}/doc/site
         bundle exec jekyll build --incremental
         sudo mkdir /${{env.PUBLISH_DIR}}/
-        sudo cp -r _site/* /${{env.PUBLISH_DIR}}/
-        sudo touch /${{env.PUBLISH_DIR}}/.nojekyll
+        cd /${{env.PUBLISH_DIR}}/
+        sudo mkdir public/
+        sudo cp -r _site/* /${{env.PUBLISH_DIR}}/public/
+        sudo touch /${{env.PUBLISH_DIR}}/public/.nojekyll
         
     # Commit and push changes to remote/gh-pages
     - name: Commit and push to gh-pages
@@ -58,6 +60,5 @@ jobs:
         cwd: ${{env.PUBLISH_DIR}}
         message: "Jekyll build, commit ${{github.sha}} (on:push)"
         ref: 'gh-pages'
-        folder: public/
       env:  
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

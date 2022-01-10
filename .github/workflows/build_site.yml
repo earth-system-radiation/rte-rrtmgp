@@ -56,7 +56,7 @@ jobs:
       run: |
         cd ${{env.SRC_DIR}}/doc/site
         bundle exec jekyll build --incremental
-        mkdir /${{env.PUBLISH_DIR}}/
+        sudo mkdir /${{env.PUBLISH_DIR}}/
         cp -r _site/* /${{env.PUBLISH_DIR}}/
         touch /${{env.PUBLISH_DIR}}/.nojekyll
         

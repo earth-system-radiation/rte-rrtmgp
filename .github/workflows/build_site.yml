@@ -44,13 +44,6 @@ jobs:
         sudo gem install bundler jekyll
         bundle update
 
-    # Setup Jekyll in SRC_DIR
-    - name: Setup Jekyll
-      run: |
-        cd ${{env.SRC_DIR}}/doc/site
-        sudo gem install bundler jekyll
-        bundle update
-
     # Run Jekyll build and copy output to PUBLISH_DIR
     - name: Build Jekyll Site
       run: |

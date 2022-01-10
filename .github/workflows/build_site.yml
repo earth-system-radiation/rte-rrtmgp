@@ -57,8 +57,8 @@ jobs:
         cd ${{env.SRC_DIR}}/doc/site
         bundle exec jekyll build --incremental
         sudo mkdir /${{env.PUBLISH_DIR}}/
-        cp -r _site/* /${{env.PUBLISH_DIR}}/
-        touch /${{env.PUBLISH_DIR}}/.nojekyll
+        sudo cp -r _site/* /${{env.PUBLISH_DIR}}/
+        sudo touch /${{env.PUBLISH_DIR}}/.nojekyll
         
     # Commit and push changes to remote/gh-pages
     - name: Commit and push to gh-pages

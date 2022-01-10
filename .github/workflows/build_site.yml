@@ -40,7 +40,10 @@ jobs:
     # Setup Jekyll in SRC_DIR
     - name: Setup Jekyll
       run: |
-      mkdir ${{env.PUBLISH_DIR}}
+        mkdir ${{env.PUBLISH_DIR}}
+        cd ${{env.SRC_DIR}}/doc/site
+        sudo gem install bundler jekyll
+        bundle update
 
     # Setup Jekyll in SRC_DIR
     - name: Setup Jekyll

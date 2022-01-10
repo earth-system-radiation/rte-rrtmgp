@@ -49,6 +49,7 @@ jobs:
     - name: Build Jekyll Site
       run: |
         cd ${{env.SRC_DIR}}/doc/site
+        gem pristine --all
         bundle update
         bundle exec jekyll build 
         cp -r _site/* ../${{env.PUBLISH_DIR}}/

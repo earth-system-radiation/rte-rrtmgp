@@ -1,0 +1,31 @@
+# pack-refs with: peeled fully-peeled sorted 
+38a84a949f9753c4542e25f422935f59b4913053 refs/heads/2.5-stable
+0b1e20d1a78287bbe20fbe622cd6225d2751db16 refs/heads/demo-site
+7516d0b4f22db708bb18b08f022dada10e889a1e refs/heads/deploy-demo-site-workflow
+adb6b4e14b7d943ad2d5db7a1ef51ff0123c1615 refs/heads/gh-pages
+69664442e5a45f631d5bccaba6d7978a91ce22c8 refs/heads/master
+5a3c86aead0bc730481e9868cfbaaa8c10f50bb2 refs/heads/minima-next
+10cc4e333f69d9f509c22e267fddfdd3e102467b refs/heads/pull/a11y-social-icons
+6399c44cd58434d26fa9de86a8bbf2a2f19dade7 refs/tags/2.4.0
+c8d02ea7d69404fc24d5cb93996a2e432bc5b30e refs/tags/v0.1.0
+^1aa4d64bce5610e4eaf0d042c9342b32ca85071e
+083aca4af03da79cc7ed2ef95ba1f3a458eec330 refs/tags/v1.0.0
+^01117f5aac0ef46624d572d4a35b7decb5336e61
+f64cec682d66e5c9214c678366721ea12b13be63 refs/tags/v1.0.1
+^da835d1def0b7d3d330edfe9c912df947fbcd82f
+80e11e37f1f451e3296e051fa6f077f9a05f2307 refs/tags/v1.1.0
+^ad8e8d9a475300ae175acafcfd5137e9c3c1337b
+b408e7a4644104e7185f96f4269cdca1ce5e00a1 refs/tags/v1.2.0
+^ea96ce516a6a4f8a90981a7ed55e6d54b8314abe
+a760524267065e31d17599ea007207a6b91b00fc refs/tags/v2.0.0
+^ed7f0df4f6ed7059dadfd374acd1dea9a2875a18
+cf7d35c31d8fb72a37ee999f6b288b12eb1125e0 refs/tags/v2.1.0
+^bcabdbd5ba83e0688200607610b83b0d6290fe36
+dbd0f84aaea78f9b629cc72520286be15c3f4a6e refs/tags/v2.1.1
+c0ce8dc78c72c9259dae66b5c747eede556efeef refs/tags/v2.2.0
+5e7fd60d88cb58bd29bfd5d742e8da562490ba4d refs/tags/v2.2.1
+298666815881fc770f01d0a611244d6c21a35dbe refs/tags/v2.3.0
+00d4d2d6539099b14f9ad509908f3202165077ba refs/tags/v2.4.1
+c5f22c7a7d901be1c2b7f6fe0ce2ca6fd717d80c refs/tags/v2.5.0
+^495703c59b1864158dafb4a2bb613ccc3d726fe9
+38a84a949f9753c4542e25f422935f59b4913053 refs/tags/v2.5.1

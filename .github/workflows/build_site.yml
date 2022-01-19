@@ -47,10 +47,10 @@ jobs:
     # Run Jekyll build and copy output to PUBLISH_DIR
     - name: Build Jekyll Site
       run: |
-        cd /${{env.SRC_DIR}}/doc/site
+        cd ../${{env.SRC_DIR}}/doc/site
         bundle exec jekyll build
-        cp -r _site/* /${{env.PUBLISH_DIR}}/
-        touch /${{env.PUBLISH_DIR}}/.nojekyll
+        cp -r _site/* ../${{env.PUBLISH_DIR}}/
+        touch ../${{env.PUBLISH_DIR}}/.nojekyll
         
     # Commit and push changes to remote/gh-pages
     - name: Commit and push to gh-pages

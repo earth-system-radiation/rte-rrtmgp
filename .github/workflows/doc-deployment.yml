@@ -38,7 +38,7 @@ jobs:
       if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v1
       with:
-        TARGET: file://${{ github.workspace }}/doc/pages/index.html
+        TARGET: file://${{ github.workspace }}/doc/ford/pages/index.html
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
 

@@ -1,6 +1,6 @@
 ---
 layout: "page"
-title: "Tutorial"
+title: "Discussions"
 ---
 
-This is a site for tutorials
+This is a site for discussions

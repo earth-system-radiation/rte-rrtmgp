@@ -15,7 +15,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-
     - name: Install Dependencies Ubuntu
       run: |
         sudo apt-get update
@@ -24,8 +23,8 @@ jobs:
         sudo pip install ford
     - name: Build Developer Documenation
       run: |
-        ford doc/ford/extensions-front-matter.md
-        ford doc/ford/kernels-front-matter.md
+        ford doc/extensions-front-matter.md
+        ford doc/kernels-front-matter.md
     - name: Upload Documentation
       uses: actions/upload-artifact@v2
       with:
@@ -37,7 +36,7 @@ jobs:
       if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v1
       with:
-        TARGET: file://${{ github.workspace }}/doc/ford/pages/index.html
+        TARGET: file://${{ github.workspace }}/doc/pages/index.html
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
 

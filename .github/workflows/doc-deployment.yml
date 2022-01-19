@@ -25,8 +25,8 @@ jobs:
         sudo pip install ford
     - name: Build Developer Documenation
       run: |
-        ford doc/extensions-front-matter.md
-        ford doc/kernels-front-matter.md
+        ford doc/ford/extensions-front-matter.md
+        ford doc/ford/kernels-front-matter.md
     - name: Upload Documentation
       uses: actions/upload-artifact@v2
       with:

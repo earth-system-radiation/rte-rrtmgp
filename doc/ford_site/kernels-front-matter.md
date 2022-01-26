@@ -3,11 +3,11 @@ project: rte-rrtmgp
 summary: A set of codes for computing radiative fluxes in planetary atmospheres.
 project_website: https://github.com/earth-system-radiation/rte-rrtmgp.git
 email: rrtmgp@aer.com
-src_dir: ../rrtmgp/kernels
-src_dir: ../rte/kernels
-src_dir: ../rrtmgp/kernels-openacc
-src_dir: ../rte/kernels-openacc
-page_dir: ../doc/pages
+src_dir: ../../rrtmgp/kernels
+src_dir: ../../rte/kernels
+src_dir: ../../rrtmgp/kernels-openacc
+src_dir: ../../rte/kernels-openacc
+page_dir: ../ford_site/pages
 preprocessor: gfortran -E
 display: public
 sort: permission-alpha

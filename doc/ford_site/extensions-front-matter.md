@@ -3,9 +3,9 @@ project: rte-rrtmgp
 summary: A set of codes for computing radiative fluxes in planetary atmospheres.
 project_website: https://github.com/earth-system-radiation/rte-rrtmgp.git
 email: rrtmgp@aer.com
-src_dir: ../rrtmgp
-src_dir: ../rte
-src_dir: ../extensions
+src_dir: ../../rrtmgp
+src_dir: ../../rte
+src_dir: ../../extensions
 exclude: mo_gas_optics_kernels.F90
 exclude: mo_rrtmgp_util_reorder_kernels.F90
 exclude: mo_gas_optics_kernels.F90
@@ -14,7 +14,7 @@ exclude: mo_optical_props_kernels.F90
 exclude: mo_rte_solver_kernels.F90
 exclude: mo_optical_props_kernels.F90
 exclude: mo_rte_solver_kernels.F90
-page_dir: ../doc/pages
+page_dir: ../ford_site/pages
 preprocessor: gfortran -E
 display: public
 sort: permission-alpha

@@ -1,4 +1,4 @@
-name: Build and Deploy Documentation
+name: Build and Deploy Ford Documentation
 
 on: [push, pull_request]
 
@@ -23,8 +23,8 @@ jobs:
         sudo pip install ford
     - name: Build Developer Documenation
       run: |
-        ford doc/extensions-front-matter.md
-        ford doc/kernels-front-matter.md
+        ford doc/ford_site/extensions-front-matter.md
+        ford doc/ford_site/kernels-front-matter.md
     - name: Upload Documentation
       uses: actions/upload-artifact@v2
       with:
@@ -36,7 +36,7 @@ jobs:
       if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v1
       with:
-        TARGET: file://${{ github.workspace }}/doc/pages/index.html
+        TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
 

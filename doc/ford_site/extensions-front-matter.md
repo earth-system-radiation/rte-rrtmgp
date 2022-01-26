@@ -18,7 +18,7 @@ page_dir: ../ford_site/pages
 preprocessor: gfortran -E
 display: public
 sort: permission-alpha
-output_dir: ../public/reference/extensions/
+output_dir: ../../public/reference/extensions/
 graph: true
 md_extensions: markdown.extensions.toc
 ...

@@ -21,10 +21,12 @@ jobs:
         sudo apt install -y gfortran-${GCC_V} cmake wget python-dev python build-essential numdiff graphviz
         wget -P . "https://bootstrap.pypa.io/get-pip.py" && sudo python get-pip.py && rm get-pip.py
         sudo pip install ford
+        
     - name: Build Developer Documenation
       run: |
         ford doc/ford_site/extensions-front-matter.md
         ford doc/ford_site/kernels-front-matter.md
+
     - name: Upload Documentation
       uses: actions/upload-artifact@v2
       with:

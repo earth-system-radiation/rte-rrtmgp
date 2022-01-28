@@ -531,8 +531,7 @@ contains
           itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           pfrac(icol,ilay,gptS:gptE) = &
-            ! interpolation in temp-m64 -O3 -g -traceback -heap-arrays -assume
-            ! realloc_lhs -extend-source 132erature, pressure, and eta
+            ! interpolation in temperature, pressure, and eta
             interpolate3D_byflav(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                           jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)

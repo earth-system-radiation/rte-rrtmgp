@@ -707,7 +707,7 @@ contains
                                                      ! index(1) : reference eta level (temperature dependent)
                                                      ! index(2) : reference pressure level
                                                      ! index(3) : reference temperature level
-    real(wp), dimension(:,:,:,:),intent(in) :: k ! (gpt, eta,temp,press)
+    real(wp), dimension(:,:,:,:),intent(in) :: k ! (temp,eta,press,gpt)
     integer,                     intent(in) :: gptS, gptE
     integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
     integer,                     intent(in) :: jtemp ! interpolation index for temperature

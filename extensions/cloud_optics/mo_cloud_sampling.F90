@@ -91,7 +91,7 @@ contains
     nbnd = clouds%get_nband()
     ngpt = clouds_sampled%get_ngpt()
     if (any([size(cloud_mask,1), size(cloud_mask,2), size(cloud_mask,3)] /= [ncol,nlay,ngpt])) then
-      error_msg = "draw_samples: cloud mask and cloud optical properties have different ncol and/or nlay"
+      error_msg = "draw_samples: cloud mask and cloud optical properties have different ncol, nlay and/or ngpt"
       return
     end if
     if (any([clouds_sampled%get_ncol(), clouds_sampled%get_nlay()] /= [ncol,nlay])) then
@@ -123,7 +123,7 @@ contains
   ! Generate a McICA-sampled cloud mask for maximum-random overlap
   !
   function sampled_mask_max_ran(randoms,cloud_frac,cloud_mask) result(error_msg)
-    real(wp), dimension(:,:,:),    intent(in ) :: randoms    !ngpt,nlay,ncol
+    real(wp), dimension(:,:,:),    intent(in ) :: randoms    ! ngpt,nlay,ncol
     real(wp), dimension(:,:),      intent(in ) :: cloud_frac ! ncol,nlay
     logical,  dimension(:,:,:),    intent(out) :: cloud_mask ! ncol,nlay,ngpt
     character(len=128)                         :: error_msg
@@ -167,10 +167,10 @@ contains
       end if
       cloud_lay_fst = findloc(cloud_mask_layer, .true., dim=1)
       cloud_lay_lst = findloc(cloud_mask_layer, .true., dim=1, back = .true.)
-      cloud_mask(icol,1:cloud_lay_fst,1:ngpt) = .false.
+      cloud_mask(icol,1:cloud_lay_fst-1,1:ngpt) = .false.
 
       ilay = cloud_lay_fst
-      local_rands(1:ngpt) = randoms(1:ngpt,cloud_lay_fst,icol)
+      local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
       cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
       do ilay = cloud_lay_fst+1, cloud_lay_lst
         if(cloud_mask_layer(ilay)) then
@@ -186,16 +186,21 @@ contains
         end if
       end do
 
-      cloud_mask(icol,cloud_lay_lst+1:nlay, 1:ngpt) = .false.
+      cloud_mask(icol,cloud_lay_lst+1:nlay,1:ngpt) = .false.
     end do
 
   end function sampled_mask_max_ran
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Generate a McICA-sampled cloud mask for exponential-random overlap
-  !   The overlap parameter alpha is defined between pairs of layers
-  !   for layer i, alpha(i) describes the overlap betwen cloud_frac(i) and cloud_frac(i+1)
-  !   By skipping layers with 0 cloud fraction the code forces alpha(i) = 0 for cloud_frac(i) = 0.
+  ! Generate a McICA-sampled cloud mask for exponential-random overlap.
+  !   The overlap parameter overlap_param is defined between pairs of layers.
+  !   For layer i, overlap_param(i) describes the overlap between cloud_frac(i) and cloud_frac(i+1).
+  !   It is a correlation coefficient in [-1,1]. E.g., 
+  !     +1 gives perfect correlation or maximum cloud overlap between layers i & i+1;
+  !      0 gives no correlation or random cloud overlap between layers i & i+1;
+  !     -1 gives perfect anticorrelation or minimum cloud overlap between layers i & i+1.
+  !   By skipping layers with zero cloud fraction the code effectively forces overlap_param(i) = 0
+  !     for cloud_frac(i) = 0, leading to random cloud overlap across clear layers.
   !
   function sampled_mask_exp_ran(randoms,cloud_frac,overlap_param,cloud_mask) result(error_msg)
     real(wp), dimension(:,:,:), intent(in ) :: randoms       ! ngpt,nlay,ncol
@@ -218,24 +223,24 @@ contains
     nlay = size(randoms, 2)
     ngpt = size(randoms, 1)
     if(any([ncol,nlay] /= [size(cloud_frac, 1),size(cloud_frac, 2)]))  then
-      error_msg = "sampled_mask_max_ran: sizes of randoms(ngpt,nlay,ncol) and cloud_frac(ncol,nlay) are inconsistent"
+      error_msg = "sampled_mask_exp_ran: sizes of randoms(ngpt,nlay,ncol) and cloud_frac(ncol,nlay) are inconsistent"
       return
     end if
     if(any([ncol,nlay-1] /= [size(overlap_param, 1),size(overlap_param, 2)]))  then
-      error_msg = "sampled_mask_max_ran: sizes of randoms(ngpt,nlay,ncol) and overlap_param(ncol,nlay-1) are inconsistent"
+      error_msg = "sampled_mask_exp_ran: sizes of randoms(ngpt,nlay,ncol) and overlap_param(ncol,nlay-1) are inconsistent"
       return
     end if
     if(any([ncol,nlay,ngpt] /= [size(cloud_mask, 1),size(cloud_mask, 2), size(cloud_mask,3)]))  then
-      error_msg = "sampled_mask_max_ran: sizes of randoms(ngpt,nlay,ncol) and cloud_mask(ncol,nlay,ngpt) are inconsistent"
+      error_msg = "sampled_mask_exp_ran: sizes of randoms(ngpt,nlay,ncol) and cloud_mask(ncol,nlay,ngpt) are inconsistent"
       return
     end if
 
     if(any(cloud_frac > 1._wp) .or. any(cloud_frac < 0._wp)) then
-      error_msg = "sampled_mask_max_ran: cloud fraction values out of range [0,1]"
+      error_msg = "sampled_mask_exp_ran: cloud fraction values out of range [0,1]"
       return
     end if
     if(any(overlap_param > 1._wp) .or. any(overlap_param < -1._wp)) then
-      error_msg = "sampled_mask_max_ran: overlap_param values out of range [-1,1]"
+      error_msg = "sampled_mask_exp_ran: overlap_param values out of range [-1,1]"
       return
     end if
     !
@@ -252,7 +257,7 @@ contains
       end if
       cloud_lay_fst = findloc(cloud_mask_layer, .true., dim=1)
       cloud_lay_lst = findloc(cloud_mask_layer, .true., dim=1, back = .true.)
-      cloud_mask(icol,1:cloud_lay_fst,1:ngpt) = .false.
+      cloud_mask(icol,1:cloud_lay_fst-1,1:ngpt) = .false.
 
       ilay = cloud_lay_fst
       local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
@@ -276,10 +281,12 @@ contains
             local_rands(1:ngpt) = randoms(1:ngpt,ilay,icol)
           end if
           cloud_mask(icol,ilay,1:ngpt) = local_rands(1:ngpt) > (1._wp - cloud_frac(icol,ilay))
+        else
+          cloud_mask(icol,ilay,1:ngpt) = .false.
         end if
       end do
 
-      cloud_mask(icol,cloud_lay_lst+1:nlay, 1:ngpt) = .false.
+      cloud_mask(icol,cloud_lay_lst+1:nlay,1:ngpt) = .false.
     end do
 
   end function sampled_mask_exp_ran

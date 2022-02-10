@@ -1,4 +1,4 @@
-name: Build and Deploy Ford Documentation
+name: Build and Deploy Documentation and Website
 
 on: [push, pull_request]
 
@@ -32,21 +32,6 @@ jobs:
         ford doc/ford_site/extensions-front-matter.md
         ford doc/ford_site/kernels-front-matter.md
 
-    - name: Upload Documentation
-      uses: actions/upload-artifact@v2
-      with:
-        name: documentation
-        path: public/
-        if-no-files-found: error    
-
-    - name: Broken Link Check
-      if: ${{ github.ref == 'refs/heads/main'}}
-      uses: technote-space/broken-link-checker-action@v1
-      with:
-        TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
-        RECURSIVE: true
-        ASSIGNEES: ${{ github.actor }}
-
     # Setup Jekyll
     - name: Setup Jekyll
       run: |
@@ -65,6 +50,21 @@ jobs:
         cd ..
         mkdir ../../public/jekyll_site
         cp -a _site/. ../../public/jekyll_site
+
+    - name: Upload Documentation
+      uses: actions/upload-artifact@v2
+      with:
+        name: documentation
+        path: public/
+        if-no-files-found: error    
+
+    - name: Broken Link Check
+      if: ${{ github.ref == 'refs/heads/main'}}
+      uses: technote-space/broken-link-checker-action@v1
+      with:
+        TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
+        RECURSIVE: true
+        ASSIGNEES: ${{ github.actor }}
 
     - name: Deploy API Documentation
       uses: JamesIves/github-pages-deploy-action@4.1.0

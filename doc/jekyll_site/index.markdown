@@ -11,6 +11,6 @@ title: "User Documentation Home"
 
 [Discussions](./discussions.html)
 
-[Link to Developer Reference Documentation for API](./reference/extensions/)
+[Link to Developer Reference Documentation for API](../reference/extensions/index.html)
 
-[Link to Developer Reference Documentation for Kernels](./reference/kernels/)
+[Link to Developer Reference Documentation for Kernels](../reference/kernels/index.html)

@@ -32,8 +32,6 @@ jobs:
         ford doc/ford_site/extensions-front-matter.md
         ford doc/ford_site/kernels-front-matter.md
 
-        cp -a _site/. ../../public/jekyll_site
-
     - name: Upload Documentation
       uses: actions/upload-artifact@v2
       with:
@@ -66,6 +64,7 @@ jobs:
         grep -rl --include \*.html /assets/main.css | xargs sed -i 's#/assets/main.css#assets/main.css#g'
         cd ..
         mkdir ../../public/jekyll_site
+        cp -a _site/. ../../public/jekyll_site
 
     - name: Deploy API Documentation
       uses: JamesIves/github-pages-deploy-action@4.1.0

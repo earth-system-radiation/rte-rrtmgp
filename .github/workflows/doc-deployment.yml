@@ -44,9 +44,6 @@ jobs:
       run: |
         cd doc/jekyll_site
         bundle exec jekyll build
-        cd _site/
-        grep -rl --include \*.html /assets/main.css | xargs sed -i 's#/rte-rrtmgp/assets/main.css#assets/main.css#g'
-        cd ..
         cp -a _site/. ../../public
 
     - name: Upload Documentation

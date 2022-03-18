@@ -91,7 +91,7 @@ module mo_optical_props
     procedure, public  :: expand
     procedure, public  :: set_name
     procedure, public  :: get_name
-  end type
+  end type ty_optical_props
   !----------------------------------------------------------------------------------------
   !
   ! Optical properties as arrays, normally dimensioned ncol, nlay, ngpt/nbnd
@@ -117,7 +117,7 @@ module mo_optical_props
     procedure(validate_abstract),     deferred, public  :: validate
     procedure(delta_scale_abstract),  deferred, public  :: delta_scale
     procedure(subset_range_abstract), deferred, public  :: get_subset
-  end type
+  end type ty_optical_props_arry
   !
   ! Interfaces for the methods to be implemented
   !
@@ -180,7 +180,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_1scl
     procedure, private :: copy_and_alloc_1scl
     generic,   public  :: alloc_1scl => alloc_only_1scl, init_and_alloc_1scl, copy_and_alloc_1scl
-  end type
+  end type ty_optical_props_1scl
 
   ! --- 2 stream ------------------------------------------------------------------------
 !! \section arg_table_ty_optical_props_2str Argument Table
@@ -199,7 +199,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_2str
     procedure, private :: copy_and_alloc_2str
     generic,   public  :: alloc_2str => alloc_only_2str, init_and_alloc_2str, copy_and_alloc_2str
-  end type
+  end type ty_optical_props_2str
 
   ! --- n stream ------------------------------------------------------------------------
 !! \section arg_table_ty_optical_props_nstr Argument Table
@@ -219,7 +219,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_nstr
     procedure, private :: copy_and_alloc_nstr
     generic,   public  :: alloc_nstr => alloc_only_nstr, init_and_alloc_nstr, copy_and_alloc_nstr
-  end type
+  end type ty_optical_props_nstr
   ! -------------------------------------------------------------------------------------------------
 contains
   ! -------------------------------------------------------------------------------------------------

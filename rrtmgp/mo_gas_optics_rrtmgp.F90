@@ -185,7 +185,7 @@ module mo_gas_optics_rrtmgp
     procedure, private :: get_npres
     procedure, private :: get_ntemp
     procedure, private :: get_nPlanckTemp
-  end type
+  end type ty_gas_optics_rrtmgp
   ! -------------------------------------------------------------------------------------------------
   !
   ! col_dry is the number of molecules per cm-2 of dry air

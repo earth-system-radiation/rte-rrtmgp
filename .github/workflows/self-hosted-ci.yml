@@ -9,23 +9,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - config_name: pgi_default_gpu
-          compiler_base: pgi
-          compiler_module: pgi
+        - config_name: nvidia_default_gpu
+          compiler_base: nvidia
+          compiler_module: nvidia
           accel_module: craype-accel-nvidia60
           # Generic accelerator flag
           FCFLAGS: "-O3 -acc -Mallocatable=03 -gopt"
           RTE_KERNELS: openacc
         - config_name: cce-cpu-icon-production
           compiler_base: cray
-          compiler_module: cce-icon/11.0.0
+          compiler_module: cce
           accel_module: ""
           # Production flags for Icon model
           RTE_KERNELS: default
           FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
         - config_name: cce-openmp
           compiler_base: cray
-          compiler_module: cce/11.0.0
+          compiler_module: cce
           accel_module: craype-accel-nvidia60
           # OpenMP flags from Nichols Romero (Argonne)
           FCFLAGS: "-hnoacc -homp -O0"
@@ -47,6 +47,7 @@ jobs:
         module swap ${{ matrix.compiler_base }} ${{ matrix.compiler_module }}
         module load ${{ matrix.accel_module }}
         module load cray-netcdf cray-hdf5
+        module rm cray-libsci_acc
         export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
         export CUDA_HOME=$CUDATOOLKIT_HOME
         echo Compiler Environment:
@@ -85,5 +86,6 @@ jobs:
         module load daint-gpu
         export RRTMGP_ROOT=$PWD
         # This module will unload some of the build modules, so do the checks separately
-        module load netcdf-python
+        module load netcdf4-python
+        . /scratch/snx3000/rpincus/netcdf-env/bin/activate
         make check

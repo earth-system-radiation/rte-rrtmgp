@@ -608,7 +608,11 @@ contains
     if (allocated(this%krayl)) then
       !$acc        data copyin(this%gpoint_flavor, this%krayl)    create(tau, tau_rayleigh)
       !$omp target data map(to:this%gpoint_flavor, this%krayl) map(alloc:tau, tau_rayleigh)
+<<<<<<< HEAD
       call zero_array(ngpt, nlay, ncol, tau)
+=======
+      call zero_array(ncol, nlay, ngpt, tau)
+>>>>>>> 818c9b50ea2da8bbe03cfcb6b4110a65fffd1be3
       call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
@@ -650,7 +654,11 @@ contains
       !$acc end        data
       !$omp end target data
     else
+<<<<<<< HEAD
       call zero_array(ngpt, nlay, ncol, optical_props%tau)
+=======
+      call zero_array(ncol, nlay, ngpt, optical_props%tau)
+>>>>>>> 818c9b50ea2da8bbe03cfcb6b4110a65fffd1be3
       call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
@@ -821,7 +829,11 @@ contains
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     logical(wl)                                  :: top_at_1
+<<<<<<< HEAD
     integer                                      :: icol, ilay, igpt
+=======
+    integer                                      :: icol, ilay
+>>>>>>> 818c9b50ea2da8bbe03cfcb6b4110a65fffd1be3
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
     real(wp), dimension(:,:),            pointer :: tlev_wk
@@ -969,7 +981,12 @@ contains
              this%optimal_angle_fit(size(optimal_angle_fit,    1), size(optimal_angle_fit,   2)))
     this%totplnk = totplnk
 !    this%planck_frac = planck_frac
+<<<<<<< HEAD
     this%planck_frac = RESHAPE(planck_frac,(/size(planck_frac,4), size(planck_frac,2), size(planck_frac,3), size(planck_frac,1)/),ORDER =(/4,2,3,1/))
+=======
+    this%planck_frac = RESHAPE(planck_frac,(/size(planck_frac,4), size(planck_frac,2), &
+    size(planck_frac,3), size(planck_frac,1)/),ORDER =(/4,2,3,1/))
+>>>>>>> 818c9b50ea2da8bbe03cfcb6b4110a65fffd1be3
     this%optimal_angle_fit = optimal_angle_fit
     !$acc        enter data copyin(this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$omp target enter data map(to:this%totplnk, this%planck_frac, this%optimal_angle_fit)
@@ -1257,8 +1274,15 @@ contains
     end if
     if (allocated(rayl_lower)) then
       allocate(this%krayl(size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1),2))
+<<<<<<< HEAD
       this%krayl(:,:,:,1) = RESHAPE(rayl_lower,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
       this%krayl(:,:,:,2) = RESHAPE(rayl_upper,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
+=======
+      this%krayl(:,:,:,1) = RESHAPE(rayl_lower,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2), &
+      size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
+      this%krayl(:,:,:,2) = RESHAPE(rayl_upper,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2), &
+      size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
+>>>>>>> 818c9b50ea2da8bbe03cfcb6b4110a65fffd1be3
       !$acc        enter data copyin(this%krayl)
       !$omp target enter data map(to:this%krayl)
     end if
@@ -1813,7 +1837,12 @@ contains
       enddo
     endif
 
+<<<<<<< HEAD
     kminor_atm_red = RESHAPE(kminor_atm_red_t,(/size(kminor_atm_red_t,dim=3),size(kminor_atm_red_t,dim=2),size(kminor_atm_red_t,dim=1)/), ORDER=(/3,2,1/))
+=======
+    kminor_atm_red = RESHAPE(kminor_atm_red_t,(/size(kminor_atm_red_t,dim=3), &
+    size(kminor_atm_red_t,dim=2),size(kminor_atm_red_t,dim=1)/), ORDER=(/3,2,1/))
+>>>>>>> 818c9b50ea2da8bbe03cfcb6b4110a65fffd1be3
     deallocate(kminor_atm_red_t)
   end subroutine reduce_minor_arrays
 

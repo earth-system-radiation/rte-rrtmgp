@@ -531,8 +531,12 @@ contains
           itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           pfrac(icol,ilay,gptS:gptE) = &
+<<<<<<< HEAD
             ! interpolation in temp-m64 -O3 -g -traceback -heap-arrays -assume
             ! realloc_lhs -extend-source 132erature, pressure, and eta
+=======
+            ! interpolation in temperature, pressure, and eta
+>>>>>>> 818c9b50ea2da8bbe03cfcb6b4110a65fffd1be3
             interpolate3D_byflav(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                           jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
@@ -708,19 +712,20 @@ contains
                                                      ! index(1) : reference eta level (temperature dependent)
                                                      ! index(2) : reference pressure level
                                                      ! index(3) : reference temperature level
-    real(wp), dimension(:,:,:,:),intent(in) :: k ! (gpt, eta,temp,press)
+    real(wp), dimension(:,:,:,:),intent(in) :: k ! (temp,eta,press,gpt)
     integer,                     intent(in) :: gptS, gptE
     integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
     integer,                     intent(in) :: jtemp ! interpolation index for temperature
     integer,                     intent(in) :: jpress ! interpolation index for pressure
-    real(wp), dimension(gptE-gptS+1)        :: res ! the result
+    real(wp), dimension(gptS:gptE)          :: res ! the result
 
     ! Local variable
     integer :: igpt
     ! each code block is for a different reference temperature
-    do igpt = 1, gptE-gptS+1
+    do igpt = gptS, gptE
       res(igpt) =  &
         scaling(1) * &
+<<<<<<< HEAD
         ( fmajor(1,1,1) * k(jtemp, jeta(1)  , jpress-1, gptS+igpt-1 ) + &
           fmajor(2,1,1) * k(jtemp, jeta(1)+1, jpress-1, gptS+igpt-1 ) + &
           fmajor(1,2,1) * k(jtemp, jeta(1)  , jpress  , gptS+igpt-1 ) + &
@@ -730,6 +735,17 @@ contains
           fmajor(2,1,2) * k(jtemp+1, jeta(2)+1, jpress-1, gptS+igpt-1) + &
           fmajor(1,2,2) * k(jtemp+1, jeta(2)  , jpress  , gptS+igpt-1) + &
           fmajor(2,2,2) * k(jtemp+1, jeta(2)+1, jpress  , gptS+igpt-1) )
+=======
+        ( fmajor(1,1,1) * k(jtemp, jeta(1)  , jpress-1, igpt) + &
+          fmajor(2,1,1) * k(jtemp, jeta(1)+1, jpress-1, igpt) + &
+          fmajor(1,2,1) * k(jtemp, jeta(1)  , jpress  , igpt) + &
+          fmajor(2,2,1) * k(jtemp, jeta(1)+1, jpress  , igpt) ) + &
+        scaling(2) * &
+        ( fmajor(1,1,2) * k(jtemp+1, jeta(2)  , jpress-1, igpt) + &
+          fmajor(2,1,2) * k(jtemp+1, jeta(2)+1, jpress-1, igpt) + &
+          fmajor(1,2,2) * k(jtemp+1, jeta(2)  , jpress  , igpt) + &
+          fmajor(2,2,2) * k(jtemp+1, jeta(2)+1, jpress  , igpt) )
+>>>>>>> 818c9b50ea2da8bbe03cfcb6b4110a65fffd1be3
     end do
   end function interpolate3D_byflav
 

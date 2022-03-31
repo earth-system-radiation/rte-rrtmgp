@@ -86,5 +86,6 @@ jobs:
         module load daint-gpu
         export RRTMGP_ROOT=$PWD
         # This module will unload some of the build modules, so do the checks separately
-        module load netcdf-python
+        module load netcdf4-python
+        . /scratch/snx3000/rpincus/netcdf-env/bin/activate
         make check

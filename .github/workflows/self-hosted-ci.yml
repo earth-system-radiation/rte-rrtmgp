@@ -18,14 +18,14 @@ jobs:
           RTE_KERNELS: openacc
         - config_name: cce-cpu-icon-production
           compiler_base: cray
-          compiler_module: cce-icon/11.0.0
+          compiler_module: cce
           accel_module: ""
           # Production flags for Icon model
           RTE_KERNELS: default
           FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
         - config_name: cce-openmp
           compiler_base: cray
-          compiler_module: cce/11.0.0
+          compiler_module: cce
           accel_module: craype-accel-nvidia60
           # OpenMP flags from Nichols Romero (Argonne)
           FCFLAGS: "-hnoacc -homp -O0"

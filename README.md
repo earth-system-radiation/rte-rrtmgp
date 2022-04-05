@@ -1,6 +1,6 @@
 # FORD Documentation
 
-[RTE+RRTMGP's GitHub Pages site](https://sourceryinstitute.github.io/rte-rrtmgp/)
+[RTE+RRTMGP's GitHub Pages site](https://earth-system-radiation.github.io/rte-rrtmgp/)
 
 # RTE+RRTMGP
 

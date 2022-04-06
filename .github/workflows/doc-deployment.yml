@@ -30,7 +30,8 @@ jobs:
     - name: Build Developer Documenation
       run: |
         ford doc/ford_site/extensions-front-matter.md
-        ford doc/ford_site/kernels-front-matter.md
+        ford doc/ford_site/rte-kernels-front-matter.md
+        ford doc/ford_site/rrtmgp-kernels-front-matter.md
 
     # Setup Jekyll
     - name: Setup Jekyll
@@ -38,7 +39,7 @@ jobs:
         cd doc/jekyll_site
         sudo gem install bundler jekyll
         bundle update
-        
+
     # Run Jekyll build and copy output to public folder
     - name: Build Jekyll Site
       run: |
@@ -51,7 +52,7 @@ jobs:
       with:
         name: documentation
         path: public/
-        if-no-files-found: error    
+        if-no-files-found: error
 
     - name: Broken Link Check
       if: ${{ github.ref == 'refs/heads/main'}}

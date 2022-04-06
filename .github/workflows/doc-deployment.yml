@@ -1,0 +1,69 @@
+name: Build and Deploy Documentation and Website
+
+on: [push, pull_request]
+
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    env:
+      FC: gfortran
+      GCC_V: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Dependencies Ubuntu
+      run: |
+        sudo apt-get update
+        sudo apt install -y gfortran-${GCC_V} cmake wget python-dev python build-essential numdiff graphviz
+        wget -P . "https://bootstrap.pypa.io/get-pip.py" && sudo python get-pip.py && rm get-pip.py
+        sudo pip install ford
+
+    # Install ruby 2.7.x
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7
+
+    - name: Build Developer Documenation
+      run: |
+        ford doc/ford_site/extensions-front-matter.md
+        ford doc/ford_site/kernels-front-matter.md
+
+    # Setup Jekyll
+    - name: Setup Jekyll
+      run: |
+        cd doc/jekyll_site
+        sudo gem install bundler jekyll
+        bundle update
+        
+    # Run Jekyll build and copy output to public folder
+    - name: Build Jekyll Site
+      run: |
+        cd doc/jekyll_site
+        bundle exec jekyll build
+        cp -a _site/. ../../public
+
+    - name: Upload Documentation
+      uses: actions/upload-artifact@v2
+      with:
+        name: documentation
+        path: public/
+        if-no-files-found: error    
+
+    - name: Broken Link Check
+      if: ${{ github.ref == 'refs/heads/main'}}
+      uses: technote-space/broken-link-checker-action@v1
+      with:
+        TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
+        RECURSIVE: true
+        ASSIGNEES: ${{ github.actor }}
+
+    - name: Deploy API Documentation
+      uses: JamesIves/github-pages-deploy-action@4.1.0
+      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
+      with:
+        branch: gh-pages
+        folder: public/

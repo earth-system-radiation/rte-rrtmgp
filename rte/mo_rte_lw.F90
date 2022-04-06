@@ -3,31 +3,38 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2021,  Atmospheric and Environmental Research,
-! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
+! Copyright 2015-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-!  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
-!    atmospheric optical properties, spectrally-resolved
-!    information about vertical ordering
-!    internal Planck source functions, defined per g-point on the same spectral grid at the atmosphere
-!    boundary conditions: surface emissivity defined per band
-!    optionally, a boundary condition for incident diffuse radiation
-!    optionally, an integer number of angles at which to do Gaussian quadrature if scattering is neglected
+!> Compute longwave radiative fluxes
+!>  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
+!>
+!> - atmospheric optical properties, spectrally-resolved via one of the sub-classes of
+!>     [[mo_optical_props(module):ty_optical_props_arry(type)]] in module [[mo_optical_props]]
+!      (ty_optical_props_arry in module mo_optical_props)
+!> - information about vertical ordering
+!> - internal Planck source functions, defined per g-point on the same spectral grid at the atmosphere,
+!>     via [[mo_source_functions(module):ty_source_func_lw(type)]] in module [[mo_source_functions]]
+!      (ty_source_func_lw in module mo_source_functions)
+!> -  boundary conditions: surface emissivity defined per band
+!> -  optionally, a boundary condition for incident diffuse radiation
+!> -  optionally, an integer number of angles at which to do Gaussian quadrature if scattering is neglected
 !
-! If optical properties are supplied via class ty_optical_props_1scl (absorption optical thickenss only)
-!    then an emission/absorption solver is called
-!    If optical properties are supplied via class ty_optical_props_2str fluxes are computed via
-!    two-stream calculations and adding.
+!> If optical properties are supplied via class ty_optical_props_1scl (absorption optical thickenss only)
+!>    then an emission/absorption solver is called
+!>    If optical properties are supplied via class ty_optical_props_2str fluxes are computed via
+!>    a rescaling by default or, optionally, using two-stream calculations and adding.
 !
-! It is the user's responsibility to ensure that emissivity is on the same
-!   spectral grid as the optical properties.
+!> Users must ensure that emissivity is on the same spectral grid as the optical properties.
 !
-! Final output is via user-extensible ty_fluxes which must reduce the detailed spectral fluxes to
-!   whatever summary the user needs.
+!> Final output is via user-extensible ty_fluxes which must reduce the detailed spectral fluxes to
+!>   whatever summary the user needs.
 !
 ! The routine does error checking and choses which lower-level kernel to invoke based on
 !   what kinds of optical properties are supplied

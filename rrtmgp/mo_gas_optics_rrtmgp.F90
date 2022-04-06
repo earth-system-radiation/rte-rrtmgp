@@ -1524,8 +1524,8 @@ contains
     !
     ! column transmissivity
     !
-    !$acc                parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
-    !$omp target teams distribute parallel do simd collapse(2) map(to:optical_props%tau, optical_props%gpt2band) map(from:optimal_angles)
+    !$acc                parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau) copyout(optimal_angles)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:optical_props%tau) map(from:optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !
@@ -1540,7 +1540,7 @@ contains
         !
         ! Optimal transport angle is a linear fit to column transmissivity
         !
-        bnd = optical_props%gpt2band(igpt)
+        bnd = optical_props%convert_gpt2band(igpt)
         optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
                                     this%optimal_angle_fit(2,bnd)
       end do

@@ -29,9 +29,7 @@ jobs:
 
     - name: Build Developer Documenation
       run: |
-        ford doc/ford_site/extensions-front-matter.md
-        ford doc/ford_site/rte-kernels-front-matter.md
-        ford doc/ford_site/rrtmgp-kernels-front-matter.md
+        ford doc/ford_site/index.md
 
     # Setup Jekyll
     - name: Setup Jekyll

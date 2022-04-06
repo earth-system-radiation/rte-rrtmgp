@@ -1,18 +1,11 @@
 ---
-project: rte-rrtmgp
-summary: RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.
-email: rrtmgp@aer.com
-src_dir: ../../rte/kernels
-page_dir: ../ford_site/pages
-preprocessor: gfortran -E
-display: public
-sort: permission-alpha
-output_dir: ../../public/reference/rte-kernels/
-graph: true
-md_extensions: markdown.extensions.toc
+title: RRTMGP Fortran interfaces
+src_dir: ../../rrtmgp
+exclude_dir: ../../rrtmgp/kernels
+exclude_dir: ../../rrtmgp/kernels-openacc
 ...
 
-These pages document the low-level computational kernels used by RRTMGP.
+These pages describe the Fortran user interface to RTE.
 
 ## How to Read This Documentation
 

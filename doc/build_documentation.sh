@@ -1,8 +1,6 @@
 #!/bin/sh
 rm -rf ../../public
-ford ford_site/extensions-front-matter.md
-ford ford_site/rte-kernels-front-matter.md
-ford ford_site/rrtmgp-kernels-front-matter.md
+ford ford_site/index.md
 cd jekyll_site/
 bundle exec jekyll build
 cd _site/

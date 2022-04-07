@@ -16,6 +16,7 @@ exclude: mo_rte_solver_kernels.F90
 page_dir: ../ford_site/pages
 preprocessor: gfortran -E
 display: public
+source: true
 sort: permission-alpha
 output_dir: ../../public/reference/extensions/
 graph: true

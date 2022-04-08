@@ -52,7 +52,8 @@ module mo_optical_props
         delta_scale_2str_kernel, &
         extract_subset
   implicit none
-  integer, parameter :: name_len = 32
+  private
+  integer, parameter, public :: name_len = 32
   ! -------------------------------------------------------------------------------------------------
   !
   ! Base class for optical properties
@@ -86,7 +87,7 @@ module mo_optical_props
     procedure, public  :: expand
     procedure, public  :: set_name
     procedure, public  :: get_name
-  end type
+  end type ty_optical_props
   !----------------------------------------------------------------------------------------
   !
   ! Optical properties as arrays, normally dimensioned ncol, nlay, ngpt/nbnd
@@ -112,7 +113,7 @@ module mo_optical_props
     procedure(validate_abstract),     deferred, public  :: validate
     procedure(delta_scale_abstract),  deferred, public  :: delta_scale
     procedure(subset_range_abstract), deferred, public  :: get_subset
-  end type
+  end type ty_optical_props_arry
   !
   ! Interfaces for the methods to be implemented
   !
@@ -170,7 +171,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_1scl
     procedure, private :: copy_and_alloc_1scl
     generic,   public  :: alloc_1scl => alloc_only_1scl, init_and_alloc_1scl, copy_and_alloc_1scl
-  end type
+  end type ty_optical_props_1scl
 
   ! --- 2 stream ------------------------------------------------------------------------
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_2str
@@ -186,7 +187,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_2str
     procedure, private :: copy_and_alloc_2str
     generic,   public  :: alloc_2str => alloc_only_2str, init_and_alloc_2str, copy_and_alloc_2str
-  end type
+  end type ty_optical_props_2str
 
   ! --- n stream ------------------------------------------------------------------------
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_nstr
@@ -203,7 +204,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_nstr
     procedure, private :: copy_and_alloc_nstr
     generic,   public  :: alloc_nstr => alloc_only_nstr, init_and_alloc_nstr, copy_and_alloc_nstr
-  end type
+  end type ty_optical_props_nstr
   ! -------------------------------------------------------------------------------------------------
 contains
   ! -------------------------------------------------------------------------------------------------
@@ -681,7 +682,7 @@ contains
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
         err_message = trim(this%get_name()) // ': ' // trim(err_message)
   end function validate_nstream
-  
+
   ! ------------------------------------------------------------------------------------------
   !
   !  Routines for array classes: subsetting of optical properties arrays along x (col) direction

@@ -36,7 +36,8 @@ module mo_gas_concentrations
   use mo_rte_util_array,     only: any_vals_outside
   implicit none
   integer, parameter :: GAS_NOT_IN_LIST = -1
-
+  private
+  
   type, private :: conc_field
     real(wp), dimension(:,:), pointer :: conc => NULL()
   end type conc_field

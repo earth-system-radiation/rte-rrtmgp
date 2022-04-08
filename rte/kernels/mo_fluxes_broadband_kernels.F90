@@ -60,7 +60,7 @@ contains
   ! Net flux: Spectral reduction over all points
   !
   subroutine net_broadband_full(ncol, nlev, ngpt, spectral_flux_dn, spectral_flux_up, broadband_flux_net) &
-    bind(C, name="net_broadband_full")
+    bind(C, name="rte_net_broadband_full")
     integer,                               intent(in ) :: ncol, nlev, ngpt
     real(wp), dimension(ncol, nlev, ngpt), intent(in ) :: spectral_flux_dn, spectral_flux_up
     real(wp), dimension(ncol, nlev),       intent(out) :: broadband_flux_net
@@ -98,7 +98,7 @@ contains
   ! Net flux when bradband flux up and down are already available
   !
   subroutine net_broadband_precalc(ncol, nlev, flux_dn, flux_up, broadband_flux_net) &
-    bind(C, name="net_broadband_precalc")
+    bind(C, name="rte_net_broadband_precalc")
     integer,                         intent(in ) :: ncol, nlev
     real(wp), dimension(ncol, nlev), intent(in ) :: flux_dn, flux_up
     real(wp), dimension(ncol, nlev), intent(out) :: broadband_flux_net

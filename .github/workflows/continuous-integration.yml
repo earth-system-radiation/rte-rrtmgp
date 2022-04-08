@@ -109,13 +109,12 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
-    - name: Setup conda
-      uses: s-weigand/setup-conda@v1
-      with:
-        python-version: 3.7
-    - name: Install python packages
-      run: conda install --yes -c conda-forge urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
+        python-version: 3.8
+    - name: Setup conda and install packages
+      uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniforge-version: latest
+        run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files

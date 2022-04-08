@@ -33,7 +33,6 @@ module mo_gas_optics_rrtmgp
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
-  use mo_rrtmgp_util_reorder
   implicit none
   private
   real(wp), parameter :: pi = acos(-1._wp)

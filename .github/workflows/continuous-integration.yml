@@ -114,7 +114,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
         with:
           miniforge-version: latest
-        run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
+      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files

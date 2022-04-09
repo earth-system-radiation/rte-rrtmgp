@@ -110,7 +110,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-        cache: 'pip'
     - name: Install Python packages
       run: sudo pip install urllib3 netcdf4 xarray dask numpy scipy matplotlib seaborn colorcet
     ############################################################################

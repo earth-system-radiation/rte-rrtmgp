@@ -54,7 +54,7 @@ contains
                               flux_up, flux_dn, &
                               do_broadband, broadband_up, broadband_dn, &
                               do_Jacobians, sfc_srcJac, flux_upJac,               &
-                              do_rescaling, ssa, g) bind(C, name="lw_solver_noscat")
+                              do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
@@ -267,7 +267,7 @@ contains
                                         flux_up, flux_dn,           &
                                         do_broadband, broadband_up, broadband_dn, &
                                         do_Jacobians, sfc_srcJac, flux_upJac,               &
-                                        do_rescaling, ssa, g) bind(C, name="lw_solver_noscat_GaussQuad")
+                                        do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat_GaussQuad")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     integer,                               intent(in   ) :: nmus         ! number of quadrature angles
@@ -380,7 +380,7 @@ contains
                                  tau, ssa, g,                &
                                  lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                                  inc_flux,                   &
-                                 flux_up, flux_dn) bind(C, name="lw_solver_2stream")
+                                 flux_up, flux_dn) bind(C, name="rte_lw_solver_2stream")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &     ! Optical thickness,
@@ -454,7 +454,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   pure subroutine sw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
-                                   tau, mu0, inc_flux_dir, flux_dir) bind(C, name="sw_solver_noscat")
+                                   tau, mu0, inc_flux_dir, flux_dir) bind(C, name="rte_sw_solver_noscat")
     integer,                               intent(in ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in ) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent(in ) :: tau          ! Absorption optical thickness []
@@ -509,7 +509,7 @@ contains
                                 flux_up, flux_dn, flux_dir, &
                                 has_dif_bc, inc_flux_dif,   &
                                 do_broadband, broadband_up, &
-                                broadband_dn, broadband_dir) bind(C, name="sw_solver_2stream")
+                                broadband_dn, broadband_dir) bind(C, name="rte_sw_solver_2stream")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &  ! Optical thickness,
@@ -607,7 +607,7 @@ contains
   !
   ! ---------------------------------------------------------------
   subroutine lw_source_noscat(ncol, nlay, lay_source, lev_source_up, lev_source_dn, tau, trans, &
-                              source_dn, source_up) bind(C, name="lw_source_noscat")
+                              source_dn, source_up)
     integer,                         intent(in) :: ncol, nlay
     real(wp), dimension(ncol, nlay), intent(in) :: lay_source, & ! Planck source at layer center
                                                    lev_source_up, & ! Planck source at levels (layer edges),
@@ -650,7 +650,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   subroutine lw_transport_noscat_dn(ncol, nlay, top_at_1,     &
-                                   trans, source_dn, radn_dn) bind(C, name="lw_transport_noscat_dn")
+                                   trans, source_dn, radn_dn)
     integer,                          intent(in   ) :: ncol, nlay ! Number of columns, layers, g-points
     logical(wl),                      intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ), intent(in   ) :: trans      ! transmissivity = exp(-tau)
@@ -679,7 +679,7 @@ contains
   end subroutine lw_transport_noscat_dn
   ! -------------------------------------------------------------------------------------------------
   subroutine lw_transport_noscat_up(ncol, nlay, top_at_1,     &
-                                   trans, source_up, radn_up, do_Jacobians, radn_upJac) bind(C, name="lw_transport_noscat_up")
+                                   trans, source_up, radn_up, do_Jacobians, radn_upJac)
     integer,                          intent(in   ) :: ncol, nlay ! Number of columns, layers, g-points
     logical(wl),                      intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ), intent(in   ) :: trans      ! transmissivity = exp(-tau)
@@ -724,7 +724,7 @@ contains
   subroutine lw_transport_1rescl(ncol, nlay, top_at_1, &
                                  trans, source_dn, source_up, &
                                  radn_up, radn_dn, An, Cn,&
-                                 do_Jacobians, radn_up_Jac) bind(C, name="lw_transport_1rescl")
+                                 do_Jacobians, radn_up_Jac)
     integer,                          intent(in   ) :: ncol, nlay ! Number of columns, layers, g-points
     logical(wl),                      intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ), intent(in   ) :: trans      ! transmissivity = exp(-tau)
@@ -823,7 +823,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   pure subroutine lw_two_stream(ncol, nlay, tau, w0, g, &
-                                gamma1, gamma2, Rdif, Tdif) bind(C, name="lw_two_stream")
+                                gamma1, gamma2, Rdif, Tdif)
     integer,                        intent(in)  :: ncol, nlay
     real(wp), dimension(ncol,nlay), intent(in)  :: tau, w0, g
     real(wp), dimension(ncol,nlay), intent(out) :: gamma1, gamma2, Rdif, Tdif
@@ -887,7 +887,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   subroutine lw_combine_sources(ncol, nlay, top_at_1, &
-                                lev_src_inc, lev_src_dec, lev_source) bind(C, name="lw_combine_sources")
+                                lev_src_inc, lev_src_dec, lev_source)
     integer,                           intent(in ) :: ncol, nlay
     logical(wl),                       intent(in ) :: top_at_1
     real(wp), dimension(ncol, nlay  ), intent(in ) :: lev_src_inc, lev_src_dec
@@ -922,7 +922,7 @@ contains
                             sfc_emis, sfc_src,      &
                             lay_source, lev_source, &
                             gamma1, gamma2, rdif, tdif, tau, source_dn, source_up, source_sfc) &
-                            bind (C, name="lw_source_2str")
+                            bind (C, name="rte_lw_source_2str")
     integer,                         intent(in) :: ncol, nlay
     logical(wl),                     intent(in) :: top_at_1
     real(wp), dimension(ncol      ), intent(in) :: sfc_emis, sfc_src
@@ -988,7 +988,7 @@ contains
   ! -------------------------------------------------------------------------------------------------
   pure subroutine sw_dif_and_source(ncol, nlay, top_at_1, mu0, sfc_albedo, &
                                     tau, w0, g,  &
-                                    Rdif, Tdif, source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="sw_source_dir")
+                                    Rdif, Tdif, source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="rte_sw_source_dir")
     integer,                          intent(in   ) :: ncol, nlay
     logical(wl),                      intent(in   ) :: top_at_1
     real(wp), dimension(ncol       ), intent(in   ) :: mu0, sfc_albedo          ! surface albedo for direct radiation
@@ -1111,7 +1111,7 @@ subroutine adding(ncol, nlay, top_at_1, &
                   albedo_sfc,           &
                   rdif, tdif,           &
                   src_dn, src_up, src_sfc, &
-                  flux_up, flux_dn) bind(C, name="adding")
+                  flux_up, flux_dn)
   integer,                          intent(in   ) :: ncol, nlay
   logical(wl),                      intent(in   ) :: top_at_1
   real(wp), dimension(ncol       ), intent(in   ) :: albedo_sfc

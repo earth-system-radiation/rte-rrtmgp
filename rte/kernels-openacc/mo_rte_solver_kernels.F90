@@ -58,7 +58,7 @@ contains
                               flux_up, flux_dn, &
                               do_broadband, broadband_up, broadband_dn, &
                               do_Jacobians, sfc_srcJac, flux_upJac,               &
-                              do_rescaling, ssa, g) bind(C, name="lw_solver_noscat")
+                              do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
@@ -270,7 +270,7 @@ contains
                                         flux_up, flux_dn,           &
                                         do_broadband, broadband_up, broadband_dn, &
                                         do_Jacobians, sfc_srcJac, flux_upJac,               &
-                                        do_rescaling, ssa, g) bind(C, name="lw_solver_noscat_GaussQuad")
+                                        do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat_GaussQuad")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     integer,                               intent(in   ) :: nmus         ! number of quadrature angles
@@ -425,7 +425,7 @@ contains
                                 tau, ssa, g,                &
                                 lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                                 inc_flux,                   &
-                                flux_up, flux_dn) bind(C, name="lw_solver_2stream")
+                                flux_up, flux_dn) bind(C, name="rte_lw_solver_2stream")
    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
    logical(wl),                           intent(in   ) :: top_at_1
    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &     ! Optical thickness,
@@ -512,7 +512,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   subroutine sw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
-                              tau, mu0, inc_flux_dir, flux_dir) bind(C, name="sw_solver_noscat")
+                              tau, mu0, inc_flux_dir, flux_dir) bind(C, name="rte_sw_solver_noscat")
     integer,                               intent(in ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in ) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent(in ) :: tau          ! Absorption optical thickness []
@@ -583,7 +583,7 @@ contains
                                 flux_up, flux_dn, flux_dir, &
                                 has_dif_bc, inc_flux_dif,   &
                                 do_broadband, broadband_up, &
-                                broadband_dn, broadband_dir) bind(C, name="sw_solver_2stream")
+                                broadband_dn, broadband_dir) bind(C, name="rte_sw_solver_2stream")
     integer,                               intent(in ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in ) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent(in ) :: tau, &  ! Optical thickness,
@@ -757,7 +757,7 @@ contains
   !
   ! ---------------------------------------------------------------
   subroutine lw_transport_noscat_dn(ncol, nlay, ngpt, top_at_1, &
-                                    trans, source_dn,radn_dn) bind(C, name="lw_transport_noscat_dn")
+                                    trans, source_dn,radn_dn)
     !dir$ optimize(-O0)
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1   !
@@ -800,7 +800,7 @@ contains
   end subroutine lw_transport_noscat_dn
   ! -------------------------------------------------------------------------------------------------
   subroutine lw_transport_noscat_up(ncol, nlay, ngpt, &
-                                    top_at_1, trans, source_up, radn_up, do_Jacobians, radn_upJac) bind(C, name="lw_transport_noscat_up")
+                                    top_at_1, trans, source_up, radn_up, do_Jacobians, radn_upJac)
     !dir$ optimize(-O0)
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1   !
@@ -862,7 +862,7 @@ contains
   !    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
   !
   subroutine lw_two_stream(ncol, nlay, ngpt, tau, w0, g, &
-                                gamma1, gamma2, Rdif, Tdif) bind(C, name="lw_two_stream")
+                                gamma1, gamma2, Rdif, Tdif)
     integer,                             intent(in)  :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(in)  :: tau, w0, g
     real(wp), dimension(ncol,nlay,ngpt), intent(out) :: gamma1, gamma2, Rdif, Tdif
@@ -939,7 +939,7 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   subroutine lw_combine_sources(ncol, nlay, ngpt, top_at_1, &
-                                lev_src_inc, lev_src_dec, lev_source) bind(C, name="lw_combine_sources")
+                                lev_src_inc, lev_src_dec, lev_source)
     integer,                                 intent(in ) :: ncol, nlay, ngpt
     logical(wl),                             intent(in ) :: top_at_1
     real(wp), dimension(ncol, nlay  , ngpt), intent(in ) :: lev_src_inc, lev_src_dec
@@ -985,7 +985,7 @@ contains
                             sfc_emis, sfc_src,      &
                             lay_source, lev_source, &
                             gamma1, gamma2, rdif, tdif, tau, source_dn, source_up, source_sfc) &
-                            bind (C, name="lw_source_2str")
+                            bind (C, name="rte_lw_source_2str")
     integer,                         intent(in) :: ncol, nlay, ngpt
     logical(wl),                     intent(in) :: top_at_1
     real(wp), dimension(ncol      , ngpt), intent(in) :: sfc_emis, sfc_src
@@ -1067,7 +1067,7 @@ contains
   subroutine sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_albedo, &
                                 tau, w0, g,                                      &
                                 Rdif, Tdif, source_dn, source_up, source_sfc,    &
-                                flux_dn_dir) bind (C, name="sw_source_dir")
+                                flux_dn_dir) bind (C, name="rte_sw_source_dir")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol            ), intent(in   ) :: mu0
@@ -1192,7 +1192,7 @@ contains
                     albedo_sfc,           &
                     rdif, tdif,           &
                     src_dn, src_up, src_sfc, &
-                    flux_up, flux_dn) bind(C, name="adding")
+                    flux_up, flux_dn)
     !dir$ optimize(-O0)
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     logical(wl),                           intent(in   ) :: top_at_1
@@ -1341,7 +1341,7 @@ contains
 subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
                                trans, source_dn, source_up, &
                                radn_up, radn_dn, An, Cn,    &
-                               do_Jacobians, radn_up_Jac) bind(C, name="lw_transport_1rescl")
+                               do_Jacobians, radn_up_Jac)
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: trans      ! transmissivity = exp(-tau)

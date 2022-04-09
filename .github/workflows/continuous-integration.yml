@@ -4,6 +4,9 @@ on: [push, pull_request]
 jobs:
   CI:
     runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       matrix:
         fortran-compiler:  [gfortran-9, gfortran-10]
@@ -106,12 +109,11 @@ jobs:
     ############################################################################
     # Set up Python and packages
     #
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Install Python packages
-      run: sudo pip install urllib3 netcdf4 xarray dask numpy scipy matplotlib seaborn colorcet
+    - name: Setup conda
+      uses: conda-incubator/setup-miniconda@v2
+        with: miniforge-version: latest
+    - name: Install python packages
+      run: conda install --yes urllib3 netcdf4 xarray dask numpy scipy matplotlib seaborn colorcet
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files

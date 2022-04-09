@@ -37,7 +37,7 @@ module mo_gas_optics
     procedure(real_abstract),    deferred, public :: get_press_max
     procedure(real_abstract),    deferred, public :: get_temp_min
     procedure(real_abstract),    deferred, public :: get_temp_max
-  end type
+  end type ty_gas_optics
   !
   ! Interfaces for the methods to be implemented
   !

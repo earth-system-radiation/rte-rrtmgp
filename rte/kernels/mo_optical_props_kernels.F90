@@ -10,11 +10,11 @@
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-! Kernels for arrays of optical properties:
-!   delta-scaling
-!   adding two sets of properties
-!   extracting subsets
-!   validity checking
+!> ## Kernels for arrays of optical properties:
+!>   - delta-scaling
+!>   - adding two sets of properties
+!>   - extracting subsets
+!>   - validity checking
 !
 ! -------------------------------------------------------------------------------------------------
 
@@ -24,10 +24,13 @@ module mo_optical_props_kernels
   implicit none
 
   public
+
+  !> Delta-scale two-stream optical properties
   interface delta_scale_2str_kernel
     module procedure delta_scale_2str_f_k, delta_scale_2str_k
   end interface
 
+  !> Subsetting, meaning extracting some portion of the 3D domain
   interface extract_subset
     module procedure extract_subset_dim1_3d, extract_subset_dim2_4d
     module procedure extract_subset_absorption_tau
@@ -37,17 +40,19 @@ module mo_optical_props_kernels
 contains
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Delta-scaling, provided only for two-stream properties at present
+  ! Delta-scaling is provided only for two-stream properties at present
   !
   ! -------------------------------------------------------------------------------------------------
-  ! Delta-scale two-stream optical properties
-  !   user-provided value of f (forward scattering)
+  !> Delta-scale two-stream optical properties given user-provided value of f (forward scattering)
   !
   pure subroutine delta_scale_2str_f_k(ncol, nlay, ngpt, tau, ssa, g, f) &
       bind(C, name="rte_delta_scale_2str_f_k")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
+      !! Array sizes
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) ::  tau, ssa, g
+      !! Optical depth, single-scattering albedo, asymmetry parameter
     real(wp), dimension(ncol, nlay, ngpt), intent(in   ) ::  f
+      !! User-provided forward-scattering fraction
 
     real(wp) :: wf
     integer  :: icol, ilay, igpt
@@ -66,13 +71,15 @@ contains
 
   end subroutine delta_scale_2str_f_k
   ! ---------------------------------
-  ! Delta-scale
-  !   f = g*g
+  !> Delta-scale assuming forward-scatternig fraction is the square of the asymmetry parameter
+  !>    i.e. \(f = g^2\)
   !
   pure subroutine delta_scale_2str_k(ncol, nlay, ngpt, tau, ssa, g) &
       bind(C, name="rte_delta_scale_2str_k")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
+      !! Array sizes
     real(wp), dimension(ncol, nlay, ngpt), intent(inout) ::  tau, ssa, g
+      !! Optical depth, single-scattering albedo, asymmetry parameter
 
     real(wp) :: f, wf
     integer  :: icol, ilay, igpt
@@ -109,7 +116,7 @@ contains
   pure subroutine increment_1scalar_by_1scalar(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2) bind(C, name="rte_increment_1scalar_by_1scalar")
-    integer,                              intent(in  ) :: ncol, nlay, ngpt
+    integer,                             intent(in  ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2
 
@@ -128,7 +135,7 @@ contains
   pure subroutine increment_1scalar_by_2stream(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2, ssa2) bind(C, name="rte_increment_1scalar_by_2stream")
-    integer,                              intent(in   ) :: ncol, nlay, ngpt
+    integer,                             intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2
 
@@ -148,7 +155,7 @@ contains
   pure subroutine increment_1scalar_by_nstream(ncol, nlay, ngpt, &
                                                tau1,             &
                                                tau2, ssa2) bind(C, name="rte_increment_1scalar_by_nstream")
-    integer,                              intent(in   ) :: ncol, nlay, ngpt
+    integer,                             intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2
 
@@ -169,7 +176,7 @@ contains
   pure subroutine increment_2stream_by_1scalar(ncol, nlay, ngpt, &
                                                tau1, ssa1,       &
                                                tau2) bind(C, name="rte_increment_2stream_by_1scalar")
-    integer,                              intent(in   ) :: ncol, nlay, ngpt
+    integer,                             intent(in   ) :: ncol, nlay, ngpt
     real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1
     real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2
 

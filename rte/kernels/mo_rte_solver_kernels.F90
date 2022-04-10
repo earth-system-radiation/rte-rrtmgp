@@ -3,26 +3,26 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2021,  Atmospheric and Environmental Research,
+! Copyright 2015-,  Atmospheric and Environmental Research,
 ! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-! Numeric calculations for radiative transfer solvers.
-!   Emission/absorption (no-scattering) calculations
-!     solver for multi-angle Gaussian quadrature
-!     solver for a single angle, calling
-!       source function computation (linear-in-tau)
-!       transport
-!   Extinction-only calculation (direct solar beam)
-!   Two-stream calculations
-!     solvers for LW and SW with different boundary conditions and source functions
-!       source function calculation for LW, SW
-!       two-stream calculations for LW, SW (using different assumtions about phase function)
-!       transport (adding)
-!   Application of boundary conditions
+!>## Numeric calculations for radiative transfer solvers
+!>  - Emission/absorption (no-scattering) calculations
+!>  - solver for multi-angle Gaussian quadrature
+!>  - solver for a single angle, calling
+!>      - source function computation (linear-in-tau)
+!>      -  transport
+!>  - Extinction-only calculation (direct solar beam)
+!>  - Two-stream calculations:
+!>    solvers for LW and SW with different boundary conditions and source functions
+!>      - source function calculation for LW, SW
+!>      - two-stream calculations for LW, SW (using different assumtions about phase function)
+!>      - transport (adding)
+!>  - Application of boundary conditions
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_solver_kernels
@@ -43,9 +43,9 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   !
-  ! LW fluxes, no scattering, mu (cosine of integration angle) specified by column
-  !   Does radiation calculation at user-supplied angles; converts radiances to flux
-  !   using user-supplied weights
+  !>  LW fluxes, no scattering, mu (cosine of integration angle) specified by column
+  !>    Does radiation calculation at user-supplied angles; converts radiances to flux
+  !>    using user-supplied weights
   !
   ! ---------------------------------------------------------------
   subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                              &

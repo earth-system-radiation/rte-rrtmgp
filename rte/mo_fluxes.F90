@@ -3,17 +3,18 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
+! Copyright 2015-  Atmospheric and Environmental Research and
 ! Regents of the University of Colorado.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-! Compute output quantities from RTE based on spectrally-resolved flux profiles
-!    This module contains an abstract class and a broadband implmentation that sums over all spectral points
-!    The abstract base class defines the routines that extenstions must implement: reduce() and are_desired()
-!    The intent is for users to extend it as required, using mo_flxues_broadband as an example
+!> ## Compute output quantities from spectrally-resolved flux profiles
+!>
+!>    This module contains an abstract class and a broadband implmentation that sums over all spectral points
+!>    The abstract base class defines the routines that extenstions must implement: `reduce()` and `are_desired()`
+!>    The intent is for users to extend it as required, using mo_flxues_broadband as an example
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_fluxes
@@ -27,9 +28,9 @@ module mo_fluxes
   private
   ! -----------------------------------------------------------------------------------------------
   !
-  ! Abstract base class
-  !   reduce() function accepts spectral flux profiles, computes desired outputs
-  !   are_desired() returns a logical - does it makes sense to invoke reduce()?
+  !> Abstract base class:
+  !>   `reduce()` function accepts spectral flux profiles, computes desired outputs
+  !>   `are_desired()` returns a logical
   !
   ! -----------------------------------------------------------------------------------------------
   type, abstract, public :: ty_fluxes
@@ -39,8 +40,8 @@ module mo_fluxes
   end type ty_fluxes
   ! -----------------------------------------------------------------------------------------------
   !
-  ! Class implementing broadband integration for the complete flux profile
-  !   Data components are pointers so results can be written directly into memory
+  !> Class implementing broadband integration for the complete flux profile.
+  !>   Data components are pointers so results can be written directly into memory
   !
   ! -----------------------------------------------------------------------------------------------
   type, extends(ty_fluxes), public :: ty_fluxes_broadband
@@ -60,8 +61,8 @@ module mo_fluxes
   abstract interface
     ! -------------------
     !
-    ! This routine takes the fully resolved calculation (detailed in spectral and vertical dimensions) and
-    !   computes desired outputs. Output values will normally be data components of the derived type.
+    !> This routine takes the fully resolved calculation (detailed in spectral and vertical dimensions) and
+    !>   computes desired outputs. Output values will normally be data components of the derived type.
     !
     function reduce_abstract(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
       import ty_fluxes, ty_optical_props
@@ -90,7 +91,7 @@ module mo_fluxes
 contains
   ! --------------------------------------------------------------------------------------
   !
-  ! Broadband fluxes -- simply sum over the spectral dimension and report the whole profile
+  !> Broadband fluxes -- simply sum over the spectral dimension and report the whole profile
   !
   ! --------------------------------------------------------------------------------------
   function reduce_broadband(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
@@ -176,8 +177,8 @@ contains
   end function reduce_broadband
   ! --------------------------------------------------------------------------------------
   !
-  ! Are any fluxes desired from this set of g-point fluxes? We can tell because memory will
-  !   be allocated for output
+  !> Are any fluxes desired from this set of g-point fluxes? We can tell because memory will
+  !>   be allocated for output
   !
   ! --------------------------------------------------------------------------------------
   function are_desired_broadband(this)

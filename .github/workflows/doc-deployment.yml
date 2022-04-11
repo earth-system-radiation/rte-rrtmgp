@@ -30,9 +30,9 @@ jobs:
     - name: Build Developer Documenation
       run: |
         cd doc
-        ford ford_site/rrtmgp-fortran-interfaces.md
+        ford ford_site/rrtmgp-fortran-interface.md
         ford ford_site/rrtmgp-kernels.md
-        ford ford_site/rte-fortran-interfaces.md
+        ford ford_site/rte-fortran-interface.md
         ford ford_site/rte-kernels.md
 
     # Setup Jekyll

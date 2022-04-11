@@ -19,7 +19,6 @@ module mo_source_functions
   use mo_optical_props, only: ty_optical_props
   implicit none
   private
-  public :: ty_source_func_lw
   ! -------------------------------------------------------------------------------------------------
   !
   ! Type for longwave sources: computed at layer center, at layer edges using

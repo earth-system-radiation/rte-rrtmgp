@@ -32,8 +32,8 @@ module mo_rte_solver_kernels
   implicit none
   private
 
-  public :: lw_solver_noscat, lw_solver_noscat_GaussQuad,  lw_solver_2stream, &
-            sw_solver_noscat,                              sw_solver_2stream
+  public :: lw_solver_noscat, lw_solver_2stream, &
+            sw_solver_noscat, sw_solver_2stream
 
   real(wp), parameter :: pi = acos(-1._wp)
 contains
@@ -48,13 +48,13 @@ contains
   !   using user-supplied weights
   !
   ! ---------------------------------------------------------------
-  subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, D, weight,                              &
+  subroutine lw_solver_noscat_oneangle(ncol, nlay, ngpt, top_at_1, D, weight,                              &
                               tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                               incident_flux,    &
                               flux_up, flux_dn, &
                               do_broadband, broadband_up, broadband_dn, &
                               do_Jacobians, sfc_srcJac, flux_upJac,               &
-                              do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat")
+                              do_rescaling, ssa, g)
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
@@ -250,7 +250,7 @@ contains
     if(do_Jacobians) &
       flux_upJac(:,:)   = 2._wp * pi * weight * flux_upJac(:,:)
 
-  end subroutine lw_solver_noscat
+  end subroutine lw_solver_noscat_oneangle
   ! -------------------------------------------------------------------------------------------------
   !
   ! LW transport, no scattering, multi-angle quadrature
@@ -258,16 +258,16 @@ contains
   !   Routine sums over single-angle solutions for each sets of angles/weights
   !
   ! ---------------------------------------------------------------
-  subroutine lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, &
-                                        nmus, Ds, weights,          &
-                                        tau,                        &
-                                        lay_source, lev_source_inc, lev_source_dec,         &
-                                        sfc_emis, sfc_src,          &
-                                        inc_flux,                   &
-                                        flux_up, flux_dn,           &
-                                        do_broadband, broadband_up, broadband_dn, &
-                                        do_Jacobians, sfc_srcJac, flux_upJac,               &
-                                        do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat_GaussQuad")
+  subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
+                              nmus, Ds, weights,          &
+                              tau,                        &
+                              lay_source, lev_source_inc, lev_source_dec, &
+                              sfc_emis, sfc_src,          &
+                              inc_flux,                   &
+                              flux_up, flux_dn,           &
+                              do_broadband, broadband_up, broadband_dn,   &
+                              do_Jacobians, sfc_srcJac, flux_upJac,       &
+                              do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
     integer,                               intent(in   ) :: nmus         ! number of quadrature angles
@@ -313,7 +313,7 @@ contains
     !
     ! For the first angle output arrays store total flux
     !
-    call lw_solver_noscat(ncol, nlay, ngpt, &
+    call lw_solver_noscat_oneangle(ncol, nlay, ngpt, &
                           top_at_1, Ds(:,:,1), weights(1), tau, &
                           lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                           inc_flux,         &
@@ -343,7 +343,7 @@ contains
       end if
     end if
     do imu = 2, nmus
-      call lw_solver_noscat(ncol, nlay, ngpt, &
+      call lw_solver_noscat_oneangle(ncol, nlay, ngpt, &
                             top_at_1, Ds(:,:,imu), weights(imu), tau, &
                             lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                             inc_flux,         &
@@ -366,7 +366,7 @@ contains
       if(.not. do_broadband) deallocate(this_flux_up,        this_flux_dn)
       if(      do_Jacobians) deallocate(this_flux_upJac)
     end if
-  end subroutine lw_solver_noscat_GaussQuad
+  end subroutine lw_solver_noscat
   ! -------------------------------------------------------------------------------------------------
   !
   ! Longwave two-stream calculation:

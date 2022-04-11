@@ -21,11 +21,13 @@
 !>   (abstract class ty_optical_props_arry).
 !>   The type holds arrays depending on how much information is needed
 !>   There are three possibilites
+!>
 !> - ty_optical_props_1scl holds absorption optical depth tau, used in calculations accounting for extinction and emission
 !> - ty_optical_props_2str holds extincion optical depth tau, single-scattering albedo ssa, and
 !>        asymmetry parameter g. These fields are what's needed for two-stream calculations.
 !> - ty_optical_props_nstr holds extincion optical depth tau, single-scattering albedo ssa, and
 !>        phase function moments p with leading dimension nmom. These fields are what's needed for multi-stream calculations.
+!>
 !>   These classes must be allocated before use. Initialization and allocation can be combined.
 !>   The classes have a validate() function that checks all arrays for valid values (e.g. tau > 0.)
 !>
@@ -69,10 +71,10 @@ module mo_optical_props
   !
   ! -------------------------------------------------------------------------------------------------
   type, public :: ty_optical_props
-    integer,  dimension(:,:), allocatable :: band2gpt       !! (begin g-point, end g-point) = band2gpt(2,band)
-    integer,  dimension(:),   allocatable :: gpt2band       !! band = gpt2band(g-point)
-    real(wp), dimension(:,:), allocatable :: band_lims_wvn  !! (upper and lower wavenumber by band) = band_lims_wvn(2,band)
-    character(len=name_len)               :: name = ""
+    integer,  dimension(:,:), allocatable, private :: band2gpt      ! (begin g-point, end g-point) = band2gpt(2,band)
+    integer,  dimension(:),   allocatable, private :: gpt2band      ! band = gpt2band(g-point)
+    real(wp), dimension(:,:), allocatable, private :: band_lims_wvn ! (upper and lower wavenumber by band) = band_lims_wvn(2,band)
+    character(len=name_len),               private :: name = ""
   contains
     generic,   public  :: init => init_base, init_base_from_copy
     procedure, private :: init_base

@@ -1539,7 +1539,7 @@ contains
         !
         ! Optimal transport angle is a linear fit to column transmissivity
         !
-        bnd = optical_props%gpt2band(igpt)
+        bnd = optical_props%convert_gpt2band(igpt)
         optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
                                     this%optimal_angle_fit(2,bnd)
       end do

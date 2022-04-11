@@ -18,6 +18,8 @@ module mo_source_functions
   use mo_rte_kind,      only: wp
   use mo_optical_props, only: ty_optical_props
   implicit none
+  private
+  public :: ty_source_func_lw
   ! -------------------------------------------------------------------------------------------------
   !
   ! Type for longwave sources: computed at layer center, at layer edges using
@@ -32,7 +34,7 @@ module mo_source_functions
                                                                   ! Includes spectral weighting that accounts for state-dependent
                                                                   ! frequency to g-space mapping
     real(wp), allocatable, dimension(:,:  ) :: sfc_source
-    real(wp), allocatable, dimension(:,:  ) :: sfc_source_Jac     ! surface source Jacobian 
+    real(wp), allocatable, dimension(:,:  ) :: sfc_source_Jac     ! surface source Jacobian
   contains
     generic,   public :: alloc => alloc_lw, copy_and_alloc_lw
     procedure, private:: alloc_lw
@@ -47,8 +49,9 @@ module mo_source_functions
   ! -------------------------------------------------------------------------------------------------
   !
   ! Type for shortave sources: top-of-domain spectrally-resolved flux
+  !   The type isn't used at this time, so it's declared as private.
   !
-  type, extends(ty_optical_props), public :: ty_source_func_sw
+  type, extends(ty_optical_props), private :: ty_source_func_sw
     real(wp), allocatable, dimension(:,:  ) :: toa_source
   contains
     generic,   public :: alloc => alloc_sw, copy_and_alloc_sw

@@ -27,14 +27,6 @@ jobs:
       with:
         ruby-version: 2.7
 
-    - name: Build Developer Documenation
-      run: |
-        cd doc
-        ford ford_site/rrtmgp-fortran-interface.md
-        ford ford_site/rrtmgp-kernels.md
-        ford ford_site/rte-fortran-interface.md
-        ford ford_site/rte-kernels.md
-
     # Setup Jekyll
     - name: Setup Jekyll
       run: |
@@ -42,12 +34,11 @@ jobs:
         sudo gem install bundler jekyll
         bundle update
 
-    # Run Jekyll build and copy output to public folder
-    - name: Build Jekyll Site
+    # Build documentation
+    - name: Build Documentation
       run: |
-        cd doc/jekyll_site
-        bundle exec jekyll build
-        cp -a _site/. ../../public
+        cd doc
+        ./build_documentation.sh -ci
 
     - name: Upload Documentation
       uses: actions/upload-artifact@v2

@@ -43,7 +43,7 @@ module mo_rte_lw
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_rte_solver_kernels, &
-                        only: lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream
+                        only: lw_solver_noscat, lw_solver_2stream
   implicit none
   private
 
@@ -95,7 +95,7 @@ contains
     ! Memory needs to be allocated for the full g-point fluxes even if they aren't
     !    used later because a) the GPU kernels use this memory to work in parallel and
     !    b) the fluxes are intent(out) in the solvers
-    ! Shortwave solver takes a different approach since three fields are needed 
+    ! Shortwave solver takes a different approach since three fields are needed
     real(wp), dimension(optical_props%get_ncol(),   &
                         optical_props%get_nlay()+1, &
                         optical_props%get_ngpt())   &
@@ -328,7 +328,7 @@ contains
               end do
             end do
           end if
-          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
+          call lw_solver_noscat(ncol, nlay, ngpt,                 &
                                 logical(top_at_1, wl), n_quad_angs,         &
                                 secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                 optical_props%tau,                 &
@@ -371,7 +371,7 @@ contains
             !
             ! Re-scaled solution to account for scattering
             !
-            call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
+            call lw_solver_noscat(ncol, nlay, ngpt,                 &
                                   logical(top_at_1, wl), n_quad_angs,         &
                                   secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                   optical_props%tau,                 &

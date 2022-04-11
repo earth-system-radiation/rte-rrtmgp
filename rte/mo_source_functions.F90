@@ -3,14 +3,16 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-! Encapsulate source function arrays for longwave/lw/internal sources
+!> Encapsulate source function arrays for longwave/lw/internal sources
 !    and shortwave/sw/external source.
 !
 ! -------------------------------------------------------------------------------------------------
@@ -21,19 +23,21 @@ module mo_source_functions
   private
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Type for longwave sources: computed at layer center, at layer edges using
-  !   spectral mapping in each direction separately, and at the surface
-  !
+  !> Type representing Planck source functions in \(W/m^2\)
+  !>   computed at layer center, at layer edges using
+  !>   spectral mapping in each direction separately, and at the surface
+  !>
   type, extends(ty_optical_props), public :: ty_source_func_lw
-    real(wp), allocatable, dimension(:,:,:) :: lay_source,     & ! Planck source at layer average temperature
-                                                                 ! [W/m2] (ncol, nlay, ngpt)
-                                               lev_source_inc, &  ! Planck source at layer edge,
-                                               lev_source_dec     ! [W/m2] (ncol, nlay, ngpt)
-                                                                  ! in increasing/decreasing ilay direction
-                                                                  ! Includes spectral weighting that accounts for state-dependent
-                                                                  ! frequency to g-space mapping
+    real(wp), allocatable, dimension(:,:,:) :: lay_source
+        !! Planck source at layer average temperature (ncol, nlay, ngpt)
+    real(wp), allocatable, dimension(:,:,:) :: lev_source_inc
+        !! Planck source at layer edge in increasing ilay direction (ncol, nlay+1, ngpt)
+    real(wp), allocatable, dimension(:,:,:) :: lev_source_dec
+        !! Planck source at layer edge in decreasing ilay direction (ncol, nlay+1, ngpt)
     real(wp), allocatable, dimension(:,:  ) :: sfc_source
-    real(wp), allocatable, dimension(:,:  ) :: sfc_source_Jac     ! surface source Jacobian
+        !! Planck function at surface temperature
+    real(wp), allocatable, dimension(:,:  ) :: sfc_source_Jac
+        !! surface source Jacobian
   contains
     generic,   public :: alloc => alloc_lw, copy_and_alloc_lw
     procedure, private:: alloc_lw

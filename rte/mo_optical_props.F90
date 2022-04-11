@@ -3,14 +3,17 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !>
 !> ## Encapsulate optical properties defined on a spectral grid of N bands.
+!>
 !>   The bands are described by their limiting wavenumbers. They need not be contiguous or complete.
 !>   A band may contain more than one spectral sub-point (g-point) in which case a mapping must be supplied.
 !>   A name may be provided and will be prepended to error messages.

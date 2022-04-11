@@ -3,8 +3,10 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2020-,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2020-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
@@ -12,7 +14,7 @@
 !> -------------------------------------------------------------------------------------------------
 !>
 !> ## Control input sanitization in Fortan front-end
-!>   Module variables are protected: can be changed only by calling one of the included subroutine
+!>   Provides public access to two proteced module variables
 !>
 !> -------------------------------------------------------------------------------------------------
 module mo_rte_config

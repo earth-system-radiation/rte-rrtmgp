@@ -117,8 +117,6 @@ jobs:
         environment-file: environment.yml
         python-version: 3.9
         auto-activate-base: false
-  - name: Install python packages
-      run: conda install --yes urllib3 netcdf4 xarray dask numpy scipy matplotlib seaborn colorcet
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files

@@ -29,7 +29,7 @@ for f in output_files: Path(f).unlink(missing_ok=True)
 Path(conds_file).unlink(missing_ok=True)
 
 #
-# Download the profiles for RFMIP; make the empty output files
+# Download the profiles for RFMIP; download or make the empty output files
 #
 print("Downloading RFMIP input files")
 urllib.request.urlretrieve(conds_url,     conds_file)

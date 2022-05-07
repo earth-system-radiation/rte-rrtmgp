@@ -597,7 +597,8 @@ contains
     call write_broadband_field(input_file, flux_net, "lw_flux_net_alt_oa", "LW flux ne, fewer g-points, opt. angle")
     call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
     call write_broadband_field(input_file, heating_rate,  &
-                                                     "lw_flux_hr_alt_oa",  "LW heating rate, fewer g-points, opt. angle", vert_dim_name = "layer")
+                                                     "lw_flux_hr_alt_oa",  "LW heating rate, fewer g-points, opt. angle", &
+                                                                                                         vert_dim_name = "layer")
     call k_dist_2%finalize()
   end subroutine lw_clear_sky_alt
   ! ----------------------------------------------------------------------------

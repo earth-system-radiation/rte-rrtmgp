@@ -1,39 +1,45 @@
 #! /usr/bin/env python
 #
-# This script downloads and creates files needed for the RFMIP off-line test cases
+# This script downloads and/or creates files needed for the RFMIP off-line test cases
 #
 import sys
-import os
 import subprocess
-import glob
+from pathlib import Path
 import urllib.request
-# This script invokes templ_scr_url, which uses Python modules time, uuid, argparse, netCDF4
 
 #
 # Download and/or create input files and output template files
 #
-rte_rrtmgp_dir  = os.path.join("..", "..")
-rfmip_dir       = os.path.join(rte_rrtmgp_dir, "examples", "rfmip-clear-sky")
+rte_rrtmgp_dir  = Path("..").joinpath("..")
+rfmip_dir       = rte_rrtmgp_dir.joinpath("examples", "rfmip-clear-sky")
 conds_file      = "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
 conds_url       = "http://aims3.llnl.gov/thredds/fileServer/user_pub_work/input4MIPs/CMIP6/RFMIP/UColorado/UColorado-RFMIP-1-2/" + \
                   "atmos/fx/multiple/none/v20190401/" + conds_file
 #
 # The official RFMIP conditions are available from the ESFG, as above, but this fails from time to time, so
-#   we use the copy at NOAA PSL where the server is more robust
+#   we use the copy at Lamont-Doherty Earth Observatory, which we have to access via ftp(!)
 #
-conds_url       = "https://psl.noaa.gov/thredds/fileServer/Datasets/rte-rrtmgp/continuous-integration/" + conds_file
-templ_scr       = "generate-output-file-templates.py"
-templ_scr_url   = "https://raw.githubusercontent.com/RobertPincus/RFMIP-IRF-Scripts/master/" + templ_scr
+conds_url       = "ftp://ftp.ldeo.columbia.edu/pub/robertp/rte-rrtmgp/continuous-integration/" + conds_file
+output_files    = [f"r{wl}{dir}_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"
+                   for wl in ['l', 's'] for dir in ['u', 'd']]
 #
 # Remove previous versions of files
 #
-for f in glob.glob("r??_Efx*.nc"): os.remove(f)
-for f in glob.glob("multiple_input4MIPs_radiation_RFMIP*.nc"): os.remove(f)
+for f in output_files: Path(f).unlink(missing_ok=True)
+Path(conds_file).unlink(missing_ok=True)
+
 #
-# Download the profiles for RFMIP; make the empty output files
+# Download the profiles for RFMIP; download or make the empty output files
 #
 print("Downloading RFMIP input files")
 urllib.request.urlretrieve(conds_url,     conds_file)
-print("Downloading scripts for generating output templates")
-urllib.request.urlretrieve(templ_scr_url, templ_scr)
-subprocess.run([sys.executable, templ_scr, "--source_id", "RTE-RRTMGP-181204"])
+
+generate_templates = False
+if generate_templates:
+    print("Downloading scripts for generating output templates")
+    urllib.request.urlretrieve(templ_scr_url, templ_scr)
+    subprocess.run([sys.executable, templ_scr, "--source_id", "RTE-RRTMGP-181204"])
+else:
+    print("Downloading output templates")
+    for f in output_files:
+        urllib.request.urlretrieve(conds_url.replace(conds_file, f), f)

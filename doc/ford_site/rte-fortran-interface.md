@@ -16,6 +16,12 @@ output_dir: ../../public/reference/rte-fortran-interface
 
 These pages provide a programmer's view of the Fortran user interface to RTE.
 
+Procedures in the two solvers ([rte_lw](./proc/rte_lw.html), [rte_sw](./proc/rte_sw.html))
+require problems specified as sets of [optical properties](./module/mo_optical_props.html)
+along with boundary conditions and/or [internal sources](./module/mo_source_functions.html) of radiation.
+The reduction of spectrally- and spatially-detailed calculations that specifies the output
+is defined in a [flux output type](./module/mo_fluxes.html)
+
 RTE aspires to follow a set of coding conventions:
 
 - Module names start with `mo_`, class/type names with `ty_`.
@@ -28,7 +34,8 @@ RTE aspires to follow a set of coding conventions:
 - Units are MKS
 
 The optical properties module provides a way to specify the spectrally-dependent
-optical properties of the atmosphere consistent
+optical properties of the atmosphere consistent with calculations neglecting scattering,
+using two-stream scattering, or using n-stream scattering.
 
 - `init()` routines to specify e.g. the spectral discretization
 - `load()` routines to provide data (e.g. lookup tables) needed to do a calculation
@@ -36,7 +43,6 @@ optical properties of the atmosphere consistent
 - `finalize()` routines to reset variables to an un-initialized state
 - Some classes have `get_ncol()` and `get_nlay()` methods to report the problem size
 - Some classes have get_subset() methods to extract values along the column dimension
-
 
 <!---
 ## How to Read This Documentation
@@ -51,5 +57,5 @@ Take me back to the [User Documentation].
 
 [README]: https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/README.md
 [User Documentation]: ../../index.html
--->
 [mo_rte_kind.F90]: ./module/mo_rte_kind.html
+-->

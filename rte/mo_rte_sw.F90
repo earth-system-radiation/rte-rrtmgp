@@ -3,28 +3,33 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2021,  Atmospheric and Environmental Research,
+! Copyright 2015-,  Atmospheric and Environmental Research,
 ! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-!  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
-!    atmospheric optical properties on a spectral grid
-!    information about vertical ordering
-!    boundary conditions
-!      solar zenith angle, spectrally-resolved incident colimated flux, surface albedos for direct and diffuse radiation
-!    optionally, a boundary condition for incident diffuse radiation
-!
-! It is the user's responsibility to ensure that boundary conditions (incident fluxes, surface albedos) are on the same
-!   spectral grid as the optical properties.
-!
-! Final output is via user-extensible ty_fluxes which must reduce the detailed spectral fluxes to
-!   whatever summary the user needs.
-!
-! The routine does error checking and choses which lower-level kernel to invoke based on
-!   what kinds of optical properties are supplied
+!> Compute shortwave radiative fluxes
+
+!>  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
+!>
+!>  - atmospheric optical properties on a spectral grid
+!>  - information about vertical ordering
+!>  - boundary conditions
+!>    - solar zenith angle, spectrally-resolved incident colimated flux, surface albedos for direct and diffuse radiation
+!>    - optionally, a boundary condition for incident diffuse radiation
+!>
+!> It is the user's responsibility to ensure that boundary conditions (incident fluxes, surface albedos) are on the same
+!>   spectral grid as the optical properties.
+!>
+!> Final output is via user-extensible ty_fluxes
+!> ([[mo_fluxes(module):ty_fluxes(type)]] in module [[mo_fluxes]])
+!> which must reduce the detailed spectral fluxes to whatever summary the user needs
+!>
+!>
+!> The routine does error checking and choses which lower-level kernel to invoke based on
+!>   what kinds of optical properties are supplied
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_sw
@@ -47,17 +52,25 @@ contains
                   mu0, inc_flux,                   &
                   sfc_alb_dir, sfc_alb_dif,        &
                   fluxes, inc_flux_dif) result(error_msg)
-    class(ty_optical_props_arry), intent(in   ) :: atmos           ! Optical properties provided as arrays
-    logical,                      intent(in   ) :: top_at_1        ! Is the top of the domain at index 1?
-                                                                   ! (if not, ordering is bottom-to-top)
-    real(wp), dimension(:),       intent(in   ) :: mu0             ! cosine of solar zenith angle (ncol)
-    real(wp), dimension(:,:),     intent(in   ) :: inc_flux,    &  ! incident flux at top of domain [W/m2] (ncol, ngpt)
-                                                   sfc_alb_dir, &  ! surface albedo for direct and
-                                                   sfc_alb_dif     ! diffuse radiation (nband, ncol)
-    class(ty_fluxes),             intent(inout) :: fluxes          ! Class describing output calculations
+    class(ty_optical_props_arry), intent(in   ) :: atmos
+      !! Optical properties provided as arrays
+    logical,                      intent(in   ) :: top_at_1
+      !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
+    real(wp), dimension(:),       intent(in   ) :: mu0
+      !! cosine of solar zenith angle (ncol)
+    real(wp), dimension(:,:),     intent(in   ) :: inc_flux
+      !! incident flux at top of domain [W/m2] (ncol, ngpt)
+    real(wp), dimension(:,:),     intent(in   )sfc_alb_dir
+      !! surface albedo for direct and
+    real(wp), dimension(:,:),     intent(in   )sfc_alb_dif
+      !! diffuse radiation (nband, ncol)
+    class(ty_fluxes),             intent(inout) :: fluxes
+      !! Class describing output calculations
     real(wp), dimension(:,:), optional, target, &
-                                  intent(in   ) :: inc_flux_dif    ! incident diffuse flux at top of domain [W/m2] (ncol, ngpt)
-    character(len=128)                          :: error_msg       ! If empty, calculation was successful
+                                  intent(in   ) :: inc_flux_dif
+      !! incident diffuse flux at top of domain [W/m2] (ncol, ngpt)
+    character(len=128)                          :: error_msg
+      !! If empty, calculation was successful
     ! --------------------------------
     !
     ! Local variables

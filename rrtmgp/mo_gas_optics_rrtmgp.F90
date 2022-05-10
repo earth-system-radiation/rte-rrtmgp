@@ -528,7 +528,7 @@ contains
         !
         ! Get vmr if  gas is provided in ty_gas_concs
         !
-        if (any (lower_case(this%gas_names(igas)) == gas_desc%gas_name(:))) then
+        if (any (lower_case(this%gas_names(igas)) == gas_desc%get_gas_names())) then
           error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(:,:,igas))
         endif
       end do
@@ -1166,7 +1166,9 @@ contains
     ngas = size(gas_names)
     allocate(gas_is_present(ngas))
     do i = 1, ngas
-      gas_is_present(i) = string_in_array(gas_names(i), available_gases%gas_name)
+      ! Next line causes a compiler bug in gfortran 11.0.1 on Mac ARM
+      ! Should replace gas_names with get_gas_names() and make gas_names private in ty_gas_concs
+      gas_is_present(i) = string_in_array(gas_names(i), available_gases%gas_names)
     end do
     !
     ! Now the number of gases is the union of those known to the k-distribution and provided
@@ -1356,7 +1358,9 @@ contains
     error_msg = ""
     key_gas_names = pack(this%gas_names, mask=this%is_key)
     do igas = 1, size(key_gas_names)
-      if(.not. string_in_array(key_gas_names(igas), gas_desc%gas_name)) &
+      ! Next line causes a compiler bug in gfortran 11.0.1 on Mac ARM
+      ! Should replace gas_names with get_gas_names() and make gas_names private in ty_gas_concs
+      if(.not. string_in_array(key_gas_names(igas), gas_desc%gas_names)) &
         error_msg = ' ' // trim(lower_case(key_gas_names(igas))) // trim(error_msg)
     end do
     if(len_trim(error_msg) > 0) error_msg = "gas_optics: required gases" // trim(error_msg) // " are not provided"
@@ -1757,7 +1761,9 @@ contains
     allocate(gas_is_present(nm))
     do i = 1, size(minor_gases_atm)
       idx_mnr = string_loc_in_array(minor_gases_atm(i), identifier_minor)
-      gas_is_present(i) = string_in_array(gas_minor(idx_mnr),available_gases%gas_name)
+      ! Next line causes a compiler bug in gfortran 11.0.1 on Mac ARM
+      ! Should replace gas_names with get_gas_names() and make gas_names private in ty_gas_concs
+      gas_is_present(i) = string_in_array(gas_minor(idx_mnr),available_gases%gas_names)
       if(gas_is_present(i)) then
         tot_g = tot_g + (minor_limits_gpt_atm(2,i)-minor_limits_gpt_atm(1,i)+1)
       endif

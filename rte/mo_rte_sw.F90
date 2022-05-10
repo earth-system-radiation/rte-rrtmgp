@@ -60,9 +60,9 @@ contains
       !! cosine of solar zenith angle (ncol)
     real(wp), dimension(:,:),     intent(in   ) :: inc_flux
       !! incident flux at top of domain [W/m2] (ncol, ngpt)
-    real(wp), dimension(:,:),     intent(in   )sfc_alb_dir
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dir
       !! surface albedo for direct and
-    real(wp), dimension(:,:),     intent(in   )sfc_alb_dif
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dif
       !! diffuse radiation (nband, ncol)
     class(ty_fluxes),             intent(inout) :: fluxes
       !! Class describing output calculations

@@ -247,7 +247,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  parallel_for( Bounds<3>(nlay,ncol,{0,max_gpt_diff}) , YAKL_DEVICE_LAMBDA (int ilay, int icol, int igpt0) {
+  parallel_for( Bounds<3>(nlay,ncol,{0,max_gpt_diff}) , YAKL_LAMBDA (int ilay, int icol, int igpt0) {
     // This check skips individual columns with no pressures in range
     //
     if ( layer_limits(icol,1) <= 0 || ilay < layer_limits(icol,1) || ilay > layer_limits(icol,2) ) {

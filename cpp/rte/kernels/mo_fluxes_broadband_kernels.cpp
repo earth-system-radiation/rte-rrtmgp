@@ -25,7 +25,7 @@ void net_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux_dn,
   // do igpt = 2, ngpt
   //   do ilev = 1, nlev
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>({2,ngpt},nlev,ncol) , YAKL_DEVICE_LAMBDA (int igpt, int ilev, int icol) {
+  parallel_for( Bounds<3>({2,ngpt},nlev,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
     real diff = spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt);
     yakl::atomicAdd( broadband_flux_net(icol,ilev) , diff );
   });

@@ -16,11 +16,11 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 # netcdf library, module files
 # C and Fortran interfaces respectively
 #
-FCINCLUDE += -I$(NFHOME)/include
-LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
+FCINCLUDE += -I/usr/include
+LDFLAGS   += `nf-config --flibs`
 LIBS      += -lnetcdff -lnetcdf
 
-VPATH = ../:$(RRTMGP_ROOT)/extensions/cloud_optics
+VPATH = ../:$(RRTMGP_ROOT)/extensions/cloud_optics:$(RRTMGP_ROOT)/extensions
 
 # Compilation rules
 %.o: %.F90

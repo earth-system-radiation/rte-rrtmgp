@@ -946,6 +946,7 @@ public:
         }
       }
     }
+
     // Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     int idx_h2o = string_loc_in_array("h2o", this->gas_names);
     real2d col_dry_wk;

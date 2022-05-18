@@ -483,7 +483,7 @@ void extract_subset_dim1_3d(int ncol, int nlay, int ngpt, real3d const &array_in
 
 
 
-void extract_subset_dim2_4d(int nmom, int ncol, int nlay, int ngpt, real3d const &array_in, int colS, int colE, real3d &array_out) {
+void extract_subset_dim2_4d(int nmom, int ncol, int nlay, int ngpt, real4d const &array_in, int colS, int colE, real4d &array_out) {
   //do igpt = 1, ngpt
   //  do ilay = 1, nlay
   //    do icol = colS, colE

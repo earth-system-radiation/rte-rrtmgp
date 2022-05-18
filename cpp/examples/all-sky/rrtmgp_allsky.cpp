@@ -1,7 +1,6 @@
 
 #include <iostream>
 #include <iomanip>
-#include <chrono>
 #include <cstdlib>
 #include "mo_gas_concentrations.h"
 #include "mo_garand_atmos_io.h"
@@ -146,11 +145,8 @@ int main(int argc , char **argv) {
       });
 
       if (verbose) std::cout << "Running the main loop\n\n";
-      auto start_time = std::chrono::high_resolution_clock::now();
-      auto end_time   = std::chrono::high_resolution_clock::now();
       for (int iloop = 1 ; iloop <= nloops ; iloop++) {
-        yakl::fence();
-        start_time = std::chrono::high_resolution_clock::now();
+        yakl::timer_start("shortwave");
 
         cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
 
@@ -170,12 +166,10 @@ int main(int argc , char **argv) {
         clouds.increment(atmos);
         rte_sw(atmos, top_at_1, mu0, toa_flux, sfc_alb_dir, sfc_alb_dif, fluxes);
 
-        yakl::fence();
-        end_time = std::chrono::high_resolution_clock::now();
+        yakl::timer_stop("shortwave");
 
         if (print_norms) fluxes.print_norms();
       }
-      if (print_timers) std::cout << "Elapsed Time: " << std::setprecision(15) << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() * 1.e-9 << "\n";
 
       if (verbose) std::cout << "Writing fluxes\n\n";
       if (write_fluxes) write_sw_fluxes(input_file, flux_up, flux_dn, flux_dir, ncol);
@@ -274,11 +268,8 @@ int main(int argc , char **argv) {
       // Multiple iterations for big problem sizes, and to help identify data movement
       //   For CPUs we can introduce OpenMP threading over loop iterations
       if (verbose) std::cout << "Running the main loop\n\n";
-      auto start_time = std::chrono::high_resolution_clock::now();
-      auto end_time   = std::chrono::high_resolution_clock::now();
       for (int iloop = 1 ; iloop <= nloops ; iloop++) {
-        yakl::fence();
-        start_time = std::chrono::high_resolution_clock::now();
+        yakl::timer_start("longwave");
 
         cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
 
@@ -296,12 +287,10 @@ int main(int argc , char **argv) {
         clouds.increment(atmos);
         rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, atmos, top_at_1, lw_sources, emis_sfc, fluxes);
 
-        yakl::fence();
-        end_time = std::chrono::high_resolution_clock::now();
+        yakl::timer_stop("longwave");
 
         if (print_norms) fluxes.print_norms();
       }
-      if (print_timers) std::cout << "Elapsed Time: " << std::setprecision(15) << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() * 1.e-9 << "\n";
 
       if (verbose) std::cout << "Writing fluxes\n\n";
       if (write_fluxes) write_lw_fluxes(input_file, flux_up, flux_dn, ncol);

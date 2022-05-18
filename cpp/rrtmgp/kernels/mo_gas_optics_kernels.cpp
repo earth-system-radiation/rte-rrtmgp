@@ -125,9 +125,16 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
     int itropo = merge(1,2,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
     int iflav = gpoint_flavor(itropo, igpt); //eta interpolation depends on band's flavor
     // interpolation in temperature, pressure, and eta
-    pfrac(igpt,ilay,icol) = 
-      interpolate3D(one, fmajor.slice<3>(COLON,COLON,COLON,iflav,icol,ilay), pfracin, 
-                    igpt, jeta.slice<1>(COLON,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo,ngpt,neta,npres,ntemp);
+
+    // inlining interpolate3D
+    pfrac(igpt,ilay,icol) = ( fmajor(1,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)  ) + 
+                              fmajor(2,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)  ) + 
+                              fmajor(1,2,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress(icol,ilay)+itropo  , jtemp(icol,ilay)  ) + 
+                              fmajor(2,2,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo  , jtemp(icol,ilay)  ) ) + 
+                            ( fmajor(1,1,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)  , jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)+1) + 
+                              fmajor(2,1,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)+1) + 
+                              fmajor(1,2,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)  , jpress(icol,ilay)+itropo  , jtemp(icol,ilay)+1) + 
+                              fmajor(2,2,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo  , jtemp(icol,ilay)+1) );
   });
 
   //
@@ -214,9 +221,11 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
   parallel_for( Bounds<3>(nlay,ncol,ngpt) , YAKL_LAMBDA (int ilay, int icol, int igpt) {
     int itropo = merge(1,2,tropo(icol,ilay)); // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
     int iflav = gpoint_flavor(itropo, igpt);
-    real k = interpolate2D(fminor.slice<2>(COLON,COLON,iflav,icol,ilay), 
-                           krayl.slice<3>(COLON,COLON,COLON,itropo),      
-                           igpt, jeta.slice<1>(COLON,iflav,icol,ilay), jtemp(icol,ilay), ngpt, neta, ntemp);
+    // Inlining interpolate2D
+    real k = fminor(1,1,iflav,icol,ilay) * krayl(igpt, jeta(1,iflav,icol,ilay)  , jtemp(icol,ilay)  ,itropo) + 
+             fminor(2,1,iflav,icol,ilay) * krayl(igpt, jeta(1,iflav,icol,ilay)+1, jtemp(icol,ilay)  ,itropo) + 
+             fminor(1,2,iflav,icol,ilay) * krayl(igpt, jeta(2,iflav,icol,ilay)  , jtemp(icol,ilay)+1,itropo) + 
+             fminor(2,2,iflav,icol,ilay) * krayl(igpt, jeta(2,iflav,icol,ilay)+1, jtemp(icol,ilay)+1,itropo);
     tau_rayleigh(igpt,ilay,icol) =  k * (col_gas(icol,ilay,idx_h2o)+col_dry(icol,ilay));
   });
 }
@@ -230,9 +239,10 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
                               bool1d const &scale_by_complement, int1d const &idx_minor, int1d const &idx_minor_scaling,
                               int1d const &kminor_start, real2d const &play, real2d const &tlay, real3d const &col_gas,
                               real5d const &fminor, int4d const &jeta, int2d const &layer_limits, int2d const &jtemp, real3d &tau) {
+  using yakl::intrinsics::size;
   real constexpr PaTohPa = 0.01;
 
-  int extent = nminor;
+  int extent = size(scale_by_complement,1);
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
@@ -244,7 +254,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
     } else {
       real myplay  = play (icol,ilay);
       real mytlay  = tlay (icol,ilay);
-      real myjtemp = jtemp(icol,ilay);
+      int  myjtemp = jtemp(icol,ilay);
       real mycol_gas_h2o = col_gas(icol,ilay,idx_h2o);
       real mycol_gas_0   = col_gas(icol,ilay,0);
 
@@ -288,8 +298,13 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
           real tau_minor = 0._wp;
           int iflav = gpt_flv(idx_tropo,igpt); // eta interpolation depends on flavor
           int minor_loc = minor_start + (igpt - gptS); // add offset to starting point
-          real kminor_loc = interpolate2D(fminor.slice<2>(COLON,COLON,iflav,icol,ilay), kminor, minor_loc,  
-                                          jeta.slice<1>(COLON,iflav,icol,ilay), myjtemp, nminork, neta, ntemp);
+          
+          // Inlined interpolate2D
+          real kminor_loc = fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp  ) + 
+                            fminor(2,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp  ) + 
+                            fminor(1,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)  , myjtemp+1) + 
+                            fminor(2,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)+1, myjtemp+1);
+
           tau_minor = kminor_loc * scaling;
 
           yakl::atomicAdd( tau(igpt,ilay,icol) , tau_minor );
@@ -317,11 +332,18 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
 
     // binary species parameter (eta) and col_mix depend on band flavor
     int iflav = gpoint_flavor(itropo, igpt);
-    real tau_major = 
-      // interpolation in temperature, pressure, and eta
-      interpolate3D(col_mix.slice<1>(COLON,iflav,icol,ilay), 
-                    fmajor.slice<3>(COLON,COLON,COLON,iflav,icol,ilay), kmajor, 
-                    igpt, jeta.slice<1>(COLON,iflav,icol,ilay), jtemp(icol,ilay),jpress(icol,ilay)+itropo,ngpt,neta,npres,ntemp);
+    // interpolation in temperature, pressure, and eta
+
+    // inlined interpolate3D
+    real tau_major = col_mix(1,iflav,icol,ilay) * ( fmajor(1,1,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)  , jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)  ) + 
+                                                    fmajor(2,1,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)  ) + 
+                                                    fmajor(1,2,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)  , jpress(icol,ilay)+itropo  , jtemp(icol,ilay)  ) + 
+                                                    fmajor(2,2,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo  , jtemp(icol,ilay)  ) ) + 
+                     col_mix(2,iflav,icol,ilay) * ( fmajor(1,1,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)  , jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)+1) + 
+                                                    fmajor(2,1,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)+1) + 
+                                                    fmajor(1,2,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)  , jpress(icol,ilay)+itropo  , jtemp(icol,ilay)+1) + 
+                                                    fmajor(2,2,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo  , jtemp(icol,ilay)+1) );
+
     tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_major;
   });
 }

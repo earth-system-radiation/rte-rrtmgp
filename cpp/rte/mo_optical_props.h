@@ -4,8 +4,8 @@
 #include "rrtmgp_const.h"
 #include "mo_optical_props_kernels.h"
 
-using yakl::intrinsics::anyLT;
-using yakl::intrinsics::anyGT;
+using yakl::intrinsics::any;
+using yakl::componentwise::operator<;
 using yakl::intrinsics::allocated;
 using yakl::intrinsics::maxval;
 using yakl::intrinsics::epsilon;
@@ -28,14 +28,14 @@ public:
     int2d band_lims_gpt_lcl("band_lims_gpt_lcl",2,size(band_lims_wvn,2));
     if (size(band_lims_wvn,1) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (anyLT(band_lims_wvn,0._wp)) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
+      if (any(band_lims_wvn < 0._wp)) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
     #endif
     if (allocated(band_lims_gpt)) {
       if (size(band_lims_gpt,2) != size(band_lims_wvn,2)) {
         stoprun("optical_props::init(): band_lims_gpt size inconsistent with band_lims_wvn");
       }
       #ifdef RRTMGP_EXPENSIVE_CHECKS
-        if (anyLT(band_lims_gpt,1) ) { stoprun("optical_props::init(): band_lims_gpt has values < 1"); }
+        if (any(band_lims_gpt < 1) ) { stoprun("optical_props::init(): band_lims_gpt has values < 1"); }
       #endif
       // for (int j=1; j <= size(band_lims_gpt,2); j++) {
       //   for (int i=1; i <= size(band_lims_gpt,1); i++) {
@@ -216,21 +216,21 @@ public:
 
 
   // Expand an array of dimension arr_in(nband) to dimension arr_out(ngpt)
-  real1d expand(real1d const &arr_in) const {
-    real1d ret("arr_out",size(this->gpt2band,1));
-    // do iband=1,this->get_nband()
-    // TODO: I don't know if this needs to be serialize or not at first glance. Need to look at it more.
-    auto &this_band2gpt = this->gpt2band;
-    int nband = get_nband();
-    parallel_for( Bounds<1>(1) , YAKL_LAMBDA (int dummy) {
-      for (int iband = 1 ; iband <= nband ; iband++) {
-        for (int i=this_band2gpt(1,iband) ; i <= this_band2gpt(2,iband) ; i++) {
-          ret(i) = arr_in(iband);
-        }
-      }
-    });
-    return ret;
-  }
+  // real1d expand(real1d const &arr_in) const {
+  //   real1d ret("arr_out",size(this->gpt2band,1));
+  //   // do iband=1,this->get_nband()
+  //   // TODO: I don't know if this needs to be serialize or not at first glance. Need to look at it more.
+  //   auto &this_band2gpt = this->gpt2band;
+  //   int nband = get_nband();
+  //   parallel_for( Bounds<1>(1) , YAKL_LAMBDA (int dummy) {
+  //     for (int iband = 1 ; iband <= nband ; iband++) {
+  //       for (int i=this_band2gpt(1,iband) ; i <= this_band2gpt(2,iband) ; i++) {
+  //         ret(i) = arr_in(iband);
+  //       }
+  //     }
+  //   });
+  //   return ret;
+  // }
 
 
   void set_name( std::string name ) { this->name = name; }

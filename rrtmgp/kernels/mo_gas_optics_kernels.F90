@@ -52,7 +52,20 @@ contains
     integer,     dimension(ncol,nlay), intent(out) :: jtemp, jpress
     logical(wl), dimension(ncol,nlay), intent(out) :: tropo
     integer,     dimension(2,    ncol,nlay,nflav), intent(out) :: jeta
+#if !defined(__INTEL_LLVM_COMPILER) && __INTEL_COMPILER >= 2021
+    ! A performance-hitting workaround for the vectorization problem reported in
+    ! https://github.com/earth-system-radiation/rte-rrtmgp/issues/159
+    ! The known affected compilers are Intel Fortran Compiler Classic
+    ! 2021.4, 2021.5 and 2022.1. We do not limit the workaround to these
+    ! versions because it is not clear when the compiler bug will be fixed, see
+    ! https://community.intel.com/t5/Intel-Fortran-Compiler/Compiler-vectorization-bug/m-p/1362591.
+    ! We, however, limit the workaround to the Classic versions only since the
+    ! problem is not confirmed for the Intel Fortran Compiler oneAPI (a.k.a
+    ! 'ifx'), which does not mean there is none though.
+    real(wp),    dimension(:,       :,   :,    :), intent(out) :: col_mix
+#else
     real(wp),    dimension(2,    ncol,nlay,nflav), intent(out) :: col_mix
+#endif
     real(wp),    dimension(2,2,2,ncol,nlay,nflav), intent(out) :: fmajor
     real(wp),    dimension(2,2,  ncol,nlay,nflav), intent(out) :: fminor
     ! -----------------

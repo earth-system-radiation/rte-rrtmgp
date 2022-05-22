@@ -26,7 +26,11 @@ module mo_rte_kind
   !
   ! Floating point working precision
   !
+#ifdef SINGLE_PREC
+  integer, parameter :: wp = sp
+#else
   integer, parameter :: wp = dp
+#endif
 
   !
   ! Logical - for use with kernels

@@ -44,20 +44,70 @@ module mo_rte_sw
   implicit none
   private
 
+  interface rte_sw
+    module procedure rte_sw_mu0_bycol, rte_sw_mu0_full
+  end interface rte_sw
   public :: rte_sw
 
 contains
-  ! --------------------------------------------------
-  function rte_sw(atmos, top_at_1,                 &
-                  mu0, inc_flux,                   &
-                  sfc_alb_dir, sfc_alb_dif,        &
+  ! -------------------------------------------------------------------------------------------------
+  function rte_sw_mu0_bycol(atmos, top_at_1, &
+                  mu0, inc_flux,             &
+                  sfc_alb_dir, sfc_alb_dif,  &
                   fluxes, inc_flux_dif) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: atmos
       !! Optical properties provided as arrays
     logical,                      intent(in   ) :: top_at_1
       !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
     real(wp), dimension(:),       intent(in   ) :: mu0
-      !! cosine of solar zenith angle (ncol)
+      !! cosine of solar zenith angle (ncol) - will be assumed constant with height
+    real(wp), dimension(:,:),     intent(in   ) :: inc_flux
+      !! incident flux at top of domain [W/m2] (ncol, ngpt)
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dir
+      !! surface albedo for direct and
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dif
+      !! diffuse radiation (nband, ncol)
+    class(ty_fluxes),             intent(inout) :: fluxes
+      !! Class describing output calculations
+    real(wp), dimension(:,:), optional, target, &
+                                  intent(in   ) :: inc_flux_dif
+      !! incident diffuse flux at top of domain [W/m2] (ncol, ngpt)
+    character(len=128)                          :: error_msg
+      !! If empty, calculation was successful
+    ! --------------------------------
+    real(wp), dimension(size(mu0), atmos%get_nlay()) :: mu0_bylay
+    integer :: i, j
+
+    ! Solar zenith angle cosine is constant with height
+    !$acc        data copyin(mu0)    create(mu0_bylay)
+    !$omp target data map(to:mu0) map(alloc:mu0_bylay)
+
+    !$acc                         parallel loop    collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do j = 1, atmos%get_nlay()
+      do i = 1, size(mu0)
+        mu0_bylay(i,j) = mu0(i)
+      end do
+    end do
+
+    error_msg = rte_sw_mu0_full(atmos, top_at_1, &
+                    mu0_bylay, inc_flux,         &
+                    sfc_alb_dir, sfc_alb_dif,    &
+                    fluxes, inc_flux_dif)
+    !$acc end data
+    !$omp end target data
+  end function rte_sw_mu0_bycol
+  ! -------------------------------------------------------------------------------------------------
+  function rte_sw_mu0_full(atmos, top_at_1, &
+                  mu0, inc_flux,            &
+                  sfc_alb_dir, sfc_alb_dif, &
+                  fluxes, inc_flux_dif) result(error_msg)
+    class(ty_optical_props_arry), intent(in   ) :: atmos
+      !! Optical properties provided as arrays
+    logical,                      intent(in   ) :: top_at_1
+      !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
+    real(wp), dimension(:,:),     intent(in   ) :: mu0
+      !! cosine of solar zenith angle (ncol, nlay)
     real(wp), dimension(:,:),     intent(in   ) :: inc_flux
       !! incident flux at top of domain [W/m2] (ncol, ngpt)
     real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dir
@@ -112,7 +162,7 @@ contains
     !$acc        data copyin(inc_flux_dif) if (has_dif_bc)
     !$omp target data map(to:inc_flux_dif) if (has_dif_bc)
     if(check_extents) then
-      if(.not. extents_are(mu0, ncol)) &
+      if(.not. extents_are(mu0, ncol, nlay)) &
         error_msg = "rte_sw: mu0 inconsistently sized"
       if(.not. extents_are(inc_flux, ncol, ngpt)) &
         error_msg = "rte_sw: inc_flux inconsistently sized"
@@ -328,7 +378,7 @@ contains
       deallocate(inc_flux_diffuse)
     end if
 
-  end function rte_sw
+  end function rte_sw_mu0_full
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)

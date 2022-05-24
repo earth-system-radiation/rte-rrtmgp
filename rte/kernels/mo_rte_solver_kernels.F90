@@ -458,15 +458,13 @@ contains
     integer,                               intent(in ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in ) :: top_at_1
     real(wp), dimension(ncol,nlay,  ngpt), intent(in ) :: tau          ! Absorption optical thickness []
-    real(wp), dimension(ncol            ), intent(in ) :: mu0          ! cosine of solar zenith angle
+    real(wp), dimension(ncol,nlay       ), intent(in ) :: mu0          ! cosine of solar zenith angle
     real(wp), dimension(ncol,       ngpt), intent(in ) :: inc_flux_dir ! Direct beam incident flux
     real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
 
     integer :: ilev, igpt
-    real(wp) :: mu0_inv(ncol)
 
     ! ------------------------------------
-    mu0_inv(1:ncol) = 1._wp/mu0(1:ncol)
     ! Indexing into arrays for upward and downward propagation depends on the vertical
     !   orientation of the arrays (whether the domain top is at the first or last index)
     ! We write the loops out explicitly so compilers will have no trouble optimizing them.
@@ -478,18 +476,18 @@ contains
       ! layer index = level index - 1
       ! previous level is up (-1)
       do igpt = 1, ngpt
-        flux_dir(:,    1,igpt) = inc_flux_dir(:,igpt) * mu0(:)
+        flux_dir(:,    1,igpt) = inc_flux_dir(:,igpt) * mu0(:,1)
         do ilev = 2, nlay+1
-          flux_dir(:,ilev,igpt) = flux_dir(:,ilev-1,igpt) * exp(-tau(:,ilev-1,igpt)*mu0_inv(:))
+          flux_dir(:,ilev,igpt) = flux_dir(:,ilev-1,igpt) * exp(-tau(:,ilev-1,igpt)/mu0(:,ilev-1))
         end do
       end do
     else
       ! layer index = level index
       ! previous level is up (+1)
       do igpt = 1, ngpt
-        flux_dir(:,nlay+1,igpt) = inc_flux_dir(:,igpt) * mu0(:)
+        flux_dir(:,nlay+1,igpt) = inc_flux_dir(:,igpt) * mu0(:,nlay)
         do ilev = nlay, 1, -1
-          flux_dir(:,ilev,igpt) = flux_dir(:,ilev+1,igpt) * exp(-tau(:,ilev,igpt)*mu0_inv(:))
+          flux_dir(:,ilev,igpt) = flux_dir(:,ilev+1,igpt) * exp(-tau(:,ilev,igpt)/mu0(:,ilev))
         end do
       end do
     end if
@@ -515,7 +513,7 @@ contains
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &  ! Optical thickness,
                                                             ssa, &  ! single-scattering albedo,
                                                             g       ! asymmetry parameter []
-    real(wp), dimension(ncol            ), intent(in   ) :: mu0     ! cosine of solar zenith angle
+    real(wp), dimension(ncol,nlay       ), intent(in   ) :: mu0     ! cosine of solar zenith angle
                                                             ! Spectral albedo of surface to direct and diffuse radiation
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_alb_dir, sfc_alb_dif, &
                                                             inc_flux_dir ! Direct beam incident flux
@@ -561,7 +559,7 @@ contains
       !
       ! Boundary conditions direct beam...
       !
-      gpt_flux_dir(:,top_level) = inc_flux_dir(:,igpt) * mu0(:)
+      gpt_flux_dir(:,top_level) = inc_flux_dir(:,igpt) * mu0(:,top_level)
       !
       ! ... and diffuse field, using 0 if no BC is provided
       !
@@ -991,8 +989,8 @@ contains
                                     Rdif, Tdif, source_dn, source_up, source_sfc, flux_dn_dir) bind (C, name="rte_sw_source_dir")
     integer,                          intent(in   ) :: ncol, nlay
     logical(wl),                      intent(in   ) :: top_at_1
-    real(wp), dimension(ncol       ), intent(in   ) :: mu0, sfc_albedo          ! surface albedo for direct radiation
-    real(wp), dimension(ncol,nlay  ), intent(in   ) :: tau, w0, g
+    real(wp), dimension(ncol       ), intent(in   ) :: sfc_albedo          ! surface albedo for direct radiation
+    real(wp), dimension(ncol,nlay  ), intent(in   ) :: tau, w0, g, mu0
     real(wp), dimension(ncol,nlay  ), intent(  out) :: Rdif, Tdif, source_dn, source_up
     real(wp), dimension(ncol       ), intent(  out) :: source_sfc ! Source function for upward radation at surface
     real(wp), dimension(ncol,nlay+1), target, &
@@ -1032,17 +1030,13 @@ contains
         tau_s = tau(i, lay_index)
         w0_s  = w0 (i, lay_index)
         g_s   = g  (i, lay_index)
-        mu0_s = mu0(i)
+        mu0_s = mu0(i, lay_index)
         !
         ! Zdunkowski Practical Improved Flux Method "PIFM"
         !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
         !
         gamma1 = (8._wp - w0_s * (5._wp + 3._wp * g_s)) * .25_wp
         gamma2 =  3._wp *(w0_s * (1._wp -         g_s)) * .25_wp
-        gamma3 = (2._wp - 3._wp * mu0_s *         g_s ) * .25_wp
-        gamma4 =  1._wp - gamma3
-        alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
-        alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
         !
         ! Direct reflect and transmission
         !
@@ -1052,8 +1046,6 @@ contains
         !   of < 0.1% in Rdif down to tau = 10^-9
         k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
         k_mu     = k * mu0_s
-        k_gamma3 = k * gamma3
-        k_gamma4 = k * gamma4
         exp_minusktau = exp(-tau_s*k)
         exp_minus2ktau = exp_minusktau * exp_minusktau
 
@@ -1067,34 +1059,54 @@ contains
         Tdif(i,lay_index) = RT_term * 2._wp * k * exp_minusktau
 
         !
-        ! Equation 14, multiplying top and bottom by exp(-k*tau)
-        !   and rearranging to avoid div by 0.
+        ! On a round earth, where mu0 can increase with depth in the atmosphere,
+        !   levels with mu0 <= 0 have no direct beam and hence no source for diffuse light
         !
-        RT_term =  w0_s * RT_term/merge(1._wp - k_mu*k_mu, &
-                                        epsilon(1._wp),    &
-                                        abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
+        if(mu0_s > 0._wp) then
+          !
+          ! Equation 14, multiplying top and bottom by exp(-k*tau)
+          !   and rearranging to avoid div by 0.
+          !
+          RT_term =  w0_s * RT_term/merge(1._wp - k_mu*k_mu, &
+                                          epsilon(1._wp),    &
+                                          abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
+          !
+          ! Zdunkowski Practical Improved Flux Method "PIFM"
+          !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
+          !
+          gamma3 = (2._wp - 3._wp * mu0_s *         g_s ) * .25_wp
+          gamma4 =  1._wp - gamma3
+          alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
+          alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
 
-        !
-        ! Transmittance of direct, unscattered beam.
-        !
-        Tnoscat = exp(-tau_s/mu0_s)
-        Rdir = RT_term  *                                            &
-            ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
-             (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
-             2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau * Tnoscat)
-        !
-        ! Equation 15, multiplying top and bottom by exp(-k*tau),
-        !   multiplying through by exp(-tau/mu0) to
-        !   prefer underflow to overflow
-        ! Omitting direct transmittance
-        !
-        Tdir = -RT_term *                                                             &
-              ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
-               (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
-               2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
-        source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
-        source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
-        dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
+          !
+          ! Transmittance of direct, unscattered beam.
+          !
+          k_gamma3 = k * gamma3
+          k_gamma4 = k * gamma4
+          Tnoscat = exp(-tau_s/mu0_s)
+          Rdir = RT_term  *                                            &
+              ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
+               (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
+               2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau * Tnoscat)
+          !
+          ! Equation 15, multiplying top and bottom by exp(-k*tau),
+          !   multiplying through by exp(-tau/mu0) to
+          !   prefer underflow to overflow
+          ! Omitting direct transmittance
+          !
+          Tdir = -RT_term *                                                             &
+                ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
+                 (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
+                 2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
+          source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
+          source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
+          dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
+        else
+          source_up(i,lay_index) = 0._wp
+          source_dn(i,lay_index) = 0._wp
+          dir_flux_trans(i)      = 0._wp
+        end if
       end do
     end do
     source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)

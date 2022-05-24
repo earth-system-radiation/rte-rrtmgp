@@ -17,6 +17,10 @@
 # Intel vectorization reports
 *.optrpt
 
+# Netcdf file during testing
+examples/*/*.nc
+examples/*/*/*.nc
+
 # Don't commit specific Makefile variants
 Makefile.libs
 Makefile.conf

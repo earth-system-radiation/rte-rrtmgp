@@ -76,16 +76,18 @@ contains
       !! If empty, calculation was successful
     ! --------------------------------
     real(wp), dimension(size(mu0), atmos%get_nlay()) :: mu0_bylay
-    integer :: i, j
+    integer :: i, j, ncol, nlay
 
+    ncol = size(mu0)
+    nlay = atmos%get_nlay()
     ! Solar zenith angle cosine is constant with height
     !$acc        data copyin(mu0)    create(mu0_bylay)
     !$omp target data map(to:mu0) map(alloc:mu0_bylay)
 
     !$acc                         parallel loop    collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
-    do j = 1, atmos%get_nlay()
-      do i = 1, size(mu0)
+    do j = 1, nlay
+      do i = 1, ncol
         mu0_bylay(i,j) = mu0(i)
       end do
     end do

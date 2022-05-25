@@ -594,7 +594,7 @@ contains
     logical(wl),                           intent(in ) :: do_broadband ! Provide broadband-integrated, not spectrally-resolved, fluxes?
     real(wp), dimension(ncol,nlay+1     ), intent(out) :: broadband_up, broadband_dn, broadband_dir
     ! -------------------------------------------
-    integer  :: icol, ilay, igpt, top_level
+    integer  :: icol, ilay, igpt, top_level, top_layer
     real(wp) :: bb_flux_s, bb_dir_s
     real(wp), dimension(ncol,nlay,ngpt) :: Rdif, Tdif
     real(wp), dimension(ncol,nlay,ngpt) :: source_up, source_dn
@@ -610,8 +610,13 @@ contains
       gpt_flux_dn  => flux_dn
       gpt_flux_dir => flux_dir
     end if
-    top_level = nlay+1
-    if(top_at_1) top_level = 1
+    if(top_at_1) then
+      top_level = 1
+      top_layer = 1
+    else
+      top_level = nlay+1
+      top_layer = nlay
+    end if
     !
     ! Boundary conditions direct beam...
     !
@@ -627,7 +632,7 @@ contains
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
-        gpt_flux_dir(icol, top_level, igpt)  = inc_flux_dir(icol,igpt) * mu0(icol, top_level)
+        gpt_flux_dir(icol, top_level, igpt)  = inc_flux_dir(icol,igpt) * mu0(icol, top_layer)
       end do
     end do
 

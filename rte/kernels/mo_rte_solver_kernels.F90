@@ -524,7 +524,7 @@ contains
     logical(wl),                           intent(in   ) :: do_broadband ! Provide broadband-integrated, not spectrally-resolved, fluxes?
     real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_up, broadband_dn, broadband_dir
     ! -------------------------------------------           ! Broadband integrated fluxes
-    integer :: igpt, top_level
+    integer :: igpt, top_level, top_layer
     real(wp), dimension(ncol,nlay  )  :: Rdif, Tdif
     real(wp), dimension(ncol,nlay  )  :: source_up, source_dn
     real(wp), dimension(ncol       )  :: source_srf
@@ -535,8 +535,13 @@ contains
     ! gpt_fluxes point to calculations for the current g-point
     real(wp), dimension(:,:), pointer :: gpt_flux_up, gpt_flux_dn, gpt_flux_dir
     ! ------------------------------------
-    top_level = nlay+1
-    if(top_at_1) top_level = 1
+    if(top_at_1) then
+      top_level = 1
+      top_layer = 1
+    else
+      top_level  = nlay+1
+      top_layer  = nlay
+    end if
     !
     ! Integrated fluxes need zeroing
     !
@@ -559,7 +564,7 @@ contains
       !
       ! Boundary conditions direct beam...
       !
-      gpt_flux_dir(:,top_level) = inc_flux_dir(:,igpt) * mu0(:,top_level)
+      gpt_flux_dir(:,top_level) = inc_flux_dir(:,igpt) * mu0(:,top_layer)
       !
       ! ... and diffuse field, using 0 if no BC is provided
       !

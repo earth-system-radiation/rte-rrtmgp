@@ -4,12 +4,6 @@
 #include "rrtmgp_const.h"
 #include "mo_optical_props_kernels.h"
 
-using yakl::intrinsics::any;
-using yakl::componentwise::operator<;
-using yakl::intrinsics::allocated;
-using yakl::intrinsics::maxval;
-using yakl::intrinsics::epsilon;
-
 // Base class for optical properties
 //   Describes the spectral discretization including the wavenumber limits
 //   of each band (spectral region) and the mapping between g-points and bands
@@ -25,6 +19,14 @@ public:
   // Base class: Initialization
   //   Values are assumed to be defined in bands a mapping between bands and g-points is provided
   void init( real2d const &band_lims_wvn , int2d const &band_lims_gpt=int2d() , std::string name="" ) {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::any;
+    using yakl::intrinsics::allocated;
+    using yakl::intrinsics::maxval;
+    using yakl::componentwise::operator<;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     int2d band_lims_gpt_lcl("band_lims_gpt_lcl",2,size(band_lims_wvn,2));
     if (size(band_lims_wvn,1) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
@@ -39,13 +41,13 @@ public:
       #endif
       // for (int j=1; j <= size(band_lims_gpt,2); j++) {
       //   for (int i=1; i <= size(band_lims_gpt,1); i++) {
-      parallel_for( Bounds<2>(size(band_lims_gpt,2),size(band_lims_gpt,1)) , YAKL_LAMBDA (int j, int i) {
+      parallel_for( SimpleBounds<2>(size(band_lims_gpt,2),size(band_lims_gpt,1)) , YAKL_LAMBDA (int j, int i) {
         band_lims_gpt_lcl(i,j) = band_lims_gpt(i,j);
       });
     } else {
       // Assume that values are defined by band, one g-point per band
       // for (int iband = 1; iband <= size(band_lims_wvn, 2); iband++) {
-      parallel_for( Bounds<1>(size(band_lims_wvn, 2)) , YAKL_LAMBDA (int iband) {
+      parallel_for( SimpleBounds<1>(size(band_lims_wvn, 2)) , YAKL_LAMBDA (int iband) {
         band_lims_gpt_lcl(2,iband) = iband;
         band_lims_gpt_lcl(1,iband) = iband;
       });
@@ -61,7 +63,7 @@ public:
     this->gpt2band = int1d("gpt2band",maxval(band_lims_gpt_lcl));
     // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
     auto &this_gpt2band = this->gpt2band;
-    parallel_for( Bounds<1>(1) , YAKL_LAMBDA (int dummy) {
+    parallel_for( SimpleBounds<1>(1) , YAKL_LAMBDA (int dummy) {
       for (int iband=1; iband <= size(band_lims_gpt_lcl,2); iband++) {
         for (int i=band_lims_gpt_lcl(1,iband); i <= band_lims_gpt_lcl(2,iband); i++) {
           this_gpt2band(i) = iband;
@@ -80,7 +82,7 @@ public:
   }
 
 
-  bool is_initialized() const { return allocated(this->band2gpt); }
+  bool is_initialized() const { return yakl::intrinsics::allocated(this->band2gpt); }
 
 
   // Base class: finalize (deallocate memory)
@@ -94,7 +96,8 @@ public:
 
   // Number of bands
   int get_nband() const {
-    if (this->is_initialized()) { return size(this->band2gpt,2); }
+    using yakl::intrinsics::size;
+    if (this->is_initialized()) { return yakl::intrinsics::size(this->band2gpt,2); }
     return 0;
   }
 
@@ -142,11 +145,15 @@ public:
 
   // Lower and upper wavelength of all bands
   real2d get_band_lims_wavelength() const {
+    using yakl::intrinsics::size;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     real2d ret("band_lim_wavelength",size(band_lims_wvn,1),size(band_lims_wvn,2));
     // for (int j = 1; j <= size(band_lims_wvn,2); j++) {
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
     auto &this_band_lims_wvn = this->band_lims_wvn;
-    parallel_for( Bounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
+    parallel_for( SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
       if (this->is_initialized()) {
         ret(i,j) = 1._wp / this_band_lims_wvn(i,j);
       } else {
@@ -159,6 +166,11 @@ public:
 
   // Are the bands of two objects the same? (same number, same wavelength limits)
   bool bands_are_equal(OpticalProps const &rhs) const {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::epsilon;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     // if ( this->get_nband() != rhs.get_nband() || this->get_nband() == 0) { return false; }
     // yakl::ScalarLiveOut<bool> ret(true);
     // // for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
@@ -192,6 +204,10 @@ public:
   // Is the g-point structure of two objects the same?
   //   (same bands, same number of g-points, same mapping between bands and g-points)
   bool gpoints_are_equal(OpticalProps const &rhs) const {
+    using yakl::intrinsics::size;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     if ( ! this->bands_are_equal(rhs) || this->get_ngpt() != rhs.get_ngpt() ) { return false; }
     // yakl::ScalarLiveOut<bool> ret(true);
     // // for (int i=1; i <= size(this->gpt2bnd,1); i++) {
@@ -245,8 +261,8 @@ class OpticalPropsArry : public OpticalProps {
 public:
   real3d tau; // optical depth (ncol, nlay, ngpt)
 
-  int get_ncol() const { if (allocated(tau)) { return size(this->tau,1); } else { return 0; } }
-  int get_nlay() const { if (allocated(tau)) { return size(this->tau,2); } else { return 0; } }
+  int get_ncol() const { if (yakl::intrinsics::allocated(tau)) { return yakl::intrinsics::size(this->tau,1); } else { return 0; } }
+  int get_nlay() const { if (yakl::intrinsics::allocated(tau)) { return yakl::intrinsics::size(this->tau,2); } else { return 0; } }
 };
 
 
@@ -260,9 +276,13 @@ class OpticalProps2str;
 class OpticalProps1scl : public OpticalPropsArry {
 public:
   void validate() const {
+    using yakl::intrinsics::allocated;
+    using yakl::intrinsics::any;
+    using yakl::componentwise::operator<;
+
     if (! allocated(this->tau)) { stoprun("validate: tau not allocated/initialized"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (anyLT(this->tau,0._wp)) { stoprun("validate: tau values out of range"); }
+      if (any(this->tau < 0)) { stoprun("validate: tau values out of range"); }
     #endif
   }
 
@@ -313,6 +333,9 @@ public:
 
 
   void print_norms() const {
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
                                     std::cout << "name         : " << name               << "\n";
     if (allocated(band2gpt     )) { std::cout << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
     if (allocated(gpt2band     )) { std::cout << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
@@ -332,6 +355,12 @@ public:
 
 
   void validate() const {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+    using yakl::intrinsics::any;
+    using yakl::componentwise::operator<;
+    using yakl::componentwise::operator>;
+
     if ( ! allocated(this->tau) || ! allocated(this->ssa) || ! allocated(this->g) ) {
       stoprun("validate: arrays not allocated/initialized");
     }
@@ -343,14 +372,20 @@ public:
       stoprun("validate: arrays not sized consistently");
     }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (anyLT(this->tau, 0._wp)                          ) { stoprun("validate: tau values out of range"); }
-      if (anyLT(this->ssa, 0._wp) || anyGT(this->ssa,1._wp)) { stoprun("validate: ssa values out of range"); }
-      if (anyLT(this->g  ,-1._wp) || anyGT(this->g  ,1._wp)) { stoprun("validate: g   values out of range"); }
+      if (any(this->tau <  0)                      ) { stoprun("validate: tau values out of range"); }
+      if (any(this->ssa <  0) || any(this->ssa > 1)) { stoprun("validate: ssa values out of range"); }
+      if (any(this->g   < -1) || any(this->g   > 1)) { stoprun("validate: g   values out of range"); }
     #endif
   }
 
 
   void delta_scale(real3d const &forward=real3d()) {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+    using yakl::intrinsics::any;
+    using yakl::componentwise::operator<;
+    using yakl::componentwise::operator>;
+
     // Forward scattering fraction; g**2 if not provided
     int ncol = this->get_ncol();
     int nlay = this->get_nlay();
@@ -360,7 +395,7 @@ public:
         stoprun("delta_scale: dimension of 'forward' don't match optical properties arrays");
       }
       #ifdef RRTMGP_EXPENSIVE_CHECKS
-        if (anyLT(forward,0._wp) || anyGT(forward,1._wp)) { stoprun("delta_scale: values of 'forward' out of bounds [0,1]"); }
+        if (any(forward < 0) || any(forward > 1)) { stoprun("delta_scale: values of 'forward' out of bounds [0,1]"); }
       #endif
       delta_scale_2str_kernel(ncol, nlay, ngpt, this->tau, this->ssa, this->g, forward);
     } else {
@@ -427,6 +462,9 @@ public:
 
 
   void print_norms() const {
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
                                     std::cout << "name         : " << name               << "\n";
     if (allocated(band2gpt     )) { std::cout << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
     if (allocated(gpt2band     )) { std::cout << "gpt2band     : " << sum(gpt2band     ) << "\n"; }

@@ -57,6 +57,8 @@ public:
 
 
   void init(string1d const &gas_names , int ncol , int nlay) {
+    using yakl::intrinsics::size;
+
     this->reset();
     this->ngas = size(gas_names,1);
     this->ncol = ncol;
@@ -86,6 +88,9 @@ public:
 
   // Set concentration as a scalar copied to every column and level
   void set_vmr(std::string gas, real w) {
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
       stoprun("GasConcs::set_vmr(): trying to set a gas whose name was not provided at initialization");
@@ -94,7 +99,7 @@ public:
     auto &this_concs = this->concs;
     // for (int ilay=1; ilay<=this->nlay; ilay++) {
     //   for (int icol=1; icol<=this->ncol; icol++) {
-    parallel_for( Bounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w;
     });
   }
@@ -103,6 +108,10 @@ public:
   // Set concentration as a single column copied to all other columns
   // w is expected to be in device memory
   void set_vmr(std::string gas, real1d const &w) {
+    using yakl::intrinsics::size;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     if (size(w,1) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)"); }
     int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
@@ -112,7 +121,7 @@ public:
     #ifdef RRTMGP_EXPENSIVE_CHECKS
       yakl::ScalarLiveOut<bool> badVal(false); // Scalar that must exist in device memory (equiv: bool badVal = false;)
       // for (int i=1; i<=size(w,1); i++) {
-      parallel_for( Bounds<1>(size(w,1)) , YAKL_LAMBDA (int i) {
+      parallel_for( SimpleBounds<1>(size(w,1)) , YAKL_LAMBDA (int i) {
         if (w(i) < 0._wp || w(i) > 1._wp) { badVal = true; }
       });
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
@@ -120,7 +129,7 @@ public:
     auto &this_concs = this->concs;
     // for (int ilay=1; ilay<=this->nlay; ilay++) {
     //   for (int icol=1; icol<=this->ncol; icol++) {
-    parallel_for( Bounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w(ilay);
     });
   }
@@ -129,6 +138,10 @@ public:
   // Set concentration as a 2-D field of columns and levels
   // w is expected to be in device memory
   void set_vmr(std::string gas, real2d const &w) {
+    using yakl::intrinsics::size;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     if (size(w,1) != this->ncol) { stoprun("GasConcs::set_vmr: different dimension (ncol)" ); }
     if (size(w,2) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)" ); }
     int igas = this->find_gas(gas);
@@ -140,7 +153,7 @@ public:
       yakl::ScalarLiveOut<bool> badVal(false); // Scalar that must exist in device memory (equiv: bool badVal = false;)
       // for (int j=1; j<=size(w,2); j++) {
       //   for (int i=1; i<=size(w,1); i++) {
-      parallel_for( Bounds<2>(size(w,2),size(w,1)) , YAKL_LAMBDA (int j, int i) {
+      parallel_for( SimpleBounds<2>(size(w,2),size(w,1)) , YAKL_LAMBDA (int j, int i) {
         if (w(i,j) < 0._wp || w(i,j) > 1._wp) { badVal = true;}
       });
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
@@ -148,7 +161,7 @@ public:
     auto &this_concs = this->concs;
     // for (int ilay=1; ilay<=this->nlay; ilay++) {
     //   for (int icol=1; icol<=this->ncol; icol++) {
-    parallel_for( Bounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w(icol,ilay);
     });
   }
@@ -156,7 +169,11 @@ public:
 
   // Get concentration as a 2-D field of columns and levels
   // array is expected to be in devide memory
-  void get_vmr(std::string gas, real2d &array) const {
+  void get_vmr(std::string gas, real2d const &array) const {
+    using yakl::intrinsics::size;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     if (this->ncol != size(array,1)) { stoprun("ty_gas_concs->get_vmr; gas array is wrong size (ncol)" ); }
     if (this->nlay != size(array,2)) { stoprun("ty_gas_concs->get_vmr; gas array is wrong size (nlay)" ); }
     int igas = this->find_gas(gas);
@@ -164,13 +181,13 @@ public:
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
     auto &this_concs = this->concs;
-    parallel_for( Bounds<2>(size(array,2),size(array,1)) , YAKL_LAMBDA (int ilay, int icol) {
+    parallel_for( SimpleBounds<2>(size(array,2),size(array,1)) , YAKL_LAMBDA (int ilay, int icol) {
       array(icol,ilay) = this_concs(icol,ilay,igas);
     });
   }
 
 
-  int get_num_gases() const { return size(gas_name,1); }
+  int get_num_gases() const { return yakl::intrinsics::size(gas_name,1); }
   
 
   string1d get_gas_names() const { return gas_name; }
@@ -189,6 +206,9 @@ public:
 
 
   void print_norms() const {
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
                                std::cout << "ncol      : " << ncol       << "\n";
                                std::cout << "nlay      : " << nlay       << "\n";
                                std::cout << "ngas      : " << ngas       << "\n";

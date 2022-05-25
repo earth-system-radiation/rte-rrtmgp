@@ -29,7 +29,7 @@ public:
   real2d sfc_source;
 
 
-  bool is_allocated() const  { return this->is_initialized() && allocated(this->sfc_source); }
+  bool is_allocated() const  { return this->is_initialized() && yakl::intrinsics::allocated(this->sfc_source); }
 
 
   void alloc(int ncol, int nlay) {
@@ -61,16 +61,19 @@ public:
 
 
   int get_ncol() const {
-    if (this->is_allocated()) { return size(this->lay_source,1); } else { return 0; }
+    if (this->is_allocated()) { return yakl::intrinsics::size(this->lay_source,1); } else { return 0; }
   }
 
 
   int get_nlay() const {
-    if (this->is_allocated()) { return size(this->lay_source,2); } else { return 0; }
+    if (this->is_allocated()) { return yakl::intrinsics::size(this->lay_source,2); } else { return 0; }
   }
 
 
   void print_norms() const {
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
                                      std::cout << "name          : " << name                << "\n";
     if (allocated(lay_source    )) { std::cout << "lay_source    : " << sum(lay_source    ) << "\n"; }
     if (allocated(lev_source_inc)) { std::cout << "lev_source_inc: " << sum(lev_source_inc) << "\n"; }
@@ -92,7 +95,7 @@ public:
   real2d toa_source;
 
 
-  bool is_allocated() const { return this->is_initialized() && allocated(this->toa_source); }
+  bool is_allocated() const { return this->is_initialized() && yakl::intrinsics::allocated(this->toa_source); }
 
 
   void alloc(int ncol) {
@@ -116,11 +119,14 @@ public:
 
 
   int get_ncol() const {
-    if (this->is_allocated()) { return size(this->toa_source,1); } else { return 0; }
+    if (this->is_allocated()) { return yakl::intrinsics::size(this->toa_source,1); } else { return 0; }
   }
 
 
   void print_norms() const {
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
                                      std::cout << "name          : " << name                << "\n";
     if (allocated(toa_source    )) { std::cout << "toa_source    : " << sum(toa_source    ) << "\n"; }
     if (allocated(band2gpt      )) { std::cout << "band2gpt      : " << sum(band2gpt      ) << "\n"; }

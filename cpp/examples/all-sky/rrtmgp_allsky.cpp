@@ -23,6 +23,12 @@ int main(int argc , char **argv) {
   yakl::init();
 
   {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::merge;
+    using yakl::intrinsics::mod;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
 
     bool constexpr use_luts = true;
 
@@ -135,7 +141,7 @@ int main(int argc , char **argv) {
       real rei_val = 0.5 * (cloud_optics.get_min_radius_ice() + cloud_optics.get_max_radius_ice());
       // do ilay=1,nlay
       //   do icol=1,ncol
-      parallel_for( Bounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+      parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
         cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp && p_lay(icol,ilay) < 900._wp * 100._wp && mod(icol, 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) && t_lay(icol,ilay) > 263._wp);
@@ -256,7 +262,7 @@ int main(int argc , char **argv) {
       real rei_val = 0.5 * (cloud_optics.get_min_radius_ice() + cloud_optics.get_max_radius_ice());
       // do ilay=1,nlay
       //   do icol=1,ncol
-      parallel_for( Bounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+      parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
         cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp && p_lay(icol,ilay) < 900._wp * 100._wp && mod(icol, 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) && t_lay(icol,ilay) > 263._wp);

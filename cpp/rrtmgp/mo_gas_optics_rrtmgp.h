@@ -9,12 +9,6 @@
 #include "mo_rrtmgp_util_reorder.h"
 #include "mo_gas_concentrations.h"
 
-using yakl::intrinsics::count;
-using yakl::intrinsics::pack;
-using yakl::intrinsics::lbound;
-using yakl::intrinsics::ubound;
-using yakl::COLON;
-
 // This code is part of RRTM for GCM Applications - Parallel (RRTMGP)
 //
 // Contacts: Robert Pincus and Eli Mlawer
@@ -181,6 +175,7 @@ public:
                            string1d         &scaling_gas_atm_red, 
                            boolHost1d       &scale_by_complement_atm_red, 
                            intHost1d        &kminor_start_atm_red) {
+    using yakl::intrinsics::size;
 
     int nm = size(minor_gases_atm,1);  // Size of the larger list of minor gases
     int tot_g = 0;
@@ -256,6 +251,8 @@ public:
   // create index list for extracting col_gas needed for minor gas optical depth calculations
   void create_idx_minor(string1d const &gas_names, string1d const &gas_minor, string1d const &identifier_minor,
                         string1d const &minor_gases_atm, intHost1d &idx_minor_atm) {
+    using yakl::intrinsics::size;
+
     idx_minor_atm = intHost1d("idx_minor_atm",size(minor_gases_atm,1));
     for (int imnr=1 ; imnr <= size(minor_gases_atm,1) ; imnr++) {
       // Find identifying string for minor species in list of possible identifiers (e.g. h2o_slf)
@@ -270,6 +267,8 @@ public:
   // create index for special treatment in density scaling of minor gases
   void create_idx_minor_scaling(string1d const &gas_names, string1d const &scaling_gas_atm,
                                 intHost1d &idx_minor_scaling_atm) {
+    using yakl::intrinsics::size;
+
     idx_minor_scaling_atm = intHost1d("idx_minor_scaling_atm",size(scaling_gas_atm,1));
     for (int imnr=1 ; imnr <= size(scaling_gas_atm,1) ; imnr++) {
       // This will be -1 if there's no interacting gas
@@ -281,6 +280,8 @@ public:
 
   void create_key_species_reduce(string1d const &gas_names, string1d const &gas_names_red, intHost3d const &key_species,
                                  intHost3d &key_species_red, boolHost1d &key_species_present_init) {
+    using yakl::intrinsics::size;
+
     int np = size(key_species,1);
     int na = size(key_species,2);
     int nt = size(key_species,3);
@@ -312,6 +313,8 @@ public:
   // Create flavor list
   // An unordered array of extent (2,:) containing all possible pairs of key species used in either upper or lower atmos
   void create_flavor(intHost3d const &key_species, intHost2d &flavor) {
+    using yakl::intrinsics::size;
+
     // prepare list of key_species
     int i = 1;
     intHost2d key_species_list("key_species_list",2,size(key_species,3)*2);
@@ -364,6 +367,8 @@ public:
   // create gpoint_flavor list: a map pointing from each g-point to the corresponding entry in the "flavor list"
   void create_gpoint_flavor(intHost3d const &key_species, intHost1d const &gpt2band, intHost2d const &flavor,
                             intHost2d &gpoint_flavor) {
+    using yakl::intrinsics::size;
+
     int ngpt = size(gpt2band,1);
     gpoint_flavor = intHost2d("gpoint_flavor",2,ngpt);
     for (int igpt=1 ; igpt <= ngpt ; igpt++) {
@@ -419,6 +424,12 @@ public:
                        intHost1d  const &kminor_start_upper, 
                        realHost3d const &rayl_lower,
                        realHost3d const &rayl_upper) {
+    using yakl::intrinsics::count;
+    using yakl::intrinsics::pack;
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
 
     OpticalProps::init(band_lims_wavenum.createDeviceCopy(), band2gpt.createDeviceCopy());
     // Which gases known to the gas optics are present in the host model (available_gases)?
@@ -544,7 +555,7 @@ public:
     auto &press_ref_loc     = this->press_ref;
     auto &press_ref_log_loc = this->press_ref_log;
     // Running a kernel because it's more convenient in this case
-    parallel_for( Bounds<1>( size(this->press_ref,1) ) , YAKL_LAMBDA (int i) {
+    parallel_for( SimpleBounds<1>( size(this->press_ref,1) ) , YAKL_LAMBDA (int i) {
       press_ref_log_loc(i) = log(press_ref_loc(i));
     });
 
@@ -597,12 +608,12 @@ public:
     this->is_key = bool1d("is_key",this->get_ngas());
     auto &is_key_loc = this->is_key;
     auto &flavor_loc = this->flavor;
-    parallel_for( Bounds<1>( this->get_ngas() ) , YAKL_LAMBDA (int i) {
+    parallel_for( SimpleBounds<1>( this->get_ngas() ) , YAKL_LAMBDA (int i) {
       is_key_loc(i) = false;
     });
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
-    parallel_for( Bounds<2>( size(this->flavor,2) , size(this->flavor,1) ) , YAKL_LAMBDA (int j, int i) {
+    parallel_for( SimpleBounds<2>( size(this->flavor,2) , size(this->flavor,1) ) , YAKL_LAMBDA (int j, int i) {
       if (flavor_loc(i,j) != 0) { is_key_loc(flavor_loc(i,j)) = true; }
     });
   }
@@ -644,6 +655,7 @@ public:
             realHost4d const &planck_frac,
             realHost3d const &rayl_lower,
             realHost3d const &rayl_upper) {
+    using yakl::intrinsics::size;
 
     init_abs_coeffs(available_gases, gas_names, key_species, band2gpt, band_lims_wavenum, press_ref, temp_ref,       
                     press_ref_trop, temp_ref_p, temp_ref_t, vmr_ref, kmajor, kminor_lower, kminor_upper, 
@@ -699,6 +711,7 @@ public:
             realHost1d const &solar_src,
             realHost3d const &rayl_lower,
             realHost3d const &rayl_upper) {
+    using yakl::intrinsics::size;
 
     init_abs_coeffs(available_gases,  gas_names, key_species, band2gpt, band_lims_wavenum, press_ref, temp_ref,
                     press_ref_trop, temp_ref_p, temp_ref_t, vmr_ref, kmajor, kminor_lower, kminor_upper,
@@ -715,13 +728,13 @@ public:
 
 
   // Two functions to define array sizes needed by gas_optics()
-  int get_ngas() const { return size(this->gas_names,1); }
+  int get_ngas() const { return yakl::intrinsics::size(this->gas_names,1); }
 
 
 
   // return the number of distinct major gas pairs in the spectral bands (referred to as
   // "flavors" - all bands have a flavor even if there is one or no major gas)
-  int get_nflav() const { return size(this->flavor,2); }
+  int get_nflav() const { return yakl::intrinsics::size(this->flavor,2); }
 
 
 
@@ -749,22 +762,22 @@ public:
 
 
 
-  int get_neta() const { return size(this->kmajor,2); }
+  int get_neta() const { return yakl::intrinsics::size(this->kmajor,2); }
 
 
 
   // return the number of pressures in reference profile
   //   absorption coefficient table is one bigger since a pressure is repeated in upper/lower atmos
-  int get_npres() const { return size(this->kmajor,3)-1; }
+  int get_npres() const { return yakl::intrinsics::size(this->kmajor,3)-1; }
 
 
 
-  int get_ntemp() const { return size(this->kmajor,4); }
+  int get_ntemp() const { return yakl::intrinsics::size(this->kmajor,4); }
 
 
 
   // return the number of temperatures for Planck function
-  int get_nPlanckTemp() const { return size(this->totplnk,1); }
+  int get_nPlanckTemp() const { return yakl::intrinsics::size(this->totplnk,1); }
 
 
 
@@ -772,6 +785,8 @@ public:
   // The final list gases includes those that are defined in gas_optics_specification
   // and are provided in ty_gas_concs.
   string1d get_minor_list(GasConcs const &gas_desc, int ngas, string1d const &name_spec) const {
+    using yakl::intrinsics::pack;
+    using yakl::intrinsics::size;
     // List of minor gases to be used in gas_optics()
     boolHost1d gas_is_present("gas_is_present",size(name_spec,1));
     for (int igas=1 ; igas <= this->get_ngas() ; igas++) {
@@ -783,17 +798,20 @@ public:
 
 
   // return true if initialized for internal sources, false otherwise
-  bool source_is_internal() const { return allocated(this->totplnk) && allocated(this->planck_frac); }
+  bool source_is_internal() const { return yakl::intrinsics::allocated(this->totplnk) && yakl::intrinsics::allocated(this->planck_frac); }
 
 
 
   // return true if initialized for external sources, false otherwise
-  bool source_is_external() const { return allocated(this->solar_src); }
+  bool source_is_external() const { return yakl::intrinsics::allocated(this->solar_src); }
 
 
 
   // Ensure that every key gas required by the k-distribution is present in the gas concentration object
   void check_key_species_present(GasConcs const &gas_desc) const {
+    using yakl::intrinsics::pack;
+    using yakl::intrinsics::size;
+
     string1d key_gas_names = pack(this->gas_names, this->is_key.createHostCopy());
     for (int igas=1 ; igas <= size(key_gas_names,1) ; igas++) {
       if (! string_in_array(key_gas_names(igas), gas_desc.gas_name)) {
@@ -810,6 +828,12 @@ public:
                   bool top_at_1, real2d const &play, real2d const &plev, real2d const &tlay, real1d const &tsfc,
                   GasConcs const &gas_desc, T &optical_props, SourceFuncLW &sources,
                   real2d const &col_dry=real2d(), real2d const &tlev=real2d()) {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+    using yakl::intrinsics::any;
+    using yakl::componentwise::operator>;
+    using yakl::componentwise::operator<;
+
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     // Interpolation coefficients for use in source function
@@ -826,14 +850,14 @@ public:
     // input data sizes and values
     if (size(tsfc,1) != ncol) { stoprun("gas_optics(): array tsfc has wrong size"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (anyLT(tsfc,this->temp_ref_min) || anyGT(tsfc,this->temp_ref_max)) {
+      if (any(tsfc < this->temp_ref_min) || any(tsfc > this->temp_ref_max)) {
         stoprun("gas_optics(): array tsfc has values outside range");
       }
     #endif
 
     if (allocated(tlev)) {
       #ifdef RRTMGP_EXPENSIVE_CHECKS
-        if (anyLT(tlev,this->temp_ref_min) || anyGT(tlev,this->temp_ref_max)) {
+        if (any(tlev < this->temp_ref_min) || any(tlev > this->temp_ref_max)) {
           stoprun("gas_optics(): array tlev has values outside range");
         }
       #endif
@@ -855,6 +879,10 @@ public:
   void gas_optics(const int ncol, const int nlay,
                   bool top_at_1, real2d const &play, real2d const &plev, real2d const &tlay, GasConcs const &gas_desc,
                   T &optical_props, real2d &toa_src, real2d const &col_dry=real2d()) {
+    using yakl::intrinsics::size;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     int ngas  = this->get_ngas();
@@ -874,7 +902,7 @@ public:
     if (size(toa_src,1) != ncol || size(toa_src,2) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
     auto &solar_src_loc = this->solar_src;
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       toa_src(icol,igpt) = solar_src_loc(igpt);
     });
   }
@@ -884,8 +912,19 @@ public:
   // Returns optical properties and interpolation coefficients
   template <class T>
   void compute_gas_taus(bool top_at_1, int ncol, int nlay, int ngpt, int nband, real2d const &play, real2d const &plev, real2d const &tlay,
-                        GasConcs const &gas_desc, T &optical_props, int2d &jtemp, int2d &jpress, int4d &jeta,
-                        bool2d &tropo, real6d &fmajor, real2d const &col_dry=real2d() ) {
+                        GasConcs const &gas_desc, T &optical_props, int2d const &jtemp, int2d const &jpress, int4d const &jeta,
+                        bool2d const &tropo, real6d const &fmajor, real2d const &col_dry=real2d() ) {
+    using yakl::intrinsics::lbound;
+    using yakl::intrinsics::ubound;
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+    using yakl::intrinsics::any;
+    using yakl::componentwise::operator>;
+    using yakl::componentwise::operator<;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+    using yakl::COLON;
+
     // Number of molecules per cm^2
     real3d tau         ("tau"         ,ngpt,nlay,ncol);
     real3d tau_rayleigh("tau_rayleigh",ngpt,nlay,ncol);
@@ -907,20 +946,20 @@ public:
     // Check for presence of key species in ty_gas_concs; return error if any key species are not present
     this->check_key_species_present(gas_desc);
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if ( anyLT(play,this->press_ref_min) || anyGT(play,this->press_ref_max) ) {
+      if ( any(play < this->press_ref_min) || any(play > this->press_ref_max) ) {
         stoprun("gas_optics(): array play has values outside range");
       }
-      if ( anyLT(plev,this->press_ref_min) || anyGT(plev,this->press_ref_max) ) {
+      if ( any(plev < this->press_ref_min) || any(plev > this->press_ref_max) ) {
         stoprun("gas_optics(): array plev has values outside range");
       }
-      if ( anyLT(tlay,this->temp_ref_min) || anyGT(tlay,this->temp_ref_max) ) {
+      if ( any(tlay < this->temp_ref_min) || any(tlay > this->temp_ref_max) ) {
         stoprun("gas_optics(): array tlay has values outside range");
       }
     #endif
     if (allocated(col_dry)) {
       if (size(col_dry,1) != ncol || size(col_dry,2) != nlay) { stoprun("gas_optics(): array col_dry has wrong size"); }
       #ifdef RRTMGP_EXPENSIVE_CHECKS
-        if (anyLT(col_dry,0._wp)) { stoprun("gas_optics(): array col_dry has values outside range"); }
+        if (any(col_dry < 0._wp)) { stoprun("gas_optics(): array col_dry has values outside range"); }
       #endif
     }
 
@@ -959,13 +998,13 @@ public:
     // compute column gas amounts [molec/cm^2]
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       col_gas(icol,ilay,0) = col_dry_wk(icol,ilay);
     });
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    parallel_for( Bounds<3>(ngas,nlay,ncol) , YAKL_LAMBDA (int igas, int ilay, int icol) {
+    parallel_for( SimpleBounds<3>(ngas,nlay,ncol) , YAKL_LAMBDA (int igas, int ilay, int icol) {
       col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
     });
     // ---- calculate gas optical depths ----
@@ -999,6 +1038,11 @@ public:
   void source(bool top_at_1, int ncol, int nlay, int nbnd, int ngpt, real2d const &play, real2d const &plev, real2d const &tlay,
               real1d const &tsfc, int2d const &jtemp, int2d const &jpress, int4d const &jeta, bool2d const &tropo,
               real6d const &fmajor, SourceFuncLW &sources, real2d const &tlev=real2d()) {
+    using yakl::intrinsics::merge;
+    using yakl::intrinsics::allocated;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     real3d lay_source_t    ("lay_source_t    ",ngpt,nlay,ncol);
     real3d lev_source_inc_t("lev_source_inc_t",ngpt,nlay,ncol);
     real3d lev_source_dec_t("lev_source_dec_t",ngpt,nlay,ncol);
@@ -1017,7 +1061,7 @@ public:
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
       //   do icol = 1, ncol
-      parallel_for( Bounds<2>(nlay+1,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+      parallel_for( SimpleBounds<2>(nlay+1,ncol) , YAKL_LAMBDA (int ilay, int icol) {
         if (ilay == 1) {
           tlev_wk(icol,1) = tlay(icol,1) + (plev(icol,1)-play(icol,1))*(tlay(icol,2)-tlay(icol,1)) / (play(icol,2)-play(icol,1));
         }
@@ -1038,10 +1082,11 @@ public:
                           this->get_gpoint_bands(), this->get_band_lims_gpoint(), this->planck_frac, this->temp_ref_min,
                           this->totplnk_delta, this->totplnk, this->gpoint_flavor, sfc_source_t, lay_source_t, lev_source_inc_t,
                           lev_source_dec_t);
+
     auto &sources_sfc_source = sources.sfc_source;
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       sources_sfc_source(icol,igpt) = sfc_source_t(igpt,icol);
     });
     reorder123x321(ngpt, nlay, ncol, lay_source_t    , sources.lay_source    );
@@ -1054,6 +1099,11 @@ public:
   // Utility function, provided for user convenience
   // computes column amounts of dry air using hydrostatic equation
   real2d get_col_dry(real2d const &vmr_h2o, real2d const &plev, real1d const &latitude=real1d()) {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     // first and second term of Helmert formula
     real constexpr helmert1 = 9.80665_wp;
     real constexpr helmert2 = 0.02586_wp;
@@ -1063,13 +1113,13 @@ public:
     if (allocated(latitude)) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
-      parallel_for( Bounds<1>(ncol) , YAKL_LAMBDA (int icol) {
+      parallel_for( SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = helmert1 - helmert2 * cos(2.0_wp * M_PI * latitude(icol) / 180.0_wp); // acceleration due to gravity [m/s^2]
       });
     } else {
       // do icol = 1, ncol
       auto &grav = ::grav;
-      parallel_for( Bounds<1>(ncol) , YAKL_LAMBDA (int icol) {
+      parallel_for( SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = grav;
       });
     }
@@ -1078,7 +1128,7 @@ public:
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
     auto &m_dry = ::m_dry;
-    parallel_for( Bounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
+    parallel_for( SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
       real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1._wp / (1.+vmr_h2o(icol,ilev));
@@ -1093,6 +1143,8 @@ public:
  // Utility function to combine optical depths from gas absorption and Rayleigh scattering
  //   (and reorder them for convenience, while we're at it)
  void combine_and_reorder(real3d const &tau, real3d const &tau_rayleigh, bool has_rayleigh, OpticalProps1scl &optical_props) {
+    using yakl::intrinsics::size;
+
     int ncol = size(tau,3);
     int nlay = size(tau,2);
     int ngpt = size(tau,1);
@@ -1104,6 +1156,8 @@ public:
  // Utility function to combine optical depths from gas absorption and Rayleigh scattering
  //   (and reorder them for convenience, while we're at it)
  void combine_and_reorder(real3d const &tau, real3d const &tau_rayleigh, bool has_rayleigh, OpticalProps2str &optical_props) {
+    using yakl::intrinsics::size;
+
     int ncol = size(tau,3);
     int nlay = size(tau,2);
     int ngpt = size(tau,1);
@@ -1121,6 +1175,10 @@ public:
 
 
   void print_norms() const {
+    using yakl::intrinsics::count;
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
                                                       std::cout << "name                                  : " << std::setw(20) << name                                   << "\n";
                                                       std::cout << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n"; 
                                                       std::cout << "press_ref_min                         : " << std::setw(20) << press_ref_min                          << "\n";

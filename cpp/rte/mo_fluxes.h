@@ -32,6 +32,9 @@ public:
 
   void reduce(real3d const &gpt_flux_up, const real3d &gpt_flux_dn, OpticalProps const &spectral_disc,
               bool top_at_1, real3d const &gpt_flux_dn_dir=real3d()) {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+
     int ncol = size(gpt_flux_up,1);
     int nlev = size(gpt_flux_up,2);
     int ngpt = size(gpt_flux_up,3);
@@ -57,11 +60,15 @@ public:
 
 
   bool are_desired() const {
+    using yakl::intrinsics::allocated;
     return allocated(this->flux_up) || allocated(this->flux_dn) || allocated(this->flux_dn_dir) || allocated(this->flux_net);
   }
 
 
   void print_norms() const {
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
     if (allocated(flux_up    )) { std::cout << std::setprecision(16) << "flux_up    : " << sum(flux_up    ) << "\n"; }
     if (allocated(flux_dn    )) { std::cout << std::setprecision(16) << "flux_dn    : " << sum(flux_dn    ) << "\n"; }
     if (allocated(flux_net   )) { std::cout << std::setprecision(16) << "flux_net   : " << sum(flux_net   ) << "\n"; }

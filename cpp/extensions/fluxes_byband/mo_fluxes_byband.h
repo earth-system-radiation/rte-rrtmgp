@@ -16,6 +16,9 @@ class FluxesByband : public FluxesBroadband {
 
     void reduce(real3d const &gpt_flux_up, const real3d &gpt_flux_dn, OpticalProps const &spectral_disc,
                 bool top_at_1, real3d const &gpt_flux_dn_dir=real3d()) {
+        using yakl::intrinsics::size;
+        using yakl::intrinsics::allocated;
+
         int ncol = size(gpt_flux_up,1);
         int nlev = size(gpt_flux_up,2);
         int ngpt = size(gpt_flux_up,3);

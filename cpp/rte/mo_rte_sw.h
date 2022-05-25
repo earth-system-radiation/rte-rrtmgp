@@ -44,6 +44,12 @@ void rte_sw(OpticalProps2str const &atmos, bool top_at_1, real1d const &mu0, rea
 template <class FluxesType>
 void rte_sw(OpticalProps2str const &atmos, bool top_at_1, real1d const &mu0, real2d const &inc_flux,
             real2d const &sfc_alb_dir, real2d const &sfc_alb_dif, FluxesType &fluxes, real2d const &inc_flux_dif) {
+  using yakl::intrinsics::size;
+  using yakl::intrinsics::allocated;
+  using yakl::intrinsics::any;
+  using yakl::componentwise::operator<;
+  using yakl::componentwise::operator>;
+
   real3d gpt_flux_up;
   real3d gpt_flux_dn;
   real3d gpt_flux_dir;
@@ -59,27 +65,27 @@ void rte_sw(OpticalProps2str const &atmos, bool top_at_1, real1d const &mu0, rea
 
   if (size(mu0,1) != ncol) { stoprun("rte_sw: mu0 inconsistently sized"); }
   #ifdef RRTMGP_EXPENSIVE_CHECKS
-    if (anyLT(mu0,0._wp) || anyGT(mu0,1._wp)) { stoprun("rte_sw: one or more mu0 <= 0 or > 1"); }
+    if (any(mu0 < 0._wp) || any(mu0 > 1._wp)) { stoprun("rte_sw: one or more mu0 <= 0 or > 1"); }
   #endif
 
   if (size(inc_flux,1) != ncol || size(inc_flux,2) != ngpt) { stoprun("rte_sw: inc_flux inconsistently sized"); }
   #ifdef RRTMGP_EXPENSIVE_CHECKS
-    if (anyLT(inc_flux,0._wp)) { stoprun("rte_sw: one or more inc_flux < 0"); }
+    if (any(inc_flux < 0._wp)) { stoprun("rte_sw: one or more inc_flux < 0"); }
   #endif
   if (allocated(inc_flux_dif)) {
     if (size(inc_flux_dif,1) != ncol || size(inc_flux_dif,2) != ngpt) { stoprun("rte_sw: inc_flux_dif inconsistently sized"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (anyLT(inc_flux_dif,0._wp)) { stoprun("rte_sw: one or more inc_flux_dif < 0"); }
+      if (any(inc_flux_dif < 0._wp)) { stoprun("rte_sw: one or more inc_flux_dif < 0"); }
     #endif
   }
 
   if (size(sfc_alb_dir,1) != nband || size(sfc_alb_dir,2) != ncol) { stoprun("rte_sw: sfc_alb_dir inconsistently sized"); }
   #ifdef RRTMGP_EXPENSIVE_CHECKS
-    if (anyLT(sfc_alb_dir,0._wp) || anyGT(sfc_alb_dir,1._wp)) { stoprun("rte_sw: sfc_alb_dir out of bounds [0,1]"); }
+    if (any(sfc_alb_dir < 0._wp) || any(sfc_alb_dir > 1._wp)) { stoprun("rte_sw: sfc_alb_dir out of bounds [0,1]"); }
   #endif
   if (size(sfc_alb_dif,1) != nband || size(sfc_alb_dif,2) != ncol) { stoprun("rte_sw: sfc_alb_dif inconsistently sized"); }
   #ifdef RRTMGP_EXPENSIVE_CHECKS
-    if (anyLT(sfc_alb_dif,0._wp) || anyGT(sfc_alb_dif,1._wp)) { stoprun("rte_sw: sfc_alb_dif out of bounds [0,1]"); }
+    if (any(sfc_alb_dif < 0._wp) || any(sfc_alb_dif > 1._wp)) { stoprun("rte_sw: sfc_alb_dif out of bounds [0,1]"); }
   #endif
 
   gpt_flux_up  = real3d("gpt_flux_up" ,ncol, nlay+1, ngpt);

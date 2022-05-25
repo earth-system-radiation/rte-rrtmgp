@@ -1064,8 +1064,9 @@ contains
                                 flux_dn_dir) bind (C, name="rte_sw_source_dir")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
     logical(wl),                           intent(in   ) :: top_at_1
+    real(wp), dimension(ncol,nlay       ), intent(in   ) :: mu0
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_albedo          ! surface albedo for direct radiation
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, w0, g, mu0
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, w0, g
     real(wp), dimension(ncol,nlay,  ngpt), target, &
                                            intent(  out) :: Rdif, Tdif, source_dn, source_up
     real(wp), dimension(ncol,       ngpt), intent(  out) :: source_sfc ! Source function for upward radation at surface
@@ -1130,10 +1131,10 @@ contains
           RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + &
                              gamma1 * (1._wp - exp_minus2ktau) )
           ! Equation 25
-          Rdif(i,lay_index) = RT_term * gamma2 * (1._wp - exp_minus2ktau)
+          Rdif(icol,lay_index,igpt) = RT_term * gamma2 * (1._wp - exp_minus2ktau)
 
           ! Equation 26
-          Tdif(i,lay_index) = RT_term * 2._wp * k * exp_minusktau
+          Tdif(icol,lay_index,igpt) = RT_term * 2._wp * k * exp_minusktau
 
           !
           ! On a round earth, where mu0 can increase with depth in the atmosphere,
@@ -1176,13 +1177,13 @@ contains
                   ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
                    (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
                    2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
-            source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
-            source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
-            dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
+            source_up  (icol,lay_index,  igpt) =    Rdir * inc_flux
+            source_dn  (icol,lay_index,  igpt) =    Tdir * inc_flux
+            flux_dn_dir(icol,trans_index,igpt) = Tnoscat * inc_flux
           else
-            source_up(i,lay_index) = 0._wp
-            source_dn(i,lay_index) = 0._wp
-            dir_flux_trans(i)      = 0._wp
+            source_up  (icol,lay_index,  igpt) = 0._wp
+            source_dn  (icol,lay_index,  igpt) = 0._wp
+            flux_dn_dir(icol,trans_index,igpt) = 0._wp
           end if
         end do
         source_sfc(icol,igpt) = flux_dn_dir(icol,trans_index,igpt)*sfc_albedo(icol,igpt)

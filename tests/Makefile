@@ -43,10 +43,13 @@ LIB_DEPS = $(RRTMGP_BUILD)/librte.a $(RRTMGP_BUILD)/librrtmgp.a
 #
 # Targets
 #
-all: clear_sky_regression
+all: clear_sky_regression test_zenith_angle_spherical_correction
 
 clear_sky_regression:   $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.o
 clear_sky_regression.o: $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.F90
+
+test_zenith_angle_spherical_correction:   mo_zenith_angle_spherical_correction.o $(LIB_DEPS) test_zenith_angle_spherical_correction.o
+test_zenith_angle_spherical_correction.o: mo_zenith_angle_spherical_correction.o $(LIB_DEPS) test_zenith_angle_spherical_correction.F90
 
 mo_testing_io.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_testing_io.F90
 
@@ -62,6 +65,7 @@ tests:
 	cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
 	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g128-210809.nc
 	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g112-210809.nc
+	./test_zenith_angle_spherical_correction 
 
 check:
 	python verification.py

@@ -36,6 +36,7 @@ contains
     character(len=128)                      :: error_msg
 
     integer  :: ncol, nlay, icol, ilay
+    real(wp) :: sin_theta2
     ! ------------------------------------
     error_msg = ""
     ncol = size(alt,1)
@@ -67,10 +68,14 @@ contains
     !$omp map(to:ref_alt, ref_mu, alt) map(from:mu)
     do ilay=1, nlay
       do icol = 1, ncol
-        mu(icol, ilay) = sqrt( 1._wp - min(1._wp,            &
-                                       (1-ref_mu(icol)**2) * &
-                                       ((planet_radius + ref_alt(icol)) / &
-                                        (planet_radius + alt(icol,ilay)))**2 )  )
+        sin_theta2 = (1-ref_mu(icol)**2) * &
+                     ((planet_radius + ref_alt(icol)) / &
+                      (planet_radius + alt(icol,ilay)))**2 
+        if(sin_theta2 < 1._wp) then
+          mu(icol, ilay) = sqrt(1._wp - sin_theta2)
+        else
+          mu(icol, ilay) = 0._wp
+        end if
       end do
     end do
   end function zenith_angle_with_height

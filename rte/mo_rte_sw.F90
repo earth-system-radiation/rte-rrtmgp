@@ -181,8 +181,8 @@ contains
     ! Values of input arrays
     !
     if(check_values) then
-      if(any_vals_outside(mu0, 0._wp, 1._wp)) &
-        error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
+      if(any_vals_outside(mu0, -1._wp, 1._wp)) &
+        error_msg = "rte_sw: one or more mu0 < -1 or > 1"
       if(any_vals_less_than(inc_flux, 0._wp)) &
         error_msg = "rte_sw: one or more inc_flux < 0"
       if(any_vals_outside(sfc_alb_dir,  0._wp, 1._wp)) &

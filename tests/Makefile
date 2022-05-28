@@ -65,7 +65,7 @@ tests:
 	cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
 	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g128-210809.nc
 	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g112-210809.nc
-	./test_zenith_angle_spherical_correction 
+	$(RUN_CMD) ./test_zenith_angle_spherical_correction 
 
 check:
 	python verification.py

@@ -54,11 +54,11 @@ contains
 
     if(check_extents) then
       if(any_vals_less_than(ref_alt, -planet_radius)) &
-        error_msg = "zenith_angle_with_height: values of ref_mu must be in [-1, 1]"
+        error_msg = "zenith_angle_with_height: values of ref_alt must be larger than -the planetary radius"
       if(any_vals_outside(ref_mu, -1._wp, 1._wp)) &
         error_msg = "zenith_angle_with_height: values of ref_mu must be in [-1, 1]"
       if(any_vals_less_than(alt, -planet_radius)) &
-        error_msg = "zenith_angle_with_height: values of alt are smaller than planetary radius"
+        error_msg = "zenith_angle_with_height: values of alt must be larger than -the planetary radius"
     end if
     if(len_trim(error_msg) /= 0) return
     ! ------------------------------------
@@ -70,7 +70,7 @@ contains
       do icol = 1, ncol
         sin_theta2 = (1-ref_mu(icol)**2) * &
                      ((planet_radius + ref_alt(icol)) / &
-                      (planet_radius + alt(icol,ilay)))**2 
+                      (planet_radius + alt(icol,ilay)))**2
         if(sin_theta2 < 1._wp) then
           mu(icol, ilay) = sqrt(1._wp - sin_theta2)
         else

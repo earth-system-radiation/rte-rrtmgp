@@ -5,15 +5,18 @@
 
 // increment 2stream by 2stream
 void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
-                                  real3d       &tau1, real3d       &ssa1, real3d       &g1,
+                                  real3d const &tau1, real3d const &ssa1, real3d const &g1,
                                   real3d const &tau2, real3d const &ssa2, real3d const &g2,
                                   int nbnd, int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1 , ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
         // t=tau1 + tau2
@@ -34,12 +37,15 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
 
 // Incrementing when the second set of optical properties is defined at lower spectral resolution
 //   (e.g. by band instead of by gpoint)
-void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, real3d const &tau2,
+void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &tau2,
                                   int nbnd, int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   // do igpt = 1 , ngpt
   //   do ilay = 1 , nlay
   //     do icol = 1 , ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
         tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -52,13 +58,16 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 // Delta-scale
 //   f = g*g
-void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3d &tau, real3d &ssa, real3d &g) {
+void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3d const &tau, real3d const &ssa, real3d const &g) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       real f  = g  (icol,ilay,igpt) * g  (icol,ilay,igpt);
       real wf = ssa(icol,ilay,igpt) * f;
@@ -74,13 +83,16 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3d &tau, real3d &
 // -------------------------------------------------------------------------------------------------
 // Delta-scale
 //   user-provided value of f (forward scattering)
-void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3d &tau, real3d &ssa, real3d &g, real3d const &f) {
+void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3d const &tau, real3d const &ssa, real3d const &g, real3d const &f) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       real wf = ssa(icol,ilay,igpt) * f(icol,ilay,igpt);
       tau(icol,ilay,igpt) = (1._wp - wf) * tau(icol,ilay,igpt);
@@ -105,11 +117,14 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3d &tau, real3d &
 //   properties are defined at the same spectral resolution. There is also a set of routines
 //   to add properties defined at lower spectral resolution to a set defined at higher spectral
 //   resolution (adding properties defined by band to those defined by g-point)
-void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, real3d &tau1, real3d const &tau2) {
+void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &tau2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -118,11 +133,14 @@ void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment 1scalar by 2stream
-void increment_1scalar_by_2stream(int ncol, int nlay, int ngpt, real3d &tau1, real3d const &tau2, real3d const &ssa2) {
+void increment_1scalar_by_2stream(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &tau2, real3d const &ssa2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt) * (1._wp - ssa2(icol,ilay,igpt));
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -131,11 +149,14 @@ void increment_1scalar_by_2stream(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment 1scalar by nstream
-void increment_1scalar_by_nstream(int ncol, int nlay, int ngpt, real3d &tau1, real3d const &tau2, real3d const &ssa2) {
+void increment_1scalar_by_nstream(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &tau2, real3d const &ssa2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt) * (1._wp - ssa2(icol,ilay,igpt));
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -144,13 +165,16 @@ void increment_1scalar_by_nstream(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment 2stream by 1scalar
-void increment_2stream_by_1scalar(int ncol, int nlay, int ngpt, real3d &tau1, real3d &ssa1, real3d const &tau2) {
+void increment_2stream_by_1scalar(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &ssa1, real3d const &tau2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     if (tau12 > eps) {
       ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / tau12;
@@ -164,14 +188,17 @@ void increment_2stream_by_1scalar(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment 2stream by 2stream
-void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3d &tau1, real3d &ssa1, real3d &g1,
+void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &ssa1, real3d const &g1,
                                   real3d const &tau2, real3d const &ssa2, real3d const &g2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // t=tau1 + tau2
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t
@@ -188,14 +215,17 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment 2stream by nstream
-void increment_2stream_by_nstream(int ncol, int nlay, int ngpt, int nmom2, real3d &tau1, real3d &ssa1,
-                                  real3d &g1, real3d const &tau2, real3d const &ssa2, real4d const &p2) {
+void increment_2stream_by_nstream(int ncol, int nlay, int ngpt, int nmom2, real3d const &tau1, real3d const &ssa1,
+                                  real3d const &g1, real3d const &tau2, real3d const &ssa2, real4d const &p2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // t=tau1 + tau2
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t
@@ -214,13 +244,16 @@ void increment_2stream_by_nstream(int ncol, int nlay, int ngpt, int nmom2, real3
 
 
 // increment nstream by 1scalar
-void increment_nstream_by_1scalar(int ncol, int nlay, int ngpt, real3d &tau1, real3d &ssa1, real3d const &tau2) {
+void increment_nstream_by_1scalar(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &ssa1, real3d const &tau2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     if (tau12 > eps) {
       ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / tau12;
@@ -234,15 +267,18 @@ void increment_nstream_by_1scalar(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment nstream by 2stream
-void increment_nstream_by_2stream(int ncol, int nlay, int ngpt, int nmom1, real3d &tau1, real3d &ssa1,
-                                  real4d &p1, real3d const &tau2, real3d const &ssa2, real3d const &g2) {
+void increment_nstream_by_2stream(int ncol, int nlay, int ngpt, int nmom1, real3d const &tau1, real3d const &ssa1,
+                                  real4d const &p1, real3d const &tau2, real3d const &ssa2, real3d const &g2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real1d temp_moms("temp_moms",nmom1);
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
@@ -266,15 +302,18 @@ void increment_nstream_by_2stream(int ncol, int nlay, int ngpt, int nmom1, real3
 
 
 // increment nstream by nstream
-void increment_nstream_by_nstream(int ncol, int nlay, int ngpt, int nmom1, int nmom2, real3d &tau1,
-                                  real3d &ssa1, real4d &p1, real3d const &tau2, real3d const &ssa2, real4d const &p2) {
+void increment_nstream_by_nstream(int ncol, int nlay, int ngpt, int nmom1, int nmom2, real3d const &tau1,
+                                  real3d const &ssa1, real4d const &p1, real3d const &tau2, real3d const &ssa2, real4d const &p2) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
   int mom_lim = min(nmom1, nmom2);
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
@@ -295,12 +334,15 @@ void increment_nstream_by_nstream(int ncol, int nlay, int ngpt, int nmom1, int n
 
 
 // increment 1scalar by 2stream
-void inc_1scalar_by_2stream_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, real3d const &tau2,
+void inc_1scalar_by_2stream_bybnd(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &tau2,
                                   real3d const &ssa2, int nbnd, int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd) * (1._wp - ssa2(icol,ilay,ibnd));
@@ -313,12 +355,15 @@ void inc_1scalar_by_2stream_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment 1scalar by nstream
-void inc_1scalar_by_nstream_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, real3d const &tau2,
+void inc_1scalar_by_nstream_bybnd(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &tau2,
                                   real3d const &ssa2, int nbnd, int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd) * (1._wp - ssa2(icol,ilay,ibnd));
@@ -331,14 +376,17 @@ void inc_1scalar_by_nstream_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment 2stream by 1scalar
-void inc_2stream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, real3d &ssa1,
+void inc_2stream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &ssa1,
                                   real3d const &tau2, int nbnd, int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -353,15 +401,18 @@ void inc_2stream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment 2stream by nstream
-void inc_2stream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom2, real3d &tau1, real3d &ssa1,
-                                  real3d &g1, real3d const &tau2, real3d const &ssa2, real4d const &p2,
+void inc_2stream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom2, real3d const &tau1, real3d const &ssa1,
+                                  real3d const &g1, real3d const &tau2, real3d const &ssa2, real4d const &p2,
                                   int nbnd, int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         // t=tau1 + tau2
@@ -382,14 +433,17 @@ void inc_2stream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom2, real3
 
 
 // increment nstream by 1scalar
-void inc_nstream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, real3d &ssa1, real3d const &tau2,
+void inc_nstream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &tau1, real3d const &ssa1, real3d const &tau2,
                                   int nbnd, int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -405,16 +459,19 @@ void inc_nstream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d &tau1, re
 
 
 // increment nstream by 2stream
-void inc_nstream_by_2stream_bybnd(int ncol, int nlay, int ngpt, int nmom1, real3d &tau1, real3d &ssa1, real4d &p1,
+void inc_nstream_by_2stream_bybnd(int ncol, int nlay, int ngpt, int nmom1, real3d const &tau1, real3d const &ssa1, real4d const &p1,
                                   real3d const &tau2, real3d const &ssa2, real3d const &g2, int nbnd,
                                   int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real1d temp_moms("temp_moms",nmom1);
   real eps = 3*std::numeric_limits<real>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -440,15 +497,18 @@ void inc_nstream_by_2stream_bybnd(int ncol, int nlay, int ngpt, int nmom1, real3
 
 
 // increment nstream by nstream
-void inc_nstream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom1, int nmom2, real3d &tau1, real3d &ssa1, real4d &p1,
+void inc_nstream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom1, int nmom2, real3d const &tau1, real3d const &ssa1, real4d const &p1,
                                   real3d const &tau2, real3d const &ssa2, real4d const &p2, int nbnd, int2d const &gpt_lims) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real eps = 3*std::numeric_limits<real>::min();
   int mom_lim = min(nmom1, nmom2);
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=0; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -471,7 +531,10 @@ void inc_nstream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom1, int n
 
 
 // Subsetting, meaning extracting some portion of the 3D domain
-void extract_subset_dim1_3d(int ncol, int nlay, int ngpt, real3d const &array_in, int colS, int colE, real3d &array_out) {
+void extract_subset_dim1_3d(int ncol, int nlay, int ngpt, real3d const &array_in, int colS, int colE, real3d const &array_out) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::Bounds;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = colS, colE
@@ -483,7 +546,10 @@ void extract_subset_dim1_3d(int ncol, int nlay, int ngpt, real3d const &array_in
 
 
 
-void extract_subset_dim2_4d(int nmom, int ncol, int nlay, int ngpt, real3d const &array_in, int colS, int colE, real3d &array_out) {
+void extract_subset_dim2_4d(int nmom, int ncol, int nlay, int ngpt, real4d const &array_in, int colS, int colE, real4d const &array_out) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::Bounds;
+
   //do igpt = 1, ngpt
   //  do ilay = 1, nlay
   //    do icol = colS, colE
@@ -497,7 +563,10 @@ void extract_subset_dim2_4d(int nmom, int ncol, int nlay, int ngpt, real3d const
 
 // Extract the absorption optical thickness which requires mulitplying by 1 - ssa
 void extract_subset_absorption_tau(int ncol, int nlay, int ngpt, real3d const &tau_in, real3d const &ssa_in, int colS, int colE,
-                                   real3d &tau_out) {
+                                   real3d const &tau_out) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::Bounds;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = colS, colE

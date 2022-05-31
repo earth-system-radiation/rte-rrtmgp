@@ -23,8 +23,6 @@
 #include "rrtmgp_const.h"
 #include "mo_optical_props.h"
 
-using yakl::COLON;
-
 
 class CloudOptics : public OpticalProps {
 public:
@@ -84,6 +82,8 @@ public:
   void load(real2d const &band_lims_wvn, real radliq_lwr, real radliq_upr, real radliq_fac, real radice_lwr, real radice_upr,
            real radice_fac, real2d const &lut_extliq, real2d const &lut_ssaliq, real2d const &lut_asyliq,
            real3d const &lut_extice, real3d const &lut_ssaice, real3d const &lut_asyice) {
+    using yakl::intrinsics::size;
+
     // Local variables
     this->init(band_lims_wvn, "RRTMGP cloud optics");
     // LUT coefficient dimensions
@@ -139,6 +139,8 @@ public:
             real4d const &pade_extice, real4d const &pade_ssaice, real4d const &pade_asyice,
             real1d const &pade_sizreg_extliq, real1d const &pade_sizreg_ssaliq, real1d const &pade_sizreg_asyliq,
             real1d const &pade_sizreg_extice, real1d const &pade_sizreg_ssaice, real1d const &pade_sizreg_asyice) {
+    using yakl::intrinsics::size;
+
     // Pade coefficient dimensions
     int nbnd         = size(pade_extliq,1);
     int nsizereg     = size(pade_extliq,2);
@@ -251,6 +253,16 @@ public:
   // Compute single-scattering properties
   template <class T>  // T is a template for a child class of OpticalPropsArry
   void cloud_optics(const int ncol, const int nlay, real2d const &clwp, real2d const &ciwp, real2d const &reliq, real2d const &reice, T &optical_props) {
+    using yakl::COLON;
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+    using yakl::intrinsics::any;
+    using yakl::componentwise::operator>;
+    using yakl::componentwise::operator<;
+    using yakl::componentwise::operator&&;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     int nbnd = this->get_nband();
     // Error checking
     if (! (allocated(this->lut_extliq) || allocated(this->pade_extliq))) { stoprun("cloud optics: no data has been initialized"); }
@@ -267,20 +279,20 @@ public:
     // Cloud masks; don't need value re values if there's no cloud
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       liqmsk(icol,ilay) = clwp(icol,ilay) > 0._wp;
       icemsk(icol,ilay) = ciwp(icol,ilay) > 0._wp;
     });
 
     #ifdef RRTMGP_EXPENSIVE_CHECKS
       // Particle size, liquid/ice water paths
-      if ( anyLT(reliq, liqmsk, this->radliq_lwr) || anyGT(reliq, liqmsk, this->radliq_upr) ) {
+      if ( any(liqmsk && (reliq < this->radliq_lwr)) || any(liqmsk && (reliq > this->radliq_upr)) ) {
         stoprun("cloud optics: liquid effective radius is out of bounds");
       }
-      if ( anyLT(reice, icemsk, this->radice_lwr) || anyGT(reice, icemsk, this->radice_upr) ) {
+      if ( any(icemsk && (reice < this->radice_lwr)) || any(icemsk && (reice > this->radice_upr)) ) {
         stoprun("cloud optics: ice effective radius is out of bounds");
       }
-      if ( anyLT(clwp, liqmsk, 0._wp) || anyLT(ciwp, icemsk, 0._wp) ) {
+      if ( any(liqmsk && (clwp < 0._wp)) || any(icemsk && (ciwp < 0._wp)) ) {
         stoprun("cloud optics: negative clwp or ciwp where clouds are supposed to be");
       }
     #endif
@@ -333,11 +345,14 @@ public:
 
   void combine( int nbnd, int nlay, int ncol, real3d const &ltau, real3d const &itau, real3d const &ltaussa, real3d const &itaussa,
                 real3d const &ltaussag, real3d const &itaussag, OpticalProps1scl &optical_props ) {
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     auto &optical_props_tau = optical_props.tau;
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    parallel_for( Bounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    parallel_for( SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       // Absorption optical depth  = (1-ssa) * tau = tau - taussa
       optical_props_tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) +
                                           (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd));
@@ -348,13 +363,17 @@ public:
 
   void combine( int nbnd, int nlay, int ncol, real3d const &ltau, real3d const &itau, real3d const &ltaussa, real3d const &itaussa,
                 real3d const &ltaussag, real3d const &itaussag, OpticalProps2str &optical_props ) {
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+    using yakl::intrinsics::epsilon;
+
     auto &optical_props_g   = optical_props.g  ;
     auto &optical_props_ssa = optical_props.ssa;
     auto &optical_props_tau = optical_props.tau;
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    parallel_for( Bounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    parallel_for( SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       real tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd);
       real taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd);
       optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / max(epsilon(tau), taussa);
@@ -366,6 +385,8 @@ public:
 
 
   void set_ice_roughness(int icergh) {
+    using yakl::intrinsics::allocated;
+
     if (! allocated(this->pade_extice) && ! allocated(this->lut_extice)) {
       stoprun("cloud_optics%set_ice_roughness(): can't set before initialization");
     }
@@ -378,6 +399,9 @@ public:
 
 
   int get_num_ice_roughness_types() {
+    using yakl::intrinsics::size;
+    using yakl::intrinsics::allocated;
+
     int i;
     if (allocated(this->pade_extice)) { i = size(this->pade_extice,4); }
     if (allocated(this->lut_extice )) { i = size(this->lut_extice ,3); }
@@ -409,10 +433,13 @@ public:
   void compute_all_from_table(int ncol, int nlay, int nbnd, bool2d const &mask, real2d const &lwp, real2d const &re,
                               int nsteps, real step_size, real offset, real2d const &tau_table, real2d const &ssa_table,
                               real2d const &asy_table, real3d &tau, real3d &taussa, real3d &taussag) {
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
-    parallel_for( Bounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    parallel_for( SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
         int index = min( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1._wp);
         real fint = (re(icol,ilay) - offset)/step_size - (index-1);
@@ -437,10 +464,13 @@ public:
                              int m_ssa, int n_ssa, real1d const &re_bounds_ssa, real3d const &coeffs_ssa,
                              int m_asy, int n_asy, real1d const &re_bounds_asy, real3d const &coeffs_asy,
                              real3d &tau, real3d &taussa, real3d &taussag) {
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    parallel_for( Bounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    parallel_for( SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
         int irad;
         // Finds index into size regime table
@@ -488,6 +518,9 @@ public:
 
 
   void print_norms() const {
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
                                          std::cout << "name                   : " << name                    << "\n";
                                          std::cout << "icergh                 : " << icergh                  << "\n";  
                                          std::cout << "radliq_lwr             : " << radliq_lwr              << "\n";

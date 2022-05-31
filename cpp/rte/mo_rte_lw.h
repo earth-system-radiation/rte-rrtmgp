@@ -54,6 +54,14 @@ template <class FluxesType>
 void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, OpticalProps1scl const &optical_props,
             bool top_at_1, SourceFuncLW const &sources, real2d const &sfc_emis,
             FluxesType &fluxes, real2d const &inc_flux, int n_gauss_angles) {
+  using yakl::intrinsics::size;
+  using yakl::intrinsics::allocated;
+  using yakl::intrinsics::any;
+  using yakl::componentwise::operator<;
+  using yakl::componentwise::operator>;
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real3d gpt_flux_up;
   real3d gpt_flux_dn;
   real2d sfc_emis_gpt;
@@ -76,14 +84,14 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
   // Surface emissivity
   if (size(sfc_emis,1) != nband || size(sfc_emis,2) != ncol) { stoprun("rte_lw: sfc_emis inconsistently sized"); }
   #ifdef RRTMGP_EXPENSIVE_CHECKS
-    if (anyLT(sfc_emis,0._wp) || anyGT(sfc_emis,1._wp)) { stoprun("rte_lw: sfc_emis has values < 0 or > 1"); }
+    if (any(sfc_emis < 0._wp) || any(sfc_emis > 1._wp)) { stoprun("rte_lw: sfc_emis has values < 0 or > 1"); }
   #endif
 
   // Incident flux, if present
   if (allocated(inc_flux)) {
     if (size(inc_flux,1) != ncol | size(inc_flux,2) != ngpt) { stoprun("rte_lw: inc_flux inconsistently sized"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (anyLT(inc_flux,0._wp)) { stoprun("rte_lw: inc_flux has values < 0"); }
+      if (any(inc_flux < 0._wp)) { stoprun("rte_lw: inc_flux has values < 0"); }
     #endif
   }
 
@@ -122,7 +130,7 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
   real1d tmp_Ds ("tmp_Ds" ,n_quad_angs);
   real1d tmp_wts("tmp_wts",n_quad_angs);
   // for (int i=1 ; i <= n_quad_angs ; i++) {
-  parallel_for( Bounds<1>(n_quad_angs) , YAKL_LAMBDA (int i) {
+  parallel_for( SimpleBounds<1>(n_quad_angs) , YAKL_LAMBDA (int i) {
     tmp_Ds (i) = gauss_Ds (i,n_quad_angs);
     tmp_wts(i) = gauss_wts(i,n_quad_angs);
   });

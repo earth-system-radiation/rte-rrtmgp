@@ -37,13 +37,15 @@ YAKL_INLINE void lw_source_noscat_stencil(int ncol, int nlay, int ngpt, int icol
 // Direct beam source for diffuse radiation in layers and at surface;
 //   report direct beam as a byproduct
 inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &Rdir, real3d const &Tdir,
-                           real3d const &Tnoscat, real2d const &sfc_albedo, real3d &source_up, real3d &source_dn,
-                           real2d &source_sfc, real3d &flux_dn_dir) {
+                           real3d const &Tnoscat, real2d const &sfc_albedo, real3d const &source_up, real3d const &source_dn,
+                           real2d const &source_sfc, real3d const &flux_dn_dir) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
 
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       for (int ilev=1; ilev<=nlay; ilev++) {
         source_up(icol,ilev,igpt)     =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
         source_dn(icol,ilev,igpt)     =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
@@ -58,7 +60,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d c
     // previous level is up (+1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       for (int ilev=nlay; ilev>=1; ilev--) {
         source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
         source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
@@ -76,12 +78,15 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d c
 // Longwave no-scattering transport
 inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real3d const &trans,
                                 real2d const &sfc_albedo, real3d const &source_dn, real3d const &source_up, real2d const &source_sfc, 
-                                real3d &radn_up, real3d &radn_dn) {
+                                real3d const &radn_up, real3d const &radn_dn) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   if (top_at_1) {
     // Top of domain is index 1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       // Downward propagation
       for (int ilev=2; ilev<=nlay+1; ilev++) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev-1,igpt)*radn_dn(icol,ilev-1,igpt) + source_dn(icol,ilev-1,igpt);
@@ -99,7 +104,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
     // Top of domain is index nlay+1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       // Downward propagation
       for (int ilev=nlay; ilev>=1; ilev--) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
@@ -126,8 +131,12 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
 // Equations are developed in Meador and Weaver, 1980,
 //    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
 inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3d const &tau,
-                          real3d const &w0, real3d const &g, real3d &Rdif, real3d &Tdif,
-                          real3d &Rdir, real3d &Tdir, real3d &Tnoscat) {
+                          real3d const &w0, real3d const &g, real3d &Rdif, real3d const &Tdif,
+                          real3d const &Rdir, real3d const &Tdir, real3d const &Tnoscat) {
+  using yakl::intrinsics::merge;
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real1d mu0_inv("mu0_inv",ncol);
 
   real eps = std::numeric_limits<real>::epsilon();
@@ -139,7 +148,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // Zdunkowski Practical Improved Flux Method "PIFM"
     //  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
     real gamma1= (8._wp - w0(icol,ilay,igpt) * (5._wp + 3._wp * g(icol,ilay,igpt))) * .25_wp;
@@ -205,15 +214,15 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
 
 
 
-void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real3d &flux_dn);
+void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &flux_dn);
 
 
 
-void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flux, real1d const &factor, real3d &flux_dn);
+void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flux, real1d const &factor, real3d const &flux_dn);
 
 
 // Upper boundary condition
-void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flux, real3d &flux_dn);
+void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flux, real3d const &flux_dn);
 
 
 
@@ -221,14 +230,14 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flu
 //   Equations are after Shonk and Hogan 2008, doi:10.1175/2007JCLI1940.1 (SH08)
 //   This routine is shared by longwave and shortwave
 void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sfc, real3d const &rdif, real3d const &tdif,
-            real3d const &src_dn, real3d const &src_up, real2d const &src_sfc, real3d &flux_up, real3d &flux_dn);
+            real3d const &src_dn, real3d const &src_up, real2d const &src_sfc, real3d const &flux_up, real3d const &flux_dn);
 
 
 
 
 void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real3d const &ssa, real3d const &g,
-                       real1d const &mu0, real2d const &sfc_alb_dir, real2d const &sfc_alb_dif, real3d &flux_up,
-                       real3d &flux_dn, real3d &flux_dir);
+                       real1d const &mu0, real2d const &sfc_alb_dir, real2d const &sfc_alb_dif, real3d const &flux_up,
+                       real3d const &flux_dn, real3d const &flux_dir);
 
 
 
@@ -239,7 +248,7 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const
 //   using user-supplied weights
 void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &D, real1d const &weights, int weight_ind, real3d const &tau,
                       real3d const &lay_source, real3d const &lev_source_inc, real3d const &lev_source_dec,
-                      real2d const &sfc_emis, real2d const &sfc_src, real3d &radn_up, real3d &radn_dn);
+                      real2d const &sfc_emis, real2d const &sfc_src, real3d const &radn_up, real3d const &radn_dn);
 
 
 
@@ -248,7 +257,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
 //   Routine sums over single-angle solutions for each sets of angles/weights
 void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int nmus, real1d const &Ds, real1d const &weights, 
                                 real3d const &tau, real3d const &lay_source, real3d const &lev_source_inc, real3d const &lev_source_dec,
-                                real2d const &sfc_emis, real2d const &sfc_src, real3d &flux_up, real3d &flux_dn);
+                                real2d const &sfc_emis, real2d const &sfc_src, real3d const &flux_up, real3d const &flux_dn);
 
 
 
@@ -257,8 +266,8 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 //   Source is provided as W/m2-str; factor of pi converts to flux units
 void lw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &sfc_emis, real2d const &sfc_src,
                     real3d const &lay_source, real3d const &lev_source, real3d const &gamma1, real3d const &gamma2,
-                    real3d const &rdif, real3d const &tdif, real3d const &tau, real3d &source_dn, real3d &source_up,
-                    real2d &source_sfc);
+                    real3d const &rdif, real3d const &tdif, real3d const &tau, real3d const &source_dn, real3d const &source_up,
+                    real2d const &source_sfc);
 
 
 
@@ -267,7 +276,7 @@ void lw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &s
 //   using the spectral mapping from each of the adjascent layers.
 //   Need to combine these for use in two-stream calculation.
 void lw_combine_sources(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &lev_src_inc, real3d const &lev_src_dec,
-                        real3d &lev_source);
+                        real3d const &lev_source);
 
 
 
@@ -275,15 +284,15 @@ void lw_combine_sources(int ncol, int nlay, int ngpt, bool top_at_1, real3d cons
 //    with optical depth tau, single scattering albedo w0, and asymmetery parameter g.
 // Equations are developed in Meador and Weaver, 1980,
 //    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
-void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const &w0, real3d const &g, real3d &gamma1,
-                   real3d &gamma2, real3d &Rdif, real3d &Tdif);
+void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const &w0, real3d const &g, real3d const &gamma1,
+                   real3d const &gamma2, real3d const &Rdif, real3d const &Tdif);
 
 
 
 //   Top-level shortwave kernels
 // -------------------------------------------------------------------------------------------------
 //   Extinction-only i.e. solar direct beam
-void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real1d const &mu0, real3d &flux_dir);
+void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real1d const &mu0, real3d const &flux_dir);
 
 
 
@@ -294,7 +303,7 @@ void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const 
 //   transport
 void lw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real3d const &ssa, real3d const &g,
                        real3d const &lay_source, real3d const &lev_source_inc, real3d const &lev_source_dec,
-                       real2d const &sfc_emis, real2d const &sfc_src, real3d &flux_up, real3d &flux_dn);
+                       real2d const &sfc_emis, real2d const &sfc_src, real3d const &flux_up, real3d const &flux_dn);
 
 
 

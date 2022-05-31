@@ -28,13 +28,13 @@
 void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres, int ntemp, int2d const &flavor,
                    real1d const &press_ref_log, real1d const &temp_ref, real press_ref_log_delta, real temp_ref_min,
                    real temp_ref_delta, real press_ref_trop_log, real3d const &vmr_ref, real2d const &play,
-                   real2d const &tlay, real3d const &col_gas, int2d &jtemp, real6d &fmajor, real5d &fminor,
-                   real4d &col_mix, bool2d &tropo, int4d &jeta, int2d &jpress);
+                   real2d const &tlay, real3d const &col_gas, int2d const &jtemp, real6d const &fmajor, real5d const &fminor,
+                   real4d const &col_mix, bool2d const &tropo, int4d const &jeta, int2d const &jpress);
 
 
 // Combine absoprtion and Rayleigh optical depths for total tau, ssa, g
 void combine_and_reorder_2str(int ncol, int nlay, int ngpt, real3d const &tau_abs, real3d const &tau_rayleigh,
-                              real3d &tau, real3d &ssa, real3d &g);
+                              real3d const &tau, real3d const &ssa, real3d const &g);
 
 
 
@@ -71,7 +71,7 @@ YAKL_INLINE real interpolate2D(real2d const &fminor, real3d const &k, int igpt, 
 // One dimensional interpolation -- return all values along second table dimension
 //
 YAKL_INLINE void interpolate1D(real val, real offset, real delta, real2d const &table,
-                               real1d &res, int tab_d1, int tab_d2) {
+                               real1d const &res, int tab_d1, int tab_d2) {
   real val0 = (val - offset) / delta;
   real frac = val0 - int(val0); // get fractional part
   int index = min(tab_d1-1, max(1, (int)(val0)+1)); // limit the index range
@@ -86,8 +86,8 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
                            real2d const &tlay, real2d const &tlev, real1d const &tsfc, int sfc_lay, real6d const &fmajor,
                            int4d const &jeta, bool2d const &tropo, int2d const &jtemp, int2d const &jpress,
                            int1d const &gpoint_bands, int2d const &band_lims_gpt, real4d const &pfracin, real temp_ref_min,
-                           real totplnk_delta, real2d const &totplnk, int2d const &gpoint_flavor, real2d &sfc_src,
-                           real3d &lay_src, real3d &lev_src_inc, real3d &lev_src_dec);
+                           real totplnk_delta, real2d const &totplnk, int2d const &gpoint_flavor, real2d const &sfc_src,
+                           real3d const &lay_src, real3d const &lev_src_inc, real3d const &lev_src_dec);
 
 
 
@@ -95,7 +95,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int nflav, int neta, int npres, int ntemp,
                           int2d const &gpoint_flavor, int2d const &band_lims_gpt, real4d const &krayl, int idx_h2o,
                           real2d const &col_dry, real3d const &col_gas, real5d const &fminor, int4d const &jeta,
-                          bool2d const &tropo, int2d const &jtemp, real3d &tau_rayleigh);
+                          bool2d const &tropo, int2d const &jtemp, real3d const &tau_rayleigh);
 
 
 
@@ -105,15 +105,15 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
                               real3d const &kminor, int2d const &minor_limits_gpt, bool1d const &minor_scales_with_density,
                               bool1d const &scale_by_complement, int1d const &idx_minor, int1d const &idx_minor_scaling,
                               int1d const &kminor_start, real2d const &play, real2d const &tlay, real3d const &col_gas,
-                              real5d const &fminor, int4d const &jeta, int2d const &layer_limits, int2d const &jtemp, real3d &tau);
+                              real5d const &fminor, int4d const &jeta, int2d const &layer_limits, int2d const &jtemp, real3d const &tau);
 
 
 
 // compute minor species optical depths
 void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav, int neta, int npres,
-                              int ntemp, int2d &gpoint_flavor, int2d &band_lims_gpt, real4d &kmajor,                         
-                              real4d &col_mix, real6d &fmajor, int4d &jeta, bool2d &tropo, 
-                              int2d &jtemp, int2d &jpress, real3d &tau);
+                              int ntemp, int2d const &gpoint_flavor, int2d const &band_lims_gpt, real4d const &kmajor,                         
+                              real4d const &col_mix, real6d const &fmajor, int4d const &jeta, bool2d const &tropo, 
+                              int2d const &jtemp, int2d const &jpress, real3d const &tau);
 
 
 
@@ -128,13 +128,13 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
                             int1d const &idx_minor_scaling_lower, int1d const &idx_minor_scaling_upper, int1d const &kminor_start_lower,                 
                             int1d const &kminor_start_upper, bool2d const &tropo, real4d const &col_mix, real6d const &fmajor,
                             real5d const &fminor, real2d const &play, real2d const &tlay, real3d const &col_gas, int4d const &jeta,
-                            int2d const &jtemp, int2d const &jpress, real3d &tau, bool top_at_1);
+                            int2d const &jtemp, int2d const &jpress, real3d const &tau, bool top_at_1);
 
 
 
 // Combine absoprtion and Rayleigh optical depths for total tau, ssa, p
 //   using Rayleigh scattering phase function
-void combine_and_reorder_nstr(int ncol, int nlay, int ngpt, int nmom, real3d &tau_abs, real3d &tau_rayleigh, real3d &tau, real3d &ssa, real4d &p);
+void combine_and_reorder_nstr(int ncol, int nlay, int ngpt, int nmom, real3d const &tau_abs, real3d const &tau_rayleigh, real3d const &tau, real3d const &ssa, real4d const &p);
 
 
 

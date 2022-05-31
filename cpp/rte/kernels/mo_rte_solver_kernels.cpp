@@ -3,18 +3,21 @@
 
 
 
-void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real3d &flux_dn) {
+void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &flux_dn) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   //   Upper boundary condition
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      1, igpt)  = 0;
     });
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay+1, igpt)  = 0;
     });
   }
@@ -22,17 +25,20 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real3d &flux_dn) {
 
 
 
-void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flux, real1d const &factor, real3d &flux_dn) {
+void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flux, real1d const &factor, real3d const &flux_dn) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt) * factor(icol);
     });
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt) * factor(icol);
     });
   }
@@ -41,20 +47,23 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flu
 
 
 // Upper boundary condition
-void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flux, real3d &flux_dn) {
+void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flux, real3d const &flux_dn) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   //   Upper boundary condition
   if (top_at_1) {
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt);
     });
   } else {
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt);
     });
   }
@@ -66,7 +75,10 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flu
 //   Equations are after Shonk and Hogan 2008, doi:10.1175/2007JCLI1940.1 (SH08)
 //   This routine is shared by longwave and shortwave
 void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sfc, real3d const &rdif, real3d const &tdif,
-            real3d const &src_dn, real3d const &src_up, real2d const &src_sfc, real3d &flux_up, real3d &flux_dn) {
+            real3d const &src_dn, real3d const &src_up, real2d const &src_sfc, real3d const &flux_up, real3d const &flux_dn) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real3d albedo("albedo",ncol,nlay+1,ngpt);
   real3d src   ("src   ",ncol,nlay+1,ngpt);
   real3d denom ("denom ",ncol,nlay  ,ngpt);
@@ -77,7 +89,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       int ilev = nlay + 1;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
@@ -117,7 +129,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
 
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       int ilev = 1;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
@@ -159,8 +171,11 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
 
 
 void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real3d const &ssa, real3d const &g,
-                       real1d const &mu0, real2d const &sfc_alb_dir, real2d const &sfc_alb_dif, real3d &flux_up,
-                       real3d &flux_dn, real3d &flux_dir) {
+                       real1d const &mu0, real2d const &sfc_alb_dir, real2d const &sfc_alb_dif, real3d const &flux_up,
+                       real3d const &flux_dn, real3d const &flux_dir) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real3d Rdif      ("Rdif      ",ncol,nlay,ngpt);         
   real3d Tdif      ("Tdif      ",ncol,nlay,ngpt);         
   real3d Rdir      ("Rdir      ",ncol,nlay,ngpt);         
@@ -188,7 +203,7 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay+1
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
   });
 }
@@ -202,7 +217,10 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const
 //   using user-supplied weights
 void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &D, real1d const &weights, int weight_ind, real3d const &tau,
                       real3d const &lay_source, real3d const &lev_source_inc, real3d const &lev_source_dec,
-                      real2d const &sfc_emis, real2d const &sfc_src, real3d &radn_up, real3d &radn_dn) {
+                      real2d const &sfc_emis, real2d const &sfc_src, real3d const &radn_up, real3d const &radn_dn) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real3d tau_loc   ("tau_loc   ",ncol,nlay,ngpt);             
   real3d trans     ("trans     ",ncol,nlay,ngpt);             
   real2d source_sfc("source_sfc",ncol,     ngpt);             
@@ -217,21 +235,21 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
   // When top_at_1, lev_source_up => lev_source_dec
   //                lev_source_dn => lev_source_inc, and vice-versa
   int top_level;
-  umgReal3d lev_source_up;
-  umgReal3d lev_source_dn;
+  real3d lev_source_up;
+  real3d lev_source_dn;
   if (top_at_1) {
     top_level = 1;
-    lev_source_up = umgReal3d("lev_source_up",lev_source_dec.data(),ncol,nlay,ngpt);
-    lev_source_dn = umgReal3d("lev_source_dn",lev_source_inc.data(),ncol,nlay,ngpt);
+    lev_source_up = real3d("lev_source_up",lev_source_dec.data(),ncol,nlay,ngpt);
+    lev_source_dn = real3d("lev_source_dn",lev_source_inc.data(),ncol,nlay,ngpt);
   } else {
     top_level = nlay+1;
-    lev_source_up = umgReal3d("lev_source_up",lev_source_inc.data(),ncol,nlay,ngpt);
-    lev_source_dn = umgReal3d("lev_source_dn",lev_source_dec.data(),ncol,nlay,ngpt);
+    lev_source_up = real3d("lev_source_up",lev_source_inc.data(),ncol,nlay,ngpt);
+    lev_source_dn = real3d("lev_source_dn",lev_source_dec.data(),ncol,nlay,ngpt);
   }
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     // Transport is for intensity
     //   convert flux at top of domain to intensity assuming azimuthal isotropy
     radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2._wp * pi * weights(weight_ind));
@@ -246,7 +264,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // Optical path and transmission, used in source function and transport calculations
     tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt);
     trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt));
@@ -266,7 +284,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
   // do igpt = 1, ngpt
   //   do ilev = 1, nlay+1
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
     radn_dn(icol,ilev,igpt) = 2._wp * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
     radn_up(icol,ilev,igpt) = 2._wp * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
   });
@@ -279,7 +297,11 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
 //   Routine sums over single-angle solutions for each sets of angles/weights
 void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int nmus, real1d const &Ds, real1d const &weights, 
                                 real3d const &tau, real3d const &lay_source, real3d const &lev_source_inc, real3d const &lev_source_dec,
-                                real2d const &sfc_emis, real2d const &sfc_src, real3d &flux_up, real3d &flux_dn) {
+                                real2d const &sfc_emis, real2d const &sfc_src, real3d const &flux_up, real3d const &flux_dn) {
+  using yakl::intrinsics::merge;
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   // Local variables
   real3d radn_dn ("radn_dn ",ncol,nlay+1,ngpt);  
   real3d radn_up ("radn_up ",ncol,nlay+1,ngpt);  
@@ -288,7 +310,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     Ds_ncol(icol, igpt) = Ds(1);
   });
 
@@ -302,7 +324,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     flux_top(icol,igpt) = flux_dn(icol,top_level,igpt);
   });
 
@@ -311,7 +333,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
   for (int imu=2; imu<=nmus; imu++) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       Ds_ncol(icol, igpt) = Ds(imu);
     });
 
@@ -323,7 +345,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
     // do igpt = 1, ngpt
     //   do ilev = 1, nlay+1
     //     do icol = 1, ncol
-    parallel_for( Bounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
+    parallel_for( SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
       flux_up(icol,ilev,ngpt) = flux_up(icol,ilev,ngpt) + radn_up(icol,ilev,ngpt);
       flux_dn(icol,ilev,ngpt) = flux_dn(icol,ilev,ngpt) + radn_dn(icol,ilev,ngpt);
     });
@@ -338,14 +360,17 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 //   Source is provided as W/m2-str; factor of pi converts to flux units
 void lw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &sfc_emis, real2d const &sfc_src,
                     real3d const &lay_source, real3d const &lev_source, real3d const &gamma1, real3d const &gamma2,
-                    real3d const &rdif, real3d const &tdif, real3d const &tau, real3d &source_dn, real3d &source_up,
-                    real2d &source_sfc) {
+                    real3d const &rdif, real3d const &tdif, real3d const &tau, real3d const &source_dn, real3d const &source_up,
+                    real2d const &source_sfc) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real constexpr pi = 3.14159265358979323846;
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     if ( tau(icol,ilay,ngpt) > 1.0e-8_wp ) {
       real lev_source_top, lev_source_bot;
       if (top_at_1) {
@@ -381,11 +406,14 @@ void lw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &s
 //   using the spectral mapping from each of the adjascent layers.
 //   Need to combine these for use in two-stream calculation.
 void lw_combine_sources(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &lev_src_inc, real3d const &lev_src_dec,
-                        real3d &lev_source) {
+                        real3d const &lev_source) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay+1
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     if (ilay == 1) {
       lev_source(icol, ilay, igpt) =      lev_src_dec(icol, ilay,   igpt);
     } else if (ilay == nlay+1) {
@@ -404,14 +432,17 @@ void lw_combine_sources(int ncol, int nlay, int ngpt, bool top_at_1, real3d cons
 //    with optical depth tau, single scattering albedo w0, and asymmetery parameter g.
 // Equations are developed in Meador and Weaver, 1980,
 //    doi:10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
-void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const &w0, real3d const &g, real3d &gamma1,
-                   real3d &gamma2, real3d &Rdif, real3d &Tdif) {
+void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const &w0, real3d const &g, real3d const &gamma1,
+                   real3d const &gamma2, real3d const &Rdif, real3d const &Tdif) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real constexpr LW_diff_sec = 1.66;  // 1./cos(diffusivity angle)
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // Coefficients differ from SW implementation because the phase function is more isotropic
     //   Here we follow Fu et al. 1997, doi:10.1175/1520-0469(1997)054<2799:MSPITI>2.0.CO;2
     //   and use a diffusivity sec of 1.66
@@ -447,7 +478,10 @@ void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const
 //   Top-level shortwave kernels
 // -------------------------------------------------------------------------------------------------
 //   Extinction-only i.e. solar direct beam
-void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real1d const &mu0, real3d &flux_dir) {
+void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real1d const &mu0, real3d const &flux_dir) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real1d mu0_inv("mu0_inv",ncol);
 
   parallel_for( ncol , YAKL_LAMBDA (int icol) {
@@ -465,7 +499,7 @@ void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const 
     // previous level is up (-1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       for (int ilev=2; ilev<=nlay+1; ilev++) {
         flux_dir(icol,ilev,igpt) = flux_dir(icol,ilev-1,igpt) * exp(-tau(icol,ilev,igpt)*mu0_inv(icol));
       }
@@ -475,7 +509,7 @@ void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const 
     // previous level is up (+1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       for (int ilev=nlay; ilev>=1; ilev--) {
         flux_dir(icol,ilev,igpt) = flux_dir(icol,ilev+1,igpt) * exp(-tau(icol,ilev,igpt)*mu0_inv(icol));
       }
@@ -493,7 +527,10 @@ void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const 
 //   transport
 void lw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real3d const &ssa, real3d const &g,
                        real3d const &lay_source, real3d const &lev_source_inc, real3d const &lev_source_dec,
-                       real2d const &sfc_emis, real2d const &sfc_src, real3d &flux_up, real3d &flux_dn) {
+                       real2d const &sfc_emis, real2d const &sfc_src, real3d const &flux_up, real3d const &flux_dn) {
+  using yakl::fortran::parallel_for;
+  using yakl::fortran::SimpleBounds;
+
   real3d Rdif      ("Rdif      ",ncol,nlay  ,ngpt);    
   real3d Tdif      ("Tdif      ",ncol,nlay  ,ngpt);    
   real3d gamma1    ("gamma1    ",ncol,nlay  ,ngpt);      
@@ -525,7 +562,7 @@ void lw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  parallel_for( Bounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt);
   });
 

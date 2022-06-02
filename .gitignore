@@ -21,9 +21,8 @@
 examples/*/*.nc
 examples/*/*/*.nc
 
-# Don't commit specific Makefile variants
-Makefile.libs
-Makefile.conf
+# Jupyter notebooks
+.ipynb_checkpoints
 
 # Intel code coverage
 *.dyn

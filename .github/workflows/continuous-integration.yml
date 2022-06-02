@@ -13,7 +13,7 @@ jobs:
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DUSE_CBOOL"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
       CC: gcc
       NCHOME: /home/runner/netcdf-c
       NFHOME: /home/runner/netcdf-fortran

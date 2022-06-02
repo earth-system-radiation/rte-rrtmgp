@@ -11,9 +11,9 @@ root of the RTE+RRTMGP installation.
 ## Gnu Fortran
 `FC: gfortran-8` or `gfortran-9` or `gfortran-10`
 ### Debugging flags
-`FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DUSE_CBOOL"`  
+`FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DRTE_USE_CBOOL"`  
 ### Even stricter debugging flags
-`FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fbacktrace -finit-real=nan -DUSE_CBOOL -pedantic -g -Wall"`  
+`FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fbacktrace -finit-real=nan -DRTE_USE_CBOOL -pedantic -g -Wall"`  
 
 ## Intel Fortran
 `FC: ifort`  

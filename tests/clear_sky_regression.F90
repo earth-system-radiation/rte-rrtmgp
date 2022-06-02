@@ -147,17 +147,7 @@ program rte_clear_sky_regression
   !
   nbnd = k_dist%get_nband()
   ngpt = k_dist%get_ngpt()
-  !
-  ! RRTMGP won't run with pressure less than its minimum. The top level in the RFMIP file
-  !   is set to 10^-3 Pa. Here we pretend the layer is just a bit less deep.
-  !
   top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
-  if(top_at_1) then
-    p_lev(:,1) = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
-  else
-    p_lev(:,nlay+1) &
-                 = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
-  end if
   ! ----------------------------------------------------------------------------
   !
   !  Boundary conditions

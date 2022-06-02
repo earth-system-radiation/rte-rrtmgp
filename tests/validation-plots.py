@@ -155,7 +155,7 @@ if __name__ == '__main__':
             plt.close()
         ########################################################################
         # Shortwave
-        #   These are in W/m2 so profiles with high run count for more.
+        #   These are in W/m2 so profiles with high sun count for more.
         #   Would they be better scaled to incoming solar flux?
         ########################################################################
         #

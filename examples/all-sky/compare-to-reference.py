@@ -39,7 +39,7 @@ if __name__ == '__main__':
     if args.download_reference or not os.path.exists(ref_file):
         os.makedirs(args.ref_dir, exist_ok=True)
         urllib.request.urlretrieve(
-            "https://owncloud.gwdg.de/index.php/s/OjbNzRTlXUk0G5w/download",
+            "ftp://ftp.ldeo.columbia.edu/pub/robertp/rte-rrtmgp/continuous-integration/rrtmgp-allsky.nc",
             ref_file)
     tst = xr.open_dataset(tst_file)
     ref = xr.open_dataset(ref_file)

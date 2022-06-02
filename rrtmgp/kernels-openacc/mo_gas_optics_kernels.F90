@@ -615,11 +615,9 @@ contains
             ! interpolation in temperature, pressure, and eta
             interpolate3D(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           igpt, jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
-
           ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
           planck_function_1 = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
           lay_src(icol,ilay,igpt) = pfrac * planck_function_1
-
           ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
           planck_function_1 = interpolate1D(tlev(icol,ilay),   temp_ref_min, totplnk_delta, totplnk(:,ibnd))
           planck_function_2 = interpolate1D(tlev(icol,ilay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
@@ -629,7 +627,6 @@ contains
           if (ilay == sfc_lay) then
             planck_function_1 = interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk(:,ibnd))
             planck_function_2 = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk(:,ibnd))
-
             sfc_src       (icol,igpt) = pfrac * planck_function_1
             sfc_source_Jac(icol,igpt) = pfrac * (planck_function_2 - planck_function_1)
           end if

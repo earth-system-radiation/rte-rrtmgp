@@ -969,7 +969,7 @@ contains
     this%totplnk = totplnk
 !    this%planck_frac = planck_frac
     this%planck_frac = RESHAPE(planck_frac,(/size(planck_frac,4), size(planck_frac,2), &
-    size(planck_frac,3), size(planck_frac,1)/),ORDER =(/4,2,3,1/))
+                                             size(planck_frac,3), size(planck_frac,1)/),ORDER =(/4,2,3,1/))
     this%optimal_angle_fit = optimal_angle_fit
     !$acc        enter data copyin(this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$omp target enter data map(to:this%totplnk, this%planck_frac, this%optimal_angle_fit)
@@ -1124,6 +1124,7 @@ contains
     real(wp), dimension(:,:,:),   intent(in) :: vmr_ref
     real(wp), dimension(:,:,:,:), intent(in) :: kmajor
     real(wp), dimension(:,:,:),   intent(in) :: kminor_lower, kminor_upper
+    real(wp), dimension(:,:,:), allocatable  :: kminor_lower_t, kminor_upper_t
     character(len=*),   dimension(:), &
                                   intent(in) :: gas_minor, &
                                                 identifier_minor
@@ -1259,9 +1260,9 @@ contains
     if (allocated(rayl_lower)) then
       allocate(this%krayl(size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1),2))
       this%krayl(:,:,:,1) = RESHAPE(rayl_lower,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2), &
-      size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
+                                                 size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
       this%krayl(:,:,:,2) = RESHAPE(rayl_upper,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2), &
-      size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
+                                                 size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
       !$acc        enter data copyin(this%krayl)
       !$omp target enter data map(to:this%krayl)
     end if
@@ -1821,7 +1822,7 @@ contains
     endif
 
     kminor_atm_red = RESHAPE(kminor_atm_red_t,(/size(kminor_atm_red_t,dim=3), &
-    size(kminor_atm_red_t,dim=2),size(kminor_atm_red_t,dim=1)/), ORDER=(/3,2,1/))
+                                                size(kminor_atm_red_t,dim=2),size(kminor_atm_red_t,dim=1)/), ORDER=(/3,2,1/))
     deallocate(kminor_atm_red_t)
   end subroutine reduce_minor_arrays
 

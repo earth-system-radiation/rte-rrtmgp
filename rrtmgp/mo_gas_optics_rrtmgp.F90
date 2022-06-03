@@ -1124,6 +1124,7 @@ contains
     real(wp), dimension(:,:,:),   intent(in) :: vmr_ref
     real(wp), dimension(:,:,:,:), intent(in) :: kmajor
     real(wp), dimension(:,:,:),   intent(in) :: kminor_lower, kminor_upper
+    real(wp), dimension(:,:,:), allocatable  :: kminor_lower_t, kminor_upper_t
     character(len=*),   dimension(:), &
                                   intent(in) :: gas_minor, &
                                                 identifier_minor

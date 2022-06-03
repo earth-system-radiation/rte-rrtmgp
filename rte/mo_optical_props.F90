@@ -1,16 +1,19 @@
-!! This code is part of Radiative Transfer for Energetics (RTE)
-!!
-!! Contacts: Robert Pincus and Eli Mlawer
-!! email:  rrtmgp@aer.com
-!!
-!! Copyright 2015-2018,  Atmospheric and Environmental Research and
-!! Regents of the University of Colorado.  All right reserved.
-!!
-!! Use and duplication is permitted under the terms of the
-!!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
-!! -------------------------------------------------------------------------------------------------
-
-!> Encapsulate optical properties defined on a spectral grid of N bands.
+! This code is part of Radiative Transfer for Energetics (RTE)
+!
+! Contacts: Robert Pincus and Eli Mlawer
+! email:  rrtmgp@aer.com
+!
+! Copyright 2015-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
+!
+! Use and duplication is permitted under the terms of the
+!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
+! -------------------------------------------------------------------------------------------------
+!>
+!> ## Encapsulate optical properties defined on a spectral grid of N bands.
+!>
 !>   The bands are described by their limiting wavenumbers. They need not be contiguous or complete.
 !>   A band may contain more than one spectral sub-point (g-point) in which case a mapping must be supplied.
 !>   A name may be provided and will be prepended to error messages.
@@ -21,11 +24,13 @@
 !>   (abstract class ty_optical_props_arry).
 !>   The type holds arrays depending on how much information is needed
 !>   There are three possibilites
-!>      ty_optical_props_1scl holds absorption optical depth tau, used in calculations accounting for extinction and emission
-!>      ty_optical_props_2str holds extincion optical depth tau, single-scattering albedo ssa, and
+!>
+!> - ty_optical_props_1scl holds absorption optical depth tau, used in calculations accounting for extinction and emission
+!> - ty_optical_props_2str holds extincion optical depth tau, single-scattering albedo ssa, and
 !>        asymmetry parameter g. These fields are what's needed for two-stream calculations.
-!>      ty_optical_props_nstr holds extincion optical depth tau, single-scattering albedo ssa, and
+!> - ty_optical_props_nstr holds extincion optical depth tau, single-scattering albedo ssa, and
 !>        phase function moments p with leading dimension nmom. These fields are what's needed for multi-stream calculations.
+!>
 !>   These classes must be allocated before use. Initialization and allocation can be combined.
 !>   The classes have a validate() function that checks all arrays for valid values (e.g. tau > 0.)
 !>
@@ -36,12 +41,14 @@
 !>   may be added to properties defined by g-point; the same value is assumed for all g-points with each band.
 !>
 !> Subsets of optical properties held as arrays may be extracted along the column dimension.
-!>@note
-!>example of a note with links to other modules and variables
 !>
-!> 1. [[mo_rte_config(module):check_extents(variable)]] in module [[mo_rte_config]]
+! Making the documentation below visible in ford, by replace ! with !>, messes up Markdown parsing above
+!@note
+!example of a note with links to other modules and variables
+!
+! 1. [[mo_rte_config(module):check_extents(variable)]] in module [[mo_rte_config]]
 !>
-!>@endnote
+!@endnote
 !> -------------------------------------------------------------------------------------------------
 module mo_optical_props
   use mo_rte_kind,              only: wp
@@ -57,19 +64,20 @@ module mo_optical_props
         delta_scale_2str_kernel, &
         extract_subset
   implicit none
-  integer, parameter :: name_len = 32
-  !> -------------------------------------------------------------------------------------------------
-  !>
-  !> Base class for optical properties
+  private
+  integer, parameter, public :: name_len = 32
+  ! -------------------------------------------------------------------------------------------------
+  !
+  !> ### Base class for optical properties
   !>   Describes the spectral discretization including the wavenumber limits
   !>   of each band (spectral region) and the mapping between g-points and bands
-  !>
-  !> -------------------------------------------------------------------------------------------------
+  !
+  ! -------------------------------------------------------------------------------------------------
   type, public :: ty_optical_props
-    integer,  dimension(:,:), allocatable :: band2gpt       !! (begin g-point, end g-point) = band2gpt(2,band)
-    integer,  dimension(:),   allocatable :: gpt2band       !! band = gpt2band(g-point)
-    real(wp), dimension(:,:), allocatable :: band_lims_wvn  !! (upper and lower wavenumber by band) = band_lims_wvn(2,band)
-    character(len=name_len)               :: name = ""
+    integer,  dimension(:,:), allocatable, private :: band2gpt      ! (begin g-point, end g-point) = band2gpt(2,band)
+    integer,  dimension(:),   allocatable, private :: gpt2band      ! band = gpt2band(g-point)
+    real(wp), dimension(:,:), allocatable, private :: band_lims_wvn ! (upper and lower wavenumber by band) = band_lims_wvn(2,band)
+    character(len=name_len),               private :: name = ""
   contains
     generic,   public  :: init => init_base, init_base_from_copy
     procedure, private :: init_base
@@ -91,15 +99,13 @@ module mo_optical_props
     procedure, public  :: expand
     procedure, public  :: set_name
     procedure, public  :: get_name
-  end type
-  !>----------------------------------------------------------------------------------------
-  !>
-  !> Optical properties as arrays, normally dimensioned ncol, nlay, ngpt/nbnd
+  end type ty_optical_props
+  !----------------------------------------------------------------------------------------
+  !
+  !>### Optical properties as arrays, normally dimensioned ncol, nlay, ngpt/nbnd
   !>   The abstract base class for arrays defines what procedures will be available
-  !>   The optical depth field is also part of the abstract base class, since
-  !>    any representation of values as arrays needs an optical depth field
-  !>
-  !> -------------------------------------------------------------------------------------------------
+  !
+  ! -------------------------------------------------------------------------------------------------
   type, extends(ty_optical_props), abstract, public :: ty_optical_props_arry
     real(wp), dimension(:,:,:), allocatable :: tau !! optical depth (ncol, nlay, ngpt)
   contains
@@ -117,10 +123,10 @@ module mo_optical_props
     procedure(validate_abstract),     deferred, public  :: validate
     procedure(delta_scale_abstract),  deferred, public  :: delta_scale
     procedure(subset_range_abstract), deferred, public  :: get_subset
-  end type
-  !>
-  !> Interfaces for the methods to be implemented
-  !>
+  end type ty_optical_props_arry
+  !
+  ! Interfaces for the methods to be implemented
+  !
   abstract interface
     !>
     !> Validation function looks only at internal data
@@ -157,10 +163,12 @@ module mo_optical_props
   end interface
   !>----------------------------------------------------------------------------------------
   !>
-  !>   ty_optical_props_arry  includes only (extinction) optical depth
-  !>   Class two-stream adds arrays for single scattering albedo ssa and
+  !>   ty_optical_props_arry represents optical properties as arrays with dimensions
+  !>      column, height, spectral point
+  !>  - Class 1-scalar only (extinction) optical depth
+  !>  -  Class two-stream adds arrays for single scattering albedo ssa and
   !>     asymmetry parameter needed in two-stream methods
-  !>   Class n-stream adds arrays for single scattering albedo ssa and
+  !>  - Class n-stream adds arrays for single scattering albedo ssa and
   !>     phase function moments (index 1 = g) for use with discrete ordinate methods
   !>
   !> -------------------------------------------------------------------------------------------------
@@ -175,7 +183,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_1scl
     procedure, private :: copy_and_alloc_1scl
     generic,   public  :: alloc_1scl => alloc_only_1scl, init_and_alloc_1scl, copy_and_alloc_1scl
-  end type
+  end type ty_optical_props_1scl
 
   ! --- 2 stream ------------------------------------------------------------------------
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_2str
@@ -191,7 +199,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_2str
     procedure, private :: copy_and_alloc_2str
     generic,   public  :: alloc_2str => alloc_only_2str, init_and_alloc_2str, copy_and_alloc_2str
-  end type
+  end type ty_optical_props_2str
 
   ! --- n stream ------------------------------------------------------------------------
   type, public, extends(ty_optical_props_arry) :: ty_optical_props_nstr
@@ -208,7 +216,7 @@ module mo_optical_props
     procedure, private :: init_and_alloc_nstr
     procedure, private :: copy_and_alloc_nstr
     generic,   public  :: alloc_nstr => alloc_only_nstr, init_and_alloc_nstr, copy_and_alloc_nstr
-  end type
+  end type ty_optical_props_nstr
   ! -------------------------------------------------------------------------------------------------
 contains
   ! -------------------------------------------------------------------------------------------------
@@ -686,17 +694,17 @@ contains
     if(len_trim(err_message) > 0 .and. len_trim(this%get_name()) > 0) &
         err_message = trim(this%get_name()) // ': ' // trim(err_message)
   end function validate_nstream
-  
-  !> ------------------------------------------------------------------------------------------
-  !>
-  !>  Routines for array classes: subsetting of optical properties arrays along x (col) direction
-  !>
-  !> Allocate class, then arrays; copy. Could probably be more efficient if
-  !>   classes used pointers internally.
-  !>
-  !> This set takes start position and number as scalars
-  !>
-  !> ------------------------------------------------------------------------------------------
+
+  ! ------------------------------------------------------------------------------------------
+  !
+  !  Routines for array classes: subsetting of optical properties arrays along x (col) direction
+  !
+  ! Allocate class, then arrays; copy. Could probably be more efficient if
+  !   classes used pointers internally.
+  !
+  ! This set takes start position and number as scalars
+  !
+  ! ------------------------------------------------------------------------------------------
 
   function subset_1scl_range(full, start, n, subset) result(err_message)
     class(ty_optical_props_1scl), intent(inout) :: full

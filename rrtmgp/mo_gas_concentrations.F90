@@ -35,17 +35,19 @@ module mo_gas_concentrations
   use mo_rrtmgp_util_string, only: lower_case
   use mo_rte_util_array,     only: any_vals_outside
   implicit none
-  integer, parameter :: GAS_NOT_IN_LIST = -1
+  integer, parameter, private :: GAS_NOT_IN_LIST = -1
+  private
 
   type, private :: conc_field
     real(wp), dimension(:,:), pointer :: conc => NULL()
   end type conc_field
 
   type, public :: ty_gas_concs
+    private
     !
     ! Data
     !
-    character(len=32), dimension(:), allocatable :: gas_name
+    character(len=32), dimension(:), allocatable, public :: gas_names ! Should make this private
     type(conc_field),  dimension(:), allocatable :: concs
     integer :: ncol = 0, nlay = 0
     contains
@@ -104,12 +106,12 @@ contains
     ! Allocate fixed-size arrays
     !
     call this%reset()
-    allocate(this%gas_name(ngas), this%concs(ngas))
+    allocate(this%gas_names(ngas), this%concs(ngas))
     !$acc enter data copyin(this)
     !$acc enter data copyin(this%concs)
     !$omp target enter data map(to:this%concs)
 
-    this%gas_name(:) = gas_names(:)
+    this%gas_names(:) = gas_names(:)
   end function
   ! -------------------------------------------------------------------------------------
   !
@@ -455,15 +457,15 @@ contains
     if(error_msg /= "") return
 
     call subset%reset()
-    allocate(subset%gas_name(size(this%gas_name)), &
+    allocate(subset%gas_names(size(this%gas_names)), &
              subset%concs   (size(this%concs))) ! These two arrays should be the same length
     !$acc enter data create(subset, subset%concs)
     !$omp target enter data map(alloc:subset%concs)
     subset%nlay = this%nlay
     subset%ncol = merge(n, 0, this%ncol > 0)
-    subset%gas_name(:)  = this%gas_name(:)
+    subset%gas_names(:)  = this%gas_names(:)
 
-    do i = 1, size(this%gas_name)
+    do i = 1, size(this%gas_names)
       !
       ! Preserve scalar/1D/2D representation in subset,
       !   but need to ensure at least extent 1 in col dimension (ncol = 0 means no gas exploits this dimension)
@@ -510,7 +512,7 @@ contains
     ! -----------------
     this%nlay = 0
     this%ncol = 0
-    if(allocated(this%gas_name)) deallocate(this%gas_name)
+    if(allocated(this%gas_names)) deallocate(this%gas_names)
     if (allocated(this%concs)) then
       do i = 1, size(this%concs)
         if(associated(this%concs(i)%conc)) then
@@ -534,7 +536,7 @@ contains
     class(ty_gas_concs), intent(in) :: this
     integer :: get_num_gases
 
-    get_num_gases = size(this%gas_name)
+    get_num_gases = size(this%gas_names)
     return
   end function get_num_gases
   ! -------------------------------------------------------------------------------------
@@ -542,7 +544,7 @@ contains
     class(ty_gas_concs), intent(in) :: this
     character(len=32), dimension(this%get_num_gases()) :: get_gas_names
 
-    get_gas_names(:) = this%gas_name(:)
+    get_gas_names(:) = this%gas_names(:)
     return
   end function get_gas_names
   ! -------------------------------------------------------------------------------------
@@ -561,10 +563,10 @@ contains
     integer :: igas
     ! -----------------
     find_gas = GAS_NOT_IN_LIST
-    if(.not. allocated(this%gas_name)) return
+    if(.not. allocated(this%gas_names)) return
     ! search gases using a loop. Fortran intrinsic findloc would be faster, but only supported since gfortran 9
-    do igas = 1, size(this%gas_name)
-      if (lower_case(trim(this%gas_name(igas))) == lower_case(trim(gas))) then
+    do igas = 1, size(this%gas_names)
+      if (lower_case(trim(this%gas_names(igas))) == lower_case(trim(gas))) then
         find_gas = igas
       end if
     end do

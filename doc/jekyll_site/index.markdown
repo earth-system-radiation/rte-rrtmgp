@@ -5,12 +5,22 @@ layout: "home"
 title: "User Documentation Home"
 ---
 
-[Tutorials](./Tutorials.html)
+# Work in progress
 
-[How To's](./howtos.html)
+Comprehensive documentation for RTE and RRTMGP is under development.
 
-[Discussions](./discussions.html)
+[Tutorials - these don't exist yet](./Tutorials.html)
 
-[Link to Developer Reference Documentation for API](./reference/extensions/index.html)
+# Technical documentation
 
-[Link to Developer Reference Documentation for Kernels](./reference/kernels/index.html)
+## Fortran user-faceing class interfaces
+
+[RTE    Fortran interface](./reference/rte-fortran-interface/index.html)
+
+[RRTMGP Fortran interface](./reference/rrtmgp-fortran-interface/index.html)
+
+## Kernel interfaces
+
+[RTE kernels:    Fortran interface](./reference/rte-kernels/index.html)
+
+[RRTMGP kernels: Fortran interface](./reference/rrtmgp-kernels/index.html)

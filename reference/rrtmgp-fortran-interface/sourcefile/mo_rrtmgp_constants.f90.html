@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="description" content="RRTMGP is a correlated k-distribution for computing fluxes in earth's atmosphere.">
+    <meta name="author" content="" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>mo_rrtmgp_constants.F90 &ndash; RRTMGP-Fortran</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">RRTMGP-Fortran </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            <li><a href="../lists/files.html">Source Files</a></li>
+            <li><a href="../lists/modules.html">Modules</a></li>
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+            <li><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                   <li><a href="../lists/types.html">Derived Types</a></li>
+       
+            </ul>
+        
+            </li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/absint.html">Abstract Interfaces</a></li>
+                             <li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+          </ul>
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+  <div class="row">
+    <h1>mo_rrtmgp_constants.F90
+    <small>Source File</small>
+    </h1>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 1.4% of total for source files.">18 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_rrtmgp_constants.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li class="active">mo_rrtmgp_constants.F90</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#mods-0">Modules</a></h3></div>
+  <div id="mods-0" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_rrtmgp_constants.html">mo_rrtmgp_constants</a>
+    </div>
+  </div>
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../sourcefile/mo_rrtmgp_constants.f90.html#src">mo_rrtmgp_constants.F90</a>
+  </div>
+</div>
+
+</div>
+
+    </div>
+    <div class="col-md-9" id='text'>
+      
+      <br>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Files dependent on this one</h3>
+      </div>
+      <div class="panel-body">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: sourcefile~~mo_rrtmgp_constants.f90~~AfferentGraph Pages: 1 -->
+<svg id="sourcefilemo_rrtmgp_constantsf90AfferentGraph" width="350pt" height="32pt"
+ viewBox="0.00 0.00 350.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="sourcefile~~mo_rrtmgp_constants.f90~~AfferentGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>sourcefile~~mo_rrtmgp_constants.f90~~AfferentGraph</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-28 346,-28 346,4 -4,4"/>
+<!-- sourcefile~mo_rrtmgp_constants.f90 -->
+<g id="sourcefile~~mo_rrtmgp_constants.f90~~AfferentGraph_node1" class="node">
+<title>sourcefile~mo_rrtmgp_constants.f90</title>
+<polygon fill="none" stroke="black" points="151,-24 0,-24 0,0 151,0 151,-24"/>
+<text text-anchor="middle" x="75.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">mo_rrtmgp_constants.F90</text>
+</g>
+<!-- sourcefile~mo_gas_optics_rrtmgp.f90 -->
+<g id="sourcefile~~mo_rrtmgp_constants.f90~~AfferentGraph_node2" class="node">
+<title>sourcefile~mo_gas_optics_rrtmgp.f90</title>
+<g id="a_sourcefile~~mo_rrtmgp_constants.f90~~AfferentGraph_node2"><a xlink:href=".././sourcefile/mo_gas_optics_rrtmgp.f90.html" xlink:title="mo_gas_optics_rrtmgp.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="342,-24 187,-24 187,0 342,0 342,-24"/>
+<text text-anchor="middle" x="264.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_gas_optics_rrtmgp.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~mo_gas_optics_rrtmgp.f90&#45;&gt;sourcefile~mo_rrtmgp_constants.f90 -->
+<g id="sourcefile~~mo_rrtmgp_constants.f90~~AfferentGraph_edge1" class="edge">
+<title>sourcefile~mo_gas_optics_rrtmgp.f90&#45;&gt;sourcefile~mo_rrtmgp_constants.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M186.9,-12C178.42,-12 169.74,-12 161.17,-12"/>
+<polygon fill="#000000" stroke="#000000" points="161.17,-8.5 151.17,-12 161.17,-15.5 161.17,-8.5"/>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="202pt" height="32pt"
+ viewBox="0.00 0.00 201.50 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-28 197.5,-28 197.5,4 -4,4"/>
+<!-- Source File -->
+<g id="node1" class="node">
+<title>Source File</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="70,-24 0,-24 0,0 70,0 70,-24"/>
+<text text-anchor="middle" x="35" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Source File</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node2" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="193.5,-24 88.5,-24 88.5,0 193.5,0 193.5,-24"/>
+<text text-anchor="middle" x="141" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a file to a file which it depends on. A file
+    is dependent upon another if the latter must be compiled before the former
+    can be.
+    </p>
+    </div></div></div></div>
+      </div>
+    </div>
+<br>
+    <section class="visible-xs visible-sm hidden-md">
+      <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#mods-1">Modules</a></h3></div>
+  <div id="mods-1" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_rrtmgp_constants.html">mo_rrtmgp_constants</a>
+    </div>
+  </div>
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../sourcefile/mo_rrtmgp_constants.f90.html#src">mo_rrtmgp_constants.F90</a>
+  </div>
+</div>
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    <section>
+      <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="hl"><pre><span></span><a name="ln-1"></a><span class="c">! This code is part of RRTM for GCM Applications - Parallel (RRTMGP)</span>
+<a name="ln-2"></a><span class="c">!</span>
+<a name="ln-3"></a><span class="c">! Contacts: Robert Pincus and Eli Mlawer</span>
+<a name="ln-4"></a><span class="c">! email:  rrtmgp@aer.com</span>
+<a name="ln-5"></a><span class="c">!</span>
+<a name="ln-6"></a><span class="c">! Copyright 2015-2018,  Atmospheric and Environmental Research and</span>
+<a name="ln-7"></a><span class="c">! Regents of the University of Colorado.  All right reserved.</span>
+<a name="ln-8"></a><span class="c">!</span>
+<a name="ln-9"></a><span class="c">! Use and duplication is permitted under the terms of the</span>
+<a name="ln-10"></a><span class="c">!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause</span>
+<a name="ln-11"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
+<a name="ln-12"></a><span class="c">! Physical and mathematical constants used in gas optics calculation</span>
+<a name="ln-13"></a><span class="c">!   If the host model in which RRTGMP is embedded has defined these constants elsewhere</span>
+<a name="ln-14"></a><span class="c">!   the model definitions can be used instead by renaming. For example,</span>
+<a name="ln-15"></a><span class="c">! use  mo_model_constants, only k_boltz =&gt; boltzman_k, ...</span>
+<a name="ln-16"></a><span class="c">!   where the syntax is local_name =&gt; original_name</span>
+<a name="ln-17"></a><span class="c">!   and all the local names need to be defined</span>
+<a name="ln-18"></a><span class="c">!</span>
+<a name="ln-19"></a><span class="c">! &quot;Constants&quot; specific to the earth&#39;s atmosphere should also be made consistent with the</span>
+<a name="ln-20"></a><span class="c">!   host model but may be changed in a call to init_constants(), normally at initialization</span>
+<a name="ln-21"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
+<a name="ln-22"></a><span class="k">module </span><span class="n">mo_rrtmgp_constants</span>
+<a name="ln-23"></a>  <span class="k">use </span><span class="n">mo_rte_kind</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">wp</span>
+<a name="ln-24"></a>  <span class="k">public</span>
+<a name="ln-25"></a>
+<a name="ln-26"></a>  <span class="c">! -----------------------------------------</span>
+<a name="ln-27"></a>  <span class="c">! Physical constants, 2018 SI defintion of metric system</span>
+<a name="ln-28"></a>  <span class="c">!   doi:10.1088/1681-7575/aa950a (see also https://www.nist.gov/si-redefinition/meet-constants)</span>
+<a name="ln-29"></a>  <span class="c">! Boltzmann constant [J/K] = [(kg m^2)/(K s^2)]</span>
+<a name="ln-30"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">k_boltz</span> <span class="o">=</span> <span class="mf">1.380649e-23_wp</span>
+<a name="ln-31"></a>
+<a name="ln-32"></a>  <span class="c">!  molecular weight of water [kg/mol]</span>
+<a name="ln-33"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">m_h2o</span> <span class="o">=</span>  <span class="mf">0.018016_wp</span>
+<a name="ln-34"></a>
+<a name="ln-35"></a>  <span class="c">! Avogadro&#39;s number [molec/mol]</span>
+<a name="ln-36"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">avogad</span> <span class="o">=</span> <span class="mf">6.02214076e23_wp</span>
+<a name="ln-37"></a>
+<a name="ln-38"></a>  <span class="c">! Universal gas constant [J/(mol K)]</span>
+<a name="ln-39"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">R_univ_gconst</span> <span class="o">=</span> <span class="n">avogad</span> <span class="o">*</span> <span class="n">k_boltz</span>
+<a name="ln-40"></a>
+<a name="ln-41"></a>  <span class="c">! -----------------------------------------</span>
+<a name="ln-42"></a>  <span class="c">!</span>
+<a name="ln-43"></a>  <span class="c">! Constants specific to the earth&#39;s atmosphere -- changeable in init() because they</span>
+<a name="ln-44"></a>  <span class="c">!   might be different on e.g. other planets</span>
+<a name="ln-45"></a>
+<a name="ln-46"></a>  <span class="c">! molecular weight of dry air [kg/mol]</span>
+<a name="ln-47"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">protected</span> <span class="kd">::</span> <span class="n">m_dry</span> <span class="o">=</span> <span class="mf">0.028964_wp</span>
+<a name="ln-48"></a>
+<a name="ln-49"></a>  <span class="c">! Gravity at Earth&#39;s surface [m/s2]</span>
+<a name="ln-50"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">protected</span> <span class="kd">::</span> <span class="n">grav</span> <span class="o">=</span> <span class="mf">9.80665_wp</span>
+<a name="ln-51"></a>
+<a name="ln-52"></a>  <span class="c">! Specific heat at constant pressure for dry air [J/(K kg)]</span>
+<a name="ln-53"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">protected</span> <span class="kd">::</span> <span class="n">cp_dry</span> <span class="o">=</span> <span class="mi">100</span><span class="mf">4.64_wp</span>
+<a name="ln-54"></a>
+<a name="ln-55"></a><span class="k">contains</span>
+<a name="ln-56"></a>  <span class="c">! -----------------------------------------</span>
+<a name="ln-57"></a>  <span class="k">subroutine </span><span class="n">init_constants</span><span class="p">(</span><span class="n">gravity</span><span class="p">,</span> <span class="n">mol_weight_dry_air</span><span class="p">,</span> <span class="n">heat_capacity_dry_air</span><span class="p">)</span>
+<a name="ln-58"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">optional</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span> <span class="kd">::</span> <span class="n">gravity</span><span class="p">,</span> <span class="n">mol_weight_dry_air</span><span class="p">,</span> <span class="n">heat_capacity_dry_air</span>
+<a name="ln-59"></a>
+<a name="ln-60"></a>    <span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">gravity</span><span class="p">))</span>               <span class="n">grav</span>   <span class="o">=</span> <span class="n">gravity</span>
+<a name="ln-61"></a>    <span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">mol_weight_dry_air</span><span class="p">))</span>    <span class="n">m_dry</span>  <span class="o">=</span> <span class="n">mol_weight_dry_air</span>
+<a name="ln-62"></a>    <span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">heat_capacity_dry_air</span><span class="p">))</span> <span class="n">cp_dry</span> <span class="o">=</span> <span class="n">heat_capacity_dry_air</span>
+<a name="ln-63"></a>
+<a name="ln-64"></a>  <span class="k">end subroutine </span><span class="n">init_constants</span>
+<a name="ln-65"></a>  <span class="c">! -----------------------------------------</span>
+<a name="ln-66"></a><span class="k">end module </span><span class="n">mo_rrtmgp_constants</span>
+</pre></div>
+
+    </section>
+    </div>
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-6"><p>RRTMGP-Fortran was developed by <br>&copy; 2022 
+</p>
+        </div>
+        <div class="col-xs-6 col-md-6">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+          </p>
+        </div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+  </body>
+</html>

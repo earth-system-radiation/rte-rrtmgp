@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
+    <meta name="author" content="" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>mo_fluxes_broadband_kernels.F90 &ndash; RTE kernels</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">RTE kernels </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            <li><a href="../lists/files.html">Source Files</a></li>
+            <li><a href="../lists/modules.html">Modules</a></li>
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+              
+            </ul>
+        
+            </li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+                                       </ul>
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+  <div class="row">
+    <h1>mo_fluxes_broadband_kernels.F90
+    <small>Source File</small>
+    </h1>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 5.7% of total for source files.">59 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_fluxes_broadband_kernels.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li class="active">mo_fluxes_broadband_kernels.F90</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#mods-0">Modules</a></h3></div>
+  <div id="mods-0" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_fluxes_broadband_kernels.html">mo_fluxes_broadband_kernels</a>
+    </div>
+  </div>
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../sourcefile/mo_fluxes_broadband_kernels.f90.html#src">mo_fluxes_broadband_kernels.F90</a>
+  </div>
+</div>
+
+</div>
+
+    </div>
+    <div class="col-md-9" id='text'>
+      
+      <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#mods-1">Modules</a></h3></div>
+  <div id="mods-1" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_fluxes_broadband_kernels.html">mo_fluxes_broadband_kernels</a>
+    </div>
+  </div>
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../sourcefile/mo_fluxes_broadband_kernels.f90.html#src">mo_fluxes_broadband_kernels.F90</a>
+  </div>
+</div>
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    <section>
+      <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="hl"><pre><span></span><a name="ln-1"></a><span class="c">! This code is part of Radiative Transfer for Energetics (RTE)</span>
+<a name="ln-2"></a><span class="c">!</span>
+<a name="ln-3"></a><span class="c">! Contacts: Robert Pincus and Eli Mlawer</span>
+<a name="ln-4"></a><span class="c">! email:  rrtmgp@aer.com</span>
+<a name="ln-5"></a><span class="c">!</span>
+<a name="ln-6"></a><span class="c">! Copyright 2015-2018,  Atmospheric and Environmental Research and</span>
+<a name="ln-7"></a><span class="c">! Regents of the University of Colorado.  All right reserved.</span>
+<a name="ln-8"></a><span class="c">!</span>
+<a name="ln-9"></a><span class="c">! Use and duplication is permitted under the terms of the</span>
+<a name="ln-10"></a><span class="c">!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause</span>
+<a name="ln-11"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
+<a name="ln-12"></a><span class="c">!&gt;</span>
+<a name="ln-13"></a><span class="c">!&gt; ## Kernels for computing broadband fluxes</span>
+<a name="ln-14"></a><span class="c">!&gt;</span>
+<a name="ln-15"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
+<a name="ln-16"></a><span class="k">module </span><span class="n">mo_fluxes_broadband_kernels</span>
+<a name="ln-17"></a>  <span class="k">use</span><span class="p">,</span> <span class="k">intrinsic</span> <span class="kd">::</span> <span class="nb">iso_c_binding</span>
+<a name="ln-18"></a><span class="nb">  </span><span class="k">use </span><span class="n">mo_rte_kind</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">wp</span>
+<a name="ln-19"></a>  <span class="k">implicit none</span>
+<a name="ln-20"></a><span class="k">  private</span>
+<a name="ln-21"></a><span class="k">  public</span> <span class="kd">::</span> <span class="n">sum_broadband</span><span class="p">,</span> <span class="n">net_broadband</span>
+<a name="ln-22"></a>
+<a name="ln-23"></a>  <span class="k">interface </span><span class="n">net_broadband</span>
+<a name="ln-24"></a>    <span class="c">!! Interface for computing net flux</span>
+<a name="ln-25"></a>    <span class="k">module procedure </span><span class="n">net_broadband_full</span><span class="p">,</span> <span class="n">net_broadband_precalc</span>
+<a name="ln-26"></a>  <span class="k">end interface </span><span class="n">net_broadband</span>
+<a name="ln-27"></a><span class="k">contains</span>
+<a name="ln-28"></a>  <span class="c">! ----------------------------------------------------------------------------</span>
+<a name="ln-29"></a>  <span class="c">!&gt;</span>
+<a name="ln-30"></a>  <span class="c">!&gt; Spectral reduction over all points</span>
+<a name="ln-31"></a>  <span class="c">!&gt;</span>
+<a name="ln-32"></a>  <span class="k">subroutine </span><span class="n">sum_broadband</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">,</span> <span class="n">ngpt</span><span class="p">,</span> <span class="n">spectral_flux</span><span class="p">,</span> <span class="n">broadband_flux</span><span class="p">)</span> <span class="k">bind</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rte_sum_broadband&quot;</span><span class="p">)</span>
+<a name="ln-33"></a>    <span class="kt">integer</span><span class="p">,</span>                               <span class="k">intent</span><span class="p">(</span><span class="n">in</span> <span class="p">)</span> <span class="kd">::</span> <span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">,</span> <span class="n">ngpt</span>
+<a name="ln-34"></a>      <span class="c">!! Array sizes</span>
+<a name="ln-35"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">,</span> <span class="n">ngpt</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span> <span class="p">)</span> <span class="kd">::</span> <span class="n">spectral_flux</span>
+<a name="ln-36"></a>      <span class="c">!! Spectrally-resolved flux</span>
+<a name="ln-37"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">),</span>       <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="kd">::</span> <span class="n">broadband_flux</span>
+<a name="ln-38"></a>      <span class="c">!! Sum of spectrally-resolved flux over `ngpt`</span>
+<a name="ln-39"></a>
+<a name="ln-40"></a>    <span class="kt">integer</span>  <span class="kd">::</span> <span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">,</span> <span class="n">igpt</span>
+<a name="ln-41"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">)</span> <span class="kd">::</span> <span class="n">bb_flux_s</span> <span class="c">! local scalar version</span>
+<a name="ln-42"></a>
+<a name="ln-43"></a>    <span class="c">!$acc enter data copyin(spectral_flux) create(broadband_flux)</span>
+<a name="ln-44"></a>    <span class="c">!$omp target enter data map(to:spectral_flux) map(alloc:broadband_flux)</span>
+<a name="ln-45"></a>    <span class="c">!$acc parallel loop gang vector collapse(2)</span>
+<a name="ln-46"></a>    <span class="c">!$omp target teams distribute parallel do simd collapse(2)</span>
+<a name="ln-47"></a>    <span class="k">do </span><span class="n">ilev</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nlev</span>
+<a name="ln-48"></a>      <span class="k">do </span><span class="n">icol</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ncol</span>
+<a name="ln-49"></a>
+<a name="ln-50"></a>        <span class="n">bb_flux_s</span> <span class="o">=</span> <span class="mf">0.0_wp</span>
+<a name="ln-51"></a>
+<a name="ln-52"></a>        <span class="k">do </span><span class="n">igpt</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ngpt</span>
+<a name="ln-53"></a>          <span class="n">bb_flux_s</span> <span class="o">=</span> <span class="n">bb_flux_s</span> <span class="o">+</span> <span class="n">spectral_flux</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">,</span> <span class="n">igpt</span><span class="p">)</span>
+<a name="ln-54"></a>        <span class="k">end do</span>
+<a name="ln-55"></a>
+<a name="ln-56"></a><span class="k">        </span><span class="n">broadband_flux</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">)</span> <span class="o">=</span> <span class="n">bb_flux_s</span>
+<a name="ln-57"></a>      <span class="k">end do</span>
+<a name="ln-58"></a><span class="k">    end do</span>
+<a name="ln-59"></a>    <span class="c">!$acc exit data delete(spectral_flux) copyout(broadband_flux)</span>
+<a name="ln-60"></a>    <span class="c">!$omp target exit data map(release:spectral_flux) map(from:broadband_flux)</span>
+<a name="ln-61"></a>  <span class="k">end subroutine </span><span class="n">sum_broadband</span>
+<a name="ln-62"></a>  <span class="c">! ----------------------------------------------------------------------------</span>
+<a name="ln-63"></a>  <span class="c">!&gt;</span>
+<a name="ln-64"></a>  <span class="c">!&gt; Spectral reduction over all points for net flux</span>
+<a name="ln-65"></a>  <span class="c">!&gt;</span>
+<a name="ln-66"></a>  <span class="k">subroutine </span><span class="n">net_broadband_full</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">,</span> <span class="n">ngpt</span><span class="p">,</span> <span class="n">spectral_flux_dn</span><span class="p">,</span> <span class="n">spectral_flux_up</span><span class="p">,</span> <span class="n">broadband_flux_net</span><span class="p">)</span> <span class="p">&amp;</span>
+<a name="ln-67"></a>    <span class="k">bind</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rte_net_broadband_full&quot;</span><span class="p">)</span>
+<a name="ln-68"></a>    <span class="kt">integer</span><span class="p">,</span>                               <span class="k">intent</span><span class="p">(</span><span class="n">in</span> <span class="p">)</span> <span class="kd">::</span> <span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">,</span> <span class="n">ngpt</span>
+<a name="ln-69"></a>      <span class="c">!! Array sizes</span>
+<a name="ln-70"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">,</span> <span class="n">ngpt</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span> <span class="p">)</span> <span class="kd">::</span> <span class="n">spectral_flux_dn</span><span class="p">,</span> <span class="n">spectral_flux_up</span>
+<a name="ln-71"></a>      <span class="c">!! Spectrally-resolved flux up and down</span>
+<a name="ln-72"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">),</span>       <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="kd">::</span> <span class="n">broadband_flux_net</span>
+<a name="ln-73"></a>      <span class="c">!! Net (down minus up) summed over `ngpt`</span>
+<a name="ln-74"></a>
+<a name="ln-75"></a>    <span class="kt">integer</span>  <span class="kd">::</span> <span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">,</span> <span class="n">igpt</span>
+<a name="ln-76"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">)</span> <span class="kd">::</span> <span class="n">diff</span>
+<a name="ln-77"></a>
+<a name="ln-78"></a>    <span class="c">!$acc enter data copyin(spectral_flux_dn, spectral_flux_up) create(broadband_flux_net)</span>
+<a name="ln-79"></a>    <span class="c">!$omp target enter data map(to:spectral_flux_dn, spectral_flux_up) map(alloc:broadband_flux_net)</span>
+<a name="ln-80"></a>    <span class="c">!$acc parallel loop collapse(2)</span>
+<a name="ln-81"></a>    <span class="c">!$omp target teams distribute parallel do simd collapse(2)</span>
+<a name="ln-82"></a>    <span class="k">do </span><span class="n">ilev</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nlev</span>
+<a name="ln-83"></a>      <span class="k">do </span><span class="n">icol</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ncol</span>
+<a name="ln-84"></a>        <span class="n">diff</span> <span class="o">=</span> <span class="n">spectral_flux_dn</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">,</span> <span class="mi">1</span>   <span class="p">)</span> <span class="o">-</span> <span class="n">spectral_flux_up</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">,</span>     <span class="mi">1</span><span class="p">)</span>
+<a name="ln-85"></a>        <span class="n">broadband_flux_net</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">)</span> <span class="o">=</span> <span class="n">diff</span>
+<a name="ln-86"></a>      <span class="k">end do</span>
+<a name="ln-87"></a><span class="k">    end do</span>
+<a name="ln-88"></a>    <span class="c">!$acc parallel loop collapse(3)</span>
+<a name="ln-89"></a>    <span class="c">!$omp target teams distribute parallel do simd collapse(3)</span>
+<a name="ln-90"></a>    <span class="k">do </span><span class="n">igpt</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ngpt</span>
+<a name="ln-91"></a>      <span class="k">do </span><span class="n">ilev</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nlev</span>
+<a name="ln-92"></a>        <span class="k">do </span><span class="n">icol</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ncol</span>
+<a name="ln-93"></a>          <span class="n">diff</span> <span class="o">=</span> <span class="n">spectral_flux_dn</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">,</span> <span class="n">igpt</span><span class="p">)</span> <span class="o">-</span> <span class="n">spectral_flux_up</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">,</span> <span class="n">igpt</span><span class="p">)</span>
+<a name="ln-94"></a>          <span class="c">!$acc atomic update</span>
+<a name="ln-95"></a>          <span class="c">!$omp atomic update</span>
+<a name="ln-96"></a>          <span class="n">broadband_flux_net</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">)</span> <span class="o">=</span> <span class="n">broadband_flux_net</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span><span class="p">)</span> <span class="o">+</span> <span class="n">diff</span>
+<a name="ln-97"></a>        <span class="k">end do</span>
+<a name="ln-98"></a><span class="k">      end do</span>
+<a name="ln-99"></a><span class="k">    end do</span>
+<a name="ln-100"></a>    <span class="c">!$acc exit data delete(spectral_flux_dn, spectral_flux_up) copyout(broadband_flux_net)</span>
+<a name="ln-101"></a>    <span class="c">!$omp target exit data map(release:spectral_flux_dn, spectral_flux_up) map(from:broadband_flux_net)</span>
+<a name="ln-102"></a>  <span class="k">end subroutine </span><span class="n">net_broadband_full</span>
+<a name="ln-103"></a>  <span class="c">! ----------------------------------------------------------------------------</span>
+<a name="ln-104"></a>  <span class="c">!&gt;</span>
+<a name="ln-105"></a>  <span class="c">!&gt; Net flux when bradband flux up and down are already available</span>
+<a name="ln-106"></a>  <span class="c">!&gt;</span>
+<a name="ln-107"></a>  <span class="k">subroutine </span><span class="n">net_broadband_precalc</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">,</span> <span class="n">flux_dn</span><span class="p">,</span> <span class="n">flux_up</span><span class="p">,</span> <span class="n">broadband_flux_net</span><span class="p">)</span> <span class="p">&amp;</span>
+<a name="ln-108"></a>    <span class="k">bind</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rte_net_broadband_precalc&quot;</span><span class="p">)</span>
+<a name="ln-109"></a>    <span class="kt">integer</span><span class="p">,</span>                         <span class="k">intent</span><span class="p">(</span><span class="n">in</span> <span class="p">)</span> <span class="kd">::</span> <span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span>
+<a name="ln-110"></a>      <span class="c">!! Array sizes</span>
+<a name="ln-111"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span> <span class="p">)</span> <span class="kd">::</span> <span class="n">flux_dn</span><span class="p">,</span> <span class="n">flux_up</span>
+<a name="ln-112"></a>      <span class="c">!! Broadband downward and upward fluxes</span>
+<a name="ln-113"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">dimension</span><span class="p">(</span><span class="n">ncol</span><span class="p">,</span> <span class="n">nlev</span><span class="p">),</span> <span class="k">intent</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="kd">::</span> <span class="n">broadband_flux_net</span>
+<a name="ln-114"></a>      <span class="c">!! Net (down minus up)</span>
+<a name="ln-115"></a>
+<a name="ln-116"></a>    <span class="kt">integer</span>  <span class="kd">::</span> <span class="n">icol</span><span class="p">,</span> <span class="n">ilev</span>
+<a name="ln-117"></a>    <span class="c">!$acc enter data copyin(flux_dn, flux_up) create(broadband_flux_net)</span>
+<a name="ln-118"></a>    <span class="c">!$omp target enter data map(to:flux_dn, flux_up) map(alloc:broadband_flux_net)</span>
+<a name="ln-119"></a>    <span class="c">!$acc parallel loop collapse(2)</span>
+<a name="ln-120"></a>    <span class="c">!$omp target teams distribute parallel do simd collapse(2)</span>
+<a name="ln-121"></a>    <span class="k">do </span><span class="n">ilev</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nlev</span>
+<a name="ln-122"></a>      <span class="k">do </span><span class="n">icol</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ncol</span>
+<a name="ln-123"></a>         <span class="n">broadband_flux_net</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="n">ilev</span><span class="p">)</span> <span class="o">=</span> <span class="n">flux_dn</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="n">ilev</span><span class="p">)</span> <span class="o">-</span> <span class="n">flux_up</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="n">ilev</span><span class="p">)</span>
+<a name="ln-124"></a>       <span class="k">end do</span>
+<a name="ln-125"></a><span class="k">    end do</span>
+<a name="ln-126"></a>    <span class="c">!$acc exit data delete(flux_dn, flux_up) copyout(broadband_flux_net)</span>
+<a name="ln-127"></a>    <span class="c">!$omp target exit data map(release:flux_dn, flux_up) map(from:broadband_flux_net)</span>
+<a name="ln-128"></a>  <span class="k">end subroutine </span><span class="n">net_broadband_precalc</span>
+<a name="ln-129"></a>  <span class="c">! ----------------------------------------------------------------------------</span>
+<a name="ln-130"></a><span class="k">end module </span><span class="n">mo_fluxes_broadband_kernels</span>
+</pre></div>
+
+    </section>
+    </div>
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by <br>&copy; 2022 
+</p>
+        </div>
+        <div class="col-xs-6 col-md-6">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+          </p>
+        </div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+  </body>
+</html>

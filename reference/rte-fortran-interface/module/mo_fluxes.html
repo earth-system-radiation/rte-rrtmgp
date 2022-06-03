@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
+    <meta name="author" content="" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>mo_fluxes &ndash; RTE-Fortran</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">RTE-Fortran </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            <li><a href="../lists/files.html">Source Files</a></li>
+            <li><a href="../lists/modules.html">Modules</a></li>
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+                   <li><a href="../lists/types.html">Derived Types</a></li>
+       
+            </ul>
+        
+            </li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+                             <li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+          </ul>
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+  <div class="row">
+    <h1>mo_fluxes 
+    <small>Module</small>
+    </h1>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 5.7% of total for modules and submodules.">93 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_fluxes.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li><a href='../sourcefile/mo_fluxes.f90.html'>mo_fluxes.F90</a></li>
+     <li class="active">mo_fluxes</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#types-0">Derived Types</a></h3></div>
+  <div id="types-0" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_fluxes.html#type-ty_fluxes">ty_fluxes</a>
+      <a class="list-group-item" href="../module/mo_fluxes.html#type-ty_fluxes_broadband">ty_fluxes_broadband</a>
+    </div>
+  </div>
+</div>
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2 id="compute-output-quantities-from-spectrally-resolved-flux-profiles">Compute output quantities from spectrally-resolved flux profiles</h2>
+<p>This module contains an abstract class and a broadband implmentation that sums over all spectral points
+   The abstract base class defines the routines that extenstions must implement: <code>reduce()</code> and <code>are_desired()</code>
+   The intent is for users to extend it as required, using mo_flxues_broadband as an example</p>
+<br>        <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Uses</h3>
+      </div>
+      <ul class="list-group">
+      <li class="list-group-item">
+  <ul class="list-inline">
+    <li><a href='../module/mo_rte_kind.html'>mo_rte_kind</a></li>
+    <li><a href='../module/mo_rte_util_array.html'>mo_rte_util_array</a></li>
+    <li>mo_fluxes_broadband_kernels</li>
+    <li><a href='../module/mo_optical_props.html'>mo_optical_props</a></li>
+    <li><a href='../module/mo_rte_config.html'>mo_rte_config</a></li>
+  </ul>
+      </li>
+      <li class="list-group-item">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: module~~mo_fluxes~~UsesGraph Pages: 1 -->
+<svg id="modulemo_fluxesUsesGraph" width="641pt" height="203pt"
+ viewBox="0.00 0.00 641.00 202.86" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~mo_fluxes~~UsesGraph" class="graph" transform="scale(1.1 1.1) rotate(0) translate(4 219.12)">
+<title>module~~mo_fluxes~~UsesGraph</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-219.12 701,-219.12 701,4 -4,4"/>
+<!-- module~mo_fluxes -->
+<g id="module~~mo_fluxes~~UsesGraph_node1" class="node">
+<title>module~mo_fluxes</title>
+<polygon fill="none" stroke="black" points="697,-155.12 630,-155.12 630,-131.12 697,-131.12 697,-155.12"/>
+<text text-anchor="middle" x="663.5" y="-140.72" font-family="Helvetica,sans-Serif" font-size="10.50">mo_fluxes</text>
+</g>
+<!-- mo_fluxes_broadband_kernels -->
+<g id="module~~mo_fluxes~~UsesGraph_node2" class="node">
+<title>mo_fluxes_broadband_kernels</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="594,-215.12 420,-215.12 420,-191.12 594,-191.12 594,-215.12"/>
+<text text-anchor="middle" x="507" y="-200.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_fluxes_broadband_kernels</text>
+</g>
+<!-- module~mo_fluxes&#45;&gt;mo_fluxes_broadband_kernels -->
+<g id="module~~mo_fluxes~~UsesGraph_edge1" class="edge">
+<title>module~mo_fluxes&#45;&gt;mo_fluxes_broadband_kernels</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M640.41,-155.26C627.19,-162.23 609.92,-170.81 594,-177.12 584.11,-181.04 573.38,-184.71 562.97,-188"/>
+<polygon fill="#000000" stroke="#000000" points="561.65,-184.74 553.12,-191.02 563.71,-191.43 561.65,-184.74"/>
+</g>
+<!-- module~mo_optical_props -->
+<g id="module~~mo_fluxes~~UsesGraph_node3" class="node">
+<title>module~mo_optical_props</title>
+<g id="a_module~~mo_fluxes~~UsesGraph_node3"><a xlink:href=".././module/mo_optical_props.html" xlink:title="mo_optical_props">
+<polygon fill="#337ab7" stroke="#337ab7" points="560,-135.12 454,-135.12 454,-111.12 560,-111.12 560,-135.12"/>
+<text text-anchor="middle" x="507" y="-120.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props</text>
+</a>
+</g>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_optical_props -->
+<g id="module~~mo_fluxes~~UsesGraph_edge2" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_optical_props</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M629.73,-138.88C612.46,-136.64 590.68,-133.82 570.33,-131.19"/>
+<polygon fill="#000000" stroke="#000000" points="570.54,-127.69 560.17,-129.87 569.64,-134.63 570.54,-127.69"/>
+</g>
+<!-- module~mo_rte_config -->
+<g id="module~~mo_fluxes~~UsesGraph_node4" class="node">
+<title>module~mo_rte_config</title>
+<g id="a_module~~mo_fluxes~~UsesGraph_node4"><a xlink:href=".././module/mo_rte_config.html" xlink:title="mo_rte_config">
+<polygon fill="#337ab7" stroke="#337ab7" points="353,-195.12 265,-195.12 265,-171.12 353,-171.12 353,-195.12"/>
+<text text-anchor="middle" x="309" y="-180.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config</text>
+</a>
+</g>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_rte_config -->
+<g id="module~~mo_fluxes~~UsesGraph_edge3" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_rte_config</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M629.97,-146.81C569.01,-153.73 437.07,-168.7 363.07,-177.1"/>
+<polygon fill="#000000" stroke="#000000" points="362.57,-173.63 353.03,-178.24 363.36,-180.59 362.57,-173.63"/>
+</g>
+<!-- module~mo_rte_util_array -->
+<g id="module~~mo_fluxes~~UsesGraph_node5" class="node">
+<title>module~mo_rte_util_array</title>
+<g id="a_module~~mo_fluxes~~UsesGraph_node5"><a xlink:href=".././module/mo_rte_util_array.html" xlink:title="mo_rte_util_array">
+<polygon fill="#337ab7" stroke="#337ab7" points="362,-73.12 256,-73.12 256,-49.12 362,-49.12 362,-73.12"/>
+<text text-anchor="middle" x="309" y="-58.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_util_array</text>
+</a>
+</g>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_rte_util_array -->
+<g id="module~~mo_fluxes~~UsesGraph_edge4" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_rte_util_array</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-21.12C478.68,-13.24 406.14,-31.8 357.39,-46.2"/>
+<polygon fill="#000000" stroke="#000000" points="356.26,-42.89 347.68,-49.11 358.26,-49.6 356.26,-42.89"/>
+</g>
+<!-- module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_node6" class="node">
+<title>module~mo_rte_kind</title>
+<g id="a_module~~mo_fluxes~~UsesGraph_node6"><a xlink:href=".././module/mo_rte_kind.html" xlink:title="mo_rte_kind">
+<polygon fill="#337ab7" stroke="#337ab7" points="198,-114.12 120,-114.12 120,-90.12 198,-90.12 198,-114.12"/>
+<text text-anchor="middle" x="159" y="-99.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_kind</text>
+</a>
+</g>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_edge5" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M652.98,-130.88C631.03,-103.87 573.68,-40.06 508,-21.12"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-21.12C389.56,12.46 346.38,5.23 234,-40.12 211.44,-49.22 190.68,-67.93 176.93,-82.43"/>
+<polygon fill="#000000" stroke="#000000" points="174.2,-80.22 170.04,-89.96 179.37,-84.94 174.2,-80.22"/>
+</g>
+<!-- module~mo_optical_props&#45;&gt;module~mo_rte_config -->
+<g id="module~~mo_fluxes~~UsesGraph_edge9" class="edge">
+<title>module~mo_optical_props&#45;&gt;module~mo_rte_config</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M465.73,-135.24C451.3,-139.59 434.92,-144.56 420,-149.12 399.82,-155.29 377.57,-162.16 358.39,-168.09"/>
+<polygon fill="#000000" stroke="#000000" points="357.19,-164.8 348.67,-171.1 359.26,-171.49 357.19,-164.8"/>
+</g>
+<!-- module~mo_optical_props&#45;&gt;module~mo_rte_util_array -->
+<g id="module~~mo_fluxes~~UsesGraph_edge8" class="edge">
+<title>module~mo_optical_props&#45;&gt;module~mo_rte_util_array</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M471.7,-111.1C447.33,-102.69 413.78,-91.34 384,-82.12 377.49,-80.1 370.63,-78.05 363.82,-76.07"/>
+<polygon fill="#000000" stroke="#000000" points="364.51,-72.62 353.93,-73.21 362.56,-79.35 364.51,-72.62"/>
+</g>
+<!-- module~mo_optical_props&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_edge7" class="edge">
+<title>module~mo_optical_props&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.79,-127.86C398.79,-131.8 309.82,-135.15 234,-124.12 223.75,-122.63 212.95,-120.03 202.87,-117.14"/>
+<polygon fill="#000000" stroke="#000000" points="203.65,-113.72 193.06,-114.17 201.62,-120.42 203.65,-113.72"/>
+</g>
+<!-- mo_optical_props_kernels -->
+<g id="module~~mo_fluxes~~UsesGraph_node7" class="node">
+<title>mo_optical_props_kernels</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="384,-115.12 234,-115.12 234,-91.12 384,-91.12 384,-115.12"/>
+<text text-anchor="middle" x="309" y="-100.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props_kernels</text>
+</g>
+<!-- module~mo_optical_props&#45;&gt;mo_optical_props_kernels -->
+<g id="module~~mo_fluxes~~UsesGraph_edge6" class="edge">
+<title>module~mo_optical_props&#45;&gt;mo_optical_props_kernels</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.99,-117.81C435.65,-115.94 414.54,-113.79 394.23,-111.71"/>
+<polygon fill="#000000" stroke="#000000" points="394.33,-108.21 384.02,-110.67 393.61,-115.17 394.33,-108.21"/>
+</g>
+<!-- module~mo_rte_config&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_edge10" class="edge">
+<title>module~mo_rte_config&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M266.74,-171.09C255.81,-167.24 244.22,-162.55 234,-157.12 214.98,-147.01 195.5,-132.33 181.31,-120.68"/>
+<polygon fill="#000000" stroke="#000000" points="183.52,-117.96 173.61,-114.22 179.03,-123.33 183.52,-117.96"/>
+</g>
+<!-- module~mo_rte_util_array&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_edge11" class="edge">
+<title>module~mo_rte_util_array&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M264.4,-73.2C246.7,-78.1 226.19,-83.78 208.06,-88.8"/>
+<polygon fill="#000000" stroke="#000000" points="206.97,-85.48 198.27,-91.52 208.84,-92.22 206.97,-85.48"/>
+</g>
+<!-- iso_c_binding -->
+<g id="module~~mo_fluxes~~UsesGraph_node8" class="node">
+<title>iso_c_binding</title>
+<g id="a_module~~mo_fluxes~~UsesGraph_node8"><a xlink:href="http://fortranwiki.org/fortran/show/iso_c_binding" xlink:title="iso_c_binding">
+<polygon fill="#337ab7" stroke="#337ab7" points="84,-114.12 0,-114.12 0,-90.12 84,-90.12 84,-114.12"/>
+<text text-anchor="middle" x="42" y="-99.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_c_binding</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_kind&#45;&gt;iso_c_binding -->
+<g id="module~~mo_fluxes~~UsesGraph_edge12" class="edge">
+<title>module~mo_rte_kind&#45;&gt;iso_c_binding</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M119.71,-102.12C111.62,-102.12 102.97,-102.12 94.49,-102.12"/>
+<polygon fill="#000000" stroke="#000000" points="94.29,-98.62 84.29,-102.12 94.29,-105.62 94.29,-98.62"/>
+</g>
+</g>
+</svg>
+</div><script>var panmodulemo_fluxesUsesGraph = svgPanZoom('#modulemo_fluxesUsesGraph', {zoomEnabled: true,controlIconsEnabled: true, fit: true, center: true,}); </script><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="518pt" height="32pt"
+ viewBox="0.00 0.00 517.50 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-28 513.5,-28 513.5,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,0 54,0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="145.5,-24 72.5,-24 72.5,0 145.5,0 145.5,-24"/>
+<text text-anchor="middle" x="109" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="234,-24 164,-24 164,0 234,0 234,-24"/>
+<text text-anchor="middle" x="199" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="310,-24 252,-24 252,0 310,0 310,-24"/>
+<text text-anchor="middle" x="281" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="386,-24 328,-24 328,0 386,0 386,-24"/>
+<text text-anchor="middle" x="357" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="509.5,-24 404.5,-24 404.5,0 509.5,0 509.5,-24"/>
+<text text-anchor="middle" x="457" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a submodule to the (sub)module which it is
+    descended from. Dashed arrows point from a module or program unit to 
+    modules which it uses.
+    </p>
+    </div></div></div></div>
+      </li>
+      </ul>
+    </div>
+
+        <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Used by</h3>
+      </div>
+      <ul class="list-group">
+  <li class="list-group-item">
+    <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: module~~mo_fluxes~~UsedByGraph Pages: 1 -->
+<svg id="modulemo_fluxesUsedByGraph" width="180pt" height="74pt"
+ viewBox="0.00 0.00 180.00 74.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~mo_fluxes~~UsedByGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 70)">
+<title>module~~mo_fluxes~~UsedByGraph</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-70 176,-70 176,4 -4,4"/>
+<!-- module~mo_fluxes -->
+<g id="module~~mo_fluxes~~UsedByGraph_node1" class="node">
+<title>module~mo_fluxes</title>
+<polygon fill="none" stroke="black" points="67,-45 0,-45 0,-21 67,-21 67,-45"/>
+<text text-anchor="middle" x="33.5" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50">mo_fluxes</text>
+</g>
+<!-- module~mo_rte_lw -->
+<g id="module~~mo_fluxes~~UsedByGraph_node2" class="node">
+<title>module~mo_rte_lw</title>
+<g id="a_module~~mo_fluxes~~UsedByGraph_node2"><a xlink:href=".././module/mo_rte_lw.html" xlink:title="mo_rte_lw">
+<polygon fill="#337ab7" stroke="#337ab7" points="171,-66 104,-66 104,-42 171,-42 171,-66"/>
+<text text-anchor="middle" x="137.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_lw</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;module~mo_fluxes -->
+<g id="module~~mo_fluxes~~UsedByGraph_edge1" class="edge">
+<title>module~mo_rte_lw&#45;&gt;module~mo_fluxes</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M103.95,-47.3C95.39,-45.54 86.03,-43.61 77.04,-41.76"/>
+<polygon fill="#000000" stroke="#000000" points="77.59,-38.3 67.09,-39.71 76.18,-45.16 77.59,-38.3"/>
+</g>
+<!-- module~mo_rte_sw -->
+<g id="module~~mo_fluxes~~UsedByGraph_node3" class="node">
+<title>module~mo_rte_sw</title>
+<g id="a_module~~mo_fluxes~~UsedByGraph_node3"><a xlink:href=".././module/mo_rte_sw.html" xlink:title="mo_rte_sw">
+<polygon fill="#337ab7" stroke="#337ab7" points="172,-24 103,-24 103,0 172,0 172,-24"/>
+<text text-anchor="middle" x="137.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_sw</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_sw&#45;&gt;module~mo_fluxes -->
+<g id="module~~mo_fluxes~~UsedByGraph_edge2" class="edge">
+<title>module~mo_rte_sw&#45;&gt;module~mo_fluxes</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M102.82,-18.93C94.56,-20.63 85.62,-22.48 77,-24.25"/>
+<polygon fill="#000000" stroke="#000000" points="76.19,-20.84 67.11,-26.29 77.61,-27.7 76.19,-20.84"/>
+</g>
+</g>
+</svg>
+</div><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="518pt" height="32pt"
+ viewBox="0.00 0.00 517.50 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-28 513.5,-28 513.5,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,0 54,0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="145.5,-24 72.5,-24 72.5,0 145.5,0 145.5,-24"/>
+<text text-anchor="middle" x="109" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="234,-24 164,-24 164,0 234,0 234,-24"/>
+<text text-anchor="middle" x="199" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="310,-24 252,-24 252,0 310,0 310,-24"/>
+<text text-anchor="middle" x="281" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="386,-24 328,-24 328,0 386,0 386,-24"/>
+<text text-anchor="middle" x="357" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="509.5,-24 404.5,-24 404.5,0 509.5,0 509.5,-24"/>
+<text text-anchor="middle" x="457" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a submodule to the (sub)module which it is
+    descended from. Dashed arrows point from a module or program unit to 
+    modules which it uses.
+    </p>
+    </div></div></div></div>
+  </li>
+      </ul>
+    </div>
+
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#types-1">Derived Types</a></h3></div>
+  <div id="types-1" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_fluxes.html#type-ty_fluxes">ty_fluxes</a>
+      <a class="list-group-item" href="../module/mo_fluxes.html#type-ty_fluxes_broadband">ty_fluxes_broadband</a>
+    </div>
+  </div>
+</div>
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+
+    
+    
+
+    
+    <section>
+     <h2>Derived Types</h2>
+     <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="type-ty_fluxes"></span><h3>type, public, abstract :: <a href='../type/ty_fluxes.html'>ty_fluxes</a>  </h3></div>
+  <div class="panel-body">
+    <p>Abstract base class:
+  <code>reduce()</code> function accepts spectral flux profiles, computes desired outputs
+  <code>are_desired()</code> returns a logical</p>
+     
+     <h4>Type-Bound Procedures</h4>
+      <table class="table table-striped varlist">
+      <tbody>
+       <tr><td>procedure(are_desired_abstract), public :: <strong><a href='../type/ty_fluxes.html#boundprocedure-are_desired'>are_desired</a></strong>  </td>
+       <td></td></tr>
+       <tr><td>procedure(reduce_abstract), public :: <strong><a href='../type/ty_fluxes.html#boundprocedure-reduce'>reduce</a></strong>  </td>
+       <td></td></tr>
+       </tbody>
+       </table>
+  </div>
+</div>
+
+     <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="type-ty_fluxes_broadband"></span><h3>type, public, extends(<a href='../type/ty_fluxes.html'>ty_fluxes</a>) :: <a href='../type/ty_fluxes_broadband.html'>ty_fluxes_broadband</a>  </h3></div>
+  <div class="panel-body">
+    <p>Class implementing broadband integration for the complete flux profile.
+  Data components are pointers so results can be written directly into memory</p>
+     <h4>Components</h4>
+    <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Visibility</th><th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" id="variable-flux_dn"></span>real(kind=wp),</td>
+<td>public,</td>  <td>dimension(:,:), pointer</td><td>::</td>
+  <td><strong>flux_dn</strong></td><td>=> </td><td>NULL()</td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-flux_dn_dir"></span>real(kind=wp),</td>
+<td>public,</td>  <td>dimension(:,:), pointer</td><td>::</td>
+  <td><strong>flux_dn_dir</strong></td><td>=> </td><td>NULL()</td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-flux_net"></span>real(kind=wp),</td>
+<td>public,</td>  <td>dimension(:,:), pointer</td><td>::</td>
+  <td><strong>flux_net</strong></td><td>=> </td><td>NULL()</td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-flux_up"></span>real(kind=wp),</td>
+<td>public,</td>  <td>dimension(:,:), pointer</td><td>::</td>
+  <td><strong>flux_up</strong></td><td>=> </td><td>NULL()</td><td></td>
+</tr>
+</tbody>
+</table>
+
+     
+     <h4>Type-Bound Procedures</h4>
+      <table class="table table-striped varlist">
+      <tbody>
+       <tr><td>procedure, public :: <strong><a href='../type/ty_fluxes_broadband.html#boundprocedure-are_desired~2'>are_desired</a></strong>  => are_desired_broadband </td>
+       <td></td></tr>
+       <tr><td>procedure, public :: <strong><a href='../type/ty_fluxes_broadband.html#boundprocedure-reduce~2'>reduce</a></strong>  => reduce_broadband </td>
+       <td></td></tr>
+       </tbody>
+       </table>
+  </div>
+</div>
+
+    </section>
+  <br>
+    
+
+    
+    </div>
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by <br>&copy; 2022 
+</p>
+        </div>
+        <div class="col-xs-6 col-md-6">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+          </p>
+        </div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+  </body>
+</html>

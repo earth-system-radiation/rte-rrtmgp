@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
+    <meta name="author" content="" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>mo_rte_lw &ndash; RTE-Fortran</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">RTE-Fortran </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            <li><a href="../lists/files.html">Source Files</a></li>
+            <li><a href="../lists/modules.html">Modules</a></li>
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+                   <li><a href="../lists/types.html">Derived Types</a></li>
+       
+            </ul>
+        
+            </li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+                             <li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+          </ul>
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+  <div class="row">
+    <h1>mo_rte_lw 
+    <small>Module</small>
+    </h1>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="12.3% of total for modules and submodules.">201 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_rte_lw.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li><a href='../sourcefile/mo_rte_lw.f90.html'>mo_rte_lw.F90</a></li>
+     <li class="active">mo_rte_lw</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#funcs-0">Functions</a></h3></div>
+  <div id="funcs-0" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_rte_lw.html#proc-rte_lw">rte_lw</a>
+    </div>
+  </div>
+</div>
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <p>Compute longwave radiative fluxes</p>
+<p>Contains a single routine to compute direct and diffuse fluxes of solar radiation given</p>
+<ul>
+<li>atmospheric optical properties, spectrally-resolved via one of the sub-classes of
+    <a href="../module/mo_optical_props.html#type-ty_optical_props_arry">ty_optical_props_arry</a> in module <a href="../module/mo_optical_props.html">mo_optical_props</a></li>
+<li>information about vertical ordering</li>
+<li>internal Planck source functions, defined per g-point on the same spectral grid at the atmosphere,
+    via <a href="../module/mo_source_functions.html#type-ty_source_func_lw">ty_source_func_lw</a> in module <a href="../module/mo_source_functions.html">mo_source_functions</a></li>
+<li>boundary conditions: surface emissivity defined per band</li>
+<li>optionally, a boundary condition for incident diffuse radiation</li>
+<li>optionally, an integer number of angles at which to do Gaussian quadrature if scattering is neglected</li>
+</ul>
+<p>If optical properties are supplied via class ty_optical_props_1scl (absorption optical thickenss only)
+   (<a href="../module/mo_optical_props.html#type-ty_optical_props_1scl">ty_optical_props_1scl</a> in module <a href="../module/mo_optical_props.html">mo_optical_props</a>)
+   then an emission/absorption solver is called.
+   If optical properties are supplied via class ty_optical_props_2str
+   (<a href="../module/mo_optical_props.html#type-ty_optical_props_2str">ty_optical_props_2str</a> in module <a href="../module/mo_optical_props.html">mo_optical_props</a>)
+   fluxes are computed via a rescaling by default or, optionally, using two-stream calculations and adding.</p>
+<p>Users must ensure that emissivity is on the same spectral grid as the optical properties.</p>
+<p>Final output is via user-extensible ty_fluxes
+(<a href="../module/mo_fluxes.html#type-ty_fluxes">ty_fluxes</a> in module <a href="../module/mo_fluxes.html">mo_fluxes</a>)
+which must reduce the detailed spectral fluxes to whatever summary the user needs
+The routine does error checking and choses which lower-level kernel to invoke based on
+  what kinds of optical properties are supplied</p>
+<br>        <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Uses</h3>
+      </div>
+      <ul class="list-group">
+      <li class="list-group-item">
+  <ul class="list-inline">
+    <li><a href='../module/mo_rte_kind.html'>mo_rte_kind</a></li>
+    <li><a href='../module/mo_source_functions.html'>mo_source_functions</a></li>
+    <li><a href='../module/mo_rte_util_array.html'>mo_rte_util_array</a></li>
+    <li>mo_rte_solver_kernels</li>
+    <li><a href='../module/mo_optical_props.html'>mo_optical_props</a></li>
+    <li><a href='../module/mo_fluxes.html'>mo_fluxes</a></li>
+    <li><a href='../module/mo_rte_config.html'>mo_rte_config</a></li>
+  </ul>
+      </li>
+      <li class="list-group-item">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: module~~mo_rte_lw~~UsesGraph Pages: 1 -->
+<svg id="modulemo_rte_lwUsesGraph" width="641pt" height="232pt"
+ viewBox="0.00 0.00 641.00 231.65" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="module~~mo_rte_lw~~UsesGraph" class="graph" transform="scale(1.36 1.36) rotate(0) translate(4 311.49)">
+<title>module~~mo_rte_lw~~UsesGraph</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-311.49 869,-311.49 869,4 -4,4"/>
+<!-- module~mo_rte_lw -->
+<g id="module~~mo_rte_lw~~UsesGraph_node1" class="node">
+<title>module~mo_rte_lw</title>
+<polygon fill="none" stroke="black" points="865,-204 798,-204 798,-180 865,-180 865,-204"/>
+<text text-anchor="middle" x="831.5" y="-189.6" font-family="Helvetica,sans-Serif" font-size="10.50">mo_rte_lw</text>
+</g>
+<!-- module~mo_fluxes -->
+<g id="module~~mo_rte_lw~~UsesGraph_node2" class="node">
+<title>module~mo_fluxes</title>
+<g id="a_module~~mo_rte_lw~~UsesGraph_node2"><a xlink:href=".././module/mo_fluxes.html" xlink:title="mo_fluxes">
+<polygon fill="#337ab7" stroke="#337ab7" points="729.5,-184 662.5,-184 662.5,-160 729.5,-160 729.5,-184"/>
+<text text-anchor="middle" x="696" y="-169.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_fluxes</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;module~mo_fluxes -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge1" class="edge">
+<title>module~mo_rte_lw&#45;&gt;module~mo_fluxes</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M797.84,-187.11C780.39,-184.49 758.68,-181.24 739.88,-178.42"/>
+<polygon fill="#000000" stroke="#000000" points="740.19,-174.93 729.78,-176.91 739.15,-181.85 740.19,-174.93"/>
+</g>
+<!-- module~mo_optical_props -->
+<g id="module~~mo_rte_lw~~UsesGraph_node3" class="node">
+<title>module~mo_optical_props</title>
+<g id="a_module~~mo_rte_lw~~UsesGraph_node3"><a xlink:href=".././module/mo_optical_props.html" xlink:title="mo_optical_props">
+<polygon fill="#337ab7" stroke="#337ab7" points="560,-184 454,-184 454,-160 560,-160 560,-184"/>
+<text text-anchor="middle" x="507" y="-169.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;module~mo_optical_props -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge2" class="edge">
+<title>module~mo_rte_lw&#45;&gt;module~mo_optical_props</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M797.78,-199.29C770.88,-204.71 731.68,-211.29 697,-212"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M695,-212C669.64,-212.52 607.94,-198.17 562.31,-186.52"/>
+<polygon fill="#000000" stroke="#000000" points="563.11,-183.11 552.55,-184 561.36,-189.89 563.11,-183.11"/>
+</g>
+<!-- module~mo_source_functions -->
+<g id="module~~mo_rte_lw~~UsesGraph_node4" class="node">
+<title>module~mo_source_functions</title>
+<g id="a_module~~mo_rte_lw~~UsesGraph_node4"><a xlink:href=".././module/mo_source_functions.html" xlink:title="mo_source_functions">
+<polygon fill="#337ab7" stroke="#337ab7" points="758,-264 634,-264 634,-240 758,-240 758,-264"/>
+<text text-anchor="middle" x="696" y="-249.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_source_functions</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;module~mo_source_functions -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge3" class="edge">
+<title>module~mo_rte_lw&#45;&gt;module~mo_source_functions</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M807.26,-204.11C794.1,-210.83 777.27,-219.17 762,-226 754.35,-229.42 746.1,-232.89 738.14,-236.12"/>
+<polygon fill="#000000" stroke="#000000" points="736.6,-232.97 728.62,-239.94 739.21,-239.47 736.6,-232.97"/>
+</g>
+<!-- module~mo_rte_config -->
+<g id="module~~mo_rte_lw~~UsesGraph_node5" class="node">
+<title>module~mo_rte_config</title>
+<g id="a_module~~mo_rte_lw~~UsesGraph_node5"><a xlink:href=".././module/mo_rte_config.html" xlink:title="mo_rte_config">
+<polygon fill="#337ab7" stroke="#337ab7" points="353,-142 265,-142 265,-118 353,-118 353,-142"/>
+<text text-anchor="middle" x="309" y="-127.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;module~mo_rte_config -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge4" class="edge">
+<title>module~mo_rte_lw&#45;&gt;module~mo_rte_config</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M813.5,-179.94C776.07,-154.24 682.78,-94.92 594,-76 518.36,-59.88 495.33,-58.51 420,-76 389.72,-83.03 358.17,-99.63 336.66,-112.58"/>
+<polygon fill="#000000" stroke="#000000" points="334.76,-109.64 328.09,-117.87 338.44,-115.6 334.76,-109.64"/>
+</g>
+<!-- module~mo_rte_util_array -->
+<g id="module~~mo_rte_lw~~UsesGraph_node6" class="node">
+<title>module~mo_rte_util_array</title>
+<g id="a_module~~mo_rte_lw~~UsesGraph_node6"><a xlink:href=".././module/mo_rte_util_array.html" xlink:title="mo_rte_util_array">
+<polygon fill="#337ab7" stroke="#337ab7" points="362,-264 256,-264 256,-240 362,-240 362,-264"/>
+<text text-anchor="middle" x="309" y="-249.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_util_array</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;module~mo_rte_util_array -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge5" class="edge">
+<title>module~mo_rte_lw&#45;&gt;module~mo_rte_util_array</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M695,-212C611.91,-213.71 590.15,-199.38 508,-212"/>
+</g>
+<!-- mo_rte_solver_kernels -->
+<g id="module~~mo_rte_lw~~UsesGraph_node7" class="node">
+<title>mo_rte_solver_kernels</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="762,-24 630,-24 630,0 762,0 762,-24"/>
+<text text-anchor="middle" x="696" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_solver_kernels</text>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;mo_rte_solver_kernels -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge6" class="edge">
+<title>module~mo_rte_lw&#45;&gt;mo_rte_solver_kernels</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M828.33,-179.81C822.61,-151.18 804.58,-78.99 762,-38 758.32,-34.46 754.09,-31.37 749.6,-28.7"/>
+<polygon fill="#000000" stroke="#000000" points="751.19,-25.58 740.71,-24.04 747.94,-31.78 751.19,-25.58"/>
+</g>
+<!-- module~mo_rte_kind -->
+<g id="module~~mo_rte_lw~~UsesGraph_node8" class="node">
+<title>module~mo_rte_kind</title>
+<g id="a_module~~mo_rte_lw~~UsesGraph_node8"><a xlink:href=".././module/mo_rte_kind.html" xlink:title="mo_rte_kind">
+<polygon fill="#337ab7" stroke="#337ab7" points="198,-182 120,-182 120,-158 198,-158 198,-182"/>
+<text text-anchor="middle" x="159" y="-167.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_kind</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge7" class="edge">
+<title>module~mo_rte_lw&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M824.29,-204.27C814.13,-222.87 792.02,-257.68 762,-273 661.16,-324.44 621.08,-286.61 508,-292"/>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_optical_props -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge9" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_optical_props</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M662.43,-172C637.14,-172 601.31,-172 570.54,-172"/>
+<polygon fill="#000000" stroke="#000000" points="570.32,-168.5 560.32,-172 570.32,-175.5 570.32,-168.5"/>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_rte_config -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge10" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_rte_config</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-90C478.71,-85.75 409.68,-102.22 361.3,-115.31"/>
+<polygon fill="#000000" stroke="#000000" points="360.34,-111.94 351.62,-117.95 362.19,-118.69 360.34,-111.94"/>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_rte_util_array -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge11" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_rte_util_array</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M662.45,-180.17C625.31,-189.21 562.64,-203.61 508,-212"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-212C460.78,-218.94 410.2,-229.33 371.75,-237.78"/>
+<polygon fill="#000000" stroke="#000000" points="370.75,-234.42 361.75,-240 372.27,-241.25 370.75,-234.42"/>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge12" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M679.48,-159.94C660.39,-145.7 626.53,-122.28 594,-109 557.76,-94.21 546.68,-96.02 508,-90"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-90C386.26,-71.37 346.56,-64.1 234,-109 211.69,-117.9 191.02,-136.14 177.23,-150.37"/>
+<polygon fill="#000000" stroke="#000000" points="174.58,-148.08 170.31,-157.78 179.7,-152.86 174.58,-148.08"/>
+</g>
+<!-- mo_fluxes_broadband_kernels -->
+<g id="module~~mo_rte_lw~~UsesGraph_node11" class="node">
+<title>mo_fluxes_broadband_kernels</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="594,-142 420,-142 420,-118 594,-118 594,-142"/>
+<text text-anchor="middle" x="507" y="-127.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_fluxes_broadband_kernels</text>
+</g>
+<!-- module~mo_fluxes&#45;&gt;mo_fluxes_broadband_kernels -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge8" class="edge">
+<title>module~mo_fluxes&#45;&gt;mo_fluxes_broadband_kernels</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M662.43,-164.68C637.51,-159.09 602.38,-151.2 571.91,-144.35"/>
+<polygon fill="#000000" stroke="#000000" points="572.31,-140.86 561.78,-142.08 570.77,-147.69 572.31,-140.86"/>
+</g>
+<!-- module~mo_optical_props&#45;&gt;module~mo_rte_config -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge16" class="edge">
+<title>module~mo_optical_props&#45;&gt;module~mo_rte_config</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.99,-160.86C426.01,-154.86 391.57,-147.48 363.38,-141.44"/>
+<polygon fill="#000000" stroke="#000000" points="363.81,-137.95 353.3,-139.28 362.35,-144.8 363.81,-137.95"/>
+</g>
+<!-- module~mo_optical_props&#45;&gt;module~mo_rte_util_array -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge15" class="edge">
+<title>module~mo_optical_props&#45;&gt;module~mo_rte_util_array</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.97,-183.64C442.37,-187.33 430.44,-192.06 420,-198 401.14,-208.74 402.95,-220.42 384,-231 380.09,-233.18 375.94,-235.15 371.67,-236.93"/>
+<polygon fill="#000000" stroke="#000000" points="370.3,-233.71 362.19,-240.52 372.78,-240.25 370.3,-233.71"/>
+</g>
+<!-- module~mo_optical_props&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge14" class="edge">
+<title>module~mo_optical_props&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.83,-171.7C387.3,-171.31 273.17,-170.65 208.47,-170.28"/>
+<polygon fill="#000000" stroke="#000000" points="208.16,-166.78 198.14,-170.22 208.12,-173.78 208.16,-166.78"/>
+</g>
+<!-- mo_optical_props_kernels -->
+<g id="module~~mo_rte_lw~~UsesGraph_node9" class="node">
+<title>mo_optical_props_kernels</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="384,-222 234,-222 234,-198 384,-198 384,-222"/>
+<text text-anchor="middle" x="309" y="-207.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props_kernels</text>
+</g>
+<!-- module~mo_optical_props&#45;&gt;mo_optical_props_kernels -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge13" class="edge">
+<title>module~mo_optical_props&#45;&gt;mo_optical_props_kernels</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.99,-182.08C431.96,-186.35 405.92,-191.4 382.08,-196.02"/>
+<polygon fill="#000000" stroke="#000000" points="381.17,-192.64 372.02,-197.98 382.51,-199.51 381.17,-192.64"/>
+</g>
+<!-- module~mo_source_functions&#45;&gt;module~mo_optical_props -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge18" class="edge">
+<title>module~mo_source_functions&#45;&gt;module~mo_optical_props</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M659.75,-239.98C649.86,-236.06 639.28,-231.32 630,-226 612.42,-215.91 612,-207.31 594,-198 586.15,-193.94 577.56,-190.4 568.94,-187.36"/>
+<polygon fill="#000000" stroke="#000000" points="569.83,-183.96 559.24,-184.12 567.62,-190.6 569.83,-183.96"/>
+</g>
+<!-- module~mo_source_functions&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge17" class="edge">
+<title>module~mo_source_functions&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M656.08,-264.09C618.59,-274.83 560.05,-289.25 508,-292"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-292C384.98,-298.39 339.83,-332.03 234,-273 201.55,-254.9 179.73,-215.91 168.62,-191.43"/>
+<polygon fill="#000000" stroke="#000000" points="171.82,-190.02 164.64,-182.23 165.4,-192.8 171.82,-190.02"/>
+</g>
+<!-- module~mo_rte_config&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge19" class="edge">
+<title>module~mo_rte_config&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M264.79,-141.68C247.09,-146.46 226.51,-152.02 208.31,-156.94"/>
+<polygon fill="#000000" stroke="#000000" points="207.21,-153.61 198.47,-159.6 209.04,-160.37 207.21,-153.61"/>
+</g>
+<!-- module~mo_rte_util_array&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge20" class="edge">
+<title>module~mo_rte_util_array&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M255.98,-240.2C248.41,-237.64 240.86,-234.6 234,-231 213.29,-220.14 193.03,-202.84 178.96,-189.43"/>
+<polygon fill="#000000" stroke="#000000" points="181.03,-186.56 171.44,-182.06 176.14,-191.56 181.03,-186.56"/>
+</g>
+<!-- iso_c_binding -->
+<g id="module~~mo_rte_lw~~UsesGraph_node10" class="node">
+<title>iso_c_binding</title>
+<g id="a_module~~mo_rte_lw~~UsesGraph_node10"><a xlink:href="http://fortranwiki.org/fortran/show/iso_c_binding" xlink:title="iso_c_binding">
+<polygon fill="#337ab7" stroke="#337ab7" points="84,-182 0,-182 0,-158 84,-158 84,-182"/>
+<text text-anchor="middle" x="42" y="-167.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_c_binding</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_kind&#45;&gt;iso_c_binding -->
+<g id="module~~mo_rte_lw~~UsesGraph_edge21" class="edge">
+<title>module~mo_rte_kind&#45;&gt;iso_c_binding</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M119.71,-170C111.62,-170 102.97,-170 94.49,-170"/>
+<polygon fill="#000000" stroke="#000000" points="94.29,-166.5 84.29,-170 94.29,-173.5 94.29,-166.5"/>
+</g>
+</g>
+</svg>
+</div><script>var panmodulemo_rte_lwUsesGraph = svgPanZoom('#modulemo_rte_lwUsesGraph', {zoomEnabled: true,controlIconsEnabled: true, fit: true, center: true,}); </script><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="518pt" height="32pt"
+ viewBox="0.00 0.00 517.50 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-28 513.5,-28 513.5,4 -4,4"/>
+<!-- Module -->
+<g id="node1" class="node">
+<title>Module</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="54,-24 0,-24 0,0 54,0 54,-24"/>
+<text text-anchor="middle" x="27" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Module</text>
+</g>
+<!-- Submodule -->
+<g id="node2" class="node">
+<title>Submodule</title>
+<polygon fill="#5bc0de" stroke="#5bc0de" points="145.5,-24 72.5,-24 72.5,0 145.5,0 145.5,-24"/>
+<text text-anchor="middle" x="109" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Submodule</text>
+</g>
+<!-- Subroutine -->
+<g id="node3" class="node">
+<title>Subroutine</title>
+<polygon fill="#d9534f" stroke="#d9534f" points="234,-24 164,-24 164,0 234,0 234,-24"/>
+<text text-anchor="middle" x="199" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Subroutine</text>
+</g>
+<!-- Function -->
+<g id="node4" class="node">
+<title>Function</title>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="310,-24 252,-24 252,0 310,0 310,-24"/>
+<text text-anchor="middle" x="281" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Function</text>
+</g>
+<!-- Program -->
+<g id="node5" class="node">
+<title>Program</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="386,-24 328,-24 328,0 386,0 386,-24"/>
+<text text-anchor="middle" x="357" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Program</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node6" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="509.5,-24 404.5,-24 404.5,0 509.5,0 509.5,-24"/>
+<text text-anchor="middle" x="457" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a submodule to the (sub)module which it is
+    descended from. Dashed arrows point from a module or program unit to 
+    modules which it uses.
+    </p>
+    </div></div></div></div>
+      </li>
+      </ul>
+    </div>
+
+    
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#funcs-1">Functions</a></h3></div>
+  <div id="funcs-1" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_rte_lw.html#proc-rte_lw">rte_lw</a>
+    </div>
+  </div>
+</div>
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+
+    
+    
+
+    
+    
+ 
+    <section>
+    <h2>Functions</h2>
+      <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-rte_lw"></span><h3>public function <a href='../proc/rte_lw.html'>rte_lw</a>(optical_props, top_at_1, sources, sfc_emis, fluxes, inc_flux, n_gauss_angles, use_2stream, lw_Ds, flux_up_Jac) result(error_msg)</h3></div>
+  <div class="panel-body">
+           
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>optical_props</strong></td><td><p>Set of optical properties as one or more arrays</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>logical,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>top_at_1</strong></td><td><p>Is the top of the domain at index 1? (if not, ordering is bottom-to-top)</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>type(<a href='../type/ty_source_func_lw.html'>ty_source_func_lw</a>),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>sources</strong></td><td><p>Derived type with Planck source functions</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>sfc_emis</strong></td><td><p>emissivity at surface [] (nband, ncol)</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_fluxes.html'>ty_fluxes</a>),</td>
+<td>intent(inout)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>fluxes</strong></td><td><p>Dervied type for computing spectral integrals from g-point fluxes.
+Default computes broadband fluxes at all levels if output arrays are defined. Can be extended per user desires.</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
+  <td><strong>inc_flux</strong></td><td><p>incident flux at domain top [W/m2] (ncol, ngpts)</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in),</td>
+  <td>optional</td>  <td></td><td>::</td>
+  <td><strong>n_gauss_angles</strong></td><td><p>Number of angles used in Gaussian quadrature (max 3, no-scattering solution)</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>logical,</td>
+<td>intent(in),</td>
+  <td>optional</td>  <td></td><td>::</td>
+  <td><strong>use_2stream</strong></td><td><p>When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
+Default is to use re-scaled longwave transport</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td>optional</td>  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>lw_Ds</strong></td><td><p>User-specifed 1/cos of transport angle per col, g-point</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(inout),</td>
+  <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
+  <td><strong>flux_up_Jac</strong></td><td><p>surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)</p></td>
+</tr>
+</tbody>
+</table>
+
+<h4>Return Value <small>character(len=128)</small></h4>  <p>If empty, calculation was successful</p>
+
+  </div>
+  </div>
+
+    </section>
+    <br>
+
+    
+    </div>
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by <br>&copy; 2022 
+</p>
+        </div>
+        <div class="col-xs-6 col-md-6">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+          </p>
+        </div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+  </body>
+</html>

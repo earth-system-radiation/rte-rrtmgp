@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
+    <meta name="author" content="" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>mo_rte_kind.F90 &ndash; RTE-Fortran</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">RTE-Fortran </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            <li><a href="../lists/files.html">Source Files</a></li>
+            <li><a href="../lists/modules.html">Modules</a></li>
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+                   <li><a href="../lists/types.html">Derived Types</a></li>
+       
+            </ul>
+        
+            </li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+                             <li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+          </ul>
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+  <div class="row">
+    <h1>mo_rte_kind.F90
+    <small>Source File</small>
+    </h1>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 0.5% of total for source files.">8 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_rte_kind.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li class="active">mo_rte_kind.F90</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#mods-0">Modules</a></h3></div>
+  <div id="mods-0" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_rte_kind.html">mo_rte_kind</a>
+    </div>
+  </div>
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../sourcefile/mo_rte_kind.f90.html#src">mo_rte_kind.F90</a>
+  </div>
+</div>
+
+</div>
+
+    </div>
+    <div class="col-md-9" id='text'>
+      
+      <br>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Files dependent on this one</h3>
+      </div>
+      <div class="panel-body">
+  <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: sourcefile~~mo_rte_kind.f90~~AfferentGraph Pages: 1 -->
+<svg id="sourcefilemo_rte_kindf90AfferentGraph" width="641pt" height="224pt"
+ viewBox="0.00 0.00 641.00 224.13" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph" class="graph" transform="scale(1.16 1.16) rotate(0) translate(4 256.49)">
+<title>sourcefile~~mo_rte_kind.f90~~AfferentGraph</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-256.49 741,-256.49 741,4 -4,4"/>
+<!-- sourcefile~mo_rte_kind.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_node1" class="node">
+<title>sourcefile~mo_rte_kind.f90</title>
+<polygon fill="none" stroke="black" points="100,-135.24 0,-135.24 0,-111.24 100,-111.24 100,-135.24"/>
+<text text-anchor="middle" x="50" y="-120.84" font-family="Helvetica,sans-Serif" font-size="10.50">mo_rte_kind.F90</text>
+</g>
+<!-- sourcefile~mo_rte_util_array.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_node2" class="node">
+<title>sourcefile~mo_rte_util_array.f90</title>
+<g id="a_sourcefile~~mo_rte_kind.f90~~AfferentGraph_node2"><a xlink:href=".././sourcefile/mo_rte_util_array.f90.html" xlink:title="mo_rte_util_array.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="263,-60.24 136,-60.24 136,-36.24 263,-36.24 263,-60.24"/>
+<text text-anchor="middle" x="199.5" y="-45.84" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_util_array.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~mo_rte_util_array.f90&#45;&gt;sourcefile~mo_rte_kind.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge1" class="edge">
+<title>sourcefile~mo_rte_util_array.f90&#45;&gt;sourcefile~mo_rte_kind.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M174.8,-60.29C150.18,-72.81 111.46,-92.5 83.89,-106.52"/>
+<polygon fill="#000000" stroke="#000000" points="81.97,-103.57 74.64,-111.22 85.14,-109.81 81.97,-103.57"/>
+</g>
+<!-- sourcefile~mo_source_functions.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_node3" class="node">
+<title>sourcefile~mo_source_functions.f90</title>
+<g id="a_sourcefile~~mo_rte_kind.f90~~AfferentGraph_node3"><a xlink:href=".././sourcefile/mo_source_functions.f90.html" xlink:title="mo_source_functions.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="610,-216.24 463,-216.24 463,-192.24 610,-192.24 610,-216.24"/>
+<text text-anchor="middle" x="536.5" y="-201.84" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_source_functions.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~mo_source_functions.f90&#45;&gt;sourcefile~mo_rte_kind.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge2" class="edge">
+<title>sourcefile~mo_source_functions.f90&#45;&gt;sourcefile~mo_rte_kind.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M499.89,-216.32C465.57,-227.07 411.92,-241.49 364,-244.24"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M362,-244.24C290.34,-248.36 270.54,-259.92 200.5,-244.24"/>
+</g>
+<!-- sourcefile~mo_optical_props.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_node7" class="node">
+<title>sourcefile~mo_optical_props.f90</title>
+<g id="a_sourcefile~~mo_rte_kind.f90~~AfferentGraph_node7"><a xlink:href=".././sourcefile/mo_optical_props.f90.html" xlink:title="mo_optical_props.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="427,-176.24 299,-176.24 299,-152.24 427,-152.24 427,-176.24"/>
+<text text-anchor="middle" x="363" y="-161.84" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~mo_source_functions.f90&#45;&gt;sourcefile~mo_optical_props.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge20" class="edge">
+<title>sourcefile~mo_source_functions.f90&#45;&gt;sourcefile~mo_optical_props.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M484.04,-192.24C465.64,-187.95 444.72,-183.07 425.56,-178.6"/>
+<polygon fill="#000000" stroke="#000000" points="426.25,-175.17 415.72,-176.3 424.66,-181.98 426.25,-175.17"/>
+</g>
+<!-- sourcefile~mo_rte_lw.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_node4" class="node">
+<title>sourcefile~mo_rte_lw.f90</title>
+<g id="a_sourcefile~~mo_rte_kind.f90~~AfferentGraph_node4"><a xlink:href=".././sourcefile/mo_rte_lw.f90.html" xlink:title="mo_rte_lw.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="735.5,-176.24 647.5,-176.24 647.5,-152.24 735.5,-152.24 735.5,-176.24"/>
+<text text-anchor="middle" x="691.5" y="-161.84" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_lw.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_rte_kind.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge3" class="edge">
+<title>sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_rte_kind.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M535.5,-244.24C460.6,-258.38 440.1,-239.87 364,-244.24"/>
+</g>
+<!-- sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_rte_util_array.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge8" class="edge">
+<title>sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_rte_util_array.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M676.33,-152.09C657.34,-136.05 624.35,-109.15 610,-103.24 498.75,-57.38 357.46,-48.01 273.27,-46.99"/>
+<polygon fill="#000000" stroke="#000000" points="273.07,-43.49 263.04,-46.91 273.01,-50.49 273.07,-43.49"/>
+</g>
+<!-- sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_source_functions.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge12" class="edge">
+<title>sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_source_functions.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M647.47,-175.49C630.62,-179.9 611.07,-185.01 593.16,-189.69"/>
+<polygon fill="#000000" stroke="#000000" points="592.2,-186.32 583.41,-192.24 593.97,-193.09 592.2,-186.32"/>
+</g>
+<!-- sourcefile~mo_rte_config.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_node6" class="node">
+<title>sourcefile~mo_rte_config.f90</title>
+<g id="a_sourcefile~~mo_rte_kind.f90~~AfferentGraph_node6"><a xlink:href=".././sourcefile/mo_rte_config.f90.html" xlink:title="mo_rte_config.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="255,-175.24 144,-175.24 144,-151.24 255,-151.24 255,-175.24"/>
+<text text-anchor="middle" x="199.5" y="-160.84" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_rte_config.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge13" class="edge">
+<title>sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_rte_config.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M677.9,-176.34C662.88,-190.12 636.5,-212.36 610,-225.24 580.04,-239.8 570.25,-238.16 537.5,-244.24"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M535.5,-244.24C507.71,-249.4 338.41,-202.81 251.66,-178.06"/>
+<polygon fill="#000000" stroke="#000000" points="252.59,-174.68 242.01,-175.29 250.66,-181.41 252.59,-174.68"/>
+</g>
+<!-- sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_optical_props.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge17" class="edge">
+<title>sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_optical_props.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M647.19,-162.01C616.5,-160.97 574.38,-160.65 537.5,-164.24"/>
+</g>
+<!-- sourcefile~mo_fluxes.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_node8" class="node">
+<title>sourcefile~mo_fluxes.f90</title>
+<g id="a_sourcefile~~mo_rte_kind.f90~~AfferentGraph_node8"><a xlink:href=".././sourcefile/mo_fluxes.f90.html" xlink:title="mo_fluxes.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="581,-136.24 492,-136.24 492,-112.24 581,-112.24 581,-136.24"/>
+<text text-anchor="middle" x="536.5" y="-121.84" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_fluxes.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_fluxes.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge21" class="edge">
+<title>sourcefile~mo_rte_lw.f90&#45;&gt;sourcefile~mo_fluxes.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M647.47,-152.99C629.94,-148.41 609.49,-143.06 591.01,-138.23"/>
+<polygon fill="#000000" stroke="#000000" points="591.83,-134.83 581.27,-135.68 590.05,-141.6 591.83,-134.83"/>
+</g>
+<!-- sourcefile~mo_rte_sw.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_node5" class="node">
+<title>sourcefile~mo_rte_sw.f90</title>
+<g id="a_sourcefile~~mo_rte_kind.f90~~AfferentGraph_node5"><a xlink:href=".././sourcefile/mo_rte_sw.f90.html" xlink:title="mo_rte_sw.F90">
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="737,-115.24 646,-115.24 646,-91.24 737,-91.24 737,-115.24"/>
+<text text-anchor="middle" x="691.5" y="-100.84" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_sw.F90</text>
+</a>
+</g>
+</g>
+<!-- sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_rte_kind.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge5" class="edge">
+<title>sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_rte_kind.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M671.69,-91.22C655.81,-81.56 632.18,-68.32 610,-60.24 505.01,-21.98 475.54,-1.44 364,-8.24"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M362,-8.24C261.21,-6.59 226.1,17.96 136,-27.24 102.77,-43.91 76.73,-79.68 62.63,-102.54"/>
+<polygon fill="#000000" stroke="#000000" points="59.6,-100.79 57.5,-111.17 65.62,-104.36 59.6,-100.79"/>
+</g>
+<!-- sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_rte_util_array.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge11" class="edge">
+<title>sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_rte_util_array.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M362,-8.24C320.98,-10.74 275.67,-22.82 243.51,-33.05"/>
+<polygon fill="#000000" stroke="#000000" points="242.39,-29.74 233.97,-36.16 244.56,-36.39 242.39,-29.74"/>
+</g>
+<!-- sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_rte_config.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge16" class="edge">
+<title>sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_rte_config.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M645.74,-96.77C571.92,-87.66 420.73,-75.68 299,-109.24 272.06,-116.67 244.41,-132.7 225.3,-145.38"/>
+<polygon fill="#000000" stroke="#000000" points="223.19,-142.58 216.89,-151.1 227.13,-148.37 223.19,-142.58"/>
+</g>
+<!-- sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_optical_props.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge19" class="edge">
+<title>sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_optical_props.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M670.58,-115.25C654.63,-124.45 631.47,-136.95 610,-145.24 578.93,-157.24 570.65,-161.01 537.5,-164.24"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M535.5,-164.24C503.42,-167.37 467.8,-167.85 437.37,-167.36"/>
+<polygon fill="#000000" stroke="#000000" points="437.33,-163.86 427.27,-167.17 437.2,-170.86 437.33,-163.86"/>
+</g>
+<!-- sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_fluxes.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge22" class="edge">
+<title>sourcefile~mo_rte_sw.f90&#45;&gt;sourcefile~mo_fluxes.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M645.83,-109.37C628.8,-111.71 609.21,-114.4 591.41,-116.84"/>
+<polygon fill="#000000" stroke="#000000" points="590.6,-113.42 581.17,-118.25 591.55,-120.35 590.6,-113.42"/>
+</g>
+<!-- sourcefile~mo_rte_config.f90&#45;&gt;sourcefile~mo_rte_kind.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge4" class="edge">
+<title>sourcefile~mo_rte_config.f90&#45;&gt;sourcefile~mo_rte_kind.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M154.25,-151.24C138.86,-147.07 121.41,-142.34 105.31,-137.97"/>
+<polygon fill="#000000" stroke="#000000" points="106.05,-134.54 95.48,-135.3 104.21,-141.3 106.05,-134.54"/>
+</g>
+<!-- sourcefile~mo_optical_props.f90&#45;&gt;sourcefile~mo_rte_kind.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge6" class="edge">
+<title>sourcefile~mo_optical_props.f90&#45;&gt;sourcefile~mo_rte_kind.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M350.58,-176.4C325.15,-201.96 261.26,-257.84 200.5,-244.24"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M198.5,-244.24C139.37,-231 89.43,-174.89 65.74,-143.95"/>
+<polygon fill="#000000" stroke="#000000" points="68.28,-141.51 59.5,-135.58 62.67,-145.69 68.28,-141.51"/>
+</g>
+<!-- sourcefile~mo_optical_props.f90&#45;&gt;sourcefile~mo_rte_util_array.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge10" class="edge">
+<title>sourcefile~mo_optical_props.f90&#45;&gt;sourcefile~mo_rte_util_array.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M328.26,-152.19C318.48,-148.07 308.02,-143.02 299,-137.24 267.79,-117.24 236.91,-87.24 218.27,-67.7"/>
+<polygon fill="#000000" stroke="#000000" points="220.7,-65.17 211.3,-60.27 215.59,-69.96 220.7,-65.17"/>
+</g>
+<!-- sourcefile~mo_optical_props.f90&#45;&gt;sourcefile~mo_rte_config.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge15" class="edge">
+<title>sourcefile~mo_optical_props.f90&#45;&gt;sourcefile~mo_rte_config.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M298.63,-163.85C287.61,-163.78 276.12,-163.71 265.06,-163.64"/>
+<polygon fill="#000000" stroke="#000000" points="265.07,-160.14 255.05,-163.58 265.03,-167.14 265.07,-160.14"/>
+</g>
+<!-- sourcefile~mo_fluxes.f90&#45;&gt;sourcefile~mo_rte_kind.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge7" class="edge">
+<title>sourcefile~mo_fluxes.f90&#45;&gt;sourcefile~mo_rte_kind.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M362,-123.24C274.35,-119.86 172.7,-120.77 110.12,-121.89"/>
+<polygon fill="#000000" stroke="#000000" points="109.97,-118.39 100.04,-122.08 110.1,-125.39 109.97,-118.39"/>
+</g>
+<!-- sourcefile~mo_fluxes.f90&#45;&gt;sourcefile~mo_rte_util_array.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge9" class="edge">
+<title>sourcefile~mo_fluxes.f90&#45;&gt;sourcefile~mo_rte_util_array.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M491.78,-124.77C457.11,-125 407.44,-124.91 364,-123.24"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M362,-123.24C308.86,-121.19 254.22,-88.03 224.08,-66.5"/>
+<polygon fill="#000000" stroke="#000000" points="226.03,-63.59 215.9,-60.5 221.9,-69.24 226.03,-63.59"/>
+</g>
+<!-- sourcefile~mo_fluxes.f90&#45;&gt;sourcefile~mo_rte_config.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge14" class="edge">
+<title>sourcefile~mo_fluxes.f90&#45;&gt;sourcefile~mo_rte_config.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M362,-123.24C318.58,-121.57 270.42,-135.67 238.09,-147.59"/>
+<polygon fill="#000000" stroke="#000000" points="236.69,-144.38 228.58,-151.2 239.17,-150.92 236.69,-144.38"/>
+</g>
+<!-- sourcefile~mo_fluxes.f90&#45;&gt;sourcefile~mo_optical_props.f90 -->
+<g id="sourcefile~~mo_rte_kind.f90~~AfferentGraph_edge18" class="edge">
+<title>sourcefile~mo_fluxes.f90&#45;&gt;sourcefile~mo_optical_props.f90</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M491.78,-134.44C471.64,-139.13 447.39,-144.79 425.46,-149.91"/>
+<polygon fill="#000000" stroke="#000000" points="424.51,-146.53 415.57,-152.21 426.1,-153.35 424.51,-146.53"/>
+</g>
+</g>
+</svg>
+</div><script>var pansourcefilemo_rte_kindf90AfferentGraph = svgPanZoom('#sourcefilemo_rte_kindf90AfferentGraph', {zoomEnabled: true,controlIconsEnabled: true, fit: true, center: true,}); </script><div><a type="button" class="graph-help" data-toggle="modal" href="#graph-help-text">Help</a></div><div class="modal fade" id="graph-help-text" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button><h4 class="modal-title" id="-graph-help-label">Graph Key</h4></div><div class="modal-body">
+    <p>Nodes of different colours represent the following: </p>
+    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: Graph Key Pages: 1 -->
+<svg width="202pt" height="32pt"
+ viewBox="0.00 0.00 201.50 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>Graph Key</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-28 197.5,-28 197.5,4 -4,4"/>
+<!-- Source File -->
+<g id="node1" class="node">
+<title>Source File</title>
+<polygon fill="#f0ad4e" stroke="#f0ad4e" points="70,-24 0,-24 0,0 70,0 70,-24"/>
+<text text-anchor="middle" x="35" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">Source File</text>
+</g>
+<!-- This Page&#39;s Entity -->
+<g id="node2" class="node">
+<title>This Page&#39;s Entity</title>
+<polygon fill="none" stroke="black" points="193.5,-24 88.5,-24 88.5,0 193.5,0 193.5,-24"/>
+<text text-anchor="middle" x="141" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">This Page&#39;s Entity</text>
+</g>
+</g>
+</svg>
+
+    
+    <p>Solid arrows point from a file to a file which it depends on. A file
+    is dependent upon another if the latter must be compiled before the former
+    can be.
+    </p>
+    </div></div></div></div>
+      </div>
+    </div>
+<br>
+    <section class="visible-xs visible-sm hidden-md">
+      <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#mods-1">Modules</a></h3></div>
+  <div id="mods-1" class="panel-collapse collapse">
+    <div class="list-group">
+      <a class="list-group-item" href="../module/mo_rte_kind.html">mo_rte_kind</a>
+    </div>
+  </div>
+</div>
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../sourcefile/mo_rte_kind.f90.html#src">mo_rte_kind.F90</a>
+  </div>
+</div>
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    <section>
+      <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="hl"><pre><span></span><a name="ln-1"></a><span class="c">! This code is part of Radiative Transfer for Energetics (RTE)</span>
+<a name="ln-2"></a><span class="c">!</span>
+<a name="ln-3"></a><span class="c">! Contacts: Robert Pincus and Eli Mlawer</span>
+<a name="ln-4"></a><span class="c">! email:  rrtmgp@aer.com</span>
+<a name="ln-5"></a><span class="c">!</span>
+<a name="ln-6"></a><span class="c">! Copyright 2015-  Atmospheric and Environmental Research,</span>
+<a name="ln-7"></a><span class="c">!    Regents of the University of Colorado,</span>
+<a name="ln-8"></a><span class="c">!    Trustees of Columbia University in the City of New York</span>
+<a name="ln-9"></a><span class="c">! All right reserved.</span>
+<a name="ln-10"></a><span class="c">!</span>
+<a name="ln-11"></a><span class="c">! Use and duplication is permitted under the terms of the</span>
+<a name="ln-12"></a><span class="c">!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause</span>
+<a name="ln-13"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
+<a name="ln-14"></a><span class="c">!&gt;</span>
+<a name="ln-15"></a><span class="c">!&gt; ## Provide the Fortran KIND parameters for REAL and INTEGER variables.</span>
+<a name="ln-16"></a><span class="c">!&gt;   By default kind parameters come from the ISO C binding and use double precision for working.</span>
+<a name="ln-17"></a><span class="c">!</span>
+<a name="ln-18"></a><span class="c">!   If the host model in which RRTGMP is embedded has defined these constants elsewhere</span>
+<a name="ln-19"></a><span class="c">!   the model definitions can be used instead by renaming. For example,</span>
+<a name="ln-20"></a><span class="c">! use  mo_model_kind, only wp =&gt; dp, ...</span>
+<a name="ln-21"></a><span class="c">!   where the syntax is local_name =&gt; original_name</span>
+<a name="ln-22"></a><span class="c">!   and all the local names need to be defined</span>
+<a name="ln-23"></a>
+<a name="ln-24"></a><span class="k">module </span><span class="n">mo_rte_kind</span>
+<a name="ln-25"></a>  <span class="k">use</span><span class="p">,</span> <span class="k">intrinsic</span> <span class="kd">::</span> <span class="nb">iso_c_binding</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="kt">c_float</span><span class="p">,</span> <span class="kt">c_double</span><span class="p">,</span> <span class="kt">c_long</span><span class="p">,</span> <span class="kt">c_int</span><span class="p">,</span> <span class="kt">c_bool</span>
+<a name="ln-26"></a><span class="kt">  </span><span class="k">implicit none</span>
+<a name="ln-27"></a><span class="k">  public</span>
+<a name="ln-28"></a><span class="k">  </span><span class="kt">integer</span><span class="p">,</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">dp</span> <span class="o">=</span> <span class="kt">c_double</span><span class="p">,</span> <span class="n">sp</span> <span class="o">=</span> <span class="kt">c_float</span><span class="p">,</span> <span class="n">i8</span> <span class="o">=</span> <span class="kt">c_long</span><span class="p">,</span> <span class="n">i4</span> <span class="o">=</span> <span class="kt">c_int</span>
+<a name="ln-29"></a>  <span class="c">!</span>
+<a name="ln-30"></a>  <span class="c">! Floating point working precision</span>
+<a name="ln-31"></a>  <span class="c">!</span>
+<a name="ln-32"></a><span class="cp">#ifdef RTE_USE_SP</span>
+<a name="ln-33"></a>  <span class="kt">integer</span><span class="p">,</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">wp</span> <span class="o">=</span> <span class="n">sp</span>
+<a name="ln-34"></a><span class="cp">#else</span>
+<a name="ln-35"></a>  <span class="kt">integer</span><span class="p">,</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">wp</span> <span class="o">=</span> <span class="n">dp</span>
+<a name="ln-36"></a><span class="cp">#endif</span>
+<a name="ln-37"></a>
+<a name="ln-38"></a>  <span class="c">!</span>
+<a name="ln-39"></a>  <span class="c">! Logical - for use with kernels</span>
+<a name="ln-40"></a>  <span class="c">!</span>
+<a name="ln-41"></a>  <span class="c">! Note that c_boolians don&#39;t work with PGI compiler currently</span>
+<a name="ln-42"></a>  <span class="c">!</span>
+<a name="ln-43"></a><span class="cp">#ifdef RTE_USE_CBOOL</span>
+<a name="ln-44"></a>  <span class="kt">integer</span><span class="p">,</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">wl</span> <span class="o">=</span> <span class="kt">c_bool</span>
+<a name="ln-45"></a><span class="cp">#else</span>
+<a name="ln-46"></a>  <span class="kt">integer</span><span class="p">,</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">wl</span> <span class="o">=</span> <span class="nb">kind</span><span class="p">(.</span><span class="n">true</span><span class="p">.)</span>
+<a name="ln-47"></a><span class="cp">#endif</span>
+<a name="ln-48"></a>
+<a name="ln-49"></a><span class="k">end module </span><span class="n">mo_rte_kind</span>
+</pre></div>
+
+    </section>
+    </div>
+  </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by <br>&copy; 2022 
+</p>
+        </div>
+        <div class="col-xs-6 col-md-6">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/Fortran-FOSS-Programmers/ford">FORD</a>
+          </p>
+        </div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+  </body>
+</html>

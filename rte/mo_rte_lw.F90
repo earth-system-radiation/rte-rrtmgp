@@ -3,34 +3,45 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2021,  Atmospheric and Environmental Research,
-! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
+! Copyright 2015-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-!  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
-!    atmospheric optical properties, spectrally-resolved
-!    information about vertical ordering
-!    internal Planck source functions, defined per g-point on the same spectral grid at the atmosphere
-!    boundary conditions: surface emissivity defined per band
-!    optionally, a boundary condition for incident diffuse radiation
-!    optionally, an integer number of angles at which to do Gaussian quadrature if scattering is neglected
+!> Compute longwave radiative fluxes
+!>
+!>  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
+!>
+!> - atmospheric optical properties, spectrally-resolved via one of the sub-classes of
+!>     [[mo_optical_props(module):ty_optical_props_arry(type)]] in module [[mo_optical_props]]
+!      (ty_optical_props_arry in module mo_optical_props)
+!> - information about vertical ordering
+!> - internal Planck source functions, defined per g-point on the same spectral grid at the atmosphere,
+!>     via [[mo_source_functions(module):ty_source_func_lw(type)]] in module [[mo_source_functions]]
+!      (ty_source_func_lw in module mo_source_functions)
+!> -  boundary conditions: surface emissivity defined per band
+!> -  optionally, a boundary condition for incident diffuse radiation
+!> -  optionally, an integer number of angles at which to do Gaussian quadrature if scattering is neglected
+!>
+!> If optical properties are supplied via class ty_optical_props_1scl (absorption optical thickenss only)
+!>    ([[mo_optical_props(module):ty_optical_props_1scl(type)]] in module [[mo_optical_props]])
+!>    then an emission/absorption solver is called.
+!>    If optical properties are supplied via class ty_optical_props_2str
+!>    ([[mo_optical_props(module):ty_optical_props_2str(type)]] in module [[mo_optical_props]])
+!>    fluxes are computed via a rescaling by default or, optionally, using two-stream calculations and adding.
+!>
+!> Users must ensure that emissivity is on the same spectral grid as the optical properties.
+!>
+!> Final output is via user-extensible ty_fluxes
+!> ([[mo_fluxes(module):ty_fluxes(type)]] in module [[mo_fluxes]])
+!> which must reduce the detailed spectral fluxes to whatever summary the user needs
 !
-! If optical properties are supplied via class ty_optical_props_1scl (absorption optical thickenss only)
-!    then an emission/absorption solver is called
-!    If optical properties are supplied via class ty_optical_props_2str fluxes are computed via
-!    two-stream calculations and adding.
-!
-! It is the user's responsibility to ensure that emissivity is on the same
-!   spectral grid as the optical properties.
-!
-! Final output is via user-extensible ty_fluxes which must reduce the detailed spectral fluxes to
-!   whatever summary the user needs.
-!
-! The routine does error checking and choses which lower-level kernel to invoke based on
-!   what kinds of optical properties are supplied
+!> The routine does error checking and choses which lower-level kernel to invoke based on
+!>   what kinds of optical properties are supplied
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_lw
@@ -43,7 +54,7 @@ module mo_rte_lw
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
   use mo_rte_solver_kernels, &
-                        only: lw_solver_noscat, lw_solver_noscat_GaussQuad, lw_solver_2stream
+                        only: lw_solver_noscat, lw_solver_2stream
   implicit none
   private
 
@@ -59,25 +70,33 @@ contains
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, &
                   lw_Ds, flux_up_Jac) result(error_msg)
-    class(ty_optical_props_arry), intent(in   ) :: optical_props     ! Set of optical properties as one or more arrays
-    logical,                      intent(in   ) :: top_at_1          ! Is the top of the domain at index 1?
-                                                                     ! (if not, ordering is bottom-to-top)
-    type(ty_source_func_lw),      intent(in   ) :: sources        ! Derived type with Planck source functions
-    real(wp), dimension(:,:),     intent(in   ) :: sfc_emis       ! emissivity at surface [] (nband, ncol)
-    class(ty_fluxes),             intent(inout) :: fluxes         ! Dervied type for computing spectral integrals from g-point fluxes.
-                                                                  ! Default computes broadband fluxes at all levels
-                                                                  ! if output arrays are defined. Can be extended per user desires.
+    class(ty_optical_props_arry), intent(in   ) :: optical_props
+      !! Set of optical properties as one or more arrays
+    logical,                      intent(in   ) :: top_at_1
+      !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
+    type(ty_source_func_lw),      intent(in   ) :: sources
+      !! Derived type with Planck source functions
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_emis
+      !! emissivity at surface [] (nband, ncol)
+    class(ty_fluxes),             intent(inout) :: fluxes
+      !! Dervied type for computing spectral integrals from g-point fluxes.
+      !! Default computes broadband fluxes at all levels if output arrays are defined. Can be extended per user desires.
     real(wp), dimension(:,:),   &
-                target, optional, intent(in   ) :: inc_flux       ! incident flux at domain top [W/m2] (ncol, ngpts)
-    integer,            optional, intent(in   ) :: n_gauss_angles ! Number of angles used in Gaussian quadrature (max 3)
-                                                                  ! (no-scattering solution)
-    logical,            optional, intent(in   ) :: use_2stream    ! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
-                                                                  ! Default is to use re-scaled longwave transport
+                target, optional, intent(in   ) :: inc_flux
+      !! incident flux at domain top [W/m2] (ncol, ngpts)
+    integer,            optional, intent(in   ) :: n_gauss_angles
+      !! Number of angles used in Gaussian quadrature (max 3, no-scattering solution)
+    logical,            optional, intent(in   ) :: use_2stream
+      !! When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
+      !! Default is to use re-scaled longwave transport
     real(wp), dimension(:,:),   &
-                      optional,   intent(in   ) :: lw_Ds          ! User-specifed 1/cos of transport angle per col, g-point
+                      optional,   intent(in   ) :: lw_Ds
+      !! User-specifed 1/cos of transport angle per col, g-point
     real(wp), dimension(:,:), target,  &
-                      optional,   intent(inout) :: flux_up_Jac    ! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
-    character(len=128)                          :: error_msg      ! If empty, calculation was successful
+                      optional,   intent(inout) :: flux_up_Jac
+      !! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
+    character(len=128)                          :: error_msg
+      !! If empty, calculation was successful
     ! --------------------------------
     !
     ! Local variables
@@ -95,7 +114,7 @@ contains
     ! Memory needs to be allocated for the full g-point fluxes even if they aren't
     !    used later because a) the GPU kernels use this memory to work in parallel and
     !    b) the fluxes are intent(out) in the solvers
-    ! Shortwave solver takes a different approach since three fields are needed 
+    ! Shortwave solver takes a different approach since three fields are needed
     real(wp), dimension(optical_props%get_ncol(),   &
                         optical_props%get_nlay()+1, &
                         optical_props%get_ngpt())   &
@@ -328,7 +347,7 @@ contains
               end do
             end do
           end if
-          call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
+          call lw_solver_noscat(ncol, nlay, ngpt,                 &
                                 logical(top_at_1, wl), n_quad_angs,         &
                                 secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                 optical_props%tau,                 &
@@ -371,7 +390,7 @@ contains
             !
             ! Re-scaled solution to account for scattering
             !
-            call lw_solver_noscat_GaussQuad(ncol, nlay, ngpt,                 &
+            call lw_solver_noscat(ncol, nlay, ngpt,                 &
                                   logical(top_at_1, wl), n_quad_angs,         &
                                   secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                   optical_props%tau,                 &

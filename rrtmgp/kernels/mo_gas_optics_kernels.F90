@@ -18,7 +18,8 @@ module mo_gas_optics_kernels
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array
   implicit none
-  public
+  private
+  public :: interpolation, compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source
 contains
   ! --------------------------------------------------------------------------------------
   ! Compute interpolation coefficients
@@ -31,7 +32,7 @@ contains
                 temp_ref_min,temp_ref_delta,press_ref_trop_log, &
                 vmr_ref,                                        &
                 play,tlay,col_gas,                              &
-                jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress) bind(C, name="interpolation")
+                jtemp,fmajor,fminor,col_mix,tropo,jeta,jpress) bind(C, name="rrtmgp_interpolation")
     ! input dimensions
     integer,                            intent(in) :: ncol,nlay
     integer,                            intent(in) :: ngas,nflav,neta,npres,ntemp
@@ -51,7 +52,20 @@ contains
     integer,     dimension(ncol,nlay), intent(out) :: jtemp, jpress
     logical(wl), dimension(ncol,nlay), intent(out) :: tropo
     integer,     dimension(2,    ncol,nlay,nflav), intent(out) :: jeta
+#if !defined(__INTEL_LLVM_COMPILER) && __INTEL_COMPILER >= 2021
+    ! A performance-hitting workaround for the vectorization problem reported in
+    ! https://github.com/earth-system-radiation/rte-rrtmgp/issues/159
+    ! The known affected compilers are Intel Fortran Compiler Classic
+    ! 2021.4, 2021.5 and 2022.1. We do not limit the workaround to these
+    ! versions because it is not clear when the compiler bug will be fixed, see
+    ! https://community.intel.com/t5/Intel-Fortran-Compiler/Compiler-vectorization-bug/m-p/1362591.
+    ! We, however, limit the workaround to the Classic versions only since the
+    ! problem is not confirmed for the Intel Fortran Compiler oneAPI (a.k.a
+    ! 'ifx'), which does not mean there is none though.
+    real(wp),    dimension(:,       :,   :,    :), intent(out) :: col_mix
+#else
     real(wp),    dimension(2,    ncol,nlay,nflav), intent(out) :: col_mix
+#endif
     real(wp),    dimension(2,2,2,ncol,nlay,nflav), intent(out) :: fmajor
     real(wp),    dimension(2,2,  ncol,nlay,nflav), intent(out) :: fminor
     ! -----------------
@@ -151,7 +165,7 @@ contains
                 col_mix,fmajor,fminor,              &
                 play,tlay,col_gas,                  &
                 jeta,jtemp,jpress,                  &
-                tau) bind(C, name="compute_tau_absorption")
+                tau) bind(C, name="rrtmgp_compute_tau_absorption")
     ! ---------------------
     ! input dimensions
     integer,                                intent(in) :: ncol,nlay,nbnd,ngpt
@@ -278,7 +292,7 @@ contains
                                       kmajor,                         &
                                       col_mix,fmajor,                 &
                                       jeta,tropo,jtemp,jpress,        & ! local input
-                                      tau) bind(C, name="gas_optical_depths_major")
+                                      tau)
     ! input dimensions
     integer, intent(in) :: ncol, nlay, nbnd, ngpt, nflav,neta,npres,ntemp  ! dimensions
 
@@ -343,7 +357,7 @@ contains
                                       play, tlay,            &
                                       col_gas,fminor,jeta,   &
                                       layer_limits,jtemp,    &
-                                      tau) bind(C, name="gas_optical_depths_minor")
+                                      tau)
     integer,                                     intent(in   ) :: ncol,nlay,ngpt
     integer,                                     intent(in   ) :: ngas,nflav
     integer,                                     intent(in   ) :: ntemp,neta,nminor,nminork
@@ -438,7 +452,7 @@ contains
                                   krayl,                       &
                                   idx_h2o, col_dry,col_gas,    &
                                   fminor,jeta,tropo,jtemp,     &
-                                  tau_rayleigh) bind(C, name="compute_tau_rayleigh")
+                                  tau_rayleigh) bind(C, name="rrtmgp_compute_tau_rayleigh")
     integer,                                     intent(in ) :: ncol,nlay,nbnd,ngpt
     integer,                                     intent(in ) :: ngas,nflav,neta,npres,ntemp
     integer,     dimension(2,ngpt),              intent(in ) :: gpoint_flavor
@@ -486,7 +500,7 @@ contains
                     fmajor, jeta, tropo, jtemp, jpress,    &
                     gpoint_bands, band_lims_gpt,           &
                     pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, &
-                    sfc_src, lay_src, lev_src_inc, lev_src_dec, sfc_source_Jac) bind(C, name="compute_Planck_source")
+                    sfc_src, lay_src, lev_src_inc, lev_src_dec, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
     integer,                                    intent(in) :: ncol, nlay, nbnd, ngpt
     integer,                                    intent(in) :: nflav, neta, npres, ntemp, nPlanckTemp
     real(wp),    dimension(ncol,nlay  ),        intent(in) :: tlay
@@ -531,8 +545,7 @@ contains
           itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
           pfrac(icol,ilay,gptS:gptE) = &
-            ! interpolation in temp-m64 -O3 -g -traceback -heap-arrays -assume
-            ! realloc_lhs -extend-source 132erature, pressure, and eta
+            ! interpolation in temperature, pressure, and eta
             interpolate3D_byflav(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                           jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
@@ -546,7 +559,7 @@ contains
     !
     do icol = 1, ncol
       planck_function(icol,1,1:nbnd) = interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk)
-      planck_function(icol,2,1:nbnd) = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk) 
+      planck_function(icol,2,1:nbnd) = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk)
       !
       ! Map to g-points
       !
@@ -559,7 +572,7 @@ contains
                                 (planck_function(icol, 2, ibnd) - planck_function(icol,1,ibnd))
         end do
       end do
-    end do !icol 
+    end do !icol
 
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -576,7 +589,7 @@ contains
       gptE = band_lims_gpt(2, ibnd)
       do igpt = gptS, gptE
         do ilay = 1, nlay
-          do icol = 1, ncol    
+          do icol = 1, ncol
             lay_src(icol,ilay,igpt) = pfrac(icol,ilay,igpt) * planck_function(icol,ilay,ibnd)
           end do
         end do
@@ -590,7 +603,7 @@ contains
       planck_function(icol,ilay+1,1:nbnd) = interpolate1D(tlev(icol,ilay+1),temp_ref_min, totplnk_delta, totplnk)
       end do
     end do
-    
+
     !
     ! Map to g-points
     !
@@ -708,28 +721,28 @@ contains
                                                      ! index(1) : reference eta level (temperature dependent)
                                                      ! index(2) : reference pressure level
                                                      ! index(3) : reference temperature level
-    real(wp), dimension(:,:,:,:),intent(in) :: k ! (gpt, eta,temp,press)
+    real(wp), dimension(:,:,:,:),intent(in) :: k ! (temp,eta,press,gpt)
     integer,                     intent(in) :: gptS, gptE
     integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
     integer,                     intent(in) :: jtemp ! interpolation index for temperature
     integer,                     intent(in) :: jpress ! interpolation index for pressure
-    real(wp), dimension(gptE-gptS+1)        :: res ! the result
+    real(wp), dimension(gptS:gptE)          :: res ! the result
 
     ! Local variable
     integer :: igpt
     ! each code block is for a different reference temperature
-    do igpt = 1, gptE-gptS+1
+    do igpt = gptS, gptE
       res(igpt) =  &
         scaling(1) * &
-        ( fmajor(1,1,1) * k(jtemp, jeta(1)  , jpress-1, gptS+igpt-1 ) + &
-          fmajor(2,1,1) * k(jtemp, jeta(1)+1, jpress-1, gptS+igpt-1 ) + &
-          fmajor(1,2,1) * k(jtemp, jeta(1)  , jpress  , gptS+igpt-1 ) + &
-          fmajor(2,2,1) * k(jtemp, jeta(1)+1, jpress  , gptS+igpt-1 ) ) + &
+        ( fmajor(1,1,1) * k(jtemp, jeta(1)  , jpress-1, igpt) + &
+          fmajor(2,1,1) * k(jtemp, jeta(1)+1, jpress-1, igpt) + &
+          fmajor(1,2,1) * k(jtemp, jeta(1)  , jpress  , igpt) + &
+          fmajor(2,2,1) * k(jtemp, jeta(1)+1, jpress  , igpt) ) + &
         scaling(2) * &
-        ( fmajor(1,1,2) * k(jtemp+1, jeta(2)  , jpress-1, gptS+igpt-1) + &
-          fmajor(2,1,2) * k(jtemp+1, jeta(2)+1, jpress-1, gptS+igpt-1) + &
-          fmajor(1,2,2) * k(jtemp+1, jeta(2)  , jpress  , gptS+igpt-1) + &
-          fmajor(2,2,2) * k(jtemp+1, jeta(2)+1, jpress  , gptS+igpt-1) )
+        ( fmajor(1,1,2) * k(jtemp+1, jeta(2)  , jpress-1, igpt) + &
+          fmajor(2,1,2) * k(jtemp+1, jeta(2)+1, jpress-1, igpt) + &
+          fmajor(1,2,2) * k(jtemp+1, jeta(2)  , jpress  , igpt) + &
+          fmajor(2,2,2) * k(jtemp+1, jeta(2)+1, jpress  , igpt) )
     end do
   end function interpolate3D_byflav
 

@@ -3,17 +3,20 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2020,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2020-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
-! -------------------------------------------------------------------------------------------------
-!
-! Control over input sanitization in Fortan front-end
-!   Module variables can be changed only by calling one of the included subroutine
-!
-! -------------------------------------------------------------------------------------------------
+
+!> -------------------------------------------------------------------------------------------------
+!>
+!> ## Control input sanitization in Fortan front-end
+!>   Provides public access to two proteced module variables
+!>
+!> -------------------------------------------------------------------------------------------------
 module mo_rte_config
   use mo_rte_kind, only: wl
   implicit none
@@ -22,12 +25,14 @@ module mo_rte_config
   logical(wl), protected, public :: check_extents = .true.
   logical(wl), protected, public :: check_values  = .true.
 
+  !> Specify checking of extents and values individually, or all checks together
   interface rte_config_checks
     module procedure rte_config_checks_each, rte_config_checks_all
   end interface
   public :: rte_config_checks
 contains
   ! --------------------------------------------------------------
+  !> Do extents and/or values checks within RTE+RRTMGP Fortran classes
   subroutine rte_config_checks_each(extents, values)
     logical(wl), intent(in) :: extents, values
 
@@ -35,6 +40,7 @@ contains
     check_values  = values
   end subroutine rte_config_checks_each
   ! --------------------------------------------------------------
+  !> Do all checks within RTE+RRTMGP Fortran classes
   subroutine rte_config_checks_all(do_checks)
     logical(wl), intent(in) :: do_checks
 

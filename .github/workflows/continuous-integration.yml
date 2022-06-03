@@ -4,13 +4,16 @@ on: [push, pull_request]
 jobs:
   CI:
     runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       matrix:
         fortran-compiler:  [gfortran-9, gfortran-10]
         rte-kernels: [default, openacc]
     env:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DUSE_CBOOL"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
       CC: gcc
       NCHOME: /home/runner/netcdf-c
       NFHOME: /home/runner/netcdf-fortran
@@ -106,16 +109,14 @@ jobs:
     ############################################################################
     # Set up Python and packages
     #
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
     - name: Setup conda
-      uses: s-weigand/setup-conda@v1
+      uses: conda-incubator/setup-miniconda@v2
       with:
-        python-version: 3.7
-    - name: Install python packages
-      run: conda install --yes urllib3 netcdf4 xarray dask scipy matplotlib seaborn colorcet
+        miniforge-version: latest
+        activate-environment: rte_rrtmgp_test
+        environment-file: environment.yml
+        python-version: 3.9
+        auto-activate-base: false
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files

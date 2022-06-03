@@ -43,10 +43,13 @@ LIB_DEPS = $(RRTMGP_BUILD)/librte.a $(RRTMGP_BUILD)/librrtmgp.a
 #
 # Targets
 #
-all: clear_sky_regression
+all: clear_sky_regression test_zenith_angle_spherical_correction
 
 clear_sky_regression:   $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.o
 clear_sky_regression.o: $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.F90
+
+test_zenith_angle_spherical_correction:   mo_zenith_angle_spherical_correction.o mo_rcemip_profiles.o $(ADDITIONS) $(LIB_DEPS) test_zenith_angle_spherical_correction.o
+test_zenith_angle_spherical_correction.o: mo_zenith_angle_spherical_correction.o mo_rcemip_profiles.o $(ADDITIONS) $(LIB_DEPS) test_zenith_angle_spherical_correction.F90
 
 mo_testing_io.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_testing_io.F90
 

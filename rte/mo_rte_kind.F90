@@ -3,15 +3,18 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
-
-! This module provides the Fortran KIND parameters for REAL and INTEGER variables.
-!   By default we use constant from the ISO C binding and use double precision for working.
+!>
+!> ## Provide the Fortran KIND parameters for REAL and INTEGER variables.
+!>   By default kind parameters come from the ISO C binding and use double precision for working.
+!
 !   If the host model in which RRTGMP is embedded has defined these constants elsewhere
 !   the model definitions can be used instead by renaming. For example,
 ! use  mo_model_kind, only wp => dp, ...
@@ -26,14 +29,18 @@ module mo_rte_kind
   !
   ! Floating point working precision
   !
+#ifdef RTE_USE_SP
+  integer, parameter :: wp = sp
+#else
   integer, parameter :: wp = dp
+#endif
 
   !
   ! Logical - for use with kernels
   !
   ! Note that c_boolians don't work with PGI compiler currently
   !
-#ifdef USE_CBOOL
+#ifdef RTE_USE_CBOOL
   integer, parameter :: wl = c_bool
 #else
   integer, parameter :: wl = kind(.true.)

@@ -13,4 +13,4 @@ else
     if [ "$1" != "-ci" ]; then grep -rl --include \*.html /assets/main.css | xargs sed -i '' 's#/rte-rrtmgp/assets/main.css#assets/main.css#g'; fi
 fi
 cd ..
-cp -a _site ../../public
+cp -a _site/* ../../public

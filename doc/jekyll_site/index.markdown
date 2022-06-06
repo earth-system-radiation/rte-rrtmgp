@@ -21,25 +21,12 @@ functions. The fluxes are normally summarized or reduced via a user extensible c
 
 # Work in progress
 
-Comprehensive documentation for RTE and RRTMGP is under development.
+Comprehensive documentation for RTE and RRTMGP is very much under development.
 
 We are planning to follow the [Diataxis](https://diataxis.fr/) framework
-and produce Tutorials, How-to guides, explanation, and reference.
+and produce [tutorials](./tutorials.html), [how-to guides](./howtos.html),
+[explanations](./explanations.html), and [reference](./reference.html).
 
-We are starting with the reference documentation, auto-generated from the code
-itself. This is provided separately for RTE and RRTMGP and for the user-facing
-classes and underlying computational kernels.
-
-# Reference/Technical documentation
-
-## Fortran user-facing class interfaces
-
-[RTE    Fortran interface](./reference/rte-fortran-interface/index.html)
-
-[RRTMGP Fortran interface](./reference/rrtmgp-fortran-interface/index.html)
-
-## Kernel interfaces
-
-[RTE kernels:    Fortran interface](./reference/rte-kernels/index.html)
-
-[RRTMGP kernels: Fortran interface](./reference/rrtmgp-kernels/index.html)
+We are starting with the [reference documentation](reference.html),
+auto-generated from the code itself. This is provided separately for
+RTE and RRTMGP and for the user-facing classes and underlying computational kernels.

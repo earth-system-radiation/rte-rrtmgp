@@ -1,12 +1,14 @@
 ---
 project: RRTMGP kernels
 summary: RRTMGP is a correlated k-distribution for computing fluxes in earth's atmosphere.
-email: rrtmgp@aer.com
 preprocessor: gfortran -E
 display: public
 sort: permission-alpha
 graph: true
 md_extensions: markdown.extensions.toc
+author: The RTE+RRTTMGP consortium
+github: https://github.com/earth-system-radiation/
+license: by
 title: RRTMGP kernels
 src_dir: ../../rrtmgp/kernels
 output_dir: ../../public/reference/rrtmgp-kernels

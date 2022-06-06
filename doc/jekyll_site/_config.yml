@@ -8,7 +8,7 @@
 # For technical reasons, this file is *NOT* reloaded automatically when you use
 # 'bundle exec jekyll serve'. If you change this file, please restart the server process.
 #
-# If you need help with YAML syntax, here are some quick references for you: 
+# If you need help with YAML syntax, here are some quick references for you:
 # https://learn-the-web.algonquindesign.ca/topics/markdown-yaml-cheat-sheet/#yaml
 # https://learnxinyminutes.com/docs/yaml/
 #
@@ -19,15 +19,19 @@
 # in the templates via {{ site.myvariable }}.
 
 title: RTE-RRTMGP
-email: your-email@example.com
+email: rrtmgp@aer.com
 description: >- # this means to ignore newlines until "baseurl:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
+  RTE+RRTMGP is a set of codes for computing radiative fluxes in
+  planetary atmospheres. RRTMGP uses a k-distribution to provide an optical
+  description (absorption and possibly Rayleigh optical depth) of the gaseous
+  atmosphere, along with the relevant source functions, on a pre-determined
+  spectral grid given temperatures, pressures, and gas concentration.
+  RTE computes fluxes given spectrally-resolved optical descriptions and
+  source functions.
 baseurl: "/rte-rrtmgp" # the subpath of your site, e.g. /blog
-url: "https://sourceryinstitute.github.io/rte-rrtmgp/" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://earth-system-radiation.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: #jekyllrb
-github_username:  #jekyll
+github_username: earth-system-radiation
 
 # Build settings
 theme: minima

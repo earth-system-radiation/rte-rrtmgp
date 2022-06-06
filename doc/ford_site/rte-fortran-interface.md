@@ -22,17 +22,6 @@ along with boundary conditions and/or [internal sources](./module/mo_source_func
 The reduction of spectrally- and spatially-detailed calculations that specifies the output
 is defined in a [flux output type](./module/mo_fluxes.html)
 
-RTE aspires to follow a set of coding conventions:
-
-- Module names start with `mo_`, class/type names with `ty_`.
-- Real variables are defined with working precision `wp`; logical variables with `wl`.
-    Both Fortran KIND parameters are set in [mo_rte_kind.F90]
-- Most procedures in RTE and RRTMGP are functions which return a string. A non-empty string indicates an error of some kind.
-- RTE and RRTMGP operate on multiple columns (profiles) at once. Problems are dimensioned by column, layer,
-    and spectral quadrature point.
-- RTE and RRTMGP are agnostic to vertical ordering
-- Units are MKS
-
 The optical properties module provides a way to specify the spectrally-dependent
 optical properties of the atmosphere consistent with calculations neglecting scattering,
 using two-stream scattering, or using n-stream scattering.
@@ -42,7 +31,9 @@ using two-stream scattering, or using n-stream scattering.
 - `alloc()` routines to allocate memory once the problem size is known
 - `finalize()` routines to reset variables to an un-initialized state
 - Some classes have `get_ncol()` and `get_nlay()` methods to report the problem size
-- Some classes have get_subset() methods to extract values along the column dimension
+- Some classes have `get_subset()` methods to extract values along the column dimension
+
+
 
 <!---
 ## How to Read This Documentation

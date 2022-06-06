@@ -33,7 +33,14 @@ using two-stream scattering, or using n-stream scattering.
 - Some classes have `get_ncol()` and `get_nlay()` methods to report the problem size
 - Some classes have `get_subset()` methods to extract values along the column dimension
 
+The listings below may not be exhaustive.
+To see the full listings use the links at the top of the page.
+There is a search bar in the top right.
 
+Return to the [Documentation overview] or the [reference overview].
+
+[Documentation overview]: ../../index.html
+[reference overview]: ../../reference.html
 
 <!---
 ## How to Read This Documentation

@@ -1,6 +1,6 @@
 ---
 layout: "page"
-title: "Tutorial"
+title: "Tutorials"
 ---
 
-This is a site for tutorials
+# Tutorials will live here

@@ -533,7 +533,7 @@ contains
                                 has_dif_bc, inc_flux_dif,   &
                                 do_broadband, broadband_up, &
                                 broadband_dn, broadband_dir) bind(C, name="rte_sw_solver_2stream")
-    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    integer,                               intent(in   ) :: ncol, nlay, ngpt
                                                             !! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
                                                             !! ilay = 1 is the top of the atmosphere?

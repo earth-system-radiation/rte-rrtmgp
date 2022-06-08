@@ -35,3 +35,6 @@ examples/*/*/*.nc
 
 # gh-pages directory
 public
+
+# Ruby stuff
+Gemfile.lock

@@ -253,9 +253,9 @@ contains
   end subroutine lw_solver_noscat_oneangle
   ! -------------------------------------------------------------------------------------------------
   !
-  ! LW transport, no scattering, multi-angle quadrature
-  !   Users provide a set of weights and quadrature angles
-  !   Routine sums over single-angle solutions for each sets of angles/weights
+  !> LW transport, no scattering, multi-angle quadrature
+  !>   Users provide a set of weights and quadrature angles
+  !>   Routine sums over single-angle solutions for each sets of angles/weights
   !
   ! ---------------------------------------------------------------
   subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
@@ -268,39 +268,52 @@ contains
                               do_broadband, broadband_up, broadband_dn,   &
                               do_Jacobians, sfc_srcJac, flux_upJac,       &
                               do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat")
-    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    integer,                               intent(in   ) :: ncol, nlay, ngpt
+                                                            !! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
-    integer,                               intent(in   ) :: nmus         ! number of quadrature angles
+                                                            !! ilay = 1 is the top of the atmosphere?
+    integer,                               intent(in   ) :: nmus
+                                                            !! number of quadrature angles
     real(wp), dimension (ncol,      ngpt, &
                                     nmus), intent(in   ) :: Ds
-    real(wp), dimension(nmus),             intent(in   ) :: weights  ! quadrature secants, weights
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
+                                                            !! quadrature secants
+    real(wp), dimension(nmus),             intent(in   ) :: weights
+                                                            !! quadrature weights
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau
+                                                            !! Absorption optical thickness []
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source
+                                                            !! Planck source at layer average temperature [W/m2]
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
-                                        ! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
-                                        ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
+                                        !! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
-                                        ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux     ! Incident diffuse flux, probably 0 [W/m2]
+                                        !! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
+                                                            !! Surface emissivity      []
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src
+                                                            !! Surface source function [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux
+                                                            !! Incident diffuse flux, probably 0 [W/m2]
     real(wp), dimension(ncol,nlay+1,ngpt), target, &
-                                           intent(  out) :: flux_up, flux_dn ! Fluxes [W/m2]
+                                           intent(  out) :: flux_up, flux_dn
+                                                            !! Fluxes [W/m2]
     !
     ! Optional variables - arrays aren't referenced if corresponding logical  == False
     !
     logical(wl),                           intent(in   ) :: do_broadband
     real(wp), dimension(ncol,nlay+1     ), target, &
                                            intent(  out) :: broadband_up, broadband_dn
-                                                            ! Spectrally-integrated fluxes [W/m2]
+                                                            !! Spectrally-integrated fluxes [W/m2]
     logical(wl),                           intent(in   ) :: do_Jacobians
+                                                            !! compute Jacobian with respect to surface temeprature?
     real(wp), dimension(ncol       ,ngpt), intent(in   ) :: sfc_srcJac
-                                                            ! surface temperature Jacobian of surface source function [W/m2/K]
+                                                            !! surface temperature Jacobian of surface source function [W/m2/K]
     real(wp), dimension(ncol,nlay+1     ), target, &
                                            intent(  out) :: flux_upJac
-                                                            ! surface temperature Jacobian of Radiances [W/m2-str / K]
+                                                            !! surface temperature Jacobian of Radiances [W/m2-str / K]
     logical(wl),                           intent(in   ) :: do_rescaling
-    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g    ! single-scattering albedo, asymmetry parameter
+                                                            !! Approximate treatment of scattering (10.1175/JAS-D-18-0014.1)
+    real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: ssa, g
+                                                            !! single-scattering albedo, asymmetry parameter
     ! ------------------------------------
     !
     ! Local variables - used for a single quadrature angle
@@ -369,11 +382,11 @@ contains
   end subroutine lw_solver_noscat
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Longwave two-stream calculation:
-  !   combine RRTMGP-specific sources at levels
-  !   compute layer reflectance, transmittance
-  !   compute total source function at levels using linear-in-tau
-  !   transport
+  !> Longwave two-stream calculation:
+  !>   - combine RRTMGP-specific sources at levels
+  !>   - compute layer reflectance, transmittance
+  !>   - compute total source function at levels using linear-in-tau
+  !>   - transport
   !
   ! -------------------------------------------------------------------------------------------------
    subroutine lw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
@@ -381,20 +394,26 @@ contains
                                  lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
                                  inc_flux,                   &
                                  flux_up, flux_dn) bind(C, name="rte_lw_solver_2stream")
-    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    integer,                               intent(in   ) :: ncol, nlay, ngpt
+                                                            !! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &     ! Optical thickness,
-                                                            ssa, &     ! single-scattering albedo,
-                                                            g          ! asymmetry parameter []
-    real(wp), dimension(ncol,nlay,ngpt),   intent(in   ) :: lay_source ! Planck source at layer average temperature [W/m2]
-    real(wp), dimension(ncol,nlay,ngpt), target, &
-                                           intent(in   ) :: lev_source_inc, lev_source_dec
-                                        ! Planck source at layer edge for radiation in increasing/decreasing ilay direction [W/m2]
-                                        ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis   ! Surface emissivity      []
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src    ! Surface source function [W/m2]
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux   ! Incident diffuse flux, probably 0 [W/m2]
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up, flux_dn ! Fluxes [W/m2]
+                                                            !! ilay = 1 is the top of the atmosphere?
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, ssa, g
+                                                            !! Optical thickness, single-scattering albedo, asymmetry parameter []
+    real(wp), dimension(ncol,nlay,  ngpt),   intent(in   ) :: lay_source
+                                                            !! Planck source at layer average temperature [W/m2]
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
+                                          !! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
+                                          !! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
+                                                            !! Surface emissivity      []
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src
+                                                            !! Surface source function [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux
+                                                            !! Incident diffuse flux, probably 0 [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: flux_up, flux_dn
+                                                            !! Fluxes [W/m2]
     ! ----------------------------------------------------------------------
     integer :: igpt, top_level
     real(wp), dimension(ncol,nlay  ) :: Rdif, Tdif, gamma1, gamma2
@@ -450,17 +469,23 @@ contains
   !
   ! -------------------------------------------------------------------------------------------------
   !
-  !   Extinction-only i.e. solar direct beam
+  !  !> Extinction-only shortwave solver i.e. solar direct beam
   !
   ! -------------------------------------------------------------------------------------------------
   pure subroutine sw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
                                    tau, mu0, inc_flux_dir, flux_dir) bind(C, name="rte_sw_solver_noscat")
     integer,                               intent(in ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+                                                          !! Number of columns, layers, g-points
     logical(wl),                           intent(in ) :: top_at_1
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in ) :: tau          ! Absorption optical thickness []
-    real(wp), dimension(ncol,nlay       ), intent(in ) :: mu0          ! cosine of solar zenith angle
-    real(wp), dimension(ncol,       ngpt), intent(in ) :: inc_flux_dir ! Direct beam incident flux
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dir     ! Direct-beam flux, spectral [W/m2]
+                                                          !! ilay = 1 is the top of the atmosphere?
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in ) :: tau
+                                                          !! Absorption optical thickness []
+    real(wp), dimension(ncol,nlay       ), intent(in ) :: mu0
+                                                          !! cosine of solar zenith angle
+    real(wp), dimension(ncol,       ngpt), intent(in ) :: inc_flux_dir
+                                                          !! Direct beam incident flux [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: flux_dir
+                                                          !! Direct-beam flux, spectral [W/m2]
 
     integer :: ilev, igpt
 
@@ -494,10 +519,10 @@ contains
   end subroutine sw_solver_noscat
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Shortwave two-stream calculation:
-  !   compute layer reflectance, transmittance
-  !   compute solar source function for diffuse radiation
-  !   transport
+  !> Shortwave two-stream calculation:
+  !>   compute layer reflectance, transmittance
+  !>   compute solar source function for diffuse radiation
+  !>   transport
   !
   ! -------------------------------------------------------------------------------------------------
   subroutine sw_solver_2stream (ncol, nlay, ngpt, top_at_1,  &
@@ -508,22 +533,30 @@ contains
                                 has_dif_bc, inc_flux_dif,   &
                                 do_broadband, broadband_up, &
                                 broadband_dn, broadband_dir) bind(C, name="rte_sw_solver_2stream")
-    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
+    integer,                               intent(in   ) :: ncol, nlay, ngpt
+                                                            !! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &  ! Optical thickness,
-                                                            ssa, &  ! single-scattering albedo,
-                                                            g       ! asymmetry parameter []
-    real(wp), dimension(ncol,nlay       ), intent(in   ) :: mu0     ! cosine of solar zenith angle
-                                                            ! Spectral albedo of surface to direct and diffuse radiation
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_alb_dir, sfc_alb_dif, &
-                                                            inc_flux_dir ! Direct beam incident flux
+                                                            !! ilay = 1 is the top of the atmosphere?
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, ssa, g
+                                                            !! Optical thickness, single-scattering albedo, asymmetry parameter []
+    real(wp), dimension(ncol,nlay       ), intent(in   ) :: mu0
+                                                            !! cosine of solar zenith angle
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_alb_dir, sfc_alb_dif
+                                                            !! Spectral surface albedo for direct and diffuse radiation
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux_dir
+                                                            !! Direct beam incident flux
     real(wp), dimension(ncol,nlay+1,ngpt), target, &
-                                           intent(  out) :: flux_up, flux_dn, flux_dir! Fluxes [W/m2]
-    logical(wl),                           intent(in   ) :: has_dif_bc   ! Is a boundary condition for diffuse flux supplied?
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux_dif ! Boundary condition for diffuse flux
-    logical(wl),                           intent(in   ) :: do_broadband ! Provide broadband-integrated, not spectrally-resolved, fluxes?
+                                           intent(  out) :: flux_up, flux_dn, flux_dir
+                                                            !! Fluxes [W/m2]
+    logical(wl),                           intent(in   ) :: has_dif_bc
+                                                            !! Is a boundary condition for diffuse flux supplied?
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux_dif
+                                                            !! Boundary condition for diffuse flux [W/m2]
+    logical(wl),                           intent(in   ) :: do_broadband
+                                                            !! Provide broadband-integrated, not spectrally-resolved, fluxes?
     real(wp), dimension(ncol,nlay+1     ), intent(  out) :: broadband_up, broadband_dn, broadband_dir
-    ! -------------------------------------------           ! Broadband integrated fluxes
+                                                            !! Broadband integrated fluxes
+    ! -------------------------------------------
     integer :: igpt, top_level, top_layer
     real(wp), dimension(ncol,nlay  )  :: Rdif, Tdif
     real(wp), dimension(ncol,nlay  )  :: source_up, source_dn

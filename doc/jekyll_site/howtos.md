@@ -1,6 +1,6 @@
 ---
 layout: "page"
-title: "How To's"
+title: "How-to guides"
 ---
 
-# This is a site for How To's
+# How-to guides will live here

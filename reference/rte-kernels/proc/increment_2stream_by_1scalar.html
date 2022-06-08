@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
    <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
-    <meta name="author" content="" >
+    <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
     <title>increment_2stream_by_1scalar &ndash; RTE kernels</title>
@@ -81,6 +81,7 @@
   <div class="col-lg-12">
 <div class="well well-sm">
   <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
@@ -119,6 +120,7 @@
     <h2>public pure subroutine increment_2stream_by_1scalar(ncol, nlay, ngpt, tau1, ssa1, tau2) bind(C, name="0")</h2>
     
 
+    <p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> with absorption optical depth</p>
 
     <h3>Arguments</h3>
       <table class="table table-striped varlist">
@@ -128,37 +130,37 @@
   <td><span class="anchor" id="variable-ncol~23"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nlay~22"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ngpt~23"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tau1~13"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ssa1~7"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tau2~13"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 </tbody>
 </table>
@@ -191,7 +193,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by <br>&copy; 2022 
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

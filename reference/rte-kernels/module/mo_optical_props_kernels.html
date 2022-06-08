@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
    <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
-    <meta name="author" content="" >
+    <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
     <title>mo_optical_props_kernels &ndash; RTE kernels</title>
@@ -81,10 +81,11 @@
   <div class="col-lg-12">
 <div class="well well-sm">
   <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="40.1% of total for modules and submodules.">416 statements</a>
+    title="40.0% of total for modules and submodules.">416 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_optical_props_kernels.F90"> Source File</a></li>
   </ul>
@@ -154,12 +155,10 @@
     
     <div class="col-md-9" id='text'>
     <h2 id="kernels-for-arrays-of-optical-properties">Kernels for arrays of optical properties:</h2>
-<ul>
-<li>delta-scaling</li>
-<li>adding two sets of properties</li>
-<li>extracting subsets</li>
-<li>validity checking</li>
-</ul>
+<div class="codehilite"><pre><span></span>- delta-scaling
+- adding two sets of properties
+- extracting subsets along the column dimension
+</pre></div>
 <br>        <div class="panel panel-default">
       <div class="panel-heading">
   <h3 class="panel-title">Uses</h3>
@@ -189,32 +188,32 @@
 <polygon fill="none" stroke="black" points="270,-45 120,-45 120,-21 270,-21 270,-45"/>
 <text text-anchor="middle" x="195" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50">mo_optical_props_kernels</text>
 </g>
-<!-- iso_c_binding -->
+<!-- mo_rte_kind -->
 <g id="module~~mo_optical_props_kernels~~UsesGraph_node2" class="node">
+<title>mo_rte_kind</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="81,-66 3,-66 3,-42 81,-42 81,-66"/>
+<text text-anchor="middle" x="42" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_kind</text>
+</g>
+<!-- module~mo_optical_props_kernels&#45;&gt;mo_rte_kind -->
+<g id="module~~mo_optical_props_kernels~~UsesGraph_edge1" class="edge">
+<title>module~mo_optical_props_kernels&#45;&gt;mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M119.83,-43.32C110.07,-44.67 100.29,-46.03 91.13,-47.31"/>
+<polygon fill="#000000" stroke="#000000" points="90.5,-43.86 81.08,-48.7 91.47,-50.79 90.5,-43.86"/>
+</g>
+<!-- iso_c_binding -->
+<g id="module~~mo_optical_props_kernels~~UsesGraph_node3" class="node">
 <title>iso_c_binding</title>
-<g id="a_module~~mo_optical_props_kernels~~UsesGraph_node2"><a xlink:href="http://fortranwiki.org/fortran/show/iso_c_binding" xlink:title="iso_c_binding">
-<polygon fill="#337ab7" stroke="#337ab7" points="84,-66 0,-66 0,-42 84,-42 84,-66"/>
-<text text-anchor="middle" x="42" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_c_binding</text>
+<g id="a_module~~mo_optical_props_kernels~~UsesGraph_node3"><a xlink:href="http://fortranwiki.org/fortran/show/iso_c_binding" xlink:title="iso_c_binding">
+<polygon fill="#337ab7" stroke="#337ab7" points="84,-24 0,-24 0,0 84,0 84,-24"/>
+<text text-anchor="middle" x="42" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_c_binding</text>
 </a>
 </g>
 </g>
 <!-- module~mo_optical_props_kernels&#45;&gt;iso_c_binding -->
-<g id="module~~mo_optical_props_kernels~~UsesGraph_edge1" class="edge">
-<title>module~mo_optical_props_kernels&#45;&gt;iso_c_binding</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M119.83,-43.32C111.23,-44.51 102.6,-45.71 94.4,-46.85"/>
-<polygon fill="#000000" stroke="#000000" points="93.7,-43.42 84.28,-48.26 94.66,-50.35 93.7,-43.42"/>
-</g>
-<!-- mo_rte_kind -->
-<g id="module~~mo_optical_props_kernels~~UsesGraph_node3" class="node">
-<title>mo_rte_kind</title>
-<polygon fill="#337ab7" stroke="#337ab7" points="81,-24 3,-24 3,0 81,0 81,-24"/>
-<text text-anchor="middle" x="42" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_kind</text>
-</g>
-<!-- module~mo_optical_props_kernels&#45;&gt;mo_rte_kind -->
 <g id="module~~mo_optical_props_kernels~~UsesGraph_edge2" class="edge">
-<title>module~mo_optical_props_kernels&#45;&gt;mo_rte_kind</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M119.83,-22.68C110.07,-21.33 100.29,-19.97 91.13,-18.69"/>
-<polygon fill="#000000" stroke="#000000" points="91.47,-15.21 81.08,-17.3 90.5,-22.14 91.47,-15.21"/>
+<title>module~mo_optical_props_kernels&#45;&gt;iso_c_binding</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M119.83,-22.68C111.23,-21.49 102.6,-20.29 94.4,-19.15"/>
+<polygon fill="#000000" stroke="#000000" points="94.66,-15.65 84.28,-17.74 93.7,-22.58 94.66,-15.65"/>
 </g>
 </g>
 </svg>
@@ -342,7 +341,7 @@
   <ul class="list-group">
     <li class="list-group-item">
     <h3>public pure subroutine <a href='../proc/delta_scale_2str_f_k.html'>delta_scale_2str_f_k</a>(ncol, nlay, ngpt, tau, ssa, g, f) bind(C, name="0")</h3>
-<p>Delta-scale two-stream optical properties given user-provided value of f (forward scattering)</p>
+<p>Delta-scale two-stream optical properties given user-provided value of <script type="math/tex">f</script> (forward scattering)</p>
     
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
@@ -454,7 +453,10 @@
   </div>
   <ul class="list-group">
     <li class="list-group-item">
-    <h3>public pure subroutine <a href='../proc/extract_subset_dim1_3d.html'>extract_subset_dim1_3d</a>(ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")</h3>    
+    <h3>public pure subroutine <a href='../proc/extract_subset_dim1_3d.html'>extract_subset_dim1_3d</a>(ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")</h3>
+<p>Extract a subset from the first dimension (normally columns) of a 3D field.
+  Applicable to most variables e.g. tau, ssa, g</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -462,43 +464,43 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>array_in</strong></td><td></td>
+  <td><strong>array_in</strong></td><td><p>Array to subset</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colS</strong></td><td></td>
+  <td><strong>colS</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colE</strong></td><td></td>
+  <td><strong>colE</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(colE-colS+1, nlay,ngpt)</td><td>::</td>
-  <td><strong>array_out</strong></td><td></td>
+  <td><strong>array_out</strong></td><td><p>subset of the input array</p></td>
 </tr>
 </tbody>
 </table>
@@ -506,7 +508,10 @@
 
     </li>
     <li class="list-group-item">
-    <h3>public pure subroutine <a href='../proc/extract_subset_dim2_4d.html'>extract_subset_dim2_4d</a>(nmom, ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")</h3>    
+    <h3>public pure subroutine <a href='../proc/extract_subset_dim2_4d.html'>extract_subset_dim2_4d</a>(nmom, ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")</h3>
+<p>Extract a subset from the second dimension (normally columns) of a 4D field.
+  Applicable to phase function moments, where the first dimension is the moment</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -514,49 +519,49 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom</strong></td><td></td>
+  <td><strong>nmom</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nmom,ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>array_in</strong></td><td></td>
+  <td><strong>array_in</strong></td><td><p>Array to subset</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colS</strong></td><td></td>
+  <td><strong>colS</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colE</strong></td><td></td>
+  <td><strong>colE</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(nmom,colE-colS+1, nlay,ngpt)</td><td>::</td>
-  <td><strong>array_out</strong></td><td></td>
+  <td><strong>array_out</strong></td><td><p>subset of the input array</p></td>
 </tr>
 </tbody>
 </table>
@@ -564,7 +569,10 @@
 
     </li>
     <li class="list-group-item">
-    <h3>public pure subroutine <a href='../proc/extract_subset_absorption_tau.html'>extract_subset_absorption_tau</a>(ncol, nlay, ngpt, tau_in, ssa_in, colS, colE, tau_out) bind(C, name="0")</h3>    
+    <h3>public pure subroutine <a href='../proc/extract_subset_absorption_tau.html'>extract_subset_absorption_tau</a>(ncol, nlay, ngpt, tau_in, ssa_in, colS, colE, tau_out) bind(C, name="0")</h3>
+<p>Extract the absorption optical thickness <script type="math/tex">\tau_{abs} = 1 - \omega_0 \tau_{ext}</script>
+</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -572,49 +580,49 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau_in</strong></td><td></td>
+  <td><strong>tau_in</strong></td><td><p>Optical thickness, single scattering albedo</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa_in</strong></td><td></td>
+  <td><strong>ssa_in</strong></td><td><p>Optical thickness, single scattering albedo</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colS</strong></td><td></td>
+  <td><strong>colS</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colE</strong></td><td></td>
+  <td><strong>colE</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(colE-colS+1, nlay,ngpt)</td><td>::</td>
-  <td><strong>tau_out</strong></td><td></td>
+  <td><strong>tau_out</strong></td><td><p>absorption optical thickness subset</p></td>
 </tr>
 </tbody>
 </table>
@@ -636,7 +644,7 @@
   <div class="panel-heading codesum"><span class="anchor" id="proc-delta_scale_2str_f_k"></span><h3>public pure subroutine <a href='../proc/delta_scale_2str_f_k.html'>delta_scale_2str_f_k</a>(ncol, nlay, ngpt, tau, ssa, g, f) bind(C, name="0")</h3></div>
   <div class="panel-body">
        
-<p>Delta-scale two-stream optical properties given user-provided value of f (forward scattering)</p>
+<p>Delta-scale two-stream optical properties given user-provided value of <script type="math/tex">f</script> (forward scattering)</p>
     
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
@@ -747,7 +755,10 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-extract_subset_absorption_tau"></span><h3>public pure subroutine <a href='../proc/extract_subset_absorption_tau.html'>extract_subset_absorption_tau</a>(ncol, nlay, ngpt, tau_in, ssa_in, colS, colE, tau_out) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>Extract the absorption optical thickness <script type="math/tex">\tau_{abs} = 1 - \omega_0 \tau_{ext}</script>
+</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -755,49 +766,49 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau_in</strong></td><td></td>
+  <td><strong>tau_in</strong></td><td><p>Optical thickness, single scattering albedo</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa_in</strong></td><td></td>
+  <td><strong>ssa_in</strong></td><td><p>Optical thickness, single scattering albedo</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colS</strong></td><td></td>
+  <td><strong>colS</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colE</strong></td><td></td>
+  <td><strong>colE</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(colE-colS+1, nlay,ngpt)</td><td>::</td>
-  <td><strong>tau_out</strong></td><td></td>
+  <td><strong>tau_out</strong></td><td><p>absorption optical thickness subset</p></td>
 </tr>
 </tbody>
 </table>
@@ -809,7 +820,10 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-extract_subset_dim1_3d"></span><h3>public pure subroutine <a href='../proc/extract_subset_dim1_3d.html'>extract_subset_dim1_3d</a>(ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>Extract a subset from the first dimension (normally columns) of a 3D field.
+  Applicable to most variables e.g. tau, ssa, g</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -817,43 +831,43 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>array_in</strong></td><td></td>
+  <td><strong>array_in</strong></td><td><p>Array to subset</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colS</strong></td><td></td>
+  <td><strong>colS</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colE</strong></td><td></td>
+  <td><strong>colE</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(colE-colS+1, nlay,ngpt)</td><td>::</td>
-  <td><strong>array_out</strong></td><td></td>
+  <td><strong>array_out</strong></td><td><p>subset of the input array</p></td>
 </tr>
 </tbody>
 </table>
@@ -865,7 +879,10 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-extract_subset_dim2_4d"></span><h3>public pure subroutine <a href='../proc/extract_subset_dim2_4d.html'>extract_subset_dim2_4d</a>(nmom, ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>Extract a subset from the second dimension (normally columns) of a 4D field.
+  Applicable to phase function moments, where the first dimension is the moment</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -873,49 +890,49 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom</strong></td><td></td>
+  <td><strong>nmom</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nmom,ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>array_in</strong></td><td></td>
+  <td><strong>array_in</strong></td><td><p>Array to subset</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colS</strong></td><td></td>
+  <td><strong>colS</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colE</strong></td><td></td>
+  <td><strong>colE</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(nmom,colE-colS+1, nlay,ngpt)</td><td>::</td>
-  <td><strong>array_out</strong></td><td></td>
+  <td><strong>array_out</strong></td><td><p>subset of the input array</p></td>
 </tr>
 </tbody>
 </table>
@@ -927,7 +944,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_1scalar_by_1scalar_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_1scalar_by_1scalar_bybnd.html'>inc_1scalar_by_1scalar_bybnd</a>(ncol, nlay, ngpt, tau1, tau2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increase one absorption optical depth defined on g-points by a second value defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -935,43 +954,43 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -983,7 +1002,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_1scalar_by_2stream_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_1scalar_by_2stream_bybnd.html'>inc_1scalar_by_2stream_bybnd</a>(ncol, nlay, ngpt, tau1, tau2, ssa2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increase absorption optical depth defined on g-points  with extinction optical depth (2-stream form) defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -991,49 +1012,49 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -1045,7 +1066,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_1scalar_by_nstream_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_1scalar_by_nstream_bybnd.html'>inc_1scalar_by_nstream_bybnd</a>(ncol, nlay, ngpt, tau1, tau2, ssa2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increase absorption optical depth defined on g-points  with extinction optical depth (n-stream form) defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1053,49 +1076,49 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -1107,7 +1130,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_2stream_by_1scalar_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_2stream_by_1scalar_bybnd.html'>inc_2stream_by_1scalar_bybnd</a>(ncol, nlay, ngpt, tau1, ssa1, tau2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> defined on g-points with absorption optical depth defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1115,49 +1140,49 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -1169,7 +1194,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_2stream_by_2stream_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_2stream_by_2stream_bybnd.html'>inc_2stream_by_2stream_bybnd</a>(ncol, nlay, ngpt, tau1, ssa1, g1, tau2, ssa2, g2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment 2-stream optical properties defined on g-points with another set defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1177,67 +1204,67 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>g1</strong></td><td></td>
+  <td><strong>g1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>g2</strong></td><td></td>
+  <td><strong>g2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -1249,7 +1276,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_2stream_by_nstream_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_2stream_by_nstream_bybnd.html'>inc_2stream_by_nstream_bybnd</a>(ncol, nlay, ngpt, nmom2, tau1, ssa1, g1, tau2, ssa2, p2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment 2-stream optical properties defined on g-points with <em>n</em>-stream properties set defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1257,73 +1286,73 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom2</strong></td><td></td>
+  <td><strong>nmom2</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>g1</strong></td><td></td>
+  <td><strong>g1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nmom2, ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>p2</strong></td><td></td>
+  <td><strong>p2</strong></td><td><p>moments of the phase function to be added</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -1335,7 +1364,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_nstream_by_1scalar_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_nstream_by_1scalar_bybnd.html'>inc_nstream_by_1scalar_bybnd</a>(ncol, nlay, ngpt, tau1, ssa1, tau2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment <em>n</em>-stream optical properties defined on g-points with absorption optical depth defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1343,49 +1374,49 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -1397,7 +1428,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_nstream_by_2stream_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_nstream_by_2stream_bybnd.html'>inc_nstream_by_2stream_bybnd</a>(ncol, nlay, ngpt, nmom1, tau1, ssa1, p1, tau2, ssa2, g2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment n-stream optical properties defined on g-points with 2-stream properties set defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1405,73 +1438,73 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom1</strong></td><td></td>
+  <td><strong>nmom1</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(nmom1, ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>p1</strong></td><td></td>
+  <td><strong>p1</strong></td><td><p>moments of the phase function be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>g2</strong></td><td></td>
+  <td><strong>g2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -1483,7 +1516,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-inc_nstream_by_nstream_bybnd"></span><h3>public pure subroutine <a href='../proc/inc_nstream_by_nstream_bybnd.html'>inc_nstream_by_nstream_bybnd</a>(ncol, nlay, ngpt, nmom1, nmom2, tau1, ssa1, p1, tau2, ssa2, p2, nbnd, gpt_lims) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment <em>n</em>-stream optical properties defined on g-points with a second set defined on bands</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1491,79 +1526,79 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom1</strong></td><td></td>
+  <td><strong>nmom1</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom2</strong></td><td></td>
+  <td><strong>nmom2</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(nmom1, ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>p1</strong></td><td></td>
+  <td><strong>p1</strong></td><td><p>moments of the phase function be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nmom2, ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>p2</strong></td><td></td>
+  <td><strong>p2</strong></td><td><p>moments of the phase function to be added</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td></td>
+  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
 </tr>
 </tbody>
 </table>
@@ -1575,7 +1610,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_1scalar_by_1scalar"></span><h3>public pure subroutine <a href='../proc/increment_1scalar_by_1scalar.html'>increment_1scalar_by_1scalar</a>(ncol, nlay, ngpt, tau1, tau2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increase one absorption optical depth by a second value</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1583,31 +1620,31 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 </tbody>
 </table>
@@ -1619,7 +1656,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_1scalar_by_2stream"></span><h3>public pure subroutine <a href='../proc/increment_1scalar_by_2stream.html'>increment_1scalar_by_2stream</a>(ncol, nlay, ngpt, tau1, tau2, ssa2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increase absorption optical depth with extinction optical depth (2-stream form)</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1627,37 +1666,37 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 </tbody>
 </table>
@@ -1669,7 +1708,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_1scalar_by_nstream"></span><h3>public pure subroutine <a href='../proc/increment_1scalar_by_nstream.html'>increment_1scalar_by_nstream</a>(ncol, nlay, ngpt, tau1, tau2, ssa2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increase absorption optical depth with extinction optical depth (n-stream form)</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1677,37 +1718,37 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 </tbody>
 </table>
@@ -1719,7 +1760,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_2stream_by_1scalar"></span><h3>public pure subroutine <a href='../proc/increment_2stream_by_1scalar.html'>increment_2stream_by_1scalar</a>(ncol, nlay, ngpt, tau1, ssa1, tau2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> with absorption optical depth</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1727,37 +1770,37 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 </tbody>
 </table>
@@ -1769,7 +1812,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_2stream_by_2stream"></span><h3>public pure subroutine <a href='../proc/increment_2stream_by_2stream.html'>increment_2stream_by_2stream</a>(ncol, nlay, ngpt, tau1, ssa1, g1, tau2, ssa2, g2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> with a second set</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1777,55 +1822,55 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>g1</strong></td><td></td>
+  <td><strong>g1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>g2</strong></td><td></td>
+  <td><strong>g2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 </tbody>
 </table>
@@ -1837,7 +1882,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_2stream_by_nstream"></span><h3>public pure subroutine <a href='../proc/increment_2stream_by_nstream.html'>increment_2stream_by_nstream</a>(ncol, nlay, ngpt, nmom2, tau1, ssa1, g1, tau2, ssa2, p2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> with <em>n</em>-stream</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1845,61 +1892,61 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom2</strong></td><td></td>
+  <td><strong>nmom2</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>g1</strong></td><td></td>
+  <td><strong>g1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nmom2, ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>p2</strong></td><td></td>
+  <td><strong>p2</strong></td><td><p>moments of the phase function to be added</p></td>
 </tr>
 </tbody>
 </table>
@@ -1911,7 +1958,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_nstream_by_1scalar"></span><h3>public pure subroutine <a href='../proc/increment_nstream_by_1scalar.html'>increment_nstream_by_1scalar</a>(ncol, nlay, ngpt, tau1, ssa1, tau2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment <em>n</em>-stream optical properties <script type="math/tex">\tau, \omega_0, p</script> with absorption optical depth</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1919,37 +1968,37 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 </tbody>
 </table>
@@ -1961,7 +2010,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_nstream_by_2stream"></span><h3>public pure subroutine <a href='../proc/increment_nstream_by_2stream.html'>increment_nstream_by_2stream</a>(ncol, nlay, ngpt, nmom1, tau1, ssa1, p1, tau2, ssa2, g2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment <em>n</em>-stream optical properties <script type="math/tex">\tau, \omega_0, p</script> with two-stream values</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1969,61 +2020,61 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom1</strong></td><td></td>
+  <td><strong>nmom1</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(nmom1, ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>p1</strong></td><td></td>
+  <td><strong>p1</strong></td><td><p>moments of the phase function be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>g2</strong></td><td></td>
+  <td><strong>g2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 </tbody>
 </table>
@@ -2035,7 +2086,9 @@
       <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="proc-increment_nstream_by_nstream"></span><h3>public pure subroutine <a href='../proc/increment_nstream_by_nstream.html'>increment_nstream_by_nstream</a>(ncol, nlay, ngpt, nmom1, nmom2, tau1, ssa1, p1, tau2, ssa2, p2) bind(C, name="0")</h3></div>
   <div class="panel-body">
-           
+       
+<p>increment one set of <em>n</em>-stream optical properties with another set</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -2043,67 +2096,67 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom1</strong></td><td></td>
+  <td><strong>nmom1</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nmom2</strong></td><td></td>
+  <td><strong>nmom2</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td></td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td></td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(nmom1, ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>p1</strong></td><td></td>
+  <td><strong>p1</strong></td><td><p>moments of the phase function be modified</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau2</strong></td><td></td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa2</strong></td><td></td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nmom2, ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>p2</strong></td><td></td>
+  <td><strong>p2</strong></td><td><p>moments of the phase function to be added</p></td>
 </tr>
 </tbody>
 </table>
@@ -2123,7 +2176,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by <br>&copy; 2022 
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

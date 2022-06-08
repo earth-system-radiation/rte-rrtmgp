@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
    <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
-    <meta name="author" content="" >
+    <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
     <title>mo_fluxes &ndash; RTE-Fortran</title>
@@ -83,6 +83,7 @@
   <div class="col-lg-12">
 <div class="well well-sm">
   <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
@@ -136,11 +137,11 @@
       <ul class="list-group">
       <li class="list-group-item">
   <ul class="list-inline">
-    <li>mo_fluxes_broadband_kernels</li>
+    <li><a href='../module/mo_optical_props.html'>mo_optical_props</a></li>
     <li><a href='../module/mo_rte_config.html'>mo_rte_config</a></li>
     <li><a href='../module/mo_rte_util_array.html'>mo_rte_util_array</a></li>
     <li><a href='../module/mo_rte_kind.html'>mo_rte_kind</a></li>
-    <li><a href='../module/mo_optical_props.html'>mo_optical_props</a></li>
+    <li>mo_fluxes_broadband_kernels</li>
   </ul>
       </li>
       <li class="list-group-item">
@@ -158,138 +159,138 @@
 <!-- module~mo_fluxes -->
 <g id="module~~mo_fluxes~~UsesGraph_node1" class="node">
 <title>module~mo_fluxes</title>
-<polygon fill="none" stroke="black" points="697,-155.12 630,-155.12 630,-131.12 697,-131.12 697,-155.12"/>
-<text text-anchor="middle" x="663.5" y="-140.72" font-family="Helvetica,sans-Serif" font-size="10.50">mo_fluxes</text>
-</g>
-<!-- mo_fluxes_broadband_kernels -->
-<g id="module~~mo_fluxes~~UsesGraph_node2" class="node">
-<title>mo_fluxes_broadband_kernels</title>
-<polygon fill="#337ab7" stroke="#337ab7" points="594,-215.12 420,-215.12 420,-191.12 594,-191.12 594,-215.12"/>
-<text text-anchor="middle" x="507" y="-200.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_fluxes_broadband_kernels</text>
-</g>
-<!-- module~mo_fluxes&#45;&gt;mo_fluxes_broadband_kernels -->
-<g id="module~~mo_fluxes~~UsesGraph_edge1" class="edge">
-<title>module~mo_fluxes&#45;&gt;mo_fluxes_broadband_kernels</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M640.41,-155.26C627.19,-162.23 609.92,-170.81 594,-177.12 584.11,-181.04 573.38,-184.71 562.97,-188"/>
-<polygon fill="#000000" stroke="#000000" points="561.65,-184.74 553.12,-191.02 563.71,-191.43 561.65,-184.74"/>
-</g>
-<!-- module~mo_optical_props -->
-<g id="module~~mo_fluxes~~UsesGraph_node3" class="node">
-<title>module~mo_optical_props</title>
-<g id="a_module~~mo_fluxes~~UsesGraph_node3"><a xlink:href=".././module/mo_optical_props.html" xlink:title="mo_optical_props">
-<polygon fill="#337ab7" stroke="#337ab7" points="560,-135.12 454,-135.12 454,-111.12 560,-111.12 560,-135.12"/>
-<text text-anchor="middle" x="507" y="-120.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props</text>
-</a>
-</g>
-</g>
-<!-- module~mo_fluxes&#45;&gt;module~mo_optical_props -->
-<g id="module~~mo_fluxes~~UsesGraph_edge2" class="edge">
-<title>module~mo_fluxes&#45;&gt;module~mo_optical_props</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M629.73,-138.88C612.46,-136.64 590.68,-133.82 570.33,-131.19"/>
-<polygon fill="#000000" stroke="#000000" points="570.54,-127.69 560.17,-129.87 569.64,-134.63 570.54,-127.69"/>
-</g>
-<!-- module~mo_rte_kind -->
-<g id="module~~mo_fluxes~~UsesGraph_node4" class="node">
-<title>module~mo_rte_kind</title>
-<g id="a_module~~mo_fluxes~~UsesGraph_node4"><a xlink:href=".././module/mo_rte_kind.html" xlink:title="mo_rte_kind">
-<polygon fill="#337ab7" stroke="#337ab7" points="198,-114.12 120,-114.12 120,-90.12 198,-90.12 198,-114.12"/>
-<text text-anchor="middle" x="159" y="-99.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_kind</text>
-</a>
-</g>
-</g>
-<!-- module~mo_fluxes&#45;&gt;module~mo_rte_kind -->
-<g id="module~~mo_fluxes~~UsesGraph_edge3" class="edge">
-<title>module~mo_fluxes&#45;&gt;module~mo_rte_kind</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M652.98,-130.88C631.03,-103.87 573.68,-40.06 508,-21.12"/>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-21.12C389.56,12.46 346.38,5.23 234,-40.12 211.44,-49.22 190.68,-67.93 176.93,-82.43"/>
-<polygon fill="#000000" stroke="#000000" points="174.2,-80.22 170.04,-89.96 179.37,-84.94 174.2,-80.22"/>
-</g>
-<!-- module~mo_rte_util_array -->
-<g id="module~~mo_fluxes~~UsesGraph_node5" class="node">
-<title>module~mo_rte_util_array</title>
-<g id="a_module~~mo_fluxes~~UsesGraph_node5"><a xlink:href=".././module/mo_rte_util_array.html" xlink:title="mo_rte_util_array">
-<polygon fill="#337ab7" stroke="#337ab7" points="362,-195.12 256,-195.12 256,-171.12 362,-171.12 362,-195.12"/>
-<text text-anchor="middle" x="309" y="-180.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_util_array</text>
-</a>
-</g>
-</g>
-<!-- module~mo_fluxes&#45;&gt;module~mo_rte_util_array -->
-<g id="module~~mo_fluxes~~UsesGraph_edge4" class="edge">
-<title>module~mo_fluxes&#45;&gt;module~mo_rte_util_array</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M629.97,-146.81C571.53,-153.44 447.87,-167.48 372.55,-176.02"/>
-<polygon fill="#000000" stroke="#000000" points="371.79,-172.59 362.25,-177.19 372.58,-179.54 371.79,-172.59"/>
+<polygon fill="none" stroke="black" points="697,-84 630,-84 630,-60 697,-60 697,-84"/>
+<text text-anchor="middle" x="663.5" y="-69.6" font-family="Helvetica,sans-Serif" font-size="10.50">mo_fluxes</text>
 </g>
 <!-- module~mo_rte_config -->
-<g id="module~~mo_fluxes~~UsesGraph_node6" class="node">
+<g id="module~~mo_fluxes~~UsesGraph_node2" class="node">
 <title>module~mo_rte_config</title>
-<g id="a_module~~mo_fluxes~~UsesGraph_node6"><a xlink:href=".././module/mo_rte_config.html" xlink:title="mo_rte_config">
-<polygon fill="#337ab7" stroke="#337ab7" points="353,-73.12 265,-73.12 265,-49.12 353,-49.12 353,-73.12"/>
-<text text-anchor="middle" x="309" y="-58.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config</text>
+<g id="a_module~~mo_fluxes~~UsesGraph_node2"><a xlink:href=".././module/mo_rte_config.html" xlink:title="mo_rte_config">
+<polygon fill="#337ab7" stroke="#337ab7" points="353,-166 265,-166 265,-142 353,-142 353,-166"/>
+<text text-anchor="middle" x="309" y="-151.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config</text>
 </a>
 </g>
 </g>
 <!-- module~mo_fluxes&#45;&gt;module~mo_rte_config -->
-<g id="module~~mo_fluxes~~UsesGraph_edge5" class="edge">
+<g id="module~~mo_fluxes~~UsesGraph_edge1" class="edge">
 <title>module~mo_fluxes&#45;&gt;module~mo_rte_config</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-21.12C478.68,-13.24 406.14,-31.8 357.39,-46.2"/>
-<polygon fill="#000000" stroke="#000000" points="356.26,-42.89 347.68,-49.11 358.26,-49.6 356.26,-42.89"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M652.98,-84.24C631.03,-111.25 573.68,-175.06 508,-194"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-194C478.68,-201.88 406.14,-183.32 357.39,-168.92"/>
+<polygon fill="#000000" stroke="#000000" points="358.26,-165.52 347.68,-166.01 356.26,-172.23 358.26,-165.52"/>
 </g>
-<!-- module~mo_optical_props&#45;&gt;module~mo_rte_kind -->
-<g id="module~~mo_fluxes~~UsesGraph_edge9" class="edge">
-<title>module~mo_optical_props&#45;&gt;module~mo_rte_kind</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.79,-127.86C398.79,-131.8 309.82,-135.15 234,-124.12 223.75,-122.63 212.95,-120.03 202.87,-117.14"/>
-<polygon fill="#000000" stroke="#000000" points="203.65,-113.72 193.06,-114.17 201.62,-120.42 203.65,-113.72"/>
+<!-- module~mo_rte_util_array -->
+<g id="module~~mo_fluxes~~UsesGraph_node3" class="node">
+<title>module~mo_rte_util_array</title>
+<g id="a_module~~mo_fluxes~~UsesGraph_node3"><a xlink:href=".././module/mo_rte_util_array.html" xlink:title="mo_rte_util_array">
+<polygon fill="#337ab7" stroke="#337ab7" points="362,-44 256,-44 256,-20 362,-20 362,-44"/>
+<text text-anchor="middle" x="309" y="-29.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_util_array</text>
+</a>
 </g>
-<!-- module~mo_optical_props&#45;&gt;module~mo_rte_util_array -->
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_rte_util_array -->
+<g id="module~~mo_fluxes~~UsesGraph_edge2" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_rte_util_array</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M629.97,-68.31C571.53,-61.68 447.87,-47.64 372.55,-39.1"/>
+<polygon fill="#000000" stroke="#000000" points="372.58,-35.58 362.25,-37.93 371.79,-42.53 372.58,-35.58"/>
+</g>
+<!-- module~mo_optical_props -->
+<g id="module~~mo_fluxes~~UsesGraph_node4" class="node">
+<title>module~mo_optical_props</title>
+<g id="a_module~~mo_fluxes~~UsesGraph_node4"><a xlink:href=".././module/mo_optical_props.html" xlink:title="mo_optical_props">
+<polygon fill="#337ab7" stroke="#337ab7" points="560,-104 454,-104 454,-80 560,-80 560,-104"/>
+<text text-anchor="middle" x="507" y="-89.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props</text>
+</a>
+</g>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_optical_props -->
+<g id="module~~mo_fluxes~~UsesGraph_edge3" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_optical_props</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M629.73,-76.24C612.46,-78.48 590.68,-81.3 570.33,-83.93"/>
+<polygon fill="#000000" stroke="#000000" points="569.64,-80.49 560.17,-85.25 570.54,-87.43 569.64,-80.49"/>
+</g>
+<!-- module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_node5" class="node">
+<title>module~mo_rte_kind</title>
+<g id="a_module~~mo_fluxes~~UsesGraph_node5"><a xlink:href=".././module/mo_rte_kind.html" xlink:title="mo_rte_kind">
+<polygon fill="#337ab7" stroke="#337ab7" points="198,-125 120,-125 120,-101 198,-101 198,-125"/>
+<text text-anchor="middle" x="159" y="-110.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_kind</text>
+</a>
+</g>
+</g>
+<!-- module~mo_fluxes&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_edge4" class="edge">
+<title>module~mo_fluxes&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M506,-194C389.56,-227.58 346.38,-220.35 234,-175 211.44,-165.9 190.68,-147.19 176.93,-132.69"/>
+<polygon fill="#000000" stroke="#000000" points="179.37,-130.18 170.04,-125.16 174.2,-134.9 179.37,-130.18"/>
+</g>
+<!-- mo_fluxes_broadband_kernels -->
+<g id="module~~mo_fluxes~~UsesGraph_node6" class="node">
+<title>mo_fluxes_broadband_kernels</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="594,-24 420,-24 420,0 594,0 594,-24"/>
+<text text-anchor="middle" x="507" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_fluxes_broadband_kernels</text>
+</g>
+<!-- module~mo_fluxes&#45;&gt;mo_fluxes_broadband_kernels -->
+<g id="module~~mo_fluxes~~UsesGraph_edge5" class="edge">
+<title>module~mo_fluxes&#45;&gt;mo_fluxes_broadband_kernels</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M640.41,-59.86C627.19,-52.89 609.92,-44.31 594,-38 584.11,-34.08 573.38,-30.41 562.97,-27.12"/>
+<polygon fill="#000000" stroke="#000000" points="563.71,-23.69 553.12,-24.1 561.65,-30.38 563.71,-23.69"/>
+</g>
+<!-- module~mo_rte_config&#45;&gt;module~mo_rte_kind -->
 <g id="module~~mo_fluxes~~UsesGraph_edge6" class="edge">
-<title>module~mo_optical_props&#45;&gt;module~mo_rte_util_array</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M465.73,-135.24C451.3,-139.59 434.92,-144.56 420,-149.12 399.82,-155.29 377.57,-162.16 358.39,-168.09"/>
-<polygon fill="#000000" stroke="#000000" points="357.19,-164.8 348.67,-171.1 359.26,-171.49 357.19,-164.8"/>
+<title>module~mo_rte_config&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M264.79,-142.03C247.09,-137.12 226.51,-131.43 208.31,-126.38"/>
+<polygon fill="#000000" stroke="#000000" points="209.04,-122.95 198.47,-123.66 207.17,-129.7 209.04,-122.95"/>
+</g>
+<!-- module~mo_rte_util_array&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_edge7" class="edge">
+<title>module~mo_rte_util_array&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M266.74,-44.03C255.81,-47.88 244.22,-52.57 234,-58 214.98,-68.11 195.5,-82.79 181.31,-94.44"/>
+<polygon fill="#000000" stroke="#000000" points="179.03,-91.79 173.61,-100.9 183.52,-97.16 179.03,-91.79"/>
 </g>
 <!-- module~mo_optical_props&#45;&gt;module~mo_rte_config -->
-<g id="module~~mo_fluxes~~UsesGraph_edge7" class="edge">
+<g id="module~~mo_fluxes~~UsesGraph_edge9" class="edge">
 <title>module~mo_optical_props&#45;&gt;module~mo_rte_config</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M471.7,-111.1C447.33,-102.69 413.78,-91.34 384,-82.12 377.16,-80 369.94,-77.85 362.79,-75.77"/>
-<polygon fill="#000000" stroke="#000000" points="363.72,-72.39 353.15,-72.99 361.79,-79.12 363.72,-72.39"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M471.7,-104.02C447.33,-112.43 413.78,-123.78 384,-133 377.16,-135.12 369.94,-137.27 362.79,-139.35"/>
+<polygon fill="#000000" stroke="#000000" points="361.79,-136 353.15,-142.13 363.72,-142.73 361.79,-136"/>
+</g>
+<!-- module~mo_optical_props&#45;&gt;module~mo_rte_util_array -->
+<g id="module~~mo_fluxes~~UsesGraph_edge11" class="edge">
+<title>module~mo_optical_props&#45;&gt;module~mo_rte_util_array</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M465.73,-79.88C451.3,-75.52 434.92,-70.56 420,-66 399.82,-59.83 377.57,-52.96 358.39,-47.03"/>
+<polygon fill="#000000" stroke="#000000" points="359.26,-43.63 348.67,-44.02 357.19,-50.32 359.26,-43.63"/>
+</g>
+<!-- module~mo_optical_props&#45;&gt;module~mo_rte_kind -->
+<g id="module~~mo_fluxes~~UsesGraph_edge10" class="edge">
+<title>module~mo_optical_props&#45;&gt;module~mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.79,-87.26C398.79,-83.32 309.82,-79.97 234,-91 223.75,-92.49 212.95,-95.09 202.87,-97.98"/>
+<polygon fill="#000000" stroke="#000000" points="201.62,-94.7 193.06,-100.95 203.65,-101.4 201.62,-94.7"/>
 </g>
 <!-- mo_optical_props_kernels -->
 <g id="module~~mo_fluxes~~UsesGraph_node8" class="node">
 <title>mo_optical_props_kernels</title>
-<polygon fill="#337ab7" stroke="#337ab7" points="384,-115.12 234,-115.12 234,-91.12 384,-91.12 384,-115.12"/>
-<text text-anchor="middle" x="309" y="-100.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props_kernels</text>
+<polygon fill="#337ab7" stroke="#337ab7" points="384,-124 234,-124 234,-100 384,-100 384,-124"/>
+<text text-anchor="middle" x="309" y="-109.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props_kernels</text>
 </g>
 <!-- module~mo_optical_props&#45;&gt;mo_optical_props_kernels -->
 <g id="module~~mo_fluxes~~UsesGraph_edge8" class="edge">
 <title>module~mo_optical_props&#45;&gt;mo_optical_props_kernels</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.99,-117.81C435.65,-115.94 414.54,-113.79 394.23,-111.71"/>
-<polygon fill="#000000" stroke="#000000" points="394.33,-108.21 384.02,-110.67 393.61,-115.17 394.33,-108.21"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M453.99,-97.31C435.65,-99.18 414.54,-101.33 394.23,-103.41"/>
+<polygon fill="#000000" stroke="#000000" points="393.61,-99.95 384.02,-104.45 394.33,-106.91 393.61,-99.95"/>
 </g>
 <!-- iso_c_binding -->
 <g id="module~~mo_fluxes~~UsesGraph_node7" class="node">
 <title>iso_c_binding</title>
 <g id="a_module~~mo_fluxes~~UsesGraph_node7"><a xlink:href="http://fortranwiki.org/fortran/show/iso_c_binding" xlink:title="iso_c_binding">
-<polygon fill="#337ab7" stroke="#337ab7" points="84,-114.12 0,-114.12 0,-90.12 84,-90.12 84,-114.12"/>
-<text text-anchor="middle" x="42" y="-99.72" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_c_binding</text>
+<polygon fill="#337ab7" stroke="#337ab7" points="84,-125 0,-125 0,-101 84,-101 84,-125"/>
+<text text-anchor="middle" x="42" y="-110.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">iso_c_binding</text>
 </a>
 </g>
 </g>
 <!-- module~mo_rte_kind&#45;&gt;iso_c_binding -->
-<g id="module~~mo_fluxes~~UsesGraph_edge10" class="edge">
-<title>module~mo_rte_kind&#45;&gt;iso_c_binding</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M119.71,-102.12C111.62,-102.12 102.97,-102.12 94.49,-102.12"/>
-<polygon fill="#000000" stroke="#000000" points="94.29,-98.62 84.29,-102.12 94.29,-105.62 94.29,-98.62"/>
-</g>
-<!-- module~mo_rte_util_array&#45;&gt;module~mo_rte_kind -->
-<g id="module~~mo_fluxes~~UsesGraph_edge11" class="edge">
-<title>module~mo_rte_util_array&#45;&gt;module~mo_rte_kind</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M266.74,-171.09C255.81,-167.24 244.22,-162.55 234,-157.12 214.98,-147.01 195.5,-132.33 181.31,-120.68"/>
-<polygon fill="#000000" stroke="#000000" points="183.52,-117.96 173.61,-114.22 179.03,-123.33 183.52,-117.96"/>
-</g>
-<!-- module~mo_rte_config&#45;&gt;module~mo_rte_kind -->
 <g id="module~~mo_fluxes~~UsesGraph_edge12" class="edge">
-<title>module~mo_rte_config&#45;&gt;module~mo_rte_kind</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M264.79,-73.09C247.09,-77.99 226.51,-83.69 208.31,-88.74"/>
-<polygon fill="#000000" stroke="#000000" points="207.17,-85.42 198.47,-91.46 209.04,-92.17 207.17,-85.42"/>
+<title>module~mo_rte_kind&#45;&gt;iso_c_binding</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M119.71,-113C111.62,-113 102.97,-113 94.49,-113"/>
+<polygon fill="#000000" stroke="#000000" points="94.29,-109.5 84.29,-113 94.29,-116.5 94.29,-109.5"/>
 </g>
 </g>
 </svg>
@@ -378,35 +379,35 @@
 <polygon fill="none" stroke="black" points="67,-45 0,-45 0,-21 67,-21 67,-45"/>
 <text text-anchor="middle" x="33.5" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50">mo_fluxes</text>
 </g>
-<!-- module~mo_rte_lw -->
-<g id="module~~mo_fluxes~~UsedByGraph_node2" class="node">
-<title>module~mo_rte_lw</title>
-<g id="a_module~~mo_fluxes~~UsedByGraph_node2"><a xlink:href=".././module/mo_rte_lw.html" xlink:title="mo_rte_lw">
-<polygon fill="#337ab7" stroke="#337ab7" points="171,-66 104,-66 104,-42 171,-42 171,-66"/>
-<text text-anchor="middle" x="137.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_lw</text>
-</a>
-</g>
-</g>
-<!-- module~mo_rte_lw&#45;&gt;module~mo_fluxes -->
-<g id="module~~mo_fluxes~~UsedByGraph_edge1" class="edge">
-<title>module~mo_rte_lw&#45;&gt;module~mo_fluxes</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M103.95,-47.3C95.39,-45.54 86.03,-43.61 77.04,-41.76"/>
-<polygon fill="#000000" stroke="#000000" points="77.59,-38.3 67.09,-39.71 76.18,-45.16 77.59,-38.3"/>
-</g>
 <!-- module~mo_rte_sw -->
-<g id="module~~mo_fluxes~~UsedByGraph_node3" class="node">
+<g id="module~~mo_fluxes~~UsedByGraph_node2" class="node">
 <title>module~mo_rte_sw</title>
-<g id="a_module~~mo_fluxes~~UsedByGraph_node3"><a xlink:href=".././module/mo_rte_sw.html" xlink:title="mo_rte_sw">
-<polygon fill="#337ab7" stroke="#337ab7" points="172,-24 103,-24 103,0 172,0 172,-24"/>
-<text text-anchor="middle" x="137.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_sw</text>
+<g id="a_module~~mo_fluxes~~UsedByGraph_node2"><a xlink:href=".././module/mo_rte_sw.html" xlink:title="mo_rte_sw">
+<polygon fill="#337ab7" stroke="#337ab7" points="172,-66 103,-66 103,-42 172,-42 172,-66"/>
+<text text-anchor="middle" x="137.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_sw</text>
 </a>
 </g>
 </g>
 <!-- module~mo_rte_sw&#45;&gt;module~mo_fluxes -->
-<g id="module~~mo_fluxes~~UsedByGraph_edge2" class="edge">
+<g id="module~~mo_fluxes~~UsedByGraph_edge1" class="edge">
 <title>module~mo_rte_sw&#45;&gt;module~mo_fluxes</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M102.82,-18.93C94.56,-20.63 85.62,-22.48 77,-24.25"/>
-<polygon fill="#000000" stroke="#000000" points="76.19,-20.84 67.11,-26.29 77.61,-27.7 76.19,-20.84"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M102.82,-47.07C94.56,-45.37 85.62,-43.52 77,-41.75"/>
+<polygon fill="#000000" stroke="#000000" points="77.61,-38.3 67.11,-39.71 76.19,-45.16 77.61,-38.3"/>
+</g>
+<!-- module~mo_rte_lw -->
+<g id="module~~mo_fluxes~~UsedByGraph_node3" class="node">
+<title>module~mo_rte_lw</title>
+<g id="a_module~~mo_fluxes~~UsedByGraph_node3"><a xlink:href=".././module/mo_rte_lw.html" xlink:title="mo_rte_lw">
+<polygon fill="#337ab7" stroke="#337ab7" points="171,-24 104,-24 104,0 171,0 171,-24"/>
+<text text-anchor="middle" x="137.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_lw</text>
+</a>
+</g>
+</g>
+<!-- module~mo_rte_lw&#45;&gt;module~mo_fluxes -->
+<g id="module~~mo_fluxes~~UsedByGraph_edge2" class="edge">
+<title>module~mo_rte_lw&#45;&gt;module~mo_fluxes</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M103.95,-18.7C95.39,-20.46 86.03,-22.39 77.04,-24.24"/>
+<polygon fill="#000000" stroke="#000000" points="76.18,-20.84 67.09,-26.29 77.59,-27.7 76.18,-20.84"/>
 </g>
 </g>
 </svg>
@@ -574,7 +575,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by <br>&copy; 2022 
+        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

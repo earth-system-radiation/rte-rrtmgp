@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
    <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
-    <meta name="author" content="" >
+    <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
     <title>All Procedures &ndash; RTE kernels
@@ -80,38 +80,50 @@
 			 <table class="table table-striped">
 			 <thead><tr><th>Procedure</th><th>Location</th><th>Procedure Type</th><th>Description</th></tr></thead>
 			 <tbody>
-			   <tr><td><a href='../proc/delta_scale_2str_f_k.html'>delta_scale_2str_f_k</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>Delta-scale two-stream optical properties given user-provided value of f (forward scattering)</p></td></tr>
+			   <tr><td><a href='../proc/delta_scale_2str_f_k.html'>delta_scale_2str_f_k</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>Delta-scale two-stream optical properties given user-provided value of <script type="math/tex">f</script> (forward scattering)</p></td></tr>
 			   <tr><td><a href='../proc/delta_scale_2str_k.html'>delta_scale_2str_k</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>Delta-scale assuming forward-scatternig fraction is the square of the asymmetry parameter
    i.e. <script type="math/tex">f = g^2</script>
 </p></td></tr>
 			   <tr><td><a href='../interface/delta_scale_2str_kernel.html'>delta_scale_2str_kernel</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Interface</td><td><p>Delta-scale two-stream optical properties</p></td></tr>
 			   <tr><td><a href='../interface/extract_subset.html'>extract_subset</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Interface</td><td><p>Subsetting, meaning extracting some portion of the 3D domain</p></td></tr>
-			   <tr><td><a href='../proc/extract_subset_absorption_tau.html'>extract_subset_absorption_tau</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/extract_subset_dim1_3d.html'>extract_subset_dim1_3d</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/extract_subset_dim2_4d.html'>extract_subset_dim2_4d</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_1scalar_by_1scalar_bybnd.html'>inc_1scalar_by_1scalar_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_1scalar_by_2stream_bybnd.html'>inc_1scalar_by_2stream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_1scalar_by_nstream_bybnd.html'>inc_1scalar_by_nstream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_2stream_by_1scalar_bybnd.html'>inc_2stream_by_1scalar_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_2stream_by_2stream_bybnd.html'>inc_2stream_by_2stream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_2stream_by_nstream_bybnd.html'>inc_2stream_by_nstream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_nstream_by_1scalar_bybnd.html'>inc_nstream_by_1scalar_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_nstream_by_2stream_bybnd.html'>inc_nstream_by_2stream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/inc_nstream_by_nstream_bybnd.html'>inc_nstream_by_nstream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_1scalar_by_1scalar.html'>increment_1scalar_by_1scalar</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_1scalar_by_2stream.html'>increment_1scalar_by_2stream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_1scalar_by_nstream.html'>increment_1scalar_by_nstream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_2stream_by_1scalar.html'>increment_2stream_by_1scalar</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_2stream_by_2stream.html'>increment_2stream_by_2stream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_2stream_by_nstream.html'>increment_2stream_by_nstream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_nstream_by_1scalar.html'>increment_nstream_by_1scalar</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_nstream_by_2stream.html'>increment_nstream_by_2stream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/increment_nstream_by_nstream.html'>increment_nstream_by_nstream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/lw_solver_2stream.html'>lw_solver_2stream</a></td><td><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></td><td>Subroutine</td><td></td></tr>
-			   <tr><td><a href='../proc/lw_solver_noscat.html'>lw_solver_noscat</a></td><td><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></td><td>Subroutine</td><td></td></tr>
+			   <tr><td><a href='../proc/extract_subset_absorption_tau.html'>extract_subset_absorption_tau</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>Extract the absorption optical thickness <script type="math/tex">\tau_{abs} = 1 - \omega_0 \tau_{ext}</script>
+</p></td></tr>
+			   <tr><td><a href='../proc/extract_subset_dim1_3d.html'>extract_subset_dim1_3d</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>Extract a subset from the first dimension (normally columns) of a 3D field.
+  Applicable to most variables e.g. tau, ssa, g</p></td></tr>
+			   <tr><td><a href='../proc/extract_subset_dim2_4d.html'>extract_subset_dim2_4d</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>Extract a subset from the second dimension (normally columns) of a 4D field.
+  Applicable to phase function moments, where the first dimension is the moment</p></td></tr>
+			   <tr><td><a href='../proc/inc_1scalar_by_1scalar_bybnd.html'>inc_1scalar_by_1scalar_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increase one absorption optical depth defined on g-points by a second value defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/inc_1scalar_by_2stream_bybnd.html'>inc_1scalar_by_2stream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increase absorption optical depth defined on g-points  with extinction optical depth (2-stream form) defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/inc_1scalar_by_nstream_bybnd.html'>inc_1scalar_by_nstream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increase absorption optical depth defined on g-points  with extinction optical depth (n-stream form) defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/inc_2stream_by_1scalar_bybnd.html'>inc_2stream_by_1scalar_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> defined on g-points with absorption optical depth defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/inc_2stream_by_2stream_bybnd.html'>inc_2stream_by_2stream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment 2-stream optical properties defined on g-points with another set defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/inc_2stream_by_nstream_bybnd.html'>inc_2stream_by_nstream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment 2-stream optical properties defined on g-points with <em>n</em>-stream properties set defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/inc_nstream_by_1scalar_bybnd.html'>inc_nstream_by_1scalar_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment <em>n</em>-stream optical properties defined on g-points with absorption optical depth defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/inc_nstream_by_2stream_bybnd.html'>inc_nstream_by_2stream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment n-stream optical properties defined on g-points with 2-stream properties set defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/inc_nstream_by_nstream_bybnd.html'>inc_nstream_by_nstream_bybnd</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment <em>n</em>-stream optical properties defined on g-points with a second set defined on bands</p></td></tr>
+			   <tr><td><a href='../proc/increment_1scalar_by_1scalar.html'>increment_1scalar_by_1scalar</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increase one absorption optical depth by a second value</p></td></tr>
+			   <tr><td><a href='../proc/increment_1scalar_by_2stream.html'>increment_1scalar_by_2stream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increase absorption optical depth with extinction optical depth (2-stream form)</p></td></tr>
+			   <tr><td><a href='../proc/increment_1scalar_by_nstream.html'>increment_1scalar_by_nstream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increase absorption optical depth with extinction optical depth (n-stream form)</p></td></tr>
+			   <tr><td><a href='../proc/increment_2stream_by_1scalar.html'>increment_2stream_by_1scalar</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> with absorption optical depth</p></td></tr>
+			   <tr><td><a href='../proc/increment_2stream_by_2stream.html'>increment_2stream_by_2stream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> with a second set</p></td></tr>
+			   <tr><td><a href='../proc/increment_2stream_by_nstream.html'>increment_2stream_by_nstream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> with <em>n</em>-stream</p></td></tr>
+			   <tr><td><a href='../proc/increment_nstream_by_1scalar.html'>increment_nstream_by_1scalar</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment <em>n</em>-stream optical properties <script type="math/tex">\tau, \omega_0, p</script> with absorption optical depth</p></td></tr>
+			   <tr><td><a href='../proc/increment_nstream_by_2stream.html'>increment_nstream_by_2stream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment <em>n</em>-stream optical properties <script type="math/tex">\tau, \omega_0, p</script> with two-stream values</p></td></tr>
+			   <tr><td><a href='../proc/increment_nstream_by_nstream.html'>increment_nstream_by_nstream</a></td><td><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></td><td>Subroutine</td><td><p>increment one set of <em>n</em>-stream optical properties with another set</p></td></tr>
+			   <tr><td><a href='../proc/lw_solver_2stream.html'>lw_solver_2stream</a></td><td><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></td><td>Subroutine</td><td><p>Longwave two-stream calculation:
+  - combine RRTMGP-specific sources at levels
+  - compute layer reflectance, transmittance
+  - compute total source function at levels using linear-in-tau
+  - transport</p></td></tr>
+			   <tr><td><a href='../proc/lw_solver_noscat.html'>lw_solver_noscat</a></td><td><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></td><td>Subroutine</td><td><p>LW transport, no scattering, multi-angle quadrature
+  Users provide a set of weights and quadrature angles
+  Routine sums over single-angle solutions for each sets of angles/weights</p></td></tr>
 			   <tr><td><a href='../interface/net_broadband.html'>net_broadband</a></td><td><a href='../module/mo_fluxes_broadband_kernels.html'>mo_fluxes_broadband_kernels</a></td><td>Interface</td><td><p>Interface for computing net flux</p></td></tr>
 			   <tr><td><a href='../proc/sum_broadband.html'>sum_broadband</a></td><td><a href='../module/mo_fluxes_broadband_kernels.html'>mo_fluxes_broadband_kernels</a></td><td>Subroutine</td><td><p>Spectral reduction over all points</p></td></tr>
-			   <tr><td><a href='../proc/sw_solver_2stream.html'>sw_solver_2stream</a></td><td><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></td><td>Subroutine</td><td></td></tr>
+			   <tr><td><a href='../proc/sw_solver_2stream.html'>sw_solver_2stream</a></td><td><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></td><td>Subroutine</td><td><p>Shortwave two-stream calculation:
+  compute layer reflectance, transmittance
+  compute solar source function for diffuse radiation
+  transport</p></td></tr>
 			   <tr><td><a href='../proc/sw_solver_noscat.html'>sw_solver_noscat</a></td><td><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></td><td>Subroutine</td><td></td></tr>
 			 </tbody></table>
              <div class="depgraph"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -120,125 +132,125 @@
 <!-- Generated by graphviz version 2.43.0 (0)
  -->
 <!-- Title: call~~graph~~CallGraph Pages: 1 -->
-<svg id="callgraphCallGraph" width="400pt" height="1103pt"
- viewBox="0.00 0.00 400.00 1103.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="call~~graph~~CallGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 1099)">
+<svg id="callgraphCallGraph" width="400pt" height="1124pt"
+ viewBox="0.00 0.00 400.00 1124.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="call~~graph~~CallGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 1120)">
 <title>call~~graph~~CallGraph</title>
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-1099 396,-1099 396,4 -4,4"/>
-<!-- proc~delta_scale_2str_f_k -->
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-1120 396,-1120 396,4 -4,4"/>
+<!-- proc~inc_1scalar_by_1scalar_bybnd -->
 <g id="call~~graph~~CallGraph_node1" class="node">
-<title>proc~delta_scale_2str_f_k</title>
-<g id="a_call~~graph~~CallGraph_node1"><a xlink:href=".././proc/delta_scale_2str_f_k.html" xlink:title="delta_scale_2str_f_k">
-<polygon fill="#d9534f" stroke="#d9534f" points="364,-66 246,-66 246,-42 364,-42 364,-66"/>
-<text text-anchor="middle" x="305" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">delta_scale_2str_f_k</text>
+<title>proc~inc_1scalar_by_1scalar_bybnd</title>
+<g id="a_call~~graph~~CallGraph_node1"><a xlink:href=".././proc/inc_1scalar_by_1scalar_bybnd.html" xlink:title="inc_1scalar_by_1scalar_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="177.5,-24 4.5,-24 4.5,0 177.5,0 177.5,-24"/>
+<text text-anchor="middle" x="91" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_1scalar_by_1scalar_bybnd</text>
 </a>
 </g>
 </g>
-<!-- proc~inc_nstream_by_nstream_bybnd -->
+<!-- proc~inc_1scalar_by_2stream_bybnd -->
 <g id="call~~graph~~CallGraph_node2" class="node">
-<title>proc~inc_nstream_by_nstream_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node2"><a xlink:href=".././proc/inc_nstream_by_nstream_bybnd.html" xlink:title="inc_nstream_by_nstream_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="182,-87 0,-87 0,-63 182,-63 182,-87"/>
-<text text-anchor="middle" x="91" y="-72.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_nstream_by_nstream_bybnd</text>
-</a>
-</g>
-</g>
-<!-- proc~increment_nstream_by_1scalar -->
-<g id="call~~graph~~CallGraph_node3" class="node">
-<title>proc~increment_nstream_by_1scalar</title>
-<g id="a_call~~graph~~CallGraph_node3"><a xlink:href=".././proc/increment_nstream_by_1scalar.html" xlink:title="increment_nstream_by_1scalar">
-<polygon fill="#d9534f" stroke="#d9534f" points="180,-129 2,-129 2,-105 180,-105 180,-129"/>
-<text text-anchor="middle" x="91" y="-114.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_nstream_by_1scalar</text>
-</a>
-</g>
-</g>
-<!-- proc~sum_broadband -->
-<g id="call~~graph~~CallGraph_node4" class="node">
-<title>proc~sum_broadband</title>
-<g id="a_call~~graph~~CallGraph_node4"><a xlink:href=".././proc/sum_broadband.html" xlink:title="sum_broadband">
-<polygon fill="#d9534f" stroke="#d9534f" points="140,-171 42,-171 42,-147 140,-147 140,-171"/>
-<text text-anchor="middle" x="91" y="-156.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">sum_broadband</text>
-</a>
-</g>
-</g>
-<!-- proc~extract_subset_dim1_3d -->
-<g id="call~~graph~~CallGraph_node5" class="node">
-<title>proc~extract_subset_dim1_3d</title>
-<g id="a_call~~graph~~CallGraph_node5"><a xlink:href=".././proc/extract_subset_dim1_3d.html" xlink:title="extract_subset_dim1_3d">
-<polygon fill="#d9534f" stroke="#d9534f" points="375,-255 235,-255 235,-231 375,-231 375,-255"/>
-<text text-anchor="middle" x="305" y="-240.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extract_subset_dim1_3d</text>
-</a>
-</g>
-</g>
-<!-- proc~extract_subset_absorption_tau -->
-<g id="call~~graph~~CallGraph_node6" class="node">
-<title>proc~extract_subset_absorption_tau</title>
-<g id="a_call~~graph~~CallGraph_node6"><a xlink:href=".././proc/extract_subset_absorption_tau.html" xlink:title="extract_subset_absorption_tau">
-<polygon fill="#d9534f" stroke="#d9534f" points="392,-213 218,-213 218,-189 392,-189 392,-213"/>
-<text text-anchor="middle" x="305" y="-198.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extract_subset_absorption_tau</text>
-</a>
-</g>
-</g>
-<!-- proc~increment_2stream_by_1scalar -->
-<g id="call~~graph~~CallGraph_node7" class="node">
-<title>proc~increment_2stream_by_1scalar</title>
-<g id="a_call~~graph~~CallGraph_node7"><a xlink:href=".././proc/increment_2stream_by_1scalar.html" xlink:title="increment_2stream_by_1scalar">
-<polygon fill="#d9534f" stroke="#d9534f" points="180,-255 2,-255 2,-231 180,-231 180,-255"/>
-<text text-anchor="middle" x="91" y="-240.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_2stream_by_1scalar</text>
-</a>
-</g>
-</g>
-<!-- proc~increment_nstream_by_2stream -->
-<g id="call~~graph~~CallGraph_node8" class="node">
-<title>proc~increment_nstream_by_2stream</title>
-<g id="a_call~~graph~~CallGraph_node8"><a xlink:href=".././proc/increment_nstream_by_2stream.html" xlink:title="increment_nstream_by_2stream">
-<polygon fill="#d9534f" stroke="#d9534f" points="182,-297 0,-297 0,-273 182,-273 182,-297"/>
-<text text-anchor="middle" x="91" y="-282.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_nstream_by_2stream</text>
-</a>
-</g>
-</g>
-<!-- proc~increment_1scalar_by_1scalar -->
-<g id="call~~graph~~CallGraph_node9" class="node">
-<title>proc~increment_1scalar_by_1scalar</title>
-<g id="a_call~~graph~~CallGraph_node9"><a xlink:href=".././proc/increment_1scalar_by_1scalar.html" xlink:title="increment_1scalar_by_1scalar">
-<polygon fill="#d9534f" stroke="#d9534f" points="177.5,-339 4.5,-339 4.5,-315 177.5,-315 177.5,-339"/>
-<text text-anchor="middle" x="91" y="-324.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_1scalar_by_1scalar</text>
-</a>
-</g>
-</g>
-<!-- proc~inc_2stream_by_nstream_bybnd -->
-<g id="call~~graph~~CallGraph_node10" class="node">
-<title>proc~inc_2stream_by_nstream_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node10"><a xlink:href=".././proc/inc_2stream_by_nstream_bybnd.html" xlink:title="inc_2stream_by_nstream_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="182,-381 0,-381 0,-357 182,-357 182,-381"/>
-<text text-anchor="middle" x="91" y="-366.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_2stream_by_nstream_bybnd</text>
-</a>
-</g>
-</g>
-<!-- proc~delta_scale_2str_k -->
-<g id="call~~graph~~CallGraph_node11" class="node">
-<title>proc~delta_scale_2str_k</title>
-<g id="a_call~~graph~~CallGraph_node11"><a xlink:href=".././proc/delta_scale_2str_k.html" xlink:title="delta_scale_2str_k">
-<polygon fill="#d9534f" stroke="#d9534f" points="359.5,-24 250.5,-24 250.5,0 359.5,0 359.5,-24"/>
-<text text-anchor="middle" x="305" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">delta_scale_2str_k</text>
+<title>proc~inc_1scalar_by_2stream_bybnd</title>
+<g id="a_call~~graph~~CallGraph_node2"><a xlink:href=".././proc/inc_1scalar_by_2stream_bybnd.html" xlink:title="inc_1scalar_by_2stream_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="180,-66 2,-66 2,-42 180,-42 180,-66"/>
+<text text-anchor="middle" x="91" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_1scalar_by_2stream_bybnd</text>
 </a>
 </g>
 </g>
 <!-- proc~inc_nstream_by_2stream_bybnd -->
-<g id="call~~graph~~CallGraph_node12" class="node">
+<g id="call~~graph~~CallGraph_node3" class="node">
 <title>proc~inc_nstream_by_2stream_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node12"><a xlink:href=".././proc/inc_nstream_by_2stream_bybnd.html" xlink:title="inc_nstream_by_2stream_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="182,-423 0,-423 0,-399 182,-399 182,-423"/>
-<text text-anchor="middle" x="91" y="-408.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_nstream_by_2stream_bybnd</text>
+<g id="a_call~~graph~~CallGraph_node3"><a xlink:href=".././proc/inc_nstream_by_2stream_bybnd.html" xlink:title="inc_nstream_by_2stream_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="182,-108 0,-108 0,-84 182,-84 182,-108"/>
+<text text-anchor="middle" x="91" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_nstream_by_2stream_bybnd</text>
 </a>
 </g>
 </g>
-<!-- proc~increment_2stream_by_2stream -->
+<!-- proc~increment_nstream_by_1scalar -->
+<g id="call~~graph~~CallGraph_node4" class="node">
+<title>proc~increment_nstream_by_1scalar</title>
+<g id="a_call~~graph~~CallGraph_node4"><a xlink:href=".././proc/increment_nstream_by_1scalar.html" xlink:title="increment_nstream_by_1scalar">
+<polygon fill="#d9534f" stroke="#d9534f" points="180,-150 2,-150 2,-126 180,-126 180,-150"/>
+<text text-anchor="middle" x="91" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_nstream_by_1scalar</text>
+</a>
+</g>
+</g>
+<!-- proc~inc_2stream_by_nstream_bybnd -->
+<g id="call~~graph~~CallGraph_node5" class="node">
+<title>proc~inc_2stream_by_nstream_bybnd</title>
+<g id="a_call~~graph~~CallGraph_node5"><a xlink:href=".././proc/inc_2stream_by_nstream_bybnd.html" xlink:title="inc_2stream_by_nstream_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="182,-192 0,-192 0,-168 182,-168 182,-192"/>
+<text text-anchor="middle" x="91" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_2stream_by_nstream_bybnd</text>
+</a>
+</g>
+</g>
+<!-- proc~inc_nstream_by_nstream_bybnd -->
+<g id="call~~graph~~CallGraph_node6" class="node">
+<title>proc~inc_nstream_by_nstream_bybnd</title>
+<g id="a_call~~graph~~CallGraph_node6"><a xlink:href=".././proc/inc_nstream_by_nstream_bybnd.html" xlink:title="inc_nstream_by_nstream_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="182,-234 0,-234 0,-210 182,-210 182,-234"/>
+<text text-anchor="middle" x="91" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_nstream_by_nstream_bybnd</text>
+</a>
+</g>
+</g>
+<!-- interface~net_broadband -->
+<g id="call~~graph~~CallGraph_node7" class="node">
+<title>interface~net_broadband</title>
+<g id="a_call~~graph~~CallGraph_node7"><a xlink:href=".././interface/net_broadband.html" xlink:title="net_broadband">
+<polygon fill="#a7506f" stroke="#a7506f" points="137.5,-276 44.5,-276 44.5,-252 137.5,-252 137.5,-276"/>
+<text text-anchor="middle" x="91" y="-261.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">net_broadband</text>
+</a>
+</g>
+</g>
+<!-- proc~inc_nstream_by_1scalar_bybnd -->
+<g id="call~~graph~~CallGraph_node8" class="node">
+<title>proc~inc_nstream_by_1scalar_bybnd</title>
+<g id="a_call~~graph~~CallGraph_node8"><a xlink:href=".././proc/inc_nstream_by_1scalar_bybnd.html" xlink:title="inc_nstream_by_1scalar_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="180,-318 2,-318 2,-294 180,-294 180,-318"/>
+<text text-anchor="middle" x="91" y="-303.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_nstream_by_1scalar_bybnd</text>
+</a>
+</g>
+</g>
+<!-- proc~increment_2stream_by_nstream -->
+<g id="call~~graph~~CallGraph_node9" class="node">
+<title>proc~increment_2stream_by_nstream</title>
+<g id="a_call~~graph~~CallGraph_node9"><a xlink:href=".././proc/increment_2stream_by_nstream.html" xlink:title="increment_2stream_by_nstream">
+<polygon fill="#d9534f" stroke="#d9534f" points="182,-360 0,-360 0,-336 182,-336 182,-360"/>
+<text text-anchor="middle" x="91" y="-345.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_2stream_by_nstream</text>
+</a>
+</g>
+</g>
+<!-- proc~increment_1scalar_by_nstream -->
+<g id="call~~graph~~CallGraph_node10" class="node">
+<title>proc~increment_1scalar_by_nstream</title>
+<g id="a_call~~graph~~CallGraph_node10"><a xlink:href=".././proc/increment_1scalar_by_nstream.html" xlink:title="increment_1scalar_by_nstream">
+<polygon fill="#d9534f" stroke="#d9534f" points="180,-402 2,-402 2,-378 180,-378 180,-402"/>
+<text text-anchor="middle" x="91" y="-387.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_1scalar_by_nstream</text>
+</a>
+</g>
+</g>
+<!-- proc~lw_solver_noscat -->
+<g id="call~~graph~~CallGraph_node11" class="node">
+<title>proc~lw_solver_noscat</title>
+<g id="a_call~~graph~~CallGraph_node11"><a xlink:href=".././proc/lw_solver_noscat.html" xlink:title="lw_solver_noscat">
+<polygon fill="#d9534f" stroke="#d9534f" points="142,-444 40,-444 40,-420 142,-420 142,-444"/>
+<text text-anchor="middle" x="91" y="-429.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lw_solver_noscat</text>
+</a>
+</g>
+</g>
+<!-- proc~delta_scale_2str_f_k -->
+<g id="call~~graph~~CallGraph_node12" class="node">
+<title>proc~delta_scale_2str_f_k</title>
+<g id="a_call~~graph~~CallGraph_node12"><a xlink:href=".././proc/delta_scale_2str_f_k.html" xlink:title="delta_scale_2str_f_k">
+<polygon fill="#d9534f" stroke="#d9534f" points="364,-507 246,-507 246,-483 364,-483 364,-507"/>
+<text text-anchor="middle" x="305" y="-492.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">delta_scale_2str_f_k</text>
+</a>
+</g>
+</g>
+<!-- proc~inc_1scalar_by_nstream_bybnd -->
 <g id="call~~graph~~CallGraph_node13" class="node">
-<title>proc~increment_2stream_by_2stream</title>
-<g id="a_call~~graph~~CallGraph_node13"><a xlink:href=".././proc/increment_2stream_by_2stream.html" xlink:title="increment_2stream_by_2stream">
-<polygon fill="#d9534f" stroke="#d9534f" points="182,-465 0,-465 0,-441 182,-441 182,-465"/>
-<text text-anchor="middle" x="91" y="-450.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_2stream_by_2stream</text>
+<title>proc~inc_1scalar_by_nstream_bybnd</title>
+<g id="a_call~~graph~~CallGraph_node13"><a xlink:href=".././proc/inc_1scalar_by_nstream_bybnd.html" xlink:title="inc_1scalar_by_nstream_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="180,-528 2,-528 2,-504 180,-504 180,-528"/>
+<text text-anchor="middle" x="91" y="-513.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_1scalar_by_nstream_bybnd</text>
 </a>
 </g>
 </g>
@@ -246,203 +258,203 @@
 <g id="call~~graph~~CallGraph_node14" class="node">
 <title>proc~sw_solver_2stream</title>
 <g id="a_call~~graph~~CallGraph_node14"><a xlink:href=".././proc/sw_solver_2stream.html" xlink:title="sw_solver_2stream">
-<polygon fill="#d9534f" stroke="#d9534f" points="147,-507 35,-507 35,-483 147,-483 147,-507"/>
-<text text-anchor="middle" x="91" y="-492.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">sw_solver_2stream</text>
+<polygon fill="#d9534f" stroke="#d9534f" points="147,-570 35,-570 35,-546 147,-546 147,-570"/>
+<text text-anchor="middle" x="91" y="-555.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">sw_solver_2stream</text>
 </a>
 </g>
 </g>
 <!-- zero_array -->
 <g id="call~~graph~~CallGraph_node32" class="node">
 <title>zero_array</title>
-<polygon fill="#777777" stroke="#777777" points="339.5,-507 270.5,-507 270.5,-483 339.5,-483 339.5,-507"/>
-<text text-anchor="middle" x="305" y="-492.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array</text>
+<polygon fill="#777777" stroke="#777777" points="339.5,-570 270.5,-570 270.5,-546 339.5,-546 339.5,-570"/>
+<text text-anchor="middle" x="305" y="-555.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array</text>
 </g>
 <!-- proc~sw_solver_2stream&#45;&gt;zero_array -->
 <g id="call~~graph~~CallGraph_edge1" class="edge">
 <title>proc~sw_solver_2stream&#45;&gt;zero_array</title>
-<path fill="none" stroke="#000000" d="M147.15,-495C182.35,-495 227.36,-495 260.13,-495"/>
-<polygon fill="#000000" stroke="#000000" points="260.31,-498.5 270.31,-495 260.31,-491.5 260.31,-498.5"/>
-</g>
-<!-- proc~inc_2stream_by_2stream_bybnd -->
-<g id="call~~graph~~CallGraph_node15" class="node">
-<title>proc~inc_2stream_by_2stream_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node15"><a xlink:href=".././proc/inc_2stream_by_2stream_bybnd.html" xlink:title="inc_2stream_by_2stream_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="182,-549 0,-549 0,-525 182,-525 182,-549"/>
-<text text-anchor="middle" x="91" y="-534.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_2stream_by_2stream_bybnd</text>
-</a>
-</g>
-</g>
-<!-- proc~increment_nstream_by_nstream -->
-<g id="call~~graph~~CallGraph_node16" class="node">
-<title>proc~increment_nstream_by_nstream</title>
-<g id="a_call~~graph~~CallGraph_node16"><a xlink:href=".././proc/increment_nstream_by_nstream.html" xlink:title="increment_nstream_by_nstream">
-<polygon fill="#d9534f" stroke="#d9534f" points="182,-591 0,-591 0,-567 182,-567 182,-591"/>
-<text text-anchor="middle" x="91" y="-576.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_nstream_by_nstream</text>
-</a>
-</g>
-</g>
-<!-- proc~sw_solver_noscat -->
-<g id="call~~graph~~CallGraph_node17" class="node">
-<title>proc~sw_solver_noscat</title>
-<g id="a_call~~graph~~CallGraph_node17"><a xlink:href=".././proc/sw_solver_noscat.html" xlink:title="sw_solver_noscat">
-<polygon fill="#d9534f" stroke="#d9534f" points="143,-633 39,-633 39,-609 143,-609 143,-633"/>
-<text text-anchor="middle" x="91" y="-618.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">sw_solver_noscat</text>
-</a>
-</g>
-</g>
-<!-- proc~extract_subset_dim2_4d -->
-<g id="call~~graph~~CallGraph_node18" class="node">
-<title>proc~extract_subset_dim2_4d</title>
-<g id="a_call~~graph~~CallGraph_node18"><a xlink:href=".././proc/extract_subset_dim2_4d.html" xlink:title="extract_subset_dim2_4d">
-<polygon fill="#d9534f" stroke="#d9534f" points="375,-171 235,-171 235,-147 375,-147 375,-171"/>
-<text text-anchor="middle" x="305" y="-156.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extract_subset_dim2_4d</text>
-</a>
-</g>
-</g>
-<!-- proc~increment_1scalar_by_2stream -->
-<g id="call~~graph~~CallGraph_node19" class="node">
-<title>proc~increment_1scalar_by_2stream</title>
-<g id="a_call~~graph~~CallGraph_node19"><a xlink:href=".././proc/increment_1scalar_by_2stream.html" xlink:title="increment_1scalar_by_2stream">
-<polygon fill="#d9534f" stroke="#d9534f" points="180,-675 2,-675 2,-651 180,-651 180,-675"/>
-<text text-anchor="middle" x="91" y="-660.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_1scalar_by_2stream</text>
-</a>
-</g>
-</g>
-<!-- proc~inc_1scalar_by_1scalar_bybnd -->
-<g id="call~~graph~~CallGraph_node20" class="node">
-<title>proc~inc_1scalar_by_1scalar_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node20"><a xlink:href=".././proc/inc_1scalar_by_1scalar_bybnd.html" xlink:title="inc_1scalar_by_1scalar_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="177.5,-717 4.5,-717 4.5,-693 177.5,-693 177.5,-717"/>
-<text text-anchor="middle" x="91" y="-702.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_1scalar_by_1scalar_bybnd</text>
-</a>
-</g>
-</g>
-<!-- proc~lw_solver_noscat -->
-<g id="call~~graph~~CallGraph_node21" class="node">
-<title>proc~lw_solver_noscat</title>
-<g id="a_call~~graph~~CallGraph_node21"><a xlink:href=".././proc/lw_solver_noscat.html" xlink:title="lw_solver_noscat">
-<polygon fill="#d9534f" stroke="#d9534f" points="142,-759 40,-759 40,-735 142,-735 142,-759"/>
-<text text-anchor="middle" x="91" y="-744.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lw_solver_noscat</text>
-</a>
-</g>
-</g>
-<!-- proc~inc_1scalar_by_nstream_bybnd -->
-<g id="call~~graph~~CallGraph_node22" class="node">
-<title>proc~inc_1scalar_by_nstream_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node22"><a xlink:href=".././proc/inc_1scalar_by_nstream_bybnd.html" xlink:title="inc_1scalar_by_nstream_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="180,-801 2,-801 2,-777 180,-777 180,-801"/>
-<text text-anchor="middle" x="91" y="-786.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_1scalar_by_nstream_bybnd</text>
-</a>
-</g>
-</g>
-<!-- proc~inc_2stream_by_1scalar_bybnd -->
-<g id="call~~graph~~CallGraph_node23" class="node">
-<title>proc~inc_2stream_by_1scalar_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node23"><a xlink:href=".././proc/inc_2stream_by_1scalar_bybnd.html" xlink:title="inc_2stream_by_1scalar_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="180,-843 2,-843 2,-819 180,-819 180,-843"/>
-<text text-anchor="middle" x="91" y="-828.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_2stream_by_1scalar_bybnd</text>
-</a>
-</g>
-</g>
-<!-- proc~lw_solver_2stream -->
-<g id="call~~graph~~CallGraph_node24" class="node">
-<title>proc~lw_solver_2stream</title>
-<g id="a_call~~graph~~CallGraph_node24"><a xlink:href=".././proc/lw_solver_2stream.html" xlink:title="lw_solver_2stream">
-<polygon fill="#d9534f" stroke="#d9534f" points="146,-885 36,-885 36,-861 146,-861 146,-885"/>
-<text text-anchor="middle" x="91" y="-870.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lw_solver_2stream</text>
-</a>
-</g>
-</g>
-<!-- interface~delta_scale_2str_kernel -->
-<g id="call~~graph~~CallGraph_node25" class="node">
-<title>interface~delta_scale_2str_kernel</title>
-<g id="a_call~~graph~~CallGraph_node25"><a xlink:href=".././interface/delta_scale_2str_kernel.html" xlink:title="delta_scale_2str_kernel">
-<polygon fill="#a7506f" stroke="#a7506f" points="159.5,-45 22.5,-45 22.5,-21 159.5,-21 159.5,-45"/>
-<text text-anchor="middle" x="91" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">delta_scale_2str_kernel</text>
-</a>
-</g>
-</g>
-<!-- interface~delta_scale_2str_kernel&#45;&gt;proc~delta_scale_2str_f_k -->
-<g id="call~~graph~~CallGraph_edge3" class="edge">
-<title>interface~delta_scale_2str_kernel&#45;&gt;proc~delta_scale_2str_f_k</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M159.66,-39.7C183.94,-42.11 211.33,-44.82 235.66,-47.23"/>
-<polygon fill="#000000" stroke="#000000" points="235.59,-50.74 245.89,-48.24 236.28,-43.77 235.59,-50.74"/>
-</g>
-<!-- interface~delta_scale_2str_kernel&#45;&gt;proc~delta_scale_2str_k -->
-<g id="call~~graph~~CallGraph_edge2" class="edge">
-<title>interface~delta_scale_2str_kernel&#45;&gt;proc~delta_scale_2str_k</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M159.66,-26.3C185.44,-23.74 214.7,-20.85 240.12,-18.33"/>
-<polygon fill="#000000" stroke="#000000" points="240.78,-21.78 250.38,-17.31 240.09,-14.81 240.78,-21.78"/>
+<path fill="none" stroke="#000000" d="M147.15,-558C182.35,-558 227.36,-558 260.13,-558"/>
+<polygon fill="#000000" stroke="#000000" points="260.31,-561.5 270.31,-558 260.31,-554.5 260.31,-561.5"/>
 </g>
 <!-- interface~extract_subset -->
-<g id="call~~graph~~CallGraph_node26" class="node">
+<g id="call~~graph~~CallGraph_node15" class="node">
 <title>interface~extract_subset</title>
-<g id="a_call~~graph~~CallGraph_node26"><a xlink:href=".././interface/extract_subset.html" xlink:title="extract_subset">
-<polygon fill="#a7506f" stroke="#a7506f" points="135.5,-213 46.5,-213 46.5,-189 135.5,-189 135.5,-213"/>
-<text text-anchor="middle" x="91" y="-198.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extract_subset</text>
+<g id="a_call~~graph~~CallGraph_node15"><a xlink:href=".././interface/extract_subset.html" xlink:title="extract_subset">
+<polygon fill="#a7506f" stroke="#a7506f" points="135.5,-654 46.5,-654 46.5,-630 135.5,-630 135.5,-654"/>
+<text text-anchor="middle" x="91" y="-639.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extract_subset</text>
+</a>
+</g>
+</g>
+<!-- proc~extract_subset_dim1_3d -->
+<g id="call~~graph~~CallGraph_node17" class="node">
+<title>proc~extract_subset_dim1_3d</title>
+<g id="a_call~~graph~~CallGraph_node17"><a xlink:href=".././proc/extract_subset_dim1_3d.html" xlink:title="extract_subset_dim1_3d">
+<polygon fill="#d9534f" stroke="#d9534f" points="375,-696 235,-696 235,-672 375,-672 375,-696"/>
+<text text-anchor="middle" x="305" y="-681.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extract_subset_dim1_3d</text>
 </a>
 </g>
 </g>
 <!-- interface~extract_subset&#45;&gt;proc~extract_subset_dim1_3d -->
-<g id="call~~graph~~CallGraph_edge6" class="edge">
+<g id="call~~graph~~CallGraph_edge4" class="edge">
 <title>interface~extract_subset&#45;&gt;proc~extract_subset_dim1_3d</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M135.67,-209.65C163.79,-215.22 200.99,-222.59 233.26,-228.99"/>
-<polygon fill="#000000" stroke="#000000" points="232.62,-232.43 243.11,-230.94 233.98,-225.56 232.62,-232.43"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M135.67,-650.65C163.79,-656.22 200.99,-663.59 233.26,-669.99"/>
+<polygon fill="#000000" stroke="#000000" points="232.62,-673.43 243.11,-671.94 233.98,-666.56 232.62,-673.43"/>
+</g>
+<!-- proc~extract_subset_absorption_tau -->
+<g id="call~~graph~~CallGraph_node18" class="node">
+<title>proc~extract_subset_absorption_tau</title>
+<g id="a_call~~graph~~CallGraph_node18"><a xlink:href=".././proc/extract_subset_absorption_tau.html" xlink:title="extract_subset_absorption_tau">
+<polygon fill="#d9534f" stroke="#d9534f" points="392,-654 218,-654 218,-630 392,-630 392,-654"/>
+<text text-anchor="middle" x="305" y="-639.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extract_subset_absorption_tau</text>
+</a>
+</g>
 </g>
 <!-- interface~extract_subset&#45;&gt;proc~extract_subset_absorption_tau -->
-<g id="call~~graph~~CallGraph_edge5" class="edge">
+<g id="call~~graph~~CallGraph_edge2" class="edge">
 <title>interface~extract_subset&#45;&gt;proc~extract_subset_absorption_tau</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M135.67,-201C156.64,-201 182.67,-201 207.93,-201"/>
-<polygon fill="#000000" stroke="#000000" points="207.94,-204.5 217.94,-201 207.94,-197.5 207.94,-204.5"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M135.67,-642C156.64,-642 182.67,-642 207.93,-642"/>
+<polygon fill="#000000" stroke="#000000" points="207.94,-645.5 217.94,-642 207.94,-638.5 207.94,-645.5"/>
+</g>
+<!-- proc~extract_subset_dim2_4d -->
+<g id="call~~graph~~CallGraph_node31" class="node">
+<title>proc~extract_subset_dim2_4d</title>
+<g id="a_call~~graph~~CallGraph_node31"><a xlink:href=".././proc/extract_subset_dim2_4d.html" xlink:title="extract_subset_dim2_4d">
+<polygon fill="#d9534f" stroke="#d9534f" points="375,-612 235,-612 235,-588 375,-588 375,-612"/>
+<text text-anchor="middle" x="305" y="-597.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extract_subset_dim2_4d</text>
+</a>
+</g>
 </g>
 <!-- interface~extract_subset&#45;&gt;proc~extract_subset_dim2_4d -->
-<g id="call~~graph~~CallGraph_edge4" class="edge">
+<g id="call~~graph~~CallGraph_edge3" class="edge">
 <title>interface~extract_subset&#45;&gt;proc~extract_subset_dim2_4d</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M135.67,-192.35C163.79,-186.78 200.99,-179.41 233.26,-173.01"/>
-<polygon fill="#000000" stroke="#000000" points="233.98,-176.44 243.11,-171.06 232.62,-169.57 233.98,-176.44"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M135.67,-633.35C163.79,-627.78 200.99,-620.41 233.26,-614.01"/>
+<polygon fill="#000000" stroke="#000000" points="233.98,-617.44 243.11,-612.06 232.62,-610.57 233.98,-617.44"/>
 </g>
-<!-- interface~net_broadband -->
+<!-- interface~delta_scale_2str_kernel -->
+<g id="call~~graph~~CallGraph_node16" class="node">
+<title>interface~delta_scale_2str_kernel</title>
+<g id="a_call~~graph~~CallGraph_node16"><a xlink:href=".././interface/delta_scale_2str_kernel.html" xlink:title="delta_scale_2str_kernel">
+<polygon fill="#a7506f" stroke="#a7506f" points="159.5,-486 22.5,-486 22.5,-462 159.5,-462 159.5,-486"/>
+<text text-anchor="middle" x="91" y="-471.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">delta_scale_2str_kernel</text>
+</a>
+</g>
+</g>
+<!-- interface~delta_scale_2str_kernel&#45;&gt;proc~delta_scale_2str_f_k -->
+<g id="call~~graph~~CallGraph_edge6" class="edge">
+<title>interface~delta_scale_2str_kernel&#45;&gt;proc~delta_scale_2str_f_k</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M159.66,-480.7C183.94,-483.11 211.33,-485.82 235.66,-488.23"/>
+<polygon fill="#000000" stroke="#000000" points="235.59,-491.74 245.89,-489.24 236.28,-484.77 235.59,-491.74"/>
+</g>
+<!-- proc~delta_scale_2str_k -->
+<g id="call~~graph~~CallGraph_node26" class="node">
+<title>proc~delta_scale_2str_k</title>
+<g id="a_call~~graph~~CallGraph_node26"><a xlink:href=".././proc/delta_scale_2str_k.html" xlink:title="delta_scale_2str_k">
+<polygon fill="#d9534f" stroke="#d9534f" points="359.5,-465 250.5,-465 250.5,-441 359.5,-441 359.5,-465"/>
+<text text-anchor="middle" x="305" y="-450.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">delta_scale_2str_k</text>
+</a>
+</g>
+</g>
+<!-- interface~delta_scale_2str_kernel&#45;&gt;proc~delta_scale_2str_k -->
+<g id="call~~graph~~CallGraph_edge5" class="edge">
+<title>interface~delta_scale_2str_kernel&#45;&gt;proc~delta_scale_2str_k</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M159.66,-467.3C185.44,-464.74 214.7,-461.85 240.12,-459.33"/>
+<polygon fill="#000000" stroke="#000000" points="240.78,-462.78 250.38,-458.31 240.09,-455.81 240.78,-462.78"/>
+</g>
+<!-- proc~increment_2stream_by_1scalar -->
+<g id="call~~graph~~CallGraph_node19" class="node">
+<title>proc~increment_2stream_by_1scalar</title>
+<g id="a_call~~graph~~CallGraph_node19"><a xlink:href=".././proc/increment_2stream_by_1scalar.html" xlink:title="increment_2stream_by_1scalar">
+<polygon fill="#d9534f" stroke="#d9534f" points="180,-696 2,-696 2,-672 180,-672 180,-696"/>
+<text text-anchor="middle" x="91" y="-681.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_2stream_by_1scalar</text>
+</a>
+</g>
+</g>
+<!-- proc~increment_nstream_by_2stream -->
+<g id="call~~graph~~CallGraph_node20" class="node">
+<title>proc~increment_nstream_by_2stream</title>
+<g id="a_call~~graph~~CallGraph_node20"><a xlink:href=".././proc/increment_nstream_by_2stream.html" xlink:title="increment_nstream_by_2stream">
+<polygon fill="#d9534f" stroke="#d9534f" points="182,-738 0,-738 0,-714 182,-714 182,-738"/>
+<text text-anchor="middle" x="91" y="-723.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_nstream_by_2stream</text>
+</a>
+</g>
+</g>
+<!-- proc~sw_solver_noscat -->
+<g id="call~~graph~~CallGraph_node21" class="node">
+<title>proc~sw_solver_noscat</title>
+<g id="a_call~~graph~~CallGraph_node21"><a xlink:href=".././proc/sw_solver_noscat.html" xlink:title="sw_solver_noscat">
+<polygon fill="#d9534f" stroke="#d9534f" points="143,-780 39,-780 39,-756 143,-756 143,-780"/>
+<text text-anchor="middle" x="91" y="-765.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">sw_solver_noscat</text>
+</a>
+</g>
+</g>
+<!-- proc~increment_1scalar_by_1scalar -->
+<g id="call~~graph~~CallGraph_node22" class="node">
+<title>proc~increment_1scalar_by_1scalar</title>
+<g id="a_call~~graph~~CallGraph_node22"><a xlink:href=".././proc/increment_1scalar_by_1scalar.html" xlink:title="increment_1scalar_by_1scalar">
+<polygon fill="#d9534f" stroke="#d9534f" points="177.5,-822 4.5,-822 4.5,-798 177.5,-798 177.5,-822"/>
+<text text-anchor="middle" x="91" y="-807.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_1scalar_by_1scalar</text>
+</a>
+</g>
+</g>
+<!-- proc~increment_1scalar_by_2stream -->
+<g id="call~~graph~~CallGraph_node23" class="node">
+<title>proc~increment_1scalar_by_2stream</title>
+<g id="a_call~~graph~~CallGraph_node23"><a xlink:href=".././proc/increment_1scalar_by_2stream.html" xlink:title="increment_1scalar_by_2stream">
+<polygon fill="#d9534f" stroke="#d9534f" points="180,-864 2,-864 2,-840 180,-840 180,-864"/>
+<text text-anchor="middle" x="91" y="-849.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_1scalar_by_2stream</text>
+</a>
+</g>
+</g>
+<!-- proc~sum_broadband -->
+<g id="call~~graph~~CallGraph_node24" class="node">
+<title>proc~sum_broadband</title>
+<g id="a_call~~graph~~CallGraph_node24"><a xlink:href=".././proc/sum_broadband.html" xlink:title="sum_broadband">
+<polygon fill="#d9534f" stroke="#d9534f" points="140,-906 42,-906 42,-882 140,-882 140,-906"/>
+<text text-anchor="middle" x="91" y="-891.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">sum_broadband</text>
+</a>
+</g>
+</g>
+<!-- proc~inc_2stream_by_1scalar_bybnd -->
+<g id="call~~graph~~CallGraph_node25" class="node">
+<title>proc~inc_2stream_by_1scalar_bybnd</title>
+<g id="a_call~~graph~~CallGraph_node25"><a xlink:href=".././proc/inc_2stream_by_1scalar_bybnd.html" xlink:title="inc_2stream_by_1scalar_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="180,-948 2,-948 2,-924 180,-924 180,-948"/>
+<text text-anchor="middle" x="91" y="-933.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_2stream_by_1scalar_bybnd</text>
+</a>
+</g>
+</g>
+<!-- proc~increment_2stream_by_2stream -->
 <g id="call~~graph~~CallGraph_node27" class="node">
-<title>interface~net_broadband</title>
-<g id="a_call~~graph~~CallGraph_node27"><a xlink:href=".././interface/net_broadband.html" xlink:title="net_broadband">
-<polygon fill="#a7506f" stroke="#a7506f" points="137.5,-927 44.5,-927 44.5,-903 137.5,-903 137.5,-927"/>
-<text text-anchor="middle" x="91" y="-912.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">net_broadband</text>
+<title>proc~increment_2stream_by_2stream</title>
+<g id="a_call~~graph~~CallGraph_node27"><a xlink:href=".././proc/increment_2stream_by_2stream.html" xlink:title="increment_2stream_by_2stream">
+<polygon fill="#d9534f" stroke="#d9534f" points="182,-990 0,-990 0,-966 182,-966 182,-990"/>
+<text text-anchor="middle" x="91" y="-975.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_2stream_by_2stream</text>
 </a>
 </g>
 </g>
-<!-- proc~inc_nstream_by_1scalar_bybnd -->
+<!-- proc~inc_2stream_by_2stream_bybnd -->
 <g id="call~~graph~~CallGraph_node28" class="node">
-<title>proc~inc_nstream_by_1scalar_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node28"><a xlink:href=".././proc/inc_nstream_by_1scalar_bybnd.html" xlink:title="inc_nstream_by_1scalar_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="180,-969 2,-969 2,-945 180,-945 180,-969"/>
-<text text-anchor="middle" x="91" y="-954.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_nstream_by_1scalar_bybnd</text>
+<title>proc~inc_2stream_by_2stream_bybnd</title>
+<g id="a_call~~graph~~CallGraph_node28"><a xlink:href=".././proc/inc_2stream_by_2stream_bybnd.html" xlink:title="inc_2stream_by_2stream_bybnd">
+<polygon fill="#d9534f" stroke="#d9534f" points="182,-1032 0,-1032 0,-1008 182,-1008 182,-1032"/>
+<text text-anchor="middle" x="91" y="-1017.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_2stream_by_2stream_bybnd</text>
 </a>
 </g>
 </g>
-<!-- proc~inc_1scalar_by_2stream_bybnd -->
+<!-- proc~increment_nstream_by_nstream -->
 <g id="call~~graph~~CallGraph_node29" class="node">
-<title>proc~inc_1scalar_by_2stream_bybnd</title>
-<g id="a_call~~graph~~CallGraph_node29"><a xlink:href=".././proc/inc_1scalar_by_2stream_bybnd.html" xlink:title="inc_1scalar_by_2stream_bybnd">
-<polygon fill="#d9534f" stroke="#d9534f" points="180,-1011 2,-1011 2,-987 180,-987 180,-1011"/>
-<text text-anchor="middle" x="91" y="-996.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">inc_1scalar_by_2stream_bybnd</text>
+<title>proc~increment_nstream_by_nstream</title>
+<g id="a_call~~graph~~CallGraph_node29"><a xlink:href=".././proc/increment_nstream_by_nstream.html" xlink:title="increment_nstream_by_nstream">
+<polygon fill="#d9534f" stroke="#d9534f" points="182,-1074 0,-1074 0,-1050 182,-1050 182,-1074"/>
+<text text-anchor="middle" x="91" y="-1059.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_nstream_by_nstream</text>
 </a>
 </g>
 </g>
-<!-- proc~increment_1scalar_by_nstream -->
+<!-- proc~lw_solver_2stream -->
 <g id="call~~graph~~CallGraph_node30" class="node">
-<title>proc~increment_1scalar_by_nstream</title>
-<g id="a_call~~graph~~CallGraph_node30"><a xlink:href=".././proc/increment_1scalar_by_nstream.html" xlink:title="increment_1scalar_by_nstream">
-<polygon fill="#d9534f" stroke="#d9534f" points="180,-1053 2,-1053 2,-1029 180,-1029 180,-1053"/>
-<text text-anchor="middle" x="91" y="-1038.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_1scalar_by_nstream</text>
-</a>
-</g>
-</g>
-<!-- proc~increment_2stream_by_nstream -->
-<g id="call~~graph~~CallGraph_node31" class="node">
-<title>proc~increment_2stream_by_nstream</title>
-<g id="a_call~~graph~~CallGraph_node31"><a xlink:href=".././proc/increment_2stream_by_nstream.html" xlink:title="increment_2stream_by_nstream">
-<polygon fill="#d9534f" stroke="#d9534f" points="182,-1095 0,-1095 0,-1071 182,-1071 182,-1095"/>
-<text text-anchor="middle" x="91" y="-1080.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">increment_2stream_by_nstream</text>
+<title>proc~lw_solver_2stream</title>
+<g id="a_call~~graph~~CallGraph_node30"><a xlink:href=".././proc/lw_solver_2stream.html" xlink:title="lw_solver_2stream">
+<polygon fill="#d9534f" stroke="#d9534f" points="146,-1116 36,-1116 36,-1092 146,-1092 146,-1116"/>
+<text text-anchor="middle" x="91" y="-1101.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lw_solver_2stream</text>
 </a>
 </g>
 </g>
@@ -514,7 +526,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by <br>&copy; 2022 
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

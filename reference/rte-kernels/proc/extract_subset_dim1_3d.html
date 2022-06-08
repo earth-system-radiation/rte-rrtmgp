@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
    <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
-    <meta name="author" content="" >
+    <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
     <title>extract_subset_dim1_3d &ndash; RTE kernels</title>
@@ -81,6 +81,7 @@
   <div class="col-lg-12">
 <div class="well well-sm">
   <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
@@ -119,6 +120,8 @@
     <h2>public pure subroutine extract_subset_dim1_3d(ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")</h2>
     
 
+    <p>Extract a subset from the first dimension (normally columns) of a 3D field.
+  Applicable to most variables e.g. tau, ssa, g</p>
 
     <h3>Arguments</h3>
       <table class="table table-striped varlist">
@@ -128,43 +131,43 @@
   <td><span class="anchor" id="variable-ncol~9"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nlay~8"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ngpt~9"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>Array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-array_in"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>array_in</strong></td><td></td>
+  <td><strong>array_in</strong></td><td><p>Array to subset</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-cols~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colS</strong></td><td></td>
+  <td><strong>colS</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-cole~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>colE</strong></td><td></td>
+  <td><strong>colE</strong></td><td><p>Starting and ending index</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-array_out"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(colE-colS+1, nlay,ngpt)</td><td>::</td>
-  <td><strong>array_out</strong></td><td></td>
+  <td><strong>array_out</strong></td><td><p>subset of the input array</p></td>
 </tr>
 </tbody>
 </table>
@@ -298,7 +301,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by <br>&copy; 2022 
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

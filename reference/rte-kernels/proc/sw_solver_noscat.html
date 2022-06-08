@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
    <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
-    <meta name="author" content="" >
+    <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
     <title>sw_solver_noscat &ndash; RTE kernels</title>
@@ -81,10 +81,11 @@
   <div class="col-lg-12">
 <div class="well well-sm">
   <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 4.1% of total for procedures.">24 statements</a>
+    title=" 4.0% of total for procedures.">24 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_rte_solver_kernels.F90"> Source File</a></li>
   </ul>
@@ -128,49 +129,49 @@
   <td><span class="anchor" id="variable-ncol~5"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nlay~4"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ngpt~5"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-top_at_1~4"></span>logical(kind=wl),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>top_at_1</strong></td><td></td>
+  <td><strong>top_at_1</strong></td><td><p>ilay = 1 is the top of the atmosphere?</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tau~4"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
-  <td><strong>tau</strong></td><td></td>
+  <td><strong>tau</strong></td><td><p>Absorption optical thickness []</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-mu0~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay       )</td><td>::</td>
-  <td><strong>mu0</strong></td><td></td>
+  <td><strong>mu0</strong></td><td><p>cosine of solar zenith angle</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-inc_flux_dir~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
-  <td><strong>inc_flux_dir</strong></td><td></td>
+  <td><strong>inc_flux_dir</strong></td><td><p>Direct beam incident flux [W/m2]</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-flux_dir~2"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
-  <td><strong>flux_dir</strong></td><td></td>
+  <td><strong>flux_dir</strong></td><td><p>Direct-beam flux, spectral [W/m2]</p></td>
 </tr>
 </tbody>
 </table>
@@ -203,7 +204,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by <br>&copy; 2022 
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

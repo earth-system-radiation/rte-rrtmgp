@@ -340,7 +340,17 @@ contains
     !   here but that's kinda hard, so we set its concentration to 0 below.
     !
     do b = 1, nblocks
-      call stop_on_err(gas_conc_array(b)%init(gas_names))
+      ! Need to know the names of the gases to be used to initialize the
+      !   gas concentrations object. A list of all possible gas names is taken from
+      !   the k-distribution file when forcing index is 1, but we provide a short list
+      !   that excludes h2o, o3, and no2 when forcing index is 2 or 3. We nontheless
+      !   need to provide those names at initialization
+      !
+      if(any( [(string_in_array(gas_names(g), ['h2o', 'o3 ', 'no2']), g = 1, len(gas_names) )])) then
+        call stop_on_err(gas_conc_array(b)%init(gas_names))
+      else
+        call stop_on_err(gas_conc_array(b)%init([gas_names, 'h2o    ', 'o3     ', 'no2    ']))
+      end if 
     end do
     !
     ! Which gases are known to the k-distribution and available in the files?

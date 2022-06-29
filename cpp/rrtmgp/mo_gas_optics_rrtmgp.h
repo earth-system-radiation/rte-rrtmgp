@@ -830,7 +830,9 @@ public:
                   real2d const &col_dry=real2d(), real2d const &tlev=real2d()) {
     using yakl::intrinsics::size;
     using yakl::intrinsics::allocated;
-    using yakl::intrinsics::any;
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+      using yakl::intrinsics::any;
+    #endif
     using yakl::componentwise::operator>;
     using yakl::componentwise::operator<;
 
@@ -918,7 +920,9 @@ public:
     using yakl::intrinsics::ubound;
     using yakl::intrinsics::size;
     using yakl::intrinsics::allocated;
-    using yakl::intrinsics::any;
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+      using yakl::intrinsics::any;
+    #endif
     using yakl::componentwise::operator>;
     using yakl::componentwise::operator<;
     using yakl::fortran::parallel_for;
@@ -1118,7 +1122,7 @@ public:
       });
     } else {
       // do icol = 1, ncol
-      auto &grav = ::grav;
+      YAKL_SCOPE(grav, ::grav);
       parallel_for( SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = grav;
       });
@@ -1127,7 +1131,7 @@ public:
     real2d col_dry("col_dry",size(plev,1),size(plev,2)-1);
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
-    auto &m_dry = ::m_dry;
+    YAKL_SCOPE(m_dry, ::m_dry);
     parallel_for( SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
       real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air

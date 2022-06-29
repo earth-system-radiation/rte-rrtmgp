@@ -46,7 +46,9 @@ void rte_sw(OpticalProps2str const &atmos, bool top_at_1, real1d const &mu0, rea
             real2d const &sfc_alb_dir, real2d const &sfc_alb_dif, FluxesType &fluxes, real2d const &inc_flux_dif) {
   using yakl::intrinsics::size;
   using yakl::intrinsics::allocated;
-  using yakl::intrinsics::any;
+  #ifdef RRTMGP_EXPENSIVE_CHECKS
+    using yakl::intrinsics::any;
+  #endif
   using yakl::componentwise::operator<;
   using yakl::componentwise::operator>;
 

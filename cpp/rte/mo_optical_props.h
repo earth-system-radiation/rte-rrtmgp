@@ -20,7 +20,9 @@ public:
   //   Values are assumed to be defined in bands a mapping between bands and g-points is provided
   void init( real2d const &band_lims_wvn , int2d const &band_lims_gpt=int2d() , std::string name="" ) {
     using yakl::intrinsics::size;
-    using yakl::intrinsics::any;
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+      using yakl::intrinsics::any;
+    #endif
     using yakl::intrinsics::allocated;
     using yakl::intrinsics::maxval;
     using yakl::componentwise::operator<;
@@ -278,7 +280,9 @@ class OpticalProps1scl : public OpticalPropsArry {
 public:
   void validate() const {
     using yakl::intrinsics::allocated;
-    using yakl::intrinsics::any;
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+      using yakl::intrinsics::any;
+    #endif
     using yakl::componentwise::operator<;
 
     if (! allocated(this->tau)) { stoprun("validate: tau not allocated/initialized"); }
@@ -358,7 +362,9 @@ public:
   void validate() const {
     using yakl::intrinsics::size;
     using yakl::intrinsics::allocated;
-    using yakl::intrinsics::any;
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+      using yakl::intrinsics::any;
+    #endif
     using yakl::componentwise::operator<;
     using yakl::componentwise::operator>;
 
@@ -383,7 +389,9 @@ public:
   void delta_scale(real3d const &forward=real3d()) {
     using yakl::intrinsics::size;
     using yakl::intrinsics::allocated;
-    using yakl::intrinsics::any;
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+      using yakl::intrinsics::any;
+    #endif
     using yakl::componentwise::operator<;
     using yakl::componentwise::operator>;
 

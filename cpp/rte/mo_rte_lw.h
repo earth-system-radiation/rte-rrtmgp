@@ -56,9 +56,7 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
             FluxesType &fluxes, real2d const &inc_flux, int n_gauss_angles) {
   using yakl::intrinsics::size;
   using yakl::intrinsics::allocated;
-  #ifdef RRTMGP_EXPENSIVE_CHECKS
-    using yakl::intrinsics::any;
-  #endif
+  using yakl::intrinsics::any;
   using yakl::componentwise::operator<;
   using yakl::componentwise::operator>;
   using yakl::fortran::parallel_for;

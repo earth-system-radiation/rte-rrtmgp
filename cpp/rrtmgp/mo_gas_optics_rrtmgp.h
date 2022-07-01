@@ -830,9 +830,7 @@ public:
                   real2d const &col_dry=real2d(), real2d const &tlev=real2d()) {
     using yakl::intrinsics::size;
     using yakl::intrinsics::allocated;
-    #ifdef RRTMGP_EXPENSIVE_CHECKS
-      using yakl::intrinsics::any;
-    #endif
+    using yakl::intrinsics::any;
     using yakl::componentwise::operator>;
     using yakl::componentwise::operator<;
 
@@ -920,9 +918,7 @@ public:
     using yakl::intrinsics::ubound;
     using yakl::intrinsics::size;
     using yakl::intrinsics::allocated;
-    #ifdef RRTMGP_EXPENSIVE_CHECKS
-      using yakl::intrinsics::any;
-    #endif
+    using yakl::intrinsics::any;
     using yakl::componentwise::operator>;
     using yakl::componentwise::operator<;
     using yakl::fortran::parallel_for;

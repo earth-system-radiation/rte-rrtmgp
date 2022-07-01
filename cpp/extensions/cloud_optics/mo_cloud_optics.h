@@ -256,9 +256,7 @@ public:
     using yakl::COLON;
     using yakl::intrinsics::size;
     using yakl::intrinsics::allocated;
-    #ifdef RRTMGP_EXPENSIVE_CHECKS
-      using yakl::intrinsics::any;
-    #endif
+    using yakl::intrinsics::any;
     using yakl::componentwise::operator>;
     using yakl::componentwise::operator<;
     using yakl::componentwise::operator&&;

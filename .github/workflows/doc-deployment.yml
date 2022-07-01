@@ -21,10 +21,10 @@ jobs:
         sudo apt install -y gfortran-${GCC_V} python3-dev graphviz
         sudo pip install ford
 
-    # Install ruby 2.7.x
+    # Install ruby
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 2.7
+        ruby-version: 3.1
 
     # Setup Jekyll
     - name: Setup Jekyll

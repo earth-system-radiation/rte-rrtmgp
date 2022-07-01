@@ -5,11 +5,11 @@ on: [push, pull_request]
 
 jobs:
   Build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     env:
       FC: gfortran
-      GCC_V: 10
+      GCC_V: 12
 
     steps:
     - name: Checkout code
@@ -18,8 +18,7 @@ jobs:
     - name: Install Dependencies Ubuntu
       run: |
         sudo apt-get update
-        sudo apt install -y gfortran-${GCC_V} cmake wget python-dev python build-essential numdiff graphviz
-        wget -P . "https://bootstrap.pypa.io/get-pip.py" && sudo python get-pip.py && rm get-pip.py
+        sudo apt install -y gfortran-${GCC_V} python3-dev graphviz
         sudo pip install ford
 
     # Install ruby 2.7.x

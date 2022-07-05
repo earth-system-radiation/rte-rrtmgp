@@ -1,5 +1,6 @@
 #!/bin/sh
 rm -rf ../../public
+mkdir  ../../public
 ford ford_site/rrtmgp-fortran-interface.md
 ford ford_site/rrtmgp-kernels.md
 ford ford_site/rte-fortran-interface.md

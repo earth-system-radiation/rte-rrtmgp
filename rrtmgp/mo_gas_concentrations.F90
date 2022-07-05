@@ -263,7 +263,7 @@ contains
 
     igas = this%find_gas(gas)
     if (igas == GAS_NOT_IN_LIST) then
-      error_msg = 'ty_gas_concs%set_vmr(): trying to set ' // trim(gas) // 'but name not provided at initialization'
+      error_msg = 'ty_gas_concs%set_vmr(): trying to set ' // trim(gas) // ' but name not provided at initialization'
       return
     end if
     !

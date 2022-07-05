@@ -11,14 +11,14 @@ def mae(diff, col_dim):
     #
     # Mean absolute error
     #
-    return xr.ufuncs.fabs(diff).mean(dim=col_dim)
+    return np.fabs(diff).mean(dim=col_dim)
 
 
 def rms(diff, col_dim):
     #
     # Root mean square error
     #
-    return xr.ufuncs.sqrt(xr.ufuncs.square(diff).mean(dim=col_dim))
+    return np.sqrt(xr.ufuncs.square(diff).mean(dim=col_dim))
 
 
 def make_comparison_plot(variants, labels, reference, vscale, col_dim="site",

@@ -24,9 +24,9 @@ functions. The fluxes are normally summarized or reduced via a user extensible c
 Comprehensive documentation for RTE and RRTMGP is very much under development.
 
 We are planning to follow the [Diataxis](https://diataxis.fr/) framework
-and produce [tutorials](tutorials/index.md), [how-to guides](howtos/index.html),
-[explanations](explanations/index.html), and [reference](reference/index.html).
+and produce [tutorials](./tutorials.html), [how-to guides](./howtos.html),
+[explanations](./explanations.html), and [reference](./reference.html).
 
-We are starting with the [reference documentation](reference/index.html),
+We are starting with the [reference documentation](reference.html),
 auto-generated from the code itself. This is provided separately for
 RTE and RRTMGP and for the user-facing classes and underlying computational kernels.

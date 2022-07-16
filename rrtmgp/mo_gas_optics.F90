@@ -13,6 +13,7 @@
 !> ## Generic Fortran interface for gas optics  
 !> 
 !> Defines an interface for gas optics parameterizations: 
+!>
 !>   - inquiry functions for the pressure and temperature limits 
 !>   - inquiry functions for the source of radiation (internal or planetary radiation vs. 
 !>      external or stellar radiation)

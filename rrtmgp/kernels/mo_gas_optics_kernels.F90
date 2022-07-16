@@ -10,9 +10,18 @@
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
-!
-!! ## Numeric calculations for gas optics. Absorption and Rayleigh optical depths,
-!!   source functions.
+! -------------------------------------------------------------------------------------------------
+!>
+!> ## Numeric calculations for gas optics. Absorption and Rayleigh optical depths, Planck source functions.
+!>
+!>   - Interpolation coefficients are computed, then used in subsequent routines. 
+!>   - All applications will call compute_tau_absorption(); 
+!>     compute_tau_rayleigh() and/or compute_Planck_source() will be called depending on the 
+!>     configuration of the k-distribution. 
+!>   - The details of the interpolation scheme are not particaulrly important as long as arrays including 
+!>     tables are passed consisently between kernels. 
+!>
+! -------------------------------------------------------------------------------------------------
 
 module mo_gas_optics_kernels
   use mo_rte_kind,      only : wp, wl

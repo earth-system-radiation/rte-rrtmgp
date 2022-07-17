@@ -34,8 +34,8 @@
 # acx_cv_[]_AC_LANG_ABBREV[]_macro__OPENMP_value shell variable. The possible
 # (successful) values of the variable are dates, which map to the versions of
 # the standard in the following way:
-#   201611 5.0 (OpenMP 5.0 preview 1)
-#   201511 4.5
+#   202011 5.1
+#   201811 5.0
 #   201307 4.0
 #   201107 3.1
 #   200805 3.0

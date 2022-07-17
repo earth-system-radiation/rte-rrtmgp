@@ -147,17 +147,7 @@ program rte_clear_sky_regression
   !
   nbnd = k_dist%get_nband()
   ngpt = k_dist%get_ngpt()
-  !
-  ! RRTMGP won't run with pressure less than its minimum. The top level in the RFMIP file
-  !   is set to 10^-3 Pa. Here we pretend the layer is just a bit less deep.
-  !
   top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
-  if(top_at_1) then
-    p_lev(:,1) = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
-  else
-    p_lev(:,nlay+1) &
-                 = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
-  end if
   ! ----------------------------------------------------------------------------
   !
   !  Boundary conditions
@@ -585,7 +575,8 @@ contains
     call write_broadband_field(input_file, flux_net, "lw_flux_net_alt", "LW flux ne, fewer g-pointst")
     call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
     call write_broadband_field(input_file, heating_rate,  &
-                                                     "lw_flux_hr_alt",  "LW heating rate, fewer g-points", vert_dim_name = "layer")
+                                                     "lw_flux_hr_alt",  "LW heating rate, fewer g-points", &
+                                                     vert_dim_name = "layer")
 
     call stop_on_err(k_dist_2%compute_optimal_angles(atmos, lw_Ds))
     call stop_on_err(rte_lw(atmos, top_at_1, &
@@ -597,7 +588,8 @@ contains
     call write_broadband_field(input_file, flux_net, "lw_flux_net_alt_oa", "LW flux ne, fewer g-points, opt. angle")
     call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
     call write_broadband_field(input_file, heating_rate,  &
-                                                     "lw_flux_hr_alt_oa",  "LW heating rate, fewer g-points, opt. angle", vert_dim_name = "layer")
+                                                     "lw_flux_hr_alt_oa",  "LW heating rate, fewer g-points, opt. angle", &
+                                                     vert_dim_name = "layer")
     call k_dist_2%finalize()
   end subroutine lw_clear_sky_alt
   ! ----------------------------------------------------------------------------

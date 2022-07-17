@@ -7,6 +7,7 @@
 *.pyo
 .dirstamp
 /Makefile
+/config.cache
 /config.log
 /config.status
 /examples/**/*.test
@@ -30,6 +31,7 @@ __pycache__
 /tests/**/*.test.log
 /tests/clear_sky_regression
 /tests/test_atmospheres.nc
+/tests/test_zenith_angle_spherical_correction
 /tests/validation-figures.pdf
 
 # Dist stage files:
@@ -60,9 +62,12 @@ __pycache__
 # Intel vectorization reports
 *.optrpt
 
-# Don't commit specific Makefile variants
-Makefile.libs
-Makefile.conf
+# Netcdf file during testing
+examples/*/*.nc
+examples/*/*/*.nc
+
+# Jupyter notebooks
+.ipynb_checkpoints
 
 # Intel code coverage
 *.dyn
@@ -72,3 +77,9 @@ Makefile.conf
 *.HTML
 *.html
 *.gif
+
+# gh-pages directory
+public
+
+# Ruby stuff
+Gemfile.lock

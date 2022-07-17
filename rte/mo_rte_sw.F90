@@ -3,28 +3,33 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2021,  Atmospheric and Environmental Research,
+! Copyright 2015-,  Atmospheric and Environmental Research,
 ! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-!  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
-!    atmospheric optical properties on a spectral grid
-!    information about vertical ordering
-!    boundary conditions
-!      solar zenith angle, spectrally-resolved incident colimated flux, surface albedos for direct and diffuse radiation
-!    optionally, a boundary condition for incident diffuse radiation
-!
-! It is the user's responsibility to ensure that boundary conditions (incident fluxes, surface albedos) are on the same
-!   spectral grid as the optical properties.
-!
-! Final output is via user-extensible ty_fluxes which must reduce the detailed spectral fluxes to
-!   whatever summary the user needs.
-!
-! The routine does error checking and choses which lower-level kernel to invoke based on
-!   what kinds of optical properties are supplied
+!> Compute shortwave radiative fluxes
+
+!>  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
+!>
+!>  - atmospheric optical properties on a spectral grid
+!>  - information about vertical ordering
+!>  - boundary conditions
+!>    - solar zenith angle, spectrally-resolved incident colimated flux, surface albedos for direct and diffuse radiation
+!>    - optionally, a boundary condition for incident diffuse radiation
+!>
+!> It is the user's responsibility to ensure that boundary conditions (incident fluxes, surface albedos) are on the same
+!>   spectral grid as the optical properties.
+!>
+!> Final output is via user-extensible ty_fluxes
+!> ([[mo_fluxes(module):ty_fluxes(type)]] in module [[mo_fluxes]])
+!> which must reduce the detailed spectral fluxes to whatever summary the user needs
+!>
+!>
+!> The routine does error checking and choses which lower-level kernel to invoke based on
+!>   what kinds of optical properties are supplied
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_sw
@@ -39,25 +44,85 @@ module mo_rte_sw
   implicit none
   private
 
+  interface rte_sw
+    module procedure rte_sw_mu0_bycol, rte_sw_mu0_full
+  end interface rte_sw
   public :: rte_sw
 
 contains
-  ! --------------------------------------------------
-  function rte_sw(atmos, top_at_1,                 &
-                  mu0, inc_flux,                   &
-                  sfc_alb_dir, sfc_alb_dif,        &
+  ! -------------------------------------------------------------------------------------------------
+  function rte_sw_mu0_bycol(atmos, top_at_1, &
+                  mu0, inc_flux,             &
+                  sfc_alb_dir, sfc_alb_dif,  &
                   fluxes, inc_flux_dif) result(error_msg)
-    class(ty_optical_props_arry), intent(in   ) :: atmos           ! Optical properties provided as arrays
-    logical,                      intent(in   ) :: top_at_1        ! Is the top of the domain at index 1?
-                                                                   ! (if not, ordering is bottom-to-top)
-    real(wp), dimension(:),       intent(in   ) :: mu0             ! cosine of solar zenith angle (ncol)
-    real(wp), dimension(:,:),     intent(in   ) :: inc_flux,    &  ! incident flux at top of domain [W/m2] (ncol, ngpt)
-                                                   sfc_alb_dir, &  ! surface albedo for direct and
-                                                   sfc_alb_dif     ! diffuse radiation (nband, ncol)
-    class(ty_fluxes),             intent(inout) :: fluxes          ! Class describing output calculations
+    class(ty_optical_props_arry), intent(in   ) :: atmos
+      !! Optical properties provided as arrays
+    logical,                      intent(in   ) :: top_at_1
+      !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
+    real(wp), dimension(:),       intent(in   ) :: mu0
+      !! cosine of solar zenith angle (ncol) - will be assumed constant with height
+    real(wp), dimension(:,:),     intent(in   ) :: inc_flux
+      !! incident flux at top of domain [W/m2] (ncol, ngpt)
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dir
+      !! surface albedo for direct and
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dif
+      !! diffuse radiation (nband, ncol)
+    class(ty_fluxes),             intent(inout) :: fluxes
+      !! Class describing output calculations
     real(wp), dimension(:,:), optional, target, &
-                                  intent(in   ) :: inc_flux_dif    ! incident diffuse flux at top of domain [W/m2] (ncol, ngpt)
-    character(len=128)                          :: error_msg       ! If empty, calculation was successful
+                                  intent(in   ) :: inc_flux_dif
+      !! incident diffuse flux at top of domain [W/m2] (ncol, ngpt)
+    character(len=128)                          :: error_msg
+      !! If empty, calculation was successful
+    ! --------------------------------
+    real(wp), dimension(size(mu0), atmos%get_nlay()) :: mu0_bylay
+    integer :: i, j, ncol, nlay
+
+    ncol = size(mu0)
+    nlay = atmos%get_nlay()
+    ! Solar zenith angle cosine is constant with height
+    !$acc        data copyin(mu0)    create(mu0_bylay)
+    !$omp target data map(to:mu0) map(alloc:mu0_bylay)
+
+    !$acc                         parallel loop    collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do j = 1, nlay
+      do i = 1, ncol
+        mu0_bylay(i,j) = mu0(i)
+      end do
+    end do
+
+    error_msg = rte_sw_mu0_full(atmos, top_at_1, &
+                    mu0_bylay, inc_flux,         &
+                    sfc_alb_dir, sfc_alb_dif,    &
+                    fluxes, inc_flux_dif)
+    !$acc end data
+    !$omp end target data
+  end function rte_sw_mu0_bycol
+  ! -------------------------------------------------------------------------------------------------
+  function rte_sw_mu0_full(atmos, top_at_1, &
+                  mu0, inc_flux,            &
+                  sfc_alb_dir, sfc_alb_dif, &
+                  fluxes, inc_flux_dif) result(error_msg)
+    class(ty_optical_props_arry), intent(in   ) :: atmos
+      !! Optical properties provided as arrays
+    logical,                      intent(in   ) :: top_at_1
+      !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
+    real(wp), dimension(:,:),     intent(in   ) :: mu0
+      !! cosine of solar zenith angle (ncol, nlay)
+    real(wp), dimension(:,:),     intent(in   ) :: inc_flux
+      !! incident flux at top of domain [W/m2] (ncol, ngpt)
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dir
+      !! surface albedo for direct and
+    real(wp), dimension(:,:),     intent(in   ) :: sfc_alb_dif
+      !! diffuse radiation (nband, ncol)
+    class(ty_fluxes),             intent(inout) :: fluxes
+      !! Class describing output calculations
+    real(wp), dimension(:,:), optional, target, &
+                                  intent(in   ) :: inc_flux_dif
+      !! incident diffuse flux at top of domain [W/m2] (ncol, ngpt)
+    character(len=128)                          :: error_msg
+      !! If empty, calculation was successful
     ! --------------------------------
     !
     ! Local variables
@@ -99,7 +164,7 @@ contains
     !$acc        data copyin(inc_flux_dif) if (has_dif_bc)
     !$omp target data map(to:inc_flux_dif) if (has_dif_bc)
     if(check_extents) then
-      if(.not. extents_are(mu0, ncol)) &
+      if(.not. extents_are(mu0, ncol, nlay)) &
         error_msg = "rte_sw: mu0 inconsistently sized"
       if(.not. extents_are(inc_flux, ncol, ngpt)) &
         error_msg = "rte_sw: inc_flux inconsistently sized"
@@ -116,8 +181,8 @@ contains
     ! Values of input arrays
     !
     if(check_values) then
-      if(any_vals_outside(mu0, 0._wp, 1._wp)) &
-        error_msg = "rte_sw: one or more mu0 <= 0 or > 1"
+      if(any_vals_outside(mu0, -1._wp, 1._wp)) &
+        error_msg = "rte_sw: one or more mu0 < -1 or > 1"
       if(any_vals_less_than(inc_flux, 0._wp)) &
         error_msg = "rte_sw: one or more inc_flux < 0"
       if(any_vals_outside(sfc_alb_dir,  0._wp, 1._wp)) &
@@ -315,7 +380,7 @@ contains
       deallocate(inc_flux_diffuse)
     end if
 
-  end function rte_sw
+  end function rte_sw_mu0_full
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)

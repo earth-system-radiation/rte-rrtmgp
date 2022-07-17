@@ -40,7 +40,7 @@ jobs:
         test ! -f /opt/intel/oneapi/setvars.sh || . /opt/intel/oneapi/setvars.sh
         test "x${RTE_KERNELS}" = xopenacc && enable_gpu=yes || enable_gpu=no
         test "x${FC}" != xifort || export acx_cv_fc_openacc_flag=
-        ./configure --disable-silent-rules --enable-tests --with-netcdf-fortran="${NFHOME}" --enable-gpu=$enable_gpu || { cat ./config.log; exit 1; }
+        ./configure --disable-silent-rules --disable-examples --enable-tests --with-netcdf-fortran="${NFHOME}" --enable-gpu=$enable_gpu || { cat ./config.log; exit 1; }
     #
     # Build the library
     #

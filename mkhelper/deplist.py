@@ -49,15 +49,26 @@ def parse_args():
     parser = ArgumentParser(
         fromfile_prefix_chars='@',
         description='Reads a set of MAKEFILEs and prints a topologically '
-                    'sorted list of TARGETs together with their dependencies.')
+                    'sorted list of TARGETs (PREREQuisites) together with '
+                    'their dependencies (dependents).')
 
     parser.add_argument(
         '-d', '--debug-file',
         help='dump debug information to DEBUG_FILE')
     parser.add_argument(
         '-t', '--target', nargs='*',
-        help='names of the makefile targets; if not specified, all targets and '
-             'prerequisites found in the makefiles are sent to the output')
+        help='names of the makefile targets to be printed together with their '
+             'dependencies; mutually exclusive with the argument '
+             '\'-p/--prereq\'; if neither of the arguments is specified, all '
+             'targets and prerequisites found in the makefiles are sent to the '
+             'output')
+    parser.add_argument(
+        '-p', '--prereq', nargs='*',
+        help='names of the makefile prerequisites to be printed together with '
+             'their dependents; mutually exclusive with the argument '
+             '\'-t/--target\'; if neither of the arguments is specified, all '
+             'targets and prerequisites found in the makefiles are sent to the '
+             'output')
     parser.add_argument(
         '--inc-oo', action='store_true',
         help='include order-only prerequisites in the dependency graph')
@@ -106,6 +117,10 @@ def parse_args():
              'the standard input stream')
 
     args = parser.parse_args()
+
+    if args.target is not None and args.prereq is not None:
+        parser.error('arguments -t/--target and -p/--prereq are mutually '
+                     'exclusive')
 
     if args.check_exists_prereq:
         for pattern_list in args.check_exists_prereq:
@@ -189,15 +204,7 @@ def visit_dfs(dep_graph, vertex,
             finish_visit_cb(vertex)
 
 
-# To make sure that the output is reproducible, we need to work with lists and
-# not with sets. This helper function removes duplicates from a list while
-# preserving the order.
-def remove_duplicates(l):
-    seen = set()
-    return [x for x in l if not (x in seen or seen.add(x))]
-
-
-def build_graph(makefiles, inc_oo=False):
+def build_graph(makefiles, inc_oo):
     # Read makefiles:
     result = collections.defaultdict(list)
     for mkf in makefiles:
@@ -206,9 +213,29 @@ def build_graph(makefiles, inc_oo=False):
         for target, prereqs in mkf_dict.items():
             result[target].extend(prereqs)
 
+    # Remove duplicates (we do not use sets as values of the dictionary to keep
+    # the order of prerequisites):
     for target in result.keys():
-        result[target] = remove_duplicates(result[target])
+        seen = set()
+        result[target] = [prereq for prereq in result[target]
+                          if not (prereq in seen or seen.add(prereq))]
 
+    # Make leaves (i.e. prerequisites without any prerequisites) explicit nodes
+    # of the graph:
+    leaves = set(prereq for prereqs in result.values()
+                 for prereq in prereqs if prereq not in result)
+    result.update((prereq, result.default_factory()) for prereq in leaves)
+
+    return result
+
+
+def flip_edges(graph):
+    result = collections.defaultdict(list)
+    for parent, children in graph.items():
+        for child in children:
+            result[child].append(parent)
+        else:
+            _ = result[parent]
     return result
 
 
@@ -243,12 +270,20 @@ def main():
     if not dep_graph:
         return
 
+    if args.prereq is None:
+        traversed_graph = dep_graph
+        start_nodes = args.target
+    else:
+        traversed_graph = flip_edges(dep_graph)
+        start_nodes = args.prereq
+
     # Insert _meta_root, which will be the starting-point for the dependency
     # graph traverse:
-    if args.target:
-        dep_graph[_meta_root] = [t for t in args.target if t in dep_graph]
+    if start_nodes is None:
+        traversed_graph[_meta_root] = sorted(traversed_graph.keys())
     else:
-        dep_graph[_meta_root] = sorted(dep_graph.keys())
+        traversed_graph[_meta_root] = [t for t in start_nodes
+                                       if t in traversed_graph]
 
     # Visitor callbacks:
     start_visit_cb_list = []
@@ -334,10 +369,17 @@ def main():
             if vertex in path:
                 start_cycle_idx = path.index(vertex)
 
-                msg_lines = (path[1:start_cycle_idx] +
-                             [path[start_cycle_idx] + ' <- start of cycle'] +
-                             path[start_cycle_idx + 1:] +
-                             [vertex + ' <- end of cycle'])
+                if args.prereq is None:
+                    msg_lines = (
+                            path[1:start_cycle_idx] +
+                            [path[start_cycle_idx] + ' <- start of cycle'] +
+                            path[start_cycle_idx + 1:] +
+                            [vertex + ' <- end of cycle'])
+                else:
+                    msg_lines = ([vertex + ' <- start of cycle'] +
+                                 path[-1:start_cycle_idx:-1] +
+                                 [path[start_cycle_idx] + ' <- end of cycle'] +
+                                 path[start_cycle_idx - 1:0:-1])
 
                 warn('the dependency graph has a cycle:\n\t%s'
                      % '\n\t'.join(msg_lines), args.check_colour)
@@ -355,7 +397,7 @@ def main():
         toposort.append(vertex)
     finish_visit_cb_list.append(toposort_finish_visit_cb)
 
-    visit_dfs(dep_graph, _meta_root,
+    visit_dfs(traversed_graph, _meta_root,
               start_visit_cb_list=start_visit_cb_list,
               finish_visit_cb_list=finish_visit_cb_list,
               skip_visit_cb_list=skip_visit_cb_list)
@@ -364,7 +406,11 @@ def main():
         postprocess_cb()
 
     # The last element of toposort is _meta_root:
-    print('\n'.join(toposort[-2::-1] if args.reverse else toposort[:-1]))
+    output = '\n'.join(toposort[-2::-1]
+                       if (args.reverse ^ (args.prereq is not None))
+                       else toposort[:-1])
+    if output:
+        print(output)
 
 
 if __name__ == "__main__":

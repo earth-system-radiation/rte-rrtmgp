@@ -8,8 +8,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - config_name: pgi-gpu-acc
-          compiler_modules: "PrgEnv-pgi pgi craype-accel-nvidia60"
+        - config_name: nvidia-gpu-acc
+          compiler_modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 ^cray-libsci_acc"
           # Generic accelerator flag
           #   -acc is removed as it should be detected by the configure script
           fcflags: "-O3 -Mallocatable=03 -gopt"

@@ -3,32 +3,46 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2019,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 module mo_rte_util_array
 !
-! This module provide utilites for sanitizing input arrays:
+!> Provide utilites for sanitizing input arrays:
 !    checking values and sizes
 ! These are in a module so code can be written for both CPUs and GPUs
 ! Used only by Fortran classes so routines don't need C bindings and can use assumed-shape
 !
   use mo_rte_kind,      only: wp, wl
   implicit none
+  !>
+  !> Values less than a floor (including masked versions)
+  !>
   interface any_vals_less_than
     module procedure any_vals_less_than_1D,        any_vals_less_than_2D,        any_vals_less_than_3D
     module procedure any_vals_less_than_1D_masked, any_vals_less_than_2D_masked, any_vals_less_than_3D_masked
   end interface
+  !>
+  !> Values outside a range (including masked versions)
+  !>
   interface any_vals_outside
     module procedure any_vals_outside_1D,        any_vals_outside_2D,        any_vals_outside_3D
     module procedure any_vals_outside_1D_masked, any_vals_outside_2D_masked, any_vals_outside_3D_masked
   end interface
+  !>
+  !> Efficiently set arrays to zero
+  !>
   interface zero_array
     module procedure zero_array_1D, zero_array_2D, zero_array_3D, zero_array_4D
   end interface
+  !>
+  !> Find the extents of an array
+  !>
   interface extents_are
     module procedure extents_are_1D, extents_are_2D, extents_are_3D
     module procedure extents_are_4D, extents_are_5D, extents_are_6D

@@ -1,0 +1,7 @@
+#!@SHELL@
+@TESTS_DISABLED@exit 77
+# The test is known to fail on GPUs with OpenACC:
+#   file:@top_srcdir@/extensions/mo_zenith_angle_spherical_correction.F90 zenith_angle_with_height line:65
+@GPU_ENABLED@exit 77
+
+@LAUNCH_PREFIX@ ./test_zenith_angle_spherical_correction '@top_srcdir@/rrtmgp/data/rrtmgp-data-sw-g112-210809.nc'

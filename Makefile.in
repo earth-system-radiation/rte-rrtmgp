@@ -86,14 +86,16 @@ prog_SOURCES=
 @EXAMPLES_ENABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@
 @EXAMPLES_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions -name '*.F90'))
 
-@TESTS_ENABLED@@EXAMPLES_ENABLED@check_PROGRAMS+= tests/clear_sky_regression@EXEEXT@
-@TESTS_ENABLED@@EXAMPLES_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/tests -name '*.F90'))
+@TESTS_ENABLED@check_PROGRAMS+= \
+@TESTS_ENABLED@    tests/clear_sky_regression@EXEEXT@ \
+@TESTS_ENABLED@    tests/test_zenith_angle_spherical_correction@EXEEXT@
+@TESTS_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/tests -name '*.F90'))
+
 @TESTS_ENABLED@@EXAMPLES_DISABLED@check_PROGRAMS+= \
 @TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/all-sky/rrtmgp_allsky@EXEEXT@           \
 @TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@ \
-@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@ \
-@TESTS_ENABLED@@EXAMPLES_DISABLED@    tests/clear_sky_regression@EXEEXT@
-@TESTS_ENABLED@@EXAMPLES_DISABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions $(srcdir)/tests -name '*.F90'))
+@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@
+@TESTS_ENABLED@@EXAMPLES_DISABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions -name '*.F90'))
 
 # Dependency files of the programs:
 prog_dep_files= $(addsuffix .d,$(prog_SOURCES))
@@ -137,6 +139,7 @@ clean: mostlyclean
 	       examples/rfmip-clear-sky/timing.* \
 	       tests/clear_sky_regression.test.log \
 	       tests/test_atmospheres.nc \
+	       tests/test_zenith_angle_spherical_correction.test.log \
 	       $(testcachedir)
 	find . -name '*.pyc' -delete -o -name '*.pyo' -delete -o -name '__pycache__' -delete
 
@@ -147,7 +150,8 @@ distclean: clean
 	rm -f $(dir_files)
 	rm -rf examples/all-sky/all-sky.test \
 	       examples/rfmip-clear-sky/rfmip-clear-sky.test \
-	       tests/clear_sky_regression.test
+	       tests/clear_sky_regression.test \
+	       tests/test_zenith_angle_spherical_correction.test
 	@for dir in $(moddir); do \
           if test -d "$$dir"; then \
             echo "find '$$dir' -type d -empty -delete"; \
@@ -161,7 +165,7 @@ distclean: clean
 	      find "$$dir" -type d -empty -delete; \
 	    fi; \
 	  done
-	rm -f config.log config.status Makefile
+	rm -f Makefile config.cache config.log config.status
 
 # Installation rules:
 install: install-libs install-mods
@@ -203,6 +207,7 @@ examples/all-sky/rrtmgp_allsky@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -
 examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/rfmip-clear-sky/rrtmgp_rfmip_lw.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/rfmip-clear-sky/rrtmgp_rfmip_sw.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 tests/clear_sky_regression@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t tests/clear_sky_regression.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
+tests/test_zenith_angle_spherical_correction@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t tests/test_zenith_angle_spherical_correction.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 
 $(noinst_PROGRAMS) $(check_PROGRAMS): | $(dir_files)
 	$(silent_FCLD)$(FC) -o $@ $(makefile_FCFLAGS) $(FCFLAGS) $(LDFLAGS) $+ $(makefile_LIBS) $(LIBS)
@@ -233,7 +238,7 @@ sanitize-mod-proxies:
 # cannot recover in case one of the downloaded files is accidentally deleted:
 $(testcachedir)/.cache:| $(testcachedir)/.dirstamp
 	@cd $(@D) && \
-	. @abs_top_srcdir@/examples/rfmip-clear-sky/stage_files.sh && \
+	${PYTHON} @abs_top_srcdir@/examples/rfmip-clear-sky/stage_files.py && \
 	touch $(@F)
 
 # Fortran dependency generation rule:

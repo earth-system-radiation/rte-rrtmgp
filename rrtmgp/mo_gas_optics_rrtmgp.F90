@@ -33,7 +33,6 @@ module mo_gas_optics_rrtmgp
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
-  use mo_rrtmgp_util_reorder
   implicit none
   private
   real(wp), parameter :: pi = acos(-1._wp)
@@ -178,7 +177,7 @@ module mo_gas_optics_rrtmgp
     procedure, private :: get_npres
     procedure, private :: get_ntemp
     procedure, private :: get_nPlanckTemp
-  end type
+  end type ty_gas_optics_rrtmgp
   ! -------------------------------------------------------------------------------------------------
   !
   ! col_dry is the number of molecules per cm-2 of dry air
@@ -529,7 +528,7 @@ contains
         !
         ! Get vmr if  gas is provided in ty_gas_concs
         !
-        if (any (lower_case(this%gas_names(igas)) == gas_desc%gas_name(:))) then
+        if (any (lower_case(this%gas_names(igas)) == gas_desc%get_gas_names())) then
           error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(:,:,igas))
         endif
       end do
@@ -608,7 +607,7 @@ contains
     if (allocated(this%krayl)) then
       !$acc        data copyin(this%gpoint_flavor, this%krayl)    create(tau, tau_rayleigh)
       !$omp target data map(to:this%gpoint_flavor, this%krayl) map(alloc:tau, tau_rayleigh)
-      call zero_array(ngpt, nlay, ncol, tau)
+      call zero_array(ncol, nlay, ngpt, tau)
       call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
@@ -650,7 +649,7 @@ contains
       !$acc end        data
       !$omp end target data
     else
-      call zero_array(ngpt, nlay, ncol, optical_props%tau)
+      call zero_array(ncol, nlay, ngpt, optical_props%tau)
       call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
@@ -821,7 +820,7 @@ contains
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
     logical(wl)                                  :: top_at_1
-    integer                                      :: icol, ilay, igpt
+    integer                                      :: icol, ilay
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
     real(wp), dimension(:,:),            pointer :: tlev_wk
@@ -969,7 +968,8 @@ contains
              this%optimal_angle_fit(size(optimal_angle_fit,    1), size(optimal_angle_fit,   2)))
     this%totplnk = totplnk
 !    this%planck_frac = planck_frac
-    this%planck_frac = RESHAPE(planck_frac,(/size(planck_frac,4), size(planck_frac,2), size(planck_frac,3), size(planck_frac,1)/),ORDER =(/4,2,3,1/))
+    this%planck_frac = RESHAPE(planck_frac,(/size(planck_frac,4), size(planck_frac,2), &
+                                             size(planck_frac,3), size(planck_frac,1)/),ORDER =(/4,2,3,1/))
     this%optimal_angle_fit = optimal_angle_fit
     !$acc        enter data copyin(this%totplnk, this%planck_frac, this%optimal_angle_fit)
     !$omp target enter data map(to:this%totplnk, this%planck_frac, this%optimal_angle_fit)
@@ -1167,7 +1167,9 @@ contains
     ngas = size(gas_names)
     allocate(gas_is_present(ngas))
     do i = 1, ngas
-      gas_is_present(i) = string_in_array(gas_names(i), available_gases%gas_name)
+      ! Next line causes a compiler bug in gfortran 11.0.1 on Mac ARM
+      ! Should replace gas_names with get_gas_names() and make gas_names private in ty_gas_concs
+      gas_is_present(i) = string_in_array(gas_names(i), available_gases%gas_names)
     end do
     !
     ! Now the number of gases is the union of those known to the k-distribution and provided
@@ -1257,8 +1259,10 @@ contains
     end if
     if (allocated(rayl_lower)) then
       allocate(this%krayl(size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1),2))
-      this%krayl(:,:,:,1) = RESHAPE(rayl_lower,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
-      this%krayl(:,:,:,2) = RESHAPE(rayl_upper,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2),size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
+      this%krayl(:,:,:,1) = RESHAPE(rayl_lower,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2), &
+                                                 size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
+      this%krayl(:,:,:,2) = RESHAPE(rayl_upper,(/size(rayl_lower,dim=3),size(rayl_lower,dim=2), &
+                                                 size(rayl_lower,dim=1)/),ORDER =(/3,2,1/))
       !$acc        enter data copyin(this%krayl)
       !$omp target enter data map(to:this%krayl)
     end if
@@ -1355,7 +1359,9 @@ contains
     error_msg = ""
     key_gas_names = pack(this%gas_names, mask=this%is_key)
     do igas = 1, size(key_gas_names)
-      if(.not. string_in_array(key_gas_names(igas), gas_desc%gas_name)) &
+      ! Next line causes a compiler bug in gfortran 11.0.1 on Mac ARM
+      ! Should replace gas_names with get_gas_names() and make gas_names private in ty_gas_concs
+      if(.not. string_in_array(key_gas_names(igas), gas_desc%gas_names)) &
         error_msg = ' ' // trim(lower_case(key_gas_names(igas))) // trim(error_msg)
     end do
     if(len_trim(error_msg) > 0) error_msg = "gas_optics: required gases" // trim(error_msg) // " are not provided"
@@ -1522,8 +1528,8 @@ contains
     !
     ! column transmissivity
     !
-    !$acc                parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau, optical_props%gpt2band) copyout(optimal_angles)
-    !$omp target teams distribute parallel do simd collapse(2) map(to:optical_props%tau, optical_props%gpt2band) map(from:optimal_angles)
+    !$acc                parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau) copyout(optimal_angles)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:optical_props%tau) map(from:optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !
@@ -1538,7 +1544,7 @@ contains
         !
         ! Optimal transport angle is a linear fit to column transmissivity
         !
-        bnd = optical_props%gpt2band(igpt)
+        bnd = optical_props%convert_gpt2band(igpt)
         optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
                                     this%optimal_angle_fit(2,bnd)
       end do
@@ -1756,7 +1762,9 @@ contains
     allocate(gas_is_present(nm))
     do i = 1, size(minor_gases_atm)
       idx_mnr = string_loc_in_array(minor_gases_atm(i), identifier_minor)
-      gas_is_present(i) = string_in_array(gas_minor(idx_mnr),available_gases%gas_name)
+      ! Next line causes a compiler bug in gfortran 11.0.1 on Mac ARM
+      ! Should replace gas_names with get_gas_names() and make gas_names private in ty_gas_concs
+      gas_is_present(i) = string_in_array(gas_minor(idx_mnr),available_gases%gas_names)
       if(gas_is_present(i)) then
         tot_g = tot_g + (minor_limits_gpt_atm(2,i)-minor_limits_gpt_atm(1,i)+1)
       endif
@@ -1813,7 +1821,8 @@ contains
       enddo
     endif
 
-    kminor_atm_red = RESHAPE(kminor_atm_red_t,(/size(kminor_atm_red_t,dim=3),size(kminor_atm_red_t,dim=2),size(kminor_atm_red_t,dim=1)/), ORDER=(/3,2,1/))
+    kminor_atm_red = RESHAPE(kminor_atm_red_t,(/size(kminor_atm_red_t,dim=3), &
+                                                size(kminor_atm_red_t,dim=2),size(kminor_atm_red_t,dim=1)/), ORDER=(/3,2,1/))
     deallocate(kminor_atm_red_t)
   end subroutine reduce_minor_arrays
 

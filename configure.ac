@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([rte+rrtmgp], [1.4], [], [],
+AC_INIT([rte+rrtmgp], [1.5], [], [],
   [https://github.com/earth-system-radiation/rte-rrtmgp])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([config])
@@ -46,7 +46,7 @@ AC_CACHE_CHECK([whether switching to C_BOOL type is required],
 [[      subroutine conftest_foo(a) bind(C)
       use iso_c_binding
       implicit none
-#ifdef USE_CBOOL
+#ifdef RTE_USE_CBOOL
       integer, parameter :: wl = c_bool
 #else
       integer, parameter :: wl = kind(.true.)
@@ -56,12 +56,12 @@ AC_CACHE_CHECK([whether switching to C_BOOL type is required],
    AC_COMPILE_IFELSE([],
      [acx_cv_fc_use_cbool=no],
      [acx_save_FCFLAGS=$FCFLAGS
-      AS_VAR_APPEND([FCFLAGS], [" ${FCDEF_PP}USE_CBOOL"])
+      AS_VAR_APPEND([FCFLAGS], [" ${FCDEF_PP}RTE_USE_CBOOL"])
       AC_COMPILE_IFELSE([], [acx_cv_fc_use_cbool=yes])
       FCFLAGS=$acx_save_FCFLAGS])
    rm -f conftest.$ac_ext])
 AS_VAR_IF([acx_cv_fc_use_cbool], [yes],
-  [AS_VAR_APPEND([FCFLAGS], [" ${FCDEF_PP}USE_CBOOL"])])
+  [AS_VAR_APPEND([FCFLAGS], [" ${FCDEF_PP}RTE_USE_CBOOL"])])
 
 dnl Additional macro definitions to aid the dependency generator,
 dnl e.g. compiler intrinsic macros:
@@ -295,8 +295,8 @@ ACX_PROG_SEARCH([AR], [ar],
 conftest.$ac_objext >&AS_MESSAGE_LOG_FD"
       _AC_DO_VAR([acx_ar_try])
       rm -f libconftest.a])
-   test "$ac_status" -eq 0 >/dev/null 2>&1],
-  [AR=$acx_candidate])
+   test "$ac_status" -eq 0],
+  [AR=$acx_cv_prog_AR])
 
 dnl Check PYTHON:
 AC_ARG_VAR([PYTHON], [Python interpreter command])dnl
@@ -304,17 +304,20 @@ ACX_PROG_SEARCH([PYTHON], [python3 python],
   [acx_python_try="$acx_candidate $srcdir/mkhelper/depgen.py -h dnl
 >&AS_MESSAGE_LOG_FD"
    _AC_DO_VAR([acx_python_try])],
-  [PYTHON=$acx_candidate])
+  [PYTHON=$acx_cv_prog_PYTHON])
 
 dnl We need Python 3 for the tests:
 AS_IF([test x"$enable_tests" != xno],
-  [AC_MSG_CHECKING([whether $PYTHON is compatible with the tests])
-   acx_python_try="$PYTHON -c 'import sys; exit(sys.version_info@<:@0@:>@ < 3)' >&AS_MESSAGE_LOG_FD"
-   _AC_DO_VAR([acx_python_try])
-   AS_IF([test $? -eq 0],
-     [AC_MSG_RESULT([yes])],
-     [AC_MSG_RESULT([no])
-      AS_VAR_IF([enable_tests], [auto],
+  [AC_CACHE_CHECK([whether $PYTHON is compatible with the tests],
+     [acx_cv_python_test_compatible],
+     [acx_cv_python_test_compatible=no
+      acx_python_try="$PYTHON -c dnl
+'import sys; import sys; exit(sys.version_info@<:@0:2@:>@ < (3, 8))' dnl
+>&AS_MESSAGE_LOG_FD"
+      _AC_DO_VAR([acx_python_try])
+      AS_IF([test $? -eq 0], [acx_cv_python_test_compatible=yes])])
+   AS_VAR_IF([acx_cv_python_test_compatible], [no],
+     [AS_VAR_IF([enable_tests], [auto],
         [AC_MSG_WARN([$PYTHON is not compatible with the tests])
          enable_tests=no],
         [AC_MSG_FAILURE([$PYTHON is not compatible with the tests])])])])
@@ -325,13 +328,15 @@ AS_IF([test x"$enable_tests" != xno],
        'xarray (v0.12.2+)' 'import xarray; exit(tuple(map(int, xarray.__version__.split("."))) < (0, 12, 2))' \
        'dask.array'        'import dask.array'
    while test $[]@%:@ -gt 1; do
-     AC_MSG_CHECKING([whether Python module '$[]1' is available])
-     acx_python_try="$PYTHON -c '$[]2' >&AS_MESSAGE_LOG_FD"
-     _AC_DO_VAR([acx_python_try])
-     AS_IF([test $? -eq 0],
-       [AC_MSG_RESULT([yes])],
-       [AC_MSG_RESULT([no])
-        AS_VAR_IF([enable_tests], [auto],
+     m4_pushdef([acx_cache_var], [acx_cv_has_pymodule_[]AS_TR_SH([$][1])])dnl
+     AC_CACHE_CHECK([whether Python module '$[]1' is available],
+       [acx_cache_var],
+       [AS_VAR_SET([acx_cache_var], [no])
+        acx_pymodule_try="$PYTHON -c '$[]2' >&AS_MESSAGE_LOG_FD"
+        _AC_DO_VAR([acx_pymodule_try])
+        AS_IF([test $? -eq 0], [AS_VAR_SET([acx_cache_var], [yes])])])
+     AS_VAR_IF([acx_cache_var], [no],
+       [AS_VAR_IF([enable_tests], [auto],
           [AC_MSG_WARN([Python module '$[]1' is not available: dnl
 unable to run the tests])
            enable_tests=no],
@@ -339,6 +344,7 @@ unable to run the tests])
 unable to run the tests])])
         break])
      shift; shift
+     m4_popdef([acx_cache_var])dnl
    done
    set dummy; shift])
 
@@ -366,6 +372,7 @@ AC_CONFIG_FILES([
    examples/all-sky/all-sky.test
    examples/rfmip-clear-sky/rfmip-clear-sky.test
    tests/clear_sky_regression.test
+   tests/test_zenith_angle_spherical_correction.test
 ], [chmod a+x "$ac_file"])
 
 AC_CONFIG_FILES([Makefile])

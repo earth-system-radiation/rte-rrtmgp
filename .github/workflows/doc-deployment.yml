@@ -1,0 +1,72 @@
+name: Build and Deploy Documentation and Website
+on: [push, pull_request]
+
+jobs:
+  Build:
+    runs-on: ubuntu-22.04
+    steps:
+    #
+    # Checks-out repository under $GITHUB_WORKSPACE
+    #
+    - uses: actions/checkout@v2
+    #
+    # Synchronize the package index
+    #
+    - name: Synchronize the package index
+      run: sudo apt-get update
+    #
+    # Install Python dependencies
+    #
+    - name: Install Python dependencies
+      run: |
+        sudo pip install 'markdown<3.4' ford
+    #
+    # Install Ruby
+    #
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1
+    #
+    # Install Jekyll
+    #
+    - name: Install Jekyll
+      run: |
+        cd doc/jekyll_site
+        sudo gem install bundler jekyll
+        bundle update
+    #
+    # Build documentation
+    #
+    - name: Build Documentation
+      run: |
+        cd doc
+        ./build_documentation.sh -ci
+    #
+    # Upload documentation
+    #
+    - name: Upload Documentation
+      uses: actions/upload-artifact@v2
+      with:
+        name: documentation
+        path: public/
+        if-no-files-found: error
+    #
+    # Check broken links
+    #
+    - name: Broken Link Check
+      if: ${{ github.ref == 'refs/heads/main'}}
+      uses: technote-space/broken-link-checker-action@v1
+      with:
+        TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
+        RECURSIVE: true
+        ASSIGNEES: ${{ github.actor }}
+    #
+    # Deploy documentation
+    #
+    - name: Deploy API Documentation
+      uses: JamesIves/github-pages-deploy-action@4.1.0
+      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
+      with:
+        branch: gh-pages
+        folder: public/

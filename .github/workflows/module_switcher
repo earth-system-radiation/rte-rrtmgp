@@ -1,6 +1,15 @@
 switch_for_module ()
 {
   for sfm_module in "$@"; do
+    case $sfm_module in
+      ^*)
+        sfm_module=`echo $sfm_module | cut -c2-`
+        sfm_cmd="module unload $sfm_module"
+        echo "$sfm_cmd"
+        eval "$sfm_cmd"
+        continue ;;
+    esac
+
     sfm_module_full=
     sfm_module_short=
     case $sfm_module in
@@ -34,6 +43,26 @@ switch_for_module ()
 
     # Add the short name of the module to the list of conflicts:
     sfm_conflicts="$sfm_conflicts $sfm_module_short"
+
+    # On a Cray system, it is important that only one PrgEnv module is loaded at
+    # a time. This is normally covered with the mutual conflict statements in
+    # the respective module files. However, that is not always the case,
+    # therefore we introduce an additional protection against two or more PrgEnv
+    # modules being loaded simultaneously: if the module we are asked to switch
+    # for starts with PrgEnv-, each of the loaded modules that starts with
+    # PrgEnv- too is added to the list of conflicts:
+    case $sfm_module_short in
+      PrgEnv-*)
+        for sfm_loaded in $sfm_loaded_short; do
+          case $sfm_loaded in
+            PrgEnv-*)
+              sfm_conflicts="$sfm_conflicts $sfm_loaded" ;;
+            *) ;;
+          esac
+        done
+      ;;
+      *) ;;
+    esac
 
     # A list of loaded modules that are in conflict with the requested module:
     sfm_loaded_conflicts=

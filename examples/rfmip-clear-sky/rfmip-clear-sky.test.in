@@ -2,7 +2,10 @@
 @TESTS_DISABLED@exit 77
 
 # The tests write to the input files, therefore we copy them instead of symlinking:
-cp "@top_builddir@/@testcachedir@"/* ./
+for file in "@top_builddir@/@testcachedir@"/*; do
+  # Skip directories explicitly to avoid warnings:
+  test -d "${file}" || cp "${file}" ./
+done
 
 @LAUNCH_PREFIX@ ./rrtmgp_rfmip_lw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc @top_srcdir@/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc || exit 1
 @LAUNCH_PREFIX@ ./rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc @top_srcdir@/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc || exit 1

@@ -1,0 +1,25 @@
+#
+# Python modules are needed to run tests and check results
+#    Also include gfortran and netCDF for development
+#
+name: rte_rrtmgp_dev
+dependencies:
+  - conda-forge::python=3.9
+  - conda-forge::urllib3
+  - conda-forge::netcdf4
+  - conda-forge::xarray
+  - conda-forge::dask
+  - conda-forge::numpy
+  - conda-forge::scipy
+  - conda-forge::matplotlib
+  - conda-forge::seaborn
+  - conda-forge::colorcet
+  - conda-forge::gfortran
+  - conda-forge::netcdf-fortran
+variables:
+  FC: gfortran
+  # Debugging flags below
+  FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
+  # Shell environment variables can't be used within this YML files, so
+  # Users still need to set RRTMGP_ROOT,
+  #  NCHOME = CONDA_PREFIX, NFHOME = CONDA_PREFIX

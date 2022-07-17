@@ -21,8 +21,8 @@ RTE computes fluxes given spectrally-resolved optical descriptions and source fu
 This branch contains an [Autoconf](https://www.gnu.org/software/autoconf/)-based building system for [master](https://github.com/RobertPincus/rte-rrtmgp/tree/master).
 The libraries can be configured, built, tested and installed following the standard workflow:
 
-```shell
-$ ./configure && make && make check && make install
+```bash
+./configure && make && make check && make install
 ```
 
 The configure scripts supports the following use cases:

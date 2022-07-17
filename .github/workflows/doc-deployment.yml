@@ -15,10 +15,11 @@ jobs:
     - name: Synchronize the package index
       run: sudo apt-get update
     #
-    # Install Python dependencies
+    # Install dependencies
     #
-    - name: Install Python dependencies
+    - name: Install dependencies
       run: |
+        sudo apt-get install graphviz
         sudo pip install 'markdown<3.4' ford
     #
     # Install Ruby

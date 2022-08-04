@@ -89,7 +89,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p>60.0% of total for derived types.</p>Including implementation: 461 statements, 48.1% of total for derived types.">51 statements</a>
+    title="<p>60.7% of total for derived types.</p>Including implementation: 462 statements, 48.2% of total for derived types.">51 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp.F90"> Source File</a></li>
   </ul>
@@ -570,7 +570,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-compute_optimal_angles"></span><h3>procedure, public :: <strong>compute_optimal_angles</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private function compute_optimal_angles(this, optical_props, optimal_angles) result(err_msg)</h3>    
+          <h3>private function compute_optimal_angles(this, optical_props, optimal_angles) result(err_msg)</h3><p>Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -584,18 +585,18 @@
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>optical_props</strong></td><td></td>
+  <td><strong>optical_props</strong></td><td><p>Optical properties</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>optimal_angles</strong></td><td></td>
+  <td><strong>optimal_angles</strong></td><td><p>Secant of optical transport angle </p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if successful</p>
 
       </li>
   </ul>
@@ -605,7 +606,9 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-gas_optics"></span><h3>generic, public :: <strong>gas_optics</strong>  => <a href='../type/ty_gas_optics_rrtmgp.html#boundprocedure-gas_optics_int'>gas_optics_int</a>, <a href='../type/ty_gas_optics_rrtmgp.html#boundprocedure-gas_optics_ext'>gas_optics_ext</a>   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-            <h3>private function gas_optics_int(this, play, plev, tlay, tsfc, gas_desc, optical_props, sources, col_dry, tlev) result(error_msg)</h3>    
+            <h3>private function gas_optics_int(this, play, plev, tlay, tsfc, gas_desc, optical_props, sources, col_dry, tlev) result(error_msg)</h3><p>Compute gas optical depth and Planck source functions,
+ given temperature, pressure, and composition</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -619,64 +622,74 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:)</td><td>::</td>
-  <td><strong>tsfc</strong></td><td></td>
+  <td><strong>tsfc</strong></td><td><p>surface skin temperatures [K]; (ncol)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>optical_props</strong></td><td></td>
+  <td><strong>optical_props</strong></td><td><p>Optical properties</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_source_func_lw),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>sources</strong></td><td></td>
+  <td><strong>sources</strong></td><td><p>Planck sources</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>col_dry</strong></td><td></td>
+  <td><strong>col_dry</strong></td><td><p>Column dry amount; dim(ncol,nlay)
+level temperatures [K]; (ncol,nlay+1)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>tlev</strong></td><td></td>
+  <td><strong>tlev</strong></td><td><p>Column dry amount; dim(ncol,nlay)
+level temperatures [K]; (ncol,nlay+1)</p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if succssful </p>
 
       </li>
       <li class="list-group-item">
-            <h3>private function gas_optics_ext(this, play, plev, tlay, gas_desc, optical_props, toa_src, col_dry) result(error_msg)</h3>    
+            <h3>private function gas_optics_ext(this, play, plev, tlay, gas_desc, optical_props, toa_src, col_dry) result(error_msg)</h3><p>Compute gas optical depth given temperature, pressure, and composition
+   Top-of-atmosphere stellar insolation is also reported </p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -690,25 +703,31 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
@@ -720,7 +739,7 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>toa_src</strong></td><td></td>
+  <td><strong>toa_src</strong></td><td><p>Incoming solar irradiance(ncol,ngpt)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
@@ -731,7 +750,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if successful</p>
 
       </li>
   </ul>
@@ -741,7 +760,9 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-gas_optics_ext"></span><h3>procedure, public :: <strong>gas_optics_ext</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private function gas_optics_ext(this, play, plev, tlay, gas_desc, optical_props, toa_src, col_dry) result(error_msg)</h3>    
+          <h3>private function gas_optics_ext(this, play, plev, tlay, gas_desc, optical_props, toa_src, col_dry) result(error_msg)</h3><p>Compute gas optical depth given temperature, pressure, and composition
+   Top-of-atmosphere stellar insolation is also reported </p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -755,25 +776,31 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
@@ -785,7 +812,7 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>toa_src</strong></td><td></td>
+  <td><strong>toa_src</strong></td><td><p>Incoming solar irradiance(ncol,ngpt)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
@@ -796,7 +823,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if successful</p>
 
       </li>
   </ul>
@@ -806,7 +833,9 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-gas_optics_int"></span><h3>procedure, public :: <strong>gas_optics_int</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private function gas_optics_int(this, play, plev, tlay, tsfc, gas_desc, optical_props, sources, col_dry, tlev) result(error_msg)</h3>    
+          <h3>private function gas_optics_int(this, play, plev, tlay, tsfc, gas_desc, optical_props, sources, col_dry, tlev) result(error_msg)</h3><p>Compute gas optical depth and Planck source functions,
+ given temperature, pressure, and composition</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -820,60 +849,68 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:)</td><td>::</td>
-  <td><strong>tsfc</strong></td><td></td>
+  <td><strong>tsfc</strong></td><td><p>surface skin temperatures [K]; (ncol)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>optical_props</strong></td><td></td>
+  <td><strong>optical_props</strong></td><td><p>Optical properties</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_source_func_lw),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>sources</strong></td><td></td>
+  <td><strong>sources</strong></td><td><p>Planck sources</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>col_dry</strong></td><td></td>
+  <td><strong>col_dry</strong></td><td><p>Column dry amount; dim(ncol,nlay)
+level temperatures [K]; (ncol,nlay+1)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>tlev</strong></td><td></td>
+  <td><strong>tlev</strong></td><td><p>Column dry amount; dim(ncol,nlay)
+level temperatures [K]; (ncol,nlay+1)</p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if succssful </p>
 
       </li>
   </ul>
@@ -883,7 +920,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_gases"></span><h3>procedure, public :: <strong>get_gases</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_gases(this)</h3>    
+          <h3>private pure function get_gases(this)</h3><p>return the names of the gases known to the k-distributions</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -896,7 +934,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=32),dimension(get_ngas(this))</small></h4>  
+<h4>Return Value <small>character(len=32),dimension(get_ngas(this))</small></h4>  <p>names of the gases known to the k-distributions</p>
 
       </li>
   </ul>
@@ -906,7 +944,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_ngas"></span><h3>procedure, public :: <strong>get_ngas</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_ngas(this)</h3>    
+          <h3>private pure function get_ngas(this)</h3><p>Two functions to define array sizes needed by gas_optics()</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -929,7 +968,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_press_max"></span><h3>procedure, public :: <strong>get_press_max</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_press_max(this)</h3>    
+          <h3>private pure function get_press_max(this)</h3><p>return the maximum pressure on the interpolation grids</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -942,7 +982,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>real(kind=wp)</small></h4>  
+<h4>Return Value <small>real(kind=wp)</small></h4>  <p>maximum pressure for which the k-dsitribution is valid</p>
 
       </li>
   </ul>
@@ -952,7 +992,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_press_min"></span><h3>procedure, public :: <strong>get_press_min</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_press_min(this)</h3>    
+          <h3>private pure function get_press_min(this)</h3><p>return the minimum pressure on the interpolation grids</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -965,7 +1006,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>real(kind=wp)</small></h4>  
+<h4>Return Value <small>real(kind=wp)</small></h4>  <p>minimum pressure for which the k-dsitribution is valid</p>
 
       </li>
   </ul>
@@ -975,7 +1016,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_temp_max"></span><h3>procedure, public :: <strong>get_temp_max</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_temp_max(this)</h3>    
+          <h3>private pure function get_temp_max(this)</h3><p>return the maximum temparature on the interpolation grids</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -988,7 +1030,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>real(kind=wp)</small></h4>  
+<h4>Return Value <small>real(kind=wp)</small></h4>  <p>maximum temperature for which the k-dsitribution is valid</p>
 
       </li>
   </ul>
@@ -998,7 +1040,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_temp_min"></span><h3>procedure, public :: <strong>get_temp_min</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_temp_min(this)</h3>    
+          <h3>private pure function get_temp_min(this)</h3><p>return the minimum temparature on the interpolation grids</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1011,7 +1054,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>real(kind=wp)</small></h4>  
+<h4>Return Value <small>real(kind=wp)</small></h4>  <p>minimum temperature for which the k-dsitribution is valid </p>
 
       </li>
   </ul>
@@ -1475,7 +1518,11 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-set_solar_variability"></span><h3>procedure, public :: <strong>set_solar_variability</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private function set_solar_variability(this, mg_index, sb_index, tsi) result(error_msg)</h3>    
+          <h3>private function set_solar_variability(this, mg_index, sb_index, tsi) result(error_msg)</h3><p>Compute the spectral solar source function adjusted to account for solar variability
+  following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
+as specified by the facular brightening (mg_index) and sunspot dimming (sb_index)
+indices provided as input.</p><a href="../proc/set_solar_variability.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1489,24 +1536,24 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>mg_index</strong></td><td></td>
+  <td><strong>mg_index</strong></td><td><p>facular brightening index (NRLSSI2 facular "Bremen" index)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>sb_index</strong></td><td></td>
+  <td><strong>sb_index</strong></td><td><p>sunspot dimming index     (NRLSSI2 sunspot "SPOT67" index)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td></td><td>::</td>
-  <td><strong>tsi</strong></td><td></td>
+  <td><strong>tsi</strong></td><td><p>total solar irradiance</p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if successful </p>
 
       </li>
   </ul>
@@ -1524,18 +1571,18 @@
   <td><span class="anchor" ></span>class(<a href='../type/ty_gas_optics_rrtmgp.html'>ty_gas_optics_rrtmgp</a>),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>this</strong></td><td></td>
+  <td><strong>this</strong></td><td><p>Scale the solar source function without changing the spectral distribution</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>tsi</strong></td><td></td>
+  <td><strong>tsi</strong></td><td><p>user-specified total solar irradiance;</p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if successful </p>
 
       </li>
   </ul>
@@ -1545,7 +1592,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-source_is_external"></span><h3>procedure, public :: <strong>source_is_external</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function source_is_external(this)</h3>    
+          <h3>private pure function source_is_external(this)</h3><p>return true if initialized for external sources/shortwave, false otherwise</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -1568,7 +1616,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-source_is_internal"></span><h3>procedure, public :: <strong>source_is_internal</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function source_is_internal(this)</h3>    
+          <h3>private pure function source_is_internal(this)</h3><p>return true if initialized for internal sources/longwave, false otherwise</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>

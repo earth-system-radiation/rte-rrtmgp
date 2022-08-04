@@ -138,7 +138,14 @@
     </div>
     
     <div class="col-md-9" id='text'>
-    
+    <h2 id="physical-and-mathematical-constants-used-in-rrtmgp-gas-optics-calculation">Physical and mathematical constants used in RRTMGP gas optics calculation</h2>
+<p>If the host model in which RRTGMP is embedded has defined these constants elsewhere
+  the model definitions can be used instead by renaming. For example,
+<code>use  mo_model_constants, only k_boltz =&gt; boltzman_k, ...</code>
+  where the syntax is local_name =&gt; original_name
+  and all the local names need to be defined
+"Constants" specific to the earth's atmosphere should also be made consistent with the
+  host model but may be changed in a call to init_constants(), normally at initialization</p>
 <br>        <div class="panel panel-default">
       <div class="panel-heading">
   <h3 class="panel-title">Uses</h3>
@@ -423,19 +430,22 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td></td><td>::</td>
-  <td><strong>gravity</strong></td><td></td>
+  <td><strong>gravity</strong></td><td><p>Planetary and atmospheric values used by RRTMGP in computing gas optical properties
+Default values reflect modern Earth but these can be changed using this routine</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td></td><td>::</td>
-  <td><strong>mol_weight_dry_air</strong></td><td></td>
+  <td><strong>mol_weight_dry_air</strong></td><td><p>Planetary and atmospheric values used by RRTMGP in computing gas optical properties
+Default values reflect modern Earth but these can be changed using this routine</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td></td><td>::</td>
-  <td><strong>heat_capacity_dry_air</strong></td><td></td>
+  <td><strong>heat_capacity_dry_air</strong></td><td><p>Planetary and atmospheric values used by RRTMGP in computing gas optical properties
+Default values reflect modern Earth but these can be changed using this routine</p></td>
 </tr>
 </tbody>
 </table>

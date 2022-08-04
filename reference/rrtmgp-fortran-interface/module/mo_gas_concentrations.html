@@ -89,7 +89,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="23.0% of total for modules and submodules.">300 statements</a>
+    title="22.9% of total for modules and submodules.">299 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_concentrations.F90"> Source File</a></li>
   </ul>
@@ -127,7 +127,23 @@
     </div>
     
     <div class="col-md-9" id='text'>
-    
+    <h2 id="fortran-class-for-representing-gas-concentrations">Fortran class for representing gas concentrations</h2>
+<p>Encapsulates a collection of volume (molar) mixing ratios (concentrations) of gases.
+  Each concentration is associated with a name, normally the chemical formula.
+Values may be provided as scalars, 1-dimensional profiles (nlay), or 2-D fields (ncol,nlay).
+  <code>nlay</code> and <code>ncol</code> are determined from the input arrays; self-consistency is enforced.
+  No bounds are enforced on the sum of the mixing ratios. </p>
+<p>For example:</p>
+<div class="codehilite"><pre><span></span><code> error_msg = gas_concs%set_vmr(&#39;h2o&#39;, values(:,:))
+ error_msg = gas_concs%set_vmr(&#39;o3&#39; , values(:)  )
+ error_msg = gas_concs%set_vmr(&#39;co2&#39;, value      )
+</code></pre></div>
+
+<p>Values can be requested as profiles (valid only if there are no 2D fields present in the object)
+  or as 2D fields. Values for all columns are returned although the entire collection
+  can be subsetted in the column dimension</p>
+<p>Subsets can be extracted in the column dimension. </p>
+<p>Functions return strings. Non-empty strings indicate an error.</p>
 <br>        <div class="panel panel-default">
       <div class="panel-heading">
   <h3 class="panel-title">Uses</h3>
@@ -135,10 +151,10 @@
       <ul class="list-group">
       <li class="list-group-item">
   <ul class="list-inline">
+    <li>mo_rte_config</li>
     <li>mo_rte_kind</li>
     <li>mo_rte_util_array</li>
     <li><a href='../module/mo_rrtmgp_util_string.html'>mo_rrtmgp_util_string</a></li>
-    <li>mo_rte_config</li>
   </ul>
       </li>
       <li class="list-group-item">
@@ -159,54 +175,54 @@
 <polygon fill="none" stroke="black" points="304,-87 165,-87 165,-63 304,-63 304,-87"/>
 <text text-anchor="middle" x="234.5" y="-72.6" font-family="Helvetica,sans-Serif" font-size="10.50">mo_gas_concentrations</text>
 </g>
-<!-- mo_rte_kind -->
+<!-- mo_rte_config -->
 <g id="module~~mo_gas_concentrations~~UsesGraph_node2" class="node">
-<title>mo_rte_kind</title>
-<polygon fill="#337ab7" stroke="#337ab7" points="103.5,-150 25.5,-150 25.5,-126 103.5,-126 103.5,-150"/>
-<text text-anchor="middle" x="64.5" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_kind</text>
+<title>mo_rte_config</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="108.5,-150 20.5,-150 20.5,-126 108.5,-126 108.5,-150"/>
+<text text-anchor="middle" x="64.5" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config</text>
 </g>
-<!-- module~mo_gas_concentrations&#45;&gt;mo_rte_kind -->
+<!-- module~mo_gas_concentrations&#45;&gt;mo_rte_config -->
 <g id="module~~mo_gas_concentrations~~UsesGraph_edge1" class="edge">
-<title>module~mo_gas_concentrations&#45;&gt;mo_rte_kind</title>
+<title>module~mo_gas_concentrations&#45;&gt;mo_rte_config</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M204.86,-87.08C183.96,-95.75 154.89,-107.53 129,-117 123.82,-118.9 118.38,-120.81 112.95,-122.67"/>
 <polygon fill="#000000" stroke="#000000" points="111.6,-119.43 103.24,-125.95 113.84,-126.07 111.6,-119.43"/>
 </g>
-<!-- mo_rte_util_array -->
+<!-- mo_rte_kind -->
 <g id="module~~mo_gas_concentrations~~UsesGraph_node3" class="node">
-<title>mo_rte_util_array</title>
-<polygon fill="#337ab7" stroke="#337ab7" points="117.5,-108 11.5,-108 11.5,-84 117.5,-84 117.5,-108"/>
-<text text-anchor="middle" x="64.5" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_util_array</text>
+<title>mo_rte_kind</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="103.5,-108 25.5,-108 25.5,-84 103.5,-84 103.5,-108"/>
+<text text-anchor="middle" x="64.5" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_kind</text>
 </g>
-<!-- module~mo_gas_concentrations&#45;&gt;mo_rte_util_array -->
+<!-- module~mo_gas_concentrations&#45;&gt;mo_rte_kind -->
 <g id="module~~mo_gas_concentrations~~UsesGraph_edge2" class="edge">
-<title>module~mo_gas_concentrations&#45;&gt;mo_rte_util_array</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M164.68,-83.6C152.44,-85.13 139.74,-86.72 127.69,-88.23"/>
-<polygon fill="#000000" stroke="#000000" points="127.24,-84.76 117.75,-89.47 128.1,-91.7 127.24,-84.76"/>
-</g>
-<!-- mo_rte_config -->
-<g id="module~~mo_gas_concentrations~~UsesGraph_node4" class="node">
-<title>mo_rte_config</title>
-<polygon fill="#337ab7" stroke="#337ab7" points="108.5,-66 20.5,-66 20.5,-42 108.5,-42 108.5,-66"/>
-<text text-anchor="middle" x="64.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config</text>
-</g>
-<!-- module~mo_gas_concentrations&#45;&gt;mo_rte_config -->
-<g id="module~~mo_gas_concentrations~~UsesGraph_edge3" class="edge">
-<title>module~mo_gas_concentrations&#45;&gt;mo_rte_config</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M164.68,-66.4C149.52,-64.5 133.67,-62.52 119.2,-60.71"/>
-<polygon fill="#000000" stroke="#000000" points="119.3,-57.2 108.94,-59.43 118.43,-64.14 119.3,-57.2"/>
+<title>module~mo_gas_concentrations&#45;&gt;mo_rte_kind</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M164.68,-83.6C147.59,-85.74 129.62,-87.98 113.75,-89.97"/>
+<polygon fill="#000000" stroke="#000000" points="113.14,-86.52 103.65,-91.23 114.01,-93.46 113.14,-86.52"/>
 </g>
 <!-- module~mo_rrtmgp_util_string -->
-<g id="module~~mo_gas_concentrations~~UsesGraph_node5" class="node">
+<g id="module~~mo_gas_concentrations~~UsesGraph_node4" class="node">
 <title>module~mo_rrtmgp_util_string</title>
-<g id="a_module~~mo_gas_concentrations~~UsesGraph_node5"><a xlink:href=".././module/mo_rrtmgp_util_string.html" xlink:title="mo_rrtmgp_util_string">
-<polygon fill="#337ab7" stroke="#337ab7" points="129,-24 0,-24 0,0 129,0 129,-24"/>
-<text text-anchor="middle" x="64.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rrtmgp_util_string</text>
+<g id="a_module~~mo_gas_concentrations~~UsesGraph_node4"><a xlink:href=".././module/mo_rrtmgp_util_string.html" xlink:title="mo_rrtmgp_util_string">
+<polygon fill="#337ab7" stroke="#337ab7" points="129,-66 0,-66 0,-42 129,-42 129,-66"/>
+<text text-anchor="middle" x="64.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rrtmgp_util_string</text>
 </a>
 </g>
 </g>
 <!-- module~mo_gas_concentrations&#45;&gt;module~mo_rrtmgp_util_string -->
-<g id="module~~mo_gas_concentrations~~UsesGraph_edge4" class="edge">
+<g id="module~~mo_gas_concentrations~~UsesGraph_edge3" class="edge">
 <title>module~mo_gas_concentrations&#45;&gt;module~mo_rrtmgp_util_string</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M164.68,-66.4C156.22,-65.34 147.54,-64.25 139,-63.19"/>
+<polygon fill="#000000" stroke="#000000" points="139.43,-59.71 129.08,-61.95 138.56,-66.66 139.43,-59.71"/>
+</g>
+<!-- mo_rte_util_array -->
+<g id="module~~mo_gas_concentrations~~UsesGraph_node5" class="node">
+<title>mo_rte_util_array</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="117.5,-24 11.5,-24 11.5,0 117.5,0 117.5,-24"/>
+<text text-anchor="middle" x="64.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_util_array</text>
+</g>
+<!-- module~mo_gas_concentrations&#45;&gt;mo_rte_util_array -->
+<g id="module~~mo_gas_concentrations~~UsesGraph_edge4" class="edge">
+<title>module~mo_gas_concentrations&#45;&gt;mo_rte_util_array</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M204.86,-62.92C183.96,-54.25 154.89,-42.47 129,-33 123.82,-31.1 118.38,-29.19 112.95,-27.33"/>
 <polygon fill="#000000" stroke="#000000" points="113.84,-23.93 103.24,-24.05 111.6,-30.57 113.84,-23.93"/>
 </g>
@@ -429,24 +445,9 @@
 <thead><tr><th>Type</th><th>Visibility</th><th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-concs"></span>type(conc_field),</td>
-<td>public,</td>  <td>dimension(:), allocatable</td><td>::</td>
-  <td><strong>concs</strong></td><td></td><td></td><td></td>
-</tr>
-<tr>
   <td><span class="anchor" id="variable-gas_names"></span>character(len=32),</td>
 <td>public,</td>  <td>dimension(:), allocatable</td><td>::</td>
   <td><strong>gas_names</strong></td><td></td><td></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ncol"></span>integer,</td>
-<td>public</td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td> =</td><td>0</td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nlay"></span>integer,</td>
-<td>public</td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td> =</td><td>0</td><td></td>
 </tr>
 </tbody>
 </table>
@@ -466,15 +467,15 @@
        <tr><td>procedure, public :: <strong><a href='../type/ty_gas_concs.html#boundprocedure-get_num_gases'>get_num_gases</a></strong>  </td>
        <td></td></tr>
        <tr><td>generic, public :: <strong><a href='../type/ty_gas_concs.html#boundprocedure-get_subset'>get_subset</a></strong>  => get_subset_range </td>
-       <td></td></tr>
+       <td><a href="../type/ty_gas_concs.html#boundprocedure-get_subset" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
        <tr><td>generic, public :: <strong><a href='../type/ty_gas_concs.html#boundprocedure-get_vmr'>get_vmr</a></strong>  => get_vmr_1d, get_vmr_2d </td>
-       <td></td></tr>
+       <td><a href="../type/ty_gas_concs.html#boundprocedure-get_vmr" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
        <tr><td>procedure, public :: <strong><a href='../type/ty_gas_concs.html#boundprocedure-init'>init</a></strong>  </td>
        <td></td></tr>
        <tr><td>procedure, public :: <strong><a href='../type/ty_gas_concs.html#boundprocedure-reset'>reset</a></strong>  </td>
        <td></td></tr>
        <tr><td>generic, public :: <strong><a href='../type/ty_gas_concs.html#boundprocedure-set_vmr'>set_vmr</a></strong>  => set_vmr_scalar, set_vmr_1d, set_vmr_2d </td>
-       <td></td></tr>
+       <td><a href="../type/ty_gas_concs.html#boundprocedure-set_vmr" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
        </tbody>
        </table>
   </div>

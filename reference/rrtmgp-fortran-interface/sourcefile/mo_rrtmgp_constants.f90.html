@@ -231,72 +231,75 @@
 
     <section>
       <h2><span class="anchor" id="src"></span>Source Code</h2>
-    <div class="hl"><pre><span></span><a name="ln-1"></a><span class="c">! This code is part of RRTM for GCM Applications - Parallel (RRTMGP)</span>
-<a name="ln-2"></a><span class="c">!</span>
-<a name="ln-3"></a><span class="c">! Contacts: Robert Pincus and Eli Mlawer</span>
-<a name="ln-4"></a><span class="c">! email:  rrtmgp@aer.com</span>
-<a name="ln-5"></a><span class="c">!</span>
-<a name="ln-6"></a><span class="c">! Copyright 2015-2018,  Atmospheric and Environmental Research and</span>
-<a name="ln-7"></a><span class="c">! Regents of the University of Colorado.  All right reserved.</span>
-<a name="ln-8"></a><span class="c">!</span>
-<a name="ln-9"></a><span class="c">! Use and duplication is permitted under the terms of the</span>
-<a name="ln-10"></a><span class="c">!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause</span>
-<a name="ln-11"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
-<a name="ln-12"></a><span class="c">! Physical and mathematical constants used in gas optics calculation</span>
-<a name="ln-13"></a><span class="c">!   If the host model in which RRTGMP is embedded has defined these constants elsewhere</span>
-<a name="ln-14"></a><span class="c">!   the model definitions can be used instead by renaming. For example,</span>
-<a name="ln-15"></a><span class="c">! use  mo_model_constants, only k_boltz =&gt; boltzman_k, ...</span>
-<a name="ln-16"></a><span class="c">!   where the syntax is local_name =&gt; original_name</span>
-<a name="ln-17"></a><span class="c">!   and all the local names need to be defined</span>
-<a name="ln-18"></a><span class="c">!</span>
-<a name="ln-19"></a><span class="c">! &quot;Constants&quot; specific to the earth&#39;s atmosphere should also be made consistent with the</span>
-<a name="ln-20"></a><span class="c">!   host model but may be changed in a call to init_constants(), normally at initialization</span>
-<a name="ln-21"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
-<a name="ln-22"></a><span class="k">module </span><span class="n">mo_rrtmgp_constants</span>
-<a name="ln-23"></a>  <span class="k">use </span><span class="n">mo_rte_kind</span><span class="p">,</span> <span class="n">only</span><span class="p">:</span> <span class="n">wp</span>
-<a name="ln-24"></a>  <span class="k">public</span>
-<a name="ln-25"></a>
-<a name="ln-26"></a>  <span class="c">! -----------------------------------------</span>
-<a name="ln-27"></a>  <span class="c">! Physical constants, 2018 SI defintion of metric system</span>
-<a name="ln-28"></a>  <span class="c">!   doi:10.1088/1681-7575/aa950a (see also https://www.nist.gov/si-redefinition/meet-constants)</span>
-<a name="ln-29"></a>  <span class="c">! Boltzmann constant [J/K] = [(kg m^2)/(K s^2)]</span>
-<a name="ln-30"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">k_boltz</span> <span class="o">=</span> <span class="mf">1.380649e-23_wp</span>
-<a name="ln-31"></a>
-<a name="ln-32"></a>  <span class="c">!  molecular weight of water [kg/mol]</span>
-<a name="ln-33"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">m_h2o</span> <span class="o">=</span>  <span class="mf">0.018016_wp</span>
-<a name="ln-34"></a>
-<a name="ln-35"></a>  <span class="c">! Avogadro&#39;s number [molec/mol]</span>
-<a name="ln-36"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">avogad</span> <span class="o">=</span> <span class="mf">6.02214076e23_wp</span>
-<a name="ln-37"></a>
-<a name="ln-38"></a>  <span class="c">! Universal gas constant [J/(mol K)]</span>
-<a name="ln-39"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">parameter</span> <span class="kd">::</span> <span class="n">R_univ_gconst</span> <span class="o">=</span> <span class="n">avogad</span> <span class="o">*</span> <span class="n">k_boltz</span>
-<a name="ln-40"></a>
-<a name="ln-41"></a>  <span class="c">! -----------------------------------------</span>
-<a name="ln-42"></a>  <span class="c">!</span>
-<a name="ln-43"></a>  <span class="c">! Constants specific to the earth&#39;s atmosphere -- changeable in init() because they</span>
-<a name="ln-44"></a>  <span class="c">!   might be different on e.g. other planets</span>
-<a name="ln-45"></a>
-<a name="ln-46"></a>  <span class="c">! molecular weight of dry air [kg/mol]</span>
-<a name="ln-47"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">protected</span> <span class="kd">::</span> <span class="n">m_dry</span> <span class="o">=</span> <span class="mf">0.028964_wp</span>
-<a name="ln-48"></a>
-<a name="ln-49"></a>  <span class="c">! Gravity at Earth&#39;s surface [m/s2]</span>
-<a name="ln-50"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">protected</span> <span class="kd">::</span> <span class="n">grav</span> <span class="o">=</span> <span class="mf">9.80665_wp</span>
-<a name="ln-51"></a>
-<a name="ln-52"></a>  <span class="c">! Specific heat at constant pressure for dry air [J/(K kg)]</span>
-<a name="ln-53"></a>  <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">protected</span> <span class="kd">::</span> <span class="n">cp_dry</span> <span class="o">=</span> <span class="mi">100</span><span class="mf">4.64_wp</span>
-<a name="ln-54"></a>
-<a name="ln-55"></a><span class="k">contains</span>
-<a name="ln-56"></a>  <span class="c">! -----------------------------------------</span>
-<a name="ln-57"></a>  <span class="k">subroutine </span><span class="n">init_constants</span><span class="p">(</span><span class="n">gravity</span><span class="p">,</span> <span class="n">mol_weight_dry_air</span><span class="p">,</span> <span class="n">heat_capacity_dry_air</span><span class="p">)</span>
-<a name="ln-58"></a>    <span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span> <span class="k">optional</span><span class="p">,</span> <span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span> <span class="kd">::</span> <span class="n">gravity</span><span class="p">,</span> <span class="n">mol_weight_dry_air</span><span class="p">,</span> <span class="n">heat_capacity_dry_air</span>
-<a name="ln-59"></a>
-<a name="ln-60"></a>    <span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">gravity</span><span class="p">))</span>               <span class="n">grav</span>   <span class="o">=</span> <span class="n">gravity</span>
-<a name="ln-61"></a>    <span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">mol_weight_dry_air</span><span class="p">))</span>    <span class="n">m_dry</span>  <span class="o">=</span> <span class="n">mol_weight_dry_air</span>
-<a name="ln-62"></a>    <span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">heat_capacity_dry_air</span><span class="p">))</span> <span class="n">cp_dry</span> <span class="o">=</span> <span class="n">heat_capacity_dry_air</span>
-<a name="ln-63"></a>
-<a name="ln-64"></a>  <span class="k">end subroutine </span><span class="n">init_constants</span>
-<a name="ln-65"></a>  <span class="c">! -----------------------------------------</span>
-<a name="ln-66"></a><span class="k">end module </span><span class="n">mo_rrtmgp_constants</span>
+    <div class="hl"><pre><span></span><a id="ln-1" name="ln-1" href="#ln-1"></a><span class="c">! This code is part of RRTM for GCM Applications - Parallel (RRTMGP)</span>
+<a id="ln-2" name="ln-2" href="#ln-2"></a><span class="c">!</span>
+<a id="ln-3" name="ln-3" href="#ln-3"></a><span class="c">! Contacts: Robert Pincus and Eli Mlawer</span>
+<a id="ln-4" name="ln-4" href="#ln-4"></a><span class="c">! email:  rrtmgp@aer.com</span>
+<a id="ln-5" name="ln-5" href="#ln-5"></a><span class="c">!</span>
+<a id="ln-6" name="ln-6" href="#ln-6"></a><span class="c">! Copyright 2015-,  Atmospheric and Environmental Research,</span>
+<a id="ln-7" name="ln-7" href="#ln-7"></a><span class="c">! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.</span>
+<a id="ln-8" name="ln-8" href="#ln-8"></a><span class="c">!</span>
+<a id="ln-9" name="ln-9" href="#ln-9"></a><span class="c">! Use and duplication is permitted under the terms of the</span>
+<a id="ln-10" name="ln-10" href="#ln-10"></a><span class="c">!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause</span>
+<a id="ln-11" name="ln-11" href="#ln-11"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
+<a id="ln-12" name="ln-12" href="#ln-12"></a><span class="c">!&gt; ##  Physical and mathematical constants used in RRTMGP gas optics calculation</span>
+<a id="ln-13" name="ln-13" href="#ln-13"></a><span class="c">!&gt;</span>
+<a id="ln-14" name="ln-14" href="#ln-14"></a><span class="c">!&gt;   If the host model in which RRTGMP is embedded has defined these constants elsewhere</span>
+<a id="ln-15" name="ln-15" href="#ln-15"></a><span class="c">!&gt;   the model definitions can be used instead by renaming. For example,</span>
+<a id="ln-16" name="ln-16" href="#ln-16"></a><span class="c">!&gt; ```use  mo_model_constants, only k_boltz =&gt; boltzman_k, ...```</span>
+<a id="ln-17" name="ln-17" href="#ln-17"></a><span class="c">!&gt;   where the syntax is local_name =&gt; original_name</span>
+<a id="ln-18" name="ln-18" href="#ln-18"></a><span class="c">!&gt;   and all the local names need to be defined</span>
+<a id="ln-19" name="ln-19" href="#ln-19"></a><span class="c">!</span>
+<a id="ln-20" name="ln-20" href="#ln-20"></a><span class="c">!&gt; &quot;Constants&quot; specific to the earth&#39;s atmosphere should also be made consistent with the</span>
+<a id="ln-21" name="ln-21" href="#ln-21"></a><span class="c">!&gt;   host model but may be changed in a call to init_constants(), normally at initialization</span>
+<a id="ln-22" name="ln-22" href="#ln-22"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
+<a id="ln-23" name="ln-23" href="#ln-23"></a><span class="k">module </span><span class="n">mo_rrtmgp_constants</span><span class="w"></span>
+<a id="ln-24" name="ln-24" href="#ln-24"></a><span class="w">  </span><span class="k">use </span><span class="n">mo_rte_kind</span><span class="p">,</span><span class="w"> </span><span class="k">only</span><span class="p">:</span><span class="w"> </span><span class="n">wp</span><span class="w"></span>
+<a id="ln-25" name="ln-25" href="#ln-25"></a><span class="w">  </span><span class="k">public</span><span class="w"></span>
+<a id="ln-26" name="ln-26" href="#ln-26"></a>
+<a id="ln-27" name="ln-27" href="#ln-27"></a><span class="w">  </span><span class="c">! -----------------------------------------</span>
+<a id="ln-28" name="ln-28" href="#ln-28"></a><span class="w">  </span><span class="c">! Physical constants, 2018 SI defintion of metric system</span>
+<a id="ln-29" name="ln-29" href="#ln-29"></a><span class="w">  </span><span class="c">!   doi:10.1088/1681-7575/aa950a (see also https://www.nist.gov/si-redefinition/meet-constants)</span>
+<a id="ln-30" name="ln-30" href="#ln-30"></a><span class="w">  </span><span class="c">! Boltzmann constant [J/K] = [(kg m^2)/(K s^2)]</span>
+<a id="ln-31" name="ln-31" href="#ln-31"></a><span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">k_boltz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.380649e-23_wp</span><span class="w"></span>
+<a id="ln-32" name="ln-32" href="#ln-32"></a>
+<a id="ln-33" name="ln-33" href="#ln-33"></a><span class="w">  </span><span class="c">!  molecular weight of water [kg/mol]</span>
+<a id="ln-34" name="ln-34" href="#ln-34"></a><span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">m_h2o</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="mf">0.018016_wp</span><span class="w"></span>
+<a id="ln-35" name="ln-35" href="#ln-35"></a>
+<a id="ln-36" name="ln-36" href="#ln-36"></a><span class="w">  </span><span class="c">! Avogadro&#39;s number [molec/mol]</span>
+<a id="ln-37" name="ln-37" href="#ln-37"></a><span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">avogad</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">6.02214076e23_wp</span><span class="w"></span>
+<a id="ln-38" name="ln-38" href="#ln-38"></a>
+<a id="ln-39" name="ln-39" href="#ln-39"></a><span class="w">  </span><span class="c">! Universal gas constant [J/(mol K)]</span>
+<a id="ln-40" name="ln-40" href="#ln-40"></a><span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">R_univ_gconst</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">avogad</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">k_boltz</span><span class="w"></span>
+<a id="ln-41" name="ln-41" href="#ln-41"></a>
+<a id="ln-42" name="ln-42" href="#ln-42"></a><span class="w">  </span><span class="c">! -----------------------------------------</span>
+<a id="ln-43" name="ln-43" href="#ln-43"></a><span class="w">  </span><span class="c">!</span>
+<a id="ln-44" name="ln-44" href="#ln-44"></a><span class="w">  </span><span class="c">! Constants specific to the earth&#39;s atmosphere -- changeable in init() because they</span>
+<a id="ln-45" name="ln-45" href="#ln-45"></a><span class="w">  </span><span class="c">!   might be different on e.g. other planets</span>
+<a id="ln-46" name="ln-46" href="#ln-46"></a>
+<a id="ln-47" name="ln-47" href="#ln-47"></a><span class="w">  </span><span class="c">! molecular weight of dry air [kg/mol]</span>
+<a id="ln-48" name="ln-48" href="#ln-48"></a><span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">protected</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">m_dry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.028964_wp</span><span class="w"></span>
+<a id="ln-49" name="ln-49" href="#ln-49"></a>
+<a id="ln-50" name="ln-50" href="#ln-50"></a><span class="w">  </span><span class="c">! Gravity at Earth&#39;s surface [m/s2]</span>
+<a id="ln-51" name="ln-51" href="#ln-51"></a><span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">protected</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">grav</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">9.80665_wp</span><span class="w"></span>
+<a id="ln-52" name="ln-52" href="#ln-52"></a>
+<a id="ln-53" name="ln-53" href="#ln-53"></a><span class="w">  </span><span class="c">! Specific heat at constant pressure for dry air [J/(K kg)]</span>
+<a id="ln-54" name="ln-54" href="#ln-54"></a><span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">protected</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">cp_dry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="mf">4.64_wp</span><span class="w"></span>
+<a id="ln-55" name="ln-55" href="#ln-55"></a>
+<a id="ln-56" name="ln-56" href="#ln-56"></a><span class="k">contains</span><span class="w"></span>
+<a id="ln-57" name="ln-57" href="#ln-57"></a><span class="w">  </span><span class="c">! -----------------------------------------</span>
+<a id="ln-58" name="ln-58" href="#ln-58"></a><span class="w">  </span><span class="k">subroutine </span><span class="n">init_constants</span><span class="p">(</span><span class="n">gravity</span><span class="p">,</span><span class="w"> </span><span class="n">mol_weight_dry_air</span><span class="p">,</span><span class="w"> </span><span class="n">heat_capacity_dry_air</span><span class="p">)</span><span class="w"></span>
+<a id="ln-59" name="ln-59" href="#ln-59"></a><span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">gravity</span><span class="p">,</span><span class="w"> </span><span class="n">mol_weight_dry_air</span><span class="p">,</span><span class="w"> </span><span class="n">heat_capacity_dry_air</span><span class="w"></span>
+<a id="ln-60" name="ln-60" href="#ln-60"></a><span class="w">      </span><span class="c">!! Planetary and atmospheric values used by RRTMGP in computing gas optical properties</span>
+<a id="ln-61" name="ln-61" href="#ln-61"></a><span class="w">      </span><span class="c">!! Default values reflect modern Earth but these can be changed using this routine</span>
+<a id="ln-62" name="ln-62" href="#ln-62"></a>
+<a id="ln-63" name="ln-63" href="#ln-63"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">gravity</span><span class="p">))</span><span class="w">               </span><span class="n">grav</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">gravity</span><span class="w"></span>
+<a id="ln-64" name="ln-64" href="#ln-64"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">mol_weight_dry_air</span><span class="p">))</span><span class="w">    </span><span class="n">m_dry</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">mol_weight_dry_air</span><span class="w"></span>
+<a id="ln-65" name="ln-65" href="#ln-65"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="nb">present</span><span class="p">(</span><span class="n">heat_capacity_dry_air</span><span class="p">))</span><span class="w"> </span><span class="n">cp_dry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">heat_capacity_dry_air</span><span class="w"></span>
+<a id="ln-66" name="ln-66" href="#ln-66"></a>
+<a id="ln-67" name="ln-67" href="#ln-67"></a><span class="w">  </span><span class="k">end subroutine </span><span class="n">init_constants</span><span class="w"></span>
+<a id="ln-68" name="ln-68" href="#ln-68"></a><span class="w">  </span><span class="c">! -----------------------------------------</span>
+<a id="ln-69" name="ln-69" href="#ln-69"></a><span class="k">end module </span><span class="n">mo_rrtmgp_constants</span><span class="w"></span>
 </pre></div>
 
     </section>

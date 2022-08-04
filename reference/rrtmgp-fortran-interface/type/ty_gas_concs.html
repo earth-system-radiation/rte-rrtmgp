@@ -89,7 +89,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p>25.9% of total for derived types.</p>Including implementation: 486 statements, 50.7% of total for derived types.">22 statements</a>
+    title="<p>25.0% of total for derived types.</p>Including implementation: 485 statements, 50.6% of total for derived types.">21 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_concentrations.F90"> Source File</a></li>
   </ul>
@@ -118,10 +118,7 @@
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-0">Variables</a></h3></div>
   <div id="vars-0" class="panel-collapse collapse">
     <div class="list-group">
-      <a class="list-group-item" href="../type/ty_gas_concs.html#variable-concs">concs</a>
       <a class="list-group-item" href="../type/ty_gas_concs.html#variable-gas_names">gas_names</a>
-      <a class="list-group-item" href="../type/ty_gas_concs.html#variable-ncol">ncol</a>
-      <a class="list-group-item" href="../type/ty_gas_concs.html#variable-nlay">nlay</a>
     </div>
   </div>
 </div>
@@ -238,10 +235,7 @@
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-1">Variables</a></h3></div>
   <div id="vars-1" class="panel-collapse collapse">
     <div class="list-group">
-      <a class="list-group-item" href="../type/ty_gas_concs.html#variable-concs">concs</a>
       <a class="list-group-item" href="../type/ty_gas_concs.html#variable-gas_names">gas_names</a>
-      <a class="list-group-item" href="../type/ty_gas_concs.html#variable-ncol">ncol</a>
-      <a class="list-group-item" href="../type/ty_gas_concs.html#variable-nlay">nlay</a>
     </div>
   </div>
 </div>
@@ -277,24 +271,9 @@
 <thead><tr><th>Type</th><th>Visibility</th><th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-concs"></span>type(conc_field),</td>
-<td>public,</td>  <td>dimension(:), allocatable</td><td>::</td>
-  <td><strong>concs</strong></td><td></td><td></td><td></td>
-</tr>
-<tr>
   <td><span class="anchor" id="variable-gas_names"></span>character(len=32),</td>
 <td>public,</td>  <td>dimension(:), allocatable</td><td>::</td>
   <td><strong>gas_names</strong></td><td></td><td></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ncol"></span>integer,</td>
-<td>public</td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td> =</td><td>0</td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nlay"></span>integer,</td>
-<td>public</td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td> =</td><td>0</td><td></td>
 </tr>
 </tbody>
 </table>
@@ -314,7 +293,8 @@
   </div>
   <ul class="list-group">
      <li class="list-group-item">
-       <h3>private subroutine del(this)</h3>    
+       <h3>private subroutine del(this)</h3><p>Finalization - free all memory when the object goes out of scope</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -343,7 +323,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_gas_names"></span><h3>procedure, public :: <strong>get_gas_names</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_gas_names(this)</h3>    
+          <h3>private pure function get_gas_names(this)</h3><p>Inquire function - what are the names of the known gases? (Not all concentrations need be set)</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -356,7 +337,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=32),dimension(this%get_num_gases())</small></h4>  
+<h4>Return Value <small>character(len=32),dimension(this%get_num_gases())</small></h4>  <p>names of the known gases</p>
 
       </li>
   </ul>
@@ -366,7 +347,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_num_gases"></span><h3>procedure, public :: <strong>get_num_gases</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_num_gases(this)</h3>    
+          <h3>private pure function get_num_gases(this)</h3><p>Inquire function - how many gases are known? (Not all concentrations need be set)</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -387,9 +369,14 @@
 
      <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_subset"></span><h3>generic, public :: <strong>get_subset</strong>  => get_subset_range   </h3></div>
+  <div class="panel-body">
+    
+    <h3 id="extract-a-subset-of-columns">Extract a subset of columns</h3>
+  </div>
   <ul class="list-group">
       <li class="list-group-item">
-            <h3>private function get_subset_range(this, start, n, subset) result(error_msg)</h3>    
+            <h3>private function get_subset_range(this, start, n, subset) result(error_msg)</h3><p>Extract a subset of n columns starting with column <code>start</code></p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -403,24 +390,24 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>start</strong></td><td></td>
+  <td><strong>start</strong></td><td><p>Index of first column, number of columns to extract</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>n</strong></td><td></td>
+  <td><strong>n</strong></td><td><p>Index of first column, number of columns to extract</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>subset</strong></td><td></td>
+  <td><strong>subset</strong></td><td><p>Object to hold the subset of columns </p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Error string, empty if successful </p>
 
       </li>
   </ul>
@@ -428,9 +415,14 @@
 
      <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_vmr"></span><h3>generic, public :: <strong>get_vmr</strong>  => get_vmr_1d, get_vmr_2d   </h3></div>
+  <div class="panel-body">
+    
+    <h3 id="get-concentration-values">Get concentration values</h3>
+  </div>
   <ul class="list-group">
       <li class="list-group-item">
-            <h3>private function get_vmr_1d(this, gas, array) result(error_msg)</h3>    
+            <h3>private function get_vmr_1d(this, gas, array) result(error_msg)</h3><a href="../proc/get_vmr_1d.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -444,18 +436,18 @@
   <td><span class="anchor" ></span>character(len=*),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas</strong></td><td></td>
+  <td><strong>gas</strong></td><td><p>Name of the gas</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:)</td><td>::</td>
-  <td><strong>array</strong></td><td></td>
+  <td><strong>array</strong></td><td><p>Volume mixing ratio </p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Error string, empty if successful </p>
 
       </li>
       <li class="list-group-item">
@@ -473,18 +465,18 @@
   <td><span class="anchor" ></span>character(len=*),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas</strong></td><td></td>
+  <td><strong>gas</strong></td><td><p>Name of the gas</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>array</strong></td><td></td>
+  <td><strong>array</strong></td><td><p>Volume mixing ratio </p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Error string, empty if successful </p>
 
       </li>
   </ul>
@@ -494,7 +486,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-init"></span><h3>procedure, public :: <strong>init</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private function init(this, gas_names) result(error_msg)</h3>    
+          <h3>private function init(this, gas_names) result(error_msg)</h3><a href="../proc/init.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -508,12 +501,12 @@
   <td><span class="anchor" ></span>character(len=*),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:)</td><td>::</td>
-  <td><strong>gas_names</strong></td><td></td>
+  <td><strong>gas_names</strong></td><td><p>names of all gases which might be provided </p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>error string, empty when successful </p>
 
       </li>
   </ul>
@@ -523,7 +516,8 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-reset"></span><h3>procedure, public :: <strong>reset</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private subroutine reset(this)</h3>    
+          <h3>private subroutine reset(this)</h3><p>Free memory and reset the object to an unititialzed state</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -543,9 +537,14 @@
 
      <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-set_vmr"></span><h3>generic, public :: <strong>set_vmr</strong>  => set_vmr_scalar, set_vmr_1d, set_vmr_2d   </h3></div>
+  <div class="panel-body">
+    
+    <h3 id="set-concentration-values">Set concentration values</h3>
+  </div>
   <ul class="list-group">
       <li class="list-group-item">
-            <h3>private function set_vmr_scalar(this, gas, w) result(error_msg)</h3>    
+            <h3>private function set_vmr_scalar(this, gas, w) result(error_msg)</h3><a href="../proc/set_vmr_scalar.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -559,22 +558,23 @@
   <td><span class="anchor" ></span>character(len=*),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas</strong></td><td></td>
+  <td><strong>gas</strong></td><td><p>Name of the gas being provided</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>w</strong></td><td></td>
+  <td><strong>w</strong></td><td><p>volume (molar) mixing ratio </p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>error string, empty when successful </p>
 
       </li>
       <li class="list-group-item">
-            <h3>private function set_vmr_1d(this, gas, w) result(error_msg)</h3>    
+            <h3>private function set_vmr_1d(this, gas, w) result(error_msg)</h3><a href="../proc/set_vmr_1d.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -588,22 +588,23 @@
   <td><span class="anchor" ></span>character(len=*),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas</strong></td><td></td>
+  <td><strong>gas</strong></td><td><p>Name of the gas being provided</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:)</td><td>::</td>
-  <td><strong>w</strong></td><td></td>
+  <td><strong>w</strong></td><td><p>volume (molar) mixing ratio </p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>error string, empty when successful </p>
 
       </li>
       <li class="list-group-item">
-            <h3>private function set_vmr_2d(this, gas, w) result(error_msg)</h3>    
+            <h3>private function set_vmr_2d(this, gas, w) result(error_msg)</h3><a href="../proc/set_vmr_2d.html" class="pull-right"><emph>Read more&hellip;</emph></a>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -617,18 +618,18 @@
   <td><span class="anchor" ></span>character(len=*),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas</strong></td><td></td>
+  <td><strong>gas</strong></td><td><p>Name of the gas being provided</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>w</strong></td><td></td>
+  <td><strong>w</strong></td><td><p>volume (molar) mixing ratio </p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>error string, empty when successful </p>
 
       </li>
   </ul>

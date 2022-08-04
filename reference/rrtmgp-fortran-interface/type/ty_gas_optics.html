@@ -89,7 +89,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p>14.1% of total for derived types.</p>Including implementation: 12 statements,  1.3% of total for derived types.">12 statements</a>
+    title="<p>14.3% of total for derived types.</p>Including implementation: 12 statements,  1.3% of total for derived types.">12 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics.F90"> Source File</a></li>
   </ul>
@@ -322,7 +322,9 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-gas_optics~2"></span><h3>generic, public :: <strong>gas_optics</strong>  => <a href='../type/ty_gas_optics_rrtmgp.html#boundprocedure-gas_optics_int'>gas_optics_int</a>, <a href='../type/ty_gas_optics_rrtmgp.html#boundprocedure-gas_optics_ext'>gas_optics_ext</a>   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-            <h3>private function gas_optics_int(this, play, plev, tlay, tsfc, gas_desc, optical_props, sources, col_dry, tlev) result(error_msg)</h3>    
+            <h3>private function gas_optics_int(this, play, plev, tlay, tsfc, gas_desc, optical_props, sources, col_dry, tlev) result(error_msg)</h3><p>Compute gas optical depth and Planck source functions,
+ given temperature, pressure, and composition</p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -336,64 +338,74 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:)</td><td>::</td>
-  <td><strong>tsfc</strong></td><td></td>
+  <td><strong>tsfc</strong></td><td><p>surface skin temperatures [K]; (ncol)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>optical_props</strong></td><td></td>
+  <td><strong>optical_props</strong></td><td><p>Optical properties</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_source_func_lw),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>sources</strong></td><td></td>
+  <td><strong>sources</strong></td><td><p>Planck sources</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>col_dry</strong></td><td></td>
+  <td><strong>col_dry</strong></td><td><p>Column dry amount; dim(ncol,nlay)
+level temperatures [K]; (ncol,nlay+1)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>tlev</strong></td><td></td>
+  <td><strong>tlev</strong></td><td><p>Column dry amount; dim(ncol,nlay)
+level temperatures [K]; (ncol,nlay+1)</p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if succssful </p>
 
       </li>
       <li class="list-group-item">
-            <h3>private function gas_optics_ext(this, play, plev, tlay, gas_desc, optical_props, toa_src, col_dry) result(error_msg)</h3>    
+            <h3>private function gas_optics_ext(this, play, plev, tlay, gas_desc, optical_props, toa_src, col_dry) result(error_msg)</h3><p>Compute gas optical depth given temperature, pressure, and composition
+   Top-of-atmosphere stellar insolation is also reported </p>
+    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -407,25 +419,31 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
@@ -437,7 +455,7 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>toa_src</strong></td><td></td>
+  <td><strong>toa_src</strong></td><td><p>Incoming solar irradiance(ncol,ngpt)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
@@ -448,7 +466,7 @@
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if successful</p>
 
       </li>
   </ul>
@@ -472,25 +490,31 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
@@ -502,18 +526,18 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>toa_src</strong></td><td></td>
+  <td><strong>toa_src</strong></td><td><p>Incoming solar irradiance(ncol,ngpt)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>col_dry</strong></td><td></td>
+  <td><strong>col_dry</strong></td><td><p>Column dry amount (molecules/cm^2); dim(ncol,nlay)</p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if successful</p>
 
       </li>
   </ul>
@@ -537,60 +561,68 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:)</td><td>::</td>
-  <td><strong>tsfc</strong></td><td></td>
+  <td><strong>tsfc</strong></td><td><p>surface skin temperatures [K]; (ncol)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>optical_props</strong></td><td></td>
+  <td><strong>optical_props</strong></td><td><p>Optical properties</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_source_func_lw),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>sources</strong></td><td></td>
+  <td><strong>sources</strong></td><td><p>Planck sources</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>col_dry</strong></td><td></td>
+  <td><strong>col_dry</strong></td><td><p>Column dry amount (molecules/cm^2); dim(ncol,nlay)
+level temperatures [K]l (ncol,nlay+1)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>tlev</strong></td><td></td>
+  <td><strong>tlev</strong></td><td><p>Column dry amount (molecules/cm^2); dim(ncol,nlay)
+level temperatures [K]l (ncol,nlay+1)</p></td>
 </tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>character(len=128)</small></h4>  
+<h4>Return Value <small>character(len=128)</small></h4>  <p>Empty if successful </p>
 
       </li>
   </ul>

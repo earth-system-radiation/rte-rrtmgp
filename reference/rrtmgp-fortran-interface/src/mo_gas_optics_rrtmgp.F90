@@ -3,20 +3,22 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-,  Atmospheric and Environmental Research,
+! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-! Class for computing spectrally-resolved gas optical properties and source functions
-!   given atmopsheric physical properties (profiles of temperature, pressure, and gas concentrations)
-!   The class must be initialized with data (provided as a netCDF file) before being used.
-!
-! Two variants apply to internal Planck sources (longwave radiation in the Earth's atmosphere) and to
-!   external stellar radiation (shortwave radiation in the Earth's atmosphere).
-!   The variant is chosen based on what information is supplied during initialization.
+!> ## Class implementing the RRTMGP correlated-_k_ distribution 
+!>
+!> Implements a class for computing spectrally-resolved gas optical properties and source functions
+!>   given atmopsheric physical properties (profiles of temperature, pressure, and gas concentrations)
+!>   The class must be initialized with data (provided as a netCDF file) before being used.
+!>
+!> Two variants apply to internal Planck sources (longwave radiation in the Earth's atmosphere) and to
+!>   external stellar radiation (shortwave radiation in the Earth's atmosphere).
+!>   The variant is chosen based on what information is supplied during initialization.
 !   (It might make more sense to define two sub-classes)
 !
 ! -------------------------------------------------------------------------------------------------
@@ -180,7 +182,7 @@ module mo_gas_optics_rrtmgp
   end type ty_gas_optics_rrtmgp
   ! -------------------------------------------------------------------------------------------------
   !
-  ! col_dry is the number of molecules per cm-2 of dry air
+  !> col_dry is the number of molecules per cm-2 of dry air
   !
   public :: get_col_dry ! Utility function, not type-bound
 
@@ -191,7 +193,7 @@ contains
   !
   ! --------------------------------------------------------------------------------------
   !
-  ! Two functions to define array sizes needed by gas_optics()
+  !> Two functions to define array sizes needed by gas_optics()
   !
   pure function get_ngas(this)
     ! return the number of gases registered in the spectral configuration
@@ -202,8 +204,8 @@ contains
   end function get_ngas
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the number of distinct major gas pairs in the spectral bands (referred to as
-  ! "flavors" - all bands have a flavor even if there is one or no major gas)
+  !> return the number of distinct major gas pairs in the spectral bands (referred to as
+  !> "flavors" - all bands have a flavor even if there is one or no major gas)
   !
   pure function get_nflav(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
@@ -213,8 +215,8 @@ contains
   end function get_nflav
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Compute gas optical depth and Planck source functions,
-  !  given temperature, pressure, and composition
+  !> Compute gas optical depth and Planck source functions,
+  !>  given temperature, pressure, and composition
   !
   function gas_optics_int(this,                             &
                           play, plev, tlay, tsfc, gas_desc, &
@@ -222,21 +224,21 @@ contains
                           col_dry, tlev) result(error_msg)
     ! inputs
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp), dimension(:,:), intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
-                                               plev, &   ! level pressures [Pa, mb]; (ncol,nlay+1)
-                                               tlay      ! layer temperatures [K]; (ncol,nlay)
-    real(wp), dimension(:),   intent(in   ) :: tsfc      ! surface skin temperatures [K]; (ncol)
-    type(ty_gas_concs),       intent(in   ) :: gas_desc  ! Gas volume mixing ratios
+    real(wp), dimension(:,:), intent(in   ) :: play, &   !! layer pressures [Pa, mb]; (ncol,nlay)
+                                               plev, &   !! level pressures [Pa, mb]; (ncol,nlay+1)
+                                               tlay      !! layer temperatures [K]; (ncol,nlay)
+    real(wp), dimension(:),   intent(in   ) :: tsfc      !! surface skin temperatures [K]; (ncol)
+    type(ty_gas_concs),       intent(in   ) :: gas_desc  !! Gas volume mixing ratios
     ! output
     class(ty_optical_props_arry),  &
-                              intent(inout) :: optical_props ! Optical properties
+                              intent(inout) :: optical_props !! Optical properties
     class(ty_source_func_lw    ),  &
-                              intent(inout) :: sources       ! Planck sources
-    character(len=128)                      :: error_msg
+                              intent(inout) :: sources       !! Planck sources
+    character(len=128)                      :: error_msg     !! Empty if succssful 
     ! Optional inputs
     real(wp), dimension(:,:),   intent(in   ), &
-                           optional, target :: col_dry, &  ! Column dry amount; dim(ncol,nlay)
-                                               tlev        ! level temperatures [K]; (ncol,nlay+1)
+                           optional, target :: col_dry, &  !! Column dry amount; dim(ncol,nlay)
+                                               tlev        !! level temperatures [K]; (ncol,nlay+1)
     ! ----------------------------------------------------------
     ! Local variables
     ! Interpolation coefficients for use in source function
@@ -326,7 +328,8 @@ contains
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
-  ! Compute gas optical depth given temperature, pressure, and composition
+  !> Compute gas optical depth given temperature, pressure, and composition
+  !>    Top-of-atmosphere stellar insolation is also reported 
   !
   function gas_optics_ext(this,                         &
                           play, plev, tlay, gas_desc,   & ! mandatory inputs
@@ -334,15 +337,15 @@ contains
                           col_dry) result(error_msg)      ! optional input
 
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp), dimension(:,:), intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
-                                               plev, &   ! level pressures [Pa, mb]; (ncol,nlay+1)
-                                               tlay      ! layer temperatures [K]; (ncol,nlay)
-    type(ty_gas_concs),       intent(in   ) :: gas_desc  ! Gas volume mixing ratios
+    real(wp), dimension(:,:), intent(in   ) :: play, &   !! layer pressures [Pa, mb]; (ncol,nlay)
+                                               plev, &   !! level pressures [Pa, mb]; (ncol,nlay+1)
+                                               tlay      !! layer temperatures [K]; (ncol,nlay)
+    type(ty_gas_concs),       intent(in   ) :: gas_desc  !! Gas volume mixing ratios
     ! output
     class(ty_optical_props_arry),  &
-                              intent(inout) :: optical_props
-    real(wp), dimension(:,:), intent(  out) :: toa_src     ! Incoming solar irradiance(ncol,ngpt)
-    character(len=128)                      :: error_msg
+                              intent(inout) :: optical_props 
+    real(wp), dimension(:,:), intent(  out) :: toa_src     !! Incoming solar irradiance(ncol,ngpt)
+    character(len=128)                      :: error_msg   !! Empty if successful
 
     ! Optional inputs
     real(wp), dimension(:,:), intent(in   ), &
@@ -711,32 +714,32 @@ contains
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
-  ! Compute the spectral solar source function adjusted to account for solar variability
-  !   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
-  ! as specified by the facular brightening (mg_index) and sunspot dimming (sb_index)
-  ! indices provided as input.
-  !
-  ! Users provide the NRLSSI2 facular ("Bremen") index and sunspot ("SPOT67") index.
-  !   Changing either of these indicies will change the total solar irradiance (TSI)
-  !   Code in extensions/mo_solar_variability may be used to compute the value of these
-  !   indices through an average solar cycle
-  ! Users may also specify the TSI, either alone or in conjunction with the facular and sunspot indices
+  !> Compute the spectral solar source function adjusted to account for solar variability
+  !>   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
+  !> as specified by the facular brightening (mg_index) and sunspot dimming (sb_index)
+  !> indices provided as input.
+  !>
+  !> Users provide the NRLSSI2 facular ("Bremen") index and sunspot ("SPOT67") index.
+  !>   Changing either of these indicies will change the total solar irradiance (TSI)
+  !>   Code in extensions/mo_solar_variability may be used to compute the value of these
+  !>   indices through an average solar cycle
+  !> Users may also specify the TSI, either alone or in conjunction with the facular and sunspot indices
   !
   !------------------------------------------------------------------------------------------
   function set_solar_variability(this,                      &
                                  mg_index, sb_index, tsi)   &
                                  result(error_msg)
     !
-    ! Updates the spectral distribution and, optionally,
-    !   the integrated value of the solar source function
-    !   Modifying either index will change the total solar irradiance
+    !! Updates the spectral distribution and, optionally,
+    !!   the integrated value of the solar source function
+    !!  Modifying either index will change the total solar irradiance
     !
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
     !
-    real(wp),           intent(in) :: mg_index, & ! facular brightening index (NRLSSI2 facular "Bremen" index)
-                                      sb_index    ! sunspot dimming index     (NRLSSI2 sunspot "SPOT67" index)
-    real(wp), optional, intent(in) :: tsi         ! total solar irradiance
-    character(len=128)             :: error_msg
+    real(wp),           intent(in) :: mg_index  !! facular brightening index (NRLSSI2 facular "Bremen" index)
+    real(wp),           intent(in) :: sb_index  !! sunspot dimming index     (NRLSSI2 sunspot "SPOT67" index)
+    real(wp), optional, intent(in) :: tsi       !! total solar irradiance
+    character(len=128)             :: error_msg !! Empty if successful 
     ! ----------------------------------------------------------
     integer :: igpt
     real(wp), parameter :: a_offset = 0.1495954_wp
@@ -765,11 +768,11 @@ contains
   !------------------------------------------------------------------------------------------
   function set_tsi(this, tsi) result(error_msg)
     !
-    ! Scale the solar source function without changing the spectral distribution
+    !> Scale the solar source function without changing the spectral distribution
     !
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
-    real(wp),                    intent(in   ) :: tsi ! user-specified total solar irradiance;
-    character(len=128)                         :: error_msg
+    real(wp),                    intent(in   ) :: tsi !! user-specified total solar irradiance;
+    character(len=128)                         :: error_msg !! Empty if successful 
 
     real(wp) :: norm
     ! ----------------------------------------------------------
@@ -1373,7 +1376,7 @@ contains
   !
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return true if initialized for internal sources, false otherwise
+  !> return true if initialized for internal sources/longwave, false otherwise
   !
   pure function source_is_internal(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
@@ -1382,7 +1385,7 @@ contains
   end function source_is_internal
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return true if initialized for external sources, false otherwise
+  !> return true if initialized for external sources/shortwave, false otherwise
   !
   pure function source_is_external(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
@@ -1392,61 +1395,61 @@ contains
 
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the gas names
+  !> return the names of the gases known to the k-distributions
   !
   pure function get_gases(this)
-    class(ty_gas_optics_rrtmgp), intent(in) :: this
-    character(32), dimension(get_ngas(this))     :: get_gases
+    class(ty_gas_optics_rrtmgp), intent(in)  :: this
+    character(32), dimension(get_ngas(this)) :: get_gases !! names of the gases known to the k-distributions
 
     get_gases = this%gas_names
   end function get_gases
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the minimum pressure on the interpolation grids
+  !> return the minimum pressure on the interpolation grids
   !
   pure function get_press_min(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_press_min
+    real(wp)                                :: get_press_min !! minimum pressure for which the k-dsitribution is valid
 
     get_press_min = this%press_ref_min
   end function get_press_min
 
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the maximum pressure on the interpolation grids
+  !> return the maximum pressure on the interpolation grids
   !
   pure function get_press_max(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_press_max
+    real(wp)                                :: get_press_max !! maximum pressure for which the k-dsitribution is valid
 
     get_press_max = this%press_ref_max
   end function get_press_max
 
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the minimum temparature on the interpolation grids
+  !> return the minimum temparature on the interpolation grids
   !
   pure function get_temp_min(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_temp_min
+    real(wp)                                :: get_temp_min !! minimum temperature for which the k-dsitribution is valid 
 
     get_temp_min = this%temp_ref_min
   end function get_temp_min
 
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the maximum temparature on the interpolation grids
+  !> return the maximum temparature on the interpolation grids
   !
   pure function get_temp_max(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_temp_max
+    real(wp)                                :: get_temp_max !! maximum temperature for which the k-dsitribution is valid
 
     get_temp_max = this%temp_ref_max
   end function get_temp_max
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Utility function, provided for user convenience
-  ! computes column amounts of dry air using hydrostatic equation
+  !> Utility function, provided for user convenience
+  !> computes column amounts of dry air using hydrostatic equation
   !
   function get_col_dry(vmr_h2o, plev, latitude) result(col_dry)
     ! input
@@ -1501,14 +1504,14 @@ contains
   end function get_col_dry
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
+  !> Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
   !
   function compute_optimal_angles(this, optical_props, optimal_angles) result(err_msg)
     ! input
     class(ty_gas_optics_rrtmgp),  intent(in   ) :: this
-    class(ty_optical_props_arry), intent(in   ) :: optical_props
-    real(wp), dimension(:,:),     intent(  out)  :: optimal_angles
-    character(len=128)                           :: err_msg
+    class(ty_optical_props_arry), intent(in   ) :: optical_props  !! Optical properties
+    real(wp), dimension(:,:),     intent(  out) :: optimal_angles !! Secant of optical transport angle 
+    character(len=128)                          :: err_msg        !! Empty if successful
     !----------------------------
     integer  :: ncol, nlay, ngpt
     integer  :: icol, ilay, igpt, bnd

@@ -3,20 +3,20 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>How-to guides | RTE-RRTMGP</title>
+<title>Explanations | RTE-RRTMGP</title>
 <meta name="generator" content="Jekyll v4.2.2" />
-<meta property="og:title" content="How-to guides" />
+<meta property="og:title" content="Explanations" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
 <meta property="og:description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
-<link rel="canonical" href="https://earth-system-radiation.github.io//rte-rrtmgp/howtos.html" />
-<meta property="og:url" content="https://earth-system-radiation.github.io//rte-rrtmgp/howtos.html" />
+<link rel="canonical" href="https://earth-system-radiation.github.io//rte-rrtmgp/explanations/" />
+<meta property="og:url" content="https://earth-system-radiation.github.io//rte-rrtmgp/explanations/" />
 <meta property="og:site_name" content="RTE-RRTMGP" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="How-to guides" />
+<meta property="twitter:title" content="Explanations" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"How-to guides","url":"https://earth-system-radiation.github.io//rte-rrtmgp/howtos.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"Explanations","url":"https://earth-system-radiation.github.io//rte-rrtmgp/explanations/"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/rte-rrtmgp/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://earth-system-radiation.github.io//rte-rrtmgp/feed.xml" title="RTE-RRTMGP" /></head>
 <body><header class="site-header" role="banner">
@@ -31,7 +31,7 @@
           </span>
         </label>
 
-        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/explanations.html">Explanations</a><a class="page-link" href="/rte-rrtmgp/howtos.html">How-to guides</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/reference.html">Reference (technical documentation)</a><a class="page-link" href="/rte-rrtmgp/tutorials.html">Tutorials</a></div>
+        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/explanations.html">Explanations</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a><a class="page-link" href="/rte-rrtmgp/reference.html">Reference (technical documentation)</a><a class="page-link" href="/rte-rrtmgp/tutorials.html">Tutorials</a></div>
       </nav></div>
 </header>
 <main class="page-content" aria-label="Content">
@@ -39,11 +39,17 @@
         <article class="post">
 
   <header class="post-header">
-    <h1 class="post-title">How-to guides</h1>
+    <h1 class="post-title">Explanations</h1>
   </header>
 
   <div class="post-content">
-    <h1 id="how-to-guides-will-live-here">How-to guides will live here</h1>
+    <h1 id="explanations-will-live-here">Explanations will live here</h1>
+
+<h3 id="spectral-discretization">Spectral discretization</h3>
+
+<p>The spectral properties of the atmosphere and the source functions depend on electromagnetic wavelength (or frequency or wavenumber). RTE treats this spectral dependence by dividing the spectrum into one or more <em>bands</em>, each of which represents a continuous set of wavelengths/frequencies. Bands may be further sub-divided into <em>g-points</em> (the language is borrowed from <em>k</em>-distributions). Each <em>g</em>-point is treated as a independent psudo-monchromatic calculation but there is no inherent mapping between <em>g</em>-points and wavelengths; the sum over <em>g</em>-points is the band-average value.</p>
+
+<p>The bands defined by RRTMGP cover the full spectrum of radiation emitted by the Sun and Earth: these are <em>broadband</em> calculations. In RRTMGP the bands are continuous so that the ending wavelength of one band is the starting wavelength of the next.</p>
 
   </div>
 

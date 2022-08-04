@@ -129,181 +129,181 @@
   <td><span class="anchor" id="variable-ncol"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>input dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nlay"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>input dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nbnd"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>input dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ngpt"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>input dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nflav"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nflav</strong></td><td></td>
+  <td><strong>nflav</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-neta"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>neta</strong></td><td></td>
+  <td><strong>neta</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-npres"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>npres</strong></td><td></td>
+  <td><strong>npres</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ntemp"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ntemp</strong></td><td></td>
+  <td><strong>ntemp</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nplancktemp"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nPlanckTemp</strong></td><td></td>
+  <td><strong>nPlanckTemp</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tlay"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay  )</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>temperature at layer centers (K)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tlev"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay+1)</td><td>::</td>
-  <td><strong>tlev</strong></td><td></td>
+  <td><strong>tlev</strong></td><td><p>temperature at interfaces (K)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tsfc"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol       )</td><td>::</td>
-  <td><strong>tsfc</strong></td><td></td>
+  <td><strong>tsfc</strong></td><td><p>surface temperture </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-sfc_lay"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>sfc_lay</strong></td><td></td>
+  <td><strong>sfc_lay</strong></td><td><p>index into surface layer </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-fmajor"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,2,2,ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>fmajor</strong></td><td></td>
+  <td><strong>fmajor</strong></td><td><p>interpolation weights for major gases - computed in interpolation() </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jeta"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,    ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>jeta</strong></td><td></td>
+  <td><strong>jeta</strong></td><td><p>interpolation indexes in eta - computed in interpolation() </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tropo"></span>logical(kind=wl),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
-  <td><strong>tropo</strong></td><td></td>
+  <td><strong>tropo</strong></td><td><p>use upper- or lower-atmospheric tables? </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jtemp"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
-  <td><strong>jtemp</strong></td><td></td>
+  <td><strong>jtemp</strong></td><td><p>interpolation indexes in temperature and pressure - computed in interpolation() </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jpress"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
-  <td><strong>jpress</strong></td><td></td>
+  <td><strong>jpress</strong></td><td><p>interpolation indexes in temperature and pressure - computed in interpolation() </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-gpoint_bands"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ngpt)</td><td>::</td>
-  <td><strong>gpoint_bands</strong></td><td></td>
+  <td><strong>gpoint_bands</strong></td><td><p>band to which each g-point belongs</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-band_lims_gpt"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2, nbnd)</td><td>::</td>
-  <td><strong>band_lims_gpt</strong></td><td></td>
+  <td><strong>band_lims_gpt</strong></td><td><p>start and end g-point for each band</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-pfracin"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ntemp,neta,npres+1,ngpt)</td><td>::</td>
-  <td><strong>pfracin</strong></td><td></td>
+  <td><strong>pfracin</strong></td><td><p>Fraction of the Planck function in each g-point</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-temp_ref_min"></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>temp_ref_min</strong></td><td></td>
+  <td><strong>temp_ref_min</strong></td><td><p>interpolation constants</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-totplnk_delta"></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>totplnk_delta</strong></td><td></td>
+  <td><strong>totplnk_delta</strong></td><td><p>interpolation constants</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-totplnk"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nPlanckTemp,nbnd)</td><td>::</td>
-  <td><strong>totplnk</strong></td><td></td>
+  <td><strong>totplnk</strong></td><td><p>Total Planck function by band at each temperature </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-gpoint_flavor"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,ngpt)</td><td>::</td>
-  <td><strong>gpoint_flavor</strong></td><td></td>
+  <td><strong>gpoint_flavor</strong></td><td><p>major gas flavor (pair) by upper/lower, g-point</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-sfc_src"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,     ngpt)</td><td>::</td>
-  <td><strong>sfc_src</strong></td><td></td>
+  <td><strong>sfc_src</strong></td><td><p>Planck emssion from the surface </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-lay_src"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lay_src</strong></td><td></td>
+  <td><strong>lay_src</strong></td><td><p>Planck emssion from layer centers</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-lev_src_inc"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lev_src_inc</strong></td><td></td>
+  <td><strong>lev_src_inc</strong></td><td><p>Planck emission at layer boundaries, using spectral mapping in the direction of propagation </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-lev_src_dec"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lev_src_dec</strong></td><td></td>
+  <td><strong>lev_src_dec</strong></td><td><p>Planck emission at layer boundaries, using spectral mapping in the direction of propagation </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-sfc_source_jac"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,     ngpt)</td><td>::</td>
-  <td><strong>sfc_source_Jac</strong></td><td></td>
+  <td><strong>sfc_source_Jac</strong></td><td><p>Jacobian (derivative) of the surface Planck source with respect to surface temperature </p></td>
 </tr>
 </tbody>
 </table>

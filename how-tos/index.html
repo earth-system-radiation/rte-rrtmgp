@@ -3,20 +3,20 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>Tutorials | RTE-RRTMGP</title>
+<title>How-to guides | RTE-RRTMGP</title>
 <meta name="generator" content="Jekyll v4.2.2" />
-<meta property="og:title" content="Tutorials" />
+<meta property="og:title" content="How-to guides" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
 <meta property="og:description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
-<link rel="canonical" href="https://earth-system-radiation.github.io//rte-rrtmgp/tutorials.html" />
-<meta property="og:url" content="https://earth-system-radiation.github.io//rte-rrtmgp/tutorials.html" />
+<link rel="canonical" href="https://earth-system-radiation.github.io//rte-rrtmgp/how-tos/" />
+<meta property="og:url" content="https://earth-system-radiation.github.io//rte-rrtmgp/how-tos/" />
 <meta property="og:site_name" content="RTE-RRTMGP" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="Tutorials" />
+<meta property="twitter:title" content="How-to guides" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"Tutorials","url":"https://earth-system-radiation.github.io//rte-rrtmgp/tutorials.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"How-to guides","url":"https://earth-system-radiation.github.io//rte-rrtmgp/how-tos/"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/rte-rrtmgp/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://earth-system-radiation.github.io//rte-rrtmgp/feed.xml" title="RTE-RRTMGP" /></head>
 <body><header class="site-header" role="banner">
@@ -39,35 +39,42 @@
         <article class="post">
 
   <header class="post-header">
-    <h1 class="post-title">Tutorials</h1>
+    <h1 class="post-title">How-to guides</h1>
   </header>
 
   <div class="post-content">
-    <h1 id="tutorials-will-live-here">Tutorials will live here</h1>
+    <h1 id="how-to-guides-will-live-here">How-to guides will live here</h1>
 
-<h3 id="clear-sky-calculation">Clear-sky calculation</h3>
-<p>A typical workflow for a clear-sky calculation is to</p>
+<h2 id="how-to-build-and-test-the-libraries-and-examples">How to: build and test the libraries and examples</h2>
+
+<h3 id="building-and-testing-using-gnu-make">Building and testing using (Gnu) make</h3>
+
 <ol>
-  <li>allocate memory</li>
-  <li>set gas concentration values</li>
-  <li>compute the optical properties of the gaseous atmosphere</li>
-  <li>compute radiative fluxes</li>
+  <li>Set environment variables <code class="language-plaintext highlighter-rouge">FC</code> (the Fortran 2003 compiler) and <code class="language-plaintext highlighter-rouge">FCFLAGS</code> (compiler flags).
+Examples are provided in the <code class="language-plaintext highlighter-rouge">Compiler-flags.md</code> file.</li>
+  <li>Set environment variable <code class="language-plaintext highlighter-rouge">RRTMGP_ROOT</code> to the top-level RTE+RRTMGP directory.
+Set the variables <code class="language-plaintext highlighter-rouge">NCHOME</code> and <code class="language-plaintext highlighter-rouge">NFHOME</code> to the roots of the C and Fortran
+netCDF installations. (Building the libraries alone )</li>
+  <li>Set environment variable <code class="language-plaintext highlighter-rouge">RTE_KERNELS</code> to <code class="language-plaintext highlighter-rouge">openacc</code> if you want the OpenACC/OpenMP
+kernels rather than the default.</li>
+  <li><code class="language-plaintext highlighter-rouge">make libs</code> in the top-level directory will make the RTE and RRTMGP libraries
+and the regression tests in in <code class="language-plaintext highlighter-rouge">examples/</code> and <code class="language-plaintext highlighter-rouge">tests/</code>. Libraries and module
+files are in <code class="language-plaintext highlighter-rouge">build/</code>; examples and tests are in the subdirectory containing
+their source code.</li>
+  <li><code class="language-plaintext highlighter-rouge">make tests</code> runs the examples and regression tests.
+(A few files need to be downloaded for <code class="language-plaintext highlighter-rouge">examples/rfmip-clear-sky</code>. The default
+is to download with a Python script is shell script using <code class="language-plaintext highlighter-rouge">wget</code> is also available.)</li>
+  <li>Comparisons can be made with <code class="language-plaintext highlighter-rouge">make check</code> in the top level directory.
+Evaluating the results of the tests requires <code class="language-plaintext highlighter-rouge">Python</code> and the packages
+described in <code class="language-plaintext highlighter-rouge">environment.yml</code>. One approach is to use
+<code class="language-plaintext highlighter-rouge">conda env create -f environment.yml; conda activate rte_rrtmgp_test; make check</code></li>
+  <li><code class="language-plaintext highlighter-rouge">make</code> invoked without a target in the top level attempts all three steps.</li>
 </ol>
 
-<p>This repository contains all the pieces needed to perform a clear-sky calculation. An <a href="https://github.com/RobertPincus/rte-rrtmgp/tree/master/examples/rfmip-clear-sky">example</a> is provided.</p>
+<h3 id="building-and-testing-using-gnu-make-1">Building and testing using (Gnu) make</h3>
 
-<h3 id="all-sky-calculation">All-sky calculation</h3>
-<p>An all-sky calculation is a small variant</p>
-<ol>
-  <li>allocate memory</li>
-  <li>set gas concentration values</li>
-  <li>compute the optical properties of the gaseous atmosphere</li>
-  <li>compute the optical properties of aerosol and add these to the optical properties</li>
-  <li>compute the optical properties of clouds and add these to the optical properties</li>
-  <li>compute radiative fluxes</li>
-</ol>
-
-<p>An <a href="https://github.com/earth-system-radiation/rte-rrtmgp/tree/main/examples/all-sky">example</a> of this workflow is available in the repository. The example also demonstrates how to complete an end-to-end calculation on a GPU using OpenACC. Users must provide methods for computing the optical properties of clouds and gases (an <a href="https://github.com/earth-system-radiation/rte-rrtmgp/tree/main/extensions/cloud_optics">example cloud optics class</a>  is provided).</p>
+<p>Sergey Kosukhin and his colleagues at the Max Planck Institute for Meteorology
+maintain the <code class="language-plaintext highlighter-rouge">autoconf</code> branch which adds Gnu <code class="language-plaintext highlighter-rouge">autotools</code> building to <code class="language-plaintext highlighter-rouge">main</code> branch.</p>
 
   </div>
 

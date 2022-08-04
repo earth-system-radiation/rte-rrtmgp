@@ -141,25 +141,31 @@
   <td><span class="anchor" id="variable-play"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>play</strong></td><td></td>
+  <td><strong>play</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-plev"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><strong>plev</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tlay"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>tlay</strong></td><td></td>
+  <td><strong>tlay</strong></td><td><p>layer pressures [Pa, mb]; (ncol,nlay)
+level pressures [Pa, mb]; (ncol,nlay+1)
+layer temperatures [K]; (ncol,nlay)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-gas_desc"></span>type(<a href='../type/ty_gas_concs.html'>ty_gas_concs</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>gas_desc</strong></td><td></td>
+  <td><strong>gas_desc</strong></td><td><p>Gas volume mixing ratios</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-optical_props"></span>class(ty_optical_props_arry),</td>
@@ -171,19 +177,19 @@
   <td><span class="anchor" id="variable-toa_src"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>toa_src</strong></td><td></td>
+  <td><strong>toa_src</strong></td><td><p>Incoming solar irradiance(ncol,ngpt)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-col_dry"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
-  <td><strong>col_dry</strong></td><td></td>
+  <td><strong>col_dry</strong></td><td><p>Column dry amount (molecules/cm^2); dim(ncol,nlay)</p></td>
 </tr>
 </tbody>
 </table>
 
       <h3>Return Value <span class="anchor" id="variable-error_msg"></span><small>character(len=128)</small></h3>
-    
+    <p>Empty if successful</p>
     <br>
 
  </div>

@@ -129,121 +129,121 @@
   <td><span class="anchor" id="variable-ncol~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ncol</strong></td><td><p>input dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nlay~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
+  <td><strong>nlay</strong></td><td><p>input dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nbnd~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>nbnd</strong></td><td><p>input dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ngpt~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td><p>input dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ngas~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngas</strong></td><td></td>
+  <td><strong>ngas</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nflav~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nflav</strong></td><td></td>
+  <td><strong>nflav</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-neta~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>neta</strong></td><td></td>
+  <td><strong>neta</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-npres~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>npres</strong></td><td></td>
+  <td><strong>npres</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ntemp~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ntemp</strong></td><td></td>
+  <td><strong>ntemp</strong></td><td><p>table dimensions </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-gpoint_flavor~3"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,ngpt)</td><td>::</td>
-  <td><strong>gpoint_flavor</strong></td><td></td>
+  <td><strong>gpoint_flavor</strong></td><td><p>major gas flavor (pair) by upper/lower, g-point</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-band_lims_gpt~3"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>band_lims_gpt</strong></td><td></td>
+  <td><strong>band_lims_gpt</strong></td><td><p>start and end g-point for each band</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-krayl"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ntemp,neta,ngpt,2)</td><td>::</td>
-  <td><strong>krayl</strong></td><td></td>
+  <td><strong>krayl</strong></td><td><p>Rayleigh scattering coefficients </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-idx_h2o~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>idx_h2o</strong></td><td></td>
+  <td><strong>idx_h2o</strong></td><td><p>index of water vapor in col_gas</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-col_dry"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
-  <td><strong>col_dry</strong></td><td></td>
+  <td><strong>col_dry</strong></td><td><p>column amount of dry air </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-col_gas~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,0:ngas)</td><td>::</td>
-  <td><strong>col_gas</strong></td><td></td>
+  <td><strong>col_gas</strong></td><td><p>input column gas amount  (molecules/cm^2)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-fminor~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,2,ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>fminor</strong></td><td></td>
+  <td><strong>fminor</strong></td><td><p>interpolation weights for major gases - computed in interpolation() </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jeta~3"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,  ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>jeta</strong></td><td></td>
+  <td><strong>jeta</strong></td><td><p>interpolation indexes in eta - computed in interpolation() </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tropo~3"></span>logical(kind=wl),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
-  <td><strong>tropo</strong></td><td></td>
+  <td><strong>tropo</strong></td><td><p>use upper- or lower-atmospheric tables? </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jtemp~3"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
-  <td><strong>jtemp</strong></td><td></td>
+  <td><strong>jtemp</strong></td><td><p>interpolation indexes in temperature - computed in interpolation() </p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tau_rayleigh"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau_rayleigh</strong></td><td></td>
+  <td><strong>tau_rayleigh</strong></td><td><p>Rayleigh optical depth </p></td>
 </tr>
 </tbody>
 </table>

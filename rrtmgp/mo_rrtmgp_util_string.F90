@@ -3,18 +3,19 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-,  Atmospheric and Environmental Research,
+! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
-!
-! Routines for handling strings:
-!   convert to lower case
-!   does a string exist within an array of strings?
-!   what is the location of a string with an array?
-!
+!>
+!> Routines for handling strings:
+!>
+!>   - convert to lower case
+!>   - does a string exist within an array of strings?
+!>   - what is the location of a string with an array?
+!>
 ! -------------------------------------------------------------------------------------------------
 module mo_rrtmgp_util_string
   implicit none
@@ -27,6 +28,7 @@ module mo_rrtmgp_util_string
 
 contains
   ! -------------------------------------------------------------------------------------------------
+  !> Convert stringo to lower case 
   pure function lower_case( input_string ) result( output_string )
     character(len=*), intent(in) :: input_string
     character(len=len(input_string)) :: output_string
@@ -43,7 +45,7 @@ contains
   end function
   ! --------------------------------------------------------------------------------------
   !
-  ! Is string somewhere in array?
+  !> Is string somewhere in array?
   !
   pure function string_in_array(string, array)
     character(len=*),               intent(in) :: string
@@ -64,7 +66,7 @@ contains
   end function string_in_array
   ! --------------------------------------------------------------------------------------
   !
-  ! Is string somewhere in array?
+  !> what is the location of a string in an array 
   !
   pure function string_loc_in_array(string, array)
     character(len=*),               intent(in) :: string

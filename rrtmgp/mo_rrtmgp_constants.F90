@@ -3,21 +3,22 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-,  Atmospheric and Environmental Research,
+! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
-! Physical and mathematical constants used in gas optics calculation
-!   If the host model in which RRTGMP is embedded has defined these constants elsewhere
-!   the model definitions can be used instead by renaming. For example,
-! use  mo_model_constants, only k_boltz => boltzman_k, ...
-!   where the syntax is local_name => original_name
-!   and all the local names need to be defined
+!> ##  Physical and mathematical constants used in RRTMGP gas optics calculation
+!>
+!>   If the host model in which RRTGMP is embedded has defined these constants elsewhere
+!>   the model definitions can be used instead by renaming. For example,
+!> ```use  mo_model_constants, only k_boltz => boltzman_k, ...```
+!>   where the syntax is local_name => original_name
+!>   and all the local names need to be defined
 !
-! "Constants" specific to the earth's atmosphere should also be made consistent with the
-!   host model but may be changed in a call to init_constants(), normally at initialization
+!> "Constants" specific to the earth's atmosphere should also be made consistent with the
+!>   host model but may be changed in a call to init_constants(), normally at initialization
 ! -------------------------------------------------------------------------------------------------
 module mo_rrtmgp_constants
   use mo_rte_kind, only: wp
@@ -56,6 +57,8 @@ contains
   ! -----------------------------------------
   subroutine init_constants(gravity, mol_weight_dry_air, heat_capacity_dry_air)
     real(wp), optional, intent(in) :: gravity, mol_weight_dry_air, heat_capacity_dry_air
+      !! Planetary and atmospheric values used by RRTMGP in computing gas optical properties
+      !! Default values reflect modern Earth but these can be changed using this routine
 
     if(present(gravity))               grav   = gravity
     if(present(mol_weight_dry_air))    m_dry  = mol_weight_dry_air

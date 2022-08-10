@@ -127,44 +127,101 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
 
   } else {
 
-    // do igpt = 1, ngpt
-    //   do icol = 1, ncol
-    parallel_for( KERNEL_NAME() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
-      int ilev = 1;
-      // Albedo of lowest level is the surface albedo...
-      albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
-      // ... and source of diffuse radiation is surface emission
-      src(icol,ilev,igpt) = src_sfc(icol,igpt);
+    #ifdef RRTMGP_CPU_KERNELS
+      #ifdef YAKL_AUTO_PROFILE
+        auto timername = std::string(KERNEL_NAME());
+        yakl::timer_start(timername.c_str());
+      #endif
+      #ifdef YAKL_ARCH_OPENMP
+        #pragma omp parallel for
+      #endif
+      for (int igpt = 1; igpt <= ngpt; igpt++) {
+        int ilev = 1;
+        for (int icol = 1; icol <= ncol; icol++) {
+          // Albedo of lowest level is the surface albedo...
+          albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
+          // ... and source of diffuse radiation is surface emission
+          src(icol,ilev,igpt) = src_sfc(icol,igpt);
+        }
 
-      // From bottom to top of atmosphere --
-      //   compute albedo and source of upward radiation
-      for (ilev = 1; ilev <= nlay; ilev++) {
-        denom (icol,ilev  ,igpt) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt));                // Eq 10
-        albedo(icol,ilev+1,igpt) = rdif(icol,ilev,igpt) + 
-                                   tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev,igpt) * denom(icol,ilev,igpt); // Equation 9
-        // Equation 11 -- source is emitted upward radiation at top of layer plus
-        //   radiation emitted at bottom of layer,
-        //   transmitted through the layer and reflected from layers below (tdiff*src*albedo)
-        src(icol,ilev+1,igpt) =  src_up(icol, ilev, igpt) +  
-                                 tdif(icol,ilev,igpt) * denom(icol,ilev,igpt) *       
-                                 (src(icol,ilev,igpt) + albedo(icol,ilev,igpt)*src_dn(icol,ilev,igpt));
+          // From bottom to top of atmosphere --
+          //   compute albedo and source of upward radiation
+        for (ilev = 1; ilev <= nlay; ilev++) {
+          for (int icol = 1; icol <= ncol; icol++) {
+            denom (icol,ilev  ,igpt) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt));                // Eq 10
+            albedo(icol,ilev+1,igpt) = rdif(icol,ilev,igpt) + 
+                                       tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev,igpt) * denom(icol,ilev,igpt); // Equation 9
+            // Equation 11 -- source is emitted upward radiation at top of layer plus
+            //   radiation emitted at bottom of layer,
+            //   transmitted through the layer and reflected from layers below (tdiff*src*albedo)
+            src(icol,ilev+1,igpt) =  src_up(icol, ilev, igpt) +  
+                                     tdif(icol,ilev,igpt) * denom(icol,ilev,igpt) *       
+                                     (src(icol,ilev,igpt) + albedo(icol,ilev,igpt)*src_dn(icol,ilev,igpt));
+          }
+        }
+
+        // Eq 12, at the top of the domain upwelling diffuse is due to ...
+        ilev = nlay+1;
+        for (int icol = 1; icol <= ncol; icol++) {
+          flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // ... reflection of incident diffuse and
+                                    src(icol,ilev,igpt);                          // scattering by the direct beam below
+        }
+
+        // From the top of the atmosphere downward -- compute fluxes
+        for (ilev=nlay; ilev >= 1; ilev--) {
+          for (int icol = 1; icol <= ncol; icol++) {
+            flux_dn(icol,ilev,igpt) = (tdif(icol,ilev,igpt)*flux_dn(icol,ilev+1,igpt) +   // Equation 13
+                                      rdif(icol,ilev,igpt)*src(icol,ilev,igpt) + 
+                                      src_dn(icol, ilev, igpt)) * denom(icol,ilev,igpt);
+            flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // Equation 12
+                                      src(icol,ilev,igpt);
+
+          }
+        }
       }
+      #ifdef YAKL_AUTO_PROFILE
+        yakl::timer_stop(timername.c_str());
+      #endif
+    #else
+      // do igpt = 1, ngpt
+      //   do icol = 1, ncol
+      parallel_for( KERNEL_NAME() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+        int ilev = 1;
+        // Albedo of lowest level is the surface albedo...
+        albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
+        // ... and source of diffuse radiation is surface emission
+        src(icol,ilev,igpt) = src_sfc(icol,igpt);
 
-      // Eq 12, at the top of the domain upwelling diffuse is due to ...
-      ilev = nlay+1;
-      flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // ... reflection of incident diffuse and
-                                src(icol,ilev,igpt);                          // scattering by the direct beam below
+        // From bottom to top of atmosphere --
+        //   compute albedo and source of upward radiation
+        for (ilev = 1; ilev <= nlay; ilev++) {
+          denom (icol,ilev  ,igpt) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt));                // Eq 10
+          albedo(icol,ilev+1,igpt) = rdif(icol,ilev,igpt) + 
+                                     tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev,igpt) * denom(icol,ilev,igpt); // Equation 9
+          // Equation 11 -- source is emitted upward radiation at top of layer plus
+          //   radiation emitted at bottom of layer,
+          //   transmitted through the layer and reflected from layers below (tdiff*src*albedo)
+          src(icol,ilev+1,igpt) =  src_up(icol, ilev, igpt) +  
+                                   tdif(icol,ilev,igpt) * denom(icol,ilev,igpt) *       
+                                   (src(icol,ilev,igpt) + albedo(icol,ilev,igpt)*src_dn(icol,ilev,igpt));
+        }
 
-      // From the top of the atmosphere downward -- compute fluxes
-      for (ilev=nlay; ilev >= 1; ilev--) {
-        flux_dn(icol,ilev,igpt) = (tdif(icol,ilev,igpt)*flux_dn(icol,ilev+1,igpt) +   // Equation 13
-                                  rdif(icol,ilev,igpt)*src(icol,ilev,igpt) + 
-                                  src_dn(icol, ilev, igpt)) * denom(icol,ilev,igpt);
-        flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // Equation 12
-                                  src(icol,ilev,igpt);
+        // Eq 12, at the top of the domain upwelling diffuse is due to ...
+        ilev = nlay+1;
+        flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // ... reflection of incident diffuse and
+                                  src(icol,ilev,igpt);                          // scattering by the direct beam below
 
-      }
-    });
+        // From the top of the atmosphere downward -- compute fluxes
+        for (ilev=nlay; ilev >= 1; ilev--) {
+          flux_dn(icol,ilev,igpt) = (tdif(icol,ilev,igpt)*flux_dn(icol,ilev+1,igpt) +   // Equation 13
+                                    rdif(icol,ilev,igpt)*src(icol,ilev,igpt) + 
+                                    src_dn(icol, ilev, igpt)) * denom(icol,ilev,igpt);
+          flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // Equation 12
+                                    src(icol,ilev,igpt);
+
+        }
+      });
+    #endif
   }
 }
 

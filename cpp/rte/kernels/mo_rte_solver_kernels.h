@@ -56,20 +56,45 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d c
       }
     });
   } else {
-    // layer index = level index
-    // previous level is up (+1)
-    // do igpt = 1, ngpt
-    //   do icol = 1, ncol
-    parallel_for( KERNEL_NAME() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
-      for (int ilev=nlay; ilev>=1; ilev--) {
-        source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
-        source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
-        flux_dn_dir(icol,ilev,igpt) = Tnoscat(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
-        if (ilev ==    1) {
-          source_sfc(icol,igpt) = flux_dn_dir(icol,    1,igpt)*sfc_albedo(icol,igpt);
+    #ifdef RRTMGP_CPU_KERNELS
+      #ifdef YAKL_AUTO_PROFILE
+        auto timername = std::string(KERNEL_NAME());
+        yakl::timer_start(timername.c_str());
+      #endif
+      #ifdef YAKL_ARCH_OPENMP
+        #pragma omp parallel for
+      #endif
+      for (int igpt = 1; igpt <= ngpt; igpt++) {
+        for (int ilev=nlay; ilev>=1; ilev--) {
+          for (int icol = 1; icol <= ncol; icol++) {
+            source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
+            source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
+            flux_dn_dir(icol,ilev,igpt) = Tnoscat(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
+            if (ilev ==    1) {
+              source_sfc(icol,igpt) = flux_dn_dir(icol,    1,igpt)*sfc_albedo(icol,igpt);
+            }
+          }
         }
       }
-    });
+      #ifdef YAKL_AUTO_PROFILE
+        yakl::timer_stop(timername.c_str());
+      #endif
+    #else
+      // layer index = level index
+      // previous level is up (+1)
+      // do igpt = 1, ngpt
+      //   do icol = 1, ncol
+      parallel_for( KERNEL_NAME() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+        for (int ilev=nlay; ilev>=1; ilev--) {
+          source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
+          source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
+          flux_dn_dir(icol,ilev,igpt) = Tnoscat(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
+          if (ilev ==    1) {
+            source_sfc(icol,igpt) = flux_dn_dir(icol,    1,igpt)*sfc_albedo(icol,igpt);
+          }
+        }
+      });
+    #endif
   }
 }
 
@@ -107,28 +132,22 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
         auto timername = std::string(KERNEL_NAME());
         yakl::timer_start(timername.c_str());
       #endif
+      #ifdef YAKL_ARCH_OPENMP
+        #pragma omp parallel for
+      #endif
       for (int igpt = 1; igpt <= ngpt; igpt++) {
         // Downward propagation
         for (int ilev=nlay; ilev>=1; ilev--) {
-          #ifdef YAKL_ARCH_OPENMP
-            #pragma omp parallel for
-          #endif
           for (int icol = 1; icol <= ncol; icol++) {
             radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
           }
         }
         // Surface reflection and emission
-          #ifdef YAKL_ARCH_OPENMP
-            #pragma omp parallel for
-          #endif
         for (int icol = 1; icol <= ncol; icol++) {
           radn_up(icol,     1,igpt) = radn_dn(icol,     1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt);
         }
         // Upward propagation
         for (int ilev=2; ilev<=nlay+1; ilev++) {
-          #ifdef YAKL_ARCH_OPENMP
-            #pragma omp parallel for
-          #endif
           for (int icol = 1; icol <= ncol; icol++) {
             radn_up(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up(icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt);
           }

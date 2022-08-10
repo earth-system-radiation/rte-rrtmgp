@@ -79,7 +79,7 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, real3d const &tau_ab
 
   real tiny = std::numeric_limits<real>::min();
 
-  int constexpr TILE_SIZE=2;
+  int constexpr TILE_SIZE=8;
   int colTiles = ncol / TILE_SIZE + 1;
   int gptTiles = ngpt / TILE_SIZE + 1;
 

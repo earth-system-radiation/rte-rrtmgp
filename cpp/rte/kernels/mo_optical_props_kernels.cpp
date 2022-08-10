@@ -16,19 +16,17 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
   // do igpt = 1 , ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( KERNEL_NAME() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
-    for (int ibnd=1; ibnd<=nbnd; ibnd++) {
-      if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
-        // t=tau1 + tau2
-        real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
-        // w=(tau1*ssa1 + tau2*ssa2) / t
-        real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
-                         tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
-        g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
-                              tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / max(eps,tauscat12);
-        ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
-        tau1(icol,ilay,igpt) = tau12;
-      }
+  parallel_for( KERNEL_NAME() , SimpleBounds<4>(nbnd,ngpt,nlay,ncol) , YAKL_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
+    if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
+      // t=tau1 + tau2
+      real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
+      // w=(tau1*ssa1 + tau2*ssa2) / t
+      real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+                       tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
+      g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
+                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / max(eps,tauscat12);
+      ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+      tau1(icol,ilay,igpt) = tau12;
     }
   });
 }
@@ -47,11 +45,11 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
       auto timername = std::string(KERNEL_NAME());
       yakl::timer_start(timername.c_str());
     #endif
+    #ifdef YAKL_ARCH_OPENMP
+      #pragma omp parallel for collapse(4)
+    #endif
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       for (int igpt = gpt_lims(1,ibnd); igpt <= gpt_lims(2,ibnd); igpt++) {
-        #ifdef YAKL_ARCH_OPENMP
-          #pragma omp parallel for collapse(2)
-        #endif
         for (int ilay = 1; ilay <= nlay; ilay++) {
           for (int icol = 1; icol <= ncol; icol++) {
             tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);

@@ -128,21 +128,23 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( KERNEL_NAME() , SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<3>(nlay,ncol,ngpt) , YAKL_LAMBDA (int ilay, int icol, int igpt) {
     // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
     int itropo = merge(1,2,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
     int iflav = gpoint_flavor(itropo, igpt); //eta interpolation depends on band's flavor
     // interpolation in temperature, pressure, and eta
+    int jpress_loc = jpress(icol,ilay)+itropo;
+    int jtemp_loc  = jtemp(icol,ilay);
 
     // inlining interpolate3D
-    pfrac(igpt,ilay,icol) = ( fmajor(1,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)  ) + 
-                              fmajor(2,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)  ) + 
-                              fmajor(1,2,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress(icol,ilay)+itropo  , jtemp(icol,ilay)  ) + 
-                              fmajor(2,2,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo  , jtemp(icol,ilay)  ) ) + 
-                            ( fmajor(1,1,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)  , jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)+1) + 
-                              fmajor(2,1,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)+1) + 
-                              fmajor(1,2,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)  , jpress(icol,ilay)+itropo  , jtemp(icol,ilay)+1) + 
-                              fmajor(2,2,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo  , jtemp(icol,ilay)+1) );
+    pfrac(igpt,ilay,icol) = ( fmajor(1,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc-1, jtemp_loc  ) + 
+                              fmajor(2,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc  ) + 
+                              fmajor(1,2,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc  , jtemp_loc  ) + 
+                              fmajor(2,2,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc  ) ) + 
+                            ( fmajor(1,1,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)  , jpress_loc-1, jtemp_loc+1) + 
+                              fmajor(2,1,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc+1) + 
+                              fmajor(1,2,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)  , jpress_loc  , jtemp_loc+1) + 
+                              fmajor(2,2,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc+1) );
   });
 
   //
@@ -240,91 +242,171 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
 
 
 // compute minor species optical depths
-void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, int ngas, int nflav, int ntemp, int neta,
-                              int nminor, int nminork, int idx_h2o, int idx_tropo, int2d const &gpt_flv,
-                              real3d const &kminor, int2d const &minor_limits_gpt, bool1d const &minor_scales_with_density,
-                              bool1d const &scale_by_complement, int1d const &idx_minor, int1d const &idx_minor_scaling,
-                              int1d const &kminor_start, real2d const &play, real2d const &tlay, real3d const &col_gas,
-                              real5d const &fminor, int4d const &jeta, int2d const &layer_limits, int2d const &jtemp, real3d const &tau) {
-  using yakl::intrinsics::size;
-  using yakl::fortran::parallel_for;
-  using yakl::fortran::SimpleBounds;
-  using yakl::fortran::Bounds;
+#ifdef RRTMGP_CPU_KERNELS
 
-  real constexpr PaTohPa = 0.01;
+  void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, int ngas, int nflav, int ntemp, int neta,
+                                int nminor, int nminork, int idx_h2o, int idx_tropo, int2d const &gpt_flv,
+                                real3d const &kminor, int2d const &minor_limits_gpt, bool1d const &minor_scales_with_density,
+                                bool1d const &scale_by_complement, int1d const &idx_minor, int1d const &idx_minor_scaling,
+                                int1d const &kminor_start, real2d const &play, real2d const &tlay, real3d const &col_gas,
+                                real5d const &fminor, int4d const &jeta, int2d const &layer_limits, int2d const &jtemp, real3d const &tau) {
+    using yakl::intrinsics::size;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+    using yakl::fortran::Bounds;
 
-  int extent = size(scale_by_complement,1);
+    #ifdef YAKL_AUTO_PROFILE
+      auto timername = std::string(KERNEL_NAME());
+      yakl::timer_start(timername.c_str());
+    #endif
 
-  // for (int ilay=1; ilay<=nlay; ilay++) {
-  //   for (int icol=1; icol<=ncol; icol++) {
-  //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  parallel_for( KERNEL_NAME() , Bounds<3>(nlay,ncol,{0,max_gpt_diff}) , YAKL_LAMBDA (int ilay, int icol, int igpt0) {
-    // This check skips individual columns with no pressures in range
-    //
-    if ( layer_limits(icol,1) <= 0 || ilay < layer_limits(icol,1) || ilay > layer_limits(icol,2) ) {
-    } else {
-      real myplay  = play (icol,ilay);
-      real mytlay  = tlay (icol,ilay);
-      int  myjtemp = jtemp(icol,ilay);
-      real mycol_gas_h2o = col_gas(icol,ilay,idx_h2o);
-      real mycol_gas_0   = col_gas(icol,ilay,0);
+    real constexpr PaTohPa = 0.01;
 
-      for (int imnr=1; imnr<=extent; imnr++) {
+    int extent = size(scale_by_complement,1);
 
-        real scaling = col_gas(icol,ilay,idx_minor(imnr));
-        if (minor_scales_with_density(imnr)) {
-          //
-          // NOTE: P needed in hPa to properly handle density scaling.
-          //
-          scaling = scaling * (PaTohPa * myplay/mytlay);
+    #ifdef YAKL_ARCH_OPENMP
+      #pragma omp parallel for collapse(2)
+    #endif
+    for (int icol=1; icol<=ncol; icol++) {
+      for (int ilay=1; ilay<=nlay; ilay++) {
+        // This check skips individual columns with no pressures in range
+        if ( layer_limits(icol,1) <= 0 || ilay < layer_limits(icol,1) || ilay > layer_limits(icol,2) ) continue;
 
-          if (idx_minor_scaling(imnr) > 0) {  // there is a second gas that affects this gas's absorption
-            real mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr));
-            real vmr_fact = 1._wp / mycol_gas_0;
-            real dry_fact = 1._wp / (1._wp + mycol_gas_h2o * vmr_fact);
-            // scale by density of special gas
-            if (scale_by_complement(imnr)) { // scale by densities of all gases but the special one
-              scaling = scaling * (1._wp - mycol_gas_imnr * vmr_fact * dry_fact);
-            } else {
-              scaling = scaling *          mycol_gas_imnr * vmr_fact * dry_fact;
-            }
-          }
-        } // minor_scalse_with_density(imnr)
+        int myjtemp = jtemp(icol,ilay);
 
-        //
-        // Interpolation of absorption coefficient and calculation of optical depth
-        //
-        // Which gpoint range does this minor gas affect?
-        int gptS = minor_limits_gpt(1,imnr);
-        int gptE = minor_limits_gpt(2,imnr);
+        for (int imnr=1; imnr<=extent; imnr++) {
+          // Which gpoint range does this minor gas affect?
+          int gptS = minor_limits_gpt(1,imnr);
+          int gptE = minor_limits_gpt(2,imnr);
 
-        // Find the actual g-point to work on
-        int igpt = igpt0 + gptS;
-
-        // Proceed only if the g-point is within the correct range
-        if (igpt <= gptE) {
           // What is the starting point in the stored array of minor absorption coefficients?
           int minor_start = kminor_start(imnr);
 
-          real tau_minor = 0._wp;
-          int iflav = gpt_flv(idx_tropo,igpt); // eta interpolation depends on flavor
-          int minor_loc = minor_start + (igpt - gptS); // add offset to starting point
-          
-          // Inlined interpolate2D
-          real kminor_loc = fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp  ) + 
-                            fminor(2,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp  ) + 
-                            fminor(1,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)  , myjtemp+1) + 
-                            fminor(2,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)+1, myjtemp+1);
+          real scaling = col_gas(icol,ilay,idx_minor(imnr));
+          if (minor_scales_with_density(imnr)) {
+            // NOTE: P needed in hPa to properly handle density scaling.
+            scaling = scaling * (PaTohPa * play(icol,ilay)/tlay(icol,ilay));
 
-          tau_minor = kminor_loc * scaling;
+            if (idx_minor_scaling(imnr) > 0) {  // there is a second gas that affects this gas's absorption
+              real mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr));
+              real vmr_fact = 1._wp / col_gas(icol,ilay,0);
+              real dry_fact = 1._wp / (1._wp + col_gas(icol,ilay,idx_h2o) * vmr_fact);
+              // scale by density of special gas
+              if (scale_by_complement(imnr)) { // scale by densities of all gases but the special one
+                scaling = scaling * (1._wp - mycol_gas_imnr * vmr_fact * dry_fact);
+              } else {
+                scaling = scaling *          mycol_gas_imnr * vmr_fact * dry_fact;
+              }
+            }
+          } // minor_scalse_with_density(imnr)
 
-          yakl::atomicAdd( tau(igpt,ilay,icol) , tau_minor );
-        }  // igpt <= gptE
+          for (int igpt=gptS; igpt <= gptE; igpt++) {
+            // Interpolation of absorption coefficient and calculation of optical depth
+            int iflav = gpt_flv(idx_tropo,igpt); // eta interpolation depends on flavor
+            int minor_loc = minor_start + (igpt - gptS); // add offset to starting point
+            // Inlined interpolate2D
+            real kminor_loc = fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp  ) + 
+                              fminor(2,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp  ) + 
+                              fminor(1,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)  , myjtemp+1) + 
+                              fminor(2,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)+1, myjtemp+1);
+            yakl::atomicAdd( tau(igpt,ilay,icol) , kminor_loc * scaling );
+          }
+        }
       }
     }
-  });
-}
+    #ifdef YAKL_AUTO_PROFILE
+      yakl::timer_stop(timername.c_str());
+    #endif
+  }
 
+#else
+
+  void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, int ngas, int nflav, int ntemp, int neta,
+                                int nminor, int nminork, int idx_h2o, int idx_tropo, int2d const &gpt_flv,
+                                real3d const &kminor, int2d const &minor_limits_gpt, bool1d const &minor_scales_with_density,
+                                bool1d const &scale_by_complement, int1d const &idx_minor, int1d const &idx_minor_scaling,
+                                int1d const &kminor_start, real2d const &play, real2d const &tlay, real3d const &col_gas,
+                                real5d const &fminor, int4d const &jeta, int2d const &layer_limits, int2d const &jtemp, real3d const &tau) {
+    using yakl::intrinsics::size;
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+    using yakl::fortran::Bounds;
+
+    real constexpr PaTohPa = 0.01;
+
+    int extent = size(scale_by_complement,1);
+
+    // for (int ilay=1; ilay<=nlay; ilay++) {
+    //   for (int icol=1; icol<=ncol; icol++) {
+    //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
+    parallel_for( KERNEL_NAME() , Bounds<3>(nlay,ncol,{0,max_gpt_diff}) , YAKL_LAMBDA (int ilay, int icol, int igpt0) {
+      // This check skips individual columns with no pressures in range
+      //
+      if ( layer_limits(icol,1) <= 0 || ilay < layer_limits(icol,1) || ilay > layer_limits(icol,2) ) {
+      } else {
+        real myplay  = play (icol,ilay);
+        real mytlay  = tlay (icol,ilay);
+        int  myjtemp = jtemp(icol,ilay);
+        real mycol_gas_h2o = col_gas(icol,ilay,idx_h2o);
+        real mycol_gas_0   = col_gas(icol,ilay,0);
+
+        for (int imnr=1; imnr<=extent; imnr++) {
+
+          real scaling = col_gas(icol,ilay,idx_minor(imnr));
+          if (minor_scales_with_density(imnr)) {
+            //
+            // NOTE: P needed in hPa to properly handle density scaling.
+            //
+            scaling = scaling * (PaTohPa * myplay/mytlay);
+
+            if (idx_minor_scaling(imnr) > 0) {  // there is a second gas that affects this gas's absorption
+              real mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr));
+              real vmr_fact = 1._wp / mycol_gas_0;
+              real dry_fact = 1._wp / (1._wp + mycol_gas_h2o * vmr_fact);
+              // scale by density of special gas
+              if (scale_by_complement(imnr)) { // scale by densities of all gases but the special one
+                scaling = scaling * (1._wp - mycol_gas_imnr * vmr_fact * dry_fact);
+              } else {
+                scaling = scaling *          mycol_gas_imnr * vmr_fact * dry_fact;
+              }
+            }
+          } // minor_scalse_with_density(imnr)
+
+          //
+          // Interpolation of absorption coefficient and calculation of optical depth
+          //
+          // Which gpoint range does this minor gas affect?
+          int gptS = minor_limits_gpt(1,imnr);
+          int gptE = minor_limits_gpt(2,imnr);
+
+          // Find the actual g-point to work on
+          int igpt = igpt0 + gptS;
+
+          // Proceed only if the g-point is within the correct range
+          if (igpt <= gptE) {
+            // What is the starting point in the stored array of minor absorption coefficients?
+            int minor_start = kminor_start(imnr);
+
+            real tau_minor = 0._wp;
+            int iflav = gpt_flv(idx_tropo,igpt); // eta interpolation depends on flavor
+            int minor_loc = minor_start + (igpt - gptS); // add offset to starting point
+            
+            // Inlined interpolate2D
+            real kminor_loc = fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp  ) + 
+                              fminor(2,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp  ) + 
+                              fminor(1,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)  , myjtemp+1) + 
+                              fminor(2,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)+1, myjtemp+1);
+
+            tau_minor = kminor_loc * scaling;
+
+            yakl::atomicAdd( tau(igpt,ilay,icol) , tau_minor );
+          }  // igpt <= gptE
+        }
+      }
+    });
+  }
+
+#endif
 
 
 // compute minor species optical depths
@@ -348,18 +430,20 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
     // binary species parameter (eta) and col_mix depend on band flavor
     int iflav = gpoint_flavor(itropo, igpt);
     // interpolation in temperature, pressure, and eta
+    int jpress_loc = jpress(icol,ilay)+itropo;
+    int jtemp_loc  = jtemp (icol,ilay);
 
     // inlined interpolate3D
-    real tau_major = col_mix(1,iflav,icol,ilay) * ( fmajor(1,1,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)  , jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)  ) + 
-                                                    fmajor(2,1,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)  ) + 
-                                                    fmajor(1,2,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)  , jpress(icol,ilay)+itropo  , jtemp(icol,ilay)  ) + 
-                                                    fmajor(2,2,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo  , jtemp(icol,ilay)  ) ) + 
-                     col_mix(2,iflav,icol,ilay) * ( fmajor(1,1,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)  , jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)+1) + 
-                                                    fmajor(2,1,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo-1, jtemp(icol,ilay)+1) + 
-                                                    fmajor(1,2,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)  , jpress(icol,ilay)+itropo  , jtemp(icol,ilay)+1) + 
-                                                    fmajor(2,2,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)+1, jpress(icol,ilay)+itropo  , jtemp(icol,ilay)+1) );
+    real tau_major = col_mix(1,iflav,icol,ilay) * ( fmajor(1,1,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc-1, jtemp_loc  ) + 
+                                                    fmajor(2,1,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc  ) + 
+                                                    fmajor(1,2,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc  , jtemp_loc  ) + 
+                                                    fmajor(2,2,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc  ) ) + 
+                     col_mix(2,iflav,icol,ilay) * ( fmajor(1,1,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)  , jpress_loc-1, jtemp_loc+1) + 
+                                                    fmajor(2,1,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc+1) + 
+                                                    fmajor(1,2,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)  , jpress_loc  , jtemp_loc+1) + 
+                                                    fmajor(2,2,2,iflav,icol,ilay) * kmajor(igpt, jeta(2,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc+1) );
 
-    tau(igpt,ilay,icol) = tau(igpt,ilay,icol) + tau_major;
+    tau(igpt,ilay,icol) += tau_major;
   });
 }
 

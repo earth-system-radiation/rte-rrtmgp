@@ -5,15 +5,35 @@ void sum_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux, re
   using yakl::fortran::parallel_for;
   using yakl::fortran::SimpleBounds;
 
-  // do ilev = 1, nlev
-  //   do icol = 1, ncol
-  parallel_for( KERNEL_NAME() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
-    real bb_flux_s = 0.0_wp;
-    for (int igpt=1; igpt<=ngpt; igpt++) {
-      bb_flux_s += spectral_flux(icol, ilev, igpt);
+  #ifdef RRTMGP_CPU_KERNELS
+    #ifdef YAKL_AUTO_PROFILE
+      auto timername = std::string(KERNEL_NAME());
+      yakl::timer_start(timername.c_str());
+    #endif
+    for (int ilev = 1; ilev <= nlev; ilev++) {
+      for (int icol = 1; icol <= ncol; icol++) {
+        broadband_flux(icol, ilev) = 0.0_wp;
+      }
+      for (int igpt=1; igpt<=ngpt; igpt++) {
+        for (int icol = 1; icol <= ncol; icol++) {
+          broadband_flux(icol, ilev) += spectral_flux(icol, ilev, igpt);
+        }
+      }
     }
-    broadband_flux(icol, ilev) = bb_flux_s;
-  });
+    #ifdef YAKL_AUTO_PROFILE
+      yakl::timer_stop(timername.c_str());
+    #endif
+  #else
+    // do ilev = 1, nlev
+    //   do icol = 1, ncol
+    parallel_for( KERNEL_NAME() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
+      real bb_flux_s = 0.0_wp;
+      for (int igpt=1; igpt<=ngpt; igpt++) {
+        bb_flux_s += spectral_flux(icol, ilev, igpt);
+      }
+      broadband_flux(icol, ilev) = bb_flux_s;
+    });
+  #endif
 }
 
 // Net flux: Spectral reduction over all points

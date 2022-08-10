@@ -42,16 +42,35 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
   using yakl::fortran::parallel_for;
   using yakl::fortran::SimpleBounds;
 
-  // do igpt = 1 , ngpt
-  //   do ilay = 1 , nlay
-  //     do icol = 1 , ncol
-  parallel_for( KERNEL_NAME() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  #ifdef RRTMGP_CPU_KERNELS
+    #ifdef YAKL_AUTO_PROFILE
+      auto timername = std::string(KERNEL_NAME());
+      yakl::timer_start(timername.c_str());
+    #endif
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
-      if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
-        tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
+      for (int igpt = gpt_lims(1,ibnd); igpt <= gpt_lims(2,ibnd); igpt++) {
+        for (int ilay = 1; ilay <= nlay; ilay++) {
+          for (int icol = 1; icol <= ncol; icol++) {
+            tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);
+          }
+        }
       }
     }
-  });
+    #ifdef YAKL_AUTO_PROFILE
+      yakl::timer_stop(timername.c_str());
+    #endif
+  #else
+    // do igpt = 1 , ngpt
+    //   do ilay = 1 , nlay
+    //     do icol = 1 , ncol
+    parallel_for( KERNEL_NAME() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+      for (int ibnd=1; ibnd<=nbnd; ibnd++) {
+        if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
+          tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);
+        }
+      }
+    });
+  #endif
 }
 
 

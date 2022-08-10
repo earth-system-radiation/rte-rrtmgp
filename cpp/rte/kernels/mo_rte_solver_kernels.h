@@ -102,22 +102,50 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
     });
   } else {
     // Top of domain is index nlay+1
-    // do igpt = 1, ngpt
-    //   do icol = 1, ncol
-    parallel_for( KERNEL_NAME() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
-      // Downward propagation
-      for (int ilev=nlay; ilev>=1; ilev--) {
-        radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
+    #ifdef RRTMGP_CPU_KERNELS
+      #ifdef YAKL_AUTO_PROFILE
+        auto timername = std::string(KERNEL_NAME());
+        yakl::timer_start(timername.c_str());
+      #endif
+      for (int igpt = 1; igpt <= ngpt; igpt++) {
+        // Downward propagation
+        for (int ilev=nlay; ilev>=1; ilev--) {
+          for (int icol = 1; icol <= ncol; icol++) {
+            radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
+          }
+        }
+        // Surface reflection and emission
+        for (int icol = 1; icol <= ncol; icol++) {
+          radn_up(icol,     1,igpt) = radn_dn(icol,     1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt);
+        }
+        // Upward propagation
+        for (int ilev=2; ilev<=nlay+1; ilev++) {
+          for (int icol = 1; icol <= ncol; icol++) {
+            radn_up(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up(icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt);
+          }
+        }
       }
+      #ifdef YAKL_AUTO_PROFILE
+        yakl::timer_stop(timername.c_str());
+      #endif
+    #else
+      // do igpt = 1, ngpt
+      //   do icol = 1, ncol
+      parallel_for( KERNEL_NAME() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+        // Downward propagation
+        for (int ilev=nlay; ilev>=1; ilev--) {
+          radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
+        }
 
-      // Surface reflection and emission
-      radn_up(icol,     1,igpt) = radn_dn(icol,     1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt);
+        // Surface reflection and emission
+        radn_up(icol,     1,igpt) = radn_dn(icol,     1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt);
 
-      // Upward propagation
-      for (int ilev=2; ilev<=nlay+1; ilev++) {
-        radn_up(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up(icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt);
-      }
-    });
+        // Upward propagation
+        for (int ilev=2; ilev<=nlay+1; ilev++) {
+          radn_up(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up(icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt);
+        }
+      });
+    #endif
   }
 }
 

@@ -17,7 +17,7 @@ inline void reorder_123x321_kernel(int d1, int d2, int d3, real3d const &array_i
   //     for (int t1=1; t1<=ntiles1; t1++) {
   //       for (int it3=1; it3<=TILE_SIZE; it3++) {
   //         for (int it1=1; it1<=TILE_SIZE; it1++) {
-  parallel_for( KERNEL_NAME() , SimpleBounds<5>(d2,ntiles3,ntiles1,TILE_SIZE,TILE_SIZE) , YAKL_LAMBDA (int i2, int t3, int t1, int it3, int it1) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<5>(d2,ntiles1,ntiles3,TILE_SIZE,TILE_SIZE) , YAKL_LAMBDA (int i2, int t1, int t3, int it1, int it3) {
     int i3 = (t3-1)*TILE_SIZE + it3;
     int i1 = (t1-1)*TILE_SIZE + it1;
     if (i3 <= d3 && i1 <= d1) {

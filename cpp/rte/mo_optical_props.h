@@ -153,13 +153,15 @@ public:
     // for (int j = 1; j <= size(band_lims_wvn,2); j++) {
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
     auto &this_band_lims_wvn = this->band_lims_wvn;
-    parallel_for( SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-      if (this->is_initialized()) {
+    if (this->is_initialized()) {
+      parallel_for( SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
         ret(i,j) = 1._wp / this_band_lims_wvn(i,j);
-      } else {
+      });
+    } else {
+      parallel_for( SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
         ret(i,j) = 0._wp;
-      }
-    });
+      });
+    }
     return ret;
   }
 

@@ -13,7 +13,6 @@
 #include "mo_rte_lw.h"
 #include "mo_rte_sw.h"
 
-bool constexpr print_timers = true;
 bool constexpr verbose      = false;
 bool constexpr write_fluxes = false;
 bool constexpr print_norms  = true;
@@ -76,7 +75,6 @@ int main(int argc , char **argv) {
     load_and_init(k_dist, k_dist_file, gas_concs);
 
     bool is_sw = k_dist.source_is_external();
-    bool is_lw = ! is_sw;
 
     if (verbose) std::cout << "Reading cloud optics file\n\n";
     CloudOptics cloud_optics;

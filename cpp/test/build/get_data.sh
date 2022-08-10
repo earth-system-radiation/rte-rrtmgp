@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mkdir -p build
-cd build
+mkdir -p input_files
+cd input_files
 rm -f *.nc
 
 wget https://code.ornl.gov/imn/data/raw/master/rrtmgp/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc 

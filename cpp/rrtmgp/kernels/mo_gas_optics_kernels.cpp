@@ -20,7 +20,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
     // index and factor for temperature interpolation
     jtemp(icol,ilay) = (int) ((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta);
     jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp(icol,ilay))); // limit the index range
@@ -39,7 +39,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int iflav=1; iflav<=nflav; iflav++) {   // loop over implemented combinations of major species
   //       for (int itemp=1; itemp<=2; itemp++) {
-  parallel_for( SimpleBounds<4>(nlay,ncol,nflav,2) , YAKL_LAMBDA (int ilay, int icol, int iflav , int itemp) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<4>(nlay,ncol,nflav,2) , YAKL_LAMBDA (int ilay, int icol, int iflav , int itemp) {
     yakl::FSArray<int,1,SB<2>> igases;
 
     // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
@@ -88,7 +88,7 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, real3d const &tau_ab
   //     for (int tgpt=1; tgpt<=gptTiles; tgpt++) {
   //       for (int itcol=1; itcol<=TILE_SIZE; itcol++) {
   //         for (int itgpt=1; itgpt<=TILE_SIZE; itgpt++) {
-  parallel_for( SimpleBounds<5>(nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE) , YAKL_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<5>(nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE) , YAKL_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
     int icol = (tcol-1)*TILE_SIZE + itcol;
     int igpt = (tgpt-1)*TILE_SIZE + itgpt;
 
@@ -128,7 +128,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
     // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
     int itropo = merge(1,2,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
     int iflav = gpoint_flavor(itropo, igpt); //eta interpolation depends on band's flavor
@@ -150,7 +150,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
   //
   // for (int icol=1; icol<=ncol; icol++) {
-  parallel_for( ncol , YAKL_LAMBDA (int icol) {
+  parallel_for( KERNEL_NAME() , ncol , YAKL_LAMBDA (int icol) {
     interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk, planck_function.slice<1>(COLON,1,icol),nPlanckTemp,nbnd);
   });
   //
@@ -158,13 +158,13 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   //
   // for (int igpt=1; igpt<=ngpt; igpt++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol);
   });
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
-  parallel_for( SimpleBounds<2>(ncol,nlay) , YAKL_LAMBDA (int icol, int ilay) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<2>(ncol,nlay) , YAKL_LAMBDA (int icol, int ilay) {
     // Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
     interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function.slice<1>(COLON,ilay,icol),nPlanckTemp,nbnd);
   });
@@ -177,19 +177,19 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
     lay_src(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,icol);
   });
 
   // compute level source irradiances for each g-point, one each for upward and downward paths
   // for (int icol=1; icol<=ncol; icol++) {
-  parallel_for( ncol , YAKL_LAMBDA (int icol) {
+  parallel_for( KERNEL_NAME() , ncol , YAKL_LAMBDA (int icol) {
     interpolate1D(tlev(icol,1), temp_ref_min, totplnk_delta, totplnk, planck_function.slice<1>(COLON,1,icol),nPlanckTemp,nbnd);
   });
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=2; ilay<=nlay+1; ilay++) {
-  parallel_for( Bounds<2>(ncol,{2,nlay+1}) , YAKL_LAMBDA (int icol, int ilay) {
+  parallel_for( KERNEL_NAME() , Bounds<2>(ncol,{2,nlay+1}) , YAKL_LAMBDA (int icol, int ilay) {
     interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function.slice<1>(COLON,ilay,icol),nPlanckTemp,nbnd);
   });
 
@@ -201,7 +201,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol+=2) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
     lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  );
     lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  );
     if (icol < ncol) {
@@ -225,7 +225,7 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( SimpleBounds<3>(nlay,ncol,ngpt) , YAKL_LAMBDA (int ilay, int icol, int igpt) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<3>(nlay,ncol,ngpt) , YAKL_LAMBDA (int ilay, int icol, int igpt) {
     int itropo = merge(1,2,tropo(icol,ilay)); // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
     int iflav = gpoint_flavor(itropo, igpt);
     // Inlining interpolate2D
@@ -258,7 +258,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  parallel_for( Bounds<3>(nlay,ncol,{0,max_gpt_diff}) , YAKL_LAMBDA (int ilay, int icol, int igpt0) {
+  parallel_for( KERNEL_NAME() , Bounds<3>(nlay,ncol,{0,max_gpt_diff}) , YAKL_LAMBDA (int ilay, int icol, int igpt0) {
     // This check skips individual columns with no pressures in range
     //
     if ( layer_limits(icol,1) <= 0 || ilay < layer_limits(icol,1) || ilay > layer_limits(icol,2) ) {
@@ -341,7 +341,7 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
   //   for (int icol=1; icol<=ncol; icol++) {
   //     // optical depth calculation for major species
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( SimpleBounds<3>(nlay,ncol,ngpt) , YAKL_LAMBDA (int ilay, int icol, int igpt) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<3>(nlay,ncol,ngpt) , YAKL_LAMBDA (int ilay, int icol, int igpt) {
     // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
     int itropo = merge(1,2,tropo(icol,ilay));  // WS: moved inside innermost loop
 
@@ -389,7 +389,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
   if (top_at_1) {
 
     // for (int icol=1; icol<=ncol; icol++){
-    parallel_for( ncol , YAKL_LAMBDA (int icol) {
+    parallel_for( KERNEL_NAME() , ncol , YAKL_LAMBDA (int icol) {
       itropo_lower(icol,2) = nlay;
       // itropo_lower(icol,1) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
       {
@@ -426,7 +426,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
   } else {  // top_at_1
 
     // for (int icol=1; icol<=ncol; icol++){
-    parallel_for( ncol , YAKL_LAMBDA ( int icol ) {
+    parallel_for( KERNEL_NAME() , ncol , YAKL_LAMBDA ( int icol ) {
       itropo_lower(icol,1) = 1;
       // itropo_lower(icol,2) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
       {
@@ -501,7 +501,7 @@ void combine_and_reorder_nstr(int ncol, int nlay, int ngpt, int nmom, real3d con
   // do icol = 1, ncol
   //   do ilay = 1, nlay
   //     do igpt = 1, ngpt
-  parallel_for( SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
     real t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
     tau(icol,ilay,igpt) = t;
     if (t > 2._wp * tiny) {

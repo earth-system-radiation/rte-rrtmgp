@@ -279,7 +279,7 @@ public:
     // Cloud masks; don't need value re values if there's no cloud
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    parallel_for( KERNEL_NAME() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       liqmsk(icol,ilay) = clwp(icol,ilay) > 0._wp;
       icemsk(icol,ilay) = ciwp(icol,ilay) > 0._wp;
     });
@@ -352,7 +352,7 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    parallel_for( SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    parallel_for( KERNEL_NAME() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       // Absorption optical depth  = (1-ssa) * tau = tau - taussa
       optical_props_tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) +
                                           (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd));
@@ -373,7 +373,7 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    parallel_for( SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    parallel_for( KERNEL_NAME() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       real tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd);
       real taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd);
       optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / max(epsilon(tau), taussa);
@@ -439,7 +439,7 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
-    parallel_for( SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    parallel_for( KERNEL_NAME() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
         int index = min( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1._wp);
         real fint = (re(icol,ilay) - offset)/step_size - (index-1);
@@ -470,7 +470,7 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    parallel_for( SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    parallel_for( KERNEL_NAME() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
         int irad;
         // Finds index into size regime table

@@ -7,7 +7,7 @@ void sum_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux, re
 
   // do ilev = 1, nlev
   //   do icol = 1, ncol
-  parallel_for( SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
     real bb_flux_s = 0.0_wp;
     for (int igpt=1; igpt<=ngpt; igpt++) {
       bb_flux_s += spectral_flux(icol, ilev, igpt);
@@ -24,7 +24,7 @@ void net_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux_dn,
 
   // do ilev = 1, nlev
   //   do icol = 1, ncol
-  parallel_for( SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
     real diff = spectral_flux_dn(icol, ilev, 1) - spectral_flux_up(icol, ilev, 1);
     broadband_flux_net(icol, ilev) = diff;
   });
@@ -32,7 +32,7 @@ void net_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux_dn,
   // do igpt = 2, ngpt
   //   do ilev = 1, nlev
   //     do icol = 1, ncol
-  parallel_for( Bounds<3>({2,ngpt},nlev,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
+  parallel_for( KERNEL_NAME() , Bounds<3>({2,ngpt},nlev,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
     real diff = spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt);
     yakl::atomicAdd( broadband_flux_net(icol,ilev) , diff );
   });
@@ -49,7 +49,7 @@ void net_broadband(int ncol, int nlev, real2d const &flux_dn, real2d const &flux
 
   // do ilev = 1, nlev
   //   do icol = 1, ncol
-  parallel_for( SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
      broadband_flux_net(icol,ilev) = flux_dn(icol,ilev) - flux_up(icol,ilev);
   });
 #ifdef RRTMGP_DEBUG

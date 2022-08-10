@@ -130,7 +130,7 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
   real1d tmp_Ds ("tmp_Ds" ,n_quad_angs);
   real1d tmp_wts("tmp_wts",n_quad_angs);
   // for (int i=1 ; i <= n_quad_angs ; i++) {
-  parallel_for( SimpleBounds<1>(n_quad_angs) , YAKL_LAMBDA (int i) {
+  parallel_for( KERNEL_NAME() , SimpleBounds<1>(n_quad_angs) , YAKL_LAMBDA (int i) {
     tmp_Ds (i) = gauss_Ds (i,n_quad_angs);
     tmp_wts(i) = gauss_wts(i,n_quad_angs);
   });

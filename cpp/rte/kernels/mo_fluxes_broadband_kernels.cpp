@@ -11,10 +11,16 @@ void sum_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux, re
       yakl::timer_start(timername.c_str());
     #endif
     for (int ilev = 1; ilev <= nlev; ilev++) {
+      #ifdef YAKL_ARCH_OPENMP
+        #pragma omp parallel for
+      #endif
       for (int icol = 1; icol <= ncol; icol++) {
         broadband_flux(icol, ilev) = 0.0_wp;
       }
       for (int igpt=1; igpt<=ngpt; igpt++) {
+        #ifdef YAKL_ARCH_OPENMP
+          #pragma omp parallel for
+        #endif
         for (int icol = 1; icol <= ncol; icol++) {
           broadband_flux(icol, ilev) += spectral_flux(icol, ilev, igpt);
         }

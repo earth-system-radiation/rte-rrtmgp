@@ -110,16 +110,25 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
       for (int igpt = 1; igpt <= ngpt; igpt++) {
         // Downward propagation
         for (int ilev=nlay; ilev>=1; ilev--) {
+          #ifdef YAKL_ARCH_OPENMP
+            #pragma omp parallel for
+          #endif
           for (int icol = 1; icol <= ncol; icol++) {
             radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
           }
         }
         // Surface reflection and emission
+          #ifdef YAKL_ARCH_OPENMP
+            #pragma omp parallel for
+          #endif
         for (int icol = 1; icol <= ncol; icol++) {
           radn_up(icol,     1,igpt) = radn_dn(icol,     1,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt);
         }
         // Upward propagation
         for (int ilev=2; ilev<=nlay+1; ilev++) {
+          #ifdef YAKL_ARCH_OPENMP
+            #pragma omp parallel for
+          #endif
           for (int icol = 1; icol <= ncol; icol++) {
             radn_up(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up(icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt);
           }

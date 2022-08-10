@@ -49,6 +49,9 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
     #endif
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       for (int igpt = gpt_lims(1,ibnd); igpt <= gpt_lims(2,ibnd); igpt++) {
+        #ifdef YAKL_ARCH_OPENMP
+          #pragma omp parallel for collapse(2)
+        #endif
         for (int ilay = 1; ilay <= nlay; ilay++) {
           for (int icol = 1; icol <= ncol; icol++) {
             tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);

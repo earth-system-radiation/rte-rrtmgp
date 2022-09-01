@@ -6,9 +6,6 @@
 #include <cmath>
 #include <filesystem>
 
-#define KERNEL_NAME() (std::filesystem::path(__FILE__).filename().string() + std::string(":") + std::to_string(__LINE__)).c_str()
-
-
 template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
 
 typedef double real;
@@ -107,7 +104,7 @@ template <class T , int rank , int myStyle> inline void zero_array( yakl::Array<
 
 
 template <class T , int rank , int myStyle> inline void zero_array( yakl::Array<T,rank,yakl::memDevice,myStyle> const &arr ) {
-  yakl::c::parallel_for( KERNEL_NAME() , yakl::c::Bounds<1>(arr.totElems()) , YAKL_LAMBDA (int i) {
+  yakl::c::parallel_for( YAKL_AUTO_LABEL() , yakl::c::Bounds<1>(arr.totElems()) , YAKL_LAMBDA (int i) {
     arr.myData[i] = 0;
   });
 }
@@ -119,7 +116,7 @@ template <class T , int rank , int myStyle> inline void memset( yakl::Array<T,ra
 
 
 template <class T , int rank , int myStyle> inline void memset( yakl::Array<T,rank,yakl::memDevice,myStyle> const &arr , T val) {
-  yakl::c::parallel_for( KERNEL_NAME() , yakl::c::Bounds<1>(arr.totElems()) , YAKL_LAMBDA (int i) {
+  yakl::c::parallel_for( YAKL_AUTO_LABEL() , yakl::c::Bounds<1>(arr.totElems()) , YAKL_LAMBDA (int i) {
     arr.myData[i] = val;
   });
 }

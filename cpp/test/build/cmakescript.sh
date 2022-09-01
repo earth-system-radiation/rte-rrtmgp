@@ -1,5 +1,10 @@
 #!/bin/bash
 
+savedir=`pwd`
+cd ${YAKL_HOME}
+git rev-parse HEAD >& $savedir/../../yakl-git-hash.txt
+cd $savedir
+
 # Clean previous build
 ./cmakeclean.sh
 
@@ -17,3 +22,4 @@ cmake                                          \
   -DF90_LINK="$F90_LINK"                       \
   -DCMAKE_Fortran_MODULE_DIRECTORY="`pwd`/fortran_module_files" \
   ..
+

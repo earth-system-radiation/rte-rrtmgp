@@ -62,7 +62,7 @@ public:
     //   Efficient only when g-point indexes start at 1 and are contiguous.
     this->gpt2band = int1d("gpt2band",maxval(band_lims_gpt_lcl));
     // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
-    auto &this_gpt2band = this->gpt2band;
+    YAKL_SCOPE( this_gpt2band , this->gpt2band );
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(1) , YAKL_LAMBDA (int dummy) {
       for (int iband=1; iband <= size(band_lims_gpt_lcl,2); iband++) {
         for (int i=band_lims_gpt_lcl(1,iband); i <= band_lims_gpt_lcl(2,iband); i++) {
@@ -152,7 +152,7 @@ public:
     real2d ret("band_lim_wavelength",size(band_lims_wvn,1),size(band_lims_wvn,2));
     // for (int j = 1; j <= size(band_lims_wvn,2); j++) {
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
-    auto &this_band_lims_wvn = this->band_lims_wvn;
+    YAKL_SCOPE( this_band_lims_wvn , this->band_lims_wvn );
     if (this->is_initialized()) {
       parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
         ret(i,j) = 1._wp / this_band_lims_wvn(i,j);
@@ -296,7 +296,7 @@ public:
     if (! this->is_initialized()) { stoprun("OpticalProps1scl::alloc_1scl: spectral discretization hasn't been provided"); }
     if (ncol <= 0 || nlay <= 0) { stoprun("OpticalProps1scl::alloc_1scl: must provide > 0 extents for ncol, nlay"); }
     this->tau = real3d("tau",ncol,nlay,this->get_ngpt());
-    memset(tau,0._wp);
+    tau = 0;
   }
 
 
@@ -412,9 +412,9 @@ public:
     this->tau = real3d("tau",ncol,nlay,this->get_ngpt());
     this->ssa = real3d("ssa",ncol,nlay,this->get_ngpt());
     this->g   = real3d("g  ",ncol,nlay,this->get_ngpt());
-    memset(tau,0._wp);
-    memset(ssa,0._wp);
-    memset(g  ,0._wp);
+    tau = 0;
+    ssa = 0;
+    g   = 0;
   }
 
 

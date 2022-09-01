@@ -296,12 +296,16 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
   real3d lev_source_dn;
   if (top_at_1) {
     top_level = 1;
-    lev_source_up = real3d("lev_source_up",lev_source_dec.data(),ncol,nlay,ngpt);
-    lev_source_dn = real3d("lev_source_dn",lev_source_inc.data(),ncol,nlay,ngpt);
+    // Recall below that equating two arrays is like assigning pointers in Fortran. No data is copied.
+    // The LHS just uses the same data pointer as the RHS so that changing one's data changes the other's as well.
+    lev_source_up = lev_source_dec;
+    lev_source_dn = lev_source_inc;
   } else {
     top_level = nlay+1;
-    lev_source_up = real3d("lev_source_up",lev_source_inc.data(),ncol,nlay,ngpt);
-    lev_source_dn = real3d("lev_source_dn",lev_source_dec.data(),ncol,nlay,ngpt);
+    // Recall below that equating two arrays is like assigning pointers in Fortran. No data is copied.
+    // The LHS just uses the same data pointer as the RHS so that changing one's data changes the other's as well.
+    lev_source_up = lev_source_inc;
+    lev_source_dn = lev_source_dec;
   }
 
   // do igpt = 1, ngpt
@@ -511,8 +515,8 @@ void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const
     //   k = 0 for isotropic, conservative scattering; this lower limit on k
     //   gives relative error with respect to conservative solution
     //   of < 0.1% in Rdif down to tau = 10^-9
-    real k = sqrt(max((gamma1(icol,ilay,igpt) - gamma2(icol,ilay,igpt)) * 
-                      (gamma1(icol,ilay,igpt) + gamma2(icol,ilay,igpt)) , 1.e-12_wp));
+    real k = sqrt(std::max((gamma1(icol,ilay,igpt) - gamma2(icol,ilay,igpt)) * 
+                           (gamma1(icol,ilay,igpt) + gamma2(icol,ilay,igpt)) , 1.e-12_wp));
     real exp_minusktau = exp(-tau(icol,ilay,igpt)*k);
 
     // Diffuse reflection and transmission

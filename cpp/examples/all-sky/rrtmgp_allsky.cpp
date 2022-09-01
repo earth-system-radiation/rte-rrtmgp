@@ -112,9 +112,9 @@ int main(int argc , char **argv) {
       real2d sfc_alb_dif("sfc_alb_dif",nbnd,ncol);
       real1d mu0        ("mu0"        ,ncol);
       // Ocean-ish values for no particular reason
-      memset( sfc_alb_dir , 0.06_wp );
-      memset( sfc_alb_dif , 0.06_wp );
-      memset( mu0         , 0.86_wp );
+      sfc_alb_dir = 0.06_wp;
+      sfc_alb_dif = 0.06_wp;
+      mu0         = 0.86_wp;
 
       // Fluxes
       real2d flux_up ("flux_up" ,ncol,nlay+1);
@@ -234,8 +234,8 @@ int main(int argc , char **argv) {
       real2d emis_sfc("emis_sfc",nbnd,ncol);
       // Surface temperature
       auto t_lev_host = t_lev.createHostCopy();
-      memset( t_sfc    , t_lev_host(1, merge(nlay+1, 1, top_at_1)) );
-      memset( emis_sfc , 0.98_wp                                   );
+      t_sfc    = t_lev_host(1, merge(nlay+1, 1, top_at_1));
+      emis_sfc = 0.98_wp                                  ;
 
       // Fluxes
       real2d flux_up ( "flux_up" ,ncol,nlay+1);

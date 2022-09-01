@@ -24,8 +24,8 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
       real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
                        tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
       g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
-                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / max(eps,tauscat12);
-      ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / std::max(eps,tauscat12);
+      ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
       tau1(icol,ilay,igpt) = tau12;
     }
   });
@@ -226,8 +226,8 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3d const &ta
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
     g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
                           tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt)) 
-                           / max(eps,tauscat12);
-    ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+                           / std::max(eps,tauscat12);
+    ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
     tau1(icol,ilay,igpt) = tau12;
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -328,7 +328,7 @@ void increment_nstream_by_nstream(int ncol, int nlay, int ngpt, int nmom1, int n
   using yakl::fortran::SimpleBounds;
 
   real eps = 3*std::numeric_limits<real>::min();
-  int mom_lim = min(nmom1, nmom2);
+  int mom_lim = std::min(nmom1, nmom2);
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
@@ -342,9 +342,9 @@ void increment_nstream_by_nstream(int ncol, int nlay, int ngpt, int nmom1, int n
       //   if it has fewer moments the higher orders are assumed to be 0
       for (int imom=1; imom<=mom_lim; imom++) {
         p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
-                                    tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * p2(imom, icol,ilay,igpt)) / max(eps,tauscat12);
+                                    tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * p2(imom, icol,ilay,igpt)) / std::max(eps,tauscat12);
       }
-      ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+      ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
       tau1(icol,ilay,igpt) = tau12;
     }
   });
@@ -410,7 +410,7 @@ void inc_2stream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
-        ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / max(eps,tau12);
+        ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
         // g is unchanged
       }
@@ -441,8 +441,8 @@ void inc_2stream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom2, real3
         real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
                          tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
         g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(   icol,ilay,igpt)+ 
-                              tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1, icol,ilay,ibnd)) / max(eps,tauscat12);
-        ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+                              tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1, icol,ilay,ibnd)) / std::max(eps,tauscat12);
+        ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
       }
     }
@@ -467,7 +467,7 @@ void inc_nstream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
-        ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / max(eps,tau12);
+        ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
         // p is unchanged
       }
@@ -504,9 +504,9 @@ void inc_nstream_by_2stream_bybnd(int ncol, int nlay, int ngpt, int nmom1, real3
         }
         for (int imom=1; imom<=nmom1; imom++) {
           p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
-                                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_moms(imom)  ) / max(eps,tauscat12);
+                                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_moms(imom)  ) / std::max(eps,tauscat12);
         }
-        ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+        ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
       }
     }
@@ -523,7 +523,7 @@ void inc_nstream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom1, int n
   using yakl::fortran::SimpleBounds;
 
   real eps = 3*std::numeric_limits<real>::min();
-  int mom_lim = min(nmom1, nmom2);
+  int mom_lim = std::min(nmom1, nmom2);
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
@@ -538,9 +538,9 @@ void inc_nstream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom1, int n
         //   if it has fewer moments the higher orders are assumed to be 0
         for (int imom=1; imom<=mom_lim; imom++) {
           p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
-                                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(imom, icol,ilay,ibnd)) / max(eps,tauscat12);
+                                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(imom, icol,ilay,ibnd)) / std::max(eps,tauscat12);
         }
-        ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+        ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
       }
     }

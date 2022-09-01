@@ -23,12 +23,12 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
     // index and factor for temperature interpolation
     jtemp(icol,ilay) = (int) ((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta);
-    jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp(icol,ilay))); // limit the index range
+    jtemp(icol,ilay) = std::min(ntemp - 1, std::max(1, jtemp(icol,ilay))); // limit the index range
     ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta;
 
     // index and factor for pressure interpolation
     real locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log(1)) / press_ref_log_delta;
-    jpress(icol,ilay) = min(npres-1, max(1, (int)(locpress)));
+    jpress(icol,ilay) = std::min(npres-1, std::max(1, (int)(locpress)));
     fpress(icol,ilay) = locpress - (real)(jpress(icol,ilay));
 
     // determine if in lower or upper part of atmosphere
@@ -56,7 +56,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     real eta = merge(col_gas(icol,ilay,igases(1)) / col_mix(itemp,iflav,icol,ilay), 0.5_wp, 
                      col_mix(itemp,iflav,icol,ilay) > 2._wp * tiny);
     real loceta = eta * (neta-1.0_wp);
-    jeta(itemp,iflav,icol,ilay) = min((int)(loceta)+1, neta-1);
+    jeta(itemp,iflav,icol,ilay) = std::min((int)(loceta)+1, neta-1);
     real feta = fmod(loceta, 1.0_wp);
     // compute interpolation fractions needed for minor species
     real ftemp_term = ((2.0_wp - itemp) + (2.0_wp * itemp - 3.0_wp ) * ftemp(icol,ilay));
@@ -122,7 +122,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   real3d pfrac          ("pfrac"          ,ngpt,nlay,ncol);
   real3d planck_function("planck_function",nbnd,nlay+1,ncol);
   real1d one            ("one"            ,2);
-  memset(one,1._wp);
+  one = 1;
 
   // Calculation of fraction of band's Planck irradiance associated with each g-point
   // for (int icol=1; icol<=ncol; icol++) {
@@ -484,7 +484,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) < mn) {
               minloc = i;
             }
-            mn = min(mn,play(icol,i));
+            mn = std::min(mn,play(icol,i));
           }
         }
         itropo_lower(icol,1) = minloc;
@@ -500,7 +500,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) > mx) {
               maxloc = i;
             }
-            mx = max(mx,play(icol,i));
+            mx = std::max(mx,play(icol,i));
           }
         }
         itropo_upper(icol,2) = maxloc;
@@ -521,7 +521,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) < mn) {
               minloc = i;
             }
-            mn = min(mn,play(icol,i));
+            mn = std::min(mn,play(icol,i));
           }
         }
         itropo_lower(icol,2) = minloc;
@@ -537,7 +537,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) > mx) {
               maxloc = i;
             }
-            mx = max(mx,play(icol,i));
+            mx = std::max(mx,play(icol,i));
           }
         }
         itropo_upper(icol,1) = maxloc;

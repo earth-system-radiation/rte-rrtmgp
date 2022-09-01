@@ -14,14 +14,6 @@ YAKL_INLINE real constexpr operator"" _wp( long double x ) {
   return static_cast<real>(x);
 }
 
-
-using std::max;
-using std::min;
-using std::abs;
-using yakl::memHost;
-using yakl::memDevice;
-
-
 typedef FArray<real,1,yakl::memDevice> real1d;
 typedef FArray<real,2,yakl::memDevice> real2d;
 typedef FArray<real,3,yakl::memDevice> real3d;
@@ -96,30 +88,5 @@ inline void stoprun( std::string str ) {
   std::cout << str << "\n" << std::endl;
   throw str;
 }
-
-
-template <class T , int rank , int myStyle> inline void zero_array( yakl::Array<T,rank,yakl::memHost,myStyle> const &arr ) {
-  for (int i=0; i < arr.totElems() ; i++) { arr.myData[i] = 0; }
-}
-
-
-template <class T , int rank , int myStyle> inline void zero_array( yakl::Array<T,rank,yakl::memDevice,myStyle> const &arr ) {
-  yakl::c::parallel_for( YAKL_AUTO_LABEL() , yakl::c::Bounds<1>(arr.totElems()) , YAKL_LAMBDA (int i) {
-    arr.myData[i] = 0;
-  });
-}
-
-
-template <class T , int rank , int myStyle> inline void memset( yakl::Array<T,rank,yakl::memHost,myStyle> const &arr , T val) {
-  for (int i=0; i < arr.totElems() ; i++) { arr.myData[i] = val; }
-}
-
-
-template <class T , int rank , int myStyle> inline void memset( yakl::Array<T,rank,yakl::memDevice,myStyle> const &arr , T val) {
-  yakl::c::parallel_for( YAKL_AUTO_LABEL() , yakl::c::Bounds<1>(arr.totElems()) , YAKL_LAMBDA (int i) {
-    arr.myData[i] = val;
-  });
-}
-
 
 

@@ -219,9 +219,9 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
     //   k = 0 for isotropic, conservative scattering; this lower limit on k
     //   gives relative error with respect to conservative solution
     //   of < 0.1% in Rdif down to tau = 10^-9
-    real k = sqrt(max((gamma1 - gamma2) * 
-                      (gamma1 + gamma2),  
-                      1.e-12_wp));
+    real k = sqrt(std::max((gamma1 - gamma2) * 
+                           (gamma1 + gamma2),  
+                           1.e-12_wp));
     real exp_minusktau = exp(-tau(icol,ilay,igpt)*k);
 
     // Diffuse reflection and transmission

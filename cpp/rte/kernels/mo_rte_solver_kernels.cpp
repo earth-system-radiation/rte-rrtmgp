@@ -285,7 +285,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
 
   real tau_thresh = sqrt( std::numeric_limits<real>::epsilon() );
 
-  real pi = M_PI;
+  real constexpr pi = M_PI;
 
   // Which way is up?
   // Level Planck sources for upward and downward radiation

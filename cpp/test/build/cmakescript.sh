@@ -1,7 +1,7 @@
 #!/bin/bash
 
 savedir=`pwd`
-cd ${YAKL_HOME}
+cd ${YAKLHOME}
 git rev-parse HEAD >& $savedir/../../yakl-git-hash.txt
 cd $savedir
 
@@ -21,5 +21,6 @@ cmake                                          \
   -DCXX_LINK="$CXX_LINK"                       \
   -DF90_LINK="$F90_LINK"                       \
   -DCMAKE_Fortran_MODULE_DIRECTORY="`pwd`/fortran_module_files" \
+  -DCMAKE_CUDA_ARCHITECTURES=OFF               \
   ..
 

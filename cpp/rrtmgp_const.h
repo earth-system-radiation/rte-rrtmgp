@@ -4,7 +4,6 @@
 #include "YAKL.h"
 #include <iostream>
 #include <cmath>
-#include <filesystem>
 
 template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
 

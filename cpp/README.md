@@ -11,43 +11,5 @@ All of this was retained while also achieve excellent performance on Nvidia and 
 
 YAKL is a C++ performance portability libarary with nearly identical syntax to Kokkos, but it has better Fortran-like coding support. For more information, see https://github.com/mrnorman/YAKL .
 
-To build and test the code, for example on Summit, please do the following:
-
-* `cd /ccs/home/$USER`
-* `git clone https://github.com/mrnorman/YAKL.git`
-* `git clone https://github.com/NVlabs/cub.git`
-* `cd /gpfs/alpine/[PROJECT_ID]/scratch/$USER`
-* `git clone https://github.com/E3SM-Project/rte-rrtmgp.git`
-* `cd rte-rrtmgp/cpp/test/build`
-* `source summit_gpu.sh`
-* `./get_data.sh`
-* `./cmakescript.sh`
-* `make -j8`
-* `make test`
-
-To build and test the code on your local GPU, please do the following:
-
-* `cd /home/$USER`
-* `git clone https://github.com/mrnorman/YAKL.git`
-* `git clone https://github.com/NVlabs/cub.git`
-* `git clone https://github.com/E3SM-Project/rte-rrtmgp.git`
-* `cd rte-rrtmgp/cpp/test/build`
-* edit `thatchroof_gpu.sh` to match your GPU's architecture
-* `source thatchroof_gpu.sh`
-* `./get_data.sh`
-* `./cmakescript.sh`
-* `make -j8`
-* `make test`
-
-To build and test the code on your local CPU, please do the following:
-
-* `cd /home/$USER`
-* `git clone https://github.com/mrnorman/YAKL.git`
-* `git clone https://github.com/E3SM-Project/rte-rrtmgp.git`
-* `cd rte-rrtmgp/cpp/test/build`
-* `source thatchroof_cpu.sh`
-* `./get_data.sh`
-* `./cmakescript.sh`
-* `make -j8`
-* `make test`
+To build and test the code, for example on Summit, please see the README.md for the rte-rrtmgp/cpp/test directory.
 

@@ -16,19 +16,17 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
   // do igpt = 1 , ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
-    for (int ibnd=1; ibnd<=nbnd; ibnd++) {
-      if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
-        // t=tau1 + tau2
-        real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
-        // w=(tau1*ssa1 + tau2*ssa2) / t
-        real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
-                         tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
-        g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
-                              tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / max(eps,tauscat12);
-        ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
-        tau1(icol,ilay,igpt) = tau12;
-      }
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<4>(nbnd,ngpt,nlay,ncol) , YAKL_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
+    if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
+      // t=tau1 + tau2
+      real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
+      // w=(tau1*ssa1 + tau2*ssa2) / t
+      real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+                       tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
+      g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
+                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / std::max(eps,tauscat12);
+      ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
+      tau1(icol,ilay,igpt) = tau12;
     }
   });
 }
@@ -42,16 +40,38 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
   using yakl::fortran::parallel_for;
   using yakl::fortran::SimpleBounds;
 
-  // do igpt = 1 , ngpt
-  //   do ilay = 1 , nlay
-  //     do icol = 1 , ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  #ifdef RRTMGP_CPU_KERNELS
+    #ifdef YAKL_AUTO_PROFILE
+      auto timername = std::string(YAKL_AUTO_LABEL());
+      yakl::timer_start(timername.c_str());
+    #endif
+    #ifdef YAKL_ARCH_OPENMP
+      #pragma omp parallel for collapse(4)
+    #endif
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
-      if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
-        tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
+      for (int igpt = gpt_lims(1,ibnd); igpt <= gpt_lims(2,ibnd); igpt++) {
+        for (int ilay = 1; ilay <= nlay; ilay++) {
+          for (int icol = 1; icol <= ncol; icol++) {
+            tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);
+          }
+        }
       }
     }
-  });
+    #ifdef YAKL_AUTO_PROFILE
+      yakl::timer_stop(timername.c_str());
+    #endif
+  #else
+    // do igpt = 1 , ngpt
+    //   do ilay = 1 , nlay
+    //     do icol = 1 , ncol
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+      for (int ibnd=1; ibnd<=nbnd; ibnd++) {
+        if (igpt >= gpt_lims(1,ibnd) && igpt <= gpt_lims(2,ibnd) ) {
+          tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);
+        }
+      }
+    });
+  #endif
 }
 
 
@@ -67,7 +87,7 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3d const &tau, re
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       real f  = g  (icol,ilay,igpt) * g  (icol,ilay,igpt);
       real wf = ssa(icol,ilay,igpt) * f;
@@ -92,7 +112,7 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3d const &tau, re
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       real wf = ssa(icol,ilay,igpt) * f(icol,ilay,igpt);
       tau(icol,ilay,igpt) = (1._wp - wf) * tau(icol,ilay,igpt);
@@ -124,7 +144,7 @@ void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -140,7 +160,7 @@ void increment_1scalar_by_2stream(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt) * (1._wp - ssa2(icol,ilay,igpt));
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -156,7 +176,7 @@ void increment_1scalar_by_nstream(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt) * (1._wp - ssa2(icol,ilay,igpt));
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -174,7 +194,7 @@ void increment_2stream_by_1scalar(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     if (tau12 > eps) {
       ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / tau12;
@@ -198,7 +218,7 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // t=tau1 + tau2
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t
@@ -206,8 +226,8 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3d const &ta
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
     g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
                           tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt)) 
-                           / max(eps,tauscat12);
-    ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+                           / std::max(eps,tauscat12);
+    ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
     tau1(icol,ilay,igpt) = tau12;
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -225,7 +245,7 @@ void increment_2stream_by_nstream(int ncol, int nlay, int ngpt, int nmom2, real3
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // t=tau1 + tau2
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t
@@ -253,7 +273,7 @@ void increment_nstream_by_1scalar(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     if (tau12 > eps) {
       ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / tau12;
@@ -278,7 +298,7 @@ void increment_nstream_by_2stream(int ncol, int nlay, int ngpt, int nmom1, real3
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
@@ -308,12 +328,12 @@ void increment_nstream_by_nstream(int ncol, int nlay, int ngpt, int nmom1, int n
   using yakl::fortran::SimpleBounds;
 
   real eps = 3*std::numeric_limits<real>::min();
-  int mom_lim = min(nmom1, nmom2);
+  int mom_lim = std::min(nmom1, nmom2);
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
@@ -322,9 +342,9 @@ void increment_nstream_by_nstream(int ncol, int nlay, int ngpt, int nmom1, int n
       //   if it has fewer moments the higher orders are assumed to be 0
       for (int imom=1; imom<=mom_lim; imom++) {
         p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
-                                    tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * p2(imom, icol,ilay,igpt)) / max(eps,tauscat12);
+                                    tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * p2(imom, icol,ilay,igpt)) / std::max(eps,tauscat12);
       }
-      ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+      ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
       tau1(icol,ilay,igpt) = tau12;
     }
   });
@@ -342,7 +362,7 @@ void inc_1scalar_by_2stream_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd) * (1._wp - ssa2(icol,ilay,ibnd));
@@ -363,7 +383,7 @@ void inc_1scalar_by_nstream_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd) * (1._wp - ssa2(icol,ilay,ibnd));
@@ -386,11 +406,11 @@ void inc_2stream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
-        ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / max(eps,tau12);
+        ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
         // g is unchanged
       }
@@ -412,7 +432,7 @@ void inc_2stream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom2, real3
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         // t=tau1 + tau2
@@ -421,8 +441,8 @@ void inc_2stream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom2, real3
         real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
                          tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
         g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(   icol,ilay,igpt)+ 
-                              tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1, icol,ilay,ibnd)) / max(eps,tauscat12);
-        ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+                              tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1, icol,ilay,ibnd)) / std::max(eps,tauscat12);
+        ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
       }
     }
@@ -443,11 +463,11 @@ void inc_nstream_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3d const &ta
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
-        ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / max(eps,tau12);
+        ssa1(icol,ilay,igpt) = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
         // p is unchanged
       }
@@ -471,7 +491,7 @@ void inc_nstream_by_2stream_bybnd(int ncol, int nlay, int ngpt, int nmom1, real3
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=1; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -484,9 +504,9 @@ void inc_nstream_by_2stream_bybnd(int ncol, int nlay, int ngpt, int nmom1, real3
         }
         for (int imom=1; imom<=nmom1; imom++) {
           p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
-                                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_moms(imom)  ) / max(eps,tauscat12);
+                                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_moms(imom)  ) / std::max(eps,tauscat12);
         }
-        ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+        ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
       }
     }
@@ -503,12 +523,12 @@ void inc_nstream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom1, int n
   using yakl::fortran::SimpleBounds;
 
   real eps = 3*std::numeric_limits<real>::min();
-  int mom_lim = min(nmom1, nmom2);
+  int mom_lim = std::min(nmom1, nmom2);
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=0; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -518,9 +538,9 @@ void inc_nstream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom1, int n
         //   if it has fewer moments the higher orders are assumed to be 0
         for (int imom=1; imom<=mom_lim; imom++) {
           p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
-                                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(imom, icol,ilay,ibnd)) / max(eps,tauscat12);
+                                      tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(imom, icol,ilay,ibnd)) / std::max(eps,tauscat12);
         }
-        ssa1(icol,ilay,igpt) = tauscat12 / max(eps,tau12);
+        ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
       }
     }
@@ -538,7 +558,7 @@ void extract_subset_dim1_3d(int ncol, int nlay, int ngpt, real3d const &array_in
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = colS, colE
-  parallel_for( Bounds<3>(ngpt,nlay,{colS,colE}) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , Bounds<3>(ngpt,nlay,{colS,colE}) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     array_out(icol-colS+1, ilay, igpt) = array_in(icol, ilay, igpt);
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -554,7 +574,7 @@ void extract_subset_dim2_4d(int nmom, int ncol, int nlay, int ngpt, real4d const
   //  do ilay = 1, nlay
   //    do icol = colS, colE
   //      do imom = 1, nmom
-  parallel_for( Bounds<4>(ngpt,nlay,{colS,colE},nmom) , YAKL_LAMBDA (int igpt, int ilay, int icol, int imom) {
+  parallel_for( YAKL_AUTO_LABEL() , Bounds<4>(ngpt,nlay,{colS,colE},nmom) , YAKL_LAMBDA (int igpt, int ilay, int icol, int imom) {
     array_out(imom, icol-colS+1, ilay, igpt) = array_in(imom, icol, ilay, igpt);
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -570,7 +590,7 @@ void extract_subset_absorption_tau(int ncol, int nlay, int ngpt, real3d const &t
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = colS, colE
-  parallel_for( Bounds<3>(ngpt,nlay,{colS,colE}) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  parallel_for( YAKL_AUTO_LABEL() , Bounds<3>(ngpt,nlay,{colS,colE}) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     tau_out(icol-colS+1, ilay, igpt) = tau_in(icol, ilay, igpt) * (1._wp - ssa_in(icol, ilay, igpt));
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";

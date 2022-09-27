@@ -490,7 +490,7 @@ public:
     // Find the largest number of g-points per band
     this->max_gpt_diff_lower = minor_limits_gpt_lower_red(2,1) - minor_limits_gpt_lower_red(1,1);
     for (int i=2; i<=size(minor_limits_gpt_lower_red,2); i++) {
-      this->max_gpt_diff_lower = max( this->max_gpt_diff_lower , minor_limits_gpt_lower_red(2,i) - minor_limits_gpt_lower_red(1,i) );
+      this->max_gpt_diff_lower = std::max( this->max_gpt_diff_lower , minor_limits_gpt_lower_red(2,i) - minor_limits_gpt_lower_red(1,i) );
     }
 
     // UPPER MINOR GASSES
@@ -517,7 +517,7 @@ public:
     // Find the largest number of g-points per band
     this->max_gpt_diff_upper = minor_limits_gpt_upper_red(2,1) - minor_limits_gpt_upper_red(1,1);
     for (int i=2; i<=size(minor_limits_gpt_upper_red,2); i++) {
-      this->max_gpt_diff_upper = max( this->max_gpt_diff_upper , minor_limits_gpt_upper_red(2,i) - minor_limits_gpt_upper_red(1,i) );
+      this->max_gpt_diff_upper = std::max( this->max_gpt_diff_upper , minor_limits_gpt_upper_red(2,i) - minor_limits_gpt_upper_red(1,i) );
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -552,10 +552,10 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // creates log reference pressure
     this->press_ref_log = real1d("press_ref_log",size(this->press_ref,1));
-    auto &press_ref_loc     = this->press_ref;
-    auto &press_ref_log_loc = this->press_ref_log;
+    YAKL_SCOPE( press_ref_loc     , this->press_ref     );
+    YAKL_SCOPE( press_ref_log_loc , this->press_ref_log );
     // Running a kernel because it's more convenient in this case
-    parallel_for( SimpleBounds<1>( size(this->press_ref,1) ) , YAKL_LAMBDA (int i) {
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>( size(this->press_ref,1) ) , YAKL_LAMBDA (int i) {
       press_ref_log_loc(i) = log(press_ref_loc(i));
     });
 
@@ -606,14 +606,14 @@ public:
     // Which species are key in one or more bands?
     //   this->flavor is an index into this->gas_names
     this->is_key = bool1d("is_key",this->get_ngas());
-    auto &is_key_loc = this->is_key;
-    auto &flavor_loc = this->flavor;
-    parallel_for( SimpleBounds<1>( this->get_ngas() ) , YAKL_LAMBDA (int i) {
+    YAKL_SCOPE( is_key_loc , this->is_key );
+    YAKL_SCOPE( flavor_loc , this->flavor );
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>( this->get_ngas() ) , YAKL_LAMBDA (int i) {
       is_key_loc(i) = false;
     });
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
-    parallel_for( SimpleBounds<2>( size(this->flavor,2) , size(this->flavor,1) ) , YAKL_LAMBDA (int j, int i) {
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(this->flavor,2) , size(this->flavor,1) ) , YAKL_LAMBDA (int j, int i) {
       if (flavor_loc(i,j) != 0) { is_key_loc(flavor_loc(i,j)) = true; }
     });
   }
@@ -901,8 +901,8 @@ public:
     // External source function is constant
     if (size(toa_src,1) != ncol || size(toa_src,2) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
-    auto &solar_src_loc = this->solar_src;
-    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    YAKL_SCOPE( solar_src_loc , this->solar_src );
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       toa_src(icol,igpt) = solar_src_loc(igpt);
     });
   }
@@ -998,17 +998,17 @@ public:
     // compute column gas amounts [molec/cm^2]
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       col_gas(icol,ilay,0) = col_dry_wk(icol,ilay);
     });
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    parallel_for( SimpleBounds<3>(ngas,nlay,ncol) , YAKL_LAMBDA (int igas, int ilay, int icol) {
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngas,nlay,ncol) , YAKL_LAMBDA (int igas, int ilay, int icol) {
       col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
     });
     // ---- calculate gas optical depths ----
-    memset(tau , 0._wp);
+    tau = 0;
 
     interpolation(ncol, nlay, ngas, nflav, neta, npres, ntemp, this->flavor, this->press_ref_log, this->temp_ref,
                   this->press_ref_log_delta, this->temp_ref_min, this->temp_ref_delta, this->press_ref_trop_log,
@@ -1061,7 +1061,7 @@ public:
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
       //   do icol = 1, ncol
-      parallel_for( SimpleBounds<2>(nlay+1,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay+1,ncol) , YAKL_LAMBDA (int ilay, int icol) {
         if (ilay == 1) {
           tlev_wk(icol,1) = tlay(icol,1) + (plev(icol,1)-play(icol,1))*(tlay(icol,2)-tlay(icol,1)) / (play(icol,2)-play(icol,1));
         }
@@ -1086,7 +1086,7 @@ public:
     auto &sources_sfc_source = sources.sfc_source;
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       sources_sfc_source(icol,igpt) = sfc_source_t(igpt,icol);
     });
     reorder123x321(ngpt, nlay, ncol, lay_source_t    , sources.lay_source    );
@@ -1113,13 +1113,13 @@ public:
     if (allocated(latitude)) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
-      parallel_for( SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
+      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = helmert1 - helmert2 * cos(2.0_wp * M_PI * latitude(icol) / 180.0_wp); // acceleration due to gravity [m/s^2]
       });
     } else {
       // do icol = 1, ncol
-      YAKL_SCOPE(grav, ::grav);
-      parallel_for( SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
+      YAKL_SCOPE( grav , ::grav );
+      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = grav;
       });
     }
@@ -1127,8 +1127,8 @@ public:
     real2d col_dry("col_dry",size(plev,1),size(plev,2)-1);
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
-    YAKL_SCOPE(m_dry, ::m_dry);
-    parallel_for( SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
+    YAKL_SCOPE( m_dry , ::m_dry );
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
       real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1._wp / (1.+vmr_h2o(icol,ilev));
@@ -1167,8 +1167,8 @@ public:
     } else {
       // index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
       reorder123x321(ngpt, nlay, ncol, tau, optical_props.tau);
-      zero_array(optical_props.ssa);
-      zero_array(optical_props.g  );
+      optical_props.ssa = 0;
+      optical_props.g   = 0;
     }
   }
 

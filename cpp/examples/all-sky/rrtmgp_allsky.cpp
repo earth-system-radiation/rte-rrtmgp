@@ -13,7 +13,6 @@
 #include "mo_rte_lw.h"
 #include "mo_rte_sw.h"
 
-bool constexpr print_timers = true;
 bool constexpr verbose      = false;
 bool constexpr write_fluxes = false;
 bool constexpr print_norms  = true;
@@ -76,7 +75,6 @@ int main(int argc , char **argv) {
     load_and_init(k_dist, k_dist_file, gas_concs);
 
     bool is_sw = k_dist.source_is_external();
-    bool is_lw = ! is_sw;
 
     if (verbose) std::cout << "Reading cloud optics file\n\n";
     CloudOptics cloud_optics;
@@ -114,9 +112,9 @@ int main(int argc , char **argv) {
       real2d sfc_alb_dif("sfc_alb_dif",nbnd,ncol);
       real1d mu0        ("mu0"        ,ncol);
       // Ocean-ish values for no particular reason
-      memset( sfc_alb_dir , 0.06_wp );
-      memset( sfc_alb_dif , 0.06_wp );
-      memset( mu0         , 0.86_wp );
+      sfc_alb_dir = 0.06_wp;
+      sfc_alb_dif = 0.06_wp;
+      mu0         = 0.86_wp;
 
       // Fluxes
       real2d flux_up ("flux_up" ,ncol,nlay+1);
@@ -141,7 +139,7 @@ int main(int argc , char **argv) {
       real rei_val = 0.5 * (cloud_optics.get_min_radius_ice() + cloud_optics.get_max_radius_ice());
       // do ilay=1,nlay
       //   do icol=1,ncol
-      parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
         cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp && p_lay(icol,ilay) < 900._wp * 100._wp && mod(icol, 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) && t_lay(icol,ilay) > 263._wp);
@@ -236,8 +234,8 @@ int main(int argc , char **argv) {
       real2d emis_sfc("emis_sfc",nbnd,ncol);
       // Surface temperature
       auto t_lev_host = t_lev.createHostCopy();
-      memset( t_sfc    , t_lev_host(1, merge(nlay+1, 1, top_at_1)) );
-      memset( emis_sfc , 0.98_wp                                   );
+      t_sfc    = t_lev_host(1, merge(nlay+1, 1, top_at_1));
+      emis_sfc = 0.98_wp                                  ;
 
       // Fluxes
       real2d flux_up ( "flux_up" ,ncol,nlay+1);
@@ -262,7 +260,7 @@ int main(int argc , char **argv) {
       real rei_val = 0.5 * (cloud_optics.get_min_radius_ice() + cloud_optics.get_max_radius_ice());
       // do ilay=1,nlay
       //   do icol=1,ncol
-      parallel_for( SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
         cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp && p_lay(icol,ilay) < 900._wp * 100._wp && mod(icol, 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) && t_lay(icol,ilay) > 263._wp);

@@ -1952,7 +1952,7 @@ contains
         nmom = size(optical_props%p, 1)
         call zero_array(nmom, ncol, nlay, ngpt, optical_props%p)
         if(nmom >= 2) then
-          !$acc parallel loop gang vector                collapse(3)
+          !$acc parallel loop gang vector collapse(3) default(present)
           !$omp target teams distribute parallel do simd collapse(3)
           do igpt = 1, ngpt
             do ilay = 1, nlay

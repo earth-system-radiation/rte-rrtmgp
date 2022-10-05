@@ -1897,7 +1897,7 @@ contains
         !
         ! Extinction optical depth
         !
-        !$acc parallel default(present) loop gang vector                collapse(3)
+        !$acc parallel loop gang vector collapse(3) default(present)
         !$omp target teams distribute parallel do simd collapse(3)
         do igpt = 1, ngpt
           do ilay = 1, nlay
@@ -1914,7 +1914,7 @@ contains
         !
         ! Extinction optical depth and single scattering albedo
         !
-        !$acc parallel default(present) loop gang vector                collapse(3)
+        !$acc parallel loop gang vector collapse(3) default(present)
         !$omp target teams distribute parallel do simd collapse(3)
         do igpt = 1, ngpt
           do ilay = 1, nlay
@@ -1934,7 +1934,7 @@ contains
         !
         ! Extinction optical depth and single scattering albedo
         !
-        !$acc parallel default(present) loop gang vector                collapse(3)
+        !$acc parallel loop gang vector collapse(3) default(present)
         !$omp target teams distribute parallel do simd collapse(3)
         do igpt = 1, ngpt
           do ilay = 1, nlay

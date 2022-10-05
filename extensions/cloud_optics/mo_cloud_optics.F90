@@ -448,7 +448,7 @@ contains
     !
     ! Cloud masks; don't need value re values if there's no cloud
     !
-    !$acc parallel loop gang vector default(none) collapse(2)
+    !$acc parallel loop gang vector default(present) collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -524,7 +524,7 @@ contains
       !
       select type(optical_props)
       type is (ty_optical_props_1scl)
-        !$acc parallel loop gang vector default(none) collapse(3) &
+        !$acc parallel loop gang vector default(present) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau)
@@ -539,7 +539,7 @@ contains
           end do
         end do
       type is (ty_optical_props_2str)
-        !$acc parallel loop gang vector default(none) collapse(3) &
+        !$acc parallel loop gang vector default(present) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau, optical_props%ssa, optical_props%g)

@@ -539,15 +539,17 @@ contains
 
     if(error_msg == '') then
 
-      !$acc data copyin(optical_props)
       select type(optical_props)
         type is (ty_optical_props_1scl)
+          !$acc enter data copyin(optical_props)
           !$acc        enter data create(   optical_props%tau)
           !$omp target enter data map(alloc:optical_props%tau)
         type is (ty_optical_props_2str)
+          !$acc enter data copyin(optical_props)
           !$acc        enter data create(   optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr)
+          !$acc enter data copyin(optical_props)
           !$acc        enter data create(   optical_props%tau, optical_props%ssa, optical_props%p)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
@@ -713,8 +715,7 @@ contains
           !$acc        exit data copyout( optical_props%tau, optical_props%ssa, optical_props%p)
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
-      !$acc end        data
-      !$omp end target data
+      !$acc exit data delete(optical_props)
 
     end if
     !$acc end        data

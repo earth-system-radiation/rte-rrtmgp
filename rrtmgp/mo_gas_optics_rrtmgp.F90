@@ -694,10 +694,14 @@ contains
       end if
       !$acc end        data
       !$omp end target data
-      if (.NOT. present(col_dry)) then
+      if (present(col_dry)) then
+        !$acc        exit data delete(     col_dry)
+        !$omp target exit data map(release:col_dry)
+      else
         !$acc        exit data delete(     col_dry_arr)
         !$omp target exit data map(release:col_dry_arr)
       end if
+
       select type(optical_props)
         type is (ty_optical_props_1scl)
           !$acc        exit data copyout( optical_props%tau)
@@ -710,6 +714,7 @@ contains
           !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
       !$acc end        data
+      !$omp end target data
 
     end if
     !$acc end        data

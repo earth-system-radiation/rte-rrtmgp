@@ -421,7 +421,11 @@ contains
             !
             ! FIXME: Do we need the create/copyout here?
             !
+#ifdef _CRAYFTN
             !$acc                         parallel loop    collapse(2) copyout( fluxes%flux_net)
+#else
+            !$acc                         parallel loop    collapse(2) copyin(fluxes) copyout( fluxes%flux_net)
+#endif
             !$omp target teams distribute parallel do simd collapse(2) map(from:fluxes%flux_net)
             do ilev = 1, nlay+1
               do icol = 1, ncol

@@ -539,56 +539,57 @@ contains
 
     if(error_msg == '') then
 
-    select type(optical_props)
-      type is (ty_optical_props_1scl)
-        !$acc        enter data copyin(optical_props) create(   optical_props%tau)
-        !$omp target enter data                       map(alloc:optical_props%tau)
-      type is (ty_optical_props_2str)
-        !$acc        enter data copyin(optical_props) create(   optical_props%tau, optical_props%ssa, optical_props%g)
-        !$omp target enter data                       map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
-      type is (ty_optical_props_nstr)
-        !$acc        enter data copyin(optical_props) create(   optical_props%tau, optical_props%ssa, optical_props%p)
-        !$omp target enter data                       map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
-    end select
-    !
-    ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
-    !
-    idx_h2o = string_loc_in_array('h2o', this%gas_names)
-    if (present(col_dry)) then
-      !$acc        enter data copyin(col_dry)
-      !$omp target enter data map(to:col_dry)
-      col_dry_wk => col_dry
-    else
-      !$acc        enter data create(   col_dry_arr)
-      !$omp target enter data map(alloc:col_dry_arr)
-      col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
-      col_dry_wk => col_dry_arr
-    end if
-    !
-    ! compute column gas amounts [molec/cm^2]
-    !
-    !$acc parallel loop gang vector collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
-    do ilay = 1, nlay
-      do icol = 1, ncol
-        col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
-      end do
-    end do
-    !$acc parallel loop gang vector collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igas = 1, ngas
+      !$acc data copyin(optical_props)
+      select type(optical_props)
+        type is (ty_optical_props_1scl)
+          !$acc        enter data create(   optical_props%tau)
+          !$omp target enter data map(alloc:optical_props%tau)
+        type is (ty_optical_props_2str)
+          !$acc        enter data create(   optical_props%tau, optical_props%ssa, optical_props%g)
+          !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
+        type is (ty_optical_props_nstr)
+          !$acc        enter data create(   optical_props%tau, optical_props%ssa, optical_props%p)
+          !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
+      end select
+      !
+      ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
+      !
+      idx_h2o = string_loc_in_array('h2o', this%gas_names)
+      if (present(col_dry)) then
+        !$acc        enter data copyin(col_dry)
+        !$omp target enter data map(to:col_dry)
+        col_dry_wk => col_dry
+      else
+        !$acc        enter data create(   col_dry_arr)
+        !$omp target enter data map(alloc:col_dry_arr)
+        col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
+        col_dry_wk => col_dry_arr
+      end if
+      !
+      ! compute column gas amounts [molec/cm^2]
+      !
+      !$acc parallel loop gang vector collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
       do ilay = 1, nlay
         do icol = 1, ncol
-          col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay)
+          col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
         end do
       end do
-    end do
-    !
-    ! ---- calculate gas optical depths ----
-    !
-    !$acc        data copyout( jtemp, jpress, jeta, tropo, fmajor) create(   col_mix, fminor)
-    !$omp target data map(from:jtemp, jpress, jeta, tropo, fmajor) map(alloc:col_mix, fminor)
-    call interpolation(               &
+      !$acc parallel loop gang vector collapse(3)
+      !$omp target teams distribute parallel do simd collapse(3)
+      do igas = 1, ngas
+        do ilay = 1, nlay
+          do icol = 1, ncol
+            col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay)
+          end do
+        end do
+      end do
+      !
+      ! ---- calculate gas optical depths ----
+      !
+      !$acc        data copyout( jtemp, jpress, jeta, tropo, fmajor) create(   col_mix, fminor)
+      !$omp target data map(from:jtemp, jpress, jeta, tropo, fmajor) map(alloc:col_mix, fminor)
+      call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
             ngas, nflav, neta, npres, ntemp, & ! interpolation dimensions
             this%flavor,              &
@@ -607,11 +608,11 @@ contains
             col_mix,      &
             tropo,        &
             jeta,jpress)
-    if (allocated(this%krayl)) then
-      !$acc        data copyin(this%gpoint_flavor, this%krayl)    create(tau, tau_rayleigh)
-      !$omp target data map(to:this%gpoint_flavor, this%krayl) map(alloc:tau, tau_rayleigh)
-      call zero_array(ncol, nlay, ngpt, tau)
-      call compute_tau_absorption(                     &
+      if (allocated(this%krayl)) then
+        !$acc        data copyin(this%gpoint_flavor, this%krayl)    create(tau, tau_rayleigh)
+        !$omp target data map(to:this%gpoint_flavor, this%krayl) map(alloc:tau, tau_rayleigh)
+        call zero_array(ncol, nlay, ngpt, tau)
+        call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
               nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
@@ -639,7 +640,7 @@ contains
               play,tlay,col_gas,                       &
               jeta,jtemp,jpress,                       &
               tau)
-      call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
+        call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
             this%gpoint_flavor,          &
@@ -648,12 +649,12 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
-      call combine_abs_and_rayleigh(tau, tau_rayleigh, optical_props)
-      !$acc end        data
-      !$omp end target data
-    else
-      call zero_array(ncol, nlay, ngpt, optical_props%tau)
-      call compute_tau_absorption(                     &
+        call combine_abs_and_rayleigh(tau, tau_rayleigh, optical_props)
+        !$acc end        data
+        !$omp end target data
+      else
+        call zero_array(ncol, nlay, ngpt, optical_props%tau)
+        call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
               nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
@@ -681,36 +682,39 @@ contains
               play,tlay,col_gas,                       &
               jeta,jtemp,jpress,                       &
               optical_props%tau)  !
-      select type(optical_props)
-        type is (ty_optical_props_2str)
-          call zero_array(ncol, nlay, ngpt, optical_props%ssa)
-          call zero_array(ncol, nlay, ngpt, optical_props%g)
-        type is (ty_optical_props_nstr)
-          call zero_array(ncol, nlay, ngpt, optical_props%ssa)
-          call zero_array(optical_props%get_nmom(), &
+        select type(optical_props)
+          type is (ty_optical_props_2str)
+            call zero_array(ncol, nlay, ngpt, optical_props%ssa)
+            call zero_array(ncol, nlay, ngpt, optical_props%g)
+          type is (ty_optical_props_nstr)
+            call zero_array(ncol, nlay, ngpt, optical_props%ssa)
+            call zero_array(optical_props%get_nmom(), &
                           ncol, nlay, ngpt, optical_props%p)
+        end select
+      end if
+      !$acc end        data
+      !$omp end target data
+      if (.NOT. present(col_dry)) then
+        !$acc        exit data delete(     col_dry_arr)
+        !$omp target exit data map(release:col_dry_arr)
+      end if
+      select type(optical_props)
+        type is (ty_optical_props_1scl)
+          !$acc        exit data copyout( optical_props%tau)
+          !$omp target exit data map(from:optical_props%tau)
+        type is (ty_optical_props_2str)
+          !$acc        exit data copyout( optical_props%tau, optical_props%ssa, optical_props%g)
+          !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)
+        type is (ty_optical_props_nstr)
+          !$acc        exit data copyout( optical_props%tau, optical_props%ssa, optical_props%p)
+          !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
-    end if
-    !$acc end        data
-    !$omp end target data
+      !$acc end        data
+
     end if
     !$acc end        data
     !$omp end target data
 
-    !$acc        exit data delete(     col_dry_wk)
-    !$omp target exit data map(release:col_dry_wk)
-
-    select type(optical_props)
-      type is (ty_optical_props_1scl)
-        !$acc        exit data delete(optical_props) copyout( optical_props%tau)
-        !$omp target exit data                       map(from:optical_props%tau)
-      type is (ty_optical_props_2str)
-        !$acc        exit data delete(optical_props) copyout( optical_props%tau, optical_props%ssa, optical_props%g)
-        !$omp target exit data                       map(from:optical_props%tau, optical_props%ssa, optical_props%g)
-      type is (ty_optical_props_nstr)
-        !$acc        exit data delete(optical_props) copyout( optical_props%tau, optical_props%ssa, optical_props%p)
-        !$omp target exit data                       map(from:optical_props%tau, optical_props%ssa, optical_props%p)
-    end select
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
@@ -1516,10 +1520,12 @@ contains
     integer  :: ncol, nlay, ngpt
     integer  :: icol, ilay, igpt, bnd
     real(wp) :: t, trans_total
+    integer, allocatable :: bands(:)
     !----------------------------
     ncol = optical_props%get_ncol()
     nlay = optical_props%get_nlay()
     ngpt = optical_props%get_ngpt()
+    allocate( bands(ngpt) )  ! In order to work with CCE 14  (it is also better software)
 
     err_msg=""
     if(.not. this%gpoints_are_equal(optical_props)) &
@@ -1528,11 +1534,14 @@ contains
       err_msg = "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
     if (err_msg /=  "") return
 
+    do igpt = 1, ngpt
+      bands(igpt) = optical_props%convert_gpt2band(igpt)
+    enddo
     !
     ! column transmissivity
     !
-    !$acc                parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau) copyout(optimal_angles)
-    !$omp target teams distribute parallel do simd collapse(2) map(to:optical_props%tau) map(from:optimal_angles)
+    !$acc parallel loop gang vector collapse(2) copyin(bands, optical_props, optical_props%tau) copyout(optimal_angles)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:bands, optical_props%tau) map(from:optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !
@@ -1547,12 +1556,11 @@ contains
         !
         ! Optimal transport angle is a linear fit to column transmissivity
         !
-        bnd = optical_props%convert_gpt2band(igpt)
-        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
-                                    this%optimal_angle_fit(2,bnd)
+        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bands(igpt))*trans_total + &
+                                    this%optimal_angle_fit(2,bands(igpt))
       end do
     end do
-
+    deallocate( bands )
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
   !

@@ -539,15 +539,29 @@ contains
 
     if(error_msg == '') then
 
+!
+! Painful hacks to get code to compile with both the CCE-14 and Nvidia 21.3 compiler
+!
+#ifdef _CRAYFTN
       !$acc enter data copyin(optical_props)
+#endif
       select type(optical_props)
         type is (ty_optical_props_1scl)
+#ifndef _CRAYFTN
+          !$acc enter data copyin(optical_props)
+#endif
           !$acc enter data create(   optical_props%tau)
           !$omp target enter data map(alloc:optical_props%tau)
         type is (ty_optical_props_2str)
+#ifndef _CRAYFTN
+          !$acc enter data copyin(optical_props)
+#endif
           !$acc enter data create(   optical_props%tau, optical_props%ssa, optical_props%g)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
         type is (ty_optical_props_nstr)
+#ifndef _CRAYFTN
+          !$acc enter data copyin(optical_props)
+#endif
           !$acc enter data create(   optical_props%tau, optical_props%ssa, optical_props%p)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
       end select

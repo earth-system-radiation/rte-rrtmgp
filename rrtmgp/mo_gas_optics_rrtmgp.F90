@@ -553,6 +553,7 @@ contains
           !$acc        enter data create(   optical_props%tau, optical_props%ssa, optical_props%p)
           !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
+
       !
       ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
       !

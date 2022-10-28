@@ -18,7 +18,7 @@ jobs:
     ############################################################################
     # Checks out repository under $GITHUB_WORKSPACE
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Environmental variables
       # This might be able to be set in the ENV section above
       run: echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
@@ -42,7 +42,7 @@ jobs:
     ############################################################################
     - name: Cache RFMIP files
       id: cache-rfmip-files
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: /home/runner/rfmip-files # Same as #{RFMIP_DIR}
         key: rfmip-files

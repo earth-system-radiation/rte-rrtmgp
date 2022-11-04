@@ -527,7 +527,7 @@ contains
     ! -----------------
     ! local variables
     real(wp) :: k(ngpt) ! rayleigh scattering coefficient
-    integer  :: icol, ilay, iflav, ibnd, igpt, gptS, gptE
+    integer  :: icol, ilay, iflav, ibnd, gptS, gptE
     integer  :: itropo
     ! -----------------
 

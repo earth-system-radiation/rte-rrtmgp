@@ -1201,7 +1201,6 @@ contains
     ! Reduce size of minor Arrays
     !
     call reduce_minor_arrays(available_gases, &
-                             gas_names, &
                              gas_minor,identifier_minor, &
                              kminor_lower, &
                              minor_gases_lower, &
@@ -1218,7 +1217,6 @@ contains
                              this%scale_by_complement_lower, &
                              this%kminor_start_lower)
     call reduce_minor_arrays(available_gases, &
-                             gas_names, &
                              gas_minor,identifier_minor,&
                              kminor_upper, &
                              minor_gases_upper, &
@@ -1708,7 +1706,6 @@ contains
 ! ---------------------------------------------------------------------------------------
 
   subroutine reduce_minor_arrays(available_gases, &
-                           gas_names, &
                            gas_minor,identifier_minor,&
                            kminor_atm, &
                            minor_gases_atm, &
@@ -1726,7 +1723,6 @@ contains
                            kminor_start_atm_red)
 
     class(ty_gas_concs),                intent(in) :: available_gases
-    character(len=*), dimension(:),     intent(in) :: gas_names
     real(wp),         dimension(:,:,:), intent(in) :: kminor_atm
     character(len=*), dimension(:),     intent(in) :: gas_minor, &
                                                       identifier_minor

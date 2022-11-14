@@ -710,24 +710,6 @@ contains
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
     res(:) = table(index,:) + frac * (table(index+1,:) - table(index,:))
   end function interpolate1D
-  ! ----------------------------------------------------------------------------------------
-  !   This function returns a single value from a subset (in gpoint) of the k table
-  !
-  pure function interpolate2D(fminor, k, igpt, jeta, jtemp) result(res)
-    real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species
-                                       ! index(1) : reference eta level (temperature dependent)
-                                       ! index(2) : reference temperature level
-    real(wp), dimension(:,:,:), intent(in) :: k ! (g-point, eta, temp)
-    integer,                    intent(in) :: igpt, jtemp ! interpolation index for temperature
-    integer, dimension(2),      intent(in) :: jeta ! interpolation index for binary species parameter (eta)
-    real(wp)                             :: res ! the result
-
-    res =  &
-      fminor(1,1) * k(jtemp  , jeta(1)  , igpt) + &
-      fminor(2,1) * k(jtemp  , jeta(1)+1, igpt) + &
-      fminor(1,2) * k(jtemp+1, jeta(2)  , igpt) + &
-      fminor(2,2) * k(jtemp+1, jeta(2)+1, igpt)
-  end function interpolate2D
   ! ----------------------------------------------------------
   !   This function returns a range of values from a subset (in gpoint) of the k table
   !
@@ -752,33 +734,6 @@ contains
     end do
 
   end function interpolate2D_byflav
-  ! ----------------------------------------------------------
-  ! interpolation in temperature, pressure, and eta
-  pure function interpolate3D(scaling, fmajor, k, igpt, jeta, jtemp, jpress) result(res)
-    real(wp), dimension(2),     intent(in) :: scaling
-    real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
-                                                     ! index(1) : reference eta level (temperature dependent)
-                                                     ! index(2) : reference pressure level
-                                                     ! index(3) : reference temperature level
-    real(wp), dimension(:,:,:,:),intent(in) :: k ! (gpt, eta,temp,press)
-    integer,                     intent(in) :: igpt
-    integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
-    integer,                     intent(in) :: jtemp ! interpolation index for temperature
-    integer,                     intent(in) :: jpress ! interpolation index for pressure
-    real(wp)                                :: res ! the result
-    ! each code block is for a different reference temperature
-    res =  &
-      scaling(1) * &
-      ( fmajor(1,1,1) * k(jtemp, jeta(1)  , jpress-1, igpt  ) + &
-        fmajor(2,1,1) * k(jtemp, jeta(1)+1, jpress-1, igpt  ) + &
-        fmajor(1,2,1) * k(jtemp, jeta(1)  , jpress  , igpt  ) + &
-        fmajor(2,2,1) * k(jtemp, jeta(1)+1, jpress  , igpt  ) ) + &
-      scaling(2) * &
-      ( fmajor(1,1,2) * k(jtemp+1, jeta(2)  , jpress-1, igpt) + &
-        fmajor(2,1,2) * k(jtemp+1, jeta(2)+1, jpress-1, igpt) + &
-        fmajor(1,2,2) * k(jtemp+1, jeta(2)  , jpress  , igpt) + &
-        fmajor(2,2,2) * k(jtemp+1, jeta(2)+1, jpress  , igpt) )
-  end function interpolate3D
   ! ----------------------------------------------------------
   pure function interpolate3D_byflav(scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress) result(res)
     real(wp), dimension(2),     intent(in) :: scaling

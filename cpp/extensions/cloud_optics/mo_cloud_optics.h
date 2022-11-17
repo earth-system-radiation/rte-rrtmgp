@@ -85,7 +85,7 @@ public:
     using yakl::intrinsics::size;
 
     // Local variables
-    this->init(band_lims_wvn, "RRTMGP cloud optics");
+    this->init(band_lims_wvn, int2d(), "RRTMGP cloud optics");
     // LUT coefficient dimensions
     int nsize_liq = size(lut_extliq,1);
     int nsize_ice = size(lut_extice,1);
@@ -152,7 +152,7 @@ public:
     if (nsizereg != 3) {
       stoprun("cloud optics: code assumes exactly three size regimes for Pade approximants but data is otherwise");
     }
-    this->init(band_lims_wvn, "RRTMGP cloud optics");
+    this->init(band_lims_wvn, int2d(), "RRTMGP cloud optics");
     // Error checking
     if (nbnd != this->get_nband()) {
       stoprun("cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization");

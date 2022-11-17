@@ -58,9 +58,11 @@ void net_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux_dn,
   // do igpt = 2, ngpt
   //   do ilev = 1, nlev
   //     do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , Bounds<3>({2,ngpt},nlev,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
-    real diff = spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt);
-    yakl::atomicAdd( broadband_flux_net(icol,ilev) , diff );
+  parallel_for( YAKL_AUTO_LABEL() , Bounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
+    for (int igpt=2; igpt<=ngpt; igpt++) {
+      real diff = spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt);
+      broadband_flux_net(icol,ilev) += diff;
+    }
   });
 #ifdef RRTMGP_DEBUG
   std::cout << "WARNING: THIS ISN'T TESTED!\n";

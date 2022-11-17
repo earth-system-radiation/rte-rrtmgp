@@ -275,13 +275,6 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
         int myjtemp = jtemp(icol,ilay);
 
         for (int imnr=1; imnr<=extent; imnr++) {
-          // Which gpoint range does this minor gas affect?
-          int gptS = minor_limits_gpt(1,imnr);
-          int gptE = minor_limits_gpt(2,imnr);
-
-          // What is the starting point in the stored array of minor absorption coefficients?
-          int minor_start = kminor_start(imnr);
-
           real scaling = col_gas(icol,ilay,idx_minor(imnr));
           if (minor_scales_with_density(imnr)) {
             // NOTE: P needed in hPa to properly handle density scaling.
@@ -300,7 +293,12 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
             }
           } // minor_scalse_with_density(imnr)
 
-          for (int igpt=gptS; igpt <= gptE; igpt++) {
+          // What is the starting point in the stored array of minor absorption coefficients?
+          int minor_start = kminor_start(imnr);
+          // Which gpoint range does this minor gas affect?
+          int gptS = minor_limits_gpt(1,imnr);
+          int gptE = minor_limits_gpt(2,imnr);
+          for (int igpt=gptS; igpt<=gptE; igpt++) {
             // Interpolation of absorption coefficient and calculation of optical depth
             int iflav = gpt_flv(idx_tropo,igpt); // eta interpolation depends on flavor
             int minor_loc = minor_start + (igpt - gptS); // add offset to starting point
@@ -309,7 +307,7 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
                               fminor(2,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp  ) + 
                               fminor(1,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)  , myjtemp+1) + 
                               fminor(2,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)+1, myjtemp+1);
-            yakl::atomicAdd( tau(igpt,ilay,icol) , kminor_loc * scaling );
+            tau(igpt,ilay,icol) += kminor_loc * scaling;
           }
         }
       }
@@ -339,9 +337,8 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
     // for (int ilay=1; ilay<=nlay; ilay++) {
     //   for (int icol=1; icol<=ncol; icol++) {
     //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-    parallel_for( YAKL_AUTO_LABEL() , Bounds<3>(nlay,ncol,{0,max_gpt_diff}) , YAKL_LAMBDA (int ilay, int icol, int igpt0) {
+    parallel_for( YAKL_AUTO_LABEL() , Bounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       // This check skips individual columns with no pressures in range
-      //
       if ( layer_limits(icol,1) <= 0 || ilay < layer_limits(icol,1) || ilay > layer_limits(icol,2) ) {
       } else {
         real myplay  = play (icol,ilay);
@@ -351,12 +348,9 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
         real mycol_gas_0   = col_gas(icol,ilay,0);
 
         for (int imnr=1; imnr<=extent; imnr++) {
-
           real scaling = col_gas(icol,ilay,idx_minor(imnr));
           if (minor_scales_with_density(imnr)) {
-            //
             // NOTE: P needed in hPa to properly handle density scaling.
-            //
             scaling = scaling * (PaTohPa * myplay/mytlay);
 
             if (idx_minor_scaling(imnr) > 0) {  // there is a second gas that affects this gas's absorption
@@ -372,35 +366,23 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
             }
           } // minor_scalse_with_density(imnr)
 
-          //
-          // Interpolation of absorption coefficient and calculation of optical depth
-          //
+          // What is the starting point in the stored array of minor absorption coefficients?
+          int minor_start = kminor_start(imnr);
           // Which gpoint range does this minor gas affect?
           int gptS = minor_limits_gpt(1,imnr);
           int gptE = minor_limits_gpt(2,imnr);
-
-          // Find the actual g-point to work on
-          int igpt = igpt0 + gptS;
-
-          // Proceed only if the g-point is within the correct range
-          if (igpt <= gptE) {
-            // What is the starting point in the stored array of minor absorption coefficients?
-            int minor_start = kminor_start(imnr);
-
-            real tau_minor = 0._wp;
+          for (int igpt=gptS; igpt<=gptE; igpt++) {
+            // Interpolation of absorption coefficient and calculation of optical depth
             int iflav = gpt_flv(idx_tropo,igpt); // eta interpolation depends on flavor
             int minor_loc = minor_start + (igpt - gptS); // add offset to starting point
-            
             // Inlined interpolate2D
-            real kminor_loc = fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp  ) + 
-                              fminor(2,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp  ) + 
-                              fminor(1,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)  , myjtemp+1) + 
+            real kminor_loc = fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp  ) +
+                              fminor(2,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp  ) +
+                              fminor(1,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)  , myjtemp+1) +
                               fminor(2,2,iflav,icol,ilay) * kminor(minor_loc, jeta(2,iflav,icol,ilay)+1, myjtemp+1);
-
-            tau_minor = kminor_loc * scaling;
-
-            yakl::atomicAdd( tau(igpt,ilay,icol) , tau_minor );
-          }  // igpt <= gptE
+            real tau_minor = kminor_loc * scaling;
+            tau(igpt,ilay,icol) += tau_minor;
+          }
         }
       }
     });

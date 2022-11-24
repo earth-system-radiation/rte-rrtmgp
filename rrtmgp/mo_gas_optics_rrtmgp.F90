@@ -1536,12 +1536,12 @@ contains
     integer  :: ncol, nlay, ngpt
     integer  :: icol, ilay, igpt, bnd
     real(wp) :: t, trans_total
-    integer  :: bands(optical_props%get_ngpt())
+    integer, allocatable  :: bands(:)
     !----------------------------
     ncol = optical_props%get_ncol()
     nlay = optical_props%get_nlay()
     ngpt = optical_props%get_ngpt()
-!!!    allocate( bands(ngpt) )  ! In order to work with CCE 14  (it is also better software)
+    allocate( bands(ngpt) )  ! In order to work with CCE 14  (it is also better software)
 
     err_msg=""
     if(.not. this%gpoints_are_equal(optical_props)) &
@@ -1576,7 +1576,7 @@ contains
                                     this%optimal_angle_fit(2,bands(igpt))
       end do
     end do
-    !!! deallocate( bands )
+    deallocate( bands )
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
   !

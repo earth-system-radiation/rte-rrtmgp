@@ -1536,7 +1536,7 @@ contains
     integer  :: ncol, nlay, ngpt
     integer  :: icol, ilay, igpt, bnd
     real(wp) :: t, trans_total
-    integer  :: bands(ptical_props%get_ngpt())
+    integer  :: bands(optical_props%get_ngpt())
     !----------------------------
     ncol = optical_props%get_ncol()
     nlay = optical_props%get_nlay()

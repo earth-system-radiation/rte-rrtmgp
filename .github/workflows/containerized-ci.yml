@@ -5,6 +5,7 @@ jobs:
   Containerized-CI:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         rte-kernels: [default, openacc]
         container: ["earthsystemradiation/rte-rrtmgp-ci:ifort","earthsystemradiation/rte-rrtmgp-ci:nvfortran"]

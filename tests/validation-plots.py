@@ -18,7 +18,7 @@ def rms(diff, col_dim):
     #
     # Root mean square error
     #
-    return np.sqrt(xr.ufuncs.square(diff).mean(dim=col_dim))
+    return np.sqrt(np.square(diff).mean(dim=col_dim))
 
 
 def make_comparison_plot(variants, labels, reference, vscale, col_dim="site",
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     gp.lw_flux_up_from_deriv.attrs = {
         "description": "LW flux up, surface T+1K, computed from Jacobian"}
     lbl = xr.open_mfdataset(
-        [construct_lbl_esgf_name(v) for v in ["rsd", "rsu", "rld", "rlu"]],
+        [construct_lbl_esgf_name(v, esgf_node="dkrz") for v in ["rsd", "rsu", "rld", "rlu"]],
         combine="by_coords").sel(expt=0)
     ########################################################################
     #

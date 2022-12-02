@@ -17,12 +17,12 @@ RTE aspires to follow a set of coding conventions:
 
 ## Fortran user-facing class interfaces
 
-[RTE    Fortran interface](./reference/rte-fortran-interface/index.html)
+[RTE    Fortran interface](./rte-fortran-interface/index.html)
 
-[RRTMGP Fortran interface](./reference/rrtmgp-fortran-interface/index.html)
+[RRTMGP Fortran interface](./rrtmgp-fortran-interface/index.html)
 
 ## Kernel interfaces
 
-[RTE kernels:    Fortran interface](./reference/rte-kernels/index.html)
+[RTE kernels:    Fortran interface](./rte-kernels/index.html)
 
-[RRTMGP kernels: Fortran interface](./reference/rrtmgp-kernels/index.html)
+[RRTMGP kernels: Fortran interface](./rrtmgp-kernels/index.html)

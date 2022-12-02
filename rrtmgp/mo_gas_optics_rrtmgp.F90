@@ -1095,23 +1095,24 @@ contains
                                   kminor_start_lower, &
                                   kminor_start_upper, &
                                   rayl_lower, rayl_upper)
-    if(err_message /= "") return
+    if(err_message == "") then
     !
     ! Spectral solar irradiance terms init
     !
-    ngpt = size(solar_quiet)
-    allocate(this%solar_source_quiet(ngpt), this%solar_source_facular(ngpt), &
-             this%solar_source_sunspot(ngpt), this%solar_source(ngpt))
-    !$acc        enter data create(   this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
-    !$omp target enter data map(alloc:this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
-    !$acc kernels
-    !$omp target
-    this%solar_source_quiet   = solar_quiet
-    this%solar_source_facular = solar_facular
-    this%solar_source_sunspot = solar_sunspot
-    !$acc end kernels
-    !$omp end target
-    err_message = this%set_solar_variability(mg_default, sb_default)
+      ngpt = size(solar_quiet)
+      allocate(this%solar_source_quiet(ngpt), this%solar_source_facular(ngpt), &
+               this%solar_source_sunspot(ngpt), this%solar_source(ngpt))
+      !$acc        enter data create(   this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
+      !$omp target enter data map(alloc:this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
+      !$acc kernels
+      !$omp target
+      this%solar_source_quiet   = solar_quiet
+      this%solar_source_facular = solar_facular
+      this%solar_source_sunspot = solar_sunspot
+      !$acc end kernels
+      !$omp end target
+      err_message = this%set_solar_variability(mg_default, sb_default)
+    endif
   end function load_ext
   !--------------------------------------------------------------------------------------------------------------------
   !

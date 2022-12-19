@@ -1,8 +1,12 @@
 name: Continuous Integration
-on: [push, pull_request]
-  branches-ignore:    
-    - documentation
-
+on: 
+  push: 
+    branches-ignore:    
+      - documentation
+  pull-request: 
+    branches-ignore:    
+      - documentation
+  
 jobs:
   CI:
     runs-on: ubuntu-20.04

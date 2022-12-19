@@ -1,8 +1,12 @@
 name: Self-hosted CI
 
-on: [push, pull_request]
-  branches-ignore:    
-    - documentation
+on: 
+  push: 
+    branches-ignore:    
+      - documentation
+  pull-request: 
+    branches-ignore:    
+      - documentation
 
 jobs:
   CI:

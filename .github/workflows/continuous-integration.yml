@@ -3,10 +3,10 @@ on:
   push: 
     branches-ignore:    
       - documentation
-  pull-request: 
+  pull_request: 
     branches-ignore:    
       - documentation
-  
+
 jobs:
   CI:
     runs-on: ubuntu-20.04

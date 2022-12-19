@@ -1537,12 +1537,21 @@ contains
     integer  :: ncol, nlay, ngpt
     integer  :: icol, ilay, igpt, bnd
     real(wp) :: t, trans_total
-    integer, allocatable  :: bands(:)
+#if defined _CRAYFTN && _RELEASE_MAJOR == 14 && _RELEASE_MINOR == 0 && _RELEASE_PATCHLEVEL == 3
+# define CRAY_WORKAROUND 
+#endif 
+#ifdef CRAY_WORKAROUND 
+    integer, allocatable :: bands(:) 
+#else 
+    integer :: bands(optical_props%get_ngpt)) 
+#endif
     !----------------------------
     ncol = optical_props%get_ncol()
     nlay = optical_props%get_nlay()
     ngpt = optical_props%get_ngpt()
+#ifdef CRAY_WORKAROUND 
     allocate( bands(ngpt) )  ! In order to work with CCE 14  (it is also better software)
+#endif
 
     err_msg=""
     if(.not. this%gpoints_are_equal(optical_props)) &
@@ -1577,7 +1586,6 @@ contains
                                     this%optimal_angle_fit(2,bands(igpt))
       end do
     end do
-    deallocate( bands )
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
   !

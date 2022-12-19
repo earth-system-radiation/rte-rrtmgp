@@ -76,113 +76,235 @@
   <div class="row">
     <h1>inc_2stream_by_1scalar_bybnd
       <small>Subroutine</small>
+      
     </h1>
-    <div class="row">
-  <div class="col-lg-12">
-<div class="well well-sm">
-  <ul class="list-inline" style="margin-bottom:0px;display:inline">
-    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
-     <li><i class="fa fa-list-ol"></i>
-       <a data-toggle="tooltip"
-    data-placement="bottom" data-html="true"
-    title=" 3.2% of total for procedures.">19 statements</a>
-     </li> 
-    <li><i class="fa fa-code"></i><a href="../src/mo_optical_props_kernels.F90"> Source File</a></li>
-  </ul>
-  <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_optical_props_kernels.f90.html'>mo_optical_props_kernels.F90</a></li>
-     <li><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></li>
-     <li class="active">inc_2stream_by_1scalar_bybnd</li>
-  </ol>
-</div>
-</div>
-</div>
-<script>
-  $(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-  })
-</script>
+      <div class="row" id="info-bar">
+    <div class="col-lg-12">
+      <div class="well well-sm">
+        <ul class="list-inline" style="margin-bottom:0px;display:inline">
+            <li id="meta-license"><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li>
+
+          <li id="statements"><i class="fa fa-list-ol"></i>
+            <a data-toggle="tooltip"
+               data-placement="bottom" data-html="true"
+               title=" 3.2% of total for procedures.">19 statements</a>
+          </li>
+
+            <li id="source-file">
+              <i class="fa fa-code"></i>
+              <a href="../src/mo_optical_props_kernels.F90"> Source File</a>
+            </li>
+        </ul>
+        <ol class="breadcrumb in-well text-right">
+              <li><a href='../sourcefile/mo_optical_props_kernels.f90.html'>mo_optical_props_kernels.F90</a></li>
+              <li><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></li>
+          <li class="active">inc_2stream_by_1scalar_bybnd</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <script>
+    $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
 
   </div>
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-    <div id="sidebar">
-  <h3>Contents</h3>
- 
-<em>None</em>
+      <div id="sidebar">
+      <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-</div>
+
+  </div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public pure subroutine inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, tau1, ssa1, tau2, nbnd, gpt_lims) bind(C, name="0")</h2>
+    <h2>public pure subroutine inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, tau1, ssa1, tau2, nbnd, gpt_lims) bind(C, name="0")  
+</h2>
     
 
     <p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> defined on g-points with absorption optical depth defined on bands</p>
 
     <h3>Arguments</h3>
-      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" id="variable-ncol~14"></span>integer,</td>
+        <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th>Type</th>
+<th>Intent</th><th>Optional</th>        <th>Attributes</th>
+        <th></th>
+        <th>Name</th>
+        <th></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ncol~22"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nlay~13"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ncol</strong></td>
+            <td>
+                <p>array sizes</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nlay~19"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ngpt~14"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nlay</strong></td>
+            <td>
+                <p>array sizes</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ngpt~21"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-tau1~4"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ngpt</strong></td>
+            <td>
+                <p>array sizes</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-tau1~13"></span>
+              real(kind=wp),
+            </td>
 <td>intent(inout),</td>
-  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ssa1"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>tau1</strong></td>
+            <td>
+                <p>optical properties to be modified (defined on g-points)</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ssa1~7"></span>
+              real(kind=wp),
+            </td>
 <td>intent(inout),</td>
-  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>ssa1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-tau2~4"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>ssa1</strong></td>
+            <td>
+                <p>optical properties to be modified (defined on g-points)</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-tau2~13"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
-  <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nbnd~4"></span>integer,</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,nbnd)
+            </td>
+            <td>::</td>
+            <td><strong>tau2</strong></td>
+            <td>
+                <p>optical properties to be added to original (defined on bands)</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nbnd~4"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-gpt_lims~4"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nbnd</strong></td>
+            <td>
+                <p>array sizes</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-gpt_lims~4"></span>
+              integer,
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>
-</tr>
-</tbody>
-</table>
+              <td></td>            <td>
+              dimension(2,nbnd)
+            </td>
+            <td>::</td>
+            <td><strong>gpt_lims</strong></td>
+            <td>
+                <p>Starting and ending gpoint for each band</p>
+            </td>
+        </tr>
+    </tbody>
+  </table>
 
     <br>
 
     <section class="visible-xs visible-sm hidden-md">
-      <h3>Contents</h3>
- 
-<em>None</em>
+        <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
 
     </section>
     <br class="visible-xs visible-sm hidden-md">

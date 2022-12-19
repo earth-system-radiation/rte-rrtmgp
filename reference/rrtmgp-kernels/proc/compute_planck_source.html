@@ -76,244 +76,564 @@
   <div class="row">
     <h1>compute_Planck_source
       <small>Subroutine</small>
+      
     </h1>
-    <div class="row">
-  <div class="col-lg-12">
-<div class="well well-sm">
-  <ul class="list-inline" style="margin-bottom:0px;display:inline">
-    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
-     <li><i class="fa fa-list-ol"></i>
-       <a data-toggle="tooltip"
-    data-placement="bottom" data-html="true"
-    title="38.1% of total for procedures.">85 statements</a>
-     </li> 
-    <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_kernels.F90"> Source File</a></li>
-  </ul>
-  <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_gas_optics_kernels.f90.html'>mo_gas_optics_kernels.F90</a></li>
-     <li><a href='../module/mo_gas_optics_kernels.html'>mo_gas_optics_kernels</a></li>
-     <li class="active">compute_Planck_source</li>
-  </ol>
-</div>
-</div>
-</div>
-<script>
-  $(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-  })
-</script>
+      <div class="row" id="info-bar">
+    <div class="col-lg-12">
+      <div class="well well-sm">
+        <ul class="list-inline" style="margin-bottom:0px;display:inline">
+            <li id="meta-license"><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li>
+
+          <li id="statements"><i class="fa fa-list-ol"></i>
+            <a data-toggle="tooltip"
+               data-placement="bottom" data-html="true"
+               title="38.1% of total for procedures.">85 statements</a>
+          </li>
+
+            <li id="source-file">
+              <i class="fa fa-code"></i>
+              <a href="../src/mo_gas_optics_kernels.F90"> Source File</a>
+            </li>
+        </ul>
+        <ol class="breadcrumb in-well text-right">
+              <li><a href='../sourcefile/mo_gas_optics_kernels.f90.html'>mo_gas_optics_kernels.F90</a></li>
+              <li><a href='../module/mo_gas_optics_kernels.html'>mo_gas_optics_kernels</a></li>
+          <li class="active">compute_Planck_source</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <script>
+    $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
 
   </div>
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-    <div id="sidebar">
-  <h3>Contents</h3>
- 
-<em>None</em>
+      <div id="sidebar">
+      <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-</div>
+
+  </div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public subroutine compute_Planck_source(ncol, nlay, nbnd, ngpt, nflav, neta, npres, ntemp, nPlanckTemp, tlay, tlev, tsfc, sfc_lay, fmajor, jeta, tropo, jtemp, jpress, gpoint_bands, band_lims_gpt, pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, sfc_src, lay_src, lev_src_inc, lev_src_dec, sfc_source_Jac) bind(C, name="0")</h2>
+    <h2>public  subroutine compute_Planck_source(ncol, nlay, nbnd, ngpt, nflav, neta, npres, ntemp, nPlanckTemp, tlay, tlev, tsfc, sfc_lay, fmajor, jeta, tropo, jtemp, jpress, gpoint_bands, band_lims_gpt, pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, sfc_src, lay_src, lev_src_inc, lev_src_dec, sfc_source_Jac) bind(C, name="0")  
+</h2>
     
 
 
     <h3>Arguments</h3>
-      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" id="variable-ncol"></span>integer,</td>
+        <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th>Type</th>
+<th>Intent</th><th>Optional</th>        <th>Attributes</th>
+        <th></th>
+        <th>Name</th>
+        <th></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ncol~4"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td><p>input dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nlay"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ncol</strong></td>
+            <td>
+                <p>input dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nlay~4"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td><p>input dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nbnd"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nlay</strong></td>
+            <td>
+                <p>input dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nbnd~3"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td><p>input dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ngpt"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nbnd</strong></td>
+            <td>
+                <p>input dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ngpt~3"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td><p>input dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nflav"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ngpt</strong></td>
+            <td>
+                <p>input dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nflav~4"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nflav</strong></td><td><p>table dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-neta"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nflav</strong></td>
+            <td>
+                <p>table dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-neta~4"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>neta</strong></td><td><p>table dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-npres"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>neta</strong></td>
+            <td>
+                <p>table dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-npres~4"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>npres</strong></td><td><p>table dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ntemp"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>npres</strong></td>
+            <td>
+                <p>table dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ntemp~4"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ntemp</strong></td><td><p>table dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nplancktemp"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ntemp</strong></td>
+            <td>
+                <p>table dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nplancktemp"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nPlanckTemp</strong></td><td><p>table dimensions </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-tlay"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nPlanckTemp</strong></td>
+            <td>
+                <p>table dimensions </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-tlay~3"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay  )</td><td>::</td>
-  <td><strong>tlay</strong></td><td><p>temperature at layer centers (K)</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-tlev"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay  )
+            </td>
+            <td>::</td>
+            <td><strong>tlay</strong></td>
+            <td>
+                <p>temperature at layer centers (K)</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-tlev"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay+1)</td><td>::</td>
-  <td><strong>tlev</strong></td><td><p>temperature at interfaces (K)</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-tsfc"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay+1)
+            </td>
+            <td>::</td>
+            <td><strong>tlev</strong></td>
+            <td>
+                <p>temperature at interfaces (K)</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-tsfc"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol       )</td><td>::</td>
-  <td><strong>tsfc</strong></td><td><p>surface temperture </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-sfc_lay"></span>integer,</td>
+              <td></td>            <td>
+              dimension(ncol       )
+            </td>
+            <td>::</td>
+            <td><strong>tsfc</strong></td>
+            <td>
+                <p>surface temperture </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-sfc_lay"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>sfc_lay</strong></td><td><p>index into surface layer </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-fmajor"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>sfc_lay</strong></td>
+            <td>
+                <p>index into surface layer </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-fmajor~3"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(2,2,2,ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>fmajor</strong></td><td><p>interpolation weights for major gases - computed in interpolation() </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-jeta"></span>integer,</td>
+              <td></td>            <td>
+              dimension(2,2,2,ncol,nlay,nflav)
+            </td>
+            <td>::</td>
+            <td><strong>fmajor</strong></td>
+            <td>
+                <p>interpolation weights for major gases - computed in interpolation() </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-jeta~4"></span>
+              integer,
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(2,    ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>jeta</strong></td><td><p>interpolation indexes in eta - computed in interpolation() </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-tropo"></span>logical(kind=wl),</td>
+              <td></td>            <td>
+              dimension(2,    ncol,nlay,nflav)
+            </td>
+            <td>::</td>
+            <td><strong>jeta</strong></td>
+            <td>
+                <p>interpolation indexes in eta - computed in interpolation() </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-tropo~4"></span>
+              logical(kind=wl),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
-  <td><strong>tropo</strong></td><td><p>use upper- or lower-atmospheric tables? </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-jtemp"></span>integer,</td>
+              <td></td>            <td>
+              dimension(            ncol,nlay)
+            </td>
+            <td>::</td>
+            <td><strong>tropo</strong></td>
+            <td>
+                <p>use upper- or lower-atmospheric tables? </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-jtemp~4"></span>
+              integer,
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
-  <td><strong>jtemp</strong></td><td><p>interpolation indexes in temperature and pressure - computed in interpolation() </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-jpress"></span>integer,</td>
+              <td></td>            <td>
+              dimension(            ncol,nlay)
+            </td>
+            <td>::</td>
+            <td><strong>jtemp</strong></td>
+            <td>
+                <p>interpolation indexes in temperature and pressure - computed in interpolation() </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-jpress~3"></span>
+              integer,
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
-  <td><strong>jpress</strong></td><td><p>interpolation indexes in temperature and pressure - computed in interpolation() </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-gpoint_bands"></span>integer,</td>
+              <td></td>            <td>
+              dimension(            ncol,nlay)
+            </td>
+            <td>::</td>
+            <td><strong>jpress</strong></td>
+            <td>
+                <p>interpolation indexes in temperature and pressure - computed in interpolation() </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-gpoint_bands"></span>
+              integer,
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ngpt)</td><td>::</td>
-  <td><strong>gpoint_bands</strong></td><td><p>band to which each g-point belongs</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-band_lims_gpt"></span>integer,</td>
+              <td></td>            <td>
+              dimension(ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>gpoint_bands</strong></td>
+            <td>
+                <p>band to which each g-point belongs</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-band_lims_gpt~3"></span>
+              integer,
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(2, nbnd)</td><td>::</td>
-  <td><strong>band_lims_gpt</strong></td><td><p>start and end g-point for each band</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-pfracin"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(2, nbnd)
+            </td>
+            <td>::</td>
+            <td><strong>band_lims_gpt</strong></td>
+            <td>
+                <p>start and end g-point for each band</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-pfracin"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ntemp,neta,npres+1,ngpt)</td><td>::</td>
-  <td><strong>pfracin</strong></td><td><p>Fraction of the Planck function in each g-point</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-temp_ref_min"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ntemp,neta,npres+1,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>pfracin</strong></td>
+            <td>
+                <p>Fraction of the Planck function in each g-point</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-temp_ref_min~2"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>temp_ref_min</strong></td><td><p>interpolation constants</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-totplnk_delta"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>temp_ref_min</strong></td>
+            <td>
+                <p>interpolation constants</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-totplnk_delta"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>totplnk_delta</strong></td><td><p>interpolation constants</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-totplnk"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>totplnk_delta</strong></td>
+            <td>
+                <p>interpolation constants</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-totplnk"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(nPlanckTemp,nbnd)</td><td>::</td>
-  <td><strong>totplnk</strong></td><td><p>Total Planck function by band at each temperature </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-gpoint_flavor"></span>integer,</td>
+              <td></td>            <td>
+              dimension(nPlanckTemp,nbnd)
+            </td>
+            <td>::</td>
+            <td><strong>totplnk</strong></td>
+            <td>
+                <p>Total Planck function by band at each temperature </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-gpoint_flavor~3"></span>
+              integer,
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(2,ngpt)</td><td>::</td>
-  <td><strong>gpoint_flavor</strong></td><td><p>major gas flavor (pair) by upper/lower, g-point</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-sfc_src"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(2,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>gpoint_flavor</strong></td>
+            <td>
+                <p>major gas flavor (pair) by upper/lower, g-point</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-sfc_src"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,     ngpt)</td><td>::</td>
-  <td><strong>sfc_src</strong></td><td><p>Planck emssion from the surface </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-lay_src"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,     ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>sfc_src</strong></td>
+            <td>
+                <p>Planck emssion from the surface </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lay_src"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lay_src</strong></td><td><p>Planck emssion from layer centers</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-lev_src_inc"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>lay_src</strong></td>
+            <td>
+                <p>Planck emssion from layer centers</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lev_src_inc"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lev_src_inc</strong></td><td><p>Planck emission at layer boundaries, using spectral mapping in the direction of propagation </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-lev_src_dec"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>lev_src_inc</strong></td>
+            <td>
+                <p>Planck emission at layer boundaries, using spectral mapping in the direction of propagation </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lev_src_dec"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lev_src_dec</strong></td><td><p>Planck emission at layer boundaries, using spectral mapping in the direction of propagation </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-sfc_source_jac"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>lev_src_dec</strong></td>
+            <td>
+                <p>Planck emission at layer boundaries, using spectral mapping in the direction of propagation </p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-sfc_source_jac"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,     ngpt)</td><td>::</td>
-  <td><strong>sfc_source_Jac</strong></td><td><p>Jacobian (derivative) of the surface Planck source with respect to surface temperature </p></td>
-</tr>
-</tbody>
-</table>
+              <td></td>            <td>
+              dimension(ncol,     ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>sfc_source_Jac</strong></td>
+            <td>
+                <p>Jacobian (derivative) of the surface Planck source with respect to surface temperature </p>
+            </td>
+        </tr>
+    </tbody>
+  </table>
 
     <br>
 
     <section class="visible-xs visible-sm hidden-md">
-      <h3>Contents</h3>
- 
-<em>None</em>
+        <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
 
     </section>
     <br class="visible-xs visible-sm hidden-md">

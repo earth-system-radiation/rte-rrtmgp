@@ -76,48 +76,73 @@
   <div class="row">
     <h1>lw_solver_noscat
       <small>Subroutine</small>
+      
     </h1>
-    <div class="row">
-  <div class="col-lg-12">
-<div class="well well-sm">
-  <ul class="list-inline" style="margin-bottom:0px;display:inline">
-    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
-     <li><i class="fa fa-list-ol"></i>
-       <a data-toggle="tooltip"
-    data-placement="bottom" data-html="true"
-    title=" 9.8% of total for procedures.">58 statements</a>
-     </li> 
-    <li><i class="fa fa-code"></i><a href="../src/mo_rte_solver_kernels.F90"> Source File</a></li>
-  </ul>
-  <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_rte_solver_kernels.f90.html'>mo_rte_solver_kernels.F90</a></li>
-     <li><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></li>
-     <li class="active">lw_solver_noscat</li>
-  </ol>
-</div>
-</div>
-</div>
-<script>
-  $(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-  })
-</script>
+      <div class="row" id="info-bar">
+    <div class="col-lg-12">
+      <div class="well well-sm">
+        <ul class="list-inline" style="margin-bottom:0px;display:inline">
+            <li id="meta-license"><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li>
+
+          <li id="statements"><i class="fa fa-list-ol"></i>
+            <a data-toggle="tooltip"
+               data-placement="bottom" data-html="true"
+               title=" 9.8% of total for procedures.">58 statements</a>
+          </li>
+
+            <li id="source-file">
+              <i class="fa fa-code"></i>
+              <a href="../src/mo_rte_solver_kernels.F90"> Source File</a>
+            </li>
+        </ul>
+        <ol class="breadcrumb in-well text-right">
+              <li><a href='../sourcefile/mo_rte_solver_kernels.f90.html'>mo_rte_solver_kernels.F90</a></li>
+              <li><a href='../module/mo_rte_solver_kernels.html'>mo_rte_solver_kernels</a></li>
+          <li class="active">lw_solver_noscat</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <script>
+    $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
 
   </div>
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-    <div id="sidebar">
-  <h3>Contents</h3>
- 
-<em>None</em>
+      <div id="sidebar">
+      <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-</div>
+
+  </div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, inc_flux, flux_up, flux_dn, do_broadband, broadband_up, broadband_dn, do_Jacobians, sfc_srcJac, flux_upJac, do_rescaling, ssa, g) bind(C, name="0")</h2>
+    <h2>public  subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, nmus, Ds, weights, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, inc_flux, flux_up, flux_dn, do_broadband, broadband_up, broadband_dn, do_Jacobians, sfc_srcJac, flux_upJac, do_rescaling, ssa, g) bind(C, name="0")  
+</h2>
     
 
     <p>LW transport, no scattering, multi-angle quadrature
@@ -125,168 +150,418 @@
   Routine sums over single-angle solutions for each sets of angles/weights</p>
 
     <h3>Arguments</h3>
-      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" id="variable-ncol~2"></span>integer,</td>
+        <table class="table table-striped varlist">
+    <thead>
+      <tr>
+        <th>Type</th>
+<th>Intent</th><th>Optional</th>        <th>Attributes</th>
+        <th></th>
+        <th>Name</th>
+        <th></th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ncol"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td><p>Number of columns, layers, g-points</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nlay~2"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ncol</strong></td>
+            <td>
+                <p>Number of columns, layers, g-points</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nlay"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td><p>Number of columns, layers, g-points</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ngpt~2"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nlay</strong></td>
+            <td>
+                <p>Number of columns, layers, g-points</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ngpt"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td><p>Number of columns, layers, g-points</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-top_at_1~2"></span>logical(kind=wl),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>ngpt</strong></td>
+            <td>
+                <p>Number of columns, layers, g-points</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-top_at_1"></span>
+              logical(kind=wl),
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>top_at_1</strong></td><td><p>ilay = 1 is the top of the atmosphere?</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-nmus"></span>integer,</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>top_at_1</strong></td>
+            <td>
+                <p>ilay = 1 is the top of the atmosphere?</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-nmus"></span>
+              integer,
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nmus</strong></td><td><p>number of quadrature angles</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ds"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>nmus</strong></td>
+            <td>
+                <p>number of quadrature angles</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ds"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension (ncol,      ngpt, nmus)</td><td>::</td>
-  <td><strong>Ds</strong></td><td><p>quadrature secants</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-weights"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension (ncol,      ngpt, nmus)
+            </td>
+            <td>::</td>
+            <td><strong>Ds</strong></td>
+            <td>
+                <p>quadrature secants</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-weights"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(nmus)</td><td>::</td>
-  <td><strong>weights</strong></td><td><p>quadrature weights</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-tau~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(nmus)
+            </td>
+            <td>::</td>
+            <td><strong>weights</strong></td>
+            <td>
+                <p>quadrature weights</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-tau"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
-  <td><strong>tau</strong></td><td><p>Absorption optical thickness []</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-lay_source~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,  ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>tau</strong></td>
+            <td>
+                <p>Absorption optical thickness []</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lay_source"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
-  <td><strong>lay_source</strong></td><td><p>Planck source at layer average temperature [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-lev_source_inc~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,  ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>lay_source</strong></td>
+            <td>
+                <p>Planck source at layer average temperature [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lev_source_inc"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
-  <td><strong>lev_source_inc</strong></td><td><p>Planck source at layer edge for radiation in increasing ilay direction [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-lev_source_dec~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,  ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>lev_source_inc</strong></td>
+            <td>
+                <p>Planck source at layer edge for radiation in increasing ilay direction [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-lev_source_dec"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
-  <td><strong>lev_source_dec</strong></td><td><p>Planck source at layer edge for radiation in decreasing ilay direction [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-sfc_emis~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay,  ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>lev_source_dec</strong></td>
+            <td>
+                <p>Planck source at layer edge for radiation in decreasing ilay direction [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-sfc_emis"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
-  <td><strong>sfc_emis</strong></td><td><p>Surface emissivity      []</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-sfc_src~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,       ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>sfc_emis</strong></td>
+            <td>
+                <p>Surface emissivity      []</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-sfc_src"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
-  <td><strong>sfc_src</strong></td><td><p>Surface source function [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-inc_flux~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,       ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>sfc_src</strong></td>
+            <td>
+                <p>Surface source function [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-inc_flux"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
-  <td><strong>inc_flux</strong></td><td><p>Incident diffuse flux, probably 0 [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-flux_up~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,       ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>inc_flux</strong></td>
+            <td>
+                <p>Incident diffuse flux, probably 0 [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-flux_up"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay+1,ngpt), target</td><td>::</td>
-  <td><strong>flux_up</strong></td><td><p>Fluxes [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-flux_dn~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay+1,ngpt), target
+            </td>
+            <td>::</td>
+            <td><strong>flux_up</strong></td>
+            <td>
+                <p>Fluxes [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-flux_dn"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay+1,ngpt), target</td><td>::</td>
-  <td><strong>flux_dn</strong></td><td><p>Fluxes [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-do_broadband"></span>logical(kind=wl),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay+1,ngpt), target
+            </td>
+            <td>::</td>
+            <td><strong>flux_dn</strong></td>
+            <td>
+                <p>Fluxes [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-do_broadband~2"></span>
+              logical(kind=wl),
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>do_broadband</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-broadband_up"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>do_broadband</strong></td>
+            <td>
+                
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-broadband_up"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay+1     ), target</td><td>::</td>
-  <td><strong>broadband_up</strong></td><td><p>Spectrally-integrated fluxes [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-broadband_dn"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay+1     ), target
+            </td>
+            <td>::</td>
+            <td><strong>broadband_up</strong></td>
+            <td>
+                <p>Spectrally-integrated fluxes [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-broadband_dn"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay+1     ), target</td><td>::</td>
-  <td><strong>broadband_dn</strong></td><td><p>Spectrally-integrated fluxes [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-do_jacobians"></span>logical(kind=wl),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay+1     ), target
+            </td>
+            <td>::</td>
+            <td><strong>broadband_dn</strong></td>
+            <td>
+                <p>Spectrally-integrated fluxes [W/m2]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-do_jacobians"></span>
+              logical(kind=wl),
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>do_Jacobians</strong></td><td><p>compute Jacobian with respect to surface temeprature?</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-sfc_srcjac"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>do_Jacobians</strong></td>
+            <td>
+                <p>compute Jacobian with respect to surface temeprature?</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-sfc_srcjac"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol       ,ngpt)</td><td>::</td>
-  <td><strong>sfc_srcJac</strong></td><td><p>surface temperature Jacobian of surface source function [W/m2/K]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-flux_upjac"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol       ,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>sfc_srcJac</strong></td>
+            <td>
+                <p>surface temperature Jacobian of surface source function [W/m2/K]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-flux_upjac"></span>
+              real(kind=wp),
+            </td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay+1     ), target</td><td>::</td>
-  <td><strong>flux_upJac</strong></td><td><p>surface temperature Jacobian of Radiances [W/m2-str / K]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-do_rescaling"></span>logical(kind=wl),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay+1     ), target
+            </td>
+            <td>::</td>
+            <td><strong>flux_upJac</strong></td>
+            <td>
+                <p>surface temperature Jacobian of Radiances [W/m2-str / K]</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-do_rescaling"></span>
+              logical(kind=wl),
+            </td>
 <td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>do_rescaling</strong></td><td><p>Approximate treatment of scattering (10.1175/JAS-D-18-0014.1)</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-ssa~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              
+            </td>
+            <td>::</td>
+            <td><strong>do_rescaling</strong></td>
+            <td>
+                <p>Approximate treatment of scattering (10.1175/JAS-D-18-0014.1)</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-ssa"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay  ,ngpt)</td><td>::</td>
-  <td><strong>ssa</strong></td><td><p>single-scattering albedo, asymmetry parameter</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-g~2"></span>real(kind=wp),</td>
+              <td></td>            <td>
+              dimension(ncol,nlay  ,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>ssa</strong></td>
+            <td>
+                <p>single-scattering albedo, asymmetry parameter</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <span class="anchor" id="variable-g"></span>
+              real(kind=wp),
+            </td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay  ,ngpt)</td><td>::</td>
-  <td><strong>g</strong></td><td><p>single-scattering albedo, asymmetry parameter</p></td>
-</tr>
-</tbody>
-</table>
+              <td></td>            <td>
+              dimension(ncol,nlay  ,ngpt)
+            </td>
+            <td>::</td>
+            <td><strong>g</strong></td>
+            <td>
+                <p>single-scattering albedo, asymmetry parameter</p>
+            </td>
+        </tr>
+    </tbody>
+  </table>
 
     <br>
 
     <section class="visible-xs visible-sm hidden-md">
-      <h3>Contents</h3>
- 
-<em>None</em>
+        <h3>Contents</h3>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
 
     </section>
     <br class="visible-xs visible-sm hidden-md">

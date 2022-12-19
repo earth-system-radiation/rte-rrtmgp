@@ -1543,7 +1543,7 @@ contains
 #ifdef CRAY_WORKAROUND 
     integer, allocatable :: bands(:) 
 #else 
-    integer :: bands(optical_props%get_ngpt)) 
+    integer :: bands(optical_props%get_ngpt())) 
 #endif
     !----------------------------
     ncol = optical_props%get_ncol()

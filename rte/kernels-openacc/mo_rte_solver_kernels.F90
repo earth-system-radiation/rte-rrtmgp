@@ -151,7 +151,11 @@ contains
     !$acc        data copyin(sfc_srcJac) create(   gpt_Jac) if(do_Jacobians)
     !$omp target data map(to:sfc_srcJac) map(alloc:gpt_Jac) if(do_Jacobians)
 
+#ifdef _CRAYFTN
+    !$acc parallel loop present(An, Cn, gpt_Jac, g) collapse(3)
+#else
     !$acc parallel loop no_create(An, Cn, gpt_Jac, g) collapse(3)
+#endif
     !$omp target teams distribute parallel do simd collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
@@ -196,7 +200,11 @@ contains
     !
     ! Surface reflection and emission
     !
+#ifdef _CRAYFTN
+    !$acc                         parallel loop    collapse(2) present(gpt_Jac, sfc_srcJac)
+#else
     !$acc                         parallel loop    collapse(2) no_create(gpt_Jac, sfc_srcJac)
+#endif
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
@@ -816,7 +824,11 @@ contains
       !
       ! Top of domain is index 1
       !
+#ifdef _CRAYFTN
+      !$acc  parallel loop collapse(2) present(radn_upJac)
+#else
       !$acc  parallel loop collapse(2) no_create(radn_upJac)
+#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -835,7 +847,11 @@ contains
       !
       ! Top of domain is index nlay+1
       !
+#ifdef _CRAYFTN
+      !$acc  parallel loop collapse(2) present(radn_upJac)
+#else
       !$acc  parallel loop collapse(2) no_create(radn_upJac)
+#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -1376,7 +1392,11 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
       ! Top of domain is index 1
       !
       ! Downward propagation
+#ifdef _CRAYFTN
+      !$acc                         parallel loop    collapse(2) present(radn_up_Jac)
+#else
       !$acc                         parallel loop    collapse(2) no_create(radn_up_Jac)
+#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -1411,7 +1431,11 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
         enddo
       enddo
     else
+#ifdef _CRAYFTN
+      !$acc  parallel loop collapse(2) present(radn_up_Jac)
+#else
       !$acc  parallel loop collapse(2) no_create(radn_up_Jac)
+#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol

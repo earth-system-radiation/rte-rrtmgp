@@ -1,7 +1,10 @@
 name: Build and Deploy Documentation and Website
 
-on: [push, pull_request]
-
+on:
+  push:
+    branches:    
+      - main
+      - documentation
 
 jobs:
   Build:
@@ -13,7 +16,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install Dependencies Ubuntu
       run: |

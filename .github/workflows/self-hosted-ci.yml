@@ -1,6 +1,12 @@
 name: Self-hosted CI
 
-on: [push, pull_request, workflow_dispatch]
+on: 
+  push: 
+    branches-ignore:    
+      - documentation
+  pull_request: 
+    branches-ignore:    
+      - documentation
 
 jobs:
   CI:
@@ -10,6 +16,7 @@ jobs:
       matrix:
         include:
         - config_name: nvidia_default_gpu
+          cdt_version: cdt-cuda/21.09
           compiler_base: nvidia
           compiler_module: nvidia
           accel_module: craype-accel-nvidia60
@@ -17,6 +24,7 @@ jobs:
           FCFLAGS: "-O3 -acc -Mallocatable=03 -gopt"
           RTE_KERNELS: openacc
         - config_name: cce-cpu-icon-production
+          cdt_version: cdt-cuda/22.05
           compiler_base: cray
           compiler_module: cce
           accel_module: ""
@@ -24,6 +32,7 @@ jobs:
           RTE_KERNELS: default
           FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
         - config_name: cce-openmp
+          cdt_version: cdt-cuda/22.05
           compiler_base: cray
           compiler_module: cce
           accel_module: craype-accel-nvidia60
@@ -36,12 +45,13 @@ jobs:
       RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
     steps:
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Create module environment
       run: |
         set -e
         echo '
         module load daint-gpu
+        module load ${{ matrix.cdt_version }}
         export PATH=$CRAY_BINUTILS_BIN:$PATH
         module swap PrgEnv-cray PrgEnv-${{ matrix.compiler_base }}
         module swap ${{ matrix.compiler_base }} ${{ matrix.compiler_module }}

@@ -51,7 +51,7 @@ jobs:
 
     - name: Broken Link Check
       if: ${{ github.ref == 'refs/heads/main'}}
-      uses: technote-space/broken-link-checker-action@v1
+      uses: technote-space/broken-link-checker-action@v2
       with:
         TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
         RECURSIVE: true

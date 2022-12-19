@@ -79,7 +79,7 @@ jobs:
         python validation-plots.py
     - name: Upload plots
       if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: valdiation-plot
         path: tests/validation-figures.pdf

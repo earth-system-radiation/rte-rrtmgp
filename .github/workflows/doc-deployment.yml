@@ -1,7 +1,10 @@
 name: Build and Deploy Documentation and Website
 
-on: [push, pull_request]
-
+on:
+  push:
+    branches:    
+      - main
+      - documentation
 
 jobs:
   Build:

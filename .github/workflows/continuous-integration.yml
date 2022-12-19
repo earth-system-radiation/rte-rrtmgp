@@ -1,5 +1,7 @@
 name: Continuous Integration
 on: [push, pull_request]
+  branches-ignore:    
+    - documentation
 
 jobs:
   CI:

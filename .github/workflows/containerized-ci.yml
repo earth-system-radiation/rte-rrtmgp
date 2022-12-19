@@ -1,5 +1,8 @@
 name: Continuous integration in a box
 on: [push, pull_request]
+  # Sequence of patterns matched against refs/heads
+  branches-ignore:    
+    - documentation
 
 jobs:
   Containerized-CI:

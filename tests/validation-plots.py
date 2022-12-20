@@ -11,14 +11,14 @@ def mae(diff, col_dim):
     #
     # Mean absolute error
     #
-    return xr.ufuncs.fabs(diff).mean(dim=col_dim)
+    return np.fabs(diff).mean(dim=col_dim)
 
 
 def rms(diff, col_dim):
     #
     # Root mean square error
     #
-    return xr.ufuncs.sqrt(xr.ufuncs.square(diff).mean(dim=col_dim))
+    return np.sqrt(np.square(diff).mean(dim=col_dim))
 
 
 def make_comparison_plot(variants, labels, reference, vscale, col_dim="site",
@@ -68,11 +68,13 @@ if __name__ == '__main__':
     gp.lw_flux_up_from_deriv.attrs = {
         "description": "LW flux up, surface T+1K, computed from Jacobian"}
     try:
-        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v) for v in ["rsd", "rsu", "rld", "rlu"]],
-                                combine = "by_coords").sel(expt=0)
+        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, esgf_node="dkrz")
+                                 for v in ["rsd", "rsu", "rld", "rlu"]],
+                                combine="by_coords").sel(expt=0)
     except:
-        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, None) for v in ["rsd", "rsu", "rld", "rlu"]],
-                                combine = "by_coords").sel(expt=0)
+        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, esgf_node="llnl")
+                                 for v in ["rsd", "rsu", "rld", "rlu"]],
+                                combine="by_coords").sel(expt=0)
     ########################################################################
     #
     # The RFMIP cases are on an irregular pressure grid so we can't compute

@@ -1,5 +1,11 @@
 name: Self-hosted CI
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches-ignore:
+    - documentation
+  pull_request:
+    branches-ignore:
+    - documentation
 
 jobs:
   CI:
@@ -9,18 +15,18 @@ jobs:
       matrix:
         include:
         - config_name: nvidia-gpu-acc
-          compiler_modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 ^cray-libsci_acc"
+          compiler_modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 ^cray-libsci_acc"
           # Generic accelerator flag
           #   -acc is removed as it should be detected by the configure script
           fcflags: "-O3 -Mallocatable=03 -gopt"
           enable_gpu: acc
         - config_name: cce-cpu-icon-production
-          compiler_modules: "PrgEnv-cray cce/11.0.0"
+          compiler_modules: "PrgEnv-cray cce/11.0.0 cdt-cuda/22.05"
           # Production flags for Icon model
           fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
           enable_gpu: no
         - config_name: cce-gpu-openmp
-          compiler_modules: "PrgEnv-cray cce/11.0.0 craype-accel-nvidia60"
+          compiler_modules: "PrgEnv-cray cce/11.0.0 craype-accel-nvidia60 cdt-cuda/22.05"
           # OpenMP flags from Nichols Romero (Argonne)
           #   -homp is removed as it should be detected by the configure script
           #   (in fact, the configure script detects -fopenmp)
@@ -34,11 +40,11 @@ jobs:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     #
     # Check whether Python virtual environment is cached
     #
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: cache-python-venv
       with:
         path: ${{ env.PYTHON_CACHEDIR }}
@@ -81,7 +87,7 @@ jobs:
     #
     # Check whether RFMIP files are cached
     #
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: cache-rfmip-files
       with:
         path: ${{ github.workspace }}/.testcache

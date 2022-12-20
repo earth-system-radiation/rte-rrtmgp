@@ -67,7 +67,7 @@ switch_for_module ()
     # A list of loaded modules that are in conflict with the requested module:
     sfm_loaded_conflicts=
     for sfm_conflict in $sfm_conflicts""; do
-      sfm_loaded_list=      
+      sfm_loaded_list=
       case $sfm_conflict in
         */*)
           # The conflict is specified with the version part:

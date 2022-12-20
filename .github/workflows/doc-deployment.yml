@@ -1,5 +1,10 @@
 name: Build and Deploy Documentation and Website
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - documentation
+      - autoconf
 
 jobs:
   Build:
@@ -8,7 +13,7 @@ jobs:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     #
     # Synchronize the package index
     #
@@ -47,7 +52,7 @@ jobs:
     # Upload documentation
     #
     - name: Upload Documentation
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: documentation
         path: public/
@@ -57,7 +62,7 @@ jobs:
     #
     - name: Broken Link Check
       if: ${{ github.ref == 'refs/heads/main'}}
-      uses: technote-space/broken-link-checker-action@v1
+      uses: technote-space/broken-link-checker-action@v2
       with:
         TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
         RECURSIVE: true
@@ -66,7 +71,7 @@ jobs:
     # Deploy documentation
     #
     - name: Deploy API Documentation
-      uses: JamesIves/github-pages-deploy-action@4.1.0
+      uses: JamesIves/github-pages-deploy-action@v4.4.1
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages

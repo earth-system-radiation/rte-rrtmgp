@@ -2,6 +2,7 @@ import argparse
 import sys
 
 import xarray as xr
+import numpy  as np
 
 
 def assert_equal(variants, reference):
@@ -15,7 +16,7 @@ def assert_equal(variants, reference):
         passed = True
         print('Using %s as reference:' % reference.description)
         for v in variants:
-            diff = xr.ufuncs.fabs(v - reference)
+            diff = np.fabs(v - reference)
             print('    %s' % v.description)
             if diff.max() > report_threshold:
                 print('      differs from reference by as much as %e' % (

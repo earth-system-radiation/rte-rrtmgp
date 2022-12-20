@@ -16,7 +16,6 @@ PACKAGE_TARNAME= @PACKAGE_NAME@-@PACKAGE_VERSION@
 
 # Compilers and utilities:
 AR= @AR@
-BZIP2 = bzip2
 DEPGEN= ${PYTHON} $(srcdir)/mkhelper/depgen.py
 DEPLIST= ${PYTHON} $(srcdir)/mkhelper/deplist.py
 FC= @FC@
@@ -189,7 +188,7 @@ check: all $(check_PROGRAMS) @TESTS_ENABLED@ $(testcachedir)/.cache
 dist:
 	@if test ! -e '@top_srcdir@/.git'; then echo "'@top_srcdir@' is not a git repository" >&2; exit 1; fi
 	$(GIT) -C '@top_srcdir@' archive --prefix=$(PACKAGE_TARNAME)/ --format tar -o '@abs_top_builddir@/$(PACKAGE_TARNAME).tar' HEAD
-	rm -f '$(PACKAGE_TARNAME).tar.bz2' && BZIP2=$${BZIP2--9} $(BZIP2) '$(PACKAGE_TARNAME).tar'
+	rm -f '$(PACKAGE_TARNAME).tar.bz2' && BZIP2=$${BZIP2--9} bzip2 '$(PACKAGE_TARNAME).tar'
 
 # Fortran compilation rule:
 %.@OBJEXT@: %.F90 | $(dir_files)

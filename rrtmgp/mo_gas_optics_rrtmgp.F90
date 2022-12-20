@@ -3,20 +3,22 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
-! Regents of the University of Colorado.  All right reserved.
+! Copyright 2015-,  Atmospheric and Environmental Research,
+! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !
-! Class for computing spectrally-resolved gas optical properties and source functions
-!   given atmopsheric physical properties (profiles of temperature, pressure, and gas concentrations)
-!   The class must be initialized with data (provided as a netCDF file) before being used.
-!
-! Two variants apply to internal Planck sources (longwave radiation in the Earth's atmosphere) and to
-!   external stellar radiation (shortwave radiation in the Earth's atmosphere).
-!   The variant is chosen based on what information is supplied during initialization.
+!> ## Class implementing the RRTMGP correlated-_k_ distribution 
+!>
+!> Implements a class for computing spectrally-resolved gas optical properties and source functions
+!>   given atmopsheric physical properties (profiles of temperature, pressure, and gas concentrations)
+!>   The class must be initialized with data (provided as a netCDF file) before being used.
+!>
+!> Two variants apply to internal Planck sources (longwave radiation in the Earth's atmosphere) and to
+!>   external stellar radiation (shortwave radiation in the Earth's atmosphere).
+!>   The variant is chosen based on what information is supplied during initialization.
 !   (It might make more sense to define two sub-classes)
 !
 ! -------------------------------------------------------------------------------------------------
@@ -180,7 +182,7 @@ module mo_gas_optics_rrtmgp
   end type ty_gas_optics_rrtmgp
   ! -------------------------------------------------------------------------------------------------
   !
-  ! col_dry is the number of molecules per cm-2 of dry air
+  !> col_dry is the number of molecules per cm-2 of dry air
   !
   public :: get_col_dry ! Utility function, not type-bound
 
@@ -191,7 +193,7 @@ contains
   !
   ! --------------------------------------------------------------------------------------
   !
-  ! Two functions to define array sizes needed by gas_optics()
+  !> Two functions to define array sizes needed by gas_optics()
   !
   pure function get_ngas(this)
     ! return the number of gases registered in the spectral configuration
@@ -202,8 +204,8 @@ contains
   end function get_ngas
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the number of distinct major gas pairs in the spectral bands (referred to as
-  ! "flavors" - all bands have a flavor even if there is one or no major gas)
+  !> return the number of distinct major gas pairs in the spectral bands (referred to as
+  !> "flavors" - all bands have a flavor even if there is one or no major gas)
   !
   pure function get_nflav(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
@@ -213,8 +215,8 @@ contains
   end function get_nflav
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Compute gas optical depth and Planck source functions,
-  !  given temperature, pressure, and composition
+  !> Compute gas optical depth and Planck source functions,
+  !>  given temperature, pressure, and composition
   !
   function gas_optics_int(this,                             &
                           play, plev, tlay, tsfc, gas_desc, &
@@ -222,21 +224,21 @@ contains
                           col_dry, tlev) result(error_msg)
     ! inputs
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp), dimension(:,:), intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
-                                               plev, &   ! level pressures [Pa, mb]; (ncol,nlay+1)
-                                               tlay      ! layer temperatures [K]; (ncol,nlay)
-    real(wp), dimension(:),   intent(in   ) :: tsfc      ! surface skin temperatures [K]; (ncol)
-    type(ty_gas_concs),       intent(in   ) :: gas_desc  ! Gas volume mixing ratios
+    real(wp), dimension(:,:), intent(in   ) :: play, &   !! layer pressures [Pa, mb]; (ncol,nlay)
+                                               plev, &   !! level pressures [Pa, mb]; (ncol,nlay+1)
+                                               tlay      !! layer temperatures [K]; (ncol,nlay)
+    real(wp), dimension(:),   intent(in   ) :: tsfc      !! surface skin temperatures [K]; (ncol)
+    type(ty_gas_concs),       intent(in   ) :: gas_desc  !! Gas volume mixing ratios
     ! output
     class(ty_optical_props_arry),  &
-                              intent(inout) :: optical_props ! Optical properties
+                              intent(inout) :: optical_props !! Optical properties
     class(ty_source_func_lw    ),  &
-                              intent(inout) :: sources       ! Planck sources
-    character(len=128)                      :: error_msg
+                              intent(inout) :: sources       !! Planck sources
+    character(len=128)                      :: error_msg     !! Empty if succssful 
     ! Optional inputs
     real(wp), dimension(:,:),   intent(in   ), &
-                           optional, target :: col_dry, &  ! Column dry amount; dim(ncol,nlay)
-                                               tlev        ! level temperatures [K]; (ncol,nlay+1)
+                           optional, target :: col_dry, &  !! Column dry amount; dim(ncol,nlay)
+                                               tlev        !! level temperatures [K]; (ncol,nlay+1)
     ! ----------------------------------------------------------
     ! Local variables
     ! Interpolation coefficients for use in source function
@@ -326,7 +328,8 @@ contains
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
-  ! Compute gas optical depth given temperature, pressure, and composition
+  !> Compute gas optical depth given temperature, pressure, and composition
+  !>    Top-of-atmosphere stellar insolation is also reported 
   !
   function gas_optics_ext(this,                         &
                           play, plev, tlay, gas_desc,   & ! mandatory inputs
@@ -334,15 +337,15 @@ contains
                           col_dry) result(error_msg)      ! optional input
 
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp), dimension(:,:), intent(in   ) :: play, &   ! layer pressures [Pa, mb]; (ncol,nlay)
-                                               plev, &   ! level pressures [Pa, mb]; (ncol,nlay+1)
-                                               tlay      ! layer temperatures [K]; (ncol,nlay)
-    type(ty_gas_concs),       intent(in   ) :: gas_desc  ! Gas volume mixing ratios
+    real(wp), dimension(:,:), intent(in   ) :: play, &   !! layer pressures [Pa, mb]; (ncol,nlay)
+                                               plev, &   !! level pressures [Pa, mb]; (ncol,nlay+1)
+                                               tlay      !! layer temperatures [K]; (ncol,nlay)
+    type(ty_gas_concs),       intent(in   ) :: gas_desc  !! Gas volume mixing ratios
     ! output
     class(ty_optical_props_arry),  &
-                              intent(inout) :: optical_props
-    real(wp), dimension(:,:), intent(  out) :: toa_src     ! Incoming solar irradiance(ncol,ngpt)
-    character(len=128)                      :: error_msg
+                              intent(inout) :: optical_props 
+    real(wp), dimension(:,:), intent(  out) :: toa_src     !! Incoming solar irradiance(ncol,ngpt)
+    character(len=128)                      :: error_msg   !! Empty if successful
 
     ! Optional inputs
     real(wp), dimension(:,:), intent(in   ), &
@@ -536,56 +539,72 @@ contains
 
     if(error_msg == '') then
 
-    select type(optical_props)
-      type is (ty_optical_props_1scl)
-        !$acc        enter data copyin(optical_props) create(   optical_props%tau)
-        !$omp target enter data                       map(alloc:optical_props%tau)
-      type is (ty_optical_props_2str)
-        !$acc        enter data copyin(optical_props) create(   optical_props%tau, optical_props%ssa, optical_props%g)
-        !$omp target enter data                       map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
-      type is (ty_optical_props_nstr)
-        !$acc        enter data copyin(optical_props) create(   optical_props%tau, optical_props%ssa, optical_props%p)
-        !$omp target enter data                       map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
-    end select
-    !
-    ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
-    !
-    idx_h2o = string_loc_in_array('h2o', this%gas_names)
-    if (present(col_dry)) then
-      !$acc        enter data copyin(col_dry)
-      !$omp target enter data map(to:col_dry)
-      col_dry_wk => col_dry
-    else
-      !$acc        enter data create(   col_dry_arr)
-      !$omp target enter data map(alloc:col_dry_arr)
-      col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
-      col_dry_wk => col_dry_arr
-    end if
-    !
-    ! compute column gas amounts [molec/cm^2]
-    !
-    !$acc parallel loop gang vector collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
-    do ilay = 1, nlay
-      do icol = 1, ncol
-        col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
-      end do
-    end do
-    !$acc parallel loop gang vector collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igas = 1, ngas
+!
+! Painful hacks to get code to compile with both the CCE-14 and Nvidia 21.3 compiler
+!
+#ifdef _CRAYFTN
+      !$acc enter data copyin(optical_props)
+#endif
+      select type(optical_props)
+        type is (ty_optical_props_1scl)
+#ifndef _CRAYFTN
+          !$acc enter data copyin(optical_props)
+#endif
+          !$acc enter data create(   optical_props%tau)
+          !$omp target enter data map(alloc:optical_props%tau)
+        type is (ty_optical_props_2str)
+#ifndef _CRAYFTN
+          !$acc enter data copyin(optical_props)
+#endif
+          !$acc enter data create(   optical_props%tau, optical_props%ssa, optical_props%g)
+          !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
+        type is (ty_optical_props_nstr)
+#ifndef _CRAYFTN
+          !$acc enter data copyin(optical_props)
+#endif
+          !$acc enter data create(   optical_props%tau, optical_props%ssa, optical_props%p)
+          !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%p)
+      end select
+
+      !
+      ! Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
+      !
+      idx_h2o = string_loc_in_array('h2o', this%gas_names)
+      if (present(col_dry)) then
+        !$acc        enter data copyin(col_dry)
+        !$omp target enter data map(to:col_dry)
+        col_dry_wk => col_dry
+      else
+        !$acc        enter data create(   col_dry_arr)
+        !$omp target enter data map(alloc:col_dry_arr)
+        col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
+        col_dry_wk => col_dry_arr
+      end if
+      !
+      ! compute column gas amounts [molec/cm^2]
+      !
+      !$acc parallel loop gang vector collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
       do ilay = 1, nlay
         do icol = 1, ncol
-          col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay)
+          col_gas(icol,ilay,0) = col_dry_wk(icol,ilay)
         end do
       end do
-    end do
-    !
-    ! ---- calculate gas optical depths ----
-    !
-    !$acc        data copyout( jtemp, jpress, jeta, tropo, fmajor) create(   col_mix, fminor)
-    !$omp target data map(from:jtemp, jpress, jeta, tropo, fmajor) map(alloc:col_mix, fminor)
-    call interpolation(               &
+      !$acc parallel loop gang vector collapse(3)
+      !$omp target teams distribute parallel do simd collapse(3)
+      do igas = 1, ngas
+        do ilay = 1, nlay
+          do icol = 1, ncol
+            col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay)
+          end do
+        end do
+      end do
+      !
+      ! ---- calculate gas optical depths ----
+      !
+      !$acc        data copyout( jtemp, jpress, jeta, tropo, fmajor) create(   col_mix, fminor)
+      !$omp target data map(from:jtemp, jpress, jeta, tropo, fmajor) map(alloc:col_mix, fminor)
+      call interpolation(               &
             ncol,nlay,                &        ! problem dimensions
             ngas, nflav, neta, npres, ntemp, & ! interpolation dimensions
             this%flavor,              &
@@ -604,11 +623,11 @@ contains
             col_mix,      &
             tropo,        &
             jeta,jpress)
-    if (allocated(this%krayl)) then
-      !$acc        data copyin(this%gpoint_flavor, this%krayl)    create(tau, tau_rayleigh)
-      !$omp target data map(to:this%gpoint_flavor, this%krayl) map(alloc:tau, tau_rayleigh)
-      call zero_array(ncol, nlay, ngpt, tau)
-      call compute_tau_absorption(                     &
+      if (allocated(this%krayl)) then
+        !$acc        data copyin(this%gpoint_flavor, this%krayl)    create(tau, tau_rayleigh)
+        !$omp target data map(to:this%gpoint_flavor, this%krayl) map(alloc:tau, tau_rayleigh)
+        call zero_array(ncol, nlay, ngpt, tau)
+        call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
               nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
@@ -636,7 +655,7 @@ contains
               play,tlay,col_gas,                       &
               jeta,jtemp,jpress,                       &
               tau)
-      call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
+        call compute_tau_rayleigh(         & !Rayleigh scattering optical depths
             ncol,nlay,nband,ngpt,        &
             ngas,nflav,neta,npres,ntemp, & ! dimensions
             this%gpoint_flavor,          &
@@ -645,12 +664,12 @@ contains
             idx_h2o, col_dry_wk,col_gas, &
             fminor,jeta,tropo,jtemp,     & ! local input
             tau_rayleigh)
-      call combine_abs_and_rayleigh(tau, tau_rayleigh, optical_props)
-      !$acc end        data
-      !$omp end target data
-    else
-      call zero_array(ncol, nlay, ngpt, optical_props%tau)
-      call compute_tau_absorption(                     &
+        call combine_abs_and_rayleigh(tau, tau_rayleigh, optical_props)
+        !$acc end        data
+        !$omp end target data
+      else
+        call zero_array(ncol, nlay, ngpt, optical_props%tau)
+        call compute_tau_absorption(                     &
               ncol,nlay,nband,ngpt,                    &  ! dimensions
               ngas,nflav,neta,npres,ntemp,             &
               nminorlower, nminorklower,               & ! number of minor contributors, total num absorption coeffs
@@ -678,65 +697,72 @@ contains
               play,tlay,col_gas,                       &
               jeta,jtemp,jpress,                       &
               optical_props%tau)  !
-      select type(optical_props)
-        type is (ty_optical_props_2str)
-          call zero_array(ncol, nlay, ngpt, optical_props%ssa)
-          call zero_array(ncol, nlay, ngpt, optical_props%g)
-        type is (ty_optical_props_nstr)
-          call zero_array(ncol, nlay, ngpt, optical_props%ssa)
-          call zero_array(optical_props%get_nmom(), &
+        select type(optical_props)
+          type is (ty_optical_props_2str)
+            call zero_array(ncol, nlay, ngpt, optical_props%ssa)
+            call zero_array(ncol, nlay, ngpt, optical_props%g)
+          type is (ty_optical_props_nstr)
+            call zero_array(ncol, nlay, ngpt, optical_props%ssa)
+            call zero_array(optical_props%get_nmom(), &
                           ncol, nlay, ngpt, optical_props%p)
+        end select
+      end if
+      !$acc end        data
+      !$omp end target data
+      if (present(col_dry)) then
+        !$acc        exit data delete(     col_dry)
+        !$omp target exit data map(release:col_dry)
+      else
+        !$acc        exit data delete(     col_dry_arr)
+        !$omp target exit data map(release:col_dry_arr)
+      end if
+
+      select type(optical_props)
+        type is (ty_optical_props_1scl)
+          !$acc        exit data copyout( optical_props%tau)
+          !$omp target exit data map(from:optical_props%tau)
+        type is (ty_optical_props_2str)
+          !$acc        exit data copyout( optical_props%tau, optical_props%ssa, optical_props%g)
+          !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%g)
+        type is (ty_optical_props_nstr)
+          !$acc        exit data copyout( optical_props%tau, optical_props%ssa, optical_props%p)
+          !$omp target exit data map(from:optical_props%tau, optical_props%ssa, optical_props%p)
       end select
-    end if
-    !$acc end        data
-    !$omp end target data
+      !$acc exit data delete(optical_props)
+
     end if
     !$acc end        data
     !$omp end target data
 
-    !$acc        exit data delete(     col_dry_wk)
-    !$omp target exit data map(release:col_dry_wk)
-
-    select type(optical_props)
-      type is (ty_optical_props_1scl)
-        !$acc        exit data delete(optical_props) copyout( optical_props%tau)
-        !$omp target exit data                       map(from:optical_props%tau)
-      type is (ty_optical_props_2str)
-        !$acc        exit data delete(optical_props) copyout( optical_props%tau, optical_props%ssa, optical_props%g)
-        !$omp target exit data                       map(from:optical_props%tau, optical_props%ssa, optical_props%g)
-      type is (ty_optical_props_nstr)
-        !$acc        exit data delete(optical_props) copyout( optical_props%tau, optical_props%ssa, optical_props%p)
-        !$omp target exit data                       map(from:optical_props%tau, optical_props%ssa, optical_props%p)
-    end select
   end function compute_gas_taus
   !------------------------------------------------------------------------------------------
   !
-  ! Compute the spectral solar source function adjusted to account for solar variability
-  !   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
-  ! as specified by the facular brightening (mg_index) and sunspot dimming (sb_index)
-  ! indices provided as input.
-  !
-  ! Users provide the NRLSSI2 facular ("Bremen") index and sunspot ("SPOT67") index.
-  !   Changing either of these indicies will change the total solar irradiance (TSI)
-  !   Code in extensions/mo_solar_variability may be used to compute the value of these
-  !   indices through an average solar cycle
-  ! Users may also specify the TSI, either alone or in conjunction with the facular and sunspot indices
+  !> Compute the spectral solar source function adjusted to account for solar variability
+  !>   following the NRLSSI2 model of Coddington et al. 2016, doi:10.1175/BAMS-D-14-00265.1.
+  !> as specified by the facular brightening (mg_index) and sunspot dimming (sb_index)
+  !> indices provided as input.
+  !>
+  !> Users provide the NRLSSI2 facular ("Bremen") index and sunspot ("SPOT67") index.
+  !>   Changing either of these indicies will change the total solar irradiance (TSI)
+  !>   Code in extensions/mo_solar_variability may be used to compute the value of these
+  !>   indices through an average solar cycle
+  !> Users may also specify the TSI, either alone or in conjunction with the facular and sunspot indices
   !
   !------------------------------------------------------------------------------------------
   function set_solar_variability(this,                      &
                                  mg_index, sb_index, tsi)   &
                                  result(error_msg)
     !
-    ! Updates the spectral distribution and, optionally,
-    !   the integrated value of the solar source function
-    !   Modifying either index will change the total solar irradiance
+    !! Updates the spectral distribution and, optionally,
+    !!   the integrated value of the solar source function
+    !!  Modifying either index will change the total solar irradiance
     !
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
     !
-    real(wp),           intent(in) :: mg_index, & ! facular brightening index (NRLSSI2 facular "Bremen" index)
-                                      sb_index    ! sunspot dimming index     (NRLSSI2 sunspot "SPOT67" index)
-    real(wp), optional, intent(in) :: tsi         ! total solar irradiance
-    character(len=128)             :: error_msg
+    real(wp),           intent(in) :: mg_index  !! facular brightening index (NRLSSI2 facular "Bremen" index)
+    real(wp),           intent(in) :: sb_index  !! sunspot dimming index     (NRLSSI2 sunspot "SPOT67" index)
+    real(wp), optional, intent(in) :: tsi       !! total solar irradiance
+    character(len=128)             :: error_msg !! Empty if successful 
     ! ----------------------------------------------------------
     integer :: igpt
     real(wp), parameter :: a_offset = 0.1495954_wp
@@ -765,11 +791,11 @@ contains
   !------------------------------------------------------------------------------------------
   function set_tsi(this, tsi) result(error_msg)
     !
-    ! Scale the solar source function without changing the spectral distribution
+    !> Scale the solar source function without changing the spectral distribution
     !
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
-    real(wp),                    intent(in   ) :: tsi ! user-specified total solar irradiance;
-    character(len=128)                         :: error_msg
+    real(wp),                    intent(in   ) :: tsi !! user-specified total solar irradiance;
+    character(len=128)                         :: error_msg !! Empty if successful 
 
     real(wp) :: norm
     ! ----------------------------------------------------------
@@ -1069,23 +1095,24 @@ contains
                                   kminor_start_lower, &
                                   kminor_start_upper, &
                                   rayl_lower, rayl_upper)
-    if(err_message /= "") return
+    if(err_message == "") then
     !
     ! Spectral solar irradiance terms init
     !
-    ngpt = size(solar_quiet)
-    allocate(this%solar_source_quiet(ngpt), this%solar_source_facular(ngpt), &
-             this%solar_source_sunspot(ngpt), this%solar_source(ngpt))
-    !$acc        enter data create(   this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
-    !$omp target enter data map(alloc:this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
-    !$acc kernels
-    !$omp target
-    this%solar_source_quiet   = solar_quiet
-    this%solar_source_facular = solar_facular
-    this%solar_source_sunspot = solar_sunspot
-    !$acc end kernels
-    !$omp end target
-    err_message = this%set_solar_variability(mg_default, sb_default)
+      ngpt = size(solar_quiet)
+      allocate(this%solar_source_quiet(ngpt), this%solar_source_facular(ngpt), &
+               this%solar_source_sunspot(ngpt), this%solar_source(ngpt))
+      !$acc        enter data create(   this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
+      !$omp target enter data map(alloc:this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot, this%solar_source)
+      !$acc kernels
+      !$omp target
+      this%solar_source_quiet   = solar_quiet
+      this%solar_source_facular = solar_facular
+      this%solar_source_sunspot = solar_sunspot
+      !$acc end kernels
+      !$omp end target
+      err_message = this%set_solar_variability(mg_default, sb_default)
+    endif
   end function load_ext
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1124,7 +1151,6 @@ contains
     real(wp), dimension(:,:,:),   intent(in) :: vmr_ref
     real(wp), dimension(:,:,:,:), intent(in) :: kmajor
     real(wp), dimension(:,:,:),   intent(in) :: kminor_lower, kminor_upper
-    real(wp), dimension(:,:,:), allocatable  :: kminor_lower_t, kminor_upper_t
     character(len=*),   dimension(:), &
                                   intent(in) :: gas_minor, &
                                                 identifier_minor
@@ -1199,7 +1225,6 @@ contains
     ! Reduce size of minor Arrays
     !
     call reduce_minor_arrays(available_gases, &
-                             gas_names, &
                              gas_minor,identifier_minor, &
                              kminor_lower, &
                              minor_gases_lower, &
@@ -1216,7 +1241,6 @@ contains
                              this%scale_by_complement_lower, &
                              this%kminor_start_lower)
     call reduce_minor_arrays(available_gases, &
-                             gas_names, &
                              gas_minor,identifier_minor,&
                              kminor_upper, &
                              minor_gases_upper, &
@@ -1373,7 +1397,7 @@ contains
   !
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return true if initialized for internal sources, false otherwise
+  !> return true if initialized for internal sources/longwave, false otherwise
   !
   pure function source_is_internal(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
@@ -1382,7 +1406,7 @@ contains
   end function source_is_internal
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return true if initialized for external sources, false otherwise
+  !> return true if initialized for external sources/shortwave, false otherwise
   !
   pure function source_is_external(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
@@ -1392,61 +1416,61 @@ contains
 
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the gas names
+  !> return the names of the gases known to the k-distributions
   !
   pure function get_gases(this)
-    class(ty_gas_optics_rrtmgp), intent(in) :: this
-    character(32), dimension(get_ngas(this))     :: get_gases
+    class(ty_gas_optics_rrtmgp), intent(in)  :: this
+    character(32), dimension(get_ngas(this)) :: get_gases !! names of the gases known to the k-distributions
 
     get_gases = this%gas_names
   end function get_gases
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the minimum pressure on the interpolation grids
+  !> return the minimum pressure on the interpolation grids
   !
   pure function get_press_min(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_press_min
+    real(wp)                                :: get_press_min !! minimum pressure for which the k-dsitribution is valid
 
     get_press_min = this%press_ref_min
   end function get_press_min
 
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the maximum pressure on the interpolation grids
+  !> return the maximum pressure on the interpolation grids
   !
   pure function get_press_max(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_press_max
+    real(wp)                                :: get_press_max !! maximum pressure for which the k-dsitribution is valid
 
     get_press_max = this%press_ref_max
   end function get_press_max
 
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the minimum temparature on the interpolation grids
+  !> return the minimum temparature on the interpolation grids
   !
   pure function get_temp_min(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_temp_min
+    real(wp)                                :: get_temp_min !! minimum temperature for which the k-dsitribution is valid 
 
     get_temp_min = this%temp_ref_min
   end function get_temp_min
 
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! return the maximum temparature on the interpolation grids
+  !> return the maximum temparature on the interpolation grids
   !
   pure function get_temp_max(this)
     class(ty_gas_optics_rrtmgp), intent(in) :: this
-    real(wp)                                       :: get_temp_max
+    real(wp)                                :: get_temp_max !! maximum temperature for which the k-dsitribution is valid
 
     get_temp_max = this%temp_ref_max
   end function get_temp_max
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Utility function, provided for user convenience
-  ! computes column amounts of dry air using hydrostatic equation
+  !> Utility function, provided for user convenience
+  !> computes column amounts of dry air using hydrostatic equation
   !
   function get_col_dry(vmr_h2o, plev, latitude) result(col_dry)
     ! input
@@ -1501,22 +1525,33 @@ contains
   end function get_col_dry
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
+  !> Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
   !
   function compute_optimal_angles(this, optical_props, optimal_angles) result(err_msg)
     ! input
     class(ty_gas_optics_rrtmgp),  intent(in   ) :: this
-    class(ty_optical_props_arry), intent(in   ) :: optical_props
-    real(wp), dimension(:,:),     intent(  out)  :: optimal_angles
-    character(len=128)                           :: err_msg
+    class(ty_optical_props_arry), intent(in   ) :: optical_props  !! Optical properties
+    real(wp), dimension(:,:),     intent(  out) :: optimal_angles !! Secant of optical transport angle 
+    character(len=128)                          :: err_msg        !! Empty if successful
     !----------------------------
     integer  :: ncol, nlay, ngpt
     integer  :: icol, ilay, igpt, bnd
     real(wp) :: t, trans_total
+#if defined _CRAYFTN && _RELEASE_MAJOR == 14 && _RELEASE_MINOR == 0 && _RELEASE_PATCHLEVEL == 3
+# define CRAY_WORKAROUND 
+#endif 
+#ifdef CRAY_WORKAROUND 
+    integer, allocatable :: bands(:) 
+#else 
+    integer :: bands(optical_props%get_ngpt())
+#endif
     !----------------------------
     ncol = optical_props%get_ncol()
     nlay = optical_props%get_nlay()
     ngpt = optical_props%get_ngpt()
+#ifdef CRAY_WORKAROUND 
+    allocate( bands(ngpt) )  ! In order to work with CCE 14  (it is also better software)
+#endif
 
     err_msg=""
     if(.not. this%gpoints_are_equal(optical_props)) &
@@ -1525,11 +1560,14 @@ contains
       err_msg = "gas_optics%compute_optimal_angles: optimal_angles different dimension (ncol)"
     if (err_msg /=  "") return
 
+    do igpt = 1, ngpt
+      bands(igpt) = optical_props%convert_gpt2band(igpt)
+    enddo
     !
     ! column transmissivity
     !
-    !$acc                parallel loop gang vector collapse(2) copyin(optical_props, optical_props%tau) copyout(optimal_angles)
-    !$omp target teams distribute parallel do simd collapse(2) map(to:optical_props%tau) map(from:optimal_angles)
+    !$acc parallel loop gang vector collapse(2) copyin(bands, optical_props, optical_props%tau) copyout(optimal_angles)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:bands, optical_props%tau) map(from:optimal_angles)
     do icol = 1, ncol
       do igpt = 1, ngpt
         !
@@ -1544,12 +1582,10 @@ contains
         !
         ! Optimal transport angle is a linear fit to column transmissivity
         !
-        bnd = optical_props%convert_gpt2band(igpt)
-        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bnd)*trans_total + &
-                                    this%optimal_angle_fit(2,bnd)
+        optimal_angles(icol,igpt) = this%optimal_angle_fit(1,bands(igpt))*trans_total + &
+                                    this%optimal_angle_fit(2,bands(igpt))
       end do
     end do
-
   end function compute_optimal_angles
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -1706,7 +1742,6 @@ contains
 ! ---------------------------------------------------------------------------------------
 
   subroutine reduce_minor_arrays(available_gases, &
-                           gas_names, &
                            gas_minor,identifier_minor,&
                            kminor_atm, &
                            minor_gases_atm, &
@@ -1724,7 +1759,6 @@ contains
                            kminor_start_atm_red)
 
     class(ty_gas_concs),                intent(in) :: available_gases
-    character(len=*), dimension(:),     intent(in) :: gas_names
     real(wp),         dimension(:,:,:), intent(in) :: kminor_atm
     character(len=*), dimension(:),     intent(in) :: gas_minor, &
                                                       identifier_minor
@@ -1886,7 +1920,7 @@ contains
         !
         ! Extinction optical depth
         !
-        !$acc parallel loop gang vector                collapse(3)
+        !$acc parallel loop gang vector collapse(3) default(present)
         !$omp target teams distribute parallel do simd collapse(3)
         do igpt = 1, ngpt
           do ilay = 1, nlay
@@ -1903,7 +1937,7 @@ contains
         !
         ! Extinction optical depth and single scattering albedo
         !
-        !$acc parallel loop gang vector                collapse(3)
+        !$acc parallel loop gang vector collapse(3) default(present)
         !$omp target teams distribute parallel do simd collapse(3)
         do igpt = 1, ngpt
           do ilay = 1, nlay
@@ -1923,7 +1957,7 @@ contains
         !
         ! Extinction optical depth and single scattering albedo
         !
-        !$acc parallel loop gang vector                collapse(3)
+        !$acc parallel loop gang vector collapse(3) default(present)
         !$omp target teams distribute parallel do simd collapse(3)
         do igpt = 1, ngpt
           do ilay = 1, nlay
@@ -1941,7 +1975,7 @@ contains
         nmom = size(optical_props%p, 1)
         call zero_array(nmom, ncol, nlay, ngpt, optical_props%p)
         if(nmom >= 2) then
-          !$acc parallel loop gang vector                collapse(3)
+          !$acc parallel loop gang vector collapse(3) default(present)
           !$omp target teams distribute parallel do simd collapse(3)
           do igpt = 1, ngpt
             do ilay = 1, nlay

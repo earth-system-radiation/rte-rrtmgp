@@ -1,5 +1,11 @@
 name: Continuous integration in a box
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore:
+    - documentation
+  pull_request:
+    branches-ignore:
+    - documentation
 
 defaults:
   run:
@@ -9,6 +15,7 @@ jobs:
   Containerized-CI:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         rte-kernels: [default, openacc]
         container: ["earthsystemradiation/rte-rrtmgp-ci:ifort","earthsystemradiation/rte-rrtmgp-ci:nvfortran"]
@@ -20,7 +27,7 @@ jobs:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     #
     # Extend the environment initialization script with FCFLAGS
     #
@@ -51,7 +58,7 @@ jobs:
     #
     # Check whether RFMIP files are cached
     #
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: cache-rfmip-files
       with:
         path: ${{ github.workspace }}/.testcache
@@ -77,7 +84,7 @@ jobs:
     #
     - name: Upload validation plots
       if: contains(matrix.container, 'ifort') && contains(matrix.rte-kernels, 'default')
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: valdiation-plot
         path: ${{ github.workspace }}/tests/validation-figures.pdf

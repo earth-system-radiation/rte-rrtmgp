@@ -82,4 +82,4 @@ examples/*/*/*.nc
 public
 
 # Ruby stuff
-Gemfile.lock
+**/Gemfile.lock

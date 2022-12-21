@@ -1,54 +1,64 @@
 name: Build and Deploy Documentation and Website
-
 on:
   push:
-    branches:    
-      - main
-      - documentation
+    branches:
+    - main
+    - documentation
 
 jobs:
   Build:
     runs-on: ubuntu-22.04
-
-    env:
-      FC: gfortran
-      GCC_V: 12
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Install Dependencies Ubuntu
+    #
+    # Checks-out repository under $GITHUB_WORKSPACE
+    #
+    - uses: actions/checkout@v3
+    #
+    # Synchronize the package index
+    #
+    - name: Synchronize the package index
+      run: sudo apt-get update
+    #
+    # Install dependencies
+    #
+    - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt install -y gfortran-${GCC_V} python3-dev graphviz
-        sudo pip install ford
-
-    # Install ruby
-    - uses: ruby/setup-ruby@v1
+        sudo apt-get install graphviz
+        sudo pip install 'markdown<3.4' ford
+    #
+    # Install Ruby
+    #
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.1
-
-    # Setup Jekyll
-    - name: Setup Jekyll
+    #
+    # Install Jekyll
+    #
+    - name: Install Jekyll
       run: |
         cd doc/jekyll_site
         sudo gem install bundler jekyll
         bundle update
-
+    #
     # Build documentation
+    #
     - name: Build Documentation
       run: |
         cd doc
         ./build_documentation.sh -ci
-
+    #
+    # Upload documentation
+    #
     - name: Upload Documentation
       uses: actions/upload-artifact@v3
       with:
         name: documentation
         path: public/
         if-no-files-found: error
-
+    #
+    # Check broken links
+    #
     - name: Broken Link Check
       if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v2
@@ -56,7 +66,9 @@ jobs:
         TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
-
+    #
+    # Deploy documentation
+    #
     - name: Deploy API Documentation
       uses: JamesIves/github-pages-deploy-action@v4.4.1
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}

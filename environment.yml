@@ -5,12 +5,6 @@ name: rte_rrtmgp_test
 
 dependencies:
   - conda-forge::python=3.9
-  - conda-forge::urllib3
   - conda-forge::netcdf4
   - conda-forge::xarray
   - conda-forge::dask
-  - conda-forge::numpy
-  - conda-forge::scipy
-  - conda-forge::matplotlib
-  - conda-forge::seaborn
-  - conda-forge::colorcet

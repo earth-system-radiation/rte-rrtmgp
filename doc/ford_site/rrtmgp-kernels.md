@@ -23,4 +23,4 @@ There is a search bar in the top right.
 Return to the [Documentation overview] or the [reference overview].
 
 [Documentation overview]: ../../index.html
-[reference overview]: ../../reference.html
+[reference overview]:    ../index.html

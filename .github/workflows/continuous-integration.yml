@@ -46,13 +46,7 @@ jobs:
     - name: Synchronize the package index
       run: sudo apt-get update
     #
-    # Install Gfortran 10
-    #
-    - name: Install Gfortran 10
-      if: matrix.fortran-compiler == 'gfortran-10'
-      run: sudo apt-get install gfortran-10
-    #
-    # Install NetCDF-Fortran (compatible with both compilers)
+    # Install NetCDF-Fortran (compatible with all compilers)
     #
     - name: Install NetCDF-Fortran
       run: sudo apt-get install libnetcdff-dev

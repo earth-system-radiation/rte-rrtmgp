@@ -14,11 +14,11 @@ defaults:
 
 jobs:
   CI:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        fortran-compiler: [gfortran-9, gfortran-10]
+        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
         rte-kernels: [default, openacc]
         include:
         - fcflags: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"

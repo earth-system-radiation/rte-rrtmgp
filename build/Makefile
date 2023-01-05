@@ -3,9 +3,8 @@
 RTE_DIR = ../rte-frontend
 RRTMGP_DIR = ../rrtmgp
 
-RTE_KERNEL_DIR += ../rte-kernels
-RRTMGP_KERNEL_DIR += ../rrtmgp/kernels
-VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
+RTE_KERNEL_DIR = ../rte-kernels
+RRTMGP_KERNEL_DIR = ../rrtmgp/kernels
 #
 # Compiler variables FC, FCFLAGS must be set in the environment
 #
@@ -25,8 +24,8 @@ include $(RRTMGP_DIR)/Make.depends
 # Choose kernels depending on environment variable
 #
 ifeq ($(RTE_KERNELS), openacc)
-  RTE_KERNEL_DIR    = $(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR)
-  RRTMGP_KERNEL_DIR = ../rrtmgp/kernels-openacc
+	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):../rrtmgp/kernels-openacc:$(RRTMGP_KERNEL_DIR)
+  RRTMGP_KERNEL_DIR = 
 endif
 
 librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)

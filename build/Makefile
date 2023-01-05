@@ -1,10 +1,9 @@
 #!/usr/bin/env make
 
-RTE_DIR = ../rte-frontend
-RRTMGP_DIR = ../rrtmgp
-
-RTE_KERNEL_DIR = ../rte-kernels
-RRTMGP_KERNEL_DIR = ../rrtmgp/kernels
+RTE_DIR           = ../rte-frontend
+RRTMGP_DIR        = ../rrtmgp-frontend
+RTE_KERNEL_DIR    = ../rte-kernels
+RRTMGP_KERNEL_DIR = ../rrtmgp-kernels
 #
 # Compiler variables FC, FCFLAGS must be set in the environment
 #
@@ -17,15 +16,16 @@ COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c
 	$(COMPILE) $<
 
 include $(RTE_DIR)/Make.depends
-include $(RTE_KERNEL_DIR)/Make.depends
 include $(RRTMGP_DIR)/Make.depends
+include $(RTE_KERNEL_DIR)/Make.depends
+include $(RRTMGP_KERNEL_DIR)/Make.depends
 
+VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
 #
-# Choose kernels depending on environment variable
+# If using OpenACC/OpenMP files in *-kernels/accel take precendence  
 #
 ifeq ($(RTE_KERNELS), openacc)
-	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):../rrtmgp/kernels-openacc:$(RRTMGP_KERNEL_DIR)
-  RRTMGP_KERNEL_DIR = 
+	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR)
 endif
 
 librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)

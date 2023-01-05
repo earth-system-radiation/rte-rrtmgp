@@ -158,6 +158,8 @@ module mo_gas_optics_rrtmgp
     generic,   public :: load       => load_int,       load_ext
     procedure, public :: source_is_internal
     procedure, public :: source_is_external
+    procedure, public :: is_loaded
+    procedure, public :: finalize
     procedure, public :: get_ngas
     procedure, public :: get_gases
     procedure, public :: get_press_min
@@ -465,7 +467,7 @@ contains
     use_rayl = allocated(this%krayl)
     error_msg = ''
     ! Check for initialization
-    if (.not. this%is_initialized()) then
+    if (.not. this%is_loaded()) then
       error_msg = 'ERROR: spectral configuration not loaded'
       return
     end if
@@ -967,6 +969,7 @@ contains
     character(len = 128) :: err_message
     ! ----
     !$acc enter data copyin(this)
+    call this%finalize()
     err_message = init_abs_coeffs(this, &
                                   available_gases, &
                                   gas_names, key_species,    &
@@ -1075,6 +1078,7 @@ contains
     integer :: ngpt
     ! ----
     !$acc enter data copyin(this)
+    call this%finalize()
     err_message = init_abs_coeffs(this, &
                                   available_gases, &
                                   gas_names, key_species,    &
@@ -1702,6 +1706,78 @@ contains
       idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm(imnr), gas_names)
     enddo
   end subroutine create_idx_minor_scaling
+  !--------------------------------------------------------------------------------------------------------------------
+  ! Is the object ready to use?
+  !
+  pure function is_loaded(this)
+    class(ty_gas_optics_rrtmgp), intent(in) :: this
+    logical(wl)                             :: is_loaded
+
+    is_loaded = allocated(this%kmajor)
+  end function is_loaded
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Reset the object to un-initialized state
+  !
+  subroutine finalize(this)
+    class(ty_gas_optics_rrtmgp), intent(inout) :: this
+    real(wp),      dimension(:),     allocatable :: press_ref,  press_ref_log, temp_ref
+
+    if(this%is_loaded()) then
+      !$acc exit data delete(this%gas_names, this%vmr_ref, this%flavor) &
+      !$acc           delete(this%gpoint_flavor, this%kmajor)  &
+      !$acc           delete(this%minor_limits_gpt_lower) &
+      !$acc           delete(this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
+      !$acc           delete(this%idx_minor_lower, this%idx_minor_scaling_lower)  &
+      !$acc           delete(this%kminor_start_lower, this%kminor_lower)
+      !$acc           delete(this%minor_limits_gpt_upper) &
+      !$acc           delete(this%minor_scales_with_density_upper, this%scale_by_complement_upper)  &
+      !$acc           delete(this%idx_minor_upper, this%idx_minor_scaling_upper)  &
+      !$acc           delete(this%kminor_start_upper, this%kminor_upper)
+      !$omp target exit data map(release:this%gas_names, this%vmr_ref, this%flavor) &
+      !$omp map(release:this%gpoint_flavor, this%kmajor)  &
+      !$omp map(release:this%minor_limits_gpt_lower) &
+      !$omp map(release:this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
+      !$omp map(release:this%idx_minor_lower, this%idx_minor_scaling_lower)  &
+      !$omp map(release:this%kminor_start_lower, this%kminor_lower)
+      !$omp map(release:this%minor_limits_gpt_upper) &
+      !$omp map(release:this%minor_scales_with_density_upper, this%scale_by_complement_upper)  &
+      !$omp map(release:this%idx_minor_upper, this%idx_minor_scaling_upper)  &
+      !$omp map(release:this%kminor_start_upper, this%kminor_upper)
+      !$omp map(release:this%lut_extice, this%lut_ssaice, this%lut_asyice)
+      deallocate(this%gas_names, this%vmr_ref, this%flavor, this%gpoint_flavor, this%kmajor)
+      deallocate(this%minor_limits_gpt_lower, &
+                 this%minor_scales_with_density_lower, this%scale_by_complement_lower, &
+                 this%idx_minor_lower, this%idx_minor_scaling_lower, this%kminor_start_lower, this%kminor_lower)
+      deallocate(this%minor_limits_gpt_upper, &
+                 this%minor_scales_with_density_upper, this%scale_by_complement_upper, &
+                 this%idx_minor_upper, this%idx_minor_scaling_upper, this%kminor_start_upper, this%kminor_upper)
+
+      if(allocated(this%krayl)) then
+        !$acc exit data delete(this%krayl)
+        !$omp target exit data map(release:this%krayl)
+        deallocate(this%krayl)
+      end if
+
+      if(allocated(this%planck_frac)) then
+        !$acc exit data delete(this%planck_frac, this%totplnk, this%optimal_angle_fit)
+        !$omp target exit data map(release:this%planck_frac, this%totplnk, this%optimal_angle_fit)
+        deallocate(this%planck_frac, this%totplnk, this%optimal_angle_fit)
+      end if
+
+      if(allocated(this%solar_source)) then
+        !$acc exit data delete(this%solar_source, this%solar_source_quiet) &
+        !$acc           delete(this%solar_source_facular,this%solar_source_sunspot)
+        !$omp target exit data map(release:his%solar_source, this%solar_source_quiet)
+        !$omp map(release:this%solar_source_facular,this%solar_source_sunspot)
+        deallocate(this%solar_source, &
+                   this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot)
+      end if
+      !$acc exit data delete(this)
+      !$omp target exit data map(release:this)
+    end if
+
+  end subroutine finalize
   ! ---------------------------------------------------------------------------------------
   subroutine create_key_species_reduce(gas_names,gas_names_red, &
     key_species,key_species_red,key_species_present_init)

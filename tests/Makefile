@@ -13,6 +13,8 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 # Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
 #
 FCINCLUDE += -I$(NFHOME)/include
+LDFLAGS   += -L$(RRTMGP_BUILD)
+LIBS      += -lrte -lrrtmgp
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
@@ -39,7 +41,7 @@ CLOUDS    += mo_cloud_sampling.o mo_cloud_optics.o mo_load_cloud_coefficients.o 
 ADDITIONS += mo_solar_variability.o
 
 # Many codes will need to be updated if the library changes
-LIB_DEPS = $(RRTMGP_BUILD)/librte.a $(RRTMGP_BUILD)/librrtmgp.a
+# LIB_DEPS = $(RRTMGP_BUILD)/librte.a $(RRTMGP_BUILD)/librrtmgp.a
 #
 # Targets
 #

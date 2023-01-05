@@ -28,8 +28,8 @@ module mo_gas_optics_rrtmgp
   use mo_rte_util_array,     only: zero_array, any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props,      only: ty_optical_props
   use mo_source_functions,   only: ty_source_func_lw
-  use mo_gas_optics_kernels, only: interpolation,                                                       &
-                                   compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source
+  use mo_gas_optics_rrtmgp_kernels, & 
+                             only: interpolation, compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source
   use mo_rrtmgp_constants,   only: avogad, m_dry, m_h2o, grav
   use mo_rrtmgp_util_string, only: lower_case, string_in_array, string_loc_in_array
   use mo_gas_concentrations, only: ty_gas_concs

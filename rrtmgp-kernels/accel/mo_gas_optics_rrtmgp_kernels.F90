@@ -14,7 +14,7 @@
 ! Description: Numeric calculations for gas optics. Absorption and Rayleigh optical depths,
 !   source functions.
 
-module mo_gas_optics_kernels
+module mo_gas_optics_rrtmgp_kernels
   use mo_rte_kind,      only: wp, wl
   use mo_rte_util_array,only: zero_array
   implicit none
@@ -748,4 +748,4 @@ contains
   end subroutine
   ! ----------------------------------------------------------
 
-end module mo_gas_optics_kernels
+end module mo_gas_optics_rrtmgp_kernels

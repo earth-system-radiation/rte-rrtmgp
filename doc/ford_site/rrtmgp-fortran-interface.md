@@ -22,7 +22,7 @@ the `gas_optics()` and other procedure(s) defined by the  [ty_gas_optics](./type
 abstract class. The class is used to compute the spectrally-varying optical properties of the
 gaseous atmosphere given temperature, pressure, and gas concentrations. Each instance of the
 variable is ["loaded"](./type/ty_gas_optics_rrtmgp.html#boundprocedure-load) with data from netCDF
-files in the `rrtmgp/data` directory. Depending on the data provided the variable can be used
+files in the `rrtmgp-data` directory. Depending on the data provided the variable can be used
 or radiation emitted by the atmosphere and surface ("longwave") of for for radiation emitted
 by the planet's star ("shortwave").
 

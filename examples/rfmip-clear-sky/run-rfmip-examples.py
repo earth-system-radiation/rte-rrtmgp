@@ -16,9 +16,9 @@ rfmip_dir = "."
 # Code should be run in the rfmip_dir directory
 
 conds_file = "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
-lw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp", "data",
+lw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-data",
                                   "rrtmgp-data-lw-g256-2018-12-04.nc")
-sw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp", "data",
+sw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-data",
                                   "rrtmgp-data-sw-g224-2018-12-04.nc")
 
 rfmip_lw_exe_name = "./rrtmgp_rfmip_lw"

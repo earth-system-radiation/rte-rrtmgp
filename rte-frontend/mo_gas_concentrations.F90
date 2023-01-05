@@ -566,8 +566,12 @@ contains
   ! -------------------------------------------------------------------------------------
   !> Convert string to lower case 
   pure function lower_case( input_string ) result( output_string )
-    character(len=*), intent(in) :: input_string
+    character(len=*), intent(in)     :: input_string
     character(len=len(input_string)) :: output_string
+  
+    ! List of character for case conversion
+    character(len=26), parameter :: LOWER_CASE_CHARS = 'abcdefghijklmnopqrstuvwxyz'
+    character(len=26), parameter :: UPPER_CASE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     integer :: i, n
 
     ! Copy input string

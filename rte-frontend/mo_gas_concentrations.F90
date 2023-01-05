@@ -38,7 +38,6 @@
 module mo_gas_concentrations
   use mo_rte_kind,           only: wp
   use mo_rte_config,         only: check_values
-  use mo_rrtmgp_util_string, only: lower_case
   use mo_rte_util_array,     only: any_vals_outside
   implicit none
   integer, parameter, private :: GAS_NOT_IN_LIST = -1
@@ -564,6 +563,22 @@ contains
   !
   ! Private procedures
   !
+  ! -------------------------------------------------------------------------------------
+  !> Convert string to lower case 
+  pure function lower_case( input_string ) result( output_string )
+    character(len=*), intent(in) :: input_string
+    character(len=len(input_string)) :: output_string
+    integer :: i, n
+
+    ! Copy input string
+    output_string = input_string
+
+    ! Convert case character by character
+    do i = 1, len(output_string)
+      n = index(UPPER_CASE_CHARS, output_string(i:i))
+      if ( n /= 0 ) output_string(i:i) = LOWER_CASE_CHARS(n:n)
+    end do
+  end function
   ! -------------------------------------------------------------------------------------
   !
   ! find gas in list; GAS_NOT_IN_LIST if not found

@@ -24,7 +24,7 @@ VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
 #
 # If using OpenACC/OpenMP files in *-kernels/accel take precendence  
 #
-ifeq ($(RTE_KERNELS), openacc)
+ifeq ($(RTE_KERNELS), accel)
 	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR)
 endif
 

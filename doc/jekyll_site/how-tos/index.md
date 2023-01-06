@@ -13,7 +13,7 @@ title: "How-to guides"
 2. Set environment variable `RRTMGP_ROOT` to the top-level RTE+RRTMGP directory.
    Set the variables `NCHOME` and `NFHOME` to the roots of the C and Fortran
    netCDF installations. (Building the libraries alone )
-3. Set environment variable `RTE_KERNELS` to `openacc` if you want the OpenACC/OpenMP
+3. Set environment variable `RTE_KERNELS` to `accel` if you want the OpenACC/OpenMP
    kernels rather than the default.
 4. `make libs` in the top-level directory will make the RTE and RRTMGP libraries
    and the regression tests in in `examples/` and `tests/`. Libraries and module

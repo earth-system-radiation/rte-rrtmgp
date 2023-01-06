@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         fortran-compiler:  [gfortran-9, gfortran-10]
-        rte-kernels: [default, openacc]
+        rte-kernels: [default, accel]
     env:
       FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"

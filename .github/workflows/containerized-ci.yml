@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rte-kernels: [default, openacc]
+        rte-kernels: [default, accel]
         container: ["earthsystemradiation/rte-rrtmgp-ci:ifort","earthsystemradiation/rte-rrtmgp-ci:nvfortran"]
     container:
       image: ${{ matrix.container }}

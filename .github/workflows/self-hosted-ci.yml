@@ -22,7 +22,7 @@ jobs:
           accel_module: craype-accel-nvidia60
           # Generic accelerator flag
           FCFLAGS: "-O3 -acc -Mallocatable=03 -gopt"
-          RTE_KERNELS: openacc
+          RTE_KERNELS: accel
         - config_name: cce-cpu-icon-production
           cdt_version: cdt-cuda/22.05
           compiler_base: cray
@@ -38,7 +38,7 @@ jobs:
           accel_module: craype-accel-nvidia60
           # OpenMP flags from Nichols Romero (Argonne)
           FCFLAGS: "-hnoacc -homp -O0"
-          RTE_KERNELS: openacc
+          RTE_KERNELS: accel
     env:
       FCFLAGS: ${{ matrix.FCFLAGS }}
       RTE_KERNELS: ${{ matrix.RTE_KERNELS }}

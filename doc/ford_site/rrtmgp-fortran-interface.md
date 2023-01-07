@@ -10,9 +10,7 @@ author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
 title: RRTMGP Fortran interfaces
-src_dir: ../../rrtmgp
-exclude_dir: ../../rrtmgp/kernels
-exclude_dir: ../../rrtmgp/kernels-openacc
+src_dir: ../../rrtmgp-frontend
 output_dir: ../../public/reference/rrtmgp-fortran-interface
 ...
 These pages provide a programmer's view of the Fortran user interface to RRTMGP.

@@ -38,7 +38,7 @@ module mo_gas_optics
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props, ty_optical_props_arry
 
-  public: combine_abs_and_rayleigh
+  public :: combine_abs_and_rayleigh
 
   type, abstract, extends(ty_optical_props), public :: ty_gas_optics
   contains

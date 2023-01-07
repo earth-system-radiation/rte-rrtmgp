@@ -34,7 +34,7 @@ module mo_gas_optics_rrtmgp
   use mo_rrtmgp_util_string, only: lower_case, string_in_array, string_loc_in_array
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
-  use mo_gas_optics,         only: ty_gas_optics
+  use mo_gas_optics,         only: ty_gas_optics, combine_abs_and_rayleigh
   implicit none
   private
   real(wp), parameter :: pi = acos(-1._wp)
@@ -1975,94 +1975,6 @@ contains
     end do
   end subroutine create_gpoint_flavor
 
- !--------------------------------------------------------------------------------------------------------------------
- !
- ! Utility function to combine optical depths from gas absorption and Rayleigh scattering
- !   (and reorder them for convenience, while we're at it)
- !
- subroutine combine_abs_and_rayleigh(tau, tau_rayleigh, optical_props)
-    real(wp), dimension(:,:,:),   intent(in   ) :: tau
-    real(wp), dimension(:,:,:),   intent(in   ) :: tau_rayleigh
-    class(ty_optical_props_arry), intent(inout) :: optical_props
-
-    integer :: icol, ilay, igpt, ncol, nlay, ngpt, nmom
-    real(wp) :: t
-
-    ncol = size(tau, 1)
-    nlay = size(tau, 2)
-    ngpt = size(tau, 3)
-    select type(optical_props)
-      type is (ty_optical_props_1scl)
-        !
-        ! Extinction optical depth
-        !
-        !$acc parallel loop gang vector collapse(3) default(present)
-        !$omp target teams distribute parallel do simd collapse(3)
-        do igpt = 1, ngpt
-          do ilay = 1, nlay
-            do icol = 1, ncol
-              optical_props%tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + &
-                                         tau_rayleigh(icol,ilay,igpt)
-            end do
-          end do
-        end do
-      !
-      ! asymmetry factor or phase function moments
-      !
-      type is (ty_optical_props_2str)
-        !
-        ! Extinction optical depth and single scattering albedo
-        !
-        !$acc parallel loop gang vector collapse(3) default(present)
-        !$omp target teams distribute parallel do simd collapse(3)
-        do igpt = 1, ngpt
-          do ilay = 1, nlay
-            do icol = 1, ncol
-              t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
-              if(t > 2._wp * tiny(t)) then
-                 optical_props%ssa(icol,ilay,igpt) = tau_rayleigh(icol,ilay,igpt) / t
-               else
-                 optical_props%ssa(icol,ilay,igpt) = 0._wp
-               end if
-               optical_props%tau(icol,ilay,igpt) = t
-             end do
-          end do
-        end do
-        call zero_array(ncol, nlay, ngpt, optical_props%g)
-      type is (ty_optical_props_nstr)
-        !
-        ! Extinction optical depth and single scattering albedo
-        !
-        !$acc parallel loop gang vector collapse(3) default(present)
-        !$omp target teams distribute parallel do simd collapse(3)
-        do igpt = 1, ngpt
-          do ilay = 1, nlay
-            do icol = 1, ncol
-              t = tau(icol,ilay,igpt) + tau_rayleigh(icol,ilay,igpt)
-              if(t > 2._wp * tiny(t)) then
-                 optical_props%ssa(icol,ilay,igpt) = tau_rayleigh(icol,ilay,igpt) / t
-               else
-                 optical_props%ssa(icol,ilay,igpt) = 0._wp
-               end if
-               optical_props%tau(icol,ilay,igpt) = t
-             end do
-          end do
-        end do
-        nmom = size(optical_props%p, 1)
-        call zero_array(nmom, ncol, nlay, ngpt, optical_props%p)
-        if(nmom >= 2) then
-          !$acc parallel loop gang vector collapse(3) default(present)
-          !$omp target teams distribute parallel do simd collapse(3)
-          do igpt = 1, ngpt
-            do ilay = 1, nlay
-              do icol = 1, ncol
-                optical_props%p(2,icol,ilay,igpt) = 0.1_wp
-              end do
-            end do
-          end do
-        end if
-      end select
-  end subroutine combine_abs_and_rayleigh
 
   !--------------------------------------------------------------------------------------------------------------------
   ! Sizes of tables: pressure, temperate, eta (mixing fraction)

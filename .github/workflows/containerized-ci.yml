@@ -7,13 +7,6 @@ on:
     branches-ignore:
     - documentation
 
-defaults:
-  run:
-    # Enable compilers by using login shell:
-    #   Contrary to what the documentation says, GitHub Actions override the
-    #   entrypoint: https://github.com/actions/runner/issues/1964
-    shell: bash -leo pipefail {0}
-
 jobs:
   Containerized-CI:
     runs-on: ubuntu-22.04

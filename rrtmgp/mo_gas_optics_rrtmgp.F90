@@ -1729,7 +1729,7 @@ contains
       !$acc           delete(this%minor_limits_gpt_lower) &
       !$acc           delete(this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
       !$acc           delete(this%idx_minor_lower, this%idx_minor_scaling_lower)  &
-      !$acc           delete(this%kminor_start_lower, this%kminor_lower)
+      !$acc           delete(this%kminor_start_lower, this%kminor_lower) &
       !$acc           delete(this%minor_limits_gpt_upper) &
       !$acc           delete(this%minor_scales_with_density_upper, this%scale_by_complement_upper)  &
       !$acc           delete(this%idx_minor_upper, this%idx_minor_scaling_upper)  &
@@ -1739,7 +1739,7 @@ contains
       !$omp map(release:this%minor_limits_gpt_lower) &
       !$omp map(release:this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
       !$omp map(release:this%idx_minor_lower, this%idx_minor_scaling_lower)  &
-      !$omp map(release:this%kminor_start_lower, this%kminor_lower)
+      !$omp map(release:this%kminor_start_lower, this%kminor_lower) &
       !$omp map(release:this%minor_limits_gpt_upper) &
       !$omp map(release:this%minor_scales_with_density_upper, this%scale_by_complement_upper)  &
       !$omp map(release:this%idx_minor_upper, this%idx_minor_scaling_upper)  &

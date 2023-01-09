@@ -9,7 +9,10 @@ on:
 
 defaults:
   run:
-    shell: bash
+    # Enable compilers by using login shell:
+    #   Contrary to what the documentation says, GitHub Actions override the
+    #   entrypoint: https://github.com/actions/runner/issues/1964
+    shell: bash -leo pipefail {0}
 
 jobs:
   Containerized-CI:
@@ -26,8 +29,7 @@ jobs:
         - fortran-compiler: nvfortran
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
           image: "earthsystemradiation/rte-rrtmgp-ci:nvfortran"
-        - netcdf-c: /home/runner/netcdf-c
-        - netcdf-fortran: /home/runner/netcdf-fortran
+        - netcdf-fortran: /opt/netcdf-fortran
     container:
       image: ${{ matrix.image }}
     env:
@@ -35,7 +37,7 @@ jobs:
       FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: ${{ matrix.fcflags }}
       # Make variables:
-      NCHOME: ${{ matrix.netcdf-c }}
+      NCHOME: /dummy
       NFHOME: ${{ matrix.netcdf-fortran }}
       RRTMGP_ROOT: ${{ github.workspace }}
       RTE_KERNELS: ${{ matrix.rte-kernels }}
@@ -47,16 +49,6 @@ jobs:
     # Checks-out repository under $GITHUB_WORKSPACE
     #
     - uses: actions/checkout@v3
-    #
-    # Install Zstd
-    #
-    - name: Install Zstd
-      run: |
-        # We skip 'apt-get update' to keep this step lightweight. However, that
-        # might lead to a failure, which we tolerate because the only reason we
-        # run it is to make cache files compatible across workflows.
-        # TODO: update the containers so that we could skip the following:
-        apt-get install zstd || true
     #
     # Cache RFMIP files
     #
@@ -80,14 +72,6 @@ jobs:
             cp "${file}" "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/"
           fi
         done
-    #
-    # Finalize build environment
-    #
-    - name: Finalize build environment
-      if: contains('ifort ifx', matrix.fortran-compiler)
-      run: |
-        # TODO: update the Intel container so that we do not have to the following:
-        echo "BASH_ENV=/opt/intel/oneapi/setvars.sh" >> "${GITHUB_ENV}"
     #
     # Build libraries, examples and tests
     #

@@ -36,27 +36,20 @@ module mo_aerosol_optics
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
   implicit none
+
+  ! MERRA2/GOCART aerosol types
+  integer, parameter, public :: merra_aero_dust = 1      ! Dust
+  integer, parameter, public :: merra_aero_salt = 2      ! Salt
+  integer, parameter, public :: merra_aero_sulf = 3      ! sulfate
+  integer, parameter, public :: merra_aero_bcar_rh = 4   ! black carbon, hydrophilic
+  integer, parameter, public :: merra_aero_bcar = 5      ! black carbon, hydrophobic
+  integer, parameter, public :: merra_aero_ocar_rh = 6   ! organic carbon, hydrophilic
+  integer, parameter, public :: merra_aero_ocar = 7      ! organic carbon, hydrophobic
+
   private
   ! -----------------------------------------------------------------------------------
   type, extends(ty_optical_props), public :: ty_aerosol_optics
     private
-    !
-    ! Aerosol type identifiers (MERRA2/GOCART aerosol climotology)
-    !
-    ! dust
-    integer :: aero_dust = 1
-    ! sea-salt
-    integer :: aero_salt = 2
-    ! sulfate
-    integer :: aero_sulf = 3
-    ! black carbon (hydrophilic)
-    integer :: aero_bcar_rh = 4
-    ! black carbon (hydrophobic)
-    integer :: aero_bcar = 5
-    ! organic carbon (hydrophilic)
-    integer :: aero_ocar_rh = 6
-    ! organic carbon (hydrophobic)
-    integer :: aero_ocar = 7
     !
     ! Lookup table information
     !
@@ -291,13 +284,13 @@ contains
               intent(in  ) :: this
     integer,  intent(in  ) :: aero_type(:,:)   ! MERRA2/GOCART aerosol type 
                                                ! Dimensions: (ncol,nlay)
-                                               ! 1 = aero_dust    (dust)
-                                               ! 2 = aero_salt    (salt)
-                                               ! 3 = aero_sulf    (sulfate)
-                                               ! 4 = aero_bcar_rh (black carbon, hydrophilic)
-                                               ! 5 = aero_bcar    (black carbon, hydrophobic)
-                                               ! 6 = aero_ocar_rh (organic carbon, hydrophilic)
-                                               ! 7 = aero_ocar    (organic carbon, hydrophobic)
+                                               ! 1 = merra_aero_dust    (dust)
+                                               ! 2 = merra_aero_salt    (salt)
+                                               ! 3 = merra_aero_sulf    (sulfate)
+                                               ! 4 = merra_aero_bcar_rh (black carbon, hydrophilic)
+                                               ! 5 = merra_aero_bcar    (black carbon, hydrophobic)
+                                               ! 6 = merra_aero_ocar_rh (organic carbon, hydrophilic)
+                                               ! 7 = merra_aero_ocar    (organic carbon, hydrophobic)
     real(wp), intent(in  ) :: aero_size(:,:)   ! aerosol size for dust and sea-salt
                                                ! Dimensions: (ncol,nlay)
     real(wp), intent(in  ) :: aero_mass(:,:)   ! aerosol mass column (g/m2)
@@ -411,8 +404,6 @@ contains
                                     aeromsk, aero_type, aero_size, aero_mass, relhum,           &
                                     this%aero_bin_lo, this%aero_bin_hi, this%aero_rh,           &
                                     this%rh_nsteps, this%rh_step_sizes, this%rh_offsets,        &
-                                    this%aero_dust, this%aero_salt, this%aero_sulf,             &
-                                    this%aero_bcar, this%aero_bcar_rh, this%aero_ocar, this%aero_ocar_rh, &
                                     this%aero_dust_ext, this%aero_dust_ssa, this%aero_dust_asy, &
                                     this%aero_salt_ext, this%aero_salt_ssa, this%aero_salt_asy, &
                                     this%aero_sulf_ext, this%aero_sulf_ssa, this%aero_sulf_asy, &
@@ -514,8 +505,6 @@ contains
                                     mask, type, size,  mass, rh,                    &
                                     aero_bin_lo, aero_bin_hi, aero_rh,              &
                                     rh_nsteps, rh_step_sizes, rh_offsets,           &
-                                    aero_dust, aero_salt, aero_sulf,                &
-                                    aero_bcar, aero_bcar_rh, aero_ocar, aero_ocar_rh, &
                                     tau_dust_table, ssa_dust_table, asy_dust_table, &
                                     tau_salt_table, ssa_salt_table, asy_salt_table, &
                                     tau_sulf_table, ssa_sulf_table, asy_sulf_table, &
@@ -535,9 +524,6 @@ contains
     integer,     dimension(2),             intent(in) :: rh_nsteps
     real(wp),    dimension(2),             intent(in) :: rh_step_sizes, rh_offsets
 
-    integer,                               intent(in) :: aero_dust, aero_salt, aero_sulf
-    integer,                               intent(in) :: aero_bcar, aero_bcar_rh, aero_ocar, aero_ocar_rh
- 
     real(wp),    dimension(nbin,    nbnd), intent(in) :: tau_dust_table, ssa_dust_table, asy_dust_table
     real(wp),    dimension(nbin,nrh,nbnd), intent(in) :: tau_salt_table, ssa_salt_table, asy_salt_table
     real(wp),    dimension(     nrh,nbnd), intent(in) :: tau_sulf_table, ssa_sulf_table, asy_sulf_table
@@ -567,7 +553,7 @@ contains
             fint = (rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2) - (index-1)
           endif
           ! dust
-          if (mask(icol,ilay) .and. type(icol,ilay) == aero_dust) then
+          if (mask(icol,ilay) .and. type(icol,ilay) == merra_aero_dust) then
             t   = mass(icol,ilay) * tau_dust_table(ibin,ibnd)
             ts  = t               * ssa_dust_table(ibin,ibnd)
             taussag(icol,ilay,ibnd) =  &
@@ -575,7 +561,7 @@ contains
             taussa (icol,ilay,ibnd) = ts
             tau    (icol,ilay,ibnd) = t
           ! sea-salt  (IN PROGRESS)
-          elseif (mask(icol,ilay) .and. type(icol,ilay) == aero_salt) then
+          elseif (mask(icol,ilay) .and. type(icol,ilay) == merra_aero_salt) then
             t   = mass(icol,ilay) * &
                   (tau_salt_table(ibin,index,ibnd) + fint * (tau_salt_table(ibin,index+1,ibnd) - tau_salt_table(ibin,index,ibnd)))
             ts  = t              * &
@@ -586,7 +572,7 @@ contains
             taussa (icol,ilay,ibnd) = ts
             tau    (icol,ilay,ibnd) = t
           ! sulfate  (IN PROGRESS)
-          elseif (mask(icol,ilay) .and. type(icol,ilay) == aero_sulf) then
+          elseif (mask(icol,ilay) .and. type(icol,ilay) == merra_aero_sulf) then
             t   = mass(icol,ilay) * &
                   (tau_sulf_table(index,  ibnd) + fint * (tau_sulf_table(index+1,ibnd) - tau_sulf_table(index,ibnd)))
             ts  = t              * &
@@ -597,7 +583,7 @@ contains
             taussa (icol,ilay,ibnd) = ts
             tau    (icol,ilay,ibnd) = t
           ! black carbon - hydrophilic  (IN PROGRESS)
-          elseif (mask(icol,ilay) .and. type(icol,ilay) == aero_bcar_rh) then
+          elseif (mask(icol,ilay) .and. type(icol,ilay) == merra_aero_bcar_rh) then
             t   = mass(icol,ilay) * &
                   (tau_bcar_rh_table(index,  ibnd) + fint * (tau_bcar_rh_table(index+1,ibnd) - tau_bcar_rh_table(index,ibnd)))
             ts  = t              * &
@@ -608,7 +594,7 @@ contains
             taussa (icol,ilay,ibnd) = ts
             tau    (icol,ilay,ibnd) = t
           ! black carbon - hydrophobic
-          elseif (mask(icol,ilay) .and. type(icol,ilay) == aero_bcar) then
+          elseif (mask(icol,ilay) .and. type(icol,ilay) == merra_aero_bcar) then
             t   = mass(icol,ilay) * tau_bcar_table(ibnd)
             ts  = t               * ssa_bcar_table(ibnd)
             taussag(icol,ilay,ibnd) =  &
@@ -616,7 +602,7 @@ contains
             taussa (icol,ilay,ibnd) = ts
             tau    (icol,ilay,ibnd) = t
           ! organic carbon - hydrophilic  (IN PROGRESS)
-          elseif (mask(icol,ilay) .and. type(icol,ilay) == aero_ocar_rh) then
+          elseif (mask(icol,ilay) .and. type(icol,ilay) == merra_aero_ocar_rh) then
             t   = mass(icol,ilay) * &
                   (tau_ocar_rh_table(index,  ibnd) + fint * (tau_ocar_rh_table(index+1,ibnd) - tau_ocar_rh_table(index,ibnd)))
             ts  = t              * &
@@ -627,7 +613,7 @@ contains
             taussa (icol,ilay,ibnd) = ts
             tau    (icol,ilay,ibnd) = t
           ! organic carbon - hydrophobic
-          elseif (mask(icol,ilay) .and. type(icol,ilay) == aero_ocar) then
+          elseif (mask(icol,ilay) .and. type(icol,ilay) == merra_aero_ocar) then
             t   = mass(icol,ilay) * tau_ocar_table(ibnd)
             ts  = t               * ssa_ocar_table(ibnd)
             taussag(icol,ilay,ibnd) =  &

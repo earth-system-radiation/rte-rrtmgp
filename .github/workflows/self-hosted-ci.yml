@@ -66,7 +66,7 @@ jobs:
         #     module load cray-python
         #     python3 -m venv /scratch/snx3000/rpincus/rte-rrtmgp-python
         #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install --upgrade pip
-        #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install netCDF4 xarray dask[array]
+        #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install dask[array] netCDF4 numpy xarray
         echo "PATH=\"/scratch/snx3000/rpincus/rte-rrtmgp-python/bin:\${PATH}\"" >> "${BASH_ENV}"
         # Make bash run the above on startup:
         echo "BASH_ENV=${BASH_ENV}" >> "${GITHUB_ENV}"

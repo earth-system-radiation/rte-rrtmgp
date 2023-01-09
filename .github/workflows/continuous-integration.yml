@@ -66,7 +66,7 @@ jobs:
       with:
         miniforge-version: latest
         activate-environment: rte_rrtmgp_test
-        environment-file: environment.yml
+        environment-file: environment-noplots.yml
         python-version: 3.9
         auto-activate-base: false
         # Use the cache properly:

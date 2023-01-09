@@ -14,6 +14,7 @@ defaults:
 jobs:
   CI:
     runs-on: daint
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -23,16 +24,19 @@ jobs:
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
           fcflags: "-O3 -acc -Mallocatable=03 -gopt"
+          experimental: false
         - config-name: cce-cpu-icon-production
           rte-kernels: default
           compiler-modules: "PrgEnv-cray"
           # Production flags for Icon model
           fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
+          experimental: false
         - config-name: cce-gpu-openmp
           rte-kernels: openacc
           compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
+          experimental: true
     env:
       # Core variables:
       FC: ftn

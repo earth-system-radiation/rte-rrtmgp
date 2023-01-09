@@ -289,10 +289,21 @@ contains
 
     class(ty_aerosol_optics), &
               intent(in  ) :: this
-    integer,  intent(in  ) :: aero_type(:,:)   ! MERRA2/GOCART aerosol type
+    integer,  intent(in  ) :: aero_type(:,:)   ! MERRA2/GOCART aerosol type 
+                                               ! Dimensions: (ncol,nlay)
+                                               ! 1 = aero_dust    (dust)
+                                               ! 2 = aero_salt    (salt)
+                                               ! 3 = aero_sulf    (sulfate)
+                                               ! 4 = aero_bcar_rh (black carbon, hydrophilic)
+                                               ! 5 = aero_bcar    (black carbon, hydrophobic)
+                                               ! 6 = aero_ocar_rh (organic carbon, hydrophilic)
+                                               ! 7 = aero_ocar    (organic carbon, hydrophobic)
     real(wp), intent(in  ) :: aero_size(:,:)   ! aerosol size for dust and sea-salt
+                                               ! Dimensions: (ncol,nlay)
     real(wp), intent(in  ) :: aero_mass(:,:)   ! aerosol mass column (g/m2)
+                                               ! Dimensions: (ncol,nlay)
     real(wp), intent(in  ) :: relhum(:,:)      ! relative humidity (fraction, 0-1)
+                                               ! Dimensions: (ncol,nlay)
 
     class(ty_optical_props_arry), &
               intent(inout) :: optical_props
@@ -302,10 +313,7 @@ contains
     ! ------- Local -------
     logical(wl), dimension(size(aero_type,1), size(aero_type,2)) :: aeromsk
     real(wp),    dimension(size(aero_type,1), size(aero_type,2), size(this%aero_dust_ext,2)) :: &
-!    real(wp),    dimension(size(aero_type,1), size(aero_type,2), this%get_nband()) :: &
                  atau, ataussa, ataussag
-                ! ltau, ltaussa, ltaussag, itau, itaussa, itaussag
-                ! Optical properties: tau, tau*ssa, tau*ssa*g
     integer  :: ncol, nlay, nbnd, nbin, nrh
     integer  :: icol, ilay, ibnd, ibin
     ! scalars for total tau, tau*ssa
@@ -327,10 +335,8 @@ contains
     nlay = size(aero_type,2)
     nbin = size(this%aero_bin_lo,1)
     nrh = size(this%aero_rh,1)
-!    nbnd = this%get_nband()
     nbnd = size(this%aero_dust_ext,2)
 
-    write(61,*) 'Aerosol Optics: checking arrays...'
     !
     ! Array sizes
     !
@@ -359,18 +365,17 @@ contains
       if(error_msg /= "") return
     end if
 
-    !$acc data copyin(clwp, ciwp, reliq, reice)                         &
-    !$acc      create(ltau, ltaussa, ltaussag, itau, itaussa, itaussag) &
-    !$acc      create(liqmsk,icemsk)
-    !$omp target data map(to:clwp, ciwp, reliq, reice) &
-    !$omp map(alloc:ltau, ltaussa, ltaussag, itau, itaussa, itaussag) &
-    !$omp map(alloc:liqmsk, icemsk)
+    !$acc data copyin(aero_type, aero_size, aero_mass, relhum)                         &
+    !$acc      create(atau, ataussa, ataussag) &
+    !$acc      create(aeromsk)
+    !$omp target data map(to:aero_type, aero_size, aero_mass, relhum) &
+    !$omp map(alloc:atau, ataussa, ataussag) &
+    !$omp map(alloc:aeromsk)
     !
     ! Aerosol mask; don't need aerosol optics if there's no aerosol
     !
     !$acc parallel loop gang vector default(none) collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
-    write(61,*) 'Aerosol Optics: defining aerosol mask...'
     do ilay = 1, nlay
       do icol = 1, ncol
         aeromsk(icol,ilay) = aero_type(icol,ilay) > 0
@@ -402,7 +407,6 @@ contains
         !
         ! Aerosol
         !
-        write(61,*) 'Aerosol Optics: computing preliminary optics...'
         call compute_all_from_table(ncol, nlay, nbnd, nbin, nrh,                                &
                                     aeromsk, aero_type, aero_size, aero_mass, relhum,           &
                                     this%aero_bin_lo, this%aero_bin_hi, this%aero_rh,           &
@@ -424,7 +428,6 @@ contains
       ! Combine liquid and ice contributions into total cloud optical properties
       !   See also the increment routines in mo_optical_props_kernels
       !
-      write(61,*) 'Aerosol Optics: computing final optics...'
       select type(optical_props)
       type is (ty_optical_props_1scl)
         !$acc parallel loop gang vector default(none) collapse(3) &
@@ -437,8 +440,6 @@ contains
             do icol = 1, ncol
               ! Absorption optical depth  = (1-ssa) * tau = tau - taussa
               optical_props%tau(icol,ilay,ibnd) = (atau(icol,ilay,ibnd) - ataussa(icol,ilay,ibnd))
-!              optical_props%tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) + &
-!                                                  (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd))
             end do
           end do
         end do
@@ -456,12 +457,6 @@ contains
                                                         max(epsilon(tau), taussa)
               optical_props%ssa(icol,ilay,ibnd) = taussa/max(epsilon(tau), tau)
               optical_props%tau(icol,ilay,ibnd) = tau
-!              tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd)
-!              taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd)
-!              optical_props%g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / &
-!                                                        max(epsilon(tau), taussa)
-!              optical_props%ssa(icol,ilay,ibnd) = taussa/max(epsilon(tau), tau)
-!              optical_props%tau(icol,ilay,ibnd) = tau
             end do
           end do
         end do
@@ -478,6 +473,11 @@ contains
   !
   !--------------------------------------------------------------------------------------------------------------------
   function get_aerosol_size_bin(nbin, aero_bin_lo, aero_bin_hi, aero_size) result(ibin)
+  !--------------------------------------------------------------------------------------------------------------------
+  ! Purpose: For an input aerosol particle size, return the corresponding bin number
+  !          from the MERRA aerosol optical property particle size dimension as defined
+  !          by aero_bin_lo and aero_bin_hi. 
+  !--------------------------------------------------------------------------------------------------------------------
     integer,                   intent(in   ) :: nbin
     real(wp), dimension(nbin), intent(in   ) :: aero_bin_lo, aero_bin_hi
     real(wp),                  intent(in   ) :: aero_size
@@ -489,9 +489,8 @@ contains
     ibin = 0
 
     error_msg = ''
-    if (aero_size .lt. aero_bin_lo(1) .or. aero_size .gt. aero_bin_hi(nbin)) then
+    if(any_vals_outside(aero_size, aero_bin_lo(1), aero_bin_hi(nbin))) &
       error_msg = "get_aerosol_size_bin(): requested aerosol size outside of allowable range"
-    endif
  
     do i=1,nbin 
        if (aero_size .ge. aero_bin_lo(i) .and. aero_size .le. aero_bin_hi(i)) then
@@ -556,10 +555,6 @@ contains
     ! ---------------------------
     !$acc parallel loop gang vector default(present) collapse(3)
     !$omp target teams distribute parallel do simd collapse(3)
-    write(61,*) 'Aerosol Optics - Compute All: starting loops...'
-    write(61,*) 'rh_nsteps = ', rh_nsteps(1), rh_nsteps(2)
-    write(61,*) 'rh_step_sizes = ', rh_step_sizes(1), rh_step_sizes(2)
-    write(61,*) 'rh_offsets = ', rh_offsets(1), rh_offsets(2)
     do ibnd = 1, nbnd
       do ilay = 1,nlay
         do icol = 1, ncol
@@ -567,33 +562,14 @@ contains
           if (mask(icol,ilay) .and. rh(icol,ilay) .le. rh_offsets(2)) then
             index = min(floor((rh(icol,ilay) - rh_offsets(1))/rh_step_sizes(1))+1, rh_nsteps(1)-1)
             fint = (rh(icol,ilay) - rh_offsets(1))/rh_step_sizes(1) - (index-1)
-            write(61,*) 'Aerosol Optics - Compute All: deriving rh index/fint (low)...'
-            write(61,*) 'ibnd, icol, ilay = ', ibnd, icol, ilay
-            write(61,*) 'index, fint = ', index, fint
-            write(61,*) 'rh = ', rh(icol,ilay)
           elseif (mask(icol,ilay) .and. rh(icol,ilay) .gt. rh_offsets(2)) then
             index = min(floor((rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2))+1, rh_nsteps(2)-1)
             fint = (rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2) - (index-1)
-            write(61,*) 'Aerosol Optics - Compute All: deriving rh index/fint (high)...'
-            write(61,*) 'ibnd, icol, ilay = ', ibnd, icol, ilay
-            write(61,*) 'index, fint = ', index, fint
-            write(61,*) 'rh = ', rh(icol,ilay)
           endif
           ! dust
           if (mask(icol,ilay) .and. type(icol,ilay) == aero_dust) then
-            write(61,*) 'Aerosol Optics - Compute All: deriving dust optical props...'
-            write(61,*) 'ibnd, icol, ilay = ', ibnd, icol, ilay
-            write(61,*) 'index, fint = ', index, fint
             t   = mass(icol,ilay) * tau_dust_table(ibin,ibnd)
             ts  = t               * ssa_dust_table(ibin,ibnd)
-            if (ilay .ge. 5 .and. ilay .le. 7) then 
-            write(61,*) 'Aerosol Optics - Compute All: deriving dust optical props...'
-            write(61,*) 'ibnd, icol, ilay = ', ibnd, icol, ilay
-            write(61,*) 'index, fint = ', index, fint
-            write(61,*) 't = ', t
-            write(61,*) 'ts = ', ts
-            write(61,*) 't-ts = ', t-ts
-            endif
             taussag(icol,ilay,ibnd) =  &
                   ts              * asy_dust_table(ibin,ibnd)
             taussa (icol,ilay,ibnd) = ts
@@ -604,16 +580,6 @@ contains
                   (tau_salt_table(ibin,index,ibnd) + fint * (tau_salt_table(ibin,index+1,ibnd) - tau_salt_table(ibin,index,ibnd)))
             ts  = t              * &
                   (ssa_salt_table(ibin,index,ibnd) + fint * (ssa_salt_table(ibin,index+1,ibnd) - ssa_salt_table(ibin,index,ibnd)))
-            if (ilay .le. 1) then
-            write(61,*) 'Aerosol Optics - Compute All: deriving salt optical props...'
-            write(61,*) 'ibnd, icol, ilay = ', ibnd, icol, ilay
-            write(61,*) 'index, fint = ', index, fint
-            write(61,*) 'tau_salt_table (index+1, index) = ', tau_salt_table(ibin,index+1,ibnd), tau_salt_table(ibin,index,ibnd)
-            write(61,*) 'ssa_salt_table (index+1, index) = ', ssa_salt_table(ibin,index+1,ibnd), ssa_salt_table(ibin,index,ibnd)
-            write(61,*) 't = ', t
-            write(61,*) 'ts = ', ts
-            write(61,*) 't-ts = ', t-ts
-            endif
             taussag(icol,ilay,ibnd) =  &
                   ts             * &
                   (asy_salt_table(ibin,index,ibnd) + fint * (asy_salt_table(ibin,index+1,ibnd) - asy_salt_table(ibin,index,ibnd)))

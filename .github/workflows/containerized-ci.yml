@@ -25,7 +25,6 @@ jobs:
         - fortran-compiler: nvfortran
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
           image: "earthsystemradiation/rte-rrtmgp-ci:nvfortran"
-        - netcdf-fortran: /opt/netcdf-fortran
     container:
       image: ${{ matrix.image }}
     env:
@@ -34,7 +33,7 @@ jobs:
       FCFLAGS: ${{ matrix.fcflags }}
       # Make variables:
       NCHOME: /dummy
-      NFHOME: ${{ matrix.netcdf-fortran }}
+      NFHOME: /opt/netcdf-fortran
       RRTMGP_ROOT: ${{ github.workspace }}
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:

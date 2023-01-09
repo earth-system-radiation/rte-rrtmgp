@@ -18,22 +18,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - config_name: nvidia-gpu-acc
+        - config-name: nvidia-gpu-acc
           rte-kernels: openacc
-          compiler_modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
+          compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
           fcflags: "-O3 -acc -Mallocatable=03 -gopt"
-        - config_name: cce-cpu-icon-production
+        - config-name: cce-cpu-icon-production
           rte-kernels: default
-          compiler_modules: "PrgEnv-cray"
+          compiler-modules: "PrgEnv-cray"
           # Production flags for Icon model
           fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
-        - config_name: cce-gpu-openmp
+        - config-name: cce-gpu-openmp
           rte-kernels: openacc
-          compiler_modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05"
+          compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
-
     env:
       # Core variables:
       FC: ftn
@@ -44,8 +43,6 @@ jobs:
       RRTMGP_ROOT: ${{ github.workspace }}
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
-      # Auxiliary variables:
-      MODULES: "daint-gpu ${{ matrix.compiler_modules }} cray-netcdf cray-hdf5"
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -60,7 +57,7 @@ jobs:
         # therefore, we use ${BASH_ENV} but only when necessary:
         BASH_ENV="${GITHUB_WORKSPACE}/.bash"
         echo "source '${GITHUB_WORKSPACE}/.github/workflows/module_switcher'" >> "${BASH_ENV}"
-        echo "switch_for_module ${MODULES}" >> "${BASH_ENV}"
+        echo "switch_for_module daint-gpu ${{ matrix.compiler-modules }} cray-netcdf cray-hdf5" >> "${BASH_ENV}"
         # Use custom Python environment:
         #   The environment can be re-generated as follows:
         #     module load cray-python

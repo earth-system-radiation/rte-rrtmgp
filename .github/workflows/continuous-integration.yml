@@ -20,16 +20,13 @@ jobs:
       matrix:
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
         rte-kernels: [default, openacc]
-        include:
-        - fcflags: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
-        - netcdf-fortran: /usr
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: ${{ matrix.fcflags }}
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
       # Make variables:
       NCHOME: /dummy
-      NFHOME: ${{ matrix.netcdf-fortran }}
+      NFHOME: /usr
       RRTMGP_ROOT: ${{ github.workspace }}
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:

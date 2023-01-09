@@ -20,10 +20,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        fortran-compiler: [ifort, nvfortran]
+        fortran-compiler: [ifort, ifx, nvfortran]
         rte-kernels: [default, openacc]
         include:
         - fortran-compiler: ifort
+          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+          image: "earthsystemradiation/rte-rrtmgp-ci:ifort"
+        - fortran-compiler: ifx
           fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
           image: "earthsystemradiation/rte-rrtmgp-ci:ifort"
         - fortran-compiler: nvfortran

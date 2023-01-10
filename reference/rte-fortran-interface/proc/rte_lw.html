@@ -78,249 +78,122 @@
   <div class="row">
     <h1>rte_lw
       <small>Function</small>
-      
     </h1>
-      <div class="row" id="info-bar">
-    <div class="col-lg-12">
-      <div class="well well-sm">
-        <ul class="list-inline" style="margin-bottom:0px;display:inline">
-            <li id="meta-license"><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li>
-
-          <li id="statements"><i class="fa fa-list-ol"></i>
-            <a data-toggle="tooltip"
-               data-placement="bottom" data-html="true"
-               title="88.5% of total for procedures.">169 statements</a>
-          </li>
-
-            <li id="source-file">
-              <i class="fa fa-code"></i>
-              <a href="../src/mo_rte_lw.F90"> Source File</a>
-            </li>
-        </ul>
-        <ol class="breadcrumb in-well text-right">
-              <li><a href='../sourcefile/mo_rte_lw.f90.html'>mo_rte_lw.F90</a></li>
-              <li><a href='../module/mo_rte_lw.html'>mo_rte_lw</a></li>
-          <li class="active">rte_lw</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-  <script>
-    $(function () {
-    $('[data-toggle="tooltip"]').tooltip()
-    })
-  </script>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="88.5% of total for procedures.">169 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_rte_lw.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li><a href='../sourcefile/mo_rte_lw.f90.html'>mo_rte_lw.F90</a></li>
+     <li><a href='../module/mo_rte_lw.html'>mo_rte_lw</a></li>
+     <li class="active">rte_lw</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
 
   </div>
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-      <div id="sidebar">
-      <h3>Contents</h3>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<em>None</em>
 
-
-  </div>
+</div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public  function rte_lw(optical_props, top_at_1, sources, sfc_emis, fluxes, inc_flux, n_gauss_angles, use_2stream, lw_Ds, flux_up_Jac) result(error_msg)  
-</h2>
+    <h2>public function rte_lw(optical_props, top_at_1, sources, sfc_emis, fluxes, inc_flux, n_gauss_angles, use_2stream, lw_Ds, flux_up_Jac) result(error_msg)</h2>
     
 
 
     <h3>Arguments</h3>
-        <table class="table table-striped varlist">
-    <thead>
-      <tr>
-        <th>Type</th>
-<th>Intent</th><th>Optional</th>        <th>Attributes</th>
-        <th></th>
-        <th>Name</th>
-        <th></th>
-    </thead>
-    <tbody>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-optical_props"></span>
-              class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),
-            </td>
+      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" id="variable-optical_props"></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>optical_props</strong></td>
-            <td>
-                <p>Set of optical properties as one or more arrays</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-top_at_1"></span>
-              logical,
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>optical_props</strong></td><td><p>Set of optical properties as one or more arrays</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-top_at_1"></span>logical,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>top_at_1</strong></td>
-            <td>
-                <p>Is the top of the domain at index 1? (if not, ordering is bottom-to-top)</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-sources"></span>
-              type(<a href='../type/ty_source_func_lw.html'>ty_source_func_lw</a>),
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>top_at_1</strong></td><td><p>Is the top of the domain at index 1? (if not, ordering is bottom-to-top)</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-sources"></span>type(<a href='../type/ty_source_func_lw.html'>ty_source_func_lw</a>),</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>sources</strong></td>
-            <td>
-                <p>Derived type with Planck source functions</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-sfc_emis"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>sources</strong></td><td><p>Derived type with Planck source functions</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-sfc_emis"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td></td>            <td>
-              dimension(:,:)
-            </td>
-            <td>::</td>
-            <td><strong>sfc_emis</strong></td>
-            <td>
-                <p>emissivity at surface [] (nband, ncol)</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-fluxes"></span>
-              class(<a href='../type/ty_fluxes.html'>ty_fluxes</a>),
-            </td>
+  <td></td>  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>sfc_emis</strong></td><td><p>emissivity at surface [] (nband, ncol)</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-fluxes"></span>class(<a href='../type/ty_fluxes.html'>ty_fluxes</a>),</td>
 <td>intent(inout)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>fluxes</strong></td>
-            <td>
-                <p>Dervied type for computing spectral integrals from g-point fluxes.
-Default computes broadband fluxes at all levels if output arrays are defined. Can be extended per user desires.</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-inc_flux"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>fluxes</strong></td><td><p>Dervied type for computing spectral integrals from g-point fluxes.
+Default computes broadband fluxes at all levels if output arrays are defined. Can be extended per user desires.</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-inc_flux"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td>optional,</td>            <td>
-              dimension(:,:), target
-            </td>
-            <td>::</td>
-            <td><strong>inc_flux</strong></td>
-            <td>
-                <p>incident flux at domain top [W/m2] (ncol, ngpts)</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-n_gauss_angles"></span>
-              integer,
-            </td>
+  <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
+  <td><strong>inc_flux</strong></td><td><p>incident flux at domain top [W/m2] (ncol, ngpts)</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-n_gauss_angles"></span>integer,</td>
 <td>intent(in),</td>
-              <td>optional</td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>n_gauss_angles</strong></td>
-            <td>
-                <p>Number of angles used in Gaussian quadrature (max 3, no-scattering solution)</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-use_2stream"></span>
-              logical,
-            </td>
+  <td>optional</td>  <td></td><td>::</td>
+  <td><strong>n_gauss_angles</strong></td><td><p>Number of angles used in Gaussian quadrature (max 3, no-scattering solution)</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-use_2stream"></span>logical,</td>
 <td>intent(in),</td>
-              <td>optional</td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>use_2stream</strong></td>
-            <td>
-                <p>When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
-Default is to use re-scaled longwave transport</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-lw_ds"></span>
-              real(kind=wp),
-            </td>
+  <td>optional</td>  <td></td><td>::</td>
+  <td><strong>use_2stream</strong></td><td><p>When 2-stream parameters (tau/ssa/g) are provided, use 2-stream methods
+Default is to use re-scaled longwave transport</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-lw_ds"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td>optional,</td>            <td>
-              dimension(:,:)
-            </td>
-            <td>::</td>
-            <td><strong>lw_Ds</strong></td>
-            <td>
-                <p>User-specifed 1/cos of transport angle per col, g-point</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-flux_up_jac"></span>
-              real(kind=wp),
-            </td>
+  <td>optional</td>  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>lw_Ds</strong></td><td><p>User-specifed 1/cos of transport angle per col, g-point</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-flux_up_jac"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
-              <td>optional,</td>            <td>
-              dimension(:,:), target
-            </td>
-            <td>::</td>
-            <td><strong>flux_up_Jac</strong></td>
-            <td>
-                <p>surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)</p>
-            </td>
-        </tr>
-    </tbody>
-  </table>
+  <td>optional</td>  <td>dimension(:,:), target</td><td>::</td>
+  <td><strong>flux_up_Jac</strong></td><td><p>surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)</p></td>
+</tr>
+</tbody>
+</table>
 
-      <h3>Return Value
-        <small>
-          <span class="anchor" id="variable-error_msg"></span>
-          character(len=128)
-        </small>
-      </h3>
-      <p>If empty, calculation was successful</p>
+   <h3>Return Value <small><span class="anchor" id="variable-error_msg"></span>character(len=128)</small></h3>
+    <p>If empty, calculation was successful</p>
     <br>
     <div class="panel panel-default">
       <div class="panel-heading">
@@ -494,27 +367,9 @@ Default is to use re-scaled longwave transport</p>
     <br>
 
     <section class="visible-xs visible-sm hidden-md">
-        <h3>Contents</h3>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
+      <h3>Contents</h3>
+ 
+<em>None</em>
 
     </section>
     <br class="visible-xs visible-sm hidden-md">
@@ -537,7 +392,7 @@ Default is to use re-scaled longwave transport</p>
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2023 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

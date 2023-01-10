@@ -76,196 +76,101 @@
   <div class="row">
     <h1>extract_subset_dim1_3d
       <small>Subroutine</small>
-      
     </h1>
-      <div class="row" id="info-bar">
-    <div class="col-lg-12">
-      <div class="well well-sm">
-        <ul class="list-inline" style="margin-bottom:0px;display:inline">
-            <li id="meta-license"><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li>
-
-          <li id="statements"><i class="fa fa-list-ol"></i>
-            <a data-toggle="tooltip"
-               data-placement="bottom" data-html="true"
-               title=" 2.4% of total for procedures.">14 statements</a>
-          </li>
-
-            <li id="source-file">
-              <i class="fa fa-code"></i>
-              <a href="../src/mo_optical_props_kernels.F90"> Source File</a>
-            </li>
-        </ul>
-        <ol class="breadcrumb in-well text-right">
-              <li><a href='../sourcefile/mo_optical_props_kernels.f90.html'>mo_optical_props_kernels.F90</a></li>
-              <li><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></li>
-          <li class="active">extract_subset_dim1_3d</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-  <script>
-    $(function () {
-    $('[data-toggle="tooltip"]').tooltip()
-    })
-  </script>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 2.4% of total for procedures.">14 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_optical_props_kernels.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li><a href='../sourcefile/mo_optical_props_kernels.f90.html'>mo_optical_props_kernels.F90</a></li>
+     <li><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></li>
+     <li class="active">extract_subset_dim1_3d</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
 
   </div>
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-      <div id="sidebar">
-      <h3>Contents</h3>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<em>None</em>
 
-
-  </div>
+</div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public pure subroutine extract_subset_dim1_3d(ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")  
-</h2>
+    <h2>public pure subroutine extract_subset_dim1_3d(ncol, nlay, ngpt, array_in, colS, colE, array_out) bind(C, name="0")</h2>
     
 
     <p>Extract a subset from the first dimension (normally columns) of a 3D field.
   Applicable to most variables e.g. tau, ssa, g</p>
 
     <h3>Arguments</h3>
-        <table class="table table-striped varlist">
-    <thead>
-      <tr>
-        <th>Type</th>
-<th>Intent</th><th>Optional</th>        <th>Attributes</th>
-        <th></th>
-        <th>Name</th>
-        <th></th>
-    </thead>
-    <tbody>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-ncol~28"></span>
-              integer,
-            </td>
+      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" id="variable-ncol~9"></span>integer,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>ncol</strong></td>
-            <td>
-                <p>Array sizes</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-nlay~25"></span>
-              integer,
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ncol</strong></td><td><p>Array sizes</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-nlay~8"></span>integer,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>nlay</strong></td>
-            <td>
-                <p>Array sizes</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-ngpt~27"></span>
-              integer,
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nlay</strong></td><td><p>Array sizes</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-ngpt~9"></span>integer,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>ngpt</strong></td>
-            <td>
-                <p>Array sizes</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-array_in"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ngpt</strong></td><td><p>Array sizes</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-array_in"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td></td>            <td>
-              dimension(ncol,nlay,ngpt)
-            </td>
-            <td>::</td>
-            <td><strong>array_in</strong></td>
-            <td>
-                <p>Array to subset</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-cols"></span>
-              integer,
-            </td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
+  <td><strong>array_in</strong></td><td><p>Array to subset</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-cols~2"></span>integer,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>colS</strong></td>
-            <td>
-                <p>Starting and ending index</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-cole"></span>
-              integer,
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>colS</strong></td><td><p>Starting and ending index</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-cole~2"></span>integer,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>colE</strong></td>
-            <td>
-                <p>Starting and ending index</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-array_out"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>colE</strong></td><td><p>Starting and ending index</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-array_out"></span>real(kind=wp),</td>
 <td>intent(out),</td>
-              <td></td>            <td>
-              dimension(colE-colS+1, nlay,ngpt)
-            </td>
-            <td>::</td>
-            <td><strong>array_out</strong></td>
-            <td>
-                <p>subset of the input array</p>
-            </td>
-        </tr>
-    </tbody>
-  </table>
+  <td></td>  <td>dimension(colE-colS+1, nlay,ngpt)</td><td>::</td>
+  <td><strong>array_out</strong></td><td><p>subset of the input array</p></td>
+</tr>
+</tbody>
+</table>
 
     <br>
     <div class="panel panel-default">
@@ -371,27 +276,9 @@
     <br>
 
     <section class="visible-xs visible-sm hidden-md">
-        <h3>Contents</h3>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
+      <h3>Contents</h3>
+ 
+<em>None</em>
 
     </section>
     <br class="visible-xs visible-sm hidden-md">
@@ -414,7 +301,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2023 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

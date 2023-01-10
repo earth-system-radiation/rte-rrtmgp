@@ -8,7 +8,7 @@
     <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
-    <title>ty_optical_props_1scl &ndash; RTE-Fortran </title>
+    <title>ty_source_func_sw &ndash; RTE-Fortran </title>
 
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/pygments.css" rel="stylesheet">
@@ -76,7 +76,7 @@
 
     <div class="container">
   <div class="row">
-    <h1>ty_optical_props_1scl
+    <h1>ty_source_func_sw
     <small>Derived Type</small>
     </h1>
     <div class="row">
@@ -87,14 +87,14 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p> 9.6% of total for derived types.</p>Including implementation: 416 statements, 17.1% of total for derived types.">11 statements</a>
+    title="<p> 9.6% of total for derived types.</p>Including implementation: 255 statements, 10.5% of total for derived types.">11 statements</a>
      </li> 
-    <li><i class="fa fa-code"></i><a href="../src/mo_optical_props.F90"> Source File</a></li>
+    <li><i class="fa fa-code"></i><a href="../src/mo_source_functions.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_optical_props.f90.html'>mo_optical_props.F90</a></li>
-     <li><a href='../module/mo_optical_props.html'>mo_optical_props</a></li>
-     <li class="active">ty_optical_props_1scl</li>
+     <li><a href='../sourcefile/mo_source_functions.f90.html'>mo_source_functions.F90</a></li>
+     <li><a href='../module/mo_source_functions.html'>mo_source_functions</a></li>
+     <li class="active">ty_source_func_sw</li>
   </ol>
 </div>
 </div>
@@ -113,41 +113,29 @@
   <h3>Contents</h3>
  
 <div class="panel panel-primary">
-  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-0">Variables</a></h3></div>
-  <div id="vars-0" class="panel-collapse collapse">
-    <div class="list-group">
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#variable-tau">tau</a>
-    </div>
-  </div>
-</div>
-<div class="panel panel-primary">
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-0">Type-Bound Procedures</a></h3></div>
   <div id="boundprocs-0" class="panel-collapse collapse">
     <div class="list-group">
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-alloc_1scl">alloc_1scl</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-bands_are_equal">bands_are_equal</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-convert_band2gpt">convert_band2gpt</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-convert_gpt2band">convert_gpt2band</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-delta_scale">delta_scale</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-expand">expand</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-finalize~3">finalize</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-finalize_1scl">finalize_1scl</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_band_lims_gpoint">get_band_lims_gpoint</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_band_lims_wavelength">get_band_lims_wavelength</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_band_lims_wavenumber">get_band_lims_wavenumber</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_gpoint_bands">get_gpoint_bands</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_name">get_name</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_nband">get_nband</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_ncol~3">get_ncol</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_ngpt">get_ngpt</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_nlay~2">get_nlay</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_subset~3">get_subset</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-gpoints_are_equal">gpoints_are_equal</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-increment">increment</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-init~4">init</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-is_initialized">is_initialized</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-set_name">set_name</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-validate~2">validate</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-alloc~2">alloc</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-bands_are_equal">bands_are_equal</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-convert_band2gpt">convert_band2gpt</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-convert_gpt2band">convert_gpt2band</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-expand">expand</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-finalize~2">finalize</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_band_lims_gpoint">get_band_lims_gpoint</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_band_lims_wavelength">get_band_lims_wavelength</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_band_lims_wavenumber">get_band_lims_wavenumber</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_gpoint_bands">get_gpoint_bands</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_name">get_name</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_nband">get_nband</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_ncol~2">get_ncol</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_ngpt">get_ngpt</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_subset~2">get_subset</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-gpoints_are_equal">gpoints_are_equal</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-init~2">init</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-is_allocated~2">is_allocated</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-is_initialized">is_initialized</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-set_name">set_name</a>
     </div>
   </div>
 </div>
@@ -157,15 +145,8 @@
     </div>
     
     <div class="col-md-9" id='text'>
-      <h2>type, public, extends(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>) :: ty_optical_props_1scl</h2>
-    <p>ty_optical_props_arry represents optical properties as arrays with dimensions
-      column, height, spectral point
-  - Class 1-scalar only (extinction) optical depth
-  -  Class two-stream adds arrays for single scattering albedo ssa and
-     asymmetry parameter needed in two-stream methods
-  - Class n-stream adds arrays for single scattering albedo ssa and
-     phase function moments (index 1 = g) for use with discrete ordinate methods</p>
-<hr>
+      <h2>type, public, extends(<a href='../type/ty_optical_props.html'>ty_optical_props</a>) :: ty_source_func_sw</h2>
+    
 <br>    <div class="panel panel-default">
       <div class="panel-heading">
   <h3 class="panel-title">Inherits</h3>
@@ -176,47 +157,32 @@
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <!-- Generated by graphviz version 2.43.0 (0)
  -->
-<!-- Title: type~~ty_optical_props_1scl~~InheritsGraph Pages: 1 -->
-<svg id="typety_optical_props_1sclInheritsGraph" width="427pt" height="32pt"
- viewBox="0.00 0.00 427.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="type~~ty_optical_props_1scl~~InheritsGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
-<title>type~~ty_optical_props_1scl~~InheritsGraph</title>
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-28 423,-28 423,4 -4,4"/>
-<!-- type~ty_optical_props_1scl -->
-<g id="type~~ty_optical_props_1scl~~InheritsGraph_node1" class="node">
-<title>type~ty_optical_props_1scl</title>
-<polygon fill="none" stroke="black" points="419,-24 295,-24 295,0 419,0 419,-24"/>
-<text text-anchor="middle" x="357" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">ty_optical_props_1scl</text>
-</g>
-<!-- type~ty_optical_props_arry -->
-<g id="type~~ty_optical_props_1scl~~InheritsGraph_node2" class="node">
-<title>type~ty_optical_props_arry</title>
-<g id="a_type~~ty_optical_props_1scl~~InheritsGraph_node2"><a xlink:href=".././type/ty_optical_props_arry.html" xlink:title="ty_optical_props_arry">
-<polygon fill="#5cb85c" stroke="#5cb85c" points="259,-24 134,-24 134,0 259,0 259,-24"/>
-<text text-anchor="middle" x="196.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ty_optical_props_arry</text>
-</a>
-</g>
-</g>
-<!-- type~ty_optical_props_1scl&#45;&gt;type~ty_optical_props_arry -->
-<g id="type~~ty_optical_props_1scl~~InheritsGraph_edge1" class="edge">
-<title>type~ty_optical_props_1scl&#45;&gt;type~ty_optical_props_arry</title>
-<path fill="none" stroke="#000000" d="M294.72,-12C286.42,-12 277.84,-12 269.38,-12"/>
-<polygon fill="#000000" stroke="#000000" points="269.14,-8.5 259.14,-12 269.14,-15.5 269.14,-8.5"/>
+<!-- Title: type~~ty_source_func_sw~~InheritsGraph Pages: 1 -->
+<svg id="typety_source_func_swInheritsGraph" width="252pt" height="32pt"
+ viewBox="0.00 0.00 252.00 32.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="type~~ty_source_func_sw~~InheritsGraph" class="graph" transform="scale(1 1) rotate(0) translate(4 28)">
+<title>type~~ty_source_func_sw~~InheritsGraph</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-28 248,-28 248,4 -4,4"/>
+<!-- type~ty_source_func_sw -->
+<g id="type~~ty_source_func_sw~~InheritsGraph_node1" class="node">
+<title>type~ty_source_func_sw</title>
+<polygon fill="none" stroke="black" points="244,-24 134,-24 134,0 244,0 244,-24"/>
+<text text-anchor="middle" x="189" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50">ty_source_func_sw</text>
 </g>
 <!-- type~ty_optical_props -->
-<g id="type~~ty_optical_props_1scl~~InheritsGraph_node3" class="node">
+<g id="type~~ty_source_func_sw~~InheritsGraph_node2" class="node">
 <title>type~ty_optical_props</title>
-<g id="a_type~~ty_optical_props_1scl~~InheritsGraph_node3"><a xlink:href=".././type/ty_optical_props.html" xlink:title="ty_optical_props">
+<g id="a_type~~ty_source_func_sw~~InheritsGraph_node2"><a xlink:href=".././type/ty_optical_props.html" xlink:title="ty_optical_props">
 <polygon fill="#5cb85c" stroke="#5cb85c" points="98,-24 0,-24 0,0 98,0 98,-24"/>
 <text text-anchor="middle" x="49" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">ty_optical_props</text>
 </a>
 </g>
 </g>
-<!-- type~ty_optical_props_arry&#45;&gt;type~ty_optical_props -->
-<g id="type~~ty_optical_props_1scl~~InheritsGraph_edge2" class="edge">
-<title>type~ty_optical_props_arry&#45;&gt;type~ty_optical_props</title>
-<path fill="none" stroke="#000000" d="M133.79,-12C125.31,-12 116.63,-12 108.22,-12"/>
-<polygon fill="#000000" stroke="#000000" points="108.12,-8.5 98.12,-12 108.12,-15.5 108.12,-8.5"/>
+<!-- type~ty_source_func_sw&#45;&gt;type~ty_optical_props -->
+<g id="type~~ty_source_func_sw~~InheritsGraph_edge1" class="edge">
+<title>type~ty_source_func_sw&#45;&gt;type~ty_optical_props</title>
+<path fill="none" stroke="#000000" d="M133.85,-12C125.48,-12 116.8,-12 108.34,-12"/>
+<polygon fill="#000000" stroke="#000000" points="108.16,-8.5 98.16,-12 108.16,-15.5 108.16,-8.5"/>
 </g>
 </g>
 </svg>
@@ -263,41 +229,29 @@
       <h3>Contents</h3>
  
 <div class="panel panel-primary">
-  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-1">Variables</a></h3></div>
-  <div id="vars-1" class="panel-collapse collapse">
-    <div class="list-group">
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#variable-tau">tau</a>
-    </div>
-  </div>
-</div>
-<div class="panel panel-primary">
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#boundprocs-1">Type-Bound Procedures</a></h3></div>
   <div id="boundprocs-1" class="panel-collapse collapse">
     <div class="list-group">
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-alloc_1scl">alloc_1scl</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-bands_are_equal">bands_are_equal</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-convert_band2gpt">convert_band2gpt</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-convert_gpt2band">convert_gpt2band</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-delta_scale">delta_scale</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-expand">expand</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-finalize~3">finalize</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-finalize_1scl">finalize_1scl</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_band_lims_gpoint">get_band_lims_gpoint</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_band_lims_wavelength">get_band_lims_wavelength</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_band_lims_wavenumber">get_band_lims_wavenumber</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_gpoint_bands">get_gpoint_bands</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_name">get_name</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_nband">get_nband</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_ncol~3">get_ncol</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_ngpt">get_ngpt</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_nlay~2">get_nlay</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-get_subset~3">get_subset</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-gpoints_are_equal">gpoints_are_equal</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-increment">increment</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-init~4">init</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-is_initialized">is_initialized</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-set_name">set_name</a>
-      <a class="list-group-item" href="../type/ty_optical_props_1scl.html#boundprocedure-validate~2">validate</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-alloc~2">alloc</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-bands_are_equal">bands_are_equal</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-convert_band2gpt">convert_band2gpt</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-convert_gpt2band">convert_gpt2band</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-expand">expand</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-finalize~2">finalize</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_band_lims_gpoint">get_band_lims_gpoint</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_band_lims_wavelength">get_band_lims_wavelength</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_band_lims_wavenumber">get_band_lims_wavenumber</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_gpoint_bands">get_gpoint_bands</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_name">get_name</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_nband">get_nband</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_ncol~2">get_ncol</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_ngpt">get_ngpt</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-get_subset~2">get_subset</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-gpoints_are_equal">gpoints_are_equal</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-init~2">init</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-is_allocated~2">is_allocated</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-is_initialized">is_initialized</a>
+      <a class="list-group-item" href="../type/ty_source_func_sw.html#boundprocedure-set_name">set_name</a>
     </div>
   </div>
 </div>
@@ -305,21 +259,6 @@
     </section>
     <br class="visible-xs visible-sm hidden-md">
 
-    <section>
-    <h2>Components</h2>
-    <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Visibility</th><th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" id="variable-tau"></span>real(kind=wp),</td>
-<td>public,</td>  <td>dimension(:,:,:), allocatable</td><td>::</td>
-  <td><strong>tau</strong></td><td></td><td></td><td><p>optical depth (ncol, nlay, ngpt)</p></td>
-</tr>
-</tbody>
-</table>
-
-    </section>
-    <br>
     
     
     
@@ -327,17 +266,16 @@
     <section>
     <h2>Type-Bound Procedures</h2>
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-alloc_1scl"></span><h3>generic, public :: <strong>alloc_1scl</strong>  => alloc_only_1scl, init_and_alloc_1scl, copy_and_alloc_1scl   </h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-alloc~2"></span><h3>generic, public :: <strong>alloc</strong>  => alloc_sw, copy_and_alloc_sw   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-            <h3>private function alloc_only_1scl(this, ncol, nlay) result(err_message)</h3><p>Straight allocation routines</p><a href="../proc/alloc_only_1scl.html" class="pull-right"><emph>Read more&hellip;</emph></a>
-    
+            <h3>private function alloc_sw(this, ncol) result(err_message)</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_1scl.html'>ty_optical_props_1scl</a>)</td>
-<td></td>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_source_func_sw.html'>ty_source_func_sw</a>),</td>
+<td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>this</strong></td><td></td>
 </tr>
@@ -346,12 +284,6 @@
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
 </tr>
 </tbody>
 </table>
@@ -360,14 +292,13 @@
 
       </li>
       <li class="list-group-item">
-            <h3>private function init_and_alloc_1scl(this, ncol, nlay, band_lims_wvn, band_lims_gpt, name) result(err_message)</h3><p>Initialization by specifying band limits and possibly g-point/band mapping</p><a href="../proc/init_and_alloc_1scl.html" class="pull-right"><emph>Read more&hellip;</emph></a>
-    
+            <h3>private function copy_and_alloc_sw(this, ncol, spectral_desc) result(err_message)</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_1scl.html'>ty_optical_props_1scl</a>)</td>
-<td></td>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_source_func_sw.html'>ty_source_func_sw</a>),</td>
+<td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>this</strong></td><td></td>
 </tr>
@@ -376,72 +307,12 @@
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>band_lims_wvn</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in),</td>
-  <td>optional</td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>band_lims_gpt</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>character(len=*),</td>
-<td>intent(in),</td>
-  <td>optional</td>  <td></td><td>::</td>
-  <td><strong>name</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-<h4>Return Value <small>character(len=128)</small></h4>  
-
-      </li>
-      <li class="list-group-item">
-            <h3>private function copy_and_alloc_1scl(this, ncol, nlay, spectral_desc, name) result(err_message)</h3><p>Initialization from an existing spectral discretization/ty_optical_props</p><a href="../proc/copy_and_alloc_1scl.html" class="pull-right"><emph>Read more&hellip;</emph></a>
-    
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_1scl.html'>ty_optical_props_1scl</a>)</td>
-<td></td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>this</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props.html'>ty_optical_props</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>spectral_desc</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>character(len=*),</td>
-<td>intent(in),</td>
-  <td>optional</td>  <td></td><td>::</td>
-  <td><strong>name</strong></td><td></td>
 </tr>
 </tbody>
 </table>
@@ -543,36 +414,6 @@
 </div>
 
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-delta_scale"></span><h3>procedure, public :: <strong>delta_scale</strong>  => delta_scale_1scl   </h3></div>
-  <ul class="list-group">
-      <li class="list-group-item">
-          <h3>private function delta_scale_1scl(this, for) result(err_message)</h3><a href="../proc/delta_scale_1scl.html" class="pull-right"><emph>Read more&hellip;</emph></a>
-    
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_1scl.html'>ty_optical_props_1scl</a>),</td>
-<td>intent(inout)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>this</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td>optional</td>  <td>dimension(:,:,:)</td><td>::</td>
-  <td><strong>for</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-<h4>Return Value <small>character(len=128)</small></h4>  
-
-      </li>
-  </ul>
-</div>
-
-     <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-expand"></span><h3>procedure, public :: <strong>expand</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
@@ -603,16 +444,15 @@
 </div>
 
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-finalize~3"></span><h3>procedure, public :: <strong>finalize</strong>  => finalize_base   </h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-finalize~2"></span><h3>procedure, public :: <strong>finalize</strong>  => finalize_sw   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private subroutine finalize_base(this)</h3><p>Base class: finalize (deallocate memory)</p><a href="../proc/finalize_base.html" class="pull-right"><emph>Read more&hellip;</emph></a>
-    
+          <h3>private subroutine finalize_sw(this)</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props.html'>ty_optical_props</a>),</td>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_source_func_sw.html'>ty_source_func_sw</a>),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>this</strong></td><td></td>
@@ -620,30 +460,6 @@
 </tbody>
 </table>
 
-
-      </li>
-  </ul>
-</div>
-
-     <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-finalize_1scl"></span><h3>procedure, public :: <strong>finalize_1scl</strong>    </h3></div>
-  <ul class="list-group">
-      <li class="list-group-item">
-          <h3>private function finalize_1scl(this) result(err_message)</h3><p>Finalize routines</p><a href="../proc/finalize_1scl.html" class="pull-right"><emph>Read more&hellip;</emph></a>
-    
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_1scl.html'>ty_optical_props_1scl</a>)</td>
-<td></td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>this</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-<h4>Return Value <small>character(len=128)</small></h4>  
 
       </li>
   </ul>
@@ -796,15 +612,15 @@
 </div>
 
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_ncol~3"></span><h3>procedure, public :: <strong>get_ncol</strong>    </h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_ncol~2"></span><h3>procedure, public :: <strong>get_ncol</strong>  => get_ncol_sw   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_ncol(this)</h3>    
+          <h3>private pure function get_ncol_sw(this)</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_source_func_sw.html'>ty_source_func_sw</a>),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>this</strong></td><td></td>
@@ -843,38 +659,15 @@
 </div>
 
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_nlay~2"></span><h3>procedure, public :: <strong>get_nlay</strong>    </h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_subset~2"></span><h3>procedure, public :: <strong>get_subset</strong>  => get_subset_range_sw   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private pure function get_nlay(this)</h3>    
+          <h3>private function get_subset_range_sw(full, start, n, subset) result(err_message)</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>this</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-<h4>Return Value <small>integer</small></h4>  
-
-      </li>
-  </ul>
-</div>
-
-     <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-get_subset~3"></span><h3>procedure, public :: <strong>get_subset</strong>  => subset_1scl_range   </h3></div>
-  <ul class="list-group">
-      <li class="list-group-item">
-          <h3>private function subset_1scl_range(full, start, n, subset) result(err_message)</h3>    
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_1scl.html'>ty_optical_props_1scl</a>),</td>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_source_func_sw.html'>ty_source_func_sw</a>),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>full</strong></td><td></td>
@@ -892,7 +685,7 @@
   <td><strong>n</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_source_func_sw.html'>ty_source_func_sw</a>),</td>
 <td>intent(inout)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>subset</strong></td><td></td>
@@ -938,42 +731,7 @@
 </div>
 
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-increment"></span><h3>procedure, public :: <strong>increment</strong>    </h3></div>
-  <div class="panel-body">
-    
-    <p>Increment another set of values</p>
-  </div>
-  <ul class="list-group">
-      <li class="list-group-item">
-          <h3>private function increment(op_in, op_io) result(err_message)</h3><p>Routines for array classes: incrementing
-  a%increment(b) adds the values of a to b, changing b and leaving a untouched</p><a href="../proc/increment.html" class="pull-right"><emph>Read more&hellip;</emph></a>
-    
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>op_in</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
-<td>intent(inout)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>op_io</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-<h4>Return Value <small>character(len=128)</small></h4>  
-
-      </li>
-  </ul>
-</div>
-
-     <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-init~4"></span><h3>generic, public :: <strong>init</strong>  => init_base, init_base_from_copy   </h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-init~2"></span><h3>generic, public :: <strong>init</strong>  => init_base, init_base_from_copy   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
             <h3>private function init_base(this, band_lims_wvn, band_lims_gpt, name) result(err_message)</h3><p>Base class: Initialization
@@ -1039,6 +797,29 @@
 </div>
 
      <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-is_allocated~2"></span><h3>procedure, public :: <strong>is_allocated</strong>  => is_allocated_sw   </h3></div>
+  <ul class="list-group">
+      <li class="list-group-item">
+          <h3>private pure function is_allocated_sw(this)</h3>    
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_source_func_sw.html'>ty_source_func_sw</a>),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+<h4>Return Value <small>logical</small></h4>  
+
+      </li>
+  </ul>
+</div>
+
+     <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-is_initialized"></span><h3>procedure, public :: <strong>is_initialized</strong>  => is_initialized_base   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
@@ -1086,30 +867,6 @@
 </tbody>
 </table>
 
-
-      </li>
-  </ul>
-</div>
-
-     <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-validate~2"></span><h3>procedure, public :: <strong>validate</strong>  => validate_1scalar   </h3></div>
-  <ul class="list-group">
-      <li class="list-group-item">
-          <h3>private function validate_1scalar(this) result(err_message)</h3><p>--- Validation</p><a href="../proc/validate_1scalar.html" class="pull-right"><emph>Read more&hellip;</emph></a>
-    
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_1scl.html'>ty_optical_props_1scl</a>),</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>this</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-<h4>Return Value <small>character(len=128)</small></h4>  
 
       </li>
   </ul>

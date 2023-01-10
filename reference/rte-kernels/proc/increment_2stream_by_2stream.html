@@ -76,250 +76,119 @@
   <div class="row">
     <h1>increment_2stream_by_2stream
       <small>Subroutine</small>
-      
     </h1>
-      <div class="row" id="info-bar">
-    <div class="col-lg-12">
-      <div class="well well-sm">
-        <ul class="list-inline" style="margin-bottom:0px;display:inline">
-            <li id="meta-license"><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li>
-
-          <li id="statements"><i class="fa fa-list-ol"></i>
-            <a data-toggle="tooltip"
-               data-placement="bottom" data-html="true"
-               title=" 3.0% of total for procedures.">18 statements</a>
-          </li>
-
-            <li id="source-file">
-              <i class="fa fa-code"></i>
-              <a href="../src/mo_optical_props_kernels.F90"> Source File</a>
-            </li>
-        </ul>
-        <ol class="breadcrumb in-well text-right">
-              <li><a href='../sourcefile/mo_optical_props_kernels.f90.html'>mo_optical_props_kernels.F90</a></li>
-              <li><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></li>
-          <li class="active">increment_2stream_by_2stream</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-  <script>
-    $(function () {
-    $('[data-toggle="tooltip"]').tooltip()
-    })
-  </script>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 3.0% of total for procedures.">18 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_optical_props_kernels.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li><a href='../sourcefile/mo_optical_props_kernels.f90.html'>mo_optical_props_kernels.F90</a></li>
+     <li><a href='../module/mo_optical_props_kernels.html'>mo_optical_props_kernels</a></li>
+     <li class="active">increment_2stream_by_2stream</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
 
   </div>
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-      <div id="sidebar">
-      <h3>Contents</h3>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<em>None</em>
 
-
-  </div>
+</div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public pure subroutine increment_2stream_by_2stream(ncol, nlay, ngpt, tau1, ssa1, g1, tau2, ssa2, g2) bind(C, name="0")  
-</h2>
+    <h2>public pure subroutine increment_2stream_by_2stream(ncol, nlay, ngpt, tau1, ssa1, g1, tau2, ssa2, g2) bind(C, name="0")</h2>
     
 
     <p>increment two-stream optical properties <script type="math/tex">\tau, \omega_0, g</script> with a second set</p>
 
     <h3>Arguments</h3>
-        <table class="table table-striped varlist">
-    <thead>
-      <tr>
-        <th>Type</th>
-<th>Intent</th><th>Optional</th>        <th>Attributes</th>
-        <th></th>
-        <th>Name</th>
-        <th></th>
-    </thead>
-    <tbody>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-ncol~14"></span>
-              integer,
-            </td>
+      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" id="variable-ncol~24"></span>integer,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>ncol</strong></td>
-            <td>
-                <p>array sizes</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-nlay~11"></span>
-              integer,
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-nlay~23"></span>integer,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>nlay</strong></td>
-            <td>
-                <p>array sizes</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-ngpt~13"></span>
-              integer,
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-ngpt~24"></span>integer,</td>
 <td>intent(in)</td>
-              <td></td>            <td>
-              
-            </td>
-            <td>::</td>
-            <td><strong>ngpt</strong></td>
-            <td>
-                <p>array sizes</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-tau1~5"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-tau1~14"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
-              <td></td>            <td>
-              dimension(ncol,nlay,ngpt)
-            </td>
-            <td>::</td>
-            <td><strong>tau1</strong></td>
-            <td>
-                <p>optical properties to be modified</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-ssa1~2"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
+  <td><strong>tau1</strong></td><td><p>optical properties to be modified</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-ssa1~8"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
-              <td></td>            <td>
-              dimension(ncol,nlay,ngpt)
-            </td>
-            <td>::</td>
-            <td><strong>ssa1</strong></td>
-            <td>
-                <p>optical properties to be modified</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-g1"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
+  <td><strong>ssa1</strong></td><td><p>optical properties to be modified</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-g1~3"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
-              <td></td>            <td>
-              dimension(ncol,nlay,ngpt)
-            </td>
-            <td>::</td>
-            <td><strong>g1</strong></td>
-            <td>
-                <p>optical properties to be modified</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-tau2~5"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
+  <td><strong>g1</strong></td><td><p>optical properties to be modified</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-tau2~14"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td></td>            <td>
-              dimension(ncol,nlay,ngpt)
-            </td>
-            <td>::</td>
-            <td><strong>tau2</strong></td>
-            <td>
-                <p>optical properties to be added to original</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-ssa2~3"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
+  <td><strong>tau2</strong></td><td><p>optical properties to be added to original</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-ssa2~9"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td></td>            <td>
-              dimension(ncol,nlay,ngpt)
-            </td>
-            <td>::</td>
-            <td><strong>ssa2</strong></td>
-            <td>
-                <p>optical properties to be added to original</p>
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-g2"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
+  <td><strong>ssa2</strong></td><td><p>optical properties to be added to original</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-g2~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td></td>            <td>
-              dimension(ncol,nlay,ngpt)
-            </td>
-            <td>::</td>
-            <td><strong>g2</strong></td>
-            <td>
-                <p>optical properties to be added to original</p>
-            </td>
-        </tr>
-    </tbody>
-  </table>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
+  <td><strong>g2</strong></td><td><p>optical properties to be added to original</p></td>
+</tr>
+</tbody>
+</table>
 
     <br>
 
     <section class="visible-xs visible-sm hidden-md">
-        <h3>Contents</h3>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
+      <h3>Contents</h3>
+ 
+<em>None</em>
 
     </section>
     <br class="visible-xs visible-sm hidden-md">
@@ -342,7 +211,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2023 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

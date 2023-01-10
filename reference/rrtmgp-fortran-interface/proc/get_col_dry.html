@@ -80,168 +80,86 @@
   <div class="row">
     <h1>get_col_dry
       <small>Function</small>
-      
     </h1>
-      <div class="row" id="info-bar">
-    <div class="col-lg-12">
-      <div class="well well-sm">
-        <ul class="list-inline" style="margin-bottom:0px;display:inline">
-            <li id="meta-license"><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li>
-
-          <li id="statements"><i class="fa fa-list-ol"></i>
-            <a data-toggle="tooltip"
-               data-placement="bottom" data-html="true"
-               title="40.3% of total for procedures.">31 statements</a>
-          </li>
-
-            <li id="source-file">
-              <i class="fa fa-code"></i>
-              <a href="../src/mo_gas_optics_rrtmgp.F90"> Source File</a>
-            </li>
-        </ul>
-        <ol class="breadcrumb in-well text-right">
-              <li><a href='../sourcefile/mo_gas_optics_rrtmgp.f90.html'>mo_gas_optics_rrtmgp.F90</a></li>
-              <li><a href='../module/mo_gas_optics_rrtmgp.html'>mo_gas_optics_rrtmgp</a></li>
-          <li class="active">get_col_dry</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-  <script>
-    $(function () {
-    $('[data-toggle="tooltip"]').tooltip()
-    })
-  </script>
+    <div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+    <li><i class="fa fa-legal"></i> <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a></li> 
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="40.3% of total for procedures.">31 statements</a>
+     </li> 
+    <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp.F90"> Source File</a></li>
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+     <li><a href='../sourcefile/mo_gas_optics_rrtmgp.f90.html'>mo_gas_optics_rrtmgp.F90</a></li>
+     <li><a href='../module/mo_gas_optics_rrtmgp.html'>mo_gas_optics_rrtmgp</a></li>
+     <li class="active">get_col_dry</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
 
   </div>
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-      <div id="sidebar">
-      <h3>Contents</h3>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+    <div id="sidebar">
+  <h3>Contents</h3>
+ 
+<em>None</em>
 
-
-  </div>
+</div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public  function get_col_dry(vmr_h2o, plev, latitude) result(col_dry)  
-</h2>
+    <h2>public function get_col_dry(vmr_h2o, plev, latitude) result(col_dry)</h2>
     
 
     <p>Utility function, provided for user convenience
 computes column amounts of dry air using hydrostatic equation</p>
 
     <h3>Arguments</h3>
-        <table class="table table-striped varlist">
-    <thead>
-      <tr>
-        <th>Type</th>
-<th>Intent</th><th>Optional</th>        <th>Attributes</th>
-        <th></th>
-        <th>Name</th>
-        <th></th>
-    </thead>
-    <tbody>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-vmr_h2o"></span>
-              real(kind=wp),
-            </td>
+      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" id="variable-vmr_h2o"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td></td>            <td>
-              dimension(:,:)
-            </td>
-            <td>::</td>
-            <td><strong>vmr_h2o</strong></td>
-            <td>
-                
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-plev~5"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>vmr_h2o</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-plev~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td></td>            <td>
-              dimension(:,:)
-            </td>
-            <td>::</td>
-            <td><strong>plev</strong></td>
-            <td>
-                
-            </td>
-        </tr>
-        <tr>
-            <td>
-              <span class="anchor" id="variable-latitude"></span>
-              real(kind=wp),
-            </td>
+  <td></td>  <td>dimension(:,:)</td><td>::</td>
+  <td><strong>plev</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-latitude"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-              <td>optional,</td>            <td>
-              dimension(:)
-            </td>
-            <td>::</td>
-            <td><strong>latitude</strong></td>
-            <td>
-                
-            </td>
-        </tr>
-    </tbody>
-  </table>
+  <td>optional</td>  <td>dimension(:)</td><td>::</td>
+  <td><strong>latitude</strong></td><td></td>
+</tr>
+</tbody>
+</table>
 
-      <h3>Return Value
-        <small>
-          <span class="anchor" id="variable-col_dry~5"></span>
-          real(kind=wp), dimension(size(plev,dim=1),size(plev,dim=2)-1)
-        </small>
-      </h3>
-      
+   <h3>Return Value <small><span class="anchor" id="variable-col_dry~3"></span>real(kind=wp),dimension(size(plev,dim=1),size(plev,dim=2)-1)</small></h3>
+    
     <br>
 
     <section class="visible-xs visible-sm hidden-md">
-        <h3>Contents</h3>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
+      <h3>Contents</h3>
+ 
+<em>None</em>
 
     </section>
     <br class="visible-xs visible-sm hidden-md">
@@ -264,7 +182,7 @@ computes column amounts of dry air using hydrostatic equation</p>
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RRTMGP-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2022 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RRTMGP-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2023 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

@@ -1,101 +1,94 @@
 name: Self-hosted CI
+on:
+  push:
+    branches-ignore:
+    - documentation
+  pull_request:
+    branches-ignore:
+    - documentation
 
-on: 
-  push: 
-    branches-ignore:    
-      - documentation
-  pull_request: 
-    branches-ignore:    
-      - documentation
+defaults:
+  run:
+    shell: bash
 
 jobs:
   CI:
     runs-on: daint
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         include:
-        - config_name: nvidia_default_gpu
-          cdt_version: cdt-cuda/21.09
-          compiler_base: nvidia
-          compiler_module: nvidia
-          accel_module: craype-accel-nvidia60
+        - config-name: nvidia-gpu-acc
+          rte-kernels: accel
+          compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
-          FCFLAGS: "-O3 -acc -Mallocatable=03 -gopt"
-          RTE_KERNELS: accel
-        - config_name: cce-cpu-icon-production
-          cdt_version: cdt-cuda/22.05
-          compiler_base: cray
-          compiler_module: cce
-          accel_module: ""
+          fcflags: "-O3 -acc -Mallocatable=03 -gopt"
+          experimental: false
+        - config-name: cce-cpu-icon-production
+          rte-kernels: default
+          compiler-modules: "PrgEnv-cray"
           # Production flags for Icon model
-          RTE_KERNELS: default
-          FCFLAGS: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
-        - config_name: cce-openmp
-          cdt_version: cdt-cuda/22.05
-          compiler_base: cray
-          compiler_module: cce
-          accel_module: craype-accel-nvidia60
+          fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
+          experimental: false
+        - config-name: cce-gpu-openmp
+          rte-kernels: accel
+          compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05"
           # OpenMP flags from Nichols Romero (Argonne)
-          FCFLAGS: "-hnoacc -homp -O0"
-          RTE_KERNELS: accel
+          fcflags: "-hnoacc -homp -O0"
+          experimental: true
     env:
-      FCFLAGS: ${{ matrix.FCFLAGS }}
-      RTE_KERNELS: ${{ matrix.RTE_KERNELS }}
+      # Core variables:
+      FC: ftn
+      FCFLAGS: ${{ matrix.fcflags }}
+      # Make variables:
+      NCHOME: /dummy
+      NFHOME: /dummy
+      RRTMGP_ROOT: ${{ github.workspace }}
+      RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
     steps:
-    - name: Check out code
-      uses: actions/checkout@v3
-    - name: Create module environment
+    #
+    # Checks-out repository under $GITHUB_WORKSPACE
+    #
+    - uses: actions/checkout@v3
+    #
+    # Finalize build environment
+    #
+    - name: Finalize build environment
       run: |
-        set -e
-        echo '
-        module load daint-gpu
-        module load ${{ matrix.cdt_version }}
-        export PATH=$CRAY_BINUTILS_BIN:$PATH
-        module swap PrgEnv-cray PrgEnv-${{ matrix.compiler_base }}
-        module swap ${{ matrix.compiler_base }} ${{ matrix.compiler_module }}
-        module load ${{ matrix.accel_module }}
-        module load cray-netcdf cray-hdf5
-        module rm cray-libsci_acc
-        export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
-        export CUDA_HOME=$CUDATOOLKIT_HOME
-        echo Compiler Environment:
-        module list
-        echo LD_LIBRARY_PATH is:
-        echo $LD_LIBRARY_PATH
-        ' > compiler_modules
-    - name: Stage files
+        # There are significant limitations on what can go into ${GITHUB_ENV},
+        # therefore, we use ${BASH_ENV} but only when necessary:
+        BASH_ENV="${GITHUB_WORKSPACE}/.bash"
+        echo "source '${GITHUB_WORKSPACE}/.github/workflows/module_switcher'" >> "${BASH_ENV}"
+        echo "switch_for_module daint-gpu ${{ matrix.compiler-modules }} cray-netcdf cray-hdf5" >> "${BASH_ENV}"
+        # Use custom Python environment:
+        #   The environment can be re-generated as follows:
+        #     module load cray-python
+        #     python3 -m venv /scratch/snx3000/rpincus/rte-rrtmgp-python
+        #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install --upgrade pip
+        #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install dask[array] netCDF4 numpy xarray
+        echo "PATH=\"/scratch/snx3000/rpincus/rte-rrtmgp-python/bin:\${PATH}\"" >> "${BASH_ENV}"
+        # Make bash run the above on startup:
+        echo "BASH_ENV=${BASH_ENV}" >> "${GITHUB_ENV}"
+        # Compiler needs more temporary space than normally available:
+        tmpdir='${{ github.workspace }}/tmp'
+        mkdir "${tmpdir}" && echo "TMPDIR=${tmpdir}" >> "${GITHUB_ENV}"
+    #
+    # Build libraries, examples and tests
+    #
+    - name: Build libraries, examples and tests
       run: |
-        set -e
-        cd examples/rfmip-clear-sky
-        source ./stage_files.sh
-    - name: Make
-      run: |
-        set -e
-        source compiler_modules
-        export RRTMGP_ROOT=$PWD
-        export FC=ftn
-        # Compiler needs more temporary space than normally available
-        mkdir -p $PWD/tmp
-        export TMPDIR=$PWD/tmp
-        make clean
+        $FC --version
         make libs
         make -C build separate-libs
-    - name: Run
-      run: |
-        set -e
-        export TMPDIR=$PWD/tmp
-        source compiler_modules
-        module load cray-python
-        export RRTMGP_ROOT=$PWD
-        make tests
-    - name: Check results
-      run: |
-        set -e
-        module load daint-gpu
-        export RRTMGP_ROOT=$PWD
-        # This module will unload some of the build modules, so do the checks separately
-        module load netcdf4-python
-        . /scratch/snx3000/rpincus/netcdf-env/bin/activate
-        make check
+    #
+    # Run examples and tests
+    #
+    - name: Run examples and tests
+      run: make tests
+    #
+    # Compare the results
+    #
+    - name: Compare the results
+      run: make check

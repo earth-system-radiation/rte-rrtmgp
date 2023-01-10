@@ -1,150 +1,111 @@
 name: Continuous Integration
-on: 
-  push: 
-    branches-ignore:    
-      - documentation
-  pull_request: 
-    branches-ignore:    
-      - documentation
+on:
+  push:
+    branches-ignore:
+    - documentation
+  pull_request:
+    branches-ignore:
+    - documentation
+
+defaults:
+  run:
+    # Enable Conda environment by using the login shell:
+    shell: bash -leo pipefail {0}
 
 jobs:
   CI:
-    runs-on: ubuntu-20.04
-    defaults:
-      run:
-        shell: bash -l {0}
+    runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
-        fortran-compiler:  [gfortran-9, gfortran-10]
+        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
         rte-kernels: [default, accel]
     env:
+      # Core variables:
       FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
-      CC: gcc
-      NCHOME: /home/runner/netcdf-c
-      NFHOME: /home/runner/netcdf-fortran
-      RFMIP_DIR: /home/runner/rfmip-files
+      # Make variables:
+      NCHOME: /dummy
+      NFHOME: /usr
+      RRTMGP_ROOT: ${{ github.workspace }}
+      RTE_KERNELS: ${{ matrix.rte-kernels }}
+      RUN_CMD:
+      # Auxiliary variables:
+      RFMIP_CACHEDIR: /home/runner/rfmip-files
     steps:
-    - name: Update system packages
+    #
+    # Checks-out repository under $GITHUB_WORKSPACE
+    #
+    - uses: actions/checkout@v3
+    #
+    # Synchronize the package index
+    #
+    - name: Synchronize the package index
       run: sudo apt-get update
-    ############################################################################
     #
-    # Compilers....
+    # Install NetCDF-Fortran (compatible with all compilers)
     #
-    # Gfortran 10 not available in Github CI stack, so install
+    - name: Install NetCDF-Fortran
+      run: sudo apt-get install libnetcdff-dev
     #
-    - name: gfortran-10 setup compiler
-      if: contains(matrix.fortran-compiler, 'gfortran-10')
-      run: |
-        sudo apt-get install gfortran-10 gcc-10
-        echo "CC=gcc-10" >> $GITHUB_ENV
-
-    ############################################################################
+    # Cache Conda packages
     #
-    # Netcdf C and Fortran
-    #
-    - name: Install HDF5 library
-      run: |
-        sudo apt-get install libhdf5-dev libcurl4-gnutls-dev hdf5-helpers
-        dpkg -L libhdf5-dev
-
-    # Skipping this for now - netCDF configure doesn't see the HDF libararies
-    - name: cache-netcdf-c
-      id: cache-netcdf-c
+    - name: Cache Conda packages
       uses: actions/cache@v3
       with:
-        path: /home/runner/netcdf-c
-        key: netcdf-c-4.7.4a-${{ runner.os }}-${{ matrix.fortran-compiler }}
-
-    - name: Install netcdf C library from source
-      if: steps.cache-netcdf-c.outputs.cache-hit != 'true'
-      env:
-        CPPFLAGS: -I/usr/include/hdf5/serial
-        LDFLAGS: -L/usr/lib/x86_64-linux-gnu/hdf5/serial/
-      run: |
-        ${CC} --version
-        git clone https://github.com/Unidata/netcdf-c.git --branch v4.7.4
-        cd netcdf-c
-        ls /usr/include
-        ./configure --prefix=${NCHOME}
-        make -j
-        sudo make install
-
-    # Would be great to encode version info
-    - name: cache-netcdf-fortran
-      id: cache-netcdf-fortran
-      uses: actions/cache@v3
-      with:
-        path: /home/runner/netcdf-fortran
-        key: netcdf-fortran-4.5.3-${{ runner.os }}-${{ matrix.fortran-compiler }}
-
-    - name: Build NetCDF Fortran library
-      # Here too it would be nice to use the environment to specify netcdf-c location
-      env:
-        CPPFLAGS: -I/home/runner/netcdf-c/include
-        LDFLAGS: -L/home/runner/netcdf-c/lib
-        LD_LIBRARY_PATH: /home/runner/netcdf-c/lib
-        FCFLAGS: -fPIC
-      if: steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
-      run: |
-        echo ${TEST}
-        ${FC} --version
-        git clone https://github.com/Unidata/netcdf-fortran.git --branch v4.5.3
-        cd netcdf-fortran
-        echo ${CPPFLAGS}
-        ./configure --prefix=${NFHOME}
-        make -j
-        sudo make install
-    ############################################################################
-    # Checks out repository under $GITHUB_WORKSPACE
-    - name: Check out code
-      uses: actions/checkout@v3
-
-    - name: Environmental variables
-      run: echo "RRTMGP_ROOT=${GITHUB_WORKSPACE}"        >> $GITHUB_ENV
-
-    - name: Make library, examples, tests
-      env:
-        RTE_KERNELS: ${{ matrix.rte-kernels }}
-      run: |
-        cd ${RRTMGP_ROOT}
-        ${FC} --version
-        make libs
-        make -C build separate-libs
-
-    ############################################################################
-    # Set up Python and packages
+        path: ~/conda_pkgs_dir
+        key: conda-pkgs
     #
-    - name: Setup conda
+    # Set up Conda
+    #
+    - name: Set up Conda
       uses: conda-incubator/setup-miniconda@v2
       with:
         miniforge-version: latest
         activate-environment: rte_rrtmgp_test
-        environment-file: environment.yml
+        environment-file: environment-noplots.yml
         python-version: 3.9
         auto-activate-base: false
-    ############################################################################
+        # Use the cache properly:
+        use-only-tar-bz2: true
+    #
+    # Cache RFMIP files
+    #
     - name: Cache RFMIP files
-      id: cache-rfmip-files
       uses: actions/cache@v3
       with:
-        path: /home/runner/rfmip-files # Same as #{RFMIP_DIR}
+        path: ${{ env.RFMIP_CACHEDIR }}
         key: rfmip-files
-
+    #
+    # Stage RFMIP files
+    #
     - name: Stage RFMIP files
-      if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
       run: |
-        mkdir -p ${RFMIP_DIR}
-        cd ${RFMIP_DIR}
-        python ${RRTMGP_ROOT}/examples/rfmip-clear-sky/stage_files.py
-    ############################################################################
-    # Would be great to encode version info
-    - name: Run examples, tests
-      env:
-        LD_LIBRARY_PATH: /home/runner/netcdf-c/lib
+        if test ! -d "${RFMIP_CACHEDIR}"; then
+          mkdir -p "${RFMIP_CACHEDIR}" && cd "${RFMIP_CACHEDIR}"
+          python "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py"
+        fi
+        for file in "${RFMIP_CACHEDIR}"/*; do
+          if test ! -d "${file}"; then
+            echo "copying '${file}'..."
+            cp "${file}" "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/"
+          fi
+        done
+    #
+    # Build libraries, examples and tests
+    #
+    - name: Build libraries, examples and tests
       run: |
-        export LD_LIBRARY_PATH=${NFHOME}/lib:${LD_LIBRARY_PATH}
-        make tests
-    - name: Comparison
-      run: |
-        make check
+        $FC --version
+        make libs
+        make -C build separate-libs
+    #
+    # Run examples and tests
+    #
+    - name: Run examples and tests
+      run: make tests
+    #
+    # Compare the results
+    #
+    - name: Compare the results
+      run: make check

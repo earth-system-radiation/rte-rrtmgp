@@ -67,9 +67,14 @@ if __name__ == '__main__':
     gp['lw_flux_up_from_deriv'] = gp.lw_flux_up + gp.lw_jaco_up
     gp.lw_flux_up_from_deriv.attrs = {
         "description": "LW flux up, surface T+1K, computed from Jacobian"}
-    lbl = xr.open_mfdataset(
-        [construct_lbl_esgf_name(v, esgf_node="dkrz") for v in ["rsd", "rsu", "rld", "rlu"]],
-        combine="by_coords").sel(expt=0)
+    try:
+        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, esgf_node="dkrz")
+                                 for v in ["rsd", "rsu", "rld", "rlu"]],
+                                combine="by_coords").sel(expt=0)
+    except:
+        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, esgf_node="llnl")
+                                 for v in ["rsd", "rsu", "rld", "rlu"]],
+                                combine="by_coords").sel(expt=0)
     ########################################################################
     #
     # The RFMIP cases are on an irregular pressure grid so we can't compute

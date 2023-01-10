@@ -19,7 +19,7 @@ LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
 VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
-VPATH += $(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/extensions/cloud_optics:$(RRTMGP_ROOT)/extensions/solar_variability
+VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/:$(RRTMGP_ROOT)/extensions/solar_variability
 
 # Compilation rules
 %.o: %.F90

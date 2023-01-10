@@ -17,7 +17,7 @@ FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
-VPATH = ../:$(RRTMGP_ROOT)/extensions/cloud_optics
+VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend # Needed for cloud_optics
 
 # Compilation rules
 %.o: %.F90
@@ -47,8 +47,8 @@ mo_load_cloud_coefficients.o: mo_simple_netcdf.o mo_cloud_optics.o mo_load_cloud
 
 tests:
 	cp garand-atmos-1.nc rrtmgp-allsky.nc
-	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-lw-g256-2018-12-04.nc ${RRTMGP_ROOT}/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc 128
-	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-reordered-sw.nc 128
+	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-lw-g256-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-cloud-optics-coeffs-lw.nc 128
+	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-cloud-optics-coeffs-reordered-sw.nc 128
 
 check:
 	python ./compare-to-reference.py

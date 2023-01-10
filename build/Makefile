@@ -1,6 +1,7 @@
 #!/usr/bin/env make
 
 RTE_DIR           = ../rte-frontend
+GAS_OPTICS_DIR    = ../gas-optics
 RRTMGP_DIR        = ../rrtmgp-frontend
 RTE_KERNEL_DIR    = ../rte-kernels
 RRTMGP_KERNEL_DIR = ../rrtmgp-kernels
@@ -20,12 +21,12 @@ include $(RRTMGP_DIR)/Make.depends
 include $(RTE_KERNEL_DIR)/Make.depends
 include $(RRTMGP_KERNEL_DIR)/Make.depends
 
-VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)
+VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
 #
 # If using OpenACC/OpenMP files in *-kernels/accel take precendence  
 #
 ifeq ($(RTE_KERNELS), accel)
-	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR)
+	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
 endif
 
 librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)

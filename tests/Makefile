@@ -36,7 +36,7 @@ ADDITIONS  = mo_heating_rates.o mo_compute_bc.o mo_rrtmgp_clr_all_sky.o
 ADDITIONS += mo_load_coefficients.o mo_simple_netcdf.o mo_rfmip_io.o
 ADDITIONS += mo_testing_io.o
 # Cloud optics
-CLOUDS    += mo_cloud_sampling.o mo_cloud_optics.o mo_load_cloud_coefficients.o mo_garand_atmos_io.o
+CLOUDS    += mo_cloud_sampling.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.o mo_garand_atmos_io.o
 # Solar variability
 ADDITIONS += mo_solar_variability.o
 
@@ -55,8 +55,8 @@ test_zenith_angle_spherical_correction.o: mo_zenith_angle_spherical_correction.o
 
 mo_testing_io.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_testing_io.F90
 
-mo_cloud_optics.o:            $(LIB_DEPS) mo_cloud_optics.F90
-mo_load_cloud_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_cloud_optics.o mo_load_cloud_coefficients.F90
+mo_cloud_optics_rrtmgp.o:     $(LIB_DEPS) mo_cloud_optics_rrtmgp.F90
+mo_load_cloud_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.F90
 mo_cloud_sampling.o:          $(LIB_DEPS) mo_cloud_sampling.F90
 
 mo_load_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_load_coefficients.F90

@@ -39,7 +39,7 @@ program rte_rrtmgp_clouds
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
-  use mo_cloud_optics,       only: ty_cloud_optics
+  use mo_cloud_optics_rrtmgp,only: ty_cloud_optics_rrtmgp
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
@@ -91,7 +91,7 @@ program rte_rrtmgp_clouds
   ! Derived types from the RTE and RRTMGP libraries
   !
   type(ty_gas_optics_rrtmgp) :: k_dist
-  type(ty_cloud_optics)      :: cloud_optics
+  type(ty_cloud_optics_rrtmgp)      :: cloud_optics
   type(ty_gas_concs)         :: gas_concs, gas_concs_garand, gas_concs_1col
   class(ty_optical_props_arry), &
                  allocatable :: atmos, clouds

@@ -1,5 +1,5 @@
 #
-# Python modules below are needed to run tests and check results
+# Python modules below are needed to run tests, check results and generate validation plots
 #
 name: rte_rrtmgp_test
 

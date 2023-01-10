@@ -1,0 +1,146 @@
+#
+# Accepts a list of environment modules and makes sure that they are
+# loaded/unloaded. The function makes it easier to manipulate modules in
+# non-interactive shell mode while transparently accounting for several common
+# defects in the configuration of the environment module system:
+#
+#   1) if a module's name is prepended with the exclamation mark ('!') on the
+#      argument list, the module is unloaded using the 'make unload' command
+#      (helps in preparing the environment using a single command);
+#
+#   2) if a module is already loaded, it does not get reloaded (some
+#      environments, e.g. Cray, are sensitive to the undocumented order of the
+#      loaded modules and keeping an already loaded module instead of reloading
+#      it is often safer);
+#
+#   3) if a module conflicts exactly one already loaded module, it gets loaded
+#      using the 'module switch' command (this is often the only tested and
+#      functional way to load a required module in some environments, e.g
+#      PrgEnv-* modules on Cray);
+#
+#   4) if a module is in conflict with several already loaded modules, all
+#      conflicting modules get unloaded first using the 'module unload' command
+#      and then the required module is loaded using the 'module load' command;
+#
+#   5) if a module's name starts with 'PrgEnv-', it is considered to be in
+#      conflict with any other module that has that prefix (on a Cray system, it
+#      is important that only one PrgEnv module is loaded at a time, which is
+#      normally covered with the mutual conflict statements in the respective
+#      module files, however, that is not always the case).
+#
+switch_for_module ()
+{
+  for sfm_module in "$@"; do
+    case $sfm_module in
+      !*)
+        sfm_module=`echo $sfm_module | cut -c2-`
+        sfm_cmd="module unload $sfm_module"
+        echo "$sfm_cmd"
+        eval "$sfm_cmd"
+        continue ;;
+    esac
+
+    sfm_module_full=
+    sfm_module_short=
+    case $sfm_module in
+      */*)
+        # The module is provided with the version part:
+        sfm_module_full=$sfm_module
+        sfm_module_short=`echo $sfm_module | sed 's%/[^/]*$%%'` ;;
+      *)
+        # Only the name of the module is provided, get the default version:
+        sfm_module_full=`module show $sfm_module 2>&1 | sed -n "s%^[^ \t]*/\\($sfm_module.*\\):%\\1%p"`
+        sfm_module_short=$sfm_module ;;
+    esac
+
+    # A space-separated list of modules that are already loaded:
+    sfm_loaded_full=`module -t list 2>&1 | tr '\n' ' ' | sed 's/^.*Modulefiles://' | sed 's/(default)//g'`
+
+    # Check whether the requested module if already loaded:
+    if test -n "$sfm_module_full"; then
+      case " $sfm_loaded_full " in
+        *" $sfm_module_full "*)
+          echo "module $sfm_module is already loaded"
+          continue ;;
+      esac
+    fi
+
+    # A list of modules in conflict:
+    sfm_conflicts=`module show $sfm_module 2>&1 | sed -n 's/^conflict\(.*\)/\1/p' | tr '\n\t' '  '`
+
+    # A list of loaded modules without version parts:
+    sfm_loaded_short=`echo "$sfm_loaded_full" | sed 's%\([^ ][^ ]*\)/[^ ]*%\1%g'`
+
+    # Add the short name of the module to the list of conflicts:
+    sfm_conflicts="$sfm_conflicts $sfm_module_short"
+
+    # On a Cray system, it is important that only one PrgEnv module is loaded at
+    # a time. This is normally covered with the mutual conflict statements in
+    # the respective module files. However, that is not always the case,
+    # therefore we introduce an additional protection against two or more PrgEnv
+    # modules being loaded simultaneously: if the module we are asked to switch
+    # for starts with PrgEnv-, each of the loaded modules that starts with
+    # PrgEnv- too is added to the list of conflicts:
+    case $sfm_module_short in
+      PrgEnv-*)
+        for sfm_loaded in $sfm_loaded_short; do
+          case $sfm_loaded in
+            PrgEnv-*)
+              sfm_conflicts="$sfm_conflicts $sfm_loaded" ;;
+            *) ;;
+          esac
+        done
+      ;;
+      *) ;;
+    esac
+
+    # A list of loaded modules that are in conflict with the requested module:
+    sfm_loaded_conflicts=
+    for sfm_conflict in $sfm_conflicts""; do
+      sfm_loaded_list=
+      case $sfm_conflict in
+        */*)
+          # The conflict is specified with the version part:
+          sfm_loaded_list=$sfm_loaded_full ;;
+        *)
+          # The conflict is specified without the version part:
+          sfm_loaded_list=$sfm_loaded_short ;;
+      esac
+
+      # Check that the conflicted module is loaded:
+      case " $sfm_loaded_list " in
+        *" $sfm_conflict "*)
+          # The conflict is loaded, check whether it is already added to the
+          # list:
+          case " $sfm_loaded_conflicts " in
+            *" $sfm_conflict "*) ;;
+            *)
+              # The conflict is not in the list, append:
+              sfm_loaded_conflicts="$sfm_loaded_conflicts $sfm_conflict" ;;
+          esac
+        ;;
+      esac
+    done
+
+    # Calculate the number of modules that must be unloaded to before loading
+    # the requested module:
+    sfm_loaded_conflicts_count=`echo $sfm_loaded_conflicts | wc -w`
+
+    case $sfm_loaded_conflicts_count in
+      0)
+        # None of the conflicting modules is loaded:
+        sfm_cmd="module load $sfm_module" ;;
+      1)
+        # There is only one module that must be unloaded, use switch command:
+        sfm_cmd="module switch $sfm_loaded_conflicts $sfm_module" ;;
+      *)
+        # There is more than one module that must be unloaded, unload all of
+        # them and then load the requested one:
+        sfm_cmd="module unload $sfm_loaded_conflicts && module load $sfm_module" ;;
+    esac
+
+    echo "$sfm_cmd"
+    eval "$sfm_cmd"
+  done
+}
+

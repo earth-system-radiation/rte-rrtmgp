@@ -18,13 +18,13 @@ jobs:
         include:
         - fortran-compiler: ifort
           fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
-          image: "earthsystemradiation/rte-rrtmgp-ci:ifort"
+          image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
         - fortran-compiler: ifx
           fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
-          image: "earthsystemradiation/rte-rrtmgp-ci:ifort"
+          image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
         - fortran-compiler: nvfortran
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-          image: "earthsystemradiation/rte-rrtmgp-ci:nvfortran"
+          image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvfortran"
     container:
       image: ${{ matrix.image }}
     env:

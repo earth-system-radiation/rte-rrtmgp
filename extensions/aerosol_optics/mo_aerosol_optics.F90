@@ -400,7 +400,7 @@ contains
         ! Aerosol
         !
         call compute_all_from_table(ncol, nlay, nbnd, npair, nbin, nrh,                         &
-                                    aeromsk, aero_type, aero_size, aero_mass, relhum,           &
+                                    aero_type, aero_size, aero_mass, relhum,                    &
                                     this%merra_aero_bin_lims, this%aero_rh,                     &
                                     this%rh_nsteps, this%rh_step_sizes, this%rh_offsets,        &
                                     this%aero_dust_ext, this%aero_dust_ssa, this%aero_dust_asy, &
@@ -499,10 +499,10 @@ contains
   ! For size dimension, select size bin appropriate for the requested aerosol size.
   ! For rh dimension, linearly interpolate values from a lookup table with "nrh" 
   !   unevenly-spaced elements "aero_rh". The last dimension for all tables is band.
-  ! Returns 0 where the mask is false.
+  ! Returns zero where no aerosol is present.
   !
   subroutine compute_all_from_table(ncol, nlay, nbnd, npair, nbin, nrh,             &
-                                    mask, type, size,  mass, rh,                    &
+                                    type, size,  mass, rh,                          &
                                     merra_aero_bin_lims, aero_rh,                   &
                                     rh_nsteps, rh_step_sizes, rh_offsets,           &
                                     tau_dust_table, ssa_dust_table, asy_dust_table, &
@@ -515,7 +515,6 @@ contains
                                     tau, taussa, taussag)
 
     integer,                               intent(in) :: ncol, nlay, nbnd, npair, nbin, nrh
-    logical(wl), dimension(ncol,nlay),     intent(in) :: mask
     integer,     dimension(ncol,nlay),     intent(in) :: type
     real(wp),    dimension(ncol,nlay),     intent(in) :: size, mass, rh
 
@@ -546,17 +545,16 @@ contains
         do icol = 1, ncol
           ibin = get_aerosol_size_bin(nbin, merra_aero_bin_lims, size(icol,ilay))
           itype = type(icol,ilay)
-          if (mask(icol,ilay) .and. rh(icol,ilay) .le. rh_offsets(2)) then
+          if (itype .ne. 0 .and. rh(icol,ilay) .le. rh_offsets(2)) then
             index = min(floor((rh(icol,ilay) - rh_offsets(1))/rh_step_sizes(1))+1, rh_nsteps(1)-1)
             fint = (rh(icol,ilay) - rh_offsets(1))/rh_step_sizes(1) - (index-1)
-          elseif (mask(icol,ilay) .and. rh(icol,ilay) .gt. rh_offsets(2)) then
+          elseif (itype .ne. 0 .and. rh(icol,ilay) .gt. rh_offsets(2)) then
             index = min(floor((rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2))+1, rh_nsteps(2)-1)
             fint = (rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2) - (index-1)
           endif
-          ! Set aerosol optical properties where aerosol present
-          if (mask(icol,ilay)) then
-          
-             select case (itype)
+          ! Set aerosol optical properties where aerosol present. Use aerosol type array as the mask. 
+          select case (itype)
+
              ! dust
              case(merra_aero_dust)
                t   = mass(icol,ilay) * tau_dust_table(ibin,ibnd)
@@ -625,13 +623,14 @@ contains
                      ts              * asy_ocar_table(ibnd)
                taussa (icol,ilay,ibnd) = ts
                tau    (icol,ilay,ibnd) = t
-             end select
-          else
-          ! no aerosol
-             tau    (icol,ilay,ibnd) = 0._wp
-             taussa (icol,ilay,ibnd) = 0._wp
-             taussag(icol,ilay,ibnd) = 0._wp
-          end if
+             ! no aerosol
+             case default
+               tau    (icol,ilay,ibnd) = 0._wp
+               taussa (icol,ilay,ibnd) = 0._wp
+               taussag(icol,ilay,ibnd) = 0._wp
+
+          end select
+
         end do
       end do
     end do

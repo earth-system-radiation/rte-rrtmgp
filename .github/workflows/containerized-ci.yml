@@ -38,7 +38,7 @@ jobs:
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
       # Auxiliary variables:
-      RFMIP_CACHEDIR: /home/runner/rfmip-files
+      RFMIP_CACHEDIR: .testcache
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -58,8 +58,8 @@ jobs:
     - name: Stage RFMIP files
       run: |
         if test ! -d "${RFMIP_CACHEDIR}"; then
-          mkdir -p "${RFMIP_CACHEDIR}" && cd "${RFMIP_CACHEDIR}"
-          python "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py"
+          mkdir -p "${RFMIP_CACHEDIR}"
+          ( cd "${RFMIP_CACHEDIR}" && python "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py" )
         fi
         for file in "${RFMIP_CACHEDIR}"/*; do
           if test ! -d "${file}"; then

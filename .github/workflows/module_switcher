@@ -1,8 +1,38 @@
+#
+# Accepts a list of environment modules and makes sure that they are
+# loaded/unloaded. The function makes it easier to manipulate modules in
+# non-interactive shell mode while transparently accounting for several common
+# defects in the configuration of the environment module system:
+#
+#   1) if a module's name is prepended with the exclamation mark ('!') on the
+#      argument list, the module is unloaded using the 'make unload' command
+#      (helps in preparing the environment using a single command);
+#
+#   2) if a module is already loaded, it does not get reloaded (some
+#      environments, e.g. Cray, are sensitive to the undocumented order of the
+#      loaded modules and keeping an already loaded module instead of reloading
+#      it is often safer);
+#
+#   3) if a module conflicts exactly one already loaded module, it gets loaded
+#      using the 'module switch' command (this is often the only tested and
+#      functional way to load a required module in some environments, e.g
+#      PrgEnv-* modules on Cray);
+#
+#   4) if a module is in conflict with several already loaded modules, all
+#      conflicting modules get unloaded first using the 'module unload' command
+#      and then the required module is loaded using the 'module load' command;
+#
+#   5) if a module's name starts with 'PrgEnv-', it is considered to be in
+#      conflict with any other module that has that prefix (on a Cray system, it
+#      is important that only one PrgEnv module is loaded at a time, which is
+#      normally covered with the mutual conflict statements in the respective
+#      module files, however, that is not always the case).
+#
 switch_for_module ()
 {
   for sfm_module in "$@"; do
     case $sfm_module in
-      ^*)
+      !*)
         sfm_module=`echo $sfm_module | cut -c2-`
         sfm_cmd="module unload $sfm_module"
         echo "$sfm_cmd"

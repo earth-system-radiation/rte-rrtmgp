@@ -231,7 +231,7 @@ sanitize-mod-proxies:
 %/.dirstamp:
 	$(silent_MKDIR)@MKDIR_P@ $(@D) && touch $@
 
-# We try not to depend on the contents of 'stage_files.sh'. Therefore, we
+# We try not to depend on the contents of 'stage_files.py'. Therefore, we
 # introduce the following sentinel file, which gets created once the script is
 # run successfully inside the test cache directory. The drawback is that we
 # cannot recover in case one of the downloaded files is accidentally deleted:

@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([rte+rrtmgp], [1.5], [], [],
+AC_INIT([rte+rrtmgp], [1.6], [], [],
   [https://github.com/earth-system-radiation/rte-rrtmgp])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([config])
@@ -97,36 +97,36 @@ AS_VAR_IF([enable_rpaths], [yes],
 AC_ARG_ENABLE([gpu],
 [  --enable-gpu            enable GPU kernels. The value of the argument must
                           be one of the following @<:@default=no@:>@:
-                            acc|yes  enable OpenACC support
-                            mp       enable OpenMP support
-                            no       disable GPU offload],
+                            openacc|yes  enable OpenACC support
+                            openmp       enable OpenMP support
+                            no           disable GPU offload],
 [AS_CASE(["$enableval"],
-   [yes], [enable_gpu=acc],
-   [acc|mp|no], [],
-   [AC_MSG_ERROR([unexpected value for the argument
---enable-gpu='$enableval'; valid values are 'acc', 'mp', dnl
-'yes' (same as 'acc'), 'no'])])],
+   [yes], [enable_gpu=openacc],
+   [openacc|openmp|no], [],
+   [AC_MSG_ERROR([unexpected value for the argument dnl
+--enable-gpu='$enableval'; valid values are 'openacc', 'openmp', 'yes' dnl
+(same as 'openacc'), 'no'])])],
 [enable_gpu=no])
 
 AS_CASE(["$enable_gpu"],
-  [acc],
+  [openacc],
   [ACX_LANG_OPENACC_FLAG(
      [AS_VAR_APPEND([FCFLAGS], [" $acx_cv_fc_openacc_flag"])])
    acx_cv_fc_macro__OPENACC_defined=${acx_cv_fc_macro__OPENACC_defined-yes}
    ACX_LANG_MACRO_CHECK_DEFINED([_OPENMP])
    AS_VAR_IF([acx_macro_defined], [yes],
      [AC_MSG_ERROR([Fortran compiler enables OpenMP support by default: dnl
-either enable GPU kernels with OpenMP support (--enable-gpu=mp) or set dnl
+either enable GPU kernels with OpenMP support (--enable-gpu=openmp) or set dnl
 FCFLAGS accordingly to disable OpenMP])])],
 dnl
-  [mp],
+  [openmp],
   [ACX_LANG_OPENMP_FLAG(
      [AS_VAR_APPEND([FCFLAGS], [" $acx_cv_fc_openmp_flag"])])
    acx_cv_fc_macro__OPENMP_defined=${acx_cv_fc_macro__OPENMP_defined-yes}
    ACX_LANG_MACRO_CHECK_DEFINED([_OPENACC])
    AS_VAR_IF([acx_macro_defined], [yes],
      [AC_MSG_ERROR([Fortran compiler enables OpenACC support by default: dnl
-either enable GPU kernels with OpenACC support (--enable-gpu=acc) or set dnl
+either enable GPU kernels with OpenACC support (--enable-gpu=openacc) or set dnl
 FCFLAGS accordingly to disable OpenACC])])],
 dnl
   [ACX_LANG_MACRO_CHECK_DEFINED([_OPENACC])
@@ -250,8 +250,7 @@ AC_ARG_WITH([gptl-fortran],
 AC_ARG_VAR([GPTL_FCFLAGS],
   [exact Fortran compiler flags enabling GPTL Fortran])
 AC_ARG_VAR([GPTL_FCLIBS],
-  [exact linker flags enabling GPTL Fortran when linking with Fortran ]dnl
-[compiler])
+  [exact linker flags enabling GPTL Fortran when linking with Fortran compiler])
 
 AS_IF([test x"$with_gptl_fortran" != xno],
   [acx_inc_search_args=
@@ -324,7 +323,8 @@ AS_IF([test x"$enable_tests" != xno],
 
 dnl We need some additional Python modules for the tests:
 AS_IF([test x"$enable_tests" != xno],
-  [set 'netCDF4'           'import netCDF4' \
+  [set 'numpy'             'import numpy' \
+       'netCDF4'           'import netCDF4' \
        'xarray (v0.12.2+)' 'import xarray; exit(tuple(map(int, xarray.__version__.split("."))) < (0, 12, 2))' \
        'dask.array'        'import dask.array'
    while test $[]@%:@ -gt 1; do

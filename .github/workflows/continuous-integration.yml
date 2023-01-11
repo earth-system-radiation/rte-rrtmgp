@@ -9,25 +9,53 @@ on:
 
 defaults:
   run:
-    shell: bash -l {0}
+    # Enable Conda environment by using the login shell:
+    shell: bash -leo pipefail {0}
 
 jobs:
   CI:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
-        fortran-compiler: [gfortran-9, gfortran-10]
+        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
         rte-kernels: [default, openacc]
+        include:
+        - rte-kernels: default
+          build-dir: .
+        - rte-kernels: openacc
+          build-dir: test_build
     env:
+      # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g"
-      NETCDF_FCFLAGS: "-I/usr/include"
-      RFMIP_CACHEDIR: ${{ github.workspace }}/.testcache
+      FCFLAGS: "-I/usr/include -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g"
+      # Configure script variables:
+      LAUNCH_PREFIX:
+      # Auxiliary variables:
+      RFMIP_CACHEDIR: .testcache
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
     - uses: actions/checkout@v3
+    #
+    # Synchronize the package index
+    #
+    - name: Synchronize the package index
+      run: sudo apt-get update
+    #
+    # Install NetCDF-Fortran (compatible with all compilers)
+    #
+    - name: Install NetCDF-Fortran
+      run: sudo apt-get install libnetcdff-dev
+    #
+    # Cache Conda packages
+    #
+    - name: Cache Conda packages
+      uses: actions/cache@v3
+      with:
+        path: ~/conda_pkgs_dir
+        key: conda-pkgs
     #
     # Set up Conda
     #
@@ -36,88 +64,76 @@ jobs:
       with:
         miniforge-version: latest
         activate-environment: rte_rrtmgp_test
-        environment-file: environment.yml
+        environment-file: environment-noplots.yml
         python-version: 3.9
         auto-activate-base: false
+        # Use the cache properly:
+        use-only-tar-bz2: true
     #
-    # Synchronize the package index
+    # Cache RFMIP files
     #
-    - name: Synchronize the package index
-      run: sudo apt-get update
-    #
-    # Install Gfortran 10
-    #
-    - name: Install Gfortran 10
-      if: contains(matrix.fortran-compiler, 'gfortran-10')
-      run: sudo apt-get install gfortran-10
-    #
-    # Install NetCDF-Fortran (compatible with both compilers)
-    #
-    - name: Install NetCDF-Fortran
-      run: sudo apt-get install libnetcdff-dev
-    #
-    # In-source (as an example) configuration with default kernels
-    #
-    - name: Configure (in-source)
-      if: contains(matrix.rte-kernels, 'default')
-      run: |
-        echo "RRTMGP_BUILD_DIR=$(pwd)" >> "${GITHUB_ENV}"
-        ./configure --disable-silent-rules --enable-examples --enable-tests --with-netcdf-fortran --disable-gpu || { cat ./config.log; exit 1; }
-    #
-    # Out-of-source (as an example) configuration with GPU kernels
-    #   We want to compile GPU kernels without OpenACC support. A way to do that
-    #   is to prevent the configure script from appending the compiler flag
-    #   enabling OpenACC support by calling it with an additional argument
-    #   'acx_cv_fc_openacc_flag='.
-    #
-    - name: Configure (out-of-source)
-      if: contains(matrix.rte-kernels, 'openacc')
-      run: |
-        mkdir test_build && cd test_build && ln -s "${RFMIP_CACHEDIR}" ./
-        echo "RRTMGP_BUILD_DIR=$(pwd)" >> "${GITHUB_ENV}"
-        ../configure --disable-silent-rules --enable-tests --with-netcdf-fortran --enable-gpu acx_cv_fc_openacc_flag= || { cat ./config.log; exit 1; }
-    #
-    # Build the library
-    #
-    - name: Build
-      run: cd "$RRTMGP_BUILD_DIR" && make
-    #
-    # Check whether RFMIP files are cached
-    #
-    - uses: actions/cache@v3
-      id: cache-rfmip-files
+    - name: Cache RFMIP files
+      uses: actions/cache@v3
       with:
         path: ${{ env.RFMIP_CACHEDIR }}
         key: rfmip-files-autoconf
     #
-    # Stage RFMIP files if they are not in the cache
+    # Finalize build environment
     #
-    - name: Stage RFMIP files
-      if: steps.cache-rfmip-files.outputs.cache-hit != 'true'
+    - name: Finalize build environment
+      if: matrix.build-dir != '.'
       run: |
-        mkdir -p "${RFMIP_CACHEDIR}" && cd "${RFMIP_CACHEDIR}"
-        . "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.sh"
-        touch "${RFMIP_CACHEDIR}/.cache"
+        # Create build directory:
+        mkdir '${{ matrix.build-dir }}'
+        # Use the cached RFMIP files:
+        ln -s "${GITHUB_WORKSPACE}/${RFMIP_CACHEDIR}" '${{ matrix.build-dir }}'
+        # Suppress an attempt to create the cache directory when running 'make'
+        # in case the cache is missing (the attempt fails because 'mkdir -p' is
+        # requested to overwrite the symlink that we create above):
+        mkdir -p "${RFMIP_CACHEDIR}" && touch "${RFMIP_CACHEDIR}/.dirstamp"
     #
-    # Check the library
+    # Configure
+    #
+    - name: Configure
+      working-directory: ${{ matrix.build-dir }}
+      run: |
+        test 'x${{ matrix.rte-kernels }}' = xopenacc && enable_gpu=yes || enable_gpu=no
+        "${GITHUB_WORKSPACE}/configure" \
+          --disable-silent-rules \
+          --enable-examples \
+          --enable-tests \
+          --with-netcdf-fortran \
+          --enable-gpu=$enable_gpu \
+          acx_cv_fc_openacc_flag= \
+        || { cat ./config.log; exit 1; }
+    #
+    # Build
+    #
+    - name: Build
+      working-directory: ${{ matrix.build-dir }}
+      run: make -j
+    #
+    # Check
     #
     - name: Check
+      working-directory: ${{ matrix.build-dir }}
       run: |
-        cd "$RRTMGP_BUILD_DIR" && make check
+        make -j check
         find . -name '*.test.log' -print -exec cat {} ';'
     #
-    # Check the installation procedure
+    # Install
     #
     - name: Install
-      run: cd "$RRTMGP_BUILD_DIR" && sudo make install
+      working-directory: ${{ matrix.build-dir }}
+      run: sudo make install
     #
-    # Check the distclean procedure
+    # Distclean
     #   We want to keep the cached RFMIP files, therefore we run this only for
-    #   the out-of-source build, which we perform when configuring with GPU
-    #   kernels.
+    #   the out-of-source build.
     #
-    - name: Distclean (out-of-source)
-      if: contains(matrix.rte-kernels, 'openacc')
+    - name: Distclean
+      if: matrix.build-dir != '.'
+      working-directory: ${{ matrix.build-dir }}
       run: |
-        cd "$RRTMGP_BUILD_DIR" && make distclean
+        make -j distclean
         test "x$(ls -A .)" = x || { find .; exit 1; }

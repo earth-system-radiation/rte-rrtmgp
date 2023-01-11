@@ -7,96 +7,94 @@ on:
     branches-ignore:
     - documentation
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   CI:
     runs-on: daint
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         include:
-        - config_name: nvidia-gpu-acc
-          compiler_modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 ^cray-libsci_acc"
+        - config-name: nvidia-gpu-openacc
+          enable-gpu: openacc
+          compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
           #   -acc is removed as it should be detected by the configure script
           fcflags: "-O3 -Mallocatable=03 -gopt"
-          enable_gpu: acc
-        - config_name: cce-cpu-icon-production
-          compiler_modules: "PrgEnv-cray cce/11.0.0 cdt-cuda/22.05"
+          experimental: false
+        - config-name: cce-cpu-icon-production
+          enable-gpu: no
+          compiler-modules: "PrgEnv-cray"
           # Production flags for Icon model
           fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
-          enable_gpu: no
-        - config_name: cce-gpu-openmp
-          compiler_modules: "PrgEnv-cray cce/11.0.0 craype-accel-nvidia60 cdt-cuda/22.05"
+          experimental: false
+        - config-name: cce-gpu-openmp
+          enable-gpu: openmp
+          compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # OpenMP flags from Nichols Romero (Argonne)
           #   -homp is removed as it should be detected by the configure script
           #   (in fact, the configure script detects -fopenmp)
           fcflags: "-hnoacc -O0"
-          enable_gpu: mp
+          experimental: true
     env:
-      MODULE_SWITCHER: ${{ github.workspace }}/.github/workflows/module_switcher
-      MODULES: "daint-gpu ${{ matrix.compiler_modules }} cray-netcdf cray-hdf5"
-      PYTHON_CACHEDIR: ${{ github.workspace }}/.python
+      # Core variables:
+      FC: ftn
+      FCFLAGS: ${{ matrix.fcflags }}
+      # Configure script variables:
+      LAUNCH_PREFIX: "srun -C gpu -A d56 -p cscsci -t 15:00"
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
     - uses: actions/checkout@v3
     #
-    # Check whether Python virtual environment is cached
+    # Finalize build environment
     #
-    - uses: actions/cache@v3
-      id: cache-python-venv
-      with:
-        path: ${{ env.PYTHON_CACHEDIR }}
-        key: python-venv-autoconf
-    #
-    # Create Python virtual environment if it is not in the cache
-    #
-    - name: Create Python virtual environment
-      if: steps.cache-python-venv.outputs.cache-hit != 'true'
+    - name: Finalize build environment
       run: |
-        . "${MODULE_SWITCHER}" && switch_for_module cray-python
-        python3 -m venv "${PYTHON_CACHEDIR}"
-        "${PYTHON_CACHEDIR}/bin/pip3" install --upgrade pip
-        "${PYTHON_CACHEDIR}/bin/pip3" install netCDF4 xarray dask[array]
+        # There are significant limitations on what can go into ${GITHUB_ENV},
+        # therefore, we use ${BASH_ENV} but only when necessary:
+        BASH_ENV="${GITHUB_WORKSPACE}/.bash"
+        echo "source '${GITHUB_WORKSPACE}/.github/workflows/module_switcher'" >> "${BASH_ENV}"
+        echo "switch_for_module daint-gpu ${{ matrix.compiler-modules }} cray-netcdf cray-hdf5" >> "${BASH_ENV}"
+        # Use custom Python environment:
+        #   The environment can be re-generated as follows:
+        #     module load cray-python
+        #     python3 -m venv /scratch/snx3000/rpincus/rte-rrtmgp-python
+        #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install --upgrade pip
+        #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install dask[array] netCDF4 numpy xarray
+        echo 'PATH="/scratch/snx3000/rpincus/rte-rrtmgp-python/bin:${PATH}"' >> "${BASH_ENV}"
+        # Make bash run the above on startup:
+        echo "BASH_ENV=${BASH_ENV}" >> "${GITHUB_ENV}"
+        # Compiler needs more temporary space than normally available:
+        tmpdir='${{ github.workspace }}/tmp'
+        mkdir "${tmpdir}" && echo "TMPDIR=${tmpdir}" >> "${GITHUB_ENV}"
+        # We use the "non-default products" for the tests
+        # (see https://support.hpe.com/hpesc/public/docDisplay?docId=a00113984en_us&page=Modify_Linking_Behavior_to_Use_Non-default_Libraries.html):
+        echo 'LD_LIBRARY_PATH="${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"' >> "${BASH_ENV}"
     #
-    # Create TMPDIR for building
-    #   Compiler needs more temporary space than normally available
-    #
-    - name: Create TMPDIR for building
-      run: mkdir tmp && cd tmp && echo "TMPDIR=$(pwd)" >> "${GITHUB_ENV}"
-    #
-    # Configuration
+    # Configure
     #
     - name: Configure
-      env:
-        FC: "ftn"
-        FCFLAGS: ${{ matrix.fcflags }}
-        PYTHON: ${{ env.PYTHON_CACHEDIR }}/bin/python3
-        LAUNCH_PREFIX: "srun -C gpu -A d56 -p cscsci -t 15:00"
       run: |
-        . "${MODULE_SWITCHER}" && switch_for_module ${MODULES}
-        ./configure --enable-tests --disable-silent-rules --enable-gpu=${{ matrix.enable_gpu }} || { cat ./config.log; exit 1; }
+        ./configure \
+          --disable-silent-rules \
+          --enable-gpu=${{ matrix.enable-gpu }} \
+          --enable-tests \
+        || { cat ./config.log; exit 1; }
     #
-    # Build the library
+    # Build
     #
     - name: Build
-      run: |
-        . "${MODULE_SWITCHER}" && switch_for_module ${MODULES}
-        make -j8
+      run: make -j8
     #
-    # Check whether RFMIP files are cached
-    #
-    - uses: actions/cache@v3
-      id: cache-rfmip-files
-      with:
-        path: ${{ github.workspace }}/.testcache
-        key: rfmip-files-autoconf
-    #
-    # Check the library
+    # Check
     #
     - name: Check
       run: |
-        . "${MODULE_SWITCHER}" && switch_for_module ${MODULES}
         make -j8 check
         find . -name '*.test.log' -print -exec cat {} ';'

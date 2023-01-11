@@ -8,5 +8,5 @@ inoutput='rrtmgp-allsky.nc'
 cp "$input" "$inoutput" || exit 1
 
 @LAUNCH_PREFIX@ ./rrtmgp_allsky "$inoutput" '@top_srcdir@/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc' '@top_srcdir@/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc' 128 || exit 1
-@LAUNCH_PREFIX@ ./rrtmgp_allsky "$inoutput" '@top_srcdir@/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc' '@top_srcdir@/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc' 128 || exit 1
+@LAUNCH_PREFIX@ ./rrtmgp_allsky "$inoutput" '@top_srcdir@/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc' '@top_srcdir@/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-reordered-sw.nc' 128 || exit 1
 @PYTHON@ @srcdir@/compare-to-reference.py --ref_dir="@top_builddir@/@testcachedir@/all-sky"

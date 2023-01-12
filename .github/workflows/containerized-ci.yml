@@ -10,20 +10,48 @@ on:
 jobs:
   Containerized-CI:
     runs-on: ubuntu-22.04
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         fortran-compiler: [ifort, ifx, nvfortran]
         rte-kernels: [default, openacc]
+        offload: [true, false]
+        exclude:
+          - offload: true
+            rte-kernels: default
+          - offload: true
+            fortran-compiler: ifort
         include:
+        # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
-          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+          offload: false
+          fcflags: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+          experimental: false
+        # Set flags for Intel ifx Fortran Compiler
+        - fortran-compiler: ifx
+          offload: false
+          fcflags: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
+          experimental: false
+        - fortran-compiler: ifx
+          offload: true
+          fcflags: "-fiopenmp -fopenmp-target=spir64 -debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
+          experimental: true
+        # Set flags for NVIDIA Fortran compiler
+        - fortran-compiler: nvfortran
+          offload: false
+          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+          experimental: false
+        - fortran-compiler: nvfortran
+          offload: true
+          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc"
+          experimental: false
+        # Set container images
+        - fortran-compiler: ifort
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
         - fortran-compiler: ifx
-          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
         - fortran-compiler: nvfortran
-          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvfortran"
     container:
       image: ${{ matrix.image }}
@@ -37,6 +65,8 @@ jobs:
       RRTMGP_ROOT: ${{ github.workspace }}
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
+      # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
+      OMP_TARGET_OFFLOAD: DISABLED
       # Auxiliary variables:
       RFMIP_CACHEDIR: .testcache
     steps:

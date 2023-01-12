@@ -23,20 +23,20 @@ jobs:
           experimental: false
         # Set flags for Intel ifx Fortran Compiler
         - fortran-compiler: ifx
-          kernels: default
+          rte-kernels: default
           fcflags: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
           experimental: false
         - fortran-compiler: ifx
-          kernels: openacc
+          rte-kernels: openacc
           fcflags: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-target=spir64"
           experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
-          kernels: default
+          rte-kernels: default
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
           experimental: false
         - fortran-compiler: nvfortran
-          kernels: openacc
+          rte-kernels: openacc
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc"
           experimental: false
         # Set container images

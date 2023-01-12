@@ -1729,7 +1729,7 @@ contains
       !$acc           delete(this%minor_limits_gpt_lower) &
       !$acc           delete(this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
       !$acc           delete(this%idx_minor_lower, this%idx_minor_scaling_lower)  &
-      !$acc           delete(this%kminor_start_lower, this%kminor_lower)
+      !$acc           delete(this%kminor_start_lower, this%kminor_lower) &
       !$acc           delete(this%minor_limits_gpt_upper) &
       !$acc           delete(this%minor_scales_with_density_upper, this%scale_by_complement_upper)  &
       !$acc           delete(this%idx_minor_upper, this%idx_minor_scaling_upper)  &
@@ -1739,12 +1739,11 @@ contains
       !$omp map(release:this%minor_limits_gpt_lower) &
       !$omp map(release:this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
       !$omp map(release:this%idx_minor_lower, this%idx_minor_scaling_lower)  &
-      !$omp map(release:this%kminor_start_lower, this%kminor_lower)
+      !$omp map(release:this%kminor_start_lower, this%kminor_lower) &
       !$omp map(release:this%minor_limits_gpt_upper) &
       !$omp map(release:this%minor_scales_with_density_upper, this%scale_by_complement_upper)  &
       !$omp map(release:this%idx_minor_upper, this%idx_minor_scaling_upper)  &
       !$omp map(release:this%kminor_start_upper, this%kminor_upper)
-      !$omp map(release:this%lut_extice, this%lut_ssaice, this%lut_asyice)
       deallocate(this%gas_names, this%vmr_ref, this%flavor, this%gpoint_flavor, this%kmajor)
       deallocate(this%minor_limits_gpt_lower, &
                  this%minor_scales_with_density_lower, this%scale_by_complement_lower, &
@@ -1768,7 +1767,7 @@ contains
       if(allocated(this%solar_source)) then
         !$acc exit data delete(this%solar_source, this%solar_source_quiet) &
         !$acc           delete(this%solar_source_facular,this%solar_source_sunspot)
-        !$omp target exit data map(release:his%solar_source, this%solar_source_quiet)
+        !$omp target exit data map(release:this%solar_source, this%solar_source_quiet)
         !$omp map(release:this%solar_source_facular,this%solar_source_sunspot)
         deallocate(this%solar_source, &
                    this%solar_source_quiet, this%solar_source_facular, this%solar_source_sunspot)

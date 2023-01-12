@@ -23,7 +23,7 @@ lw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "extensions",
                                     "rrtmgp-cloud-optics-coeffs-lw.nc")
 sw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "extensions",
                                     "cloud_optics",
-                                    "rrtmgp-cloud-optics-coeffs-sw.nc")
+                                    "rrtmgp-cloud-optics-coeffs-reordered-sw.nc")
 
 # In the local directory
 all_sky_exe_name = os.path.join(all_sky_dir, "rrtmgp_allsky")

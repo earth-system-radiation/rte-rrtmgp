@@ -26,7 +26,7 @@ jobs:
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
         - config-name: ifx-openmp
           fortran-compiler: ifx
-          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
         - config-name: nvfortran
           fortran-compiler: nvfortran

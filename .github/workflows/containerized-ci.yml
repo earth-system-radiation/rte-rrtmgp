@@ -16,17 +16,20 @@ jobs:
         fortran-compiler: [ifort, ifx, nvfortran]
         rte-kernels: [default, openacc]
         include:
-        - fortran-compiler: ifort
+        - config-name: ifort 
+          fortran-compiler: ifort
           fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
-        - fortran-compiler: ifx
-          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
-          image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
-        - name: ifx-openmp
+        - config-name: ifx-default
           fortran-compiler: ifx
           fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
-        - fortran-compiler: nvfortran
+        - config-name: ifx-openmp
+          fortran-compiler: ifx
+          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+          image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
+        - config-name: nvfortran
+          fortran-compiler: nvfortran
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvfortran"
     container:

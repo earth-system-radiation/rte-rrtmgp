@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
+      continue-on-error: ${{ matrix.experimental }}
       matrix:
         fortran-compiler: [ifort, ifx, nvfortran]
         rte-kernels: [default, openacc]
@@ -25,22 +26,26 @@ jobs:
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
           offload: false
-          # TODO: do we need -m64 or not?
           fcflags: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
-        # Set flags for Intel Fortran Compiler
+          experimental: false
+        # Set flags for Intel ifx Fortran Compiler
         - fortran-compiler: ifx
           offload: false
           fcflags: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
+          experimental: false
         - fortran-compiler: ifx
           offload: true
           fcflags: "-fiopenmp -fopenmp-target=spir64 -debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
+          experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
           offload: false
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+          experimental: false
         - fortran-compiler: nvfortran
           offload: true
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc"
+          experimental: false
         # Set container images
         - fortran-compiler: ifort
           image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"

@@ -10,9 +10,9 @@ on:
 jobs:
   Containerized-CI:
     runs-on: ubuntu-22.04
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
-      continue-on-error: ${{ matrix.experimental }}
       matrix:
         fortran-compiler: [ifort, ifx, nvfortran]
         rte-kernels: [default, openacc]

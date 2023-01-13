@@ -27,7 +27,7 @@ jobs:
           fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
           experimental: false
         - fortran-compiler: ifx
-          rte-kernels: openacc
+          rte-kernels: accel
           fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64"
           experimental: true
         # Set flags for NVIDIA Fortran compiler
@@ -36,7 +36,7 @@ jobs:
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
           experimental: false
         - fortran-compiler: nvfortran
-          rte-kernels: openacc
+          rte-kernels: accel
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc"
           experimental: false
         # Set container images

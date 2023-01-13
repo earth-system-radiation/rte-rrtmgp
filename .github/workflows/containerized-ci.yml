@@ -24,11 +24,11 @@ jobs:
         # Set flags for Intel ifx Fortran Compiler
         - fortran-compiler: ifx
           rte-kernels: default
-          fcflags: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
+          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
           experimental: false
         - fortran-compiler: ifx
           rte-kernels: openacc
-          fcflags: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-target=spir64"
+          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64"
           experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran

@@ -28,34 +28,18 @@ contains
     ! Local variables
     integer :: ncid, nband, nrh, nbin
 
-    real(wp), dimension(:,:),   allocatable :: band_lims_wvn
+    real(wp), dimension(:,:),   allocatable :: band_lims_wvn    ! spectral band wavenumber limits (npair,nband)
     ! LUT interpolation arrays
-    real(wp), dimension(:),     allocatable :: aero_bin_lo      ! aerosol size bin lower bounds
-    real(wp), dimension(:),     allocatable :: aero_bin_hi      ! aerosol size bin upper bounds
-    real(wp), dimension(:),     allocatable :: aero_bin_eff     ! aerosol size bin effective radius
-    real(wp), dimension(:),     allocatable :: aero_rh          ! aerosol relative humidity values
+    real(wp), dimension(:,:),   allocatable :: merra_aero_bin_lims ! aerosol size bin limits (npair, nbin)
+    real(wp), dimension(:),     allocatable :: aero_rh             ! aerosol relative humidity values (nrh)
     ! LUT coefficients 
-    real(wp), dimension(:,:),   allocatable :: aero_dust_ext    ! extinction: dust
-    real(wp), dimension(:,:),   allocatable :: aero_dust_ssa    ! single scattering albedo: dust
-    real(wp), dimension(:,:),   allocatable :: aero_dust_asy    ! asymmetry parameter: dust
-    real(wp), dimension(:,:,:), allocatable :: aero_salt_ext    ! extinction: sea salt
-    real(wp), dimension(:,:,:), allocatable :: aero_salt_ssa    ! single scattering albedo: sea salt
-    real(wp), dimension(:,:,:), allocatable :: aero_salt_asy    ! asymmetry parameter: sea salt
-    real(wp), dimension(:,:),   allocatable :: aero_sulf_ext    ! extinction: sulfate
-    real(wp), dimension(:,:),   allocatable :: aero_sulf_ssa    ! single scattering albedo: sulfate
-    real(wp), dimension(:,:),   allocatable :: aero_sulf_asy    ! asymmetry parameter: sulfate
-    real(wp), dimension(:),     allocatable :: aero_bcar_ext    ! extinction: black carbon, hydrophobic
-    real(wp), dimension(:),     allocatable :: aero_bcar_ssa    ! single scattering albedo: black carbon, hydrophobic
-    real(wp), dimension(:),     allocatable :: aero_bcar_asy    ! asymmetry parameter: black carbon, hydrophobic
-    real(wp), dimension(:,:),   allocatable :: aero_bcar_rh_ext ! extinction: black carbon, hydrophilic
-    real(wp), dimension(:,:),   allocatable :: aero_bcar_rh_ssa ! single scattering albedo: black carbon, hydrophilic
-    real(wp), dimension(:,:),   allocatable :: aero_bcar_rh_asy ! asymmetry parameter: black carbon, hydrophilic
-    real(wp), dimension(:),     allocatable :: aero_ocar_ext    ! extinction: organic carbon, hydrophobic
-    real(wp), dimension(:),     allocatable :: aero_ocar_ssa    ! single scattering albedo: organic carbon, hydrophobic
-    real(wp), dimension(:),     allocatable :: aero_ocar_asy    ! asymmetry parameter: organic carbon, hydrophobic
-    real(wp), dimension(:,:),   allocatable :: aero_ocar_rh_ext ! extinction: organic carbon, hydrophilic
-    real(wp), dimension(:,:),   allocatable :: aero_ocar_rh_ssa ! single scattering albedo: organic carbon, hydrophilic
-    real(wp), dimension(:,:),   allocatable :: aero_ocar_rh_asy ! asymmetry parameter: organic carbon, hydrophilic
+    real(wp), dimension(:,:,:),   allocatable :: aero_dust_tbl    ! extinction, ssa, g: dust (nval,nbin,nband)
+    real(wp), dimension(:,:,:,:), allocatable :: aero_salt_tbl    ! extinction, ssa, g: sea salt (nval,nrh,nbin,nband)
+    real(wp), dimension(:,:,:),   allocatable :: aero_sulf_tbl    ! extinction, ssa, g: sulfate (nval,nrh,nband)
+    real(wp), dimension(:,:),     allocatable :: aero_bcar_tbl    ! extinction, ssa, g: black carbon, hydrophobic (nval,nband)
+    real(wp), dimension(:,:,:),   allocatable :: aero_bcar_rh_tbl ! extinction, ssa, g: black carbon, hydrophilic (nval,nrh,nband)
+    real(wp), dimension(:,:),     allocatable :: aero_ocar_tbl    ! extinction, ssa, g: organic carbon, hydrophobic (nval,nband)
+    real(wp), dimension(:,:,:),   allocatable :: aero_ocar_rh_tbl ! extinction, ssa, g: organic carbon, hydrophilic (nval,nrh,nband)
     ! -----------------
     ! Open aerosol optical property coefficient file
     if(nf90_open(trim(aero_coeff_file), NF90_WRITE, ncid) /= NF90_NOERR) &
@@ -65,79 +49,45 @@ contains
     nband = get_dim_size(ncid,'nband')
     nrh   = get_dim_size(ncid,'nrh')
     nbin  = get_dim_size(ncid,'nbin')
+    nval  = get_dim_size(ncid,'nval')
+    npair  = get_dim_size(ncid,'pair')
 
-    allocate(band_lims_wvn(2, nband))
+    allocate(band_lims_wvn(npair, nband))
     band_lims_wvn = read_field(ncid, 'bnd_limits_wavenumber', 2, nband)
 
     ! Allocate aerosol property lookup table interpolation arrays
-    allocate(aero_bin_lo(nbin), &
-             aero_bin_hi(nbin), &
-             aero_bin_eff(nbin), &
+    allocate(merra_aero_bin_lims(npair,nbin), &
              aero_rh(nrh))
 
-    ! Allocate aerosol property lookup table input arrays
-    allocate(aero_dust_ext(nbin, nband), &
-             aero_dust_ssa(nbin, nband), &
-             aero_dust_asy(nbin, nband), &
-             aero_salt_ext(nbin, nrh, nband), &
-             aero_salt_ssa(nbin, nrh, nband), &
-             aero_salt_asy(nbin, nrh, nband), &
-             aero_sulf_ext(nrh, nband), &
-             aero_sulf_ssa(nrh, nband), &
-             aero_sulf_asy(nrh, nband), &
-             aero_bcar_ext(nband), &
-             aero_bcar_ssa(nband), &
-             aero_bcar_asy(nband), &
-             aero_bcar_rh_ext(nrh, nband), &
-             aero_bcar_rh_ssa(nrh, nband), &
-             aero_bcar_rh_asy(nrh, nband), &
-             aero_ocar_ext(nband), &
-             aero_ocar_ssa(nband), &
-             aero_ocar_asy(nband), &
-             aero_ocar_rh_ext(nrh, nband), &
-             aero_ocar_rh_ssa(nrh, nband), &
-             aero_ocar_rh_asy(nrh, nband))
-
     ! Read LUT interpolation arryas
-    aero_bin_lo = read_field(ncid, 'aero_bin_lo',  nbin)
-    aero_bin_hi = read_field(ncid, 'aero_bin_hi',  nbin)
-    aero_bin_eff= read_field(ncid, 'aero_bin_eff',  nbin)
-    aero_rh = read_field(ncid, 'aero_rh',  nrh)
+    merra_aero_bin_lims = read_field(ncid, 'merra_aero_bin_lims',  npair, nbin)
+    aero_rh= read_field(ncid, 'aero_rh',  nrh)
+
+    ! Allocate aerosol property lookup table input arrays
+    allocate(aero_dust_tbl(nvsl, nbin, nband), &
+             aero_salt_tbl(nval, nrh, nbin, nband), &
+             aero_sulf_tbl(nval, nrh, nband), &
+             aero_bcar_tbl(nval, nband), &
+             aero_bcar_rh_tbl(nval,nrh, nband), &
+             aero_ocar_tbl(nval, nband), &
+             aero_ocar_rh_tbl(nval, nrh, nband))
 
     ! Read LUT coefficients
-    aero_dust_ext = read_field(ncid, 'aero_dust_ext',  nbin, nband)
-    aero_dust_ssa = read_field(ncid, 'aero_dust_ssa',  nbin, nband)
-    aero_dust_asy = read_field(ncid, 'aero_dust_asy',  nbin, nband)
-    aero_salt_ext = read_field(ncid, 'aero_salt_ext',  nbin, nrh, nband)
-    aero_salt_ssa = read_field(ncid, 'aero_salt_ssa',  nbin, nrh, nband)
-    aero_salt_asy = read_field(ncid, 'aero_salt_asy',  nbin, nrh, nband)
-    aero_sulf_ext = read_field(ncid, 'aero_sulf_ext',  nrh, nband)
-    aero_sulf_ssa = read_field(ncid, 'aero_sulf_ssa',  nrh, nband)
-    aero_sulf_asy = read_field(ncid, 'aero_sulf_asy',  nrh, nband)
-    aero_bcar_ext = read_field(ncid, 'aero_bcar_ext',  nband)
-    aero_bcar_ssa = read_field(ncid, 'aero_bcar_ssa',  nband)
-    aero_bcar_asy = read_field(ncid, 'aero_bcar_asy',  nband)
-    aero_bcar_rh_ext = read_field(ncid, 'aero_bcar_rh_ext',  nrh, nband)
-    aero_bcar_rh_ssa = read_field(ncid, 'aero_bcar_rh_ssa',  nrh, nband)
-    aero_bcar_rh_asy = read_field(ncid, 'aero_bcar_rh_asy',  nrh, nband)
-    aero_ocar_ext = read_field(ncid, 'aero_ocar_ext',  nband)
-    aero_ocar_ssa = read_field(ncid, 'aero_ocar_ssa',  nband)
-    aero_ocar_asy = read_field(ncid, 'aero_ocar_asy',  nband)
-    aero_ocar_rh_ext = read_field(ncid, 'aero_ocar_rh_ext',  nrh, nband)
-    aero_ocar_rh_ssa = read_field(ncid, 'aero_ocar_rh_ssa',  nrh, nband)
-    aero_ocar_rh_asy = read_field(ncid, 'aero_ocar_rh_asy',  nrh, nband)
+    aero_dust_tbl = read_field(ncid, 'aero_dust_tbl',  nval, nbin, nband)
+    aero_salt_tbl = read_field(ncid, 'aero_salt_tbl',  nval, nrh, nbin, nband)
+    aero_sulf_tbl = read_field(ncid, 'aero_sulf_tbl',  nval, nrh, nband)
+    aero_bcar_tbl = read_field(ncid, 'aero_bcar_tbl',  nval, nband)
+    aero_bcar_rh_tbl = read_field(ncid, 'aero_bcar_rh_tbl',  nval, nrh, nband)
+    aero_ocar_tbl = read_field(ncid, 'aero_ocar_tbl',  nval, nband)
+    aero_ocar_rh_tbl = read_field(ncid, 'aero_ocar_rh_tbl',  nval, nrh, nband)
 
     ncid = nf90_close(ncid)
 
     call stop_on_err(aerosol_spec%load(band_lims_wvn, &
-                                  aero_bin_lo, aero_bin_hi, aero_bin_eff, aero_rh, &
-                                  aero_dust_ext, aero_dust_ssa, aero_dust_asy, &
-                                  aero_salt_ext, aero_salt_ssa, aero_salt_asy, &
-                                  aero_sulf_ext, aero_sulf_ssa, aero_sulf_asy, &
-                                  aero_bcar_ext, aero_bcar_ssa, aero_bcar_asy, &
-                                  aero_bcar_rh_ext, aero_bcar_rh_ssa, aero_bcar_rh_asy, &
-                                  aero_ocar_ext, aero_ocar_ssa, aero_ocar_asy, &
-                                  aero_ocar_rh_ext, aero_ocar_rh_ssa, aero_ocar_rh_asy))
+                                  merra-aero_bin_lims, aero_rh, &
+                                  aero_dust_tbl, aero_salt_tbl, aero_sulf_tbl, &
+                                  aero_bcar_tbl, aero_bcar_rh_tbl, &
+                                  aero_ocar_tbl, aero_ocar_rh_tbl))
 
   end subroutine load_aero_lutcoeff
   !--------------------------------------------------------------------------------------------------------------------
@@ -234,7 +184,7 @@ contains
 
     ! -----------------
     integer :: ncid
-    integer :: ncol, nlay, nlev, nmom, nbnd, ngpt, npai
+    integer :: ncol, nlay, nlev, nmom, nbnd, ngpt
     logical :: is_initialized
 
     integer, dimension(:,:), allocatable                 :: band_lims_gpt
@@ -249,7 +199,6 @@ contains
     nlay = get_dim_size(ncid,'lay')
     nlev = get_dim_size(ncid,'lev')
     nmom = get_dim_size(ncid,'mom')
-    npai = get_dim_size(ncid,'pair')
 
     allocate(play(ncol,nlay), plev(ncol,nlev), tlay(ncol,nlay))
     play = read_field(ncid, 'p_lay', ncol, nlay)

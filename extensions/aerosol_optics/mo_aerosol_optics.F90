@@ -56,21 +56,24 @@ module mo_aerosol_optics
     ! Lookup table information
     !
     ! Table upper and lower size bin limits and effective (center) values
-    real(wp),dimension(:), allocatable :: merra_aero_bin_lims(:,:)     ! Dimensions (pair,nbin)
+    real(wp),dimension(:,:), allocatable :: merra_aero_bin_lims     ! Dimensions (pair,nbin)
     ! Table relative humidity values
     real(wp),dimension(:), allocatable :: aero_rh(:)
     integer, dimension(:), allocatable :: rh_nsteps
     real(wp),dimension(:), allocatable :: rh_step_sizes, rh_offsets
     !
-    ! The tables themselves.
+    ! The aerosol tables themselves.
+    ! extinction (m2/kg)
+    ! single scattering albedo (unitless)
+    ! asymmetry parameter (unitless)
     !
-    real(wp), dimension(:,:  ), allocatable :: aero_dust_ext, aero_dust_ssa, aero_dust_asy          ! (nbin, nbnd)
-    real(wp), dimension(:,:,:), allocatable :: aero_salt_ext, aero_salt_ssa, aero_salt_asy          ! (nbin, nrh, nbnd)
-    real(wp), dimension(:,:  ), allocatable :: aero_sulf_ext, aero_sulf_ssa, aero_sulf_asy          ! (nrh, nbnd)
-    real(wp), dimension(:    ), allocatable :: aero_bcar_ext, aero_bcar_ssa, aero_bcar_asy          ! (nbnd)
-    real(wp), dimension(:,:  ), allocatable :: aero_bcar_rh_ext, aero_bcar_rh_ssa, aero_bcar_rh_asy ! (nrh, nbnd)
-    real(wp), dimension(:    ), allocatable :: aero_ocar_ext, aero_ocar_ssa, aero_ocar_asy          ! (nbnd)
-    real(wp), dimension(:,:  ), allocatable :: aero_ocar_rh_ext, aero_ocar_rh_ssa, aero_ocar_rh_asy ! (nrh, nbnd)
+    real(wp), dimension(:,:,:  ), allocatable :: aero_dust_tbl      ! ext, ssa, g (nval, nbin, nbnd)
+    real(wp), dimension(:,:,:,:), allocatable :: aero_salt_tbl      ! ext, ssa, g (nval, nrh, nbin, nbnd)
+    real(wp), dimension(:,:,:  ), allocatable :: aero_sulf_tbl      ! ext, ssa, g (nval, nrh, nbnd)
+    real(wp), dimension(:,:    ), allocatable :: aero_bcar_tbl      ! ext, ssa, g (nval, nbnd)
+    real(wp), dimension(:,:,:  ), allocatable :: aero_bcar_rh_tbl   ! ext, ssa, g (nval, nrh, nbnd)
+    real(wp), dimension(:,:    ), allocatable :: aero_ocar_tbl      ! ext, ssa, g (nval, nbnd)
+    real(wp), dimension(:,:,:  ), allocatable :: aero_ocar_rh_tbl   ! ext, ssa, g (nval, nrh, nbnd)
     !
     ! -----
   contains
@@ -90,14 +93,11 @@ contains
   ! ------------------------------------------------------------------------------
   function load_lut(this, band_lims_wvn, &
                     merra_aero_bin_lims, aero_rh, &
-                    aero_dust_ext, aero_dust_ssa, aero_dust_asy, &
-                    aero_salt_ext, aero_salt_ssa, aero_salt_asy, &
-                    aero_sulf_ext, aero_sulf_ssa, aero_sulf_asy, &
-                    aero_bcar_ext, aero_bcar_ssa, aero_bcar_asy, &
-                    aero_bcar_rh_ext, aero_bcar_rh_ssa, aero_bcar_rh_asy, &
-                    aero_ocar_ext, aero_ocar_ssa, aero_ocar_asy, &
-                    aero_ocar_rh_ext, aero_ocar_rh_ssa, aero_ocar_rh_asy) &
+                    aero_dust_tbl, aero_salt_tbl, aero_sulf_tbl, &
+                    aero_bcar_tbl, aero_bcar_rh_tbl, &
+                    aero_ocar_tbl, aero_ocar_rh_tbl) &
                     result(error_msg)
+
     class(ty_aerosol_optics),   intent(inout) :: this
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! spectral discretization
     ! Lookup table interpolation constants
@@ -105,13 +105,13 @@ contains
     real(wp), dimension(:),     intent(in   ) :: aero_rh       ! relative humidity LUT dimension values
     ! LUT coefficients
     ! Extinction, single-scattering albedo, and asymmetry parameter for aerosol types
-    real(wp), dimension(:,:),   intent(in)    :: aero_dust_ext, aero_dust_ssa, aero_dust_asy
-    real(wp), dimension(:,:,:), intent(in)    :: aero_salt_ext, aero_salt_ssa, aero_salt_asy
-    real(wp), dimension(:,:),   intent(in)    :: aero_sulf_ext, aero_sulf_ssa, aero_sulf_asy
-    real(wp), dimension(:),     intent(in)    :: aero_bcar_ext, aero_bcar_ssa, aero_bcar_asy
-    real(wp), dimension(:,:),   intent(in)    :: aero_bcar_rh_ext, aero_bcar_rh_ssa, aero_bcar_rh_asy
-    real(wp), dimension(:),     intent(in)    :: aero_ocar_ext, aero_ocar_ssa, aero_ocar_asy
-    real(wp), dimension(:,:),   intent(in)    :: aero_ocar_rh_ext, aero_ocar_rh_ssa, aero_ocar_rh_asy
+    real(wp), dimension(:,:,:),   intent(in)  :: aero_dust_tbl
+    real(wp), dimension(:,:,:,:), intent(in)  :: aero_salt_tbl
+    real(wp), dimension(:,:,:),   intent(in)  :: aero_sulf_tbl
+    real(wp), dimension(:,:),     intent(in)  :: aero_bcar_tbl
+    real(wp), dimension(:,:,:),   intent(in)  :: aero_bcar_rh_tbl
+    real(wp), dimension(:,:),     intent(in)  :: aero_ocar_tbl
+    real(wp), dimension(:,:,:),   intent(in)  :: aero_ocar_rh_tbl
     character(len=128)    :: error_msg
     ! -------
     !
@@ -124,51 +124,48 @@ contains
     ! LUT coefficient dimensions
     !
     npair = size(merra_aero_bin_lims,dim=1)
-    nbin  = size(aero_salt_ext,dim=1)
-    nrh   = size(aero_salt_ext,dim=2)
-    nband = size(aero_salt_ext,dim=3)
+    nval  = size(aero_salt_tbl,dim=1)
+    nrh   = size(aero_salt_tbl,dim=2)
+    nbin  = size(aero_salt_ext,dim=3)
+    nband = size(aero_salt_ext,dim=4)
     !
     ! Error checking
     !
 !    if(nband /= this%get_nband()) &
 !      error_msg = "aerosol_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
     error_msg = ''
-    if(size(aero_dust_ext, 1) /= nbin) &
-      error_msg = "aerosol_optics%init(): array aero_dust_ext has the wrong number of size bins"
-    if(size(aero_dust_ext, 2) /= nband) &
-      error_msg = "aerosol_optics%init(): array aero_dust_ext has the wrong number of bands"
-    if(size(aero_salt_ext, 3) /= nband) &
-      error_msg = "aerosol_optics%init(): array aero_salt_ext has the wrong number of bands"
-    if(size(aero_sulf_ext, 2) /= nband) &
-      error_msg = "aerosol_optics%init(): array aero_sulf_ext has the wrong number of bands"
-    if(size(aero_bcar_ext, 1) /= nband) &
-      error_msg = "aerosol_optics%init(): array aero_bcar_ext has the wrong number of bands"
-    if(size(aero_ocar_ext, 1) /= nband) &
+    if(size(aero_dust_tbl, 1) /= nval) &
+      error_msg = "aerosol_optics%init(): array aero_dust_tbl has the wrong number of values"
+    if(size(aero_dust_tbl, 2) /= nbin) &
+      error_msg = "aerosol_optics%init(): array aero_dust_tbl has the wrong number of size bins"
+    if(size(aero_dust_tbl, 3) /= nband) &
+      error_msg = "aerosol_optics%init(): array aero_dust_tbl has the wrong number of bands"
+    if(size(aero_salt_tbl, 1) /= nval) &
+      error_msg = "aerosol_optics%init(): array aero_salt_tbl has the wrong number of values"
+    if(size(aero_salt_tbl, 2) /= nrh) &
+      error_msg = "aerosol_optics%init(): array aero_salt_tbl has the wrong number of rh bins"
+    if(size(aero_salt_tbl, 3) /= nbin) &
+      error_msg = "aerosol_optics%init(): array aero_salt_tbl has the wrong number of size bins"
+    if(size(aero_salt_tbl, 4) /= nband) &
+      error_msg = "aerosol_optics%init(): array aero_salt_tbl has the wrong number of bands"
+    if(size(aero_sulf_tbl, 2) /= nband) &
+      error_msg = "aerosol_optics%init(): array aero_sulf_tbl has the wrong number of bands"
+    if(size(aero_bcar_tbl, 2) /= nband) &
+      error_msg = "aerosol_optics%init(): array aero_bcar_tbl has the wrong number of bands"
+    if(size(aero_bcar_rh_tbl, 2) /= nrh) &
+      error_msg = "aerosol_optics%init(): array aero_bcar_rh_tbl has the wrong number of rh bins"
+    if(size(aero_ocar_tbl, 2) /= nband) &
       error_msg = "aerosol_optics%init(): array aero_ocar_ext has the wrong number of bands"
-    if(.not. extents_are(aero_salt_ext, nbin, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_salt_ext isn't consistently sized"
-    if(.not. extents_are(aero_salt_ssa, nbin, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_salt_ssa isn't consistently sized"
-    if(.not. extents_are(aero_salt_asy, nbin, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_salt_asy isn't consistently sized"
-    if(.not. extents_are(aero_sulf_ext, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_sulf_ext isn't consistently sized"
-    if(.not. extents_are(aero_sulf_ssa, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_sulf_ssa isn't consistently sized"
-    if(.not. extents_are(aero_sulf_asy, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_sulf_asy isn't consistently sized"
-    if(.not. extents_are(aero_bcar_rh_ext, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_bcar_rh_ext isn't consistently sized"
-    if(.not. extents_are(aero_bcar_rh_ssa, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_bcar_rh_ssa isn't consistently sized"
-    if(.not. extents_are(aero_bcar_rh_asy, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_bcar_rh_asy isn't consistently sized"
-    if(.not. extents_are(aero_ocar_rh_ext, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_ocar_rh_ext isn't consistently sized"
-    if(.not. extents_are(aero_ocar_rh_ssa, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_ocar_rh_ssa isn't consistently sized"
-    if(.not. extents_are(aero_ocar_rh_asy, nrh, nband)) &
-      error_msg = "aerosol_optics%init(): array aero_ocar_rh_asy isn't consistently sized"
+    if(.not. extents_are(aero_dust_tbl, nval, nbin, nband)) &
+      error_msg = "aerosol_optics%init(): array aero_dust_tbl isn't consistently sized"
+    if(.not. extents_are(aero_salt_tbl, nval, nrh, nbin, nband)) &
+      error_msg = "aerosol_optics%init(): array aero_salt_tbl isn't consistently sized"
+    if(.not. extents_are(aero_sulf_tbl, nval, nrh, nband)) &
+      error_msg = "aerosol_optics%init(): array aero_sulf_tbl isn't consistently sized"
+    if(.not. extents_are(aero_bcar_rh_tbl, nval, nrh, nband)) &
+      error_msg = "aerosol_optics%init(): array aero_bcar_rh_tbl isn't consistently sized"
+    if(.not. extents_are(aero_ocar_rh_tbl, nval, nrh, nband)) &
+      error_msg = "aerosol_optics%init(): array aero_ocar_rh_tbl isn't consistently sized"
     if(error_msg /= "") return
 
     ! Allocate LUT parameters
@@ -187,52 +184,24 @@ contains
     this%rh_offsets(1) = 0.0_wp
     this%rh_offsets(2) = 0.8_wp
     ! Allocate LUT coefficients
-    allocate(this%aero_dust_ext(nbin, nband), &
-             this%aero_dust_ssa(nbin, nband), &
-             this%aero_dust_asy(nbin, nband), &
-             this%aero_salt_ext(nbin, nrh, nband), &
-             this%aero_salt_ssa(nbin, nrh, nband), &
-             this%aero_salt_asy(nbin, nrh, nband), &
-             this%aero_sulf_ext(nrh, nband), &
-             this%aero_sulf_ssa(nrh, nband), &
-             this%aero_sulf_asy(nrh, nband), &
-             this%aero_bcar_ext(nband), &
-             this%aero_bcar_ssa(nband), &
-             this%aero_bcar_asy(nband), &
-             this%aero_bcar_rh_ext(nrh, nband), &
-             this%aero_bcar_rh_ssa(nrh, nband), &
-             this%aero_bcar_rh_asy(nrh, nband), &
-             this%aero_ocar_ext(nband), &
-             this%aero_ocar_ssa(nband), &
-             this%aero_ocar_asy(nband), &
-             this%aero_ocar_rh_ext(nrh, nband), &
-             this%aero_ocar_rh_ssa(nrh, nband), &
-             this%aero_ocar_rh_asy(nrh, nband))
+    allocate(this%aero_dust_tbl(nval, nbin, nband), &
+             this%aero_salt_tbl(nval, nrh, nbin, nband), &
+             this%aero_sulf_tbl(nval, nrh, nband), &
+             this%aero_bcar_tbl(nval, nband), &
+             this%aero_bcar_rh_tbl(nval, nrh, nband), &
+             this%aero_ocar_tbl(nval, nband), &
+             this%aero_ocar_rh_tbl(nval, nrh, nband))
 
     ! Load LUT coefficients
     !$acc kernels
     !$omp target
-    this%aero_dust_ext = aero_dust_ext
-    this%aero_dust_ssa = aero_dust_ssa
-    this%aero_dust_asy = aero_dust_asy
-    this%aero_salt_ext = aero_salt_ext
-    this%aero_salt_ssa = aero_salt_ssa
-    this%aero_salt_asy = aero_salt_asy
-    this%aero_sulf_ext = aero_sulf_ext
-    this%aero_sulf_ssa = aero_sulf_ssa
-    this%aero_sulf_asy = aero_sulf_asy
-    this%aero_bcar_ext = aero_bcar_ext
-    this%aero_bcar_ssa = aero_bcar_ssa
-    this%aero_bcar_asy = aero_bcar_asy
-    this%aero_bcar_rh_ext = aero_bcar_rh_ext
-    this%aero_bcar_rh_ssa = aero_bcar_rh_ssa
-    this%aero_bcar_rh_asy = aero_bcar_rh_asy
-    this%aero_ocar_ext = aero_ocar_ext
-    this%aero_ocar_ssa = aero_ocar_ssa
-    this%aero_ocar_asy = aero_ocar_asy
-    this%aero_ocar_rh_ext = aero_ocar_rh_ext
-    this%aero_ocar_rh_ssa = aero_ocar_rh_ssa
-    this%aero_ocar_rh_asy = aero_ocar_rh_asy
+    this%aero_dust_tbl = aero_dust_tbl
+    this%aero_salt_tbl = aero_salt_tbl
+    this%aero_sulf_tbl = aero_sulf_tbl
+    this%aero_bcar_tbl = aero_bcar_tbl
+    this%aero_bcar_rh_tbl = aero_bcar_rh_tbl
+    this%aero_ocar_tbl = aero_ocar_tbl
+    this%aero_ocar_rh_tbl = aero_ocar_rh_tbl
     !$acc end kernels
     !$omp end target
     !
@@ -254,13 +223,9 @@ contains
     ! Lookup table aerosol optics coefficients
     if(allocated(this%aero_dust_ext)) then
 
-      deallocate(this%aero_dust_ext, this%aero_dust_ssa, this%aero_dust_asy, &
-                 this%aero_salt_ext, this%aero_salt_ssa, this%aero_salt_asy, &
-                 this%aero_sulf_ext, this%aero_sulf_ssa, this%aero_sulf_asy, &
-                 this%aero_bcar_ext, this%aero_bcar_ssa, this%aero_bcar_asy, &
-                 this%aero_bcar_rh_ext, this%aero_bcar_rh_ssa, this%aero_bcar_rh_asy, &
-                 this%aero_ocar_ext, this%aero_ocar_ssa, this%aero_ocar_asy, &
-                 this%aero_ocar_rh_ext, this%aero_ocar_rh_ssa, this%aero_ocar_rh_asy)
+      deallocate(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl, &
+                 this%aero_bcar_tbl, this%aero_bcar_rh_tbl, &
+                 this%aero_ocar_tbl, this%aero_ocar_rh_tbl)
     end if
 
   end subroutine finalize
@@ -300,7 +265,7 @@ contains
     character(len=128)      :: error_msg
     ! ------- Local -------
     logical(wl), dimension(size(aero_type,1), size(aero_type,2)) :: aeromsk
-    real(wp),    dimension(size(aero_type,1), size(aero_type,2), size(this%aero_dust_ext,2)) :: &
+    real(wp),    dimension(size(aero_type,1), size(aero_type,2), size(this%aero_dust_tbl,3)) :: &
                  atau, ataussa, ataussag
     integer  :: ncol, nlay, nbnd, npair, nbin, nrh
     integer  :: icol, ilay, ibnd, ibin
@@ -314,7 +279,7 @@ contains
     ! ----------------------------------------
 
     error_msg = ''
-    if(.not.(allocated(this%aero_dust_ext))) then
+    if(.not.(allocated(this%aero_dust_tbl))) then
       error_msg = 'aerosol optics: no data has been initialized'
       return
     end if
@@ -324,7 +289,8 @@ contains
     npair= size(this%merra_aero_bin_lims,1)
     nbin = size(this%merra_aero_bin_lims,2)
     nrh  = size(this%aero_rh,1)
-    nbnd = size(this%aero_dust_ext,2)
+    nval = size(this%aero_dust_tbl,1)
+    nbnd = size(this%aero_dust_tbl,3)
 
     !
     ! Array sizes
@@ -403,13 +369,9 @@ contains
                                     aero_type, aero_size, aero_mass, relhum,                    &
                                     this%merra_aero_bin_lims, this%aero_rh,                     &
                                     this%rh_nsteps, this%rh_step_sizes, this%rh_offsets,        &
-                                    this%aero_dust_ext, this%aero_dust_ssa, this%aero_dust_asy, &
-                                    this%aero_salt_ext, this%aero_salt_ssa, this%aero_salt_asy, &
-                                    this%aero_sulf_ext, this%aero_sulf_ssa, this%aero_sulf_asy, &
-                                    this%aero_bcar_rh_ext, this%aero_bcar_rh_ssa, this%aero_bcar_rh_asy, &
-                                    this%aero_bcar_ext, this%aero_bcar_ssa, this%aero_bcar_asy, &
-                                    this%aero_ocar_rh_ext, this%aero_ocar_rh_ssa, this%aero_ocar_rh_asy, &
-                                    this%aero_ocar_ext, this%aero_ocar_ssa, this%aero_ocar_asy, &
+                                    this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl, &
+                                    this%aero_bcar_rh_tbl, this%aero_bcar_tbl,                  &
+                                    this%aero_ocar_rh_tbl, this%aero_ocar_tbl,                  &
                                     atau, ataussa, ataussag)
 
       endif
@@ -466,7 +428,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------------
   ! Purpose: For an input aerosol particle size, return the corresponding bin number
   !          from the MERRA aerosol optical property particle size dimension as defined
-  !          by aero_bin_lo and aero_bin_hi. 
+  !          by merra_aero_bin_lims. 
   !--------------------------------------------------------------------------------------------------------------------
     integer,                          intent(in   ) :: npair, nbin
     real(wp), dimension(npair, nbin), intent(in   ) :: merra_aero_bin_lims
@@ -501,17 +463,13 @@ contains
   !   unevenly-spaced elements "aero_rh". The last dimension for all tables is band.
   ! Returns zero where no aerosol is present.
   !
-  subroutine compute_all_from_table(ncol, nlay, nbnd, npair, nbin, nrh,             &
-                                    type, size,  mass, rh,                          &
-                                    merra_aero_bin_lims, aero_rh,                   &
-                                    rh_nsteps, rh_step_sizes, rh_offsets,           &
-                                    tau_dust_table, ssa_dust_table, asy_dust_table, &
-                                    tau_salt_table, ssa_salt_table, asy_salt_table, &
-                                    tau_sulf_table, ssa_sulf_table, asy_sulf_table, &
-                                    tau_bcar_rh_table, ssa_bcar_rh_table, asy_bcar_rh_table, &
-                                    tau_bcar_table, ssa_bcar_table, asy_bcar_table, &
-                                    tau_ocar_rh_table, ssa_ocar_rh_table, asy_ocar_rh_table, &
-                                    tau_ocar_table, ssa_ocar_table, asy_ocar_table, &
+  subroutine compute_all_from_table(ncol, nlay, nbnd, npair, nbin, nrh,                &
+                                    type, size,  mass, rh,                             &
+                                    merra_aero_bin_lims, aero_rh,                      &
+                                    rh_nsteps, rh_step_sizes, rh_offsets,              &
+                                    aero_dust_table, aero_salt_table, aero_sulf_table, &
+                                    aero_bcar_rh_table, aero_bcar_table,               &
+                                    aero_ocar_rh_table, aero_ocar_table,               &
                                     tau, taussa, taussag)
 
     integer,                               intent(in) :: ncol, nlay, nbnd, npair, nbin, nrh
@@ -523,18 +481,18 @@ contains
     integer,     dimension(2),             intent(in) :: rh_nsteps
     real(wp),    dimension(2),             intent(in) :: rh_step_sizes, rh_offsets
 
-    real(wp),    dimension(nbin,    nbnd), intent(in) :: tau_dust_table, ssa_dust_table, asy_dust_table
-    real(wp),    dimension(nbin,nrh,nbnd), intent(in) :: tau_salt_table, ssa_salt_table, asy_salt_table
-    real(wp),    dimension(     nrh,nbnd), intent(in) :: tau_sulf_table, ssa_sulf_table, asy_sulf_table
-    real(wp),    dimension(     nrh,nbnd), intent(in) :: tau_bcar_rh_table, ssa_bcar_rh_table, asy_bcar_rh_table
-    real(wp),    dimension(         nbnd), intent(in) :: tau_bcar_table, ssa_bcar_table, asy_bcar_table
-    real(wp),    dimension(     nrh,nbnd), intent(in) :: tau_ocar_rh_table, ssa_ocar_rh_table, asy_ocar_rh_table
-    real(wp),    dimension(         nbnd), intent(in) :: tau_ocar_table, ssa_ocar_table, asy_ocar_table
+    real(wp),    dimension(nval,    nbin,nbnd), intent(in) :: aero_dust_table
+    real(wp),    dimension(nval,nrh,nbin,nbnd), intent(in) :: aero_salt_table
+    real(wp),    dimension(nval,nrh,     nbnd), intent(in) :: aero_sulf_table
+    real(wp),    dimension(nval,nrh,     nbnd), intent(in) :: aero_bcar_rh_table
+    real(wp),    dimension(nval,         nbnd), intent(in) :: aero_bcar_table
+    real(wp),    dimension(nval,nrh,     nbnd), intent(in) :: aero_ocar_rh_table
+    real(wp),    dimension(nval,         nbnd), intent(in) :: aero_ocar_table
 
     real(wp),    dimension(ncol,nlay,nbnd)            :: tau, taussa, taussag
     ! ---------------------------
     integer  :: icol, ilay, ibnd, ibin
-    integer  :: index, itype
+    integer  :: irh, itype
     real(wp) :: fint
     real(wp) :: t, ts, tsg  ! tau, tau*ssa, tau*ssa*g
     ! ---------------------------
@@ -546,81 +504,81 @@ contains
           ibin = get_aerosol_size_bin(nbin, merra_aero_bin_lims, size(icol,ilay))
           itype = type(icol,ilay)
           if (itype .ne. 0 .and. rh(icol,ilay) .le. rh_offsets(2)) then
-            index = min(floor((rh(icol,ilay) - rh_offsets(1))/rh_step_sizes(1))+1, rh_nsteps(1)-1)
-            fint = (rh(icol,ilay) - rh_offsets(1))/rh_step_sizes(1) - (index-1)
+            irh = min(floor((rh(icol,ilay) - rh_offsets(1))/rh_step_sizes(1))+1, rh_nsteps(1)-1)
+            fint = (rh(icol,ilay) - rh_offsets(1))/rh_step_sizes(1) - (irh-1)
           elseif (itype .ne. 0 .and. rh(icol,ilay) .gt. rh_offsets(2)) then
-            index = min(floor((rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2))+1, rh_nsteps(2)-1)
-            fint = (rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2) - (index-1)
+            irh = min(floor((rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2))+1, rh_nsteps(2)-1)
+            fint = (rh(icol,ilay) - rh_offsets(2))/rh_step_sizes(2) - (irh-1)
           endif
           ! Set aerosol optical properties where aerosol present. Use aerosol type array as the mask. 
           select case (itype)
 
              ! dust
              case(merra_aero_dust)
-               t   = mass(icol,ilay) * tau_dust_table(ibin,ibnd)
-               ts  = t               * ssa_dust_table(ibin,ibnd)
+               t   = mass(icol,ilay) * aero_dust_table(1,ibin,ibnd)
+               ts  = t               * aero_dust_table(2,ibin,ibnd)
                taussag(icol,ilay,ibnd) =  &
-                     ts              * asy_dust_table(ibin,ibnd)
+                     ts              * aero_dust_table(3,ibin,ibnd)
                taussa (icol,ilay,ibnd) = ts
                tau    (icol,ilay,ibnd) = t
-             ! sea-salt  (IN PROGRESS)
+             ! sea-salt
              case(merra_aero_salt)
                t   = mass(icol,ilay) * &
-                     (tau_salt_table(ibin,index,ibnd) + fint * (tau_salt_table(ibin,index+1,ibnd) - tau_salt_table(ibin,index,ibnd)))
+                     (aero_salt_table(1,irh,ibin,ibnd) + fint * (aero_salt_table(1,irh+1,ibin,ibnd) - aero_salt_table(1,irh,ibin,ibnd)))
                ts  = t              * &
-                     (ssa_salt_table(ibin,index,ibnd) + fint * (ssa_salt_table(ibin,index+1,ibnd) - ssa_salt_table(ibin,index,ibnd)))
+                     (aero_salt_table(2,irh,ibin,ibnd) + fint * (aero_salt_table(2,irh+1,ibin,ibnd) - aero_salt_table(2,irh,ibin,ibnd)))
                taussag(icol,ilay,ibnd) =  &
                      ts             * &
-                     (asy_salt_table(ibin,index,ibnd) + fint * (asy_salt_table(ibin,index+1,ibnd) - asy_salt_table(ibin,index,ibnd)))
+                     (aero_salt_table(3,irh,ibin,ibnd) + fint * (aero_salt_table(3,irh+1,ibin,ibnd) - aero_salt_table(3,irh,ibin,ibnd)))
                taussa (icol,ilay,ibnd) = ts
                tau    (icol,ilay,ibnd) = t
-             ! sulfate  (IN PROGRESS)
+             ! sulfate
              case(merra_aero_sulf)
                t   = mass(icol,ilay) * &
-                     (tau_sulf_table(index,  ibnd) + fint * (tau_sulf_table(index+1,ibnd) - tau_sulf_table(index,ibnd)))
+                     (aero_sulf_table(1,irh,ibnd) + fint * (aero_sulf_table(1,irh+1,ibnd) - aero_sulf_table(1,irh,ibnd)))
                ts  = t              * &
-                     (ssa_sulf_table(index,  ibnd) + fint * (ssa_sulf_table(index+1,ibnd) - ssa_sulf_table(index,ibnd)))
+                     (aero_sulf_table(2,irh,ibnd) + fint * (aero_sulf_table(2,irh+1,ibnd) - aero_sulf_table(2,irh,ibnd)))
                taussag(icol,ilay,ibnd) =  &
                      ts             * &
-                     (asy_sulf_table(index,  ibnd) + fint * (asy_sulf_table(index+1,ibnd) - asy_sulf_table(index,ibnd)))
+                     (aero_sulf_table(3,irh,ibnd) + fint * (aero_sulf_table(3,irh+1,ibnd) - aero_sulf_table(3,irh,ibnd)))
                taussa (icol,ilay,ibnd) = ts
                tau    (icol,ilay,ibnd) = t
              ! black carbon - hydrophilic
              case(merra_aero_bcar_rh)
                t   = mass(icol,ilay) * &
-                     (tau_bcar_rh_table(index,  ibnd) + fint * (tau_bcar_rh_table(index+1,ibnd) - tau_bcar_rh_table(index,ibnd)))
+                     (aero_bcar_rh_table(1,irh,ibnd) + fint * (aero_bcar_rh_table(1,irh+1,ibnd) - aero_bcar_rh_table(1,irh,ibnd)))
                ts  = t              * &
-                     (ssa_bcar_rh_table(index,  ibnd) + fint * (ssa_bcar_rh_table(index+1,ibnd) - ssa_bcar_rh_table(index,ibnd)))
+                     (aero_bcar_rh_table(2,irh,ibnd) + fint * (aero_bcar_rh_table(2,irh+1,ibnd) - aero_bcar_rh_table(2,irh,ibnd)))
                taussag(icol,ilay,ibnd) =  &
                      ts             * &
-                     (asy_bcar_rh_table(index,  ibnd) + fint * (asy_bcar_rh_table(index+1,ibnd) - asy_bcar_rh_table(index,ibnd)))
+                     (aero_bcar_rh_table(3,irh,ibnd) + fint * (aero_bcar_rh_table(3,irh+1,ibnd) - aero_bcar_rh_table(3,irh,ibnd)))
                taussa (icol,ilay,ibnd) = ts
                tau    (icol,ilay,ibnd) = t
              ! black carbon - hydrophobic
              case(merra_aero_bcar)
-               t   = mass(icol,ilay) * tau_bcar_table(ibnd)
-               ts  = t               * ssa_bcar_table(ibnd)
+               t   = mass(icol,ilay) * aero_bcar_table(1,ibnd)
+               ts  = t               * aero_bcar_table(2,ibnd)
                taussag(icol,ilay,ibnd) =  &
-                     ts              * asy_bcar_table(ibnd)
+                     ts              * aero_bcar_table(3,ibnd)
                taussa (icol,ilay,ibnd) = ts
                tau    (icol,ilay,ibnd) = t
              ! organic carbon - hydrophilic
              case(merra_aero_ocar_rh)
                t   = mass(icol,ilay) * &
-                     (tau_ocar_rh_table(index,  ibnd) + fint * (tau_ocar_rh_table(index+1,ibnd) - tau_ocar_rh_table(index,ibnd)))
+                     (aero_ocar_rh_table(1,irh,ibnd) + fint * (aero_ocar_rh_table(1,irh+1,ibnd) - aero_ocar_rh_table(1,irh,ibnd)))
                ts  = t              * &
-                     (ssa_ocar_rh_table(index,  ibnd) + fint * (ssa_ocar_rh_table(index+1,ibnd) - ssa_ocar_rh_table(index,ibnd)))
+                     (aero_ocar_rh_table(2,irh,ibnd) + fint * (aero_ocar_rh_table(2,irh+1,ibnd) - aero_ocar_rh_table(2,irh,ibnd)))
                taussag(icol,ilay,ibnd) =  &
                      ts             * &
-                     (asy_ocar_rh_table(index,  ibnd) + fint * (asy_ocar_rh_table(index+1,ibnd) - asy_ocar_rh_table(index,ibnd)))
+                     (aero_ocar_rh_table(3,irh,ibnd) + fint * (aero_ocar_rh_table(3,irh+1,ibnd) - aero_ocar_rh_table(3,irh,ibnd)))
                taussa (icol,ilay,ibnd) = ts
                tau    (icol,ilay,ibnd) = t
              ! organic carbon - hydrophobic
              case(merra_aero_ocar)
-               t   = mass(icol,ilay) * tau_ocar_table(ibnd)
-               ts  = t               * ssa_ocar_table(ibnd)
+               t   = mass(icol,ilay) * aero_ocar_table(1,ibnd)
+               ts  = t               * aero_ocar_table(2,ibnd)
                taussag(icol,ilay,ibnd) =  &
-                     ts              * asy_ocar_table(ibnd)
+                     ts              * aero_ocar_table(3,ibnd)
                taussa (icol,ilay,ibnd) = ts
                tau    (icol,ilay,ibnd) = t
              ! no aerosol
@@ -635,5 +593,26 @@ contains
       end do
     end do
   end subroutine compute_all_from_table
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Function for interpolating MERRA 2-d aerosol optics tables in the rh dimension
+  ! for each spectral band, vertical layer and column. Interpolation is performed
+  ! only where aerosol in present using aerosol type as the mask. 
+  ! Returns zero where no aerosol is present.
+  !
+  function interp_aero_table_2d()
+
+  end function interp_aero_table_2d
+
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Function for interpolating MERRA 3-d aerosol optics tables in the rh dimension
+  ! for each spectral band, vertical layer and column. Interpolation is performed
+  ! only where aerosol in present using aerosol type as the mask. 
+  ! Returns zero where no aerosol is present.
+  !
+  function interp_aero_table_3d()
+
+  end function interp_aero_table_3d
 
 end module mo_aerosol_optics

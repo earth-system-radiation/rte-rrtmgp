@@ -134,19 +134,19 @@ contains
 !      error_msg = "aerosol_optics%init(): number of bands inconsistent between lookup tables, spectral discretization"
       error_msg = ''
       if(.not. extents_are(aero_dust_tbl, nval, nbin, nband)) &
-        error_msg = "aerosol_optics%init(): array aero_dust_tbl isn't consistently sized"
+        error_msg = "aerosol_optics%load_lut(): array aero_dust_tbl isn't consistently sized"
       if(.not. extents_are(aero_salt_tbl, nval, nrh, nbin, nband)) &
-        error_msg = "aerosol_optics%init(): array aero_salt_tbl isn't consistently sized"
+        error_msg = "aerosol_optics%load_lut(): array aero_salt_tbl isn't consistently sized"
       if(.not. extents_are(aero_sulf_tbl, nval, nrh, nband)) &
-        error_msg = "aerosol_optics%init(): array aero_sulf_tbl isn't consistently sized"
+        error_msg = "aerosol_optics%load_lut(): array aero_sulf_tbl isn't consistently sized"
       if(.not. extents_are(aero_bcar_rh_tbl, nval, nrh, nband)) &
-        error_msg = "aerosol_optics%init(): array aero_bcar_rh_tbl isn't consistently sized"
+        error_msg = "aerosol_optics%load_lut(): array aero_bcar_rh_tbl isn't consistently sized"
       if(.not. extents_are(aero_bcar_tbl, nval, nband)) &
-        error_msg = "aerosol_optics%init(): array aero_bcar_tbl isn't consistently sized"
+        error_msg = "aerosol_optics%load_lut(): array aero_bcar_tbl isn't consistently sized"
       if(.not. extents_are(aero_ocar_rh_tbl, nval, nrh, nband)) &
-        error_msg = "aerosol_optics%init(): array aero_ocar_rh_tbl isn't consistently sized"
+        error_msg = "aerosol_optics%load_lut(): array aero_ocar_rh_tbl isn't consistently sized"
       if(.not. extents_are(aero_ocar_tbl, nval, nband)) &
-        error_msg = "aerosol_optics%init(): array aero_ocar_tbl isn't consistently sized"
+        error_msg = "aerosol_optics%load_lut(): array aero_ocar_tbl isn't consistently sized"
       if(error_msg /= "") return
     endif
 
@@ -270,14 +270,15 @@ contains
     ! Array sizes
     !
     if (check_extents) then
-      if(size(aero_type, 1) /= ncol .or. size(aero_type, 2) /= nlay) &
-        error_msg = "aerosol optics: aero_type has wrong extents"
-      if(size(aero_size, 1) /= ncol .or. size(aero_size, 2) /= nlay) &
-        error_msg = "aerosol optics: aero_size has wrong extents"
-      if(size(aero_mass, 1) /= ncol .or. size(aero_mass, 2) /= nlay) &
-        error_msg = "aerosol optics: aero_mass has wrong extents"
-      if(size(relhum,  1) /= ncol .or. size(relhum,  2) /= nlay) &
-        error_msg = "aerosol optics: relhumn has wrong extents"
+      error_msg = ''
+      if(.not. extents_are(aero_type, ncol, nlay)) &
+        error_msg = "aerosol optics: aero_type isn't consistenly sized"
+      if(.not. extents_are(aero_size, ncol, nlay)) &
+        error_msg = "aerosol optics: aero_size isn't consistenly sized"
+      if(.not. extents_are(aero_mass, ncol, nlay)) &
+        error_msg = "aerosol optics: aero_mass isn't consistenly sized"
+      if(.not. extents_are(relhum, ncol, nlay)) &
+        error_msg = "aerosol optics: relhum isn't consistenly sized"
       if(optical_props%get_ncol() /= ncol .or. optical_props%get_nlay() /= nlay) &
         error_msg = "aerosol optics: optical_props have wrong extents"
       if(error_msg /= "") return

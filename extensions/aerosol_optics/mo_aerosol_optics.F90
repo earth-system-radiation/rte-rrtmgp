@@ -459,7 +459,7 @@ contains
     real(wp),    dimension(nval,nrh,     nbnd), intent(in) :: aero_ocar_rh_table
     real(wp),    dimension(nval,         nbnd), intent(in) :: aero_ocar_table
 
-    real(wp),    dimension(ncol,nlay,nbnd)            :: tau, taussa, taussag
+    real(wp),    dimension(ncol,nlay,nbnd), intent(out) :: tau, taussa, taussag
     ! ---------------------------
     integer  :: icol, ilay, ibnd, ibin
     integer  :: itype, irh1, irh2
@@ -496,72 +496,51 @@ contains
 
              ! dust
              case(merra_aero_dust)
-               t   = mass(icol,ilay) * aero_dust_table(1,ibin,ibnd)
-               ts  = t               * aero_dust_table(2,ibin,ibnd)
-               taussag(icol,ilay,ibnd) =  &
-                     ts              * aero_dust_table(3,ibin,ibnd)
-               taussa (icol,ilay,ibnd) = ts
-               tau    (icol,ilay,ibnd) = t
+               tau    (icol,ilay,ibnd) = mass(icol,ilay) * aero_dust_table(1,ibin,ibnd)
+               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * aero_dust_table(2,ibin,ibnd)
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * aero_dust_table(3,ibin,ibnd)
              ! sea-salt
              case(merra_aero_salt)
-               t   = mass(icol,ilay) * &
-                     (aero_salt_table(1,irh1,ibin,ibnd) + rdrh * (aero_salt_table(1,irh2,ibin,ibnd) - aero_salt_table(1,irh1,ibin,ibnd)))
-               ts  = t              * &
-                     (aero_salt_table(2,irh1,ibin,ibnd) + rdrh * (aero_salt_table(2,irh2,ibin,ibnd) - aero_salt_table(2,irh1,ibin,ibnd)))
-               taussag(icol,ilay,ibnd) =  &
-                     ts             * &
-                     (aero_salt_table(3,irh1,ibin,ibnd) + rdrh * (aero_salt_table(3,irh2,ibin,ibnd) - aero_salt_table(3,irh1,ibin,ibnd)))
-               taussa (icol,ilay,ibnd) = ts
-               tau    (icol,ilay,ibnd) = t
+               tau    (icol,ilay,ibnd) = mass(icol,ilay) * (aero_salt_table(1,irh1,ibin,ibnd) &
+                                       + rdrh * (aero_salt_table(1,irh2,ibin,ibnd) - aero_salt_table(1,irh1,ibin,ibnd)))
+               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * (aero_salt_table(2,irh1,ibin,ibnd) &
+                                       + rdrh * (aero_salt_table(2,irh2,ibin,ibnd) - aero_salt_table(2,irh1,ibin,ibnd)))
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * (aero_salt_table(3,irh1,ibin,ibnd) &
+                                       + rdrh * (aero_salt_table(3,irh2,ibin,ibnd) - aero_salt_table(3,irh1,ibin,ibnd)))
              ! sulfate
              case(merra_aero_sulf)
-               t   = mass(icol,ilay) * &
-                     (aero_sulf_table(1,irh1,ibnd) + rdrh * (aero_sulf_table(1,irh2,ibnd) - aero_sulf_table(1,irh1,ibnd)))
-               ts  = t              * &
-                     (aero_sulf_table(2,irh1,ibnd) + rdrh * (aero_sulf_table(2,irh2,ibnd) - aero_sulf_table(2,irh1,ibnd)))
-               taussag(icol,ilay,ibnd) =  &
-                     ts             * &
-                     (aero_sulf_table(3,irh1,ibnd) + rdrh * (aero_sulf_table(3,irh2,ibnd) - aero_sulf_table(3,irh1,ibnd)))
-               taussa (icol,ilay,ibnd) = ts
-               tau    (icol,ilay,ibnd) = t
+               tau    (icol,ilay,ibnd) = mass(icol,ilay) * (aero_sulf_table(1,irh1,ibnd) &
+                                       + rdrh * (aero_sulf_table(1,irh2,ibnd) - aero_sulf_table(1,irh1,ibnd)))
+               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * (aero_sulf_table(2,irh1,ibnd) &
+                                       + rdrh * (aero_sulf_table(2,irh2,ibnd) - aero_sulf_table(2,irh1,ibnd)))
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * (aero_sulf_table(3,irh1,ibnd) &
+                                       + rdrh * (aero_sulf_table(3,irh2,ibnd) - aero_sulf_table(3,irh1,ibnd)))
              ! black carbon - hydrophilic
              case(merra_aero_bcar_rh)
-               t   = mass(icol,ilay) * &
-                     (aero_bcar_rh_table(1,irh1,ibnd) + rdrh * (aero_bcar_rh_table(1,irh2,ibnd) - aero_bcar_rh_table(1,irh1,ibnd)))
-               ts  = t              * &
-                     (aero_bcar_rh_table(2,irh1,ibnd) + rdrh * (aero_bcar_rh_table(2,irh2,ibnd) - aero_bcar_rh_table(2,irh1,ibnd)))
-               taussag(icol,ilay,ibnd) =  &
-                     ts             * &
-                     (aero_bcar_rh_table(3,irh1,ibnd) + rdrh * (aero_bcar_rh_table(3,irh2,ibnd) - aero_bcar_rh_table(3,irh1,ibnd)))
-               taussa (icol,ilay,ibnd) = ts
-               tau    (icol,ilay,ibnd) = t
+               tau    (icol,ilay,ibnd) = mass(icol,ilay) * (aero_bcar_rh_table(1,irh1,ibnd) &
+                                       + rdrh * (aero_bcar_rh_table(1,irh2,ibnd) - aero_bcar_rh_table(1,irh1,ibnd)))
+               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * (aero_bcar_rh_table(2,irh1,ibnd) &
+                                       + rdrh * (aero_bcar_rh_table(2,irh2,ibnd) - aero_bcar_rh_table(2,irh1,ibnd)))
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * (aero_bcar_rh_table(3,irh1,ibnd) &
+                                       + rdrh * (aero_bcar_rh_table(3,irh2,ibnd) - aero_bcar_rh_table(3,irh1,ibnd)))
              ! black carbon - hydrophobic
              case(merra_aero_bcar)
-               t   = mass(icol,ilay) * aero_bcar_table(1,ibnd)
-               ts  = t               * aero_bcar_table(2,ibnd)
-               taussag(icol,ilay,ibnd) =  &
-                     ts              * aero_bcar_table(3,ibnd)
-               taussa (icol,ilay,ibnd) = ts
-               tau    (icol,ilay,ibnd) = t
+               tau    (icol,ilay,ibnd) = mass(icol,ilay) * aero_bcar_table(1,ibnd)
+               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * aero_bcar_table(2,ibnd)
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * aero_bcar_table(3,ibnd)
              ! organic carbon - hydrophilic
              case(merra_aero_ocar_rh)
-               t   = mass(icol,ilay) * &
-                     (aero_ocar_rh_table(1,irh1,ibnd) + rdrh * (aero_ocar_rh_table(1,irh2,ibnd) - aero_ocar_rh_table(1,irh1,ibnd)))
-               ts  = t              * &
-                     (aero_ocar_rh_table(2,irh1,ibnd) + rdrh * (aero_ocar_rh_table(2,irh2,ibnd) - aero_ocar_rh_table(2,irh1,ibnd)))
-               taussag(icol,ilay,ibnd) =  &
-                     ts             * &
-                     (aero_ocar_rh_table(3,irh1,ibnd) + rdrh * (aero_ocar_rh_table(3,irh2,ibnd) - aero_ocar_rh_table(3,irh1,ibnd)))
-               taussa (icol,ilay,ibnd) = ts
-               tau    (icol,ilay,ibnd) = t
+               tau    (icol,ilay,ibnd) = mass(icol,ilay) * (aero_ocar_rh_table(1,irh1,ibnd) &
+                                       + rdrh * (aero_ocar_rh_table(1,irh2,ibnd) - aero_ocar_rh_table(1,irh1,ibnd)))
+               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * (aero_ocar_rh_table(2,irh1,ibnd) &
+                                       + rdrh * (aero_ocar_rh_table(2,irh2,ibnd) - aero_ocar_rh_table(2,irh1,ibnd)))
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * (aero_ocar_rh_table(3,irh1,ibnd) &
+                                       + rdrh * (aero_ocar_rh_table(3,irh2,ibnd) - aero_ocar_rh_table(3,irh1,ibnd)))
              ! organic carbon - hydrophobic
              case(merra_aero_ocar)
-               t   = mass(icol,ilay) * aero_ocar_table(1,ibnd)
-               ts  = t               * aero_ocar_table(2,ibnd)
-               taussag(icol,ilay,ibnd) =  &
-                     ts              * aero_ocar_table(3,ibnd)
-               taussa (icol,ilay,ibnd) = ts
-               tau    (icol,ilay,ibnd) = t
+               tau    (icol,ilay,ibnd) = mass(icol,ilay) * aero_ocar_table(1,ibnd)
+               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * aero_ocar_table(2,ibnd)
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * aero_ocar_table(3,ibnd)
              ! no aerosol
              case default
                tau    (icol,ilay,ibnd) = 0._wp

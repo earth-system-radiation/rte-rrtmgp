@@ -32,7 +32,7 @@ contains
     ! LUT interpolation arrays
     real(wp), dimension(:,:),   allocatable :: merra_aero_bin_lims ! aerosol size bin limits (npair, nbin)
     real(wp), dimension(:),     allocatable :: aero_rh             ! aerosol relative humidity values (nrh)
-    ! LUT coefficients 
+    ! LUT coefficients (extinction: m2/kg; ssa, g: unitless)
     real(wp), dimension(:,:,:),   allocatable :: aero_dust_tbl    ! extinction, ssa, g: dust (nval,nbin,nband)
     real(wp), dimension(:,:,:,:), allocatable :: aero_salt_tbl    ! extinction, ssa, g: sea salt (nval,nrh,nbin,nband)
     real(wp), dimension(:,:,:),   allocatable :: aero_sulf_tbl    ! extinction, ssa, g: sulfate (nval,nrh,nband)

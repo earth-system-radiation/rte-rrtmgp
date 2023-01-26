@@ -26,7 +26,7 @@ contains
     character(len=*),           intent(in   ) :: aero_coeff_file
     ! -----------------
     ! Local variables
-    integer :: ncid, nband, nrh, nbin
+    integer :: ncid, nband, nrh, nbin, nval, npair
 
     real(wp), dimension(:,:),   allocatable :: band_lims_wvn    ! spectral band wavenumber limits (npair,nband)
     ! LUT interpolation arrays
@@ -64,7 +64,7 @@ contains
     aero_rh= read_field(ncid, 'aero_rh',  nrh)
 
     ! Allocate aerosol property lookup table input arrays
-    allocate(aero_dust_tbl(nvsl, nbin, nband), &
+    allocate(aero_dust_tbl(nval, nbin, nband), &
              aero_salt_tbl(nval, nrh, nbin, nband), &
              aero_sulf_tbl(nval, nrh, nband), &
              aero_bcar_tbl(nval, nband), &
@@ -84,7 +84,7 @@ contains
     ncid = nf90_close(ncid)
 
     call stop_on_err(aerosol_spec%load(band_lims_wvn, &
-                                  merra-aero_bin_lims, aero_rh, &
+                                  merra_aero_bin_lims, aero_rh, &
                                   aero_dust_tbl, aero_salt_tbl, aero_sulf_tbl, &
                                   aero_bcar_tbl, aero_bcar_rh_tbl, &
                                   aero_ocar_tbl, aero_ocar_rh_tbl))

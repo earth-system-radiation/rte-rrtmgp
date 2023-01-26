@@ -33,7 +33,7 @@ program test_aerosol_optics
     real(wp), dimension(:,:), allocatable :: aero_mmr
                                             ! Aerosol mass mixing ratio
     real(wp), dimension(:,:), allocatable :: aero_mass
-                                            ! Aerosol mass column (g/m2)
+                                            ! Aerosol mass column (kg/m2)
     real(wp), dimension(:,:), allocatable :: relhum
                                             ! Relative humidity (fraction)
     real(wp), dimension(:,:), allocatable :: p_lay   ! layer pressure (Pa)
@@ -167,7 +167,7 @@ contains
           es_tmp = exp( (17.67_wp * (t_lay(i,k)-t_ref)) / (t_lay(i,k)-29.65_wp) )
           rh = (0.263_wp * p_lay(i,k) * q_tmp) / es_tmp
           ! Convert rh from percent to fraction
-          relhum(i,k) = 0.01 * rh
+          relhum(i,k) = 0.01_wp * rh
        enddo
     enddo
     
@@ -183,7 +183,7 @@ contains
     real(wp), intent(in) :: vmr_h2o(ncol,nlay)  ! water volume mixing ratio
     real(wp), intent(in) :: aero_mmr(ncol,nlay) ! aerosol mass mixing ratio
 
-    real(wp), dimension(:,:), allocatable, intent(inout) :: aero_mass ! aerosol column integrated mass (g/m2)
+    real(wp), dimension(:,:), allocatable, intent(inout) :: aero_mass ! aerosol column integrated mass (kg/m2)
 
     ! Local variables 
     integer :: i, k
@@ -210,8 +210,8 @@ contains
           p_del = p_lev(i,k) - p_lev(i,k+1)
           p_deldry = p_del * (1._wp - q_lay)
           mmr2mass = rg * p_deldry
-          ! Derive mass, convert from kg/m2 to g/m2
-          aero_mass(i,k) = aero_mmr(i,k) * mmr2mass * 1.e3_wp
+          ! Derive aerosol mass; units are kg/m2
+          aero_mass(i,k) = aero_mmr(i,k) * mmr2mass
        enddo
     enddo
     

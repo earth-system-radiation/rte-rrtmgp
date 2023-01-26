@@ -40,7 +40,8 @@ module mo_aerosol_optics
 
   ! MERRA2/GOCART aerosol types
   integer, parameter, public :: merra_ntype = 7          ! Number of MERRA aerosol types
-  integer, parameter, public :: merra_aero_dust = 1      ! Dust
+  integer, parameter, public :: merra_aero_none = 0      ! no aerosal
+  integer, parameter, public :: merra_aero_dust = 1      ! dust
   integer, parameter, public :: merra_aero_salt = 2      ! Salt
   integer, parameter, public :: merra_aero_sulf = 3      ! sulfate
   integer, parameter, public :: merra_aero_bcar_rh = 4   ! black carbon, hydrophilic
@@ -120,7 +121,7 @@ contains
     !
     ! Local variables
     !
-    integer               :: npair, nbin, nrh, nband
+    integer               :: npair, nval, nrh, nbin, nband
 
     error_msg = this%init(band_lims_wvn, name="RRTMGP aerosol optics")
     !
@@ -244,7 +245,7 @@ contains
     logical(wl), dimension(size(aero_type,1), size(aero_type,2)) :: aeromsk
     real(wp),    dimension(size(aero_type,1), size(aero_type,2), size(this%aero_dust_tbl,3)) :: &
                  atau, ataussa, ataussag
-    integer  :: ncol, nlay, nbnd, npair, nbin, nrh
+    integer  :: ncol, nlay, npair, nbin, nrh, nval, nbnd
     integer  :: icol, ilay, ibnd, ibin
     ! scalars for total tau, tau*ssa
     real(wp) :: tau, taussa
@@ -294,7 +295,7 @@ contains
         error_msg = "aerosol optics: optical properties don't have the same band structure"
       if(optical_props%get_nband() /= optical_props%get_ngpt() ) &
         error_msg = "aerosol optics: optical properties must be requested by band not g-points"
-      if(any_vals_outside(aero_type, 0, merra_ntype)) &
+      if(any_int_vals_outside_2D(aero_type, merra_aero_none, merra_ntype)) &
         error_msg = 'aerosol optics: aerosol type is out of bounds'
       if(error_msg /= "") return
     end if
@@ -342,7 +343,7 @@ contains
         !
         ! Aerosol
         !
-        call compute_all_from_table(ncol, nlay, nbnd, npair, nbin, nrh,                         &
+        call compute_all_from_table(ncol, nlay, npair, nval, nrh, nbin, nbnd,                   &
                                     aero_type, aero_size, aero_mass, relhum,                    &
                                     this%merra_aero_bin_lims, this%aero_rh,                     &
                                     this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl, &
@@ -417,8 +418,8 @@ contains
     ibin = 0
 
     error_msg = ''
-    if(any_vals_outside(aero_size, merra_aero_bin_lims(0,1), merra_aero_bin_lims(1,nbin))) &
-      error_msg = "get_aerosol_size_bin(): requested aerosol size outside of allowable range"
+!    if(any_vals_outside(aero_size, merra_aero_bin_lims(0,1), merra_aero_bin_lims(1,nbin))) &
+!      error_msg = "get_aerosol_size_bin(): requested aerosol size outside of allowable range"
  
     do i=1,nbin 
        if (aero_size .ge. merra_aero_bin_lims(0,i) .and. &
@@ -439,7 +440,7 @@ contains
   !   unevenly-spaced elements "aero_rh". The last dimension for all tables is band.
   ! Returns zero where no aerosol is present.
   !
-  subroutine compute_all_from_table(ncol, nlay, nbnd, npair, nbin, nrh,                &
+  subroutine compute_all_from_table(ncol, nlay, npair, nval, nrh, nbin, nbnd,          &
                                     type, size, mass, rh,                              &
                                     merra_aero_bin_lims, aero_rh,                      &
                                     aero_dust_tbl, aero_salt_tbl, aero_sulf_tbl,       &
@@ -447,7 +448,7 @@ contains
                                     aero_ocar_rh_tbl, aero_ocar_tbl,                   &
                                     tau, taussa, taussag)
 
-    integer,                               intent(in) :: ncol, nlay, nbnd, npair, nbin, nrh
+    integer,                               intent(in) :: ncol, nlay, npair, nval, nrh, nbin, nbnd
     integer,     dimension(ncol,nlay),     intent(in) :: type
     real(wp),    dimension(ncol,nlay),     intent(in) :: size, mass, rh
 
@@ -474,10 +475,10 @@ contains
     do ibnd = 1, nbnd
       do ilay = 1,nlay
         do icol = 1, ncol
-          ibin = get_aerosol_size_bin(nbin, merra_aero_bin_lims, size(icol,ilay))
+          ibin = get_aerosol_size_bin(npair, nbin, merra_aero_bin_lims, size(icol,ilay))
           itype = type(icol,ilay)
           ! relative humidity linear interpolation coefficients
-          if (itype .ne. 0) then
+          if (itype .ne. merra_aero_none) then
              irh2 = 1
              do while (rh(icol,ilay) .gt. aero_rh(irh2))
                 irh2 = irh2 + 1
@@ -505,28 +506,28 @@ contains
              ! sea-salt
              case(merra_aero_salt)
                tau    (icol,ilay,ibnd) = mass(icol,ilay) * &
-                                         linear_interp(aero_salt_tbl(ext,:,ibin,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_salt_tbl(ext,:,ibin,ibnd),irh1,irh2,rdrh)
                taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * &
-                                         linear_interp(aero_salt_tbl(ssa,:,ibin,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_salt_tbl(ssa,:,ibin,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp(aero_salt_tbl(g,:,ibin,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_salt_tbl(g,:,ibin,ibnd),irh1,irh2,rdrh)
 
              ! sulfate
              case(merra_aero_sulf)
                tau    (icol,ilay,ibnd) = mass(icol,ilay) * &
-                                         linear_interp(aero_sulf_tbl(ext,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_sulf_tbl(ext,:,ibnd),irh1,irh2,rdrh)
                taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * &
-                                         linear_interp(aero_sulf_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_sulf_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp(aero_sulf_tbl(g,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_sulf_tbl(g,:,ibnd),irh1,irh2,rdrh)
              ! black carbon - hydrophilic
              case(merra_aero_bcar_rh)
                tau    (icol,ilay,ibnd) = mass(icol,ilay) * &
-                                         linear_interp(aero_bcar_rh_tbl(ext,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_bcar_rh_tbl(ext,:,ibnd),irh1,irh2,rdrh)
                taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * &
-                                         linear_interp(aero_bcar_rh_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_bcar_rh_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp(aero_bcar_rh_tbl(g,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_bcar_rh_tbl(g,:,ibnd),irh1,irh2,rdrh)
              ! black carbon - hydrophobic
              case(merra_aero_bcar)
                tau    (icol,ilay,ibnd) = mass(icol,ilay) * aero_bcar_tbl(ext,ibnd)
@@ -535,11 +536,11 @@ contains
              ! organic carbon - hydrophilic
              case(merra_aero_ocar_rh)
                tau    (icol,ilay,ibnd) = mass(icol,ilay) * &
-                                         linear_interp(aero_ocar_rh_tbl(ext,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_ocar_rh_tbl(ext,:,ibnd),irh1,irh2,rdrh)
                taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * &
-                                         linear_interp(aero_ocar_rh_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_ocar_rh_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp(aero_ocar_rh_tbl(g,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_ocar_rh_tbl(g,:,ibnd),irh1,irh2,rdrh)
              ! organic carbon - hydrophobic
              case(merra_aero_ocar)
                tau    (icol,ilay,ibnd) = mass(icol,ilay) * aero_ocar_tbl(ext,ibnd)
@@ -574,5 +575,21 @@ contains
      value = table(index1) + weight * (table(index2) - table(index1))
      
   end function linear_interp_aero_table
+! ----------------------------------------------------------
+  logical function any_int_vals_outside_2D(array, checkMin, checkMax)
+    integer, dimension(:,:), intent(in) :: array
+    integer,                 intent(in) :: checkMin, checkMax
+
+    integer :: minValue, maxValue
+
+    !$acc kernels copyin(array)
+    !$omp target map(to:array) map(from:minValue, maxValue)
+    minValue = minval(array)
+    maxValue = maxval(array)
+    !$acc end kernels
+    !$omp end target
+    any_int_vals_outside_2D = minValue < checkMin .or. maxValue > checkMax
+
+  end function any_int_vals_outside_2D
 
 end module mo_aerosol_optics

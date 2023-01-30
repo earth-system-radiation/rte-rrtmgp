@@ -15,7 +15,7 @@ void sum_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux, re
         #pragma omp parallel for
       #endif
       for (int icol = 1; icol <= ncol; icol++) {
-        broadband_flux(icol, ilev) = 0.0_wp;
+        broadband_flux(icol, ilev) = 0.0;
       }
       #ifdef YAKL_ARCH_OPENMP
         #pragma omp parallel for
@@ -33,7 +33,7 @@ void sum_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux, re
     // do ilev = 1, nlev
     //   do icol = 1, ncol
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
-      real bb_flux_s = 0.0_wp;
+      real bb_flux_s = 0.0;
       for (int igpt=1; igpt<=ngpt; igpt++) {
         bb_flux_s += spectral_flux(icol, ilev, igpt);
       }

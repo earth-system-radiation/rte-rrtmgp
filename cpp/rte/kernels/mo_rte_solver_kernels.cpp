@@ -99,7 +99,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
       // From bottom to top of atmosphere --
       //   compute albedo and source of upward radiation
       for (ilev=nlay; ilev>=1; ilev--) {
-        denom(icol,ilev,igpt) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev+1,igpt));    // Eq 10
+        denom(icol,ilev,igpt) = 1./(1. - rdif(icol,ilev,igpt)*albedo(icol,ilev+1,igpt));    // Eq 10
         albedo(icol,ilev,igpt) = rdif(icol,ilev,igpt) + 
                                  tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev+1,igpt) * denom(icol,ilev,igpt); // Equation 9
         // Equation 11 -- source is emitted upward radiation at top of layer plus
@@ -148,7 +148,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
           //   compute albedo and source of upward radiation
         for (ilev = 1; ilev <= nlay; ilev++) {
           for (int icol = 1; icol <= ncol; icol++) {
-            denom (icol,ilev  ,igpt) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt));                // Eq 10
+            denom (icol,ilev  ,igpt) = 1./(1. - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt));                // Eq 10
             albedo(icol,ilev+1,igpt) = rdif(icol,ilev,igpt) + 
                                        tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev,igpt) * denom(icol,ilev,igpt); // Equation 9
             // Equation 11 -- source is emitted upward radiation at top of layer plus
@@ -195,7 +195,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
         // From bottom to top of atmosphere --
         //   compute albedo and source of upward radiation
         for (ilev = 1; ilev <= nlay; ilev++) {
-          denom (icol,ilev  ,igpt) = 1._wp/(1._wp - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt));                // Eq 10
+          denom (icol,ilev  ,igpt) = 1./(1. - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt));                // Eq 10
           albedo(icol,ilev+1,igpt) = rdif(icol,ilev,igpt) + 
                                      tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev,igpt) * denom(icol,ilev,igpt); // Equation 9
           // Equation 11 -- source is emitted upward radiation at top of layer plus
@@ -313,10 +313,10 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     // Transport is for intensity
     //   convert flux at top of domain to intensity assuming azimuthal isotropy
-    radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2._wp * pi * weights(weight_ind));
+    radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2. * pi * weights(weight_ind));
     
     // Surface albedo, surface source function
-    sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt);
+    sfc_albedo(icol,igpt) = 1. - sfc_emis(icol,igpt);
     source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt);
   });
 
@@ -346,8 +346,8 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
   //   do ilev = 1, nlay+1
   //     do icol = 1, ncol
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
-    radn_dn(icol,ilev,igpt) = 2._wp * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
-    radn_up(icol,ilev,igpt) = 2._wp * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
+    radn_dn(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
+    radn_up(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
   });
 }
 
@@ -432,7 +432,7 @@ void lw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &s
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
-    if ( tau(icol,ilay,ngpt) > 1.0e-8_wp ) {
+    if ( tau(icol,ilay,ngpt) > 1.0e-8 ) {
       real lev_source_top, lev_source_bot;
       if (top_at_1) {
         lev_source_top = lev_source(icol,ilay  ,ngpt);
@@ -450,8 +450,8 @@ void lw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &s
       source_up(icol,ilay,igpt) = pi * (Zup_top    - rdif(icol,ilay,igpt) * Zdn_top    - tdif(icol,ilay,igpt) * Zup_bottom);
       source_dn(icol,ilay,igpt) = pi * (Zdn_bottom - rdif(icol,ilay,igpt) * Zup_bottom - tdif(icol,ilay,igpt) * Zdn_top);
     } else {
-      source_up(icol,ilay,igpt) = 0._wp;
-      source_dn(icol,ilay,igpt) = 0._wp;
+      source_up(icol,ilay,igpt) = 0.;
+      source_dn(icol,ilay,igpt) = 0.;
     }
     if(ilay == 1) {
       source_sfc(icol,igpt) = pi * sfc_emis(icol,igpt) * sfc_src(icol,igpt);
@@ -507,8 +507,8 @@ void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const
     // Coefficients differ from SW implementation because the phase function is more isotropic
     //   Here we follow Fu et al. 1997, doi:10.1175/1520-0469(1997)054<2799:MSPITI>2.0.CO;2
     //   and use a diffusivity sec of 1.66
-    gamma1(icol,ilay,igpt)= LW_diff_sec * (1._wp - 0.5_wp * w0(icol,ilay,igpt) * (1._wp + g(icol,ilay,igpt))); // Fu et al. Eq 2.9
-    gamma2(icol,ilay,igpt)= LW_diff_sec *          0.5_wp * w0(icol,ilay,igpt) * (1._wp - g(icol,ilay,igpt));  // Fu et al. Eq 2.10
+    gamma1(icol,ilay,igpt)= LW_diff_sec * (1. - 0.5 * w0(icol,ilay,igpt) * (1. + g(icol,ilay,igpt))); // Fu et al. Eq 2.9
+    gamma2(icol,ilay,igpt)= LW_diff_sec *          0.5 * w0(icol,ilay,igpt) * (1. - g(icol,ilay,igpt));  // Fu et al. Eq 2.10
 
     // Written to encourage vectorization of exponential, square root
     // Eq 18;  k = SQRT(gamma1**2 - gamma2**2), limited below to avoid div by 0.
@@ -516,20 +516,20 @@ void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const
     //   gives relative error with respect to conservative solution
     //   of < 0.1% in Rdif down to tau = 10^-9
     real k = sqrt(std::max((gamma1(icol,ilay,igpt) - gamma2(icol,ilay,igpt)) * 
-                           (gamma1(icol,ilay,igpt) + gamma2(icol,ilay,igpt)) , 1.e-12_wp));
+                           (gamma1(icol,ilay,igpt) + gamma2(icol,ilay,igpt)) , 1.e-12));
     real exp_minusktau = exp(-tau(icol,ilay,igpt)*k);
 
     // Diffuse reflection and transmission
     real exp_minus2ktau = exp_minusktau * exp_minusktau;
 
     // Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
-    real RT_term = 1._wp / (k * (1._wp + exp_minus2ktau)  +  gamma1(icol,ilay,igpt) * (1._wp - exp_minus2ktau) );
+    real RT_term = 1. / (k * (1. + exp_minus2ktau)  +  gamma1(icol,ilay,igpt) * (1. - exp_minus2ktau) );
 
     // Equation 25
-    Rdif(icol,ilay,igpt) = RT_term * gamma2(icol,ilay,igpt) * (1._wp - exp_minus2ktau);
+    Rdif(icol,ilay,igpt) = RT_term * gamma2(icol,ilay,igpt) * (1. - exp_minus2ktau);
 
     // Equation 26
-    Tdif(icol,ilay,igpt) = RT_term * 2._wp * k * exp_minusktau;
+    Tdif(icol,ilay,igpt) = RT_term * 2. * k * exp_minusktau;
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
@@ -546,7 +546,7 @@ void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const 
   real1d mu0_inv("mu0_inv",ncol);
 
   parallel_for( YAKL_AUTO_LABEL() , ncol , YAKL_LAMBDA (int icol) {
-    mu0_inv(icol) = 1._wp/mu0(icol);
+    mu0_inv(icol) = 1./mu0(icol);
   });
 
   // Indexing into arrays for upward and downward propagation depends on the vertical
@@ -624,7 +624,7 @@ void lw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
-    sfc_albedo(icol,igpt) = 1._wp - sfc_emis(icol,igpt);
+    sfc_albedo(icol,igpt) = 1. - sfc_emis(icol,igpt);
   });
 
   // Transport

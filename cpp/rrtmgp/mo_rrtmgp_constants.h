@@ -7,13 +7,13 @@
 // Physical constants, 2018 SI defintion of metric system
 //   doi:10.1088/1681-7575/aa950a (see also https://www.nist.gov/si-redefinition/meet-constants)
 // Boltzmann constant [J/K] = [(kg m^2)/(K s^2)]
-real constexpr k_boltz = 1.380649e-23_wp;
+real constexpr k_boltz = 1.380649e-23;
 
 //  molecular weight of water [kg/mol]
-real constexpr m_h2o =  0.018016_wp;
+real constexpr m_h2o =  0.018016;
 
 // Avogadro's number [molec/mol]
-real constexpr avogad = 6.02214076e23_wp;
+real constexpr avogad = 6.02214076e23;
 
 // Universal gas constant [J/(mol K)]
 real constexpr R_univ_gconst = avogad * k_boltz;

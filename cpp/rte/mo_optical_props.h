@@ -30,7 +30,7 @@ public:
     int2d band_lims_gpt_lcl("band_lims_gpt_lcl",2,size(band_lims_wvn,2));
     if (size(band_lims_wvn,1) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (any(band_lims_wvn < 0._wp)) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
+      if (any(band_lims_wvn < 0.)) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
     #endif
     if (allocated(band_lims_gpt)) {
       if (size(band_lims_gpt,2) != size(band_lims_wvn,2)) {
@@ -155,11 +155,11 @@ public:
     YAKL_SCOPE( this_band_lims_wvn , this->band_lims_wvn );
     if (this->is_initialized()) {
       parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-        ret(i,j) = 1._wp / this_band_lims_wvn(i,j);
+        ret(i,j) = 1. / this_band_lims_wvn(i,j);
       });
     } else {
       parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-        ret(i,j) = 0._wp;
+        ret(i,j) = 0.;
       });
     }
     return ret;

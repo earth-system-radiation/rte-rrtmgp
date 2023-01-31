@@ -114,8 +114,8 @@ public:
 
     this->liq_nsteps = nsize_liq;
     this->ice_nsteps = nsize_ice;
-    this->liq_step_size = (radliq_upr - radliq_lwr) / (nsize_liq-1._wp);
-    this->ice_step_size = (radice_upr - radice_lwr) / (nsize_ice-1._wp);
+    this->liq_step_size = (radliq_upr - radliq_lwr) / (nsize_liq-1.);
+    this->ice_step_size = (radice_upr - radice_lwr) / (nsize_ice-1.);
     // Load LUT constants
     this->radliq_lwr = radliq_lwr;
     this->radliq_upr = radliq_upr;
@@ -280,8 +280,8 @@ public:
     // do ilay = 1, nlay
     //   do icol = 1, ncol
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
-      liqmsk(icol,ilay) = clwp(icol,ilay) > 0._wp;
-      icemsk(icol,ilay) = ciwp(icol,ilay) > 0._wp;
+      liqmsk(icol,ilay) = clwp(icol,ilay) > 0.;
+      icemsk(icol,ilay) = ciwp(icol,ilay) > 0.;
     });
 
     #ifdef RRTMGP_EXPENSIVE_CHECKS
@@ -292,7 +292,7 @@ public:
       if ( any(icemsk && (reice < this->radice_lwr)) || any(icemsk && (reice > this->radice_upr)) ) {
         stoprun("cloud optics: ice effective radius is out of bounds");
       }
-      if ( any(liqmsk && (clwp < 0._wp)) || any(icemsk && (ciwp < 0._wp)) ) {
+      if ( any(liqmsk && (clwp < 0.)) || any(icemsk && (ciwp < 0.)) ) {
         stoprun("cloud optics: negative clwp or ciwp where clouds are supposed to be");
       }
     #endif
@@ -441,7 +441,7 @@ public:
     //     do icol = 1, ncol
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
-        int index = std::min( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1._wp);
+        int index = std::min( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.);
         real fint = (re(icol,ilay) - offset)/step_size - (index-1);
         real t   = lwp(icol,ilay)    * (tau_table(index,  ibnd) + fint * (tau_table(index+1,ibnd) - tau_table(index,ibnd)));
         real ts  = t                 * (ssa_table(index,  ibnd) + fint * (ssa_table(index+1,ibnd) - ssa_table(index,ibnd)));
@@ -476,14 +476,14 @@ public:
         // Finds index into size regime table
         // This works only if there are precisely three size regimes (four bounds) and it's
         //   previously guaranteed that size_bounds(1) <= size <= size_bounds(4)
-        irad = std::min(floor((re(icol,ilay) - re_bounds_ext(2))/re_bounds_ext(3))+2, 3._wp);
+        irad = std::min(floor((re(icol,ilay) - re_bounds_ext(2))/re_bounds_ext(3))+2, 3.);
         real t = lwp(icol,ilay) *         pade_eval(ibnd, nbnd, nsizes, m_ext, n_ext, irad, re(icol,ilay), coeffs_ext);
 
-        irad = std::min(floor((re(icol,ilay) - re_bounds_ssa(2))/re_bounds_ssa(3))+2, 3._wp);
+        irad = std::min(floor((re(icol,ilay) - re_bounds_ssa(2))/re_bounds_ssa(3))+2, 3.);
         // Pade approximants for co-albedo can sometimes be negative
-        real ts = t * (1._wp - std::max(0._wp, pade_eval(ibnd, nbnd, nsizes, m_ssa, n_ssa, irad, re(icol,ilay), coeffs_ssa)));
+        real ts = t * (1. - std::max(0., pade_eval(ibnd, nbnd, nsizes, m_ssa, n_ssa, irad, re(icol,ilay), coeffs_ssa)));
 
-        irad = std::min(floor((re(icol,ilay) - re_bounds_asy(2))/re_bounds_asy(3))+2, 3._wp);
+        irad = std::min(floor((re(icol,ilay) - re_bounds_asy(2))/re_bounds_asy(3))+2, 3.);
         taussag(icol,ilay,ibnd) = ts *    pade_eval(ibnd, nbnd, nsizes, m_asy, n_asy, irad, re(icol,ilay), coeffs_asy);
 
         taussa (icol,ilay,ibnd) = ts;

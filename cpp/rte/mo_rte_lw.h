@@ -84,14 +84,14 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
   // Surface emissivity
   if (size(sfc_emis,1) != nband || size(sfc_emis,2) != ncol) { stoprun("rte_lw: sfc_emis inconsistently sized"); }
   #ifdef RRTMGP_EXPENSIVE_CHECKS
-    if (any(sfc_emis < 0._wp) || any(sfc_emis > 1._wp)) { stoprun("rte_lw: sfc_emis has values < 0 or > 1"); }
+    if (any(sfc_emis < 0.) || any(sfc_emis > 1.)) { stoprun("rte_lw: sfc_emis has values < 0 or > 1"); }
   #endif
 
   // Incident flux, if present
   if (allocated(inc_flux)) {
     if (size(inc_flux,1) != ncol | size(inc_flux,2) != ngpt) { stoprun("rte_lw: inc_flux inconsistently sized"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      if (any(inc_flux < 0._wp)) { stoprun("rte_lw: inc_flux has values < 0"); }
+      if (any(inc_flux < 0.)) { stoprun("rte_lw: inc_flux has values < 0"); }
     #endif
   }
 

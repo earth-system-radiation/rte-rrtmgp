@@ -21,15 +21,15 @@ YAKL_INLINE void lw_source_noscat_stencil(int ncol, int nlay, int ngpt, int icol
   const auto term2 = tau(icol,ilay,igpt);
   real fact;
   if (term2 > tau_thresh) {
-    fact = (1._wp - term1) / term2 - term1;
+    fact = (1. - term1) / term2 - term1;
   } else {
-    fact = term2 * ( 0.5_wp - 1._wp/3._wp*term2 );
+    fact = term2 * ( 0.5 - 1./3.*term2 );
   }
   // Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
-  source_dn(icol,ilay,igpt) = (1._wp - term1) * lev_source_dn(icol,ilay,igpt) +
-                              2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_dn(icol,ilay,igpt));
-  source_up(icol,ilay,igpt) = (1._wp - term1) * lev_source_up(icol,ilay,igpt) +
-                              2._wp * fact * (lay_source(icol,ilay,igpt) - lev_source_up(icol,ilay,igpt));
+  source_dn(icol,ilay,igpt) = (1. - term1) * lev_source_dn(icol,ilay,igpt) +
+                              2. * fact * (lay_source(icol,ilay,igpt) - lev_source_dn(icol,ilay,igpt));
+  source_up(icol,ilay,igpt) = (1. - term1) * lev_source_up(icol,ilay,igpt) +
+                              2. * fact * (lay_source(icol,ilay,igpt) - lev_source_up(icol,ilay,igpt));
 }
 
 
@@ -198,7 +198,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
   real eps = std::numeric_limits<real>::epsilon();
 
   parallel_for( YAKL_AUTO_LABEL() , ncol , YAKL_LAMBDA (int icol) {
-    mu0_inv(icol) = 1._wp/mu0(icol);
+    mu0_inv(icol) = 1./mu0(icol);
   });
 
   // do igpt = 1, ngpt
@@ -207,10 +207,10 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // Zdunkowski Practical Improved Flux Method "PIFM"
     //  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
-    real gamma1= (8._wp - w0(icol,ilay,igpt) * (5._wp + 3._wp * g(icol,ilay,igpt))) * .25_wp;
-    real gamma2=  3._wp *(w0(icol,ilay,igpt) * (1._wp -         g(icol,ilay,igpt))) * .25_wp;
-    real gamma3= (2._wp - 3._wp * mu0(icol)  *                  g(icol,ilay,igpt) ) * .25_wp;
-    real gamma4=  1._wp - gamma3;
+    real gamma1= (8. - w0(icol,ilay,igpt) * (5. + 3. * g(icol,ilay,igpt))) * .25;
+    real gamma2=  3. *(w0(icol,ilay,igpt) * (1. -         g(icol,ilay,igpt))) * .25;
+    real gamma3= (2. - 3. * mu0(icol)  *                  g(icol,ilay,igpt) ) * .25;
+    real gamma4=  1. - gamma3;
 
     real alpha1 = gamma1 * gamma4 + gamma2 * gamma3;           // Eq. 16
     real alpha2 = gamma1 * gamma3 + gamma2 * gamma4;           // Eq. 17
@@ -221,21 +221,21 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
     //   of < 0.1% in Rdif down to tau = 10^-9
     real k = sqrt(std::max((gamma1 - gamma2) * 
                            (gamma1 + gamma2),  
-                           1.e-12_wp));
+                           1.e-12));
     real exp_minusktau = exp(-tau(icol,ilay,igpt)*k);
 
     // Diffuse reflection and transmission
     real exp_minus2ktau = exp_minusktau * exp_minusktau;
 
     // Refactored to avoid rounding errors when k, gamma1 are of very different magnitudes
-    real RT_term = 1._wp / (k      * (1._wp + exp_minus2ktau)  + 
-                            gamma1 * (1._wp - exp_minus2ktau) );
+    real RT_term = 1. / (k      * (1. + exp_minus2ktau)  + 
+                            gamma1 * (1. - exp_minus2ktau) );
 
     // Equation 25
-    Rdif(icol,ilay,igpt) = RT_term * gamma2 * (1._wp - exp_minus2ktau);
+    Rdif(icol,ilay,igpt) = RT_term * gamma2 * (1. - exp_minus2ktau);
 
     // Equation 26
-    Tdif(icol,ilay,igpt) = RT_term * 2._wp * k * exp_minusktau;
+    Tdif(icol,ilay,igpt) = RT_term * 2. * k * exp_minusktau;
 
     // Transmittance of direct, unscattered beam. Also used below
     Tnoscat(icol,ilay,igpt) = exp(-tau(icol,ilay,igpt)*mu0_inv(icol));
@@ -247,23 +247,23 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
 
     // Equation 14, multiplying top and bottom by exp(-k*tau)
     //   and rearranging to avoid div by 0.
-    RT_term =  w0(icol,ilay,igpt) * RT_term/merge(1._wp - k_mu*k_mu, 
+    RT_term =  w0(icol,ilay,igpt) * RT_term/merge(1. - k_mu*k_mu, 
                                                   eps,    
-                                                  abs(1._wp - k_mu*k_mu) >= eps);
+                                                  abs(1. - k_mu*k_mu) >= eps);
 
     Rdir(icol,ilay,igpt) = RT_term  *                                    
-       ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - 
-        (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - 
-        2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau  * Tnoscat(icol,ilay,igpt));
+       ((1. - k_mu) * (alpha2 + k_gamma3)                  - 
+        (1. + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - 
+        2.0 * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau  * Tnoscat(icol,ilay,igpt));
 
     // Equation 15, multiplying top and bottom by exp(-k*tau),
     //   multiplying through by exp(-tau/mu0) to
     //   prefer underflow to overflow
     // Omitting direct transmittance
     Tdir(icol,ilay,igpt) = 
-             -RT_term * ((1._wp + k_mu) * (alpha1 + k_gamma4) * Tnoscat(icol,ilay,igpt) - 
-                         (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat(icol,ilay,igpt) - 
-                          2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau );
+             -RT_term * ((1. + k_mu) * (alpha1 + k_gamma4) * Tnoscat(icol,ilay,igpt) - 
+                         (1. - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat(icol,ilay,igpt) - 
+                          2.0 * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau );
 
   });
 }

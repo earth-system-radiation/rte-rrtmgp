@@ -9,9 +9,10 @@
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
-! Provides aerosol optical properties as a function of effective radius for the RRTMGP bands
-!   Based on climatoligical aerosol optical properties used in MERRA2 as derived from
-!     the GOCART model for 15 aerosol types, including five dust types, five sea salt types,
+! Provides aerosol optical properties as a function of aerosol size (radius), aerosol mass,
+! and relative humidity for the RRTMGP spectral bands.
+!   Based on climatoligical aerosol optical properties used in MERRA2 as derived from the
+!     GOCART model for 15 aerosol types, including dust and sea salt each for five size bins,
 !     one sulfate type, and both hydrophobic and hydrophilic black carbon and organic carbon.
 !   Input aerosol optical data are stored in look-up tables.
 !
@@ -61,7 +62,7 @@ module mo_aerosol_optics
     !
     ! Lookup table information
     !
-    ! Table upper and lower size bin limits and effective (center) values
+    ! Table upper and lower aerosol size (radius) bin limits (microns)
     real(wp),dimension(:,:), allocatable :: merra_aero_bin_lims     ! Dimensions (pair,nbin)
     ! Table relative humidity values
     real(wp),dimension(:), allocatable :: aero_rh(:)
@@ -229,7 +230,7 @@ contains
                                                ! 5 = merra_aero_bcar    (black carbon, hydrophobic)
                                                ! 6 = merra_aero_ocar_rh (organic carbon, hydrophilic)
                                                ! 7 = merra_aero_ocar    (organic carbon, hydrophobic)
-    real(wp), intent(in  ) :: aero_size(:,:)   ! aerosol size for dust and sea-salt
+    real(wp), intent(in  ) :: aero_size(:,:)   ! aerosol size (radius) for dust and sea-salt (microns)
                                                ! Dimensions: (ncol,nlay)
     real(wp), intent(in  ) :: aero_mass(:,:)   ! aerosol mass column (kg/m2)
                                                ! Dimensions: (ncol,nlay)

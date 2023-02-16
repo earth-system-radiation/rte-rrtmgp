@@ -323,7 +323,7 @@ contains
     !
     if(check_values) then
       if(any_vals_outside(aero_size, aeromsk, &
-        this%merra_aero_bin_lims(0,1), this%merra_aero_bin_lims(1,nbin))) &
+        this%merra_aero_bin_lims(1,1), this%merra_aero_bin_lims(2,nbin))) &
         error_msg = 'aerosol optics: requested aerosol size is out of bounds'
       if(any_vals_outside(relhum, 0._wp, 1._wp)) &
         error_msg = 'aerosol optics: relative humidity fraction is out of bounds'
@@ -423,8 +423,8 @@ contains
 !      error_msg = "get_aerosol_size_bin(): requested aerosol size outside of allowable range"
  
     do i=1,nbin 
-       if (aero_size .ge. merra_aero_bin_lims(0,i) .and. &
-           aero_size .le. merra_aero_bin_lims(1,i)) then
+       if (aero_size .ge. merra_aero_bin_lims(1,i) .and. &
+           aero_size .le. merra_aero_bin_lims(2,i)) then
           ibin = i
        endif
     enddo

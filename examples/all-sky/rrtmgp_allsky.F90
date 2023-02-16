@@ -462,14 +462,14 @@ program rte_rrtmgp_clouds_aerosols
           p_lay(icol,ilay) < 100._wp * 100._wp .and. mod(icol, 2) /= 0) then 
          aero_type(icol,ilay) = merge(merra_aero_sulf, 0, aero_mask(icol,ilay))
          aero_size(icol,ilay) = merge(0.2_wp, 0._wp, aero_mask(icol,ilay))
-         aero_mass(icol,ilay) = merge(1.e-5_wp, 0._wp, aero_mask(icol,ilay))
+         aero_mass(icol,ilay) = merge(1.e-6_wp, 0._wp, aero_mask(icol,ilay))
       endif
       ! Dust aerosol
       if (p_lay(icol,ilay) > 700._wp * 100._wp .and. &
           p_lay(icol,ilay) < 900._wp * 100._wp .and. mod(icol, 2) /= 0) then 
          aero_type(icol,ilay) = merge(merra_aero_dust, 0, aero_mask(icol,ilay))
          aero_size(icol,ilay) = merge(0.5_wp, 0._wp, aero_mask(icol,ilay))
-         aero_mass(icol,ilay) = merge(3.e-4_wp, 0._wp, aero_mask(icol,ilay))
+         aero_mass(icol,ilay) = merge(3.e-5_wp, 0._wp, aero_mask(icol,ilay))
       endif
     end do
   end do

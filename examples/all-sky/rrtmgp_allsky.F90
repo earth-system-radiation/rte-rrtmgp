@@ -132,6 +132,7 @@ program rte_rrtmgp_clouds_aerosols
   !
   ! Aerosols
   !
+  logical :: cell_has_aerosols
   integer, dimension(:,:), allocatable :: aero_type
                                           ! MERRA2/GOCART aerosol type
                                           ! 0: no aerosol
@@ -153,6 +154,7 @@ program rte_rrtmgp_clouds_aerosols
                                            ! Aerosol mask
   real(wp), allocatable, dimension(:,:) :: vmr_h2o
                                            ! h2o vmr
+
   !
   ! Output variables
   !
@@ -437,45 +439,48 @@ program rte_rrtmgp_clouds_aerosols
   !
   allocate(aero_type(ncol,nlay), aero_size(ncol,nlay), &
            aero_mass(ncol,nlay), aero_mask(ncol,nlay))
-  !$acc enter data create(aero_mask, aero_type, aero_size, aero_mass)
+  !$acc        enter data create(   aero_mask, aero_type, aero_size, aero_mass)
   !$omp target enter data map(alloc:aero_mask, aero_type, aero_size, aero_mass)
 
   ! Restrict sulfate aerosols to lower stratosphere (> 50 hPa = 50*100 Pa; < 100 hPa = 100*100 Pa)
   !   and dust aerosols to the lower troposphere (> 700 hPa; < 900 hPa), and
   !   put them in 1/2 of the columns
   !
-  !$acc parallel loop collapse(2) copyin(t_lay) copyout(lwp, iwp, rel, rei)
-  !$omp target teams distribute parallel do simd collapse(2) map(to:t_lay) map(from:lwp, iwp, rel, rei)
   !
-  aero_type(:,:) = 0
-  aero_size(:,:) = 0._wp
-  aero_mass(:,:) = 0._wp
+  !$acc parallel loop collapse(2) copyin(p_lay) 
+  !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay) 
   do ilay=1,nlay
     do icol=1,ncol
-      aero_mask(icol,ilay) = ((p_lay(icol,ilay) > 50._wp * 100._wp .and. &
-                             p_lay(icol,ilay) < 100._wp * 100._wp) .or. &
-                             (p_lay(icol,ilay) > 700._wp * 100._wp .and. &
-                             p_lay(icol,ilay) < 900._wp * 100._wp)) .and. &
-                             mod(icol, 2) /= 0
-      ! Sulfate aerosol
-      if (p_lay(icol,ilay) > 50._wp * 100._wp .and. &
-          p_lay(icol,ilay) < 100._wp * 100._wp .and. mod(icol, 2) /= 0) then 
-         aero_type(icol,ilay) = merge(merra_aero_sulf, 0, aero_mask(icol,ilay))
-         aero_size(icol,ilay) = merge(0.2_wp, 0._wp, aero_mask(icol,ilay))
-         aero_mass(icol,ilay) = merge(1.e-6_wp, 0._wp, aero_mask(icol,ilay))
-      endif
-      ! Dust aerosol
-      if (p_lay(icol,ilay) > 700._wp * 100._wp .and. &
-          p_lay(icol,ilay) < 900._wp * 100._wp .and. mod(icol, 2) /= 0) then 
-         aero_type(icol,ilay) = merge(merra_aero_dust, 0, aero_mask(icol,ilay))
-         aero_size(icol,ilay) = merge(0.5_wp, 0._wp, aero_mask(icol,ilay))
-         aero_mass(icol,ilay) = merge(3.e-5_wp, 0._wp, aero_mask(icol,ilay))
-      endif
+      cell_has_aerosols = ((p_lay(icol,ilay) >  50._wp * 100._wp   .and. &
+                            p_lay(icol,ilay) < 100._wp * 100._wp)  .or. &
+                           (p_lay(icol,ilay) > 700._wp * 100._wp   .and. &
+                            p_lay(icol,ilay) < 900._wp * 100._wp)) .and. &
+                           mod(icol, 2) /= 0
+      if cell_has_aerosols then 
+        ! Sulfate aerosol
+        if (p_lay(icol,ilay) >  50._wp * 100._wp .and. & 
+            p_lay(icol,ilay) < 100._wp * 100._wp) then 
+           aero_type(icol,ilay) = merra_aero_sulf,
+           aero_size(icol,ilay) = 0.2_wp
+           aero_mass(icol,ilay) = 1.e-6_wp
+        endif
+        ! Dust aerosol
+        if (p_lay(icol,ilay) > 700._wp * 100._wp .and. & 
+            p_lay(icol,ilay) < 900._wp * 100._wp) then 
+           aero_type(icol,ilay) = merra_aero_dust,
+           aero_size(icol,ilay) = 0.5_wp
+           aero_mass(icol,ilay) = 3.e-5_wp
+        endif
+      else
+        aero_type(icol,ilay) = 0
+        aero_size(icol,ilay) = 0._wp
+        aero_mass(icol,ilay) = 0._wp
+      end if
+      aero_mask(icol, ilay) = cell_has_aerosols
     end do
   end do
 
-  !$acc exit data delete(cloud_mask)
-  !$omp target exit data map(release:cloud_mask)
+
   ! ----------------------------------------------------------------------------
   !
   ! Multiple iterations for big problem sizes, and to help identify data movement

@@ -20,7 +20,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
 
   real(wp) :: tmp(sz1, sz2), tmp_col(sz2)
 
-  !$acc data create(tmp, tmp_col)
+  !$acc        data create(   tmp, tmp_col)
   !$omp target data map(alloc:tmp, tmp_col)
   call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
   !$acc kernels
@@ -460,14 +460,14 @@ program rte_rrtmgp_clouds_aerosols
         ! Sulfate aerosol
         if (p_lay(icol,ilay) >  50._wp * 100._wp .and. & 
             p_lay(icol,ilay) < 100._wp * 100._wp) then 
-           aero_type(icol,ilay) = merra_aero_sulf,
+           aero_type(icol,ilay) = merra_aero_sulf
            aero_size(icol,ilay) = 0.2_wp
            aero_mass(icol,ilay) = 1.e-6_wp
         endif
         ! Dust aerosol
         if (p_lay(icol,ilay) > 700._wp * 100._wp .and. & 
             p_lay(icol,ilay) < 900._wp * 100._wp) then 
-           aero_type(icol,ilay) = merra_aero_dust,
+           aero_type(icol,ilay) = merra_aero_dust
            aero_size(icol,ilay) = 0.5_wp
            aero_mass(icol,ilay) = 3.e-5_wp
         endif

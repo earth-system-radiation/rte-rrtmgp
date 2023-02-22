@@ -456,7 +456,7 @@ program rte_rrtmgp_clouds_aerosols
                            (p_lay(icol,ilay) > 700._wp * 100._wp   .and. &
                             p_lay(icol,ilay) < 900._wp * 100._wp)) .and. &
                            mod(icol, 2) /= 0
-      if cell_has_aerosols then 
+      if (cell_has_aerosols) then 
         ! Sulfate aerosol
         if (p_lay(icol,ilay) >  50._wp * 100._wp .and. & 
             p_lay(icol,ilay) < 100._wp * 100._wp) then 

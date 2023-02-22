@@ -157,11 +157,7 @@ contains
 
     ! Allocate LUT parameters
     allocate(this%merra_aero_bin_lims(npair,nbin))
-    this%merra_aero_bin_lims = merra_aero_bin_lims
-
     allocate(this%aero_rh(nrh))
-    this%aero_rh = aero_rh
-
     ! Allocate LUT coefficients
     allocate(this%aero_dust_tbl(nval, nbin, nband), &
              this%aero_salt_tbl(nval, nrh, nbin, nband), &
@@ -170,10 +166,23 @@ contains
              this%aero_bcar_rh_tbl(nval, nrh, nband), &
              this%aero_ocar_tbl(nval, nband), &
              this%aero_ocar_rh_tbl(nval, nrh, nband))
+    !$acc enter data create(this)                                               &
+    !$acc            create(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl)  &
+    !$acc            create(this%aero_bcar_tbl, this%aero_bcar_rh_tbl)          &
+    !$acc            create(this%aero_ocar_tbl, this%aero_ocar_rh_tbl)          &
+    !$acc            create(this%merra_aero_bin_lims, this%aero_rh)
+    !$omp target enter data &
+    !$omp map(alloc:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl) &
+    !$omp map(alloc:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  &
+    !$omp map(alloc:this%aero_ocar_tbl, this%aero_ocar_rh_tbl)                  &
+    !$omp map(alloc:this%merra_aero_bin_lims, this%aero_rh)
+
 
     ! Load LUT coefficients
     !$acc kernels
     !$omp target
+    this%merra_aero_bin_lims = merra_aero_bin_lims
+    this%aero_rh             = aero_rh
     this%aero_dust_tbl = aero_dust_tbl
     this%aero_salt_tbl = aero_salt_tbl
     this%aero_sulf_tbl = aero_sulf_tbl
@@ -184,6 +193,9 @@ contains
     !$acc end kernels
     !$omp end target
     !
+
+
+
   end function load_lut
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -205,6 +217,13 @@ contains
       deallocate(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl, &
                  this%aero_bcar_tbl, this%aero_bcar_rh_tbl, &
                  this%aero_ocar_tbl, this%aero_ocar_rh_tbl)
+      !$acc exit data delete(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl)  &
+      !$acc           delete(this%aero_bcar_tbl, this%aero_bcar_rh_tbl) &
+      !$acc           delete(this%aero_ocar_tbl, this%aero_ocar_rh_tbl) &
+      !$acc           delete(this)
+      !$omp target exit data map(release:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl)) &
+      !$omp                  map(release:this%aero_bcar_tbl, this%aero_bcar_rh_tbl) & 
+      !$omp                  map(release:this%aero_ocar_tbl, this%aero_ocar_rh_tbl) 
     end if
 
   end subroutine finalize
@@ -301,12 +320,10 @@ contains
       if(error_msg /= "") return
     end if
 
-    !$acc data copyin(aero_type, aero_size, aero_mass, relhum)                         &
-    !$acc      create(atau, ataussa, ataussag) &
-    !$acc      create(aeromsk)
+    !$acc data        copyin(aero_type, aero_size, aero_mass, relhum)       &
+    !$acc      create(atau, ataussa, ataussag, aeromsk)
     !$omp target data map(to:aero_type, aero_size, aero_mass, relhum) &
-    !$omp map(alloc:atau, ataussa, ataussag) &
-    !$omp map(alloc:aeromsk)
+    !$omp   map(alloc:atau, ataussa, ataussag, aeromsk) 
     !
     ! Aerosol mask; don't need aerosol optics if there's no aerosol
     !
@@ -364,7 +381,6 @@ contains
         !$acc               copyin(optical_props) copyout(optical_props%tau)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau)
-
         do ibnd = 1, nbnd
           do ilay = 1, nlay
             do icol = 1, ncol

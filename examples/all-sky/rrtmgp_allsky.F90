@@ -447,7 +447,7 @@ program rte_rrtmgp_clouds_aerosols
   !   put them in 1/2 of the columns
   !
   !
-  !$acc parallel loop collapse(2) copyin(p_lay) 
+  !$acc                         parallel loop    collapse(2) copyin(p_lay) 
   !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay) 
   do ilay=1,nlay
     do icol=1,ncol

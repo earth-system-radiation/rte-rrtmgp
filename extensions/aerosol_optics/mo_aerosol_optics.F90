@@ -490,52 +490,52 @@ contains
 
              ! dust
              case(merra_aero_dust)
-               tau    (icol,ilay,ibnd) = mass(icol,ilay) * aero_dust_tbl(ext,ibin,ibnd)
-               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * aero_dust_tbl(ssa,ibin,ibnd)
+               tau    (icol,ilay,ibnd) = mass  (icol,ilay)      * aero_dust_tbl(ext,ibin,ibnd)
+               taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * aero_dust_tbl(ssa,ibin,ibnd)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * aero_dust_tbl(g,ibin,ibnd)
              ! sea-salt
              case(merra_aero_salt)
-               tau    (icol,ilay,ibnd) = mass(icol,ilay) * &
+               tau    (icol,ilay,ibnd) = mass  (icol,ilay) * &
                                          linear_interp_aero_table(aero_salt_tbl(ext,:,ibin,ibnd),irh1,irh2,rdrh)
-               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * &
+               taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * &
                                          linear_interp_aero_table(aero_salt_tbl(ssa,:,ibin,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_salt_tbl(g,:,ibin,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_salt_tbl(g,  :,ibin,ibnd),irh1,irh2,rdrh)
 
              ! sulfate
              case(merra_aero_sulf)
-               tau    (icol,ilay,ibnd) = mass(icol,ilay) * &
+               tau    (icol,ilay,ibnd) = mass  (icol,ilay) * &
                                          linear_interp_aero_table(aero_sulf_tbl(ext,:,ibnd),irh1,irh2,rdrh)
-               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * &
+               taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * &
                                          linear_interp_aero_table(aero_sulf_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_sulf_tbl(g,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_sulf_tbl(g,  :,ibnd),irh1,irh2,rdrh)
              ! black carbon - hydrophilic
              case(merra_aero_bcar_rh)
-               tau    (icol,ilay,ibnd) = mass(icol,ilay) * &
+               tau    (icol,ilay,ibnd) = mass  (icol,ilay) * &
                                          linear_interp_aero_table(aero_bcar_rh_tbl(ext,:,ibnd),irh1,irh2,rdrh)
-               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * &
+               taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * &
                                          linear_interp_aero_table(aero_bcar_rh_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_bcar_rh_tbl(g,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_bcar_rh_tbl(g,  :,ibnd),irh1,irh2,rdrh)
              ! black carbon - hydrophobic
              case(merra_aero_bcar)
-               tau    (icol,ilay,ibnd) = mass(icol,ilay) * aero_bcar_tbl(ext,ibnd)
-               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * aero_bcar_tbl(ssa,ibnd)
-               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * aero_bcar_tbl(g,ibnd)
+               tau    (icol,ilay,ibnd) = mass  (icol,ilay)      * aero_bcar_tbl(ext,ibnd)
+               taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * aero_bcar_tbl(ssa,ibnd)
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * aero_bcar_tbl(g,  ibnd)
              ! organic carbon - hydrophilic
              case(merra_aero_ocar_rh)
-               tau    (icol,ilay,ibnd) = mass(icol,ilay) * &
+               tau    (icol,ilay,ibnd) = mass  (icol,ilay) * &
                                          linear_interp_aero_table(aero_ocar_rh_tbl(ext,:,ibnd),irh1,irh2,rdrh)
-               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * &
+               taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * &
                                          linear_interp_aero_table(aero_ocar_rh_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_ocar_rh_tbl(g,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_ocar_rh_tbl(g,  :,ibnd),irh1,irh2,rdrh)
              ! organic carbon - hydrophobic
              case(merra_aero_ocar)
-               tau    (icol,ilay,ibnd) = mass(icol,ilay) * aero_ocar_tbl(ext,ibnd)
-               taussa (icol,ilay,ibnd) = tau(icol,ilay,ibnd) * aero_ocar_tbl(ssa,ibnd)
-               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * aero_ocar_tbl(g,ibnd)
+               tau    (icol,ilay,ibnd) = mass  (icol,ilay)      * aero_ocar_tbl(ext,ibnd)
+               taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * aero_ocar_tbl(ssa,ibnd)
+               taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * aero_ocar_tbl(g,  ibnd)
              ! no aerosol
              case default
                tau    (icol,ilay,ibnd) = 0._wp
@@ -555,14 +555,16 @@ contains
   ! only where aerosol in present using aerosol type as the mask. 
   !
   function linear_interp_aero_table(table, index1, index2, weight) result(value)
+    !$acc routine seq
+    !$omp declare target
 
-     integer,                intent(in) :: index1, index2
-     real(wp),               intent(in) :: weight
-     real(wp), dimension(:), intent(in) :: table
+    integer,                intent(in) :: index1, index2
+    real(wp),               intent(in) :: weight
+    real(wp), dimension(:), intent(in) :: table
 
-     real(wp) :: value
+    real(wp) :: value
 
-     value = table(index1) + weight * (table(index2) - table(index1))
+    value = table(index1) + weight * (table(index2) - table(index1))
      
   end function linear_interp_aero_table
 ! ----------------------------------------------------------

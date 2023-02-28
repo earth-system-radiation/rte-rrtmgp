@@ -221,8 +221,8 @@ contains
       !$acc           delete(this%aero_bcar_tbl, this%aero_bcar_rh_tbl) &
       !$acc           delete(this%aero_ocar_tbl, this%aero_ocar_rh_tbl) &
       !$acc           delete(this)
-      !$omp target exit data map(release:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl)) &
-      !$omp                  map(release:this%aero_bcar_tbl, this%aero_bcar_rh_tbl) & 
+      !$omp target exit data map(release:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl) &
+      !$omp                  map(release:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  & 
       !$omp                  map(release:this%aero_ocar_tbl, this%aero_ocar_rh_tbl) 
     end if
 
@@ -415,39 +415,6 @@ contains
   end function aerosol_optics
   !--------------------------------------------------------------------------------------------------------------------
   !
-  ! Inquiry functions
-  !
-  !--------------------------------------------------------------------------------------------------------------------
-  function get_aerosol_size_bin(npair, nbin, merra_aero_bin_lims, aero_size) result(ibin)
-  !--------------------------------------------------------------------------------------------------------------------
-  ! Purpose: For an input aerosol particle size, return the corresponding bin number
-  !          from the MERRA aerosol optical property particle size dimension as defined
-  !          by merra_aero_bin_lims. 
-  !--------------------------------------------------------------------------------------------------------------------
-    integer,                          intent(in   ) :: npair, nbin
-    real(wp), dimension(npair, nbin), intent(in   ) :: merra_aero_bin_lims
-    real(wp),                         intent(in   ) :: aero_size
-
-    integer  :: i, ibin
-
-    character(len=128)      :: error_msg
-
-    ibin = 0
-
-    error_msg = ''
-!    if(any_vals_outside(aero_size, merra_aero_bin_lims(0,1), merra_aero_bin_lims(1,nbin))) &
-!      error_msg = "get_aerosol_size_bin(): requested aerosol size outside of allowable range"
- 
-    do i=1,nbin 
-       if (aero_size .ge. merra_aero_bin_lims(1,i) .and. &
-           aero_size .le. merra_aero_bin_lims(2,i)) then
-          ibin = i
-       endif
-    enddo
-
-  end function get_aerosol_size_bin
-  !--------------------------------------------------------------------------------------------------------------------
-  !
   ! Ancillary functions
   !
   !--------------------------------------------------------------------------------------------------------------------
@@ -482,7 +449,7 @@ contains
 
     real(wp),    dimension(ncol,nlay,nbnd), intent(out) :: tau, taussa, taussag
     ! ---------------------------
-    integer  :: icol, ilay, ibnd, ibin
+    integer  :: icol, ilay, ibnd, ibin, i
     integer  :: itype, irh1, irh2
     real(wp) :: drh0, drh1, rdrh
     real(wp) :: t, ts, tsg  ! tau, tau*ssa, tau*ssa*g
@@ -492,7 +459,13 @@ contains
     do ibnd = 1, nbnd
       do ilay = 1,nlay
         do icol = 1, ncol
-          ibin = get_aerosol_size_bin(npair, nbin, merra_aero_bin_lims, size(icol,ilay))
+          ! Sequential loop to find size bin
+          do i=1,nbin 
+             if (size(icol,ilay) .ge. merra_aero_bin_lims(1,i) .and. &
+                 size(icol,ilay) .le. merra_aero_bin_lims(2,i)) then
+                ibin = i
+             endif
+          enddo
           itype = type(icol,ilay)
           ! relative humidity linear interpolation coefficients
           if (itype .ne. merra_aero_none) then

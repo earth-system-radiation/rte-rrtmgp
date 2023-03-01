@@ -164,13 +164,14 @@ program rte_rrtmgp_clouds_aerosols
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
-  type(ty_gas_optics_rrtmgp) :: k_dist
-  type(ty_cloud_optics_rrtmgp)      :: cloud_optics
-  type(ty_aerosol_optics)    :: aerosol_optics
-  type(ty_gas_concs)         :: gas_concs, gas_concs_garand, gas_concs_1col
+  type(ty_gas_optics_rrtmgp)   :: k_dist
+  type(ty_cloud_optics_rrtmgp) :: cloud_optics
+  type(ty_aerosol_optics_rrtmgp_merra)   & 
+                               :: aerosol_optics
+  type(ty_gas_concs)           :: gas_concs, gas_concs_garand, gas_concs_1col
   class(ty_optical_props_arry), &
-                 allocatable :: atmos, clouds, aerosols
-  type(ty_fluxes_broadband)  :: fluxes
+                 allocatable   :: atmos, clouds, aerosols
+  type(ty_fluxes_broadband)    :: fluxes
 
   !
   ! Inputs to RRTMGP

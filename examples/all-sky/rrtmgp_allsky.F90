@@ -202,13 +202,6 @@ program rte_rrtmgp_clouds_aerosols
   !
   ! Parse command line for any file names, block size
   !
-<<<<<<< HEAD
-  ! rrtmgp_clouds rrtmgp-clouds.nc $RRTMGP_ROOT/rrtmgp-data/rrtmgp-data-lw-g256-2018-12-04.nc $RRTMGP_ROOT/rrtmgp-data/rrtmgp-cloud-optics-coeffs-lw.nc  128 1
-  ! rrtmgp_clouds rrtmgp-clouds.nc $RRTMGP_ROOT/rrtmgp-data/rrtmgp-data-sw-g224-2018-12-04.nc $RRTMGP_ROOT/rrtmgp-data/rrtmgp-cloud-optics-coeffs-sw.nc  128 1
-=======
-  ! rrtmgp_clouds rrtmgp-clouds.nc $RRTMGP_ROOT/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc $RRTMGP_ROOT/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc $RRTMGP_ROOT/extensions/aerosol_optics/rrtmgp-lw-inputs-aerosol-optics.nc  128 1
-  ! rrtmgp_clouds rrtmgp-clouds.nc $RRTMGP_ROOT/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc $RRTMGP_ROOT/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc $RRTMGP_ROOT/extensions/aerosol_optics/rrtmgp-sw-inputs-aerosol-optics.nc  128 1
->>>>>>> develop
   nUserArgs = command_argument_count()
   nloops = 1
   if (nUserArgs <  4) call stop_on_err("Need to supply input_file k_distribution_file ncol.")

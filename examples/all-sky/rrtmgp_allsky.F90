@@ -84,8 +84,7 @@ program rte_rrtmgp_clouds_aerosols
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   use mo_cloud_optics_rrtmgp,only: ty_cloud_optics_rrtmgp
-  use mo_aerosol_optics_rrtmgp_merra, & 
-                             only: ty_aerosol_optics_rrtmgp_merra
+  use mo_aerosol_optics_rrtmgp_merra ! Includes aerosol type integers
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband

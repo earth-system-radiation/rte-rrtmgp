@@ -77,6 +77,9 @@ jobs:
         # We use the "non-default products" for the tests
         # (see https://support.hpe.com/hpesc/public/docDisplay?docId=a00113984en_us&page=Modify_Linking_Behavior_to_Use_Non-default_Libraries.html):
         echo 'LD_LIBRARY_PATH="${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"' >> "${BASH_ENV}"
+        # SLURM jobs, user home directories and HDF5 file locking are
+        # incompatible on Daint:
+        echo 'HDF5_USE_FILE_LOCKING=FALSE' >> "${GITHUB_ENV}"
     #
     # Build libraries, examples and tests
     #

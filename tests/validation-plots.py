@@ -1,3 +1,4 @@
+import urllib.request
 import colorcet as cc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -42,23 +43,43 @@ def make_comparison_plot(variants, labels, reference, vscale, col_dim="site",
         # Reverse vertical ordering
         plt.ylim(vscale.max(), vscale.min())
 
-
-def construct_lbl_esgf_name(var, esgf_node="llnl"):
+def construct_lbl_esgf_root(var, esgf_node="llnl"):
     #
-    # For a given variable name, provide the OpenDAP URL for the LBLRM
+    # For a given variable name, provide the https URL for the LBLRM
     # line-by-line results
     #
-    prefix = ("http://esgf3.dkrz.de/thredds/dodsC/cmip6/RFMIP/AER/LBLRTM-12-8/"
-              "rad-irf/r1i1p1f1/Efx/")
+    model="LBLRTM-12-8"
+    prefix = ("http://esgf3.dkrz.de/thredds/fileServer/cmip6/RFMIP/AER/" + model + 
+              "/rad-irf/r1i1p1f1/Efx/")
     if esgf_node == "llnl":
-        prefix = ("http://esgf-data1.llnl.gov/thredds/dodsC/css03_data/"
-                  "CMIP6/RFMIP/AER/LBLRTM-12-8/rad-irf/r1i1p1f1/Efx/")
+        prefix = ("http://esgf-data1.llnl.gov/thredds/fileServer/css03_data/"
+                  "CMIP6/RFMIP/AER/" + model + "/rad-irf/r1i1p1f1/Efx/")
     return (prefix + var + "/gn/v20190514/" + var +
-            "_Efx_LBLRTM-12-8_rad-irf_r1i1p1f1_gn.nc")
+            "_Efx_" + model + "_rad-irf_r1i1p1f1_gn.nc")
 
 
 ########################################################################
 if __name__ == '__main__':
+    #
+    # Reference values from LBLRTM - download locally, since OpenDAP access is so inconsistent 
+    #
+    fluxes = ["rsd", "rsu", "rld", "rlu"]
+    lbl_suffix = "_Efx_LBLRTM-12-8_rad-irf_r1i1p1f1_gn.nc"
+    for v in fluxes:
+        try: 
+            try:
+                urllib.request.urlretrieve(construct_lbl_esgf_root(v), v+lbl_suffix)
+            except:
+                urllib.request.urlretrieve(construct_lbl_esgf_root(v), v+lbl_suffix, node="dkrz")
+        except:
+            raise Exception("Failed to download {0}".format(v+lbl_suffix))
+
+    lbl = xr.open_mfdataset([v + lbl_suffix for v in fluxes],
+                            combine="by_coords").sel(expt=0)
+
+    #
+    # Open the test results
+    #
     gp = xr.open_dataset("test_atmospheres.nc")
     #
     # Does the flux plus the Jacobian equal a calculation with perturbed surface
@@ -67,14 +88,6 @@ if __name__ == '__main__':
     gp['lw_flux_up_from_deriv'] = gp.lw_flux_up + gp.lw_jaco_up
     gp.lw_flux_up_from_deriv.attrs = {
         "description": "LW flux up, surface T+1K, computed from Jacobian"}
-    try:
-        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, esgf_node="dkrz")
-                                 for v in ["rsd", "rsu", "rld", "rlu"]],
-                                combine="by_coords").sel(expt=0)
-    except:
-        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, esgf_node="llnl")
-                                 for v in ["rsd", "rsu", "rld", "rlu"]],
-                                combine="by_coords").sel(expt=0)
     ########################################################################
     #
     # The RFMIP cases are on an irregular pressure grid so we can't compute

@@ -17,7 +17,7 @@ FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
-VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions/aerosol_optics/ # Needed for cloud_optics
+VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend # Needed for cloud_optics and aerosol_optics
 
 # Compilation rules
 %.o: %.F90
@@ -30,7 +30,7 @@ VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions/aerosol_opt
 #
 ADDITIONS  = mo_load_coefficients.o mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.o
 ADDITIONS += mo_garand_atmos_io.o
-ADDITIONS += mo_aerosol_optics.o mo_load_aerosol_coefficients.o
+ADDITIONS += mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.o
 
 #
 # Targets
@@ -45,13 +45,13 @@ mo_cloud_optics_rrtmgp.o: mo_cloud_optics_rrtmgp.F90
 mo_load_coefficients.o:   mo_simple_netcdf.o mo_load_coefficients.F90
 mo_garand_atmos_io.o:     mo_simple_netcdf.o mo_garand_atmos_io.F90
 mo_load_cloud_coefficients.o: mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.F90
-mo_aerosol_optics.o: mo_aerosol_optics.F90
-mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics.o mo_load_aerosol_coefficients.F90
+mo_aerosol_optics_rrtmgp_merra.o: mo_aerosol_optics_rrtmgp_merra.F90
+mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.F90
 
 tests:
 	cp garand-atmos-1.nc rrtmgp-allsky.nc
-	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-lw-g256-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-cloud-optics-coeffs-lw.nc           ${RRTMGP_ROOT}/extensions/aerosol_optics/rrtmgp-lw-inputs-aerosol-optics.nc 128
-	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-cloud-optics-coeffs-reordered-sw.nc ${RRTMGP_ROOT}/extensions/aerosol_optics/rrtmgp-sw-inputs-aerosol-optics.nc 128
+	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-lw-g256-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-cloud-optics-coeffs-lw.nc           ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-aerosol-optics-rrtmgp-merra-coeffs-lw.nc 128
+	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-cloud-optics-coeffs-reordered-sw.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-aerosol-optics-rrtmgp-merra-coeffs-sw.nc 128
 
 check:
 	python ./compare-to-reference.py

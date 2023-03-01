@@ -28,7 +28,7 @@
 ! The class can be used as-is but is also intended as an example of how to extend the RTE framework
 ! -------------------------------------------------------------------------------------------------
 
-module mo_aerosol_optics
+module mo_aerosol_optics_rrtmgp_merra
   use mo_rte_kind,      only: wp, wl
   use mo_rte_config,    only: check_values, check_extents
   use mo_rte_util_array,only: any_vals_less_than, any_vals_outside, extents_are
@@ -57,7 +57,7 @@ module mo_aerosol_optics
 
   private
   ! -----------------------------------------------------------------------------------
-  type, extends(ty_optical_props), public :: ty_aerosol_optics
+  type, extends(ty_optical_props), public :: ty_aerosol_optics_rrtmgp_merra
     private
     !
     ! Lookup table information
@@ -88,7 +88,7 @@ module mo_aerosol_optics
 
     ! Internal procedures
     procedure, private :: load_lut
-  end type ty_aerosol_optics
+  end type ty_aerosol_optics_rrtmgp_merra
 
 contains
   ! ------------------------------------------------------------------------------
@@ -103,7 +103,8 @@ contains
                     aero_ocar_tbl, aero_ocar_rh_tbl) &
                     result(error_msg)
 
-    class(ty_aerosol_optics),   intent(inout) :: this
+    class(ty_aerosol_optics_rrtmgp_merra),   & 
+                                intent(inout) :: this
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! spectral discretization
     ! Lookup table interpolation constants
     real(wp), dimension(:,:),   intent(in   ) :: merra_aero_bin_lims ! aerosol lut size bin limiits (pair,nbin)
@@ -203,7 +204,7 @@ contains
   !
   !--------------------------------------------------------------------------------------------------------------------
   subroutine finalize(this)
-    class(ty_aerosol_optics), intent(inout) :: this
+    class(ty_aerosol_optics_rrtmgp_merra), intent(inout) :: this
 
     ! Lookup table aerosol optics interpolation arrays
     if(allocated(this%merra_aero_bin_lims)) then
@@ -238,7 +239,7 @@ contains
   function aerosol_optics(this, aero_type, aero_size, aero_mass, relhum, &
                           optical_props) result(error_msg)
 
-    class(ty_aerosol_optics), &
+    class(ty_aerosol_optics_rrtmgp_merra), &
               intent(in  ) :: this
     integer,  intent(in  ) :: aero_type(:,:)   ! MERRA2/GOCART aerosol type 
                                                ! Dimensions: (ncol,nlay)
@@ -584,4 +585,4 @@ contains
 
   end function any_int_vals_outside_2D
 
-end module mo_aerosol_optics
+end module mo_aerosol_optics_rrtmgp_merra

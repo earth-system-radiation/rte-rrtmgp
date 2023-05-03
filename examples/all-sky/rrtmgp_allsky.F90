@@ -39,7 +39,7 @@ end subroutine vmr_2d_to_1d
 !
 subroutine get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
   use mo_rte_kind,           only: wp
-  use mo_rrtmgp_constants,   only: m_h2o, m_dry
+  use mo_gas_optics_constants,   only: m_h2o, m_dry
 
   integer,  intent(in) :: ncol, nlay
   real(wp), intent(in) :: p_lay(ncol,nlay)    ! layer pressure (Pa)

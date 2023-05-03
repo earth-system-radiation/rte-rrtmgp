@@ -1,6 +1,6 @@
 RRTMGP_FORTRAN_INTERFACE = \
-  mo_rrtmgp_util_string.o \
-	mo_rrtmgp_constants.o \
+  mo_gas_optics_util_string.o \
+	mo_gas_optics_constants.o \
   mo_gas_concentrations.o \
   mo_gas_optics.o \
   mo_gas_optics_rrtmgp.o
@@ -11,11 +11,11 @@ RRTMGP_FORTRAN_INTERFACE = \
 #
 # Physical constants
 #
-mo_rrtmgp_constants.o: mo_rte_kind.o mo_rrtmgp_constants.F90
+mo_gas_optics_constants.o: mo_rte_kind.o mo_gas_optics_constants.F90
 #
 # Utility
 #
-mo_rrtmgp_util_string.o:  mo_rrtmgp_util_string.F90
+mo_gas_optics_util_string.o:  mo_gas_optics_util_string.F90
 
 #
 # Gas concentrations - used by gas optics base class
@@ -32,8 +32,8 @@ mo_gas_optics.o: mo_rte_kind.o mo_rte_config.o mo_gas_concentrations.o \
 #
 # RRTMGP gas optics
 # 
-mo_gas_optics_rrtmgp.o: mo_rte_kind.o mo_rrtmgp_constants.o  \
-  mo_rrtmgp_util_string.o  mo_gas_optics_rrtmgp_kernels.o \
+mo_gas_optics_rrtmgp.o: mo_rte_kind.o mo_gas_optics_constants.o  \
+  mo_gas_optics_util_string.o  mo_gas_optics_rrtmgp_kernels.o \
   mo_gas_concentrations.o \
   mo_optical_props.o mo_source_functions.o \
   mo_gas_optics.o \

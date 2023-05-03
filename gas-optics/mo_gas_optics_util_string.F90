@@ -17,7 +17,7 @@
 !>   - what is the location of a string with an array?
 !>
 ! -------------------------------------------------------------------------------------------------
-module mo_rrtmgp_util_string
+module mo_gas_optics_util_string
   implicit none
   private
   public :: lower_case, string_in_array, string_loc_in_array

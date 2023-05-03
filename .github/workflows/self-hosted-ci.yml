@@ -13,7 +13,8 @@ defaults:
 
 jobs:
   CI:
-    runs-on: [daint104, daint106]
+    runs-on: 
+      - labels: cscs-ci 
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false

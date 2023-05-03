@@ -13,7 +13,7 @@ defaults:
 
 jobs:
   CI:
-    runs-on: [daint-104, daint-106]
+    runs-on: [daint104, daint106]
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false

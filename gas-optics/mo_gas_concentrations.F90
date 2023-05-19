@@ -38,7 +38,8 @@
 module mo_gas_concentrations
   use mo_rte_kind,           only: wp
   use mo_rte_config,         only: check_values
-  use mo_rte_util_array,     only: any_vals_outside
+  use mo_rte_util_array_validation, & 
+                             only: any_vals_outside
   implicit none
   integer, parameter, private :: GAS_NOT_IN_LIST = -1
   private

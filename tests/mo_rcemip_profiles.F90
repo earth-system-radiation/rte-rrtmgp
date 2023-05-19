@@ -17,7 +17,8 @@
 ! ------------------------------------------------------------------------------
 module mo_rcemip_profiles
   use mo_rte_kind,           only: wp, wl
-  use mo_rte_util_array,     only: extents_are
+  use mo_rte_util_array_validation, &  
+                             only: extents_are
   use mo_gas_concentrations, only: ty_gas_concs
   implicit none
   private

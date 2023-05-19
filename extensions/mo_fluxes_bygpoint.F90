@@ -16,7 +16,8 @@
 !
 module mo_fluxes_bygpoint
   use mo_rte_kind,      only: wp
-  use mo_rte_util_array,only: extents_are
+  use mo_rte_util_array_validation, & 
+                        only: extents_are
   use mo_fluxes,        only: ty_fluxes
   use mo_optical_props, only: ty_optical_props
   implicit none

@@ -16,7 +16,7 @@ RTE_FORTRAN_INTERFACE = \
 mo_rte_config.o: mo_rte_config.F90 mo_rte_kind.o
 #
 #
-mo_rte_util_array.o: mo_rte_util_array.F90 mo_rte_kind.o
+mo_rte_util_array_validation.o: mo_rte_util_array_validation.F90 mo_rte_kind.o
 #
 # Optical properties
 #

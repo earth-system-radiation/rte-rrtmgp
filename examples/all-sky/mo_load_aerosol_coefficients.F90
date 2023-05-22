@@ -5,7 +5,8 @@ module mo_load_aerosol_coefficients
                               ty_optical_props_1scl, &
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
-  use mo_aerosol_optics,  only: ty_aerosol_optics
+  use mo_aerosol_optics_rrtmgp_merra,  & 
+                        only: ty_aerosol_optics_rrtmgp_merra
   use mo_simple_netcdf, only: read_field, read_string, var_exists, get_dim_size, &
                               write_field, create_dim, create_var
   use netcdf
@@ -22,7 +23,8 @@ contains
   ! read aerosol optical property LUT coefficients from NetCDF file
   !
   subroutine load_aero_lutcoeff(aerosol_spec, aero_coeff_file)
-    class(ty_aerosol_optics),   intent(inout) :: aerosol_spec
+    class(ty_aerosol_optics_rrtmgp_merra),   & 
+                                intent(inout) :: aerosol_spec
     character(len=*),           intent(in   ) :: aero_coeff_file
     ! -----------------
     ! Local variables

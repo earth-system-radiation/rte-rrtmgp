@@ -13,14 +13,15 @@ defaults:
 
 jobs:
   CI:
-    runs-on: daint
+    runs-on: 
+      labels: cscs-ci 
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         include:
         - config-name: nvidia-gpu-openacc
-          rte-kernels: openacc
+          rte-kernels: accel
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
           fcflags: "-O3 -acc -Mallocatable=03 -gopt"
@@ -32,7 +33,7 @@ jobs:
           fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
           experimental: false
         - config-name: cce-gpu-openmp
-          rte-kernels: openacc
+          rte-kernels: accel
           compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"

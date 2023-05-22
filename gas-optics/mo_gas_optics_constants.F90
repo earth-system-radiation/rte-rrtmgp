@@ -20,7 +20,7 @@
 !> "Constants" specific to the earth's atmosphere should also be made consistent with the
 !>   host model but may be changed in a call to init_constants(), normally at initialization
 ! -------------------------------------------------------------------------------------------------
-module mo_rrtmgp_constants
+module mo_gas_optics_constants
   use mo_rte_kind, only: wp
   public
 
@@ -66,4 +66,4 @@ contains
 
   end subroutine init_constants
   ! -----------------------------------------
-end module mo_rrtmgp_constants
+end module mo_gas_optics_constants

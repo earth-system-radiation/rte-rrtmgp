@@ -23,7 +23,7 @@
 !>
 ! -------------------------------------------------------------------------------------------------
 
-module mo_gas_optics_kernels
+module mo_gas_optics_rrtmgp_kernels
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array
   implicit none
@@ -766,4 +766,4 @@ contains
     end do
   end function interpolate3D_byflav
 
-end module mo_gas_optics_kernels
+end module mo_gas_optics_rrtmgp_kernels

@@ -23,4 +23,4 @@ An all-sky calculation is a small variant
 5. compute the optical properties of clouds and add these to the optical properties
 6. compute radiative fluxes
 
-An [example](https://github.com/earth-system-radiation/rte-rrtmgp/tree/main/examples/all-sky) of this workflow is available in the repository. The example also demonstrates how to complete an end-to-end calculation on a GPU using OpenACC. Users must provide methods for computing the optical properties of clouds and gases (an [example cloud optics class](https://github.com/earth-system-radiation/rte-rrtmgp/tree/main/extensions/cloud_optics)  is provided).
+An [example](https://github.com/earth-system-radiation/rte-rrtmgp/tree/main/examples/all-sky) of this workflow is available in the repository. The example also demonstrates how to complete an end-to-end calculation on a GPU using OpenACC. Users must provide methods for computing the optical properties of clouds and gases (an [example cloud optics class](https://github.com/earth-system-radiation/rte-rrtmgp/tree/main/rrtmgp-frontend)  is provided).

@@ -39,7 +39,7 @@ end subroutine vmr_2d_to_1d
 !
 subroutine get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
   use mo_rte_kind,           only: wp
-  use mo_rrtmgp_constants,   only: m_h2o, m_dry
+  use mo_gas_optics_constants,   only: m_h2o, m_dry
 
   integer,  intent(in) :: ncol, nlay
   real(wp), intent(in) :: p_lay(ncol,nlay)    ! layer pressure (Pa)
@@ -83,8 +83,8 @@ program rte_rrtmgp_clouds_aerosols
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
-  use mo_aerosol_optics
-  use mo_cloud_optics,       only: ty_cloud_optics
+  use mo_cloud_optics_rrtmgp,only: ty_cloud_optics_rrtmgp
+  use mo_aerosol_optics_rrtmgp_merra ! Includes aerosol type integers
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
@@ -163,13 +163,14 @@ program rte_rrtmgp_clouds_aerosols
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
-  type(ty_gas_optics_rrtmgp) :: k_dist
-  type(ty_cloud_optics)      :: cloud_optics
-  type(ty_aerosol_optics)    :: aerosol_optics
-  type(ty_gas_concs)         :: gas_concs, gas_concs_garand, gas_concs_1col
+  type(ty_gas_optics_rrtmgp)   :: k_dist
+  type(ty_cloud_optics_rrtmgp) :: cloud_optics
+  type(ty_aerosol_optics_rrtmgp_merra)   & 
+                               :: aerosol_optics
+  type(ty_gas_concs)           :: gas_concs, gas_concs_garand, gas_concs_1col
   class(ty_optical_props_arry), &
-                 allocatable :: atmos, clouds, aerosols
-  type(ty_fluxes_broadband)  :: fluxes
+                 allocatable   :: atmos, clouds, aerosols
+  type(ty_fluxes_broadband)    :: fluxes
 
   !
   ! Inputs to RRTMGP
@@ -202,8 +203,6 @@ program rte_rrtmgp_clouds_aerosols
   !
   ! Parse command line for any file names, block size
   !
-  ! rrtmgp_clouds rrtmgp-clouds.nc $RRTMGP_ROOT/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc $RRTMGP_ROOT/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-lw.nc $RRTMGP_ROOT/extensions/aerosol_optics/rrtmgp-lw-inputs-aerosol-optics.nc  128 1
-  ! rrtmgp_clouds rrtmgp-clouds.nc $RRTMGP_ROOT/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc $RRTMGP_ROOT/extensions/cloud_optics/rrtmgp-cloud-optics-coeffs-sw.nc $RRTMGP_ROOT/extensions/aerosol_optics/rrtmgp-sw-inputs-aerosol-optics.nc  128 1
   nUserArgs = command_argument_count()
   nloops = 1
   if (nUserArgs <  4) call stop_on_err("Need to supply input_file k_distribution_file ncol.")

@@ -53,7 +53,8 @@
 module mo_optical_props
   use mo_rte_kind,              only: wp
   use mo_rte_config,            only: check_extents, check_values
-  use mo_rte_util_array,        only: any_vals_less_than, any_vals_outside, extents_are
+  use mo_rte_util_array_validation, & 
+                                only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props_kernels, only: &
         increment_1scalar_by_1scalar, increment_1scalar_by_2stream, increment_1scalar_by_nstream, &
         increment_2stream_by_1scalar, increment_2stream_by_2stream, increment_2stream_by_nstream, &

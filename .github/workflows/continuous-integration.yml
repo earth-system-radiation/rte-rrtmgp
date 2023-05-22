@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
-        rte-kernels: [default, openacc]
+        rte-kernels: [default, accel]
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}

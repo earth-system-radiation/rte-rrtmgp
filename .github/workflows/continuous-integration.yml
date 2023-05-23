@@ -28,7 +28,7 @@ jobs:
       NCHOME: /dummy
       NFHOME: /usr
       RRTMGP_ROOT: ${{ github.workspace }}
-      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
+      RRTMGP_DATA: rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
       # Auxiliary variables:
@@ -46,7 +46,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: earth-system-radiation/rrtmgp-data
-        path: ${{ RRTMGP_DATA }}
+        path: ${RRTMGP_DATA}
     #    
     # Synchronize the package index
     #

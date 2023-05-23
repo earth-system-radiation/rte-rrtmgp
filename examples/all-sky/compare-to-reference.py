@@ -5,7 +5,6 @@
 import argparse
 import os
 import sys
-import urllib.request
 
 import numpy as np
 import xarray as xr
@@ -21,10 +20,8 @@ if __name__ == '__main__':
                         dest="file",
                         help="Name of file inputs and outputs for "
                              "all-sky problem (same for test and reference)")
-    parser.add_argument("--ref_dir", type=str, default="ref",
+    parser.add_argument("--ref_dir", type=str, default=os.path.join(os.environ["RRTMGP_DATA"], "examples"),
                         help="Directory where reference values are")
-    parser.add_argument("--download_reference", action="store_true",
-                        help="Download reference files even if they exist")
     parser.add_argument("--report_threshold", type=float, default=0.,
                         help="Threshold for reporting differences")
     parser.add_argument("--failure_threshold", type=float, default=1.e-5,
@@ -34,13 +31,6 @@ if __name__ == '__main__':
 
     tst_file = args.file
     ref_file = os.path.join(args.ref_dir, tst_file)
-    # If a version of the file exists in the reference directory,
-    # no need to download (can be over-ridden)
-    if args.download_reference or not os.path.exists(ref_file):
-        os.makedirs(args.ref_dir, exist_ok=True)
-        urllib.request.urlretrieve(
-            "ftp://ftp.ldeo.columbia.edu/pub/robertp/rte-rrtmgp/continuous-integration/rrtmgp-allsky-2023-02-16.nc",
-            ref_file)
     tst = xr.open_dataset(tst_file)
     ref = xr.open_dataset(ref_file)
 

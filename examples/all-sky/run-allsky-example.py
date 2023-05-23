@@ -8,20 +8,16 @@ import os
 import shutil
 import subprocess
 
-rte_rrtmgp_dir = os.path.join("..", "..")
+rte_rrtmgp_dir = os.environ["RRTMGP_DATA"]
 # This files lives in $RRTMGP_ROOT/examples/all-sky/
 all_sky_dir = "."
 # Code should be run in the all_sky_dir directory
 
-lw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-data",
-                                  "rrtmgp-gas-lw-g256.nc")
-sw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-data",
-                                  "rrtmgp-gas-sw-g224.nc")
+lw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-gas-lw-g256.nc")
+sw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-gas-sw-g224.nc")
 
-lw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-data",
-                                    "rrtmgp-clouds-lw.nc")
-sw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-data",
-                                    "rrtmgp-clouds-sw.nc")
+lw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-clouds-lw.nc")
+sw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-clouds-sw.nc")
 
 # In the local directory
 all_sky_exe_name = os.path.join(all_sky_dir, "rrtmgp_allsky")

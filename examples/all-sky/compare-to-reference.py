@@ -20,7 +20,7 @@ if __name__ == '__main__':
                         dest="file",
                         help="Name of file inputs and outputs for "
                              "all-sky problem (same for test and reference)")
-    parser.add_argument("--ref_dir", type=str, default=os.path.join(os.environ["RRTMGP_DATA"], "examples", "all-sky"),
+    parser.add_argument("--ref_dir", type=str, default=os.path.join(os.environ["RRTMGP_DATA"], "examples", "all-sky", "reference"),
                         help="Directory where reference values are")
     parser.add_argument("--report_threshold", type=float, default=0.,
                         help="Threshold for reporting differences")

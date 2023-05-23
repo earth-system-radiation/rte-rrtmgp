@@ -19,7 +19,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Compares all-sky example output to file in reference "
                     "directory")
-    parser.add_argument("--ref_dir", type=str, default=os.environ["RRTMGP_DATA"],
+    parser.add_argument("--ref_dir", type=str, 
+                        default=os.path.join(os.environ["RRTMGP_DATA"], "examples", "rfmip-clear-sky", "reference"),
                         help="Directory where reference values are")
     parser.add_argument("--report_threshold", type=float, default=0.,
                         help="Threshold for reporting differences")

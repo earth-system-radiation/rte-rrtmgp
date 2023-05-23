@@ -82,7 +82,6 @@ jobs:
     - name: Set up mamba
       uses: mamba-org/setup-micromamba@v1
       with:
-        environment-file: environment.yml    #
         activate-environment: rte_rrtmgp_test
         environment-file: environment-noplots.yml
         python-version: 3.9

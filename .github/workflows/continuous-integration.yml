@@ -28,7 +28,7 @@ jobs:
       NCHOME: /dummy
       NFHOME: /usr
       RRTMGP_ROOT: ${{ github.workspace }}
-      RRTMGP_DATA: rrtmgp-data
+      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
       # Auxiliary variables:
@@ -46,7 +46,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: earth-system-radiation/rrtmgp-data
-        path: ${RRTMGP_DATA}
+        path: rrtmgp-data
     #    
     # Synchronize the package index
     #
@@ -68,18 +68,27 @@ jobs:
     #
     # Set up Conda
     #
-    - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v2
+#    - name: Set up Conda
+#      uses: conda-incubator/setup-miniconda@v2
+#      with:
+#        mamba-version: "*"
+#        # miniforge-version: latest
+#        activate-environment: rte_rrtmgp_test
+#        environment-file: environment-noplots.yml
+#        python-version: 3.9
+#        auto-activate-base: false
+        # Use the cache properly:
+#        use-only-tar-bz2: true
+    - name: Set up mamba
+      uses: mamba-org/setup-micromamba@v1
       with:
-        mamba-version: "*"
-        # miniforge-version: latest
+        environment-file: environment.yml    #
         activate-environment: rte_rrtmgp_test
         environment-file: environment-noplots.yml
         python-version: 3.9
         auto-activate-base: false
         # Use the cache properly:
         use-only-tar-bz2: true
-    #
     # Cache RFMIP files
     #
     - name: Cache RFMIP files

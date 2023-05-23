@@ -50,8 +50,8 @@ mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merr
 
 tests:
 	cp garand-atmos-1.nc rrtmgp-allsky.nc
-	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-lw-g256-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-cloud-optics-coeffs-lw.nc           ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-aerosol-optics-rrtmgp-merra-coeffs-lw.nc 128
-	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-cloud-optics-coeffs-reordered-sw.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-aerosol-optics-rrtmgp-merra-coeffs-sw.nc 128
+	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-gas-lw-g256.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-clouds-lw.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-aerosols-merra-lw.nc 128
+	$(RUN_CMD) ./rrtmgp_allsky rrtmgp-allsky.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-gas-sw-g224.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-clouds-sw.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-aerosols-merra-sw.nc 128
 
 check:
 	python ./compare-to-reference.py

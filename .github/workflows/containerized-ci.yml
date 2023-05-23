@@ -75,7 +75,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: earth-system-radiation/rrtmgp-data
-        path: ${RRTMGP_DATA}
+        path: ${{ RRTMGP_DATA }}
     #
     # Cache RFMIP files
     #

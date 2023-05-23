@@ -46,7 +46,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: earth-system-radiation/rrtmgp-data
-        path: ${RRTMGP_DATA}
+        path: ${{ RRTMGP_DATA }}
     #    
     # Synchronize the package index
     #
@@ -71,7 +71,8 @@ jobs:
     - name: Set up Conda
       uses: conda-incubator/setup-miniconda@v2
       with:
-        miniforge-version: latest
+        mamba-version: "*"
+        # miniforge-version: latest
         activate-environment: rte_rrtmgp_test
         environment-file: environment-noplots.yml
         python-version: 3.9

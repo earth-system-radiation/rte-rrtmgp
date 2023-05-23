@@ -68,20 +68,10 @@ jobs:
     #
     # Set up Conda
     #
-#    - name: Set up Conda
-#      uses: conda-incubator/setup-miniconda@v2
-#      with:
-#        mamba-version: "*"
-#        # miniforge-version: latest
-#        activate-environment: rte_rrtmgp_test
-#        environment-file: environment-noplots.yml
-#        python-version: 3.9
-#        auto-activate-base: false
-        # Use the cache properly:
-#        use-only-tar-bz2: true
-    - name: Set up mamba
-      uses: mamba-org/setup-micromamba@v1
+    - name: Set up Conda
+      uses: conda-incubator/setup-miniconda@v2
       with:
+        miniforge-version: latest
         activate-environment: rte_rrtmgp_test
         environment-file: environment-noplots.yml
         python-version: 3.9

@@ -21,7 +21,7 @@ sw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-clouds-sw.nc")
 
 # In the local directory
 all_sky_exe_name = os.path.join(all_sky_dir, "rrtmgp_allsky")
-input_file = os.path.join(all_sky_dir, "garand-atmos-1.nc")
+input_file = os.path.join(os.environ["RRTMGP_DATA"], "examples", "all-sky", "inputs", "garand-atmos-1.nc")
 atmos_file = os.path.join(all_sky_dir, "rrtmgp-allsky.nc")
 
 if __name__ == '__main__':

@@ -66,8 +66,8 @@ mo_simple_netcdf.o:     $(LIB_DEPS) mo_simple_netcdf.F90
 .PHONY: tests
 tests:
 	cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
-	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-lw-g256-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-lw-g128-210809.nc
-	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-sw-g224-2018-12-04.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-sw-g112-210809.nc
+	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
+	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
 
 check:
 	python verification.py

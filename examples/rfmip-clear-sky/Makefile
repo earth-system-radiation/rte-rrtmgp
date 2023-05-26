@@ -67,10 +67,10 @@ tests: multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc # Also th
 	$(RUN_CMD) ./rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_ROOT}/rrtmgp-data/rrtmgp-data-sw-g224-2018-12-04.nc
 
 check:
-	cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky && python ./compare-to-reference.py --fail=7.e-4
+	cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky && python3 ./compare-to-reference.py --fail=7.e-4
 
 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc:
-	python stage_files.py
+	python3 stage_files.py
 
 clean:
 	-rm rrtmgp_rfmip_sw rrtmgp_rfmip_lw *.o *.mod *.optrpt *.nc

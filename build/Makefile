@@ -5,6 +5,8 @@ GAS_OPTICS_DIR    = ../gas-optics
 RRTMGP_DIR        = ../rrtmgp-frontend
 RTE_KERNEL_DIR    = ../rte-kernels
 RRTMGP_KERNEL_DIR = ../rrtmgp-kernels
+RTE_KERNEL_DIR    = ../rte-kernels
+RRTMGP_KERNEL_DIR = ../rrtmgp-kernels
 #
 # Compiler variables FC, FCFLAGS must be set in the environment
 #
@@ -15,6 +17,10 @@ separate-libs: librtekernels.a librtef.a librrtmgpkernels.a librrtmgpf.a
 COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c
 %.o: %.F90
 	$(COMPILE) $<
+
+COMPILE_CU = nvc++ -c -std=c++17 -O3 -DRTE_RRTMGP_GPU_MEMPOOL_CUDA
+%.o: %.cu
+    $(COMPILE_CU) $<
 
 include $(RTE_DIR)/Make.depends
 include $(RRTMGP_DIR)/Make.depends
@@ -46,6 +52,9 @@ librrtmgpkernels.a: $(RRTMGP_FORTRAN_KERNELS)
 
 librrtmgpf.a: $(RRTMGP_FORTRAN_INTERFACE)
 	ar -rvs librrtmgpf.a $(RRTMGP_FORTRAN_INTERFACE)
+
+librrtmgpcudakernels.a: $(RRTMGP_CUDA_KERNELS)
+    ar -rvs librrtmgpcudakernels.a $(RRTMGP_CUDA_KERNELS)
 
 clean:
 	rm -f *.optrpt *.mod *.o lib*.a

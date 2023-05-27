@@ -29,6 +29,9 @@ root of the RTE+RRTMGP installation.
 ### Optimization flags:  
 `FCFLAGS: "-g -O3 -fast -Minfo -Mallocatable=03 -Mpreprocess"`
 
+## An example for NVFortran with CUDA kernels
+`RRTMGP_ROOT=/home/chiel/devel/rte-rrtmgp NCHOME=/home/chiel/devel/netcdf-nvidia NFHOME=/home/chiel/devel/netcdf-nvidia RTE_KERNELS=accel FC=nvfortran FCFLAGS="-g -O3 -fast -gpu=cc86 -acc=gpu -Minfo -Mallocatable=03 -Mpreprocess -c++libs -cuda" make`
+
 ## HPE CCE for GPU using OpenMP-acc: crayftn   -- requires at least CCE 14.0.0
 `FC: crayftn`
 ### Debugging flags  (these appear to be insufficient during the link stage)

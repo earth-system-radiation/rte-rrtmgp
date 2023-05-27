@@ -7,7 +7,7 @@ template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_devicep
 
 extern "C"
 {
-    void interpolation_cuda_(
+    void interpolation_(
             int* ncol, int* nlay,
             int* ngas, int* nflav, int* neta, int* npres, int* ntemp,
             int* flavor,

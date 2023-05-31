@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         fortran-compiler: [ifort, ifx, nvfortran]
-        rte-kernels: [default, openacc]
+        rte-kernels: [default, accel]
         include:
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
@@ -24,11 +24,11 @@ jobs:
         # Set flags for Intel ifx Fortran Compiler
         - fortran-compiler: ifx
           rte-kernels: default
-          fcflags: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
+          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
           experimental: false
         - fortran-compiler: ifx
-          rte-kernels: openacc
-          fcflags: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-target=spir64"
+          rte-kernels: accel
+          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64"
           experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
@@ -36,7 +36,7 @@ jobs:
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
           experimental: false
         - fortran-compiler: nvfortran
-          rte-kernels: openacc
+          rte-kernels: accel
           fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc"
           experimental: false
         # Set container images
@@ -56,6 +56,7 @@ jobs:
       NCHOME: /dummy
       NFHOME: /opt/netcdf-fortran
       RRTMGP_ROOT: ${{ github.workspace }}
+      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
@@ -67,6 +68,14 @@ jobs:
     # Checks-out repository under $GITHUB_WORKSPACE
     #
     - uses: actions/checkout@v3
+    #
+    # Check out data 
+    #
+    - name: Check out data
+      uses: actions/checkout@v3
+      with:
+        repository: earth-system-radiation/rrtmgp-data
+        path: rrtmgp-data
     #
     # Cache RFMIP files
     #

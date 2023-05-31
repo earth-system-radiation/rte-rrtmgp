@@ -13,14 +13,15 @@ defaults:
 
 jobs:
   CI:
-    runs-on: daint
+    runs-on: 
+      labels: cscs-ci 
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         include:
         - config-name: nvidia-gpu-openacc
-          rte-kernels: openacc
+          rte-kernels: accel
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
           fcflags: "-O3 -acc -Mallocatable=03 -gopt"
@@ -32,7 +33,7 @@ jobs:
           fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
           experimental: false
         - config-name: cce-gpu-openmp
-          rte-kernels: openacc
+          rte-kernels: accel
           compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
@@ -45,6 +46,7 @@ jobs:
       NCHOME: /dummy
       NFHOME: /dummy
       RRTMGP_ROOT: ${{ github.workspace }}
+      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
     steps:
@@ -52,6 +54,14 @@ jobs:
     # Checks-out repository under $GITHUB_WORKSPACE
     #
     - uses: actions/checkout@v3
+    #
+    # Check out data 
+    #
+    - name: Check out data
+      uses: actions/checkout@v3
+      with:
+        repository: earth-system-radiation/rrtmgp-data
+        path: rrtmgp-data
     #
     # Finalize build environment
     #
@@ -77,6 +87,9 @@ jobs:
         # We use the "non-default products" for the tests
         # (see https://support.hpe.com/hpesc/public/docDisplay?docId=a00113984en_us&page=Modify_Linking_Behavior_to_Use_Non-default_Libraries.html):
         echo 'LD_LIBRARY_PATH="${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"' >> "${BASH_ENV}"
+        # SLURM jobs, user home directories and HDF5 file locking are
+        # incompatible on Daint:
+        echo 'HDF5_USE_FILE_LOCKING=FALSE' >> "${GITHUB_ENV}"
     #
     # Build libraries, examples and tests
     #

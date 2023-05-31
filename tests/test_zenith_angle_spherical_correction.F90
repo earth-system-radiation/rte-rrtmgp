@@ -41,7 +41,7 @@ program test_solar_zenith_angle
   real(wp), dimension(ncol, nlay+1), target &
                               :: flux_up, flux_dn, flux_dir
   logical                     :: top_at_1
-  character(len=128)          :: k_dist_file = "../rrtmgp/data/rrtmgp-data-sw-g112-210809.nc"
+  character(len=128)          :: k_dist_file = "rrtmgp-gas-sw-g112.nc"
   real(wp), dimension(:,:), allocatable &
                               :: toa_flux, sfc_alb_dir, sfc_alb_dif
   !

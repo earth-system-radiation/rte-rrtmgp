@@ -10,7 +10,8 @@ author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
 title: RTE kernels
-src_dir: ../../rte/kernels
+src_dir: ../../rte-kernels
+exclude_dir: ../../rte-kernels/accel
 output_dir: ../../public/reference/rte-kernels
 ...
 

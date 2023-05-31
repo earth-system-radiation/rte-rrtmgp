@@ -54,9 +54,9 @@ make clean
 cd ${PROF_DIR} || exit 1
 make clean || exit 1
 make -j 4  || exit 1
-cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
-./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc
-./clear_sky_regression test_atmospheres.nc ${RRTMGP_ROOT}/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc
+cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc test_atmospheres.nc
+./clear_sky_regression test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
+./clear_sky_regression test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
 # Need to repeat for openacc-kernels
 
 #

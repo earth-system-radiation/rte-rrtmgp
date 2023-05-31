@@ -10,6 +10,7 @@ author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
 title: RTE Fortran interfaces-frontend
+src_dir: ../../rte-frontend
 output_dir: ../../public/reference/rte-fortran-interface
 ...
 

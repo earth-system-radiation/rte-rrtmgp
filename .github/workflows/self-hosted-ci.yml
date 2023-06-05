@@ -38,6 +38,13 @@ jobs:
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
           experimental: true
+        - config-name: cuda-kernels
+          # Fall back to OpenACC 
+          rte-kernels: accel 
+          compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
+          # OpenMP flags from Nichols Romero (Argonne)
+          fcflags: "-g -O3 -fast -gpu=cc86 -acc=gpu -Minfo -Mallocatable=03 -Mpreprocess -c++libs -cuda"
+          experimental: true
     env:
       # Core variables:
       FC: ftn
@@ -98,6 +105,12 @@ jobs:
         $FC --version
         make libs
         make -C build separate-libs
+    #
+    # Check out and build CUDA kernels if needed 
+    #
+    - name: Build libraries, examples and tests
+      if {{ config-name.config-name == "cuda-kernels" }}
+      run: $FC --version
     #
     # Run examples and tests
     #

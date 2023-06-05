@@ -76,7 +76,7 @@ jobs:
       if: matrix.config-name == 'cuda-kernels'
       uses: actions/checkout@v3
       with:
-        branch: feature-cuda-kernels
+        ref: feature-cuda-kernels
         path: cuda-kernels
     #
     # Finalize build environment

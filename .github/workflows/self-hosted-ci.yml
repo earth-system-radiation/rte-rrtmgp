@@ -110,7 +110,7 @@ jobs:
     # Build library of CUDA kernels 
     #
     - name: Build CUDA kernels
-      if {{ config-name.config-name == "cuda-kernels" }}
+      if: {{ config-name.config-name == "cuda-kernels" }}
       run: make -C cuda-kernels/build librrtmgpcudakernels.a
 
     # Build libraries, examples and tests

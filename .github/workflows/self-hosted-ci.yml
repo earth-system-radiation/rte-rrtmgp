@@ -70,6 +70,15 @@ jobs:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
     #
+    # Check out CUDA kernels if needed 
+    #
+    - name: Check out CUDA kernels 
+      if {{ config-name.config-name == "cuda-kernels" }}
+      uses: actions/checkout@v3
+      with:
+        branch: feature-cuda-kernels
+        path: cuda-kernels
+    #
     # Finalize build environment
     #
     - name: Finalize build environment
@@ -98,6 +107,12 @@ jobs:
         # incompatible on Daint:
         echo 'HDF5_USE_FILE_LOCKING=FALSE' >> "${GITHUB_ENV}"
     #
+    # Build library of CUDA kernels 
+    #
+    - name: Build libraries, examples and tests
+      if {{ config-name.config-name == "cuda-kernels" }}
+      run: make -C cuda-kernels/build librrtmgpcudakernels.a
+
     # Build libraries, examples and tests
     #
     - name: Build libraries, examples and tests
@@ -105,12 +120,6 @@ jobs:
         $FC --version
         make libs
         make -C build separate-libs
-    #
-    # Check out and build CUDA kernels if needed 
-    #
-    - name: Build libraries, examples and tests
-      if {{ config-name.config-name == "cuda-kernels" }}
-      run: $FC --version
     #
     # Run examples and tests
     #

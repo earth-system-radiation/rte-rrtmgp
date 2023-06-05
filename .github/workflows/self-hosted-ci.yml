@@ -112,9 +112,7 @@ jobs:
     - name: Build CUDA kernels
       if: matrix.config-name == 'cuda-kernels'
       run: 
-        pwd
-        cd ../cuda-kernels
-        make -C build/librrtmgpcudakernels.a 
+        make -C cuda-kernels/build/librrtmgpcudakernels.a 
 
     # Build libraries, examples and tests
     #

@@ -73,7 +73,7 @@ jobs:
     # Check out CUDA kernels if needed 
     #
     - name: Check out CUDA kernels 
-      if {{ config-name.config-name == "cuda-kernels" }}
+      if: {{ config-name.config-name == "cuda-kernels" }}
       uses: actions/checkout@v3
       with:
         branch: feature-cuda-kernels
@@ -109,7 +109,7 @@ jobs:
     #
     # Build library of CUDA kernels 
     #
-    - name: Build libraries, examples and tests
+    - name: Build CUDA kernels
       if {{ config-name.config-name == "cuda-kernels" }}
       run: make -C cuda-kernels/build librrtmgpcudakernels.a
 

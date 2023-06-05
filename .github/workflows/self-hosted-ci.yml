@@ -73,7 +73,7 @@ jobs:
     # Check out CUDA kernels if needed 
     #
     - name: Check out CUDA kernels 
-      if: {{ config-name.config-name == "cuda-kernels" }}
+      if: {{ matrix.config-name == "cuda-kernels" }}
       uses: actions/checkout@v3
       with:
         branch: feature-cuda-kernels

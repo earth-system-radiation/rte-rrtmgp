@@ -41,7 +41,7 @@ jobs:
         - config-name: cuda-kernels
           # Fall back to OpenACC 
           rte-kernels: accel 
-          compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
+          compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # fcflags: "-g -O3 -fast -gpu=cc86 -acc=gpu -Minfo -Mallocatable=03 -Mpreprocess -c++libs -cuda"
           fcflags: "-g -O3 -fast -Minfo -Mallocatable=03 -Mpreprocess"
           experimental: true

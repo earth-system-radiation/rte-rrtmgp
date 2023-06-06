@@ -5,11 +5,13 @@ Before using the Makefiles supplied with the `RTE+RRTMGP` repository, the enviro
 used during development and testing.
 
 To build any of the executables in `examples/` or `tests` the locations of the C and Fortran netCDF libraries
-need to be set via environment variables `NCHOME` and `NFHOME`, and the variable `RRTMGP_ROOT` must be set to the
-root of the RTE+RRTMGP installation.
+need to be set via environment variable `NFHOME` (so that `netcdf.mod` is in `NFHOME/include`) 
+and the variable `RRTMGP_ROOT` must be set to the root of the RTE+RRTMGP installation. 
+
+Running the tests requires environment variable `RRTMGP_DATA` to be set to the location of the data repository
 
 ## Gnu Fortran
-`FC: gfortran-8` or `gfortran-9` or `gfortran-10`
+`FC: gfortran-8` or `gfortran-9` or `gfortran-10` or `gfortran-11` or `gfortran-12`
 ### Debugging flags
 `FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DRTE_USE_CBOOL"`  
 ### Even stricter debugging flags

@@ -10,10 +10,10 @@ LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
 LIBS      += -lrtef -lrrtmgpf -lrtekernels -lrrtmgpkernels
 #
 # netcdf library, module files
-# Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
+# Environment variable NFHOME points to root of the Fortran interfaces 
 #
 FCINCLUDE += -I$(NFHOME)/include
-# LDFLAGS   += -L$(NFHOME)/lib
+LDFLAGS   += -L$(NFHOME)/lib
 LIBS      += -lnetcdff
 
 VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky

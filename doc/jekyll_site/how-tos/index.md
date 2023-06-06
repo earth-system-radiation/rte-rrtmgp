@@ -11,8 +11,8 @@ title: "How-to guides"
 1. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags).
    Examples are provided in the `Compiler-flags.md` file.
 2. Set environment variable `RRTMGP_ROOT` to the top-level RTE+RRTMGP directory.
-   Set the variables `NCHOME` and `NFHOME` to the roots of the C and Fortran
-   netCDF installations. (Building the libraries alone )
+   Set the environment variable `NFHOME` to the root of the Fortran
+   netCDF installation. (Building the libraries alone )
 3. Set environment variable `RTE_KERNELS` to `accel` if you want the OpenACC/OpenMP
    kernels rather than the default.
 4. `make libs` in the top-level directory will make the RTE and RRTMGP libraries

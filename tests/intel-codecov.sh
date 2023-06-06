@@ -12,7 +12,6 @@ export PROF_DIR=$PWD
 # Environment variables for netCDF Fortran and C installations
 #
 export NFHOME=${HOME}/Applications/${FC}
-export NCHOME=/opt/local
 
 #
 # An Anaconda environent with modules needed for other python scripts
@@ -32,7 +31,7 @@ make -C ${RRTMGP_BUILD} -j 4 || exit 1
 #
 cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky || exit 1
 export FCFLAGS+=" -I${RRTMGP_BUILD} -I${NFHOME}/include"
-export LDFLAGS+=" -L${RRTMGP_BUILD} -L${NFHOME}/lib -L${NCHOME}/lib -lrte -lrrtmgp -lnetcdff -lnetcdf"
+export LDFLAGS+=" -L${RRTMGP_BUILD} -L${NFHOME}/lib -lrte -lrrtmgp -lnetcdff"
 make clean || exit 1
 make -j 4  || exit 1
 python ./stage_files.py

@@ -13,10 +13,10 @@ LIBS      += -lrtef -lrrtmgpf -lrtekernels -lrrtmgpkernels
 
 #
 # netcdf library, module files
-# Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
+# Environment variable NFHOME points to root of the Fortran interface
 #
 FCINCLUDE += -I$(NFHOME)/include
-# LDFLAGS   += -L$(NFHOME)/lib
+LDFLAGS   += -L$(NFHOME)/lib
 LIBS      += -lnetcdff
 
 VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend # Needed for cloud_optics and aerosol_optics

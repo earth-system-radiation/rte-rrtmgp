@@ -14,7 +14,7 @@ LIBS      += -lrtef -lrrtmgpf -lrtekernels -lrrtmgpkernels
 # Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
 #
 FCINCLUDE += -I$(NFHOME)/include
-# LDFLAGS   += -L$(NFHOME)/lib
+LDFLAGS   += -L$(NFHOME)/lib
 LIBS      += -lnetcdff
 
 

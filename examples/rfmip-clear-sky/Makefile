@@ -1,25 +1,22 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
+#   Default values can be overridden with environmental variables 
 #
-RRTMGP_DIR = $(RRTMGP_ROOT)/build
-# Override with environment variable ? Nope...
-KERNEL_DIR = $(RRTMGP_ROOT)/build 
-# RRTMGP library, module files
-#
-# LDFLAGS   += -L$(RRTMGP_BUILD)
-# LIBS      += -lrrtmgp -lrte
+RRTMGP_DIR ?= $(RRTMGP_ROOT)/build
+KERNEL_DIR ?= $(RRTMGP_ROOT)/build 
+
 FCINCLUDE += -I$(RRTMGP_DIR)
+LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
+LIBS      += -lrtef -lrrtmgpf -lrtekernels -lrrtmgpkernels
 
 #
 # netcdf library, module files
 # Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
 #
 FCINCLUDE += -I$(NFHOME)/include
-LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
-LIBS      += -lnetcdff -lnetcdf
+# LDFLAGS   += -L$(NFHOME)/lib
+LIBS      += -lnetcdff
 
-LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
-LIBS      += -lrtef -lrrtmgpf -lrtekernels -lrrtmgpkernels
 
 #
 # General Purpose Timing Library https://jmrosinski.github.io/GPTL/

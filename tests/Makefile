@@ -1,22 +1,20 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
+#   Default values can be overridden with environmental variables 
 #
-RRTMGP_BUILD = $(RRTMGP_ROOT)/build
-#
-# RRTMGP library, module files
-#
-# LDFLAGS   += -L$(RRTMGP_BUILD)
-# LIBS      += -lrrtmgp -lrte
-FCINCLUDE += -I$(RRTMGP_BUILD)
+RRTMGP_DIR ?= $(RRTMGP_ROOT)/build
+KERNEL_DIR ?= $(RRTMGP_ROOT)/build 
+
+FCINCLUDE += -I$(RRTMGP_DIR)
+LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
+LIBS      += -lrtef -lrrtmgpf -lrtekernels -lrrtmgpkernels
 #
 # netcdf library, module files
 # Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
 #
 FCINCLUDE += -I$(NFHOME)/include
-LDFLAGS   += -L$(RRTMGP_BUILD)
-LIBS      += -lrte -lrrtmgp
-LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
-LIBS      += -lnetcdff -lnetcdf
+# LDFLAGS   += -L$(NFHOME)/lib
+LIBS      += -lnetcdff
 
 VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
 VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/:$(RRTMGP_ROOT)/extensions/solar_variability

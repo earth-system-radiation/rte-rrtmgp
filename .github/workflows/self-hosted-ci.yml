@@ -119,7 +119,6 @@ jobs:
       run: |
         $FC --version
         make libs
-        make -C build separate-libs
     #
     # Run examples and tests
     #

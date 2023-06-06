@@ -8,9 +8,9 @@ RRTMGP_KERNEL_DIR = ../rrtmgp-kernels
 #
 # Compiler variables FC, FCFLAGS must be set in the environment
 #
-# Make all the libraries though we'll only use the interface + kernels
-all:           librte.a                  librrtmgp.a
-separate-libs: librtekernels.a librtef.a librrtmgpkernels.a librrtmgpf.a
+# 
+all:           librte.a                  librrtmgp.a \
+               librtekernels.a librtef.a librrtmgpkernels.a librrtmgpf.a
 
 COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c
 %.o: %.F90
@@ -29,15 +29,27 @@ ifeq ($(RTE_KERNELS), accel)
 	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
 endif
 
+#
+# Library containing Fortran front-end and kernels 
+#
 librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
 	ar -rvs librte.a $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
 
+#
+# Library with just the kernels...
+#
 librtekernels.a: $(RTE_FORTRAN_KERNELS)
 	ar -rvs librtekernels.a $(RTE_FORTRAN_KERNELS)
 
+#
+# ... and just the Fortran front-end 
+#
 librtef.a: $(RTE_FORTRAN_INTERFACE)
 	ar -rvs librtef.a $(RTE_FORTRAN_INTERFACE)
 
+#
+# As with RTE, libraries with Fortran front-end and kernels, separate and combined 
+#
 librrtmgp.a: $(RRTMGP_FORTRAN_KERNELS)  $(RRTMGP_FORTRAN_INTERFACE)
 	ar -rvs librrtmgp.a $(RRTMGP_FORTRAN_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
 

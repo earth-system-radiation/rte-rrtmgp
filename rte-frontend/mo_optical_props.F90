@@ -1126,15 +1126,14 @@ contains
   !> Lower and upper wavenumber of all bands
   !> (upper and lower wavenumber by band) = band_lims_wvn(2,band)
   !>
-  pure function get_band_lims_wavenumber(this)
-    class(ty_optical_props), intent(in) :: this
-    real(wp), dimension(size(this%band_lims_wvn,1), size(this%band_lims_wvn,2)) &
-                                        :: get_band_lims_wavenumber
+  function get_band_lims_wavenumber(this)
+    class(ty_optical_props), target, intent(in) :: this
+    real(wp), dimension(:,:), pointer           :: get_band_lims_wavenumber
 
     if(this%is_initialized()) then
-      get_band_lims_wavenumber(:,:) = this%band_lims_wvn(:,:)
+      get_band_lims_wavenumber => this%band_lims_wvn
     else
-      get_band_lims_wavenumber(:,:) = 0._wp
+      get_band_lims_wavenumber => NULL()
     end if
   end function get_band_lims_wavenumber
   !>--------------------------------------------------------------------------------------------------------------------
@@ -1156,15 +1155,14 @@ contains
   !> Bands for all the g-points at once
   !> dimension (ngpt)
   !>
-  pure function get_gpoint_bands(this)
-    class(ty_optical_props), intent(in) :: this
-    integer, dimension(size(this%gpt2band,dim=1)) &
-                                        :: get_gpoint_bands
+  function get_gpoint_bands(this)
+    class(ty_optical_props), target, intent(in) :: this
+    integer, dimension(:), pointer :: get_gpoint_bands
 
     if(this%is_initialized()) then
-      get_gpoint_bands(:) = this%gpt2band(:)
+      get_gpoint_bands => this%gpt2band
     else
-      get_gpoint_bands(:) = 0
+      get_gpoint_bands => NULL()
     end if
   end function get_gpoint_bands
   !>--------------------------------------------------------------------------------------------------------------------
@@ -1201,7 +1199,7 @@ contains
   !>
   !> Are the bands of two objects the same? (same number, same wavelength limits)
   !>
-  pure function bands_are_equal(this, that)
+  function bands_are_equal(this, that)
     class(ty_optical_props), intent(in) :: this, that
     logical                             :: bands_are_equal
 
@@ -1217,7 +1215,7 @@ contains
   !> Is the g-point structure of two objects the same?
   !>   (same bands, same number of g-points, same mapping between bands and g-points)
   !>
-  pure function gpoints_are_equal(this, that)
+  function gpoints_are_equal(this, that)
     class(ty_optical_props), intent(in) :: this, that
     logical                             :: gpoints_are_equal
 

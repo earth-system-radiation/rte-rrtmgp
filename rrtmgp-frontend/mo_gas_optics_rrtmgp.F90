@@ -260,7 +260,9 @@ contains
     !
     ! Gas optics
     !
-    !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
+    !$acc enter data        copyin(play, plev, tlay) 
+    !$omp target enter data map(to:play, plev, tlay)
+    !$acc enter data           create(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
@@ -274,7 +276,7 @@ contains
     ! External source -- check arrays sizes and values
     ! input data sizes and values
     !
-    !$acc enter data copyin(tsfc, tlev) ! Should be fine even if tlev is not supplied
+    !$acc enter data        copyin(tsfc, tlev) ! Should be fine even if tlev is not supplied
     !$omp target enter data map(to:tsfc, tlev)
 
     if(check_extents) then
@@ -325,10 +327,12 @@ contains
                          jtemp, jpress, jeta, tropo, fmajor, &
                          sources)
     end if
-    !$acc exit data delete(tsfc)
+    !$acc        exit data      delete(tsfc)
     !$omp target exit data map(release:tsfc)
-    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
+    !$acc             exit data delete(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
+    !$acc             exit data delete(play, plev, tlay)
+    !$omp target exit data map(release:play, plev, tlay)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
@@ -374,7 +378,9 @@ contains
     !
     ! Gas optics
     !
-    !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
+    !$acc enter data        copyin(play, plev, tlay) 
+    !$omp target enter data map(to:play, plev, tlay)
+    !$acc enter data           create(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
@@ -382,15 +388,17 @@ contains
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
-    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
+    !$acc             exit data delete(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
+    !$acc             exit data delete(play, plev, tlay)
+    !$omp target exit data map(release:play, plev, tlay)
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
     !
     ! External source function is constant
     !
-    !$acc enter data create(toa_src)
+    !$acc        enter data create(   toa_src)
     !$omp target enter data map(alloc:toa_src)
     if(check_extents) then
       if(.not. extents_are(toa_src, ncol, ngpt)) &
@@ -405,7 +413,7 @@ contains
           toa_src(icol,igpt) = this%solar_source(igpt)
        end do
     end do
-    !$acc exit data copyout(toa_src)
+    !$acc        exit data copyout( toa_src)
     !$omp target exit data map(from:toa_src)
   end function gas_optics_ext
   !------------------------------------------------------------------------------------------

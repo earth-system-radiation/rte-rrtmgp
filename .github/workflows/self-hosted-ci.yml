@@ -42,7 +42,7 @@ jobs:
           # Fall back to OpenACC 
           rte-kernels: accel 
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c !cray-libsci_acc"
-          fcflags: "-g -O3 -fast -gopt -Minfo -Mallocatable=03 -Mpreprocess"
+          fcflags: "-g -O3 -acc -gopt -Mallocatable=03 -Mpreprocess -Minfo"
           experimental: true
     env:
       # Core variables:

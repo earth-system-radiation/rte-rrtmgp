@@ -3,6 +3,7 @@ on:
   push:
     branches-ignore:
     - documentation
+    - feature-cuda-kernels
   pull_request:
     branches-ignore:
     - documentation

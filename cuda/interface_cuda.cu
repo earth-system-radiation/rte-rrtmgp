@@ -127,7 +127,6 @@ extern "C"
             Float* tau_rayleigh)
     {
         printf("CvH: compute_tau_rayleigh, %d, %p\n", *nband, acc_to_cuda(band_lims_gpt));
-
         rrtmgp_kernel_launcher_cuda::compute_tau_rayleigh(
                 *ncol, *nlay, *nband, *ngpt,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -138,5 +137,58 @@ extern "C"
                 acc_to_cuda(fminor), acc_to_cuda(jeta),
                 acc_to_cuda(tropo), acc_to_cuda(jtemp),
                 acc_to_cuda(tau_rayleigh));
+    }
+
+
+    void compute_Planck_source_(
+            int* ncol, int* nlay, int* nbnd, int* ngpt,
+            int* nflav, int* neta, int* npres, int* ntemp,
+            int* nPlanckTemp,
+            Float* tlay,
+            Float* tlev,
+            Float* tsfc,
+            int* sfc_lay,
+            Float* fmajor,
+            int* jeta,
+            Bool* tropo,
+            int* jtemp,
+            int* jpress,
+            int* gpoint_bands,
+            int* band_lims_gpt,
+            Float* pfracin,
+            Float* temp_ref_min, Float* totplnk_delta,
+            Float* totplnk,
+            int* gpoint_flavor,
+            Float* sfc_src,
+            Float* lay_src,
+            Float* lev_src_inc,
+            Float* lev_src_dec,
+            Float* sfc_src_jac)
+    {
+        printf("CvH: compute_Planck_source\n");
+        rrtmgp_kernel_launcher_cuda::Planck_source(
+                *ncol, *nlay, *nbnd, *ngpt,
+                *nflav, *neta, *npres, *ntemp,
+                *nPlanckTemp,
+                acc_to_cuda(tlay),
+                acc_to_cuda(tlev),
+                acc_to_cuda(tsfc),
+                *sfc_lay,
+                acc_to_cuda(fmajor),
+                acc_to_cuda(jeta),
+                acc_to_cuda(tropo),
+                acc_to_cuda(jtemp),
+                acc_to_cuda(jpress),
+                acc_to_cuda(gpoint_bands),
+                acc_to_cuda(band_lims_gpt),
+                acc_to_cuda(pfracin),
+                *temp_ref_min, *totplnk_delta,
+                acc_to_cuda(totplnk),
+                acc_to_cuda(gpoint_flavor),
+                acc_to_cuda(sfc_src),
+                acc_to_cuda(lay_src),
+                acc_to_cuda(lev_src_inc),
+                acc_to_cuda(lev_src_dec),
+                acc_to_cuda(sfc_src_jac));
     }
 }

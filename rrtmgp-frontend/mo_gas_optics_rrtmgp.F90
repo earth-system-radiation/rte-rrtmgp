@@ -260,10 +260,10 @@ contains
     !
     ! Gas optics
     !
-    !$acc enter data        copyin(play, plev, tlay) 
-    !$omp target enter data map(to:play, plev, tlay)
-    !$acc enter data           create(jtemp, jpress, tropo, fmajor, jeta)
-    !$omp target enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
+    !$acc  data        copyin(play, plev, tlay) 
+    !$omp target  data map(to:play, plev, tlay)
+    !$acc  data           create(jtemp, jpress, tropo, fmajor, jeta)
+    !$omp target  data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
@@ -329,10 +329,10 @@ contains
     end if
     !$acc        exit data      delete(tsfc)
     !$omp target exit data map(release:tsfc)
-    !$acc             exit data delete(jtemp, jpress, tropo, fmajor, jeta)
-    !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
-    !$acc             exit data delete(play, plev, tlay)
-    !$omp target exit data map(release:play, plev, tlay)
+    !$acc        end data 
+    !$omp target end data
+    !$acc        end data 
+    !$omp target end data
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
@@ -719,6 +719,7 @@ contains
                           ncol, nlay, ngpt, optical_props%p)
         end select
       end if
+      ! Interpolation coefficients copyout 
       !$acc end        data
       !$omp end target data
       if (present(col_dry)) then
@@ -743,6 +744,7 @@ contains
       !$acc exit data delete(optical_props)
 
     end if
+    ! play, plev, tlay
     !$acc end        data
     !$omp end target data
 

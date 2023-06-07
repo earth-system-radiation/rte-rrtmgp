@@ -1099,12 +1099,15 @@ contains
   !> The first and last g-point of all bands at once
   !> dimension (2, nbands)
   !>
-  pure function get_band_lims_gpoint(this)
-    class(ty_optical_props), intent(in) :: this
-    integer, dimension(size(this%band2gpt,dim=1), size(this%band2gpt,dim=2)) &
-                                        :: get_band_lims_gpoint
+  function get_band_lims_gpoint(this)
+    class(ty_optical_props), target, intent(in) :: this
+    integer, dimension(:,:), pointer :: get_band_lims_gpoint
 
-    get_band_lims_gpoint = this%band2gpt
+    if(this%is_initialized()) then
+      get_band_lims_gpoint => this%band2gpt
+    else
+      get_band_lims_gpoint => NULL()
+    end if 
   end function get_band_lims_gpoint
   !>--------------------------------------------------------------------------------------------------------------------
   !>

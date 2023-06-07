@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <openacc.h>
 #include "Types.h"
 #include "rrtmgp_kernel_launcher_cuda.h"
@@ -28,7 +27,6 @@ extern "C"
             int* jeta,
             int* jpress)
     {
-        printf("CvH: interpolation\n");
         rrtmgp_kernel_launcher_cuda::interpolation(
                 *ncol, *nlay,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -82,7 +80,6 @@ extern "C"
             int* jeta, int* jtemp,
             int* jpress, Float* tau)
     {
-        printf("CvH: compute_tau_absorption\n");
         rrtmgp_kernel_launcher_cuda::compute_tau_absorption(
                 *ncol, *nlay, *nband, *ngpt,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -126,7 +123,6 @@ extern "C"
             Bool* tropo, int* jtemp,
             Float* tau_rayleigh)
     {
-        printf("CvH: compute_tau_rayleigh\n");
         rrtmgp_kernel_launcher_cuda::compute_tau_rayleigh(
                 *ncol, *nlay, *nband, *ngpt,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -165,10 +161,6 @@ extern "C"
             Float* lev_src_dec,
             Float* sfc_src_jac)
     {
-        int* gpoint_bands_gpu = (int*) acc_malloc((*ngpt) * sizeof(int));
-        acc_memcpy_to_device(gpoint_bands_gpu, gpoint_bands, (*ngpt) * sizeof(int));
-        printf("CvH: compute_planck_source %p\n", acc_to_cuda(gpoint_bands_gpu));
-        
         rrtmgp_kernel_launcher_cuda::Planck_source(
                 *ncol, *nlay, *nbnd, *ngpt,
                 *nflav, *neta, *npres, *ntemp,
@@ -182,8 +174,7 @@ extern "C"
                 acc_to_cuda(tropo),
                 acc_to_cuda(jtemp),
                 acc_to_cuda(jpress),
-                // acc_to_cuda(gpoint_bands),
-                acc_to_cuda(gpoint_bands_gpu),
+                acc_to_cuda(gpoint_bands),
                 acc_to_cuda(band_lims_gpt),
                 acc_to_cuda(pfracin),
                 *temp_ref_min, *totplnk_delta,
@@ -194,7 +185,5 @@ extern "C"
                 acc_to_cuda(lev_src_inc),
                 acc_to_cuda(lev_src_dec),
                 acc_to_cuda(sfc_src_jac));
-
-        acc_free(gpoint_bands_gpu);
     }
 }

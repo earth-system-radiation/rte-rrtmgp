@@ -176,7 +176,6 @@ namespace rrtmgp_kernel_launcher_cuda
             const int ncol, const int nlay, const int nbnd, const int ngpt,
             const int ngas, const int nflav, const int neta, const int npres, const int ntemp,
             const int* gpoint_flavor,
-            const int* gpoint_bands,
             const int* band_lims_gpt,
             const Float* krayl,
             int idx_h2o, const Float* col_dry, const Float* col_gas,
@@ -186,20 +185,19 @@ namespace rrtmgp_kernel_launcher_cuda
     {
         Tuner_map& tunings = Tuner::get_map();
 
-        dim3 grid(ncol, nlay, ngpt);
+        dim3 grid(ncol, nlay);
         dim3 block;
 
         if (tunings.count("compute_tau_rayleigh_kernel") == 0)
         {
             std::tie(grid, block) = tune_kernel(
                 "compute_tau_rayleigh_kernel",
-                dim3(ncol, nlay, ngpt),
-                {1, 2, 4, 16, 24, 32}, {1, 2, 4}, {1, 2, 4, 8, 16},
+                dim3(ncol, nlay),
+                {1, 2, 4, 16, 24, 32, 48, 64, 96, 128, 256, 512, 1024}, {1, 2, 4, 8, 16}, {1},
                 compute_tau_rayleigh_kernel,
                 ncol, nlay, nbnd, ngpt,
                 ngas, nflav, neta, npres, ntemp,
                 gpoint_flavor,
-                gpoint_bands,
                 band_lims_gpt,
                 krayl,
                 idx_h2o, col_dry, col_gas,
@@ -220,7 +218,6 @@ namespace rrtmgp_kernel_launcher_cuda
                 ncol, nlay, nbnd, ngpt,
                 ngas, nflav, neta, npres, ntemp,
                 gpoint_flavor,
-                gpoint_bands,
                 band_lims_gpt,
                 krayl,
                 idx_h2o, col_dry, col_gas,

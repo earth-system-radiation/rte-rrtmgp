@@ -28,6 +28,7 @@ extern "C"
             int* jeta,
             int* jpress)
     {
+        printf("CvH: interpolation\n");
         rrtmgp_kernel_launcher_cuda::interpolation(
                 *ncol, *nlay,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -49,6 +50,7 @@ extern "C"
                 acc_to_cuda(jeta),
                 acc_to_cuda(jpress));
     }
+
 
     void compute_tau_absorption_(
             int* ncol, int* nlay, int* nband, int* ngpt,
@@ -80,6 +82,7 @@ extern "C"
             int* jeta, int* jtemp,
             int* jpress, Float* tau)
     {
+        printf("CvH: compute_tau_absorption\n");
         rrtmgp_kernel_launcher_cuda::compute_tau_absorption(
                 *ncol, *nlay, *nband, *ngpt,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -109,5 +112,31 @@ extern "C"
                 acc_to_cuda(tlay), acc_to_cuda(col_gas),
                 acc_to_cuda(jeta), acc_to_cuda(jtemp),
                 acc_to_cuda(jpress), acc_to_cuda(tau));
+    }
+
+
+    void compute_tau_rayleigh_(
+            int* ncol, int* nlay, int* nband, int* ngpt,
+            int* ngas, int* nflav, int* neta, int* npres, int* ntemp,
+            int* gpoint_flavor,
+            int* band_lims_gpt,
+            Float* krayl,
+            int* idx_h2o, Float* col_dry, Float* col_gas,
+            Float* fminor, int* jeta,
+            Bool* tropo, int* jtemp,
+            Float* tau_rayleigh)
+    {
+        printf("CvH: compute_tau_rayleigh, %d, %p\n", *nband, acc_to_cuda(band_lims_gpt));
+
+        rrtmgp_kernel_launcher_cuda::compute_tau_rayleigh(
+                *ncol, *nlay, *nband, *ngpt,
+                *ngas, *nflav, *neta, *npres, *ntemp,
+                acc_to_cuda(gpoint_flavor),
+                acc_to_cuda(band_lims_gpt),
+                acc_to_cuda(krayl),
+                *idx_h2o, acc_to_cuda(col_dry), acc_to_cuda(col_gas),
+                acc_to_cuda(fminor), acc_to_cuda(jeta),
+                acc_to_cuda(tropo), acc_to_cuda(jtemp),
+                acc_to_cuda(tau_rayleigh));
     }
 }

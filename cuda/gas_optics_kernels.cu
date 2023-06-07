@@ -740,7 +740,6 @@ void compute_tau_rayleigh_kernel(
         const int ncol, const int nlay, const int nbnd, const int ngpt,
         const int ngas, const int nflav, const int neta, const int npres, const int ntemp,
         const int* __restrict__ gpoint_flavor,
-        const int* __restrict__ gpoint_bands,
         const int* __restrict__ band_lims_gpt,
         const Float* __restrict__ krayl,
         int idx_h2o, const Float* __restrict__ col_dry, const Float* __restrict__ col_gas,
@@ -751,35 +750,34 @@ void compute_tau_rayleigh_kernel(
     // Fetch the three coordinates.
     const int icol = blockIdx.x*blockDim.x + threadIdx.x;
     const int ilay = blockIdx.y*blockDim.y + threadIdx.y;
-    const int igpt = blockIdx.z*blockDim.z + threadIdx.z;
 
-    if ( (icol < ncol) && (ilay < nlay) && (igpt < ngpt) )
+    if ( (icol < ncol) && (ilay < nlay) )
     {
-        const int ibnd = gpoint_bands[igpt]-1;
-
         const int idx_collay = icol + ilay*ncol;
         const int idx_collaywv = icol + ilay*ncol + idx_h2o*nlay*ncol;
         const int itropo = !tropo[idx_collay];
 
-        const int gpt_start = band_lims_gpt[2*ibnd]-1;
-        const int iflav = gpoint_flavor[itropo+2*gpt_start]-1;
-
-        const int idx_fcl2 = 2*2*(icol + ilay*ncol + iflav*ncol*nlay);
-        const int idx_fcl1 =   2*(icol + ilay*ncol + iflav*ncol*nlay);
-
         const int idx_krayl = itropo*ntemp*neta*ngpt;
-
-        const int j0 = jeta[idx_fcl1  ];
-        const int j1 = jeta[idx_fcl1+1];
         const int jtempl = jtemp[idx_collay];
 
-        const Float kloc = fminor[idx_fcl2+0] * krayl[idx_krayl + (jtempl-1) + (j0-1)*ntemp + igpt*ntemp*neta] +
-                        fminor[idx_fcl2+1] * krayl[idx_krayl + (jtempl-1) +  j0   *ntemp + igpt*ntemp*neta] +
-                        fminor[idx_fcl2+2] * krayl[idx_krayl + (jtempl  ) + (j1-1)*ntemp + igpt*ntemp*neta] +
-                        fminor[idx_fcl2+3] * krayl[idx_krayl + (jtempl  ) +  j1   *ntemp + igpt*ntemp*neta];
+        for (int igpt=0; igpt<ngpt; ++igpt)
+        {
+            const int iflav = gpoint_flavor[itropo+2*igpt]-1;
 
-        const int idx_out = icol + ilay*ncol + igpt*ncol*nlay;
-        tau_rayleigh[idx_out] = kloc * (col_gas[idx_collaywv] + col_dry[idx_collay]);
+            const int idx_fcl2 = 2*2*(icol + ilay*ncol + iflav*ncol*nlay);
+            const int idx_fcl1 =   2*(icol + ilay*ncol + iflav*ncol*nlay);
+
+            const int j0 = jeta[idx_fcl1  ];
+            const int j1 = jeta[idx_fcl1+1];
+
+            const Float kloc = fminor[idx_fcl2+0] * krayl[idx_krayl + (jtempl-1) + (j0-1)*ntemp + igpt*ntemp*neta] +
+                               fminor[idx_fcl2+1] * krayl[idx_krayl + (jtempl-1) +  j0   *ntemp + igpt*ntemp*neta] +
+                               fminor[idx_fcl2+2] * krayl[idx_krayl + (jtempl  ) + (j1-1)*ntemp + igpt*ntemp*neta] +
+                               fminor[idx_fcl2+3] * krayl[idx_krayl + (jtempl  ) +  j1   *ntemp + igpt*ntemp*neta];
+
+            const int idx_out = icol + ilay*ncol + igpt*ncol*nlay;
+            tau_rayleigh[idx_out] = kloc * (col_gas[idx_collaywv] + col_dry[idx_collay]);
+        }
     }
 }
 

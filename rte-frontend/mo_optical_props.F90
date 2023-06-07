@@ -292,6 +292,9 @@ contains
     do iband=1,size(band_lims_gpt_lcl,dim=2)
       this%gpt2band(band_lims_gpt_lcl(1,iband):band_lims_gpt_lcl(2,iband)) = iband
     end do
+    !$acc        enter data copyin(this%band2gpt, this%band_lims_wvn)
+    !$omp target enter data map(to:this%band2gpt, this%band_lims_wvn)
+
   end function init_base
   !-------------------------------------------------------------------------------------------------
   function init_base_from_copy(this, spectral_desc) result(err_message)

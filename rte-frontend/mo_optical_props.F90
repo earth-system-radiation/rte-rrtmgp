@@ -329,8 +329,8 @@ contains
   subroutine finalize_base(this)
     class(ty_optical_props),    intent(inout) :: this
 
-    !$acc        exit data     delete( this%band2gpt, this%gpt2band, this%band_lims_wvn)
-    !$omp target exit data map(release:this%band2gpt, this%gpt2band, this%band_lims_wvn)
+    !!$acc        exit data     delete( this%band2gpt, this%gpt2band, this%band_lims_wvn)
+    !!$omp target exit data map(release:this%band2gpt, this%gpt2band, this%band_lims_wvn)
     if(allocated(this%band2gpt)) deallocate(this%band2gpt)
     if(allocated(this%gpt2band)) deallocate(this%gpt2band)
     if(allocated(this%band_lims_wvn)) &

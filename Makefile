@@ -6,11 +6,11 @@ all:    libs tests check docs
 
 libs:
 	make -C build -j
+
+tests:
 	make -C tests -j 1
 	make -C examples/all-sky -j
 	make -C examples/rfmip-clear-sky -j
-
-tests:
 	make -C examples/rfmip-clear-sky tests
 	make -C examples/all-sky         tests
 	make -C tests                    tests

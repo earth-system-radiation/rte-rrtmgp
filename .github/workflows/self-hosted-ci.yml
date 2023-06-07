@@ -104,20 +104,21 @@ jobs:
         # SLURM jobs, user home directories and HDF5 file locking are
         # incompatible on Daint:
         echo 'HDF5_USE_FILE_LOCKING=FALSE' >> "${GITHUB_ENV}"
+    # Build libraries, examples and tests
     #
-    # Build library of CUDA kernels 
+    - name: Build libraries
+      run: |
+        $FC --version
+        make libs
+    #
+    # Build library of CUDA kernels; copy to build directory 
     #
     - name: Build CUDA kernels
       if: matrix.config-name == 'cuda-kernels'
       run: 
         make -C cuda-kernels/build librrtmgpcudakernels.a 
+        cp cuda-kernels/build/librrtmgpcudakernels.a build/librrtmgpkernels.a
 
-    # Build libraries, examples and tests
-    #
-    - name: Build libraries, examples and tests
-      run: |
-        $FC --version
-        make libs
     #
     # Run examples and tests
     #

@@ -9,14 +9,14 @@ RRTMGP_KERNEL_DIR = ../rrtmgp-kernels
 # Compiler variables FC, FCFLAGS must be set in the environment
 #
 # Make all the libraries though we'll only use the interface + kernels
-all:           librte.a                  librrtmgp.a		librrtmgpcudakernels.a
+all:           librte.a                  librrtmgp.a
 separate-libs: librtekernels.a librtef.a librrtmgpkernels.a librrtmgpf.a
 
 COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c
 %.o: %.F90
 	$(COMPILE) $<
 
-COMPILE_CU = nvc++ -c -std=c++17 -O3 -DRTE_RRTMGP_GPU_MEMPOOL_CUDA -gpu=cc86
+COMPILE_CU = nvc++ -c -std=c++17 -O3 -DRTE_RRTMGP_GPU_MEMPOOL_CUDA
 %.o: %.cu
 	$(COMPILE_CU) $<
 
@@ -32,7 +32,7 @@ VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR):$(GAS_OP
 # If using OpenACC/OpenMP files in *-kernels/accel take precendence  
 #
 ifeq ($(RTE_KERNELS), accel)
-	VPATH = ../cuda:$(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
+	VPATH = ../cuda:$(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/cuda:$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
 endif
 
 librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
@@ -44,8 +44,11 @@ librtekernels.a: $(RTE_FORTRAN_KERNELS)
 librtef.a: $(RTE_FORTRAN_INTERFACE)
 	ar -rvs librtef.a $(RTE_FORTRAN_INTERFACE)
 
-librrtmgp.a: $(RRTMGP_FORTRAN_KERNELS)  $(RRTMGP_FORTRAN_INTERFACE)
-	ar -rvs librrtmgp.a $(RRTMGP_FORTRAN_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
+# librrtmgp.a: $(RRTMGP_FORTRAN_KERNELS)  $(RRTMGP_FORTRAN_INTERFACE)
+# 	ar -rvs librrtmgp.a $(RRTMGP_FORTRAN_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
+
+librrtmgp.a: $(RRTMGP_CUDA_KERNELS)  $(RRTMGP_FORTRAN_INTERFACE)
+	ar -rvs librrtmgp.a $(RRTMGP_CUDA_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
 
 librrtmgpkernels.a: $(RRTMGP_FORTRAN_KERNELS)
 	ar -rvs librrtmgpkernels.a $(RRTMGP_FORTRAN_KERNELS)

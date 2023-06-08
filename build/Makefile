@@ -21,13 +21,21 @@ include $(RRTMGP_DIR)/Make.depends
 include $(RTE_KERNEL_DIR)/Make.depends
 include $(RRTMGP_KERNEL_DIR)/Make.depends
 
-VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
 #
 # If using OpenACC/OpenMP files in *-kernels/accel take precendence  
 #
 ifeq ($(RTE_KERNELS), accel)
-	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
+	VPATH = $(RTE_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR)/accel
 endif
+#
+# If using external libraries just compile the interfaces 
+#    (and, for now, the OpenACC kernels)
+#
+ifeq ($(RTE_KERNELS), extern)
+	VPATH = $(RTE_KERNEL_DIR)/extern:$(RRTMGP_KERNEL_DIR)/extern:$(RTE_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR)/accel
+endif
+
+VPATH +=$(RTE_DIR):$(GAS_OPTICS_DIR):$(RRTMGP_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_KERNEL_DIR)
 
 #
 # Library containing Fortran front-end and kernels 

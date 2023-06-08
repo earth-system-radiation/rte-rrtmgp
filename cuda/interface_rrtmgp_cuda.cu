@@ -8,7 +8,7 @@ template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_devicep
 
 extern "C"
 {
-    void interpolation_(
+    void rrtmgp_interpolation(
             int* ncol, int* nlay,
             int* ngas, int* nflav, int* neta, int* npres, int* ntemp,
             int* flavor,
@@ -53,7 +53,7 @@ extern "C"
     }
 
 
-    void compute_tau_absorption_(
+    void rrtmgp_compute_tau_absorption(
             int* ncol, int* nlay, int* nband, int* ngpt,
             int* ngas, int* nflav, int* neta, int* npres, int* ntemp,
             int* nminorlower, int* nminorklower,
@@ -116,7 +116,7 @@ extern "C"
     }
 
 
-    void compute_tau_rayleigh_(
+    void rrtmgp_compute_tau_rayleigh(
             int* ncol, int* nlay, int* nband, int* ngpt,
             int* ngas, int* nflav, int* neta, int* npres, int* ntemp,
             int* gpoint_flavor,
@@ -141,7 +141,7 @@ extern "C"
     }
 
 
-    void compute_planck_source_(
+    void rrtmgp_compute_Planck_source(
             int* ncol, int* nlay, int* nbnd, int* ngpt,
             int* nflav, int* neta, int* npres, int* ntemp,
             int* nPlanckTemp,

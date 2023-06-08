@@ -1,3 +1,15 @@
+! This code is part of
+! RRTM for GCM Applications - Parallel (RRTMGP)
+!
+! Contact: Eli Mlawer and Robert Pincus
+! email:  rrtmgp@aer.com
+!
+! Copyright 2015-,  Atmospheric and Environmental Research and
+! Regents of the University of Colorado.  All right reserved.
+!
+! Use and duplication is permitted under the terms of the
+!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
+
 module mo_gas_optics_rrtmgp_kernels
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array

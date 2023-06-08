@@ -1,7 +1,10 @@
 #include <openacc.h>
 #include <cstdio>
+#include <exception>
 
 #include "Types.h"
+// CvH: zero_array should move to rte kernels.
+#include "rrtmgp_kernel_launcher_cuda.h"
 #include "rte_kernel_launcher_cuda.h"
 
 
@@ -10,6 +13,18 @@ template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_devicep
 
 extern "C"
 {
+    void zero_array_3d_(
+            int* n1, int* n2, int* n3, Float* arr)
+    {
+        rrtmgp_kernel_launcher_cuda::zero_array(*n1, *n2, *n3, arr);
+    }
+
+    void zero_array_4d_(
+            int* n1, int* n2, int* n3, int* n4, Float* arr)
+    {
+        throw std::runtime_error("zero_array_4d is not implemented in CUDA!");
+    }
+
     // void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1,
     //               const Float* inc_flux_dir, const Float* mu0, Float* gpt_flux_dir);
     // void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1, Float* gpt_flux_dn);

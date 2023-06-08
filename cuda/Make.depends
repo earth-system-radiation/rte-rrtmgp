@@ -5,8 +5,10 @@ RRTMGP_CUDA_KERNELS = \
 
 RTE_CUDA_KERNELS = \
   interface_rte_cuda.o \
-  gas_optics_kernel_launchers.o \
-  gas_optics_kernels.o \
+  optical_solver_kernel_launchers.o
+  optical_solver_kernels.o \
+  rte_solver_kernel_launchers.o
+  rte_solver_kernels.o \
 
 
 ##################################
@@ -20,3 +22,8 @@ interface_rte_cuda.o: interface_rte_cuda.cu
 gas_optics_kernel_launchers.o: gas_optics_kernel_launchers.cu
 gas_optics_kernels.o: gas_optics_kernels.cu
 
+optical_solver_kernel_lauchers.o: optical_solver_kernel_lauchers.cu
+optical_solver_kernels.o: optical_solver_kernels.cu
+
+rte_solver_kernel_lauchers.o: rte_solver_kernel_lauchers.cu
+rte_solver_kernels.o: rte_solver_kernels.cu

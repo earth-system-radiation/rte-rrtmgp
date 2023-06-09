@@ -261,9 +261,9 @@ contains
     ! Gas optics
     !
     !$acc  data        copyin(play, plev, tlay) 
-    !$omp target  data map(to:play, plev, tlay)
+    !$omp target  enter data map(to:play, plev, tlay)
     !$acc  data           create(jtemp, jpress, tropo, fmajor, jeta)
-    !$omp target  data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
+    !$omp target  enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
@@ -330,9 +330,9 @@ contains
     !$acc        exit data      delete(tsfc)
     !$omp target exit data map(release:tsfc)
     !$acc        end data 
-    !$omp end target data
+    !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
     !$acc        end data 
-    !$omp end target data
+    !$omp target exit data map(release:play, plev, tlay)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !

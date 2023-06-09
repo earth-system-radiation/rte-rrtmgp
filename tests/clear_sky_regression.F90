@@ -127,15 +127,15 @@ program rte_clear_sky_regression
   !   RFMIP I/O returns an array, we're going to use first ncol values = experiement 1 (present-day)
   !
   call read_and_block_gases_ty(input_file, ncol*nexp, kdist_gas_names, rfmip_gas_games, gas_conc_array)
-  print *, "Read data"
+  ! print *, "Read data"
   !
   ! All the profiles are in the first and only element of the array of gas concentration types
   !   Extract the first ncol profiles (this is part of testing)
   !
   call stop_on_err(gas_conc_array(1)%get_subset(1, ncol, gas_concs))
-  print *, "Got subset"
+  !print *, "Got subset"
   call gas_conc_array(1)%reset()
-  print *, "Reset gas concs"
+  ! print *, "Reset gas concs"
   deallocate(gas_conc_array)
   ! ----------------------------------------------------------------------------
   ! load data into classes
@@ -151,7 +151,7 @@ program rte_clear_sky_regression
   nbnd = k_dist%get_nband()
   ngpt = k_dist%get_ngpt()
   top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
-  print *, "Preliminaries"
+  ! print *, "Preliminaries"
   ! ----------------------------------------------------------------------------
   !
   !  Boundary conditions

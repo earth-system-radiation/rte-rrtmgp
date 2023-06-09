@@ -133,7 +133,7 @@ program rte_clear_sky_regression
   !
   call stop_on_err(gas_conc_array(1)%get_subset(1, ncol, gas_concs))
   call gas_conc_array(1)%reset()
-  ! print *, "Reset gas concs"
+  print *, "Reset gas concs"
   deallocate(gas_conc_array)
   ! ----------------------------------------------------------------------------
   ! load data into classes
@@ -178,7 +178,7 @@ program rte_clear_sky_regression
     sfc_emis(:,:) = spread(bc_3d(:,1), dim=1, ncopies=nbnd)
 
     sfc_t   (:)   = sfc_t_3d(:,1)
-    print *, "Data read"
+    ! print *, "Data read"
   end if
   ! ----------------------------------------------------------------------------
   !

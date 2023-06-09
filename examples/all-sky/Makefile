@@ -9,7 +9,7 @@ KERNEL_DIR ?= $(RRTMGP_ROOT)/build
 #
 FCINCLUDE += -I$(RRTMGP_DIR)
 LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
-LIBS      += -lrtekernels -lrrtmgpkernels -lrtef -lrrtmgpf
+LIBS      +=  -lrtef -lrrtmgpf -lrtekernels -lrrtmgpkernels
 
 #
 # netcdf library, module files

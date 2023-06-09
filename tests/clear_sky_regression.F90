@@ -127,7 +127,7 @@ program rte_clear_sky_regression
   !   RFMIP I/O returns an array, we're going to use first ncol values = experiement 1 (present-day)
   !
   call read_and_block_gases_ty(input_file, ncol*nexp, kdist_gas_names, rfmip_gas_games, gas_conc_array)
-  print *, "Read data"
+  ! print *, "Read data"
   !
   ! All the profiles are in the first and only element of the array of gas concentration types
   !   Extract the first ncol profiles (this is part of testing)
@@ -151,7 +151,6 @@ program rte_clear_sky_regression
   nbnd = k_dist%get_nband()
   ngpt = k_dist%get_ngpt()
   top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
-  ! print *, "Preliminaries"
   ! ----------------------------------------------------------------------------
   !
   !  Boundary conditions

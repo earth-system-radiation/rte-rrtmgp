@@ -7,7 +7,7 @@ KERNEL_DIR ?= $(RRTMGP_ROOT)/build
 
 FCINCLUDE += -I$(RRTMGP_DIR)
 LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
-LIBS      += -lrtef -lrrtmgpf -lrtekernels -lrrtmgpkernels
+LIBS      += -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 #
 # netcdf library, module files
 # Environment variable NFHOME points to root of the Fortran interfaces 

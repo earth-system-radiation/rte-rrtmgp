@@ -127,15 +127,15 @@ program rte_clear_sky_regression
   !   RFMIP I/O returns an array, we're going to use first ncol values = experiement 1 (present-day)
   !
   call read_and_block_gases_ty(input_file, ncol*nexp, kdist_gas_names, rfmip_gas_games, gas_conc_array)
-  ! print *, "Read data"
+  print *, "Read data"
   !
   ! All the profiles are in the first and only element of the array of gas concentration types
   !   Extract the first ncol profiles (this is part of testing)
   !
   call stop_on_err(gas_conc_array(1)%get_subset(1, ncol, gas_concs))
-  !print *, "Got subset"
+  print *, "Got subset"
   call gas_conc_array(1)%reset()
-  ! print *, "Reset gas concs"
+  print *, "Reset gas concs"
   deallocate(gas_conc_array)
   ! ----------------------------------------------------------------------------
   ! load data into classes
@@ -197,31 +197,18 @@ program rte_clear_sky_regression
   if(is_lw) then
     call make_optical_props_1scl(k_dist)
     call atmos%finalize()
-    ! print *, "Made and finalized"
     call make_optical_props_1scl(k_dist)
-    ! print *, "Optical props a second time"
     call atmos%set_name("gas only atmosphere")
-    !print *, "Set name"
     call lw_clear_sky_default
-    ! print *, "default"
     call lw_clear_sky_notlev
-    ! print *, "notlev"
     call lw_clear_sky_3ang
-    ! print *, "lw_clear_sky_3ang"
     call lw_clear_sky_optangle
-    ! print *, "lw_clear_sky_optangle"
     call lw_clear_sky_jaco
-    ! print *, "lw_clear_sky_jaco"
     call lw_clear_sky_subset
-    ! print *, "lw_clear_sky_subset"
     call lw_clear_sky_vr
-    ! print *, "lw_clear_sky_vr"
     call lw_clear_sky_incr
-    ! print *, "lw_clear_sky_incr"
     call make_optical_props_2str(k_dist)
-    ! print *, "made 2-stream"
     call lw_clear_sky_2str
-    ! print *, "lw_clear_sky_2str"
     if(len_trim(k_dist_file_2) > 0) then
       call load_and_init(k_dist_2, k_dist_file_2, gas_concs)
       print *, "Alternate k-distribution is for the " // merge("longwave ", "shortwave", .not. k_dist_2%source_is_external())

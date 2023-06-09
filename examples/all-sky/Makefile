@@ -18,6 +18,12 @@ LIBS      +=  -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib
 LIBS      += -lnetcdff
+#
+# Include libraries needed for CUDA kernels 
+#
+ifeq ($(RTE_KERNELS), extern)
+	LIBS += -c++libs -cuda
+endif
 
 VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend # Needed for cloud_optics and aerosol_optics
 

@@ -17,6 +17,12 @@ FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib
 LIBS      += -lnetcdff
 
+#
+# Include libraries needed for CUDA kernels 
+#
+ifeq ($(RTE_KERNELS), extern)
+	LIBS += -c++libs -cuda
+endif
 
 #
 # General Purpose Timing Library https://jmrosinski.github.io/GPTL/

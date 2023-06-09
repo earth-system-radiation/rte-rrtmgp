@@ -15,6 +15,12 @@ LIBS      += -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib
 LIBS      += -lnetcdff
+#
+# Include libraries needed for CUDA kernels 
+#
+ifeq ($(RTE_KERNELS), extern)
+	LIBS += -c++libs -cuda
+endif
 
 VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
 VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/:$(RRTMGP_ROOT)/extensions/solar_variability

@@ -181,7 +181,7 @@ program rte_clear_sky_regression
     sfc_emis(:,:) = spread(bc_3d(:,1), dim=1, ncopies=nbnd)
 
     sfc_t   (:)   = sfc_t_3d(:,1)
-    "Data read"
+    print *, "Data read"
   end if
   ! ----------------------------------------------------------------------------
   !

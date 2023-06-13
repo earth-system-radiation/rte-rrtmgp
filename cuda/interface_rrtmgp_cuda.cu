@@ -192,4 +192,19 @@ extern "C"
                 acc_to_cuda(lev_src_dec),
                 acc_to_cuda(sfc_src_jac));
     }
+
+    void zero_array_2D(int* ni, int* nj)
+    {
+        throw std::runtime_error("zero_array_2D is not implemented in CUDA");
+    }
+
+    void zero_array_3D(int* ni, int* nj, int* nk, Float* array)
+    {
+        rrtmgp_kernel_launcher_cuda::zero_array(*ni, *nj, *nk, array);
+    }
+
+    void zero_array_4D(int* ni, int* nj, int* nk, int* nl, Float* array)
+    {
+        throw std::runtime_error("zero_array_4D is not implemented in CUDA");
+    }
 }

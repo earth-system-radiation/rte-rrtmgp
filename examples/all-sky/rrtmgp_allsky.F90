@@ -89,19 +89,10 @@ program rte_rrtmgp_clouds_aerosols
   ! Aerosols
   !
   logical :: cell_has_aerosols
-  integer, dimension(:,:), allocatable :: aero_type
-                                          ! MERRA2/GOCART aerosol type
-                                          ! 0: no aerosol
-                                          ! 1: dust
-                                          ! 2: sea salt
-                                          ! 3: sulfate
-                                          ! 4: black carbon, hydrophobic
-                                          ! 5: black carbon, hydrophilic
-                                          ! 6: organic carbon, hydrophobic
-                                          ! 7: organic carbon, hydrophilic
+  integer,  dimension(:,:), allocatable :: aero_type 
+                                           ! MERRA2/GOCART aerosol type
   real(wp), dimension(:,:), allocatable :: aero_size
                                            ! Aerosol size for dust and sea salt
-                                           ! Allowable range: 0 - 10 microns
   real(wp), dimension(:,:), allocatable :: aero_mass
                                            ! Aerosol mass column (kg/m2)
   real(wp), dimension(:,:), allocatable :: relhum
@@ -133,13 +124,13 @@ program rte_rrtmgp_clouds_aerosols
   !
   logical :: top_at_1, is_sw, is_lw
 
-  integer  :: ncol, nlay, nbnd, ngpt
+  integer  :: nbnd, ngpt
   integer  :: icol, ilay, ibnd, iloop, igas
-  real(wp) :: rel_val, rei_val
 
   character(len=8) :: char_input
-  integer  :: nUserArgs=0, nloops=1, ncol = 1, nlay=1
-  logical :: use_luts = .true., write_fluxes = .true.
+  integer :: nUserArgs, nloops, ncol, nlay
+  logical :: do_clouds = .false., use_luts = .true., write_fluxes = .true.
+  logical :: do_aerosols = .false.
   integer, parameter :: ngas = 8
   character(len=3), dimension(ngas) &
                      :: gas_names = ['h2o', 'co2', 'o3 ', 'n2o', 'co ', 'ch4', 'o2 ', 'n2 ']
@@ -157,29 +148,32 @@ program rte_rrtmgp_clouds_aerosols
   ! Code
   ! ----------------------------------------------------------------------------------
   !
-  ! Parse command line for any file names, block size
+  ! Parse command line: rrtmgp_allsky ncol nlay nreps kdist [clouds [aerosols]] 
+
   !
   nUserArgs = command_argument_count()
-  nloops = 1
-  if (nUserArgs <  4) call stop_on_err("Need to supply input_file k_distribution_file ncol.")
-  if (nUserArgs >= 1) call get_command_argument(1,input_file)
-  if (nUserArgs >= 2) call get_command_argument(2,k_dist_file)
-  if (nUserArgs >= 3) call get_command_argument(3,cloud_optics_file)
-  if (nUserArgs >= 4) call get_command_argument(4,aerosol_optics_file)
-  if (nUserArgs >= 5) then
-    call get_command_argument(5, char_input)
-    read(char_input, '(i8)') ncol
-    if(ncol <= 0) call stop_on_err("Specify positive ncol.")
-  end if
-  if (nUserArgs >= 6) then
-    call get_command_argument(6, char_input)
-    read(char_input, '(i8)') nloops
-    if(nloops <= 0) call stop_on_err("Specify positive nloops.")
-  end if
-  if (nUserArgs >  7) print *, "Ignoring command line arguments beyond the first six..."
-  if(trim(input_file) == '-h' .or. trim(input_file) == "--help") then
-    call stop_on_err("rte_rrtmgp_clouds_aerosols input_file absorption_coefficients_file cloud_optics_file aerosol_optics_file ncol")
-  end if
+  print *, "Got so many arugments", nUserArgs
+  if (nUserArgs <  5) call stop_on_err("Need to supply ncol nlay nreps input_file gas-optics [cloud-optics [aerosol-optics]]")
+  call get_command_argument(1, char_input)
+  read(char_input, '(i8)') ncol
+  if(ncol <= 0) call stop_on_err("Specify positive ncol.")
+  call get_command_argument(2, char_input)
+  read(char_input, '(i8)') nlay
+  if(nlay <= 0) call stop_on_err("Specify positive nlay.")
+  call get_command_argument(3, char_input)
+  read(char_input, '(i8)') nloops
+  if(nloops <= 0) call stop_on_err("Specify positive nreps (number of times to do ncol examples.")
+  call get_command_argument(4,input_file)
+  call get_command_argument(5,k_dist_file)
+  if (nUserArgs >= 6) then 
+    call get_command_argument(6,cloud_optics_file)
+    do_clouds = .true. 
+  end if 
+  if (nUserArgs >= 7) then 
+    call get_command_argument(7,aerosol_optics_file)
+    do_aerosols = .true. 
+  end if 
+  if (nUserArgs >  7) print *, "Ignoring command line arguments beyond the first seven..."
 
   !
   ! Read temperature, pressure, gas concentrations.
@@ -218,27 +212,32 @@ program rte_rrtmgp_clouds_aerosols
   call load_and_init(k_dist, k_dist_file, gas_concs)
   is_sw = k_dist%source_is_external()
   is_lw = .not. is_sw
-  !
-  ! Should also try with Pade calculations
-  !  call load_cld_padecoeff(cloud_optics, cloud_optics_file)
-  !
-  if(use_luts) then
-    call load_cld_lutcoeff (cloud_optics, cloud_optics_file)
-  else
-    call load_cld_padecoeff(cloud_optics, cloud_optics_file)
+  if (do_clouds) then 
+    !
+    ! Should also try with Pade calculations
+    !  call load_cld_padecoeff(cloud_optics, cloud_optics_file)
+    !
+    if(use_luts) then
+      call load_cld_lutcoeff (cloud_optics, cloud_optics_file)
+    else
+      call load_cld_padecoeff(cloud_optics, cloud_optics_file)
+    end if
+    call stop_on_err(cloud_optics%set_ice_roughness(2))
   end if
-  call stop_on_err(cloud_optics%set_ice_roughness(2))
-  !
-  ! Load aerosol optics coefficients from lookup tables
-  !
-  call load_aero_lutcoeff (aerosol_optics, aerosol_optics_file)
-  !
-  ! Derive relative humidity from profile
-  !
-  allocate(vmr_h2o(ncol, nlay))
-  call stop_on_err(gas_concs%get_vmr(gas_names(1),vmr_h2o))
-  allocate(relhum(ncol, nlay))
-  call get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
+
+  if (do_aerosols) then 
+    !
+    ! Load aerosol optics coefficients from lookup tables
+    !
+    call load_aero_lutcoeff (aerosol_optics, aerosol_optics_file)
+    !
+    ! Derive relative humidity from profile
+    !
+    allocate(vmr_h2o(ncol, nlay))
+    call stop_on_err(gas_concs%get_vmr(gas_names(1),vmr_h2o))
+    allocate(relhum(ncol, nlay))
+    call get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
+  end if 
 
   ! ----------------------------------------------------------------------------
   !
@@ -254,17 +253,9 @@ program rte_rrtmgp_clouds_aerosols
   !
   if(is_sw) then
     allocate(ty_optical_props_2str::atmos)
-    allocate(ty_optical_props_2str::clouds)
-    allocate(ty_optical_props_2str::aerosols)
   else
     allocate(ty_optical_props_1scl::atmos)
-    allocate(ty_optical_props_1scl::clouds)
-    allocate(ty_optical_props_1scl::aerosols)
   end if
-  ! Clouds optical props are defined by band
-  call stop_on_err(clouds%init(k_dist%get_band_lims_wavenumber()))
-  ! Aerosol optical props are defined by band
-  call stop_on_err(aerosols%init(k_dist%get_band_lims_wavenumber()))
   !
   ! Allocate arrays for the optical properties themselves.
   !
@@ -281,30 +272,7 @@ program rte_rrtmgp_clouds_aerosols
     class default
       call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
   end select
-  select type(clouds)
-    class is (ty_optical_props_1scl)
-      call stop_on_err(clouds%alloc_1scl(ncol, nlay))
-      !$acc enter data copyin(clouds) create(clouds%tau)
-      !$omp target enter data map(alloc:clouds%tau)
-    class is (ty_optical_props_2str)
-      call stop_on_err(clouds%alloc_2str(ncol, nlay))
-      !$acc enter data copyin(clouds) create(clouds%tau, clouds%ssa, clouds%g)
-      !$omp target enter data map(alloc:clouds%tau, clouds%ssa, clouds%g)
-    class default
-      call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
-  end select
-  select type(aerosols)
-    class is (ty_optical_props_1scl)
-      call stop_on_err(aerosols%alloc_1scl(ncol, nlay))
-      !$acc enter data copyin(aerosols) create(aerosols%tau)
-      !$omp target enter data map(alloc:aerosols%tau)
-    class is (ty_optical_props_2str)
-      call stop_on_err(aerosols%alloc_2str(ncol, nlay))
-      !$acc enter data copyin(aerosols) create(aerosols%tau, aerosols%ssa, aerosols%g)
-      !$omp target enter data map(alloc:aerosols%tau, aerosols%ssa, aerosols%g)
-    class default
-      call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
-  end select
+
   ! ----------------------------------------------------------------------------
   !  Boundary conditions depending on whether the k-distribution being supplied
   !   is LW or SW
@@ -357,84 +325,9 @@ program rte_rrtmgp_clouds_aerosols
     !$acc enter data create(flux_dir)
     !$omp target enter data map(alloc:flux_dir)
   end if
-  !
-  ! Clouds
-  !
-  allocate(lwp(ncol,nlay), iwp(ncol,nlay), &
-           rel(ncol,nlay), rei(ncol,nlay), cloud_mask(ncol,nlay))
-  !$acc enter data create(cloud_mask, lwp, iwp, rel, rei)
-  !$omp target enter data map(alloc:cloud_mask, lwp, iwp, rel, rei)
 
-  ! Restrict clouds to troposphere (> 100 hPa = 100*100 Pa)
-  !   and not very close to the ground (< 900 hPa), and
-  !   put them in 2/3 of the columns since that's roughly the
-  !   total cloudiness of earth
-  rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
-  rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
-  !$acc parallel loop collapse(2) copyin(t_lay) copyout(lwp, iwp, rel, rei)
-  !$omp target teams distribute parallel do simd collapse(2) map(to:t_lay) map(from:lwp, iwp, rel, rei)
-  do ilay=1,nlay
-    do icol=1,ncol
-      cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp .and. &
-                              p_lay(icol,ilay) < 900._wp * 100._wp .and. &
-                              mod(icol, 3) /= 0
-      !
-      ! Ice and liquid will overlap in a few layers
-      !
-      lwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) .and. t_lay(icol,ilay) > 263._wp)
-      iwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) .and. t_lay(icol,ilay) < 273._wp)
-      rel(icol,ilay) = merge(rel_val, 0._wp, lwp(icol,ilay) > 0._wp)
-      rei(icol,ilay) = merge(rei_val, 0._wp, iwp(icol,ilay) > 0._wp)
-    end do
-  end do
-  !$acc exit data delete(cloud_mask)
-  !$omp target exit data map(release:cloud_mask)
-  !
-  ! Aerosols
-  !
-  allocate(aero_type(ncol,nlay), aero_size(ncol,nlay), &
-           aero_mass(ncol,nlay), aero_mask(ncol,nlay))
-  !$acc        enter data create(   aero_mask, aero_type, aero_size, aero_mass)
-  !$omp target enter data map(alloc:aero_mask, aero_type, aero_size, aero_mass)
-
-  ! Restrict sulfate aerosols to lower stratosphere (> 50 hPa = 50*100 Pa; < 100 hPa = 100*100 Pa)
-  !   and dust aerosols to the lower troposphere (> 700 hPa; < 900 hPa), and
-  !   put them in 1/2 of the columns
-  !
-  !
-  !$acc                         parallel loop    collapse(2) copyin(p_lay) 
-  !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay) 
-  do ilay=1,nlay
-    do icol=1,ncol
-      cell_has_aerosols = ((p_lay(icol,ilay) >  50._wp * 100._wp   .and. &
-                            p_lay(icol,ilay) < 100._wp * 100._wp)  .or. &
-                           (p_lay(icol,ilay) > 700._wp * 100._wp   .and. &
-                            p_lay(icol,ilay) < 900._wp * 100._wp)) .and. &
-                           mod(icol, 2) /= 0
-      if (cell_has_aerosols) then 
-        ! Sulfate aerosol
-        if (p_lay(icol,ilay) >  50._wp * 100._wp .and. & 
-            p_lay(icol,ilay) < 100._wp * 100._wp) then 
-           aero_type(icol,ilay) = merra_aero_sulf
-           aero_size(icol,ilay) = 0.2_wp
-           aero_mass(icol,ilay) = 1.e-6_wp
-        endif
-        ! Dust aerosol
-        if (p_lay(icol,ilay) > 700._wp * 100._wp .and. & 
-            p_lay(icol,ilay) < 900._wp * 100._wp) then 
-           aero_type(icol,ilay) = merra_aero_dust
-           aero_size(icol,ilay) = 0.5_wp
-           aero_mass(icol,ilay) = 3.e-5_wp
-        endif
-      else
-        aero_type(icol,ilay) = 0
-        aero_size(icol,ilay) = 0._wp
-        aero_mass(icol,ilay) = 0._wp
-      end if
-      aero_mask(icol, ilay) = cell_has_aerosols
-    end do
-  end do
-
+  if (do_clouds)   call compute_clouds
+  if (do_aerosols) call compute_aerosols
 
   ! ----------------------------------------------------------------------------
   !
@@ -454,14 +347,14 @@ program rte_rrtmgp_clouds_aerosols
     !
     ! Cloud optics
     !
-    call stop_on_err(                                      &
-      cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+    if(do_clouds) & 
+      call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
     !
     ! Aerosol optics
     !
-    call stop_on_err(                                      &
-      aerosol_optics%aerosol_optics(aero_type, aero_size,  &
-                               aero_mass, relhum, aerosols))
+    if(do_aerosols) & 
+      call stop_on_err(aerosol_optics%aerosol_optics(aero_type, aero_size,  &
+                                                     aero_mass, relhum, aerosols))
     !
     ! Solvers
     !
@@ -478,8 +371,8 @@ program rte_rrtmgp_clouds_aerosols
                                          atmos,        &
                                          lw_sources,   &
                                          tlev = t_lev))
-      call stop_on_err(clouds%increment(atmos))
-      call stop_on_err(aerosols%increment(atmos))
+      if(do_clouds)   call stop_on_err(clouds%increment(atmos))
+      if(do_aerosols) call stop_on_err(aerosols%increment(atmos))
       call stop_on_err(rte_lw(atmos, top_at_1, &
                               lw_sources,      &
                               emis_sfc,        &
@@ -497,10 +390,14 @@ program rte_rrtmgp_clouds_aerosols
                                          gas_concs,    &
                                          atmos,        &
                                          toa_flux))
-      call stop_on_err(clouds%delta_scale())
-      call stop_on_err(clouds%increment(atmos))
-      call stop_on_err(aerosols%delta_scale())
-      call stop_on_err(aerosols%increment(atmos))
+      if(do_clouds) then 
+        call stop_on_err(clouds%delta_scale())
+        call stop_on_err(clouds%increment(atmos))
+      end if 
+      if(do_aerosols) then 
+        call stop_on_err(aerosols%delta_scale())
+        call stop_on_err(aerosols%increment(atmos))
+      end if 
       call stop_on_err(rte_sw(atmos, top_at_1, &
                               mu0,   toa_flux, &
                               sfc_alb_dir, sfc_alb_dif, &
@@ -515,8 +412,13 @@ program rte_rrtmgp_clouds_aerosols
   !
   call system_clock(finish_all, clock_rate)
   !
-  !$acc exit data delete(lwp, iwp, rel, rei)
-  !$omp target exit data map(release:lwp, iwp, rel, rei)
+  if(do_clouds) then 
+    !$acc        exit data delete(     lwp, iwp, rel, rei)
+    !$omp target exit data map(release:lwp, iwp, rel, rei)
+  end if 
+  !
+  ! TK - release aerosol memory
+  !
   !$acc exit data delete(p_lay, p_lev, t_lay, t_lev)
   !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
 
@@ -544,50 +446,182 @@ program rte_rrtmgp_clouds_aerosols
     !$acc exit data delete(sfc_alb_dir, sfc_alb_dif, mu0)
     !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif, mu0)
   end if
-  !$acc enter data create(lwp, iwp, rel, rei)
-  !$omp target enter data map(alloc:lwp, iwp, rel, rei)
 contains
-! --------------------------------------------------------------------------------------
-!
-! Calculate layer relative humidity for aerosol optics calculations
-!
-subroutine get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
-  use mo_rte_kind,           only: wp
-  use mo_gas_optics_constants,   only: m_h2o, m_dry
+  ! --------------------------------------------------------------------------------------
+  !
+  subroutine compute_clouds 
+    real(wp) :: rel_val, rei_val
+    ! 
+    ! Variable and memory allocation 
+    !
+    if(is_sw) then
+      allocate(ty_optical_props_2str::clouds)
+    else
+      allocate(ty_optical_props_1scl::clouds)
+    end if
+    ! Clouds optical props are defined by band
+    call stop_on_err(clouds%init(k_dist%get_band_lims_wavenumber()))
 
-  integer,  intent(in) :: ncol, nlay
-  real(wp), intent(in) :: p_lay(ncol,nlay)    ! layer pressure (Pa)
-  real(wp), intent(in) :: t_lay(ncol,nlay)    ! layer temperature (K)
-  real(wp), intent(in) :: vmr_h2o(ncol,nlay)  ! water volume mixing ratio
+    select type(clouds)
+      class is (ty_optical_props_1scl)
+        call stop_on_err(clouds%alloc_1scl(ncol, nlay))
+        !$acc enter data copyin(clouds) create(clouds%tau)
+        !$omp target enter data map(alloc:clouds%tau)
+      class is (ty_optical_props_2str)
+        call stop_on_err(clouds%alloc_2str(ncol, nlay))
+        !$acc enter data copyin(clouds) create(clouds%tau, clouds%ssa, clouds%g)
+        !$omp target enter data map(alloc:clouds%tau, clouds%ssa, clouds%g)
+      class default
+        call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
+    end select
+    !
+    ! Cloud physical properties 
+    !
+    allocate(lwp(ncol,nlay), iwp(ncol,nlay), &
+             rel(ncol,nlay), rei(ncol,nlay), cloud_mask(ncol,nlay))
+    !$acc enter        data create(   cloud_mask, lwp, iwp, rel, rei)
+    !$omp target enter data map(alloc:cloud_mask, lwp, iwp, rel, rei)
 
-  real(wp), intent(inout) :: relhum(ncol,nlay) ! relative humidity (fraction, 0-1)
+    ! Restrict clouds to troposphere (> 100 hPa = 100*100 Pa)
+    !   and not very close to the ground (< 900 hPa), and
+    !   put them in 2/3 of the columns since that's roughly the
+    !   total cloudiness of earth
+    rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
+    rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
+    !$acc                         parallel loop    collapse(2) copyin(t_lay) copyout( lwp, iwp, rel, rei)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:t_lay) map(from:lwp, iwp, rel, rei)
+    do ilay=1,nlay
+      do icol=1,ncol
+        cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp .and. &
+                                p_lay(icol,ilay) < 900._wp * 100._wp .and. &
+                                mod(icol, 3) /= 0
+        !
+        ! Ice and liquid will overlap in a few layers
+        !
+        lwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) .and. t_lay(icol,ilay) > 263._wp)
+        iwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) .and. t_lay(icol,ilay) < 273._wp)
+        rel(icol,ilay) = merge(rel_val, 0._wp, lwp(icol,ilay) > 0._wp)
+        rei(icol,ilay) = merge(rei_val, 0._wp, iwp(icol,ilay) > 0._wp)
+      end do
+    end do
+    !$acc exit data delete(cloud_mask)
+    !$omp target exit data map(release:cloud_mask)
+   
+  end subroutine compute_clouds
+  !
+  ! --------------------------------------------------------------------------------------
+  !
+  subroutine compute_aerosols
+    ! 
+    ! Variable and memory allocation 
+    !
+    if(is_sw) then
+      allocate(ty_optical_props_2str::aerosols)
+    else
+      allocate(ty_optical_props_1scl::aerosols)
+    end if
+    call stop_on_err(aerosols%init(k_dist%get_band_lims_wavenumber()))
+    select type(aerosols)
+      class is (ty_optical_props_1scl)
+        call stop_on_err(aerosols%alloc_1scl(ncol, nlay))
+        !$acc enter data copyin(aerosols) create(aerosols%tau)
+        !$omp target enter data map(alloc:aerosols%tau)
+      class is (ty_optical_props_2str)
+        call stop_on_err(aerosols%alloc_2str(ncol, nlay))
+        !$acc enter data copyin(aerosols) create(aerosols%tau, aerosols%ssa, aerosols%g)
+        !$omp target enter data map(alloc:aerosols%tau, aerosols%ssa, aerosols%g)
+      class default
+        call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
+    end select
 
-  ! Local variables 
-  integer :: i, k
+    !
+    ! Aerosols
+    !
+    allocate(aero_type(ncol,nlay), aero_size(ncol,nlay), &
+             aero_mass(ncol,nlay), aero_mask(ncol,nlay))
+    !$acc        enter data create(   aero_mask, aero_type, aero_size, aero_mass)
+    !$omp target enter data map(alloc:aero_mask, aero_type, aero_size, aero_mass)
 
-  real(wp) :: mmr_h2o             ! water mass mixing ratio
-  real(wp) :: q_lay               ! water specific humidity
-  real(wp) :: q_lay_min, q_tmp, es_tmp
-  real(wp) :: mwd, t_ref, rh
+    ! Restrict sulfate aerosols to lower stratosphere (> 50 hPa = 50*100 Pa; < 100 hPa = 100*100 Pa)
+    !   and dust aerosols to the lower troposphere (> 700 hPa; < 900 hPa), and
+    !   put them in 1/2 of the columns
+    !
+    !
+    !$acc                         parallel loop    collapse(2) copyin(p_lay) 
+    !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay) 
+    do ilay=1,nlay
+      do icol=1,ncol
+        cell_has_aerosols = ((p_lay(icol,ilay) >  50._wp * 100._wp   .and. &
+                              p_lay(icol,ilay) < 100._wp * 100._wp)  .or. &
+                             (p_lay(icol,ilay) > 700._wp * 100._wp   .and. &
+                              p_lay(icol,ilay) < 900._wp * 100._wp)) .and. &
+                             mod(icol, 2) /= 0
+        if (cell_has_aerosols) then 
+          ! Sulfate aerosol
+          if (p_lay(icol,ilay) >  50._wp * 100._wp .and. & 
+              p_lay(icol,ilay) < 100._wp * 100._wp) then 
+             aero_type(icol,ilay) = merra_aero_sulf
+             aero_size(icol,ilay) = 0.2_wp
+             aero_mass(icol,ilay) = 1.e-6_wp
+          endif
+          ! Dust aerosol
+          if (p_lay(icol,ilay) > 700._wp * 100._wp .and. & 
+              p_lay(icol,ilay) < 900._wp * 100._wp) then 
+             aero_type(icol,ilay) = merra_aero_dust
+             aero_size(icol,ilay) = 0.5_wp
+             aero_mass(icol,ilay) = 3.e-5_wp
+          endif
+        else
+          aero_type(icol,ilay) = 0
+          aero_size(icol,ilay) = 0._wp
+          aero_mass(icol,ilay) = 0._wp
+        end if
+        aero_mask(icol, ilay) = cell_has_aerosols
+      end do
+    end do
 
-  ! Set constants
-  mwd = m_h2o/m_dry            ! ratio of water to dry air molecular weights
-  t_ref = 273.16_wp            ! reference temperature (K)
-  q_lay_min = 1.e-7_wp         ! minimum water mass mixing ratio
-  ! -------------------
+    end subroutine compute_aerosols
+  ! --------------------------------------------------------------------------------------
+  !
+  ! Calculate layer relative humidity for aerosol optics calculations
+  !
+  subroutine get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
+    use mo_rte_kind,           only: wp
+    use mo_gas_optics_constants,   only: m_h2o, m_dry
 
-  ! Derive layer virtual temperature
-  do i = 1, ncol 
-     do k = 1, nlay
-        ! Convert h2o vmr to mmr
-        mmr_h2o = vmr_h2o(i,k) * mwd
-        q_lay = mmr_h2o / (1 + mmr_h2o)
-        q_tmp = max(q_lay_min, q_lay)
-        es_tmp = exp( (17.67_wp * (t_lay(i,k)-t_ref)) / (t_lay(i,k)-29.65_wp) )
-        rh = (0.263_wp * p_lay(i,k) * q_tmp) / es_tmp
-        ! Convert rh from percent to fraction
-        relhum(i,k) = 0.01_wp * rh
-     enddo
-  enddo
+    integer,  intent(in) :: ncol, nlay
+    real(wp), intent(in) :: p_lay(ncol,nlay)    ! layer pressure (Pa)
+    real(wp), intent(in) :: t_lay(ncol,nlay)    ! layer temperature (K)
+    real(wp), intent(in) :: vmr_h2o(ncol,nlay)  ! water volume mixing ratio
+
+    real(wp), intent(inout) :: relhum(ncol,nlay) ! relative humidity (fraction, 0-1)
+
+    ! Local variables 
+    integer :: i, k
+
+    real(wp) :: mmr_h2o             ! water mass mixing ratio
+    real(wp) :: q_lay               ! water specific humidity
+    real(wp) :: q_lay_min, q_tmp, es_tmp
+    real(wp) :: mwd, t_ref, rh
+
+    ! Set constants
+    mwd = m_h2o/m_dry            ! ratio of water to dry air molecular weights
+    t_ref = 273.16_wp            ! reference temperature (K)
+    q_lay_min = 1.e-7_wp         ! minimum water mass mixing ratio
+    ! -------------------
+
+    ! Derive layer virtual temperature
+    do i = 1, ncol 
+       do k = 1, nlay
+          ! Convert h2o vmr to mmr
+          mmr_h2o = vmr_h2o(i,k) * mwd
+          q_lay = mmr_h2o / (1 + mmr_h2o)
+          q_tmp = max(q_lay_min, q_lay)
+          es_tmp = exp( (17.67_wp * (t_lay(i,k)-t_ref)) / (t_lay(i,k)-29.65_wp) )
+          rh = (0.263_wp * p_lay(i,k) * q_tmp) / es_tmp
+          ! Convert rh from percent to fraction
+          relhum(i,k) = 0.01_wp * rh
+       enddo
+    enddo
   end subroutine get_relhum
 end program rte_rrtmgp_clouds_aerosols

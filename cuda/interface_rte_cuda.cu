@@ -6,6 +6,7 @@
 // CvH: zero_array should move to rte kernels.
 #include "rrtmgp_kernel_launcher_cuda.h"
 #include "rte_kernel_launcher_cuda.h"
+#include "optical_props_kernel_launcher_cuda.h"
 
 
 template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_deviceptr(ptr)); }
@@ -70,4 +71,22 @@ extern "C"
     // void lw_secants_array(
     //         const int ncol, const int ngpt, const int n_quad_angs, const int max_gauss_pts,
     //         const Float* Gauss_Ds, Float* secants);
+
+    void rte_delta_scale_2str_k(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, Float* ssa_inout, Float* g_inout)
+    {
+        printf("CvH: delta_scale_2str_k CUDA\n");
+        optical_props_kernel_launcher_cuda::delta_scale_2str_k(
+            *ncol, *nlay, *ngpt,
+            tau_inout, ssa_inout, g_inout);
+    }
+
+    void rte_delta_scale_2str_f_k(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, Float* ssa_inout, Float* g_inout, Float* f)
+    {
+        throw std::runtime_error("delta_scale_2str_f_k is not implemented in CUDA");
+    }
+ 
 }

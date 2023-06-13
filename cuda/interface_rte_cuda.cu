@@ -72,6 +72,54 @@ extern "C"
     //         const int ncol, const int ngpt, const int n_quad_angs, const int max_gauss_pts,
     //         const Float* Gauss_Ds, Float* secants);
 
+    // OPTICAL PROPS.
+    void rte_increment_1scalar_by_1scalar(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, const Float* tau_in)
+    {
+        optical_props_kernel_launcher_cuda::increment_1scalar_by_1scalar(
+                *ncol, *nlay, *ngpt,
+                tau_inout, tau_in);
+    }
+
+
+    void rte_increment_2stream_by_2stream(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, Float* ssa_inout, Float* g_inout,
+            const Float* tau_in, const Float* ssa_in, const Float* g_in)
+    {
+        optical_props_kernel_launcher_cuda::increment_2stream_by_2stream(
+                *ncol, *nlay, *ngpt,
+                tau_inout, ssa_inout, g_inout,
+                tau_in, ssa_in, g_in);
+    }
+
+
+    void rte_inc_1scalar_by_1scalar_bybnd(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, const Float* tau_in,
+            int* nbnd, int* band_lims_gpoint)
+    {
+        optical_props_kernel_launcher_cuda::inc_1scalar_by_1scalar_bybnd(
+                *ncol, *nlay, *ngpt,
+                tau_inout, tau_in,
+                *nbnd, band_lims_gpoint);
+    }
+
+
+    void rte_inc_2stream_by_2stream_bybnd(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, Float* ssa_inout, Float* g_inout,
+            const Float* tau_in, const Float* ssa_in, const Float* g_in,
+            int* nbnd, const int* band_lims_gpoint)
+    {
+        optical_props_kernel_launcher_cuda::inc_2stream_by_2stream_bybnd(
+                *ncol, *nlay, *ngpt,
+                tau_inout, ssa_inout, g_inout,
+                tau_in, ssa_in, g_in,
+                *nbnd, band_lims_gpoint);
+    }
+
     void rte_delta_scale_2str_k(
             int* ncol, int* nlay, int* ngpt,
             Float* tau_inout, Float* ssa_inout, Float* g_inout)
@@ -82,11 +130,13 @@ extern "C"
             tau_inout, ssa_inout, g_inout);
     }
 
+
     void rte_delta_scale_2str_f_k(
             int* ncol, int* nlay, int* ngpt,
             Float* tau_inout, Float* ssa_inout, Float* g_inout, Float* f)
     {
         throw std::runtime_error("delta_scale_2str_f_k is not implemented in CUDA");
     }
- 
+
+
 }

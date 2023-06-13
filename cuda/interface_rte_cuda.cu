@@ -19,7 +19,7 @@ extern "C"
     // void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1, const Float* inc_flux_dif, Float* gpt_flux_dn);
 
 
-    void sw_solver_2stream_(
+    void rte_sw_solver_2stream(
             int* ncol, int* nlay, int* ngpt, Bool* top_at_1,
             Float* tau, Float* ssa, Float* g,
             Float* mu0,
@@ -43,7 +43,7 @@ extern "C"
 
 
     // void lw_solver_noscat_gaussquad(
-    void lw_solver_noscat_(
+    void rte_lw_solver_noscat(
             int* ncol, int* nlay, int* ngpt, Bool* top_at_1, int* nmus,
             Float* secants, Float* weights,
             Float* tau, Float* lay_source,

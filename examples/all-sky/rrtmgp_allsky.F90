@@ -33,50 +33,6 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
   !$acc end data
   !$omp end target data
 end subroutine vmr_2d_to_1d
-! --------------------------------------------------------------------------------------
-!
-! Calculate layer relative humidity for aerosol optics calculations
-!
-subroutine get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
-  use mo_rte_kind,           only: wp
-  use mo_gas_optics_constants,   only: m_h2o, m_dry
-
-  integer,  intent(in) :: ncol, nlay
-  real(wp), intent(in) :: p_lay(ncol,nlay)    ! layer pressure (Pa)
-  real(wp), intent(in) :: t_lay(ncol,nlay)    ! layer temperature (K)
-  real(wp), intent(in) :: vmr_h2o(ncol,nlay)  ! water volume mixing ratio
-
-  real(wp), intent(inout) :: relhum(ncol,nlay) ! relative humidity (fraction, 0-1)
-
-  ! Local variables 
-  integer :: i, k
-
-  real(wp) :: mmr_h2o             ! water mass mixing ratio
-  real(wp) :: q_lay               ! water specific humidity
-  real(wp) :: q_lay_min, q_tmp, es_tmp
-  real(wp) :: mwd, t_ref, rh
-
-  ! Set constants
-  mwd = m_h2o/m_dry            ! ratio of water to dry air molecular weights
-  t_ref = 273.16_wp            ! reference temperature (K)
-  q_lay_min = 1.e-7_wp         ! minimum water mass mixing ratio
-  ! -------------------
-
-  ! Derive layer virtual temperature
-  do i = 1, ncol 
-     do k = 1, nlay
-        ! Convert h2o vmr to mmr
-        mmr_h2o = vmr_h2o(i,k) * mwd
-        q_lay = mmr_h2o / (1 + mmr_h2o)
-        q_tmp = max(q_lay_min, q_lay)
-        es_tmp = exp( (17.67_wp * (t_lay(i,k)-t_ref)) / (t_lay(i,k)-29.65_wp) )
-        rh = (0.263_wp * p_lay(i,k) * q_tmp) / es_tmp
-        ! Convert rh from percent to fraction
-        relhum(i,k) = 0.01_wp * rh
-     enddo
-  enddo
-    
-end subroutine get_relhum
 ! ----------------------------------------------------------------------------------
 program rte_rrtmgp_clouds_aerosols
   use mo_rte_kind,           only: wp, i8, wl
@@ -182,7 +138,7 @@ program rte_rrtmgp_clouds_aerosols
   real(wp) :: rel_val, rei_val
 
   character(len=8) :: char_input
-  integer  :: nUserArgs=0, nloops
+  integer  :: nUserArgs=0, nloops=1, ncol = 1, nlay=1
   logical :: use_luts = .true., write_fluxes = .true.
   integer, parameter :: ngas = 8
   character(len=3), dimension(ngas) &
@@ -307,7 +263,7 @@ program rte_rrtmgp_clouds_aerosols
   end if
   ! Clouds optical props are defined by band
   call stop_on_err(clouds%init(k_dist%get_band_lims_wavenumber()))
-  ! Clouds optical props are defined by band
+  ! Aerosol optical props are defined by band
   call stop_on_err(aerosols%init(k_dist%get_band_lims_wavenumber()))
   !
   ! Allocate arrays for the optical properties themselves.
@@ -590,4 +546,48 @@ program rte_rrtmgp_clouds_aerosols
   end if
   !$acc enter data create(lwp, iwp, rel, rei)
   !$omp target enter data map(alloc:lwp, iwp, rel, rei)
+contains
+! --------------------------------------------------------------------------------------
+!
+! Calculate layer relative humidity for aerosol optics calculations
+!
+subroutine get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
+  use mo_rte_kind,           only: wp
+  use mo_gas_optics_constants,   only: m_h2o, m_dry
+
+  integer,  intent(in) :: ncol, nlay
+  real(wp), intent(in) :: p_lay(ncol,nlay)    ! layer pressure (Pa)
+  real(wp), intent(in) :: t_lay(ncol,nlay)    ! layer temperature (K)
+  real(wp), intent(in) :: vmr_h2o(ncol,nlay)  ! water volume mixing ratio
+
+  real(wp), intent(inout) :: relhum(ncol,nlay) ! relative humidity (fraction, 0-1)
+
+  ! Local variables 
+  integer :: i, k
+
+  real(wp) :: mmr_h2o             ! water mass mixing ratio
+  real(wp) :: q_lay               ! water specific humidity
+  real(wp) :: q_lay_min, q_tmp, es_tmp
+  real(wp) :: mwd, t_ref, rh
+
+  ! Set constants
+  mwd = m_h2o/m_dry            ! ratio of water to dry air molecular weights
+  t_ref = 273.16_wp            ! reference temperature (K)
+  q_lay_min = 1.e-7_wp         ! minimum water mass mixing ratio
+  ! -------------------
+
+  ! Derive layer virtual temperature
+  do i = 1, ncol 
+     do k = 1, nlay
+        ! Convert h2o vmr to mmr
+        mmr_h2o = vmr_h2o(i,k) * mwd
+        q_lay = mmr_h2o / (1 + mmr_h2o)
+        q_tmp = max(q_lay_min, q_lay)
+        es_tmp = exp( (17.67_wp * (t_lay(i,k)-t_ref)) / (t_lay(i,k)-29.65_wp) )
+        rh = (0.263_wp * p_lay(i,k) * q_tmp) / es_tmp
+        ! Convert rh from percent to fraction
+        relhum(i,k) = 0.01_wp * rh
+     enddo
+  enddo
+  end subroutine get_relhum
 end program rte_rrtmgp_clouds_aerosols

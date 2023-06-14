@@ -1,41 +1,3 @@
-subroutine stop_on_err(error_msg)
-  use iso_fortran_env, only : error_unit
-  character(len=*), intent(in) :: error_msg
-
-  if(error_msg /= "") then
-    write (error_unit,*) trim(error_msg)
-    write (error_unit,*) "rte_rrtmgp_clouds_aerosols stopping"
-    error stop 1
-  end if
-end subroutine stop_on_err
-
-subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
-  use mo_gas_concentrations, only: ty_gas_concs
-  use mo_rte_kind,           only: wp
-
-  type(ty_gas_concs), intent(in)    :: gas_concs_garand
-  type(ty_gas_concs), intent(inout) :: gas_concs
-  character(len=*),   intent(in)    :: name
-  integer,            intent(in)    :: sz1, sz2
-
-  real(wp) :: tmp(sz1, sz2), tmp_col(sz2)
-
-  !$acc        data create(   tmp, tmp_col)
-  !$omp target data map(alloc:tmp, tmp_col)
-  print *, "vmr_2d_to_1d " // name
-  print *, "   sizes", sz1, sz2
-  call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
-  !$acc kernels
-  !$omp target
-  tmp_col(:) = tmp(1, :)
-  !$acc end kernels
-  !$omp end target
-
-  call stop_on_err(gas_concs%set_vmr       (name, tmp_col))
-  !$acc end data
-  !$omp end target data
-end subroutine vmr_2d_to_1d
-! ----------------------------------------------------------------------------------
 program rte_rrtmgp_clouds_aerosols
   use mo_rte_kind,           only: wp, i8, wl
   use mo_optical_props,      only: ty_optical_props, &
@@ -153,17 +115,22 @@ program rte_rrtmgp_clouds_aerosols
   !
   nUserArgs = command_argument_count()
   if (nUserArgs <  5) call stop_on_err("Need to supply ncol nlay nreps input_file gas-optics [cloud-optics [aerosol-optics]]")
+
   call get_command_argument(1, char_input)
   read(char_input, '(i8)') ncol
   if(ncol <= 0) call stop_on_err("Specify positive ncol.")
+
   call get_command_argument(2, char_input)
   read(char_input, '(i8)') nlay
   if(nlay <= 0) call stop_on_err("Specify positive nlay.")
+
   call get_command_argument(3, char_input)
   read(char_input, '(i8)') nloops
   if(nloops <= 0) call stop_on_err("Specify positive nreps (number of times to do ncol examples.")
+
   call get_command_argument(4,input_file)
   call get_command_argument(5,k_dist_file)
+
   if (nUserArgs >= 6) then 
     call get_command_argument(6,cloud_optics_file)
     do_clouds = .true. 
@@ -440,6 +407,44 @@ program rte_rrtmgp_clouds_aerosols
     !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif, mu0)
   end if
 contains
+  ! ----------------------------------------------------------------------------------
+  subroutine stop_on_err(error_msg)
+    use iso_fortran_env, only : error_unit
+    character(len=*), intent(in) :: error_msg
+
+    if(error_msg /= "") then
+      write (error_unit,*) trim(error_msg)
+      write (error_unit,*) "rrtmgp_allsky stopping"
+      error stop 1
+    end if
+  end subroutine stop_on_err
+  ! ----------------------------------------------------------------------------------
+  subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
+    use mo_gas_concentrations, only: ty_gas_concs
+    use mo_rte_kind,           only: wp
+
+    type(ty_gas_concs), intent(in)    :: gas_concs_garand
+    type(ty_gas_concs), intent(inout) :: gas_concs
+    character(len=*),   intent(in)    :: name
+    integer,            intent(in)    :: sz1, sz2
+
+    real(wp) :: tmp(sz1, sz2), tmp_col(sz2)
+
+    !$acc        data create(   tmp, tmp_col)
+    !$omp target data map(alloc:tmp, tmp_col)
+    print *, "vmr_2d_to_1d " // name
+    print *, "   sizes", sz1, sz2
+    call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
+    !$acc kernels
+    !$omp target
+    tmp_col(:) = tmp(1, :)
+    !$acc end kernels
+    !$omp end target
+
+    call stop_on_err(gas_concs%set_vmr       (name, tmp_col))
+    !$acc end data
+    !$omp end target data
+  end subroutine vmr_2d_to_1d
   ! --------------------------------------------------------------------------------------
   !
   subroutine compute_clouds 

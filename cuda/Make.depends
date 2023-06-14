@@ -6,6 +6,7 @@ RTE_CUDA_KERNELS = \
   interface_rte_cuda.o \
   optical_props_kernel_launchers.o \
   rte_solver_kernel_launchers.o \
+  fluxes_kernel_launchers.o \
 
 
 ##################################
@@ -17,10 +18,9 @@ interface_rrtmgp_cuda.o: interface_rrtmgp_cuda.cu
 interface_rte_cuda.o: interface_rte_cuda.cu
 
 gas_optics_kernel_launchers.o: gas_optics_kernel_launchers.cu
-# gas_optics_kernels.o: gas_optics_kernels.cu
 
 optical_props_kernel_launchers.o: optical_props_kernel_launchers.cu
-# optical_props_kernels.o: optical_props_kernels.cu
 
 rte_solver_kernel_launchers.o: rte_solver_kernel_launchers.cu
-# rte_solver_kernels.o: rte_solver_kernels.cu
+
+fluxes_kernel_launchers.o: fluxes_kernel_launchers.cu

@@ -99,8 +99,6 @@ program rte_rrtmgp_clouds_aerosols
                                            ! Relative humidity (fraction)
   logical, dimension(:,:), allocatable  :: aero_mask
                                            ! Aerosol mask
-  real(wp), allocatable, dimension(:,:) :: vmr_h2o
-                                           ! h2o vmr
 
   !
   ! Output variables
@@ -152,7 +150,6 @@ program rte_rrtmgp_clouds_aerosols
 
   !
   nUserArgs = command_argument_count()
-  print *, "Got so many arugments", nUserArgs
   if (nUserArgs <  5) call stop_on_err("Need to supply ncol nlay nreps input_file gas-optics [cloud-optics [aerosol-optics]]")
   call get_command_argument(1, char_input)
   read(char_input, '(i8)') ncol
@@ -230,13 +227,6 @@ program rte_rrtmgp_clouds_aerosols
     ! Load aerosol optics coefficients from lookup tables
     !
     call load_aero_lutcoeff (aerosol_optics, aerosol_optics_file)
-    !
-    ! Derive relative humidity from profile
-    !
-    allocate(vmr_h2o(ncol, nlay))
-    call stop_on_err(gas_concs%get_vmr(gas_names(1),vmr_h2o))
-    allocate(relhum(ncol, nlay))
-    call get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
   end if 
 
   ! ----------------------------------------------------------------------------
@@ -512,7 +502,9 @@ contains
   ! --------------------------------------------------------------------------------------
   !
   subroutine compute_aerosols
-    ! 
+   real(wp), dimension(ncol,nlay) :: vmr_h2o ! h2o vmr
+   logical :: is_sulfate, is_dust, is_even_column 
+   ! 
     ! Variable and memory allocation 
     !
     if(is_sw) then
@@ -533,10 +525,15 @@ contains
       class default
         call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
     end select
-
     !
-    ! Aerosols
+    ! Derive relative humidity from profile
     !
+    call stop_on_err(gas_concs%get_vmr("h2o",vmr_h2o))
+    allocate(relhum(ncol, nlay))
+    call get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
+    !
+    ! Aerosol properties 
+    ! 
     allocate(aero_type(ncol,nlay), aero_size(ncol,nlay), &
              aero_mass(ncol,nlay), aero_mask(ncol,nlay))
     !$acc        enter data create(   aero_mask, aero_type, aero_size, aero_mass)
@@ -551,32 +548,25 @@ contains
     !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay) 
     do ilay=1,nlay
       do icol=1,ncol
-        cell_has_aerosols = ((p_lay(icol,ilay) >  50._wp * 100._wp   .and. &
-                              p_lay(icol,ilay) < 100._wp * 100._wp)  .or. &
-                             (p_lay(icol,ilay) > 700._wp * 100._wp   .and. &
-                              p_lay(icol,ilay) < 900._wp * 100._wp)) .and. &
-                             mod(icol, 2) /= 0
-        if (cell_has_aerosols) then 
-          ! Sulfate aerosol
-          if (p_lay(icol,ilay) >  50._wp * 100._wp .and. & 
-              p_lay(icol,ilay) < 100._wp * 100._wp) then 
-             aero_type(icol,ilay) = merra_aero_sulf
-             aero_size(icol,ilay) = 0.2_wp
-             aero_mass(icol,ilay) = 1.e-6_wp
-          endif
+        is_sulfate = (p_lay(icol,ilay) >  50._wp * 100._wp .and. & 
+                      p_lay(icol,ilay) < 100._wp * 100._wp)
+        is_dust    = (p_lay(icol,ilay) > 700._wp * 100._wp .and. & 
+                      p_lay(icol,ilay) < 900._wp * 100._wp)
+        is_even_column = mod(icol, 2) /= 0
+        if      (is_even_column .and. is_sulfate) then 
+          aero_type(icol,ilay) = merra_aero_sulf
+          aero_size(icol,ilay) = 0.2_wp
+          aero_mass(icol,ilay) = 1.e-6_wp
+        else if(is_even_column .and. is_dust) then 
           ! Dust aerosol
-          if (p_lay(icol,ilay) > 700._wp * 100._wp .and. & 
-              p_lay(icol,ilay) < 900._wp * 100._wp) then 
-             aero_type(icol,ilay) = merra_aero_dust
-             aero_size(icol,ilay) = 0.5_wp
-             aero_mass(icol,ilay) = 3.e-5_wp
-          endif
-        else
+          aero_type(icol,ilay) = merra_aero_dust
+          aero_size(icol,ilay) = 0.5_wp
+          aero_mass(icol,ilay) = 3.e-5_wp
+          else
           aero_type(icol,ilay) = 0
           aero_size(icol,ilay) = 0._wp
           aero_mass(icol,ilay) = 0._wp
         end if
-        aero_mask(icol, ilay) = cell_has_aerosols
       end do
     end do
 

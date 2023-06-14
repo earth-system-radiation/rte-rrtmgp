@@ -336,6 +336,7 @@ contains
 
     if(this%nlay > 0 .and. this%nlay /= size(array)) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
+      print *, this%nlay, size(array)
     end if
     if(error_msg /= "") return
 
@@ -396,6 +397,7 @@ contains
     end if
     if(this%nlay > 0 .and. this%nlay /= size(array,2)) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
+      print *, this%nlay, size(array, 2)
     end if
     if(error_msg /= "") return
 

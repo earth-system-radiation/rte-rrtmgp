@@ -22,6 +22,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
 
   !$acc        data create(   tmp, tmp_col)
   !$omp target data map(alloc:tmp, tmp_col)
+  print *, "vmr_2d_to_1d " // name
   call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
   !$acc kernels
   !$omp target
@@ -562,7 +563,7 @@ contains
           aero_type(icol,ilay) = merra_aero_dust
           aero_size(icol,ilay) = 0.5_wp
           aero_mass(icol,ilay) = 3.e-5_wp
-          else
+        else
           aero_type(icol,ilay) = 0
           aero_size(icol,ilay) = 0._wp
           aero_mass(icol,ilay) = 0._wp

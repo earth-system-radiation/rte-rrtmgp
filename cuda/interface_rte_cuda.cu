@@ -14,10 +14,16 @@ template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_devicep
 
 extern "C"
 {
-    // void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1,
-    //               const Float* inc_flux_dir, const Float* mu0, Float* gpt_flux_dir);
-    // void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1, Float* gpt_flux_dn);
-    // void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1, const Float* inc_flux_dif, Float* gpt_flux_dn);
+    // SHORTWAVE SOLVERS
+    void rte_sw_solver_noscat(
+            int* ncol, int* nlay, int* ngpt, Bool* top_at_1,
+            Float* tau,
+            Float* mu0,
+            Float* inc_flux_dir,
+            Float* flux_dir)
+    {
+        throw std::runtime_error("rte_sw_solver_noscat not implemented in CUDA!");
+    }
 
 
     void rte_sw_solver_2stream(
@@ -67,6 +73,19 @@ extern "C"
                 *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc),
                 *do_jacobians, acc_to_cuda(sfc_src_jac), acc_to_cuda(flux_up_jac));
     }
+
+
+    void rte_lw_solver_2stream(
+            int* ncol, int* nlay, int* ngpt, Bool* top_at_1,
+            Float* tau, Float* ssa, Float* g,
+            Float* lay_source, Float* lev_source_inc, Float* lev_source_dec,
+            Float* sfc_emis, Float* sfc_src,
+            Float* inc_flux,
+            Float* flux_up, Float* flux_dn)
+    {
+        throw std::runtime_error("rte_lw_solver_2stream not implemented in CUDA!");
+    }
+
 
     // void lw_secants_array(
     //         const int ncol, const int ngpt, const int n_quad_angs, const int max_gauss_pts,

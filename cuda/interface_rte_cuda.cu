@@ -339,4 +339,11 @@ extern "C"
     {
         throw std::runtime_error("rte_extract_subset_dim2_4d is not implemented in CUDA");
     }
+
+
+    void rte_extract_subset_absorption_tau(
+            int* ncol, int* nlay, int* ngpt, Float* tau_in, Float* ssa_in, int* ncol_start, int* ncol_end, Float* tau_out)
+    {
+        throw std::runtime_error("rte_extract_subset_absorption_tau is not implemented in CUDA");
+    }
 }

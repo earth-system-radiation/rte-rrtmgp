@@ -183,6 +183,7 @@ program rte_rrtmgp_clouds_aerosols
                   gas_concs_garand, col_dry)
   deallocate(col_dry)
   nlay = size(p_lay, 2)
+  print *, "In main, Garand atmos sizes : ", size(p_lay, 1), size(p_lay, 2)
 
   ! For clouds we'll use the first column, repeated over and over
   call stop_on_err(gas_concs%init(gas_names))

@@ -408,6 +408,76 @@ program rte_rrtmgp_clouds_aerosols
   end if
 contains
   ! ----------------------------------------------------------------------------------
+  subroutine compute_profiles(SST, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q, o3)
+    real(wp),                          intent(in ) :: SST 
+    integer,                           intent(in ) :: ncol, nlay
+    real(wp), dimension(ncol, nlay  ), intent(out) :: p_lay, t_lay, q, o3
+    real(wp), dimension(ncol, nlay+1), intent(out) :: p_lev, t_lev
+
+    real(wp) :: z_lay(nlay), z_lev(nlay+1)
+    real(wp) :: q_tmp, p_hpa
+    integer  :: icol, ilay, i
+
+    real(wp), parameter :: z_trop = 15000._wp, z_top = 70.e3_wp
+    ! Ozone profile - maybe only a single profile? 
+    real(wp), parameter :: g1 = 3.6478_wp, g2 = 0.83209_wp, g3 = 11.3515_wp, o3_min = 1e-13_wp 
+    ! According to CvH RRTMGP in Single Precision will fail with lower ozone concentrations
+
+    z_lev(:) = [0._wp,  2._wp*           z_trop /nlay * [(i, i=1, nlay/2)],  & 
+               z_trop + 2._wp * (z_top - z_trop)/nlay * [(i, i=1, nlay/2)]]
+    z_lay(:) = 0.5_wp * (z_lev(1:nlay)  + z_lev(2:nlay+1))
+    
+    !$acc        data copyin(z_lev, lay) create(   p_lay, t_lay, p_lev, t_lev, q, o3)
+    !$omp target data map(to:z_lev, lay) map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
+
+    !$acc                         parallel loop    collapse(2) 
+    !$omp target teams distribute parallel do simd collapse(2) 
+    do ilay = 1, nlay 
+      do icol = 1, ncol 
+        call thermo(z_lay(ilay), SST, p_lay(icol,ilay), t_lay(icol,ilay), q(icol,ilay))
+        p_hpa = p_lay(icol,ilay) / 100._wp
+        o3(icol, ilay) = max(o3_min, & 
+                             g1 * p_hpa**g2 * exp(-p_hpa/g3) * 1.e-6_wp)
+        call thermo(z_lev(ilay), SST, p_lev(icol,ilay), t_lev(icol,ilay), q_tmp)
+      end do
+    end do 
+
+    !$acc                         parallel loop    
+    !$omp target teams distribute parallel do simd 
+    do icol = 1, ncol 
+      call thermo(z_lev(nlay+1), SST, p_lev(icol, nlay+1), t_lev(icol, nlay+1), q_tmp)
+    end do
+    !$acc        end data
+    !$omp target end data
+  end subroutine compute_profiles
+  ! ---------------------------------------
+  elemental function Tv(T, q)
+  real(wp), intent(in) :: T, q 
+  real(wp)             :: Tv
+
+  Tv = (1. + 0.608*q) * T
+  end function Tv
+  ! ---------------------------------------
+  elemental subroutine thermo(z, SST, p, T, q)
+    real(wp), intent(in)  :: z, SST   ! Height, SST
+    real(wp), intent(out) :: p, T, q
+
+    real(wp), parameter :: g = 9.79764, Rd = 287.04, p0 = 101480. ! Surface pressure 
+    real(wp), parameter :: z_q1 = 4.0e3, z_q2 = 7.5e3, z_trop = 15.e3,  q_t = 1.e-8
+    real(wp), parameter :: gamma = 6.7e-3
+    
+    real(wp), parameter :: q_0 = 0.01864 ! for 300 K SST.
+
+    q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
+    T = SST - gamma*z / (1. + 0.608*q)    
+    p = p0 * (Tv(T, q)/Tv(SST, q_0))**(g/(Rd*gamma))
+    if (z > z_trop) then 
+      q = q_t
+      T = SST - gamma*z_trop/(1. + 0.608*q_0)
+      p = p0 * (Tv(T, q)/Tv(SST, q_0))**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv(T, q))) )
+    end if 
+  end subroutine thermo
+  ! ----------------------------------------------------------------------------------
   subroutine stop_on_err(error_msg)
     use iso_fortran_env, only : error_unit
     character(len=*), intent(in) :: error_msg

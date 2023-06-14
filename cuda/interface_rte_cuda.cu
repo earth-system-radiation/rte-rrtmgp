@@ -292,4 +292,44 @@ extern "C"
     {
         throw std::runtime_error("delta_scale_2str_f_k is not implemented in CUDA");
     }
+
+    // OPTICAL PROPS - SUBSET
+    void rte_extract_subset_dim1_3d(
+            int* ncol, int* nlay, int* ngpt, Float* array_in, int* ncol_start, int* ncol_end, Float* array_out)
+    {
+        printf("CvH: rte_extract_subset_dim1_3d CUDA\n");
+
+        const int ncol_sub = (*ncol_end) - (*ncol_start) + 1;
+
+        // Launch directly from the interface, as the subsetting is integrated with Array class in CUDA implementation.
+        Subset_data<3> subset_data;
+
+        subset_data.sub_strides[0] = 1;
+        subset_data.strides[0] = 1;
+        subset_data.starts[0] = (*ncol_start) + 1;
+        subset_data.offsets[0] = 0;
+        subset_data.do_spread[0] = false;
+
+        subset_data.sub_strides[1] = ncol_sub;
+        subset_data.strides[1] = (*ncol);
+        subset_data.starts[1] = 1;
+        subset_data.offsets[1] = 0;
+        subset_data.do_spread[1] = false;
+
+        subset_data.sub_strides[2] = ncol_sub * (*nlay);
+        subset_data.strides[2] = (*ncol) * (*nlay);
+        subset_data.starts[2] = 1;
+        subset_data.offsets[2] = 0;
+        subset_data.do_spread[2] = false;
+
+        const int ncells = ncol_sub * (*nlay) * (*ngpt);
+
+        constexpr int block_ncells = 64;
+        const int grid_ncells = ncells/block_ncells + (ncells%block_ncells > 0);
+
+        dim3 block_gpu(block_ncells);
+        dim3 grid_gpu(grid_ncells);
+
+        subset_kernel<<<grid_gpu, block_gpu>>>(array_out, array_in, subset_data, ncells);
+    }
 }

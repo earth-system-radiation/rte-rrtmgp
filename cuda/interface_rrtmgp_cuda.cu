@@ -193,6 +193,11 @@ extern "C"
                 acc_to_cuda(sfc_src_jac));
     }
 
+    void zero_array_1D(int* ni)
+    {
+        throw std::runtime_error("zero_array_1D is not implemented in CUDA");
+    }
+
     void zero_array_2D(int* ni, int* nj)
     {
         throw std::runtime_error("zero_array_2D is not implemented in CUDA");

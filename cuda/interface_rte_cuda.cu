@@ -7,6 +7,7 @@
 #include "rrtmgp_kernel_launcher_cuda.h"
 #include "rte_kernel_launcher_cuda.h"
 #include "optical_props_kernel_launcher_cuda.h"
+#include "fluxes_kernel_launcher_cuda.h"
 
 
 template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_deviceptr(ptr)); }
@@ -345,5 +346,60 @@ extern "C"
             int* ncol, int* nlay, int* ngpt, Float* tau_in, Float* ssa_in, int* ncol_start, int* ncol_end, Float* tau_out)
     {
         throw std::runtime_error("rte_extract_subset_absorption_tau is not implemented in CUDA");
+    }
+
+
+    void rte_sum_broadband(
+            int* ncol, int* nlev, int* ngpt,
+            Float* gpt_flux, Float* flux)
+    {
+        fluxes_kernel_launcher_cuda::sum_broadband(
+                *ncol, *nlev, *ngpt,
+                gpt_flux, flux);
+    }
+
+    void rte_net_broadband_full(
+            int* ncol, int* nlev, int* ngpt,
+            Float* gpt_flux_dn, Float* gpt_flux_up,
+            Float* flux_net)
+    {
+        throw std::runtime_error("rte_net_broadband_full is not implemented in CUDA");
+    }
+
+
+    void rte_net_broadband_precalc(
+            int* ncol, int* nlev,
+            Float* broadband_flux_dn, Float* broadband_flux_up,
+            Float* broadband_flux_net)
+    {
+        fluxes_kernel_launcher_cuda::net_broadband_precalc(
+                *ncol, *nlev,
+                broadband_flux_dn, broadband_flux_up,
+                broadband_flux_net);
+    }
+
+
+
+    void rte_sum_byband(
+            int* ncol, int* nlev, int* ngpt, int* nbnd,
+            int* band_lims,
+            Float* gpt_flux,
+            Float* bnd_flux)
+    {
+        fluxes_kernel_launcher_cuda::sum_byband(
+                *ncol, *nlev, *ngpt, *nbnd,
+                band_lims,
+                gpt_flux,
+                bnd_flux);
+    }
+
+
+    void rte_net_byband_full(
+            int* ncol, int* nlev, int* ngpt, int* nbnd, int* band_lims,
+            Float* bnd_flux_dn, Float* bnd_flux_up, Float* bnd_flux_net)
+    {
+        fluxes_kernel_launcher_cuda::net_byband_full(
+                *ncol, *nlev, *ngpt, *nbnd, band_lims,
+                bnd_flux_dn, bnd_flux_up, bnd_flux_net);
     }
 }

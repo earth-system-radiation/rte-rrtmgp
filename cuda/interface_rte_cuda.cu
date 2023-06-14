@@ -83,15 +83,21 @@ extern "C"
     }
 
 
-    void rte_increment_2stream_by_2stream(
+    void rte_increment_1scalar_by_2stream(
             int* ncol, int* nlay, int* ngpt,
-            Float* tau_inout, Float* ssa_inout, Float* g_inout,
-            const Float* tau_in, const Float* ssa_in, const Float* g_in)
+            Float* tau_inout,
+            Float* tau_in, Float* ssa_in)
     {
-        optical_props_kernel_launcher_cuda::increment_2stream_by_2stream(
-                *ncol, *nlay, *ngpt,
-                tau_inout, ssa_inout, g_inout,
-                tau_in, ssa_in, g_in);
+        throw std::runtime_error("increment_1scalar_by_2stream is not implemented in CUDA");
+    }
+
+
+    void rte_increment_1scalar_by_nstream(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout,
+            Float* tau_in, Float* ssa_in)
+    {
+        throw std::runtime_error("increment_1scalar_by_nstream is not implemented in CUDA");
     }
 
 
@@ -104,6 +110,63 @@ extern "C"
                 *ncol, *nlay, *ngpt,
                 tau_inout, tau_in,
                 *nbnd, band_lims_gpoint);
+    }
+
+
+    void rte_increment_2stream_by_1scalar(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, Float* ssa_inout,
+            Float* tau_in)
+    {
+        throw std::runtime_error("increment_2stream_by_1scalar is not implemented in CUDA");
+    }
+
+
+    void rte_increment_2stream_by_2stream(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, Float* ssa_inout, Float* g_inout,
+            const Float* tau_in, const Float* ssa_in, const Float* g_in)
+    {
+        optical_props_kernel_launcher_cuda::increment_2stream_by_2stream(
+                *ncol, *nlay, *ngpt,
+                tau_inout, ssa_inout, g_inout,
+                tau_in, ssa_in, g_in);
+    }
+
+
+    void rte_increment_2stream_by_nstream(
+            int* ncol, int* nlay, int* ngpt, int* nmom,
+            Float* tau_inout, Float* ssa_inout, Float* g_inout,
+            Float* tau_in, Float* ssa_in, Float* p_in)
+    {
+        throw std::runtime_error("increment_2stream_by_nstream is not implemented in CUDA");
+    }
+
+
+    void rte_increment_nstream_by_1scalar(
+            int* ncol, int* nlay, int* ngpt,
+            Float* tau_inout, Float* ssa_inout,
+            Float* tau_in)
+    {
+        throw std::runtime_error("increment_nstream_by_1scalar is not implemented in CUDA");
+    }
+
+
+    void rte_increment_nstream_by_2stream(
+            int* ncol, int* nlay, int* ngpt, int* nmom1,
+            Float* tau_inout, Float* ssa_inout, Float* p_inout,
+            Float* tau_in, Float* ssa_in, Float* g_in)
+    {
+        throw std::runtime_error("increment_nstream_by_2stream is not implemented in CUDA");
+    }
+
+
+    void rte_increment_nstream_by_nstream(
+            int* ncol, int* nlay, int* ngpt, int* nmom1, int* nmom2,
+            Float* tau_inout, Float* ssa_inout, Float* p_inout,
+            Float* tau_in, Float* ssa_in, Float* p_in)
+    {
+        throw std::runtime_error("increment_nstream_by_nstream is not implemented in CUDA");
     }
 
 
@@ -137,43 +200,5 @@ extern "C"
             Float* tau_inout, Float* ssa_inout, Float* g_inout, Float* f)
     {
         throw std::runtime_error("delta_scale_2str_f_k is not implemented in CUDA");
-    }
-
-
-    void rte_increment_1scalar_by_2stream(
-            int* ncol, int* nlay, int* ngpt,
-            Float* tau_inout,
-            Float* tau_in, Float* ssa_in)
-    {
-        throw std::runtime_error("increment_1scalar_by_2stream is not implemented in CUDA");
-    }
-
-
-
-
-    void rte_increment_nstream_by_nstream(
-            int* ncol, int* nlay, int* ngpt, int* nmom1, int* nmom2,
-            Float* tau_inout, Float* ssa_inout, Float* p_inout,
-            Float* tau_in, Float* ssa_in, Float* p_in)
-    {
-        throw std::runtime_error("increment_nstream_by_nstream is not implemented in CUDA");
-    }
-
-
-    void rte_increment_1scalar_by_nstream(
-            int* ncol, int* nlay, int* ngpt,
-            Float* tau_inout,
-            Float* tau_in, Float* ssa_in)
-    {
-        throw std::runtime_error("increment_1scalar_by_nstream is not implemented in CUDA");
-    }
-
-
-    void rte_increment_2stream_by_nstream(
-            int* ncol, int* nlay, int* ngpt, int* nmom,
-            Float* tau_inout, Float* ssa_inout, Float* g_inout,
-            Float* tau_in, Float* ssa_in, Float* p_in)
-    {
-        throw std::runtime_error("increment_2stream_by_nstream is not implemented in CUDA");
     }
 }

@@ -332,4 +332,11 @@ extern "C"
 
         subset_kernel<<<grid_gpu, block_gpu>>>(array_out, array_in, subset_data, ncells);
     }
+
+
+    void rte_extract_subset_dim2_4d(
+            int* ncol, int* nlay, int* ngpt, Float* array_in, int* ncol_start, int* ncol_end, Float* array_out)
+    {
+        throw std::runtime_error("rte_extract_subset_dim2_4d is not implemented in CUDA");
+    }
 }

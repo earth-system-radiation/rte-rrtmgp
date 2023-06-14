@@ -23,6 +23,7 @@ subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
   !$acc        data create(   tmp, tmp_col)
   !$omp target data map(alloc:tmp, tmp_col)
   print *, "vmr_2d_to_1d " // name
+  print *, "   sizes", sz1, sz2
   call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
   !$acc kernels
   !$omp target

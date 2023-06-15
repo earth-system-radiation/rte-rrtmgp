@@ -195,7 +195,7 @@ extern "C"
 
     void zero_array_1D(int* ni, Float* array)
     {
-        throw std::runtime_error("zero_array_1D is not implemented in CUDA");
+        rrtmgp_kernel_launcher_cuda::zero_array(*ni, acc_to_cuda(array));
     }
 
     void zero_array_2D(int* ni, int* nj, Float* array)

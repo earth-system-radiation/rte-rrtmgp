@@ -88,6 +88,12 @@ namespace rrtmgp_kernel_launcher_cuda
     }
 
 
+    void zero_array(const int ni, Float* arr)
+    {
+        zero_array(ni, 1, 1, arr);
+    }
+
+
     void zero_array(const int ni, const int nj, Float* arr)
     {
         zero_array(ni, nj, 1, arr);

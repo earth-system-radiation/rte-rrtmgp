@@ -63,16 +63,49 @@ extern "C"
             Bool* do_jacobians, Float* sfc_src_jac, Float* flux_up_jac)
     {
         printf("CvH: lw_solver_noscat CUDA\n");
-        rte_kernel_launcher_cuda::lw_solver_noscat_gaussquad(
-                *ncol, *nlay, *ngpt, *top_at_1, *nmus,
-                acc_to_cuda(secants), acc_to_cuda(weights),
-                acc_to_cuda(tau), acc_to_cuda(lay_source),
-                acc_to_cuda(lev_source_inc), acc_to_cuda(lev_source_dec),
-                acc_to_cuda(sfc_emis), acc_to_cuda(sfc_src),
-                acc_to_cuda(inc_flux),
-                acc_to_cuda(flux_up), acc_to_cuda(flux_dn),
-                *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc),
-                *do_jacobians, acc_to_cuda(sfc_src_jac), acc_to_cuda(flux_up_jac));
+
+        // CVH: TMP SOLUTION
+        Float* weights_gpu = Tools_gpu::allocate_gpu<Float>( (*nmus) );
+        acc_memcpy_to_device(weights_gpu, weights, *nmus * sizeof(Float));
+
+
+        Float* sfc_src_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * (*ncol) );
+        if (*do_jacobians != 0)
+        {
+            rte_kernel_launcher_cuda::lw_solver_noscat_gaussquad(
+                    *ncol, *nlay, *ngpt, *top_at_1, *nmus,
+                    // acc_to_cuda(secants), acc_to_cuda(weights),
+                    acc_to_cuda(secants), weights_gpu,
+                    acc_to_cuda(tau), acc_to_cuda(lay_source),
+                    acc_to_cuda(lev_source_inc), acc_to_cuda(lev_source_dec),
+                    acc_to_cuda(sfc_emis), acc_to_cuda(sfc_src),
+                    acc_to_cuda(inc_flux),
+                    acc_to_cuda(flux_up), acc_to_cuda(flux_dn),
+                    *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc),
+                    *do_jacobians, acc_to_cuda(sfc_src_jac), acc_to_cuda(flux_up_jac));
+        }
+        else
+        {
+            Float* sfc_src_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * (*ncol) );
+            Float* flux_up_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * ( (*nlay) + 1 ) * (*ncol) );
+            
+            rte_kernel_launcher_cuda::lw_solver_noscat_gaussquad(
+                    *ncol, *nlay, *ngpt, *top_at_1, *nmus,
+                    // acc_to_cuda(secants), acc_to_cuda(weights),
+                    acc_to_cuda(secants), weights_gpu,
+                    acc_to_cuda(tau), acc_to_cuda(lay_source),
+                    acc_to_cuda(lev_source_inc), acc_to_cuda(lev_source_dec),
+                    acc_to_cuda(sfc_emis), acc_to_cuda(sfc_src),
+                    acc_to_cuda(inc_flux),
+                    acc_to_cuda(flux_up), acc_to_cuda(flux_dn),
+                    *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc),
+                    *do_jacobians, sfc_src_jac_dummy, flux_up_jac_dummy);
+
+            Tools_gpu::free_gpu(sfc_src_jac_dummy);
+            Tools_gpu::free_gpu(flux_up_jac_dummy);
+        }
+
+        Tools_gpu::free_gpu(weights_gpu);
     }
 
 

@@ -91,6 +91,7 @@ namespace rte_kernel_launcher_cuda
             const Bool do_broadband, Float* flux_up_loc, Float* flux_dn_loc,
             const Bool do_jacobians, const Float* sfc_src_jac, Float* flux_up_jac)
     {
+        printf("CvH: %p, %p\n", secants, weights);
         Float eps = std::numeric_limits<Float>::epsilon();
 
         const int flx_size = ncol*(nlay+1)*ngpt;

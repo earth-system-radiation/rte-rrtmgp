@@ -309,8 +309,8 @@ contains
     !
     ! Compute the radiative transfer...
     !
-    !$acc        data create(   sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
-    !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
+    !$acc        data create(   sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn) copyin(weights)
+    !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn) map(to:weights)
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     if(check_values) error_msg =  optical_props%validate()
     if(len_trim(error_msg) == 0) then ! Can't do an early return within OpenACC/MP data regions

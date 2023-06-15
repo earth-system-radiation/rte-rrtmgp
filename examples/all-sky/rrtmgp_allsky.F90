@@ -22,14 +22,13 @@ program rte_rrtmgp_clouds_aerosols
   ! Variables
   ! ----------------------------------------------------------------------------------
   ! Arrays: dimensions (col, lay)
-  real(wp), dimension(:,:),   allocatable :: p_lay, t_lay, p_lev
-  real(wp), dimension(:,:),   allocatable :: col_dry
+  real(wp), dimension(:,:),   allocatable :: p_lay, t_lay, p_lev, t_lev ! t_lev is only needed for LW
+  real(wp), dimension(:,:),   allocatable :: q, o3, col_dry
   real(wp), dimension(:,:),   allocatable :: temp_array
 
   !
   ! Longwave only
   !
-  real(wp), dimension(:,:),   allocatable :: t_lev
   real(wp), dimension(:),     allocatable :: t_sfc
   real(wp), dimension(:,:),   allocatable :: emis_sfc ! First dimension is band
   !
@@ -37,6 +36,11 @@ program rte_rrtmgp_clouds_aerosols
   !
   real(wp), dimension(:),     allocatable :: mu0
   real(wp), dimension(:,:),   allocatable :: sfc_alb_dir, sfc_alb_dif ! First dimension is band
+  !
+  ! Gas concentrations 
+  !
+  character(len=3), dimension(8), parameter :: &
+                   gas_names = ['h2o', 'co2', 'o3 ', 'n2o', 'co ', 'ch4', 'o2 ', 'n2 ']
   !
   ! Source functions
   !
@@ -91,11 +95,13 @@ program rte_rrtmgp_clouds_aerosols
 
   character(len=8) :: char_input
   integer :: nUserArgs, nloops, ncol, nlay
-  logical :: do_clouds = .false., use_luts = .true., write_fluxes = .true.
+  logical :: write_fluxes = .false.
+  logical :: do_clouds = .false., use_luts = .true. 
   logical :: do_aerosols = .false.
+  logical :: do_rce = .true. 
   integer, parameter :: ngas = 8
-  character(len=3), dimension(ngas) &
-                     :: gas_names = ['h2o', 'co2', 'o3 ', 'n2o', 'co ', 'ch4', 'o2 ', 'n2 ']
+!  character(len=3), dimension(ngas) &
+!                     :: gas_names = ['h2o', 'co2', 'o3 ', 'n2o', 'co ', 'ch4', 'o2 ', 'n2 ']
 
   character(len=256) :: input_file, k_dist_file, cloud_optics_file, aerosol_optics_file
   !
@@ -140,40 +146,57 @@ program rte_rrtmgp_clouds_aerosols
     do_aerosols = .true. 
   end if 
   if (nUserArgs >  7) print *, "Ignoring command line arguments beyond the first seven..."
+  ! -----------------------------------------------------------------------------------
+  if(do_rce) then 
+    allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
+    allocate(q    (ncol, nlay),    o3(ncol, nlay))
+    !$acc        data create(   p_lay, t_lay, p_lev, t_lev, q, o3)
+    !$omp target data map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
+    call compute_profiles(300._wp, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q, o3)
 
-  !
-  ! Read temperature, pressure, gas concentrations.
-  !   Arrays are allocated as they are read
-  !
-  call read_atmos(input_file,                 &
-                  p_lay, t_lay, p_lev, t_lev, &
-                  gas_concs_garand, col_dry)
-  deallocate(col_dry)
-  nlay = size(p_lay, 2)
-  print *, "In main, Garand atmos sizes : ", size(p_lay, 1), size(p_lay, 2)
+    call stop_on_err(gas_concs%init(gas_names))
+    call stop_on_err(gas_concs%set_vmr("h2o", q )) 
+    call stop_on_err(gas_concs%set_vmr("o3",  o3)) 
+    call stop_on_err(gas_concs%set_vmr("co2", 348.e-6_wp)) 
+    call stop_on_err(gas_concs%set_vmr("ch4", 1650.e-9_wp)) 
+    call stop_on_err(gas_concs%set_vmr("n2o", 306.e-9_wp)) 
+    call stop_on_err(gas_concs%set_vmr("n2",  0.7808_wp)) 
+    call stop_on_err(gas_concs%set_vmr("o2",  0.2095_wp)) 
+    call stop_on_err(gas_concs%set_vmr("co",  0._wp)) 
+  else
+    !
+    ! Read temperature, pressure, gas concentrations.
+    !   Arrays are allocated as they are read
+    !
+    call read_atmos(input_file,                 &
+                    p_lay, t_lay, p_lev, t_lev, &
+                    gas_concs_garand, col_dry)
+    deallocate(col_dry)
+    nlay = size(p_lay, 2)
 
-  ! For clouds we'll use the first column, repeated over and over
-  call stop_on_err(gas_concs%init(gas_names))
-  do igas = 1, ngas
-    call vmr_2d_to_1d(gas_concs, gas_concs_garand, gas_names(igas), size(p_lay, 1), nlay)
-  end do
-  !  If we trusted in Fortran allocate-on-assign we could skip the temp_array here
-  allocate(temp_array(ncol, nlay))
-  temp_array = spread(p_lay(1,:), dim = 1, ncopies=ncol)
-  call move_alloc(temp_array, p_lay)
-  allocate(temp_array(ncol, nlay))
-  temp_array = spread(t_lay(1,:), dim = 1, ncopies=ncol)
-  call move_alloc(temp_array, t_lay)
-  allocate(temp_array(ncol, nlay+1))
-  temp_array = spread(p_lev(1,:), dim = 1, ncopies=ncol)
-  call move_alloc(temp_array, p_lev)
-  allocate(temp_array(ncol, nlay+1))
-  temp_array = spread(t_lev(1,:), dim = 1, ncopies=ncol)
-  call move_alloc(temp_array, t_lev)
+    ! For clouds we'll use the first column, repeated over and over
+    call stop_on_err(gas_concs%init(gas_names))
+    do igas = 1, ngas
+      call vmr_2d_to_1d(gas_concs, gas_concs_garand, gas_names(igas), size(p_lay, 1), nlay)
+    end do
+    !  If we trusted in Fortran allocate-on-assign we could skip the temp_array here
+    allocate(temp_array(ncol, nlay))
+    temp_array = spread(p_lay(1,:), dim = 1, ncopies=ncol)
+    call move_alloc(temp_array, p_lay)
+    allocate(temp_array(ncol, nlay))
+    temp_array = spread(t_lay(1,:), dim = 1, ncopies=ncol)
+    call move_alloc(temp_array, t_lay)
+    allocate(temp_array(ncol, nlay+1))
+    temp_array = spread(p_lev(1,:), dim = 1, ncopies=ncol)
+    call move_alloc(temp_array, p_lev)
+    allocate(temp_array(ncol, nlay+1))
+    temp_array = spread(t_lev(1,:), dim = 1, ncopies=ncol)
+    call move_alloc(temp_array, t_lev)
 
-  ! This puts pressure and temperature arrays on the GPU
-  !$acc enter data copyin(p_lay, p_lev, t_lay, t_lev)
-  !$omp target enter data map(to:p_lay, p_lev, t_lay, t_lev)
+    ! This puts pressure and temperature arrays on the GPU
+    !$acc enter data copyin(p_lay, p_lev, t_lay, t_lev)
+    !$omp target enter data map(to:p_lay, p_lev, t_lay, t_lev)
+  end if 
   ! ----------------------------------------------------------------------------
   ! load data into classes
   call load_and_init(k_dist, k_dist_file, gas_concs)
@@ -371,7 +394,15 @@ program rte_rrtmgp_clouds_aerosols
   end do
   !
   call system_clock(finish_all, clock_rate)
-  !
+
+  ! Release GPU memory for p_lay, t_lay, p_lev, t_lev, q, o3)
+  if(do_rce) then 
+    !$acc        end data 
+    !$omp target end data 
+  else
+    !$acc exit data delete(p_lay, p_lev, t_lay, t_lev)
+    !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
+  end if 
   if(do_clouds) then 
     !$acc        exit data delete(     lwp, iwp, rel, rei)
     !$omp target exit data map(release:lwp, iwp, rel, rei)
@@ -379,8 +410,6 @@ program rte_rrtmgp_clouds_aerosols
   !
   ! TK - release aerosol memory
   !
-  !$acc exit data delete(p_lay, p_lev, t_lay, t_lev)
-  !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
 
 #if defined(_OPENACC) || defined(_OPENMP)
   avg = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
@@ -409,6 +438,13 @@ program rte_rrtmgp_clouds_aerosols
 contains
   ! ----------------------------------------------------------------------------------
   subroutine compute_profiles(SST, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q, o3)
+    !
+    ! Construct profiles of pressure, temperature, humidity, and ozone 
+    !   more or less following the RCEMIP protocol for a surface temperature of 300K
+    !   more or less follows a Python implementation by Chiel van Heerwardeen
+    ! Extensions for future - variable SST and T profile, variable RH, lapse rate in stratosphere 
+    !   will all access absorption coefficient data more realistically 
+    !
     real(wp),                          intent(in ) :: SST 
     integer,                           intent(in ) :: ncol, nlay
     real(wp), dimension(ncol, nlay  ), intent(out) :: p_lay, t_lay, q, o3
@@ -423,6 +459,9 @@ contains
     real(wp), parameter :: g1 = 3.6478_wp, g2 = 0.83209_wp, g3 = 11.3515_wp, o3_min = 1e-13_wp 
     ! According to CvH RRTMGP in Single Precision will fail with lower ozone concentrations
 
+    !
+    ! Split resolution above and below RCE tropopause (15 km or about 125 hPa)
+    !
     z_lev(:) = [0._wp,  2._wp*           z_trop /nlay * [(i, i=1, nlay/2)],  & 
                z_trop + 2._wp * (z_top - z_trop)/nlay * [(i, i=1, nlay/2)]]
     z_lay(:) = 0.5_wp * (z_lev(1:nlay)  + z_lev(2:nlay+1))

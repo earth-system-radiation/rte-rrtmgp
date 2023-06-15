@@ -336,7 +336,6 @@ contains
 
     if(this%nlay > 0 .and. this%nlay /= size(array)) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
-      print *, "get_vmr_1d", this%nlay, size(array)
     end if
     if(error_msg /= "") return
 
@@ -397,7 +396,6 @@ contains
     end if
     if(this%nlay > 0 .and. this%nlay /= size(array,2)) then
       error_msg = 'ty_gas_concs%get_vmr; gas ' // trim(gas) // ' array is wrong size (nlay)'
-      print *, "get_vmr_2d", this%nlay, size(array, 2)
     end if
     if(error_msg /= "") return
 
@@ -409,7 +407,6 @@ contains
       !$omp target teams distribute parallel do simd
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
-          !print *, (size(this%concs))
 #ifdef _CRAYFTN
            array(icol,ilay) = p(icol,ilay)
 #else

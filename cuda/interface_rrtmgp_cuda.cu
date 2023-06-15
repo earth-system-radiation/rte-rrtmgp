@@ -193,19 +193,19 @@ extern "C"
                 acc_to_cuda(sfc_src_jac));
     }
 
-    void zero_array_1D(int* ni)
+    void zero_array_1D(int* ni, Float* array)
     {
         throw std::runtime_error("zero_array_1D is not implemented in CUDA");
     }
 
-    void zero_array_2D(int* ni, int* nj)
+    void zero_array_2D(int* ni, int* nj, Float* array)
     {
-        throw std::runtime_error("zero_array_2D is not implemented in CUDA");
+        rrtmgp_kernel_launcher_cuda::zero_array(*ni, *nj, acc_to_cuda(array));
     }
 
     void zero_array_3D(int* ni, int* nj, int* nk, Float* array)
     {
-        rrtmgp_kernel_launcher_cuda::zero_array(*ni, *nj, *nk, array);
+        rrtmgp_kernel_launcher_cuda::zero_array(*ni, *nj, *nk, acc_to_cuda(array));
     }
 
     void zero_array_4D(int* ni, int* nj, int* nk, int* nl, Float* array)

@@ -37,6 +37,7 @@ namespace rrtmgp_kernel_launcher_cuda
 
     void reorder12x21(const int ni, const int nj, const Float* arr_in, Float* arr_out);
 
+    void zero_array(const int ni, const int nj, Float* arr);
     void zero_array(const int ni, const int nj, const int nk, Float* arr);
 
     void interpolation(

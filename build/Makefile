@@ -50,6 +50,9 @@ librtef.a: $(RTE_FORTRAN_INTERFACE)
 librrtmgp.a: $(RRTMGP_CUDA_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
 	ar -rvs librrtmgp.a $(RRTMGP_CUDA_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
 
+librrtmgpcudakernels.a: $(RRTMGP_CUDA_KERNELS)
+	ar -rvs librrtmgpcudakernels.a $(RRTMGP_CUDA_KERNELS)
+
 librrtmgpkernels.a: $(RRTMGP_FORTRAN_KERNELS)
 	ar -rvs librrtmgpkernels.a $(RRTMGP_FORTRAN_KERNELS)
 

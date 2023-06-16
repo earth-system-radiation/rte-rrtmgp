@@ -72,7 +72,7 @@ contains
       !! use lower (or upper) atmosphere tables 
     integer,     dimension(2,    ncol,nlay,nflav), intent(out) :: jeta
       !! Index for binary species interpolation 
-#if !defined(__INTEL_LLVM_COMPILER) && __INTEL_COMPILER >= 2021
+#if !defined(__INTEL_LLVM_COMPILER) && __INTEL_COMPILER >= 1910
     ! A performance-hitting workaround for the vectorization problem reported in
     ! https://github.com/earth-system-radiation/rte-rrtmgp/issues/159
     ! The known affected compilers are Intel Fortran Compiler Classic

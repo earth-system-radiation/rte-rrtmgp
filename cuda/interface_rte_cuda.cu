@@ -3,6 +3,7 @@
 #include <exception>
 
 #include "Types.h"
+
 // CvH: zero_array should move to rte kernels.
 #include "rrtmgp_kernel_launcher_cuda.h"
 #include "rte_kernel_launcher_cuda.h"
@@ -131,6 +132,7 @@ extern "C"
             int* ncol, int* nlay, int* ngpt,
             Float* tau_inout, const Float* tau_in)
     {
+        printf("CvH: rte_increment_1scalar_by_1scalar CUDA\n");
         optical_props_kernel_launcher_cuda::increment_1scalar_by_1scalar(
                 *ncol, *nlay, *ngpt,
                 tau_inout, tau_in);
@@ -169,6 +171,7 @@ extern "C"
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
             const Float* tau_in, const Float* ssa_in, const Float* g_in)
     {
+        printf("CvH: rte_increment_2stream_by_2stream CUDA\n");
         optical_props_kernel_launcher_cuda::increment_2stream_by_2stream(
                 *ncol, *nlay, *ngpt,
                 tau_inout, ssa_inout, g_inout,
@@ -218,6 +221,7 @@ extern "C"
             Float* tau_inout, const Float* tau_in,
             int* nbnd, int* band_lims_gpoint)
     {
+        printf("CvH: rte_inc_1scalar_by_1scalar_bybnd CUDA\n");
         optical_props_kernel_launcher_cuda::inc_1scalar_by_1scalar_bybnd(
                 *ncol, *nlay, *ngpt,
                 tau_inout, tau_in,
@@ -260,6 +264,7 @@ extern "C"
             const Float* tau_in, const Float* ssa_in, const Float* g_in,
             int* nbnd, const int* band_lims_gpoint)
     {
+        printf("CvH: rte_inc_2stream_by_2stream_bybnd CUDA\n");
         optical_props_kernel_launcher_cuda::inc_2stream_by_2stream_bybnd(
                 *ncol, *nlay, *ngpt,
                 tau_inout, ssa_inout, g_inout,
@@ -386,6 +391,7 @@ extern "C"
             int* ncol, int* nlev, int* ngpt,
             Float* gpt_flux, Float* flux)
     {
+        printf("CvH: rte_sum_broadband CUDA\n");
         fluxes_kernel_launcher_cuda::sum_broadband(
                 *ncol, *nlev, *ngpt,
                 gpt_flux, flux);
@@ -405,6 +411,7 @@ extern "C"
             Float* broadband_flux_dn, Float* broadband_flux_up,
             Float* broadband_flux_net)
     {
+        printf("CvH: rte_net_broadband_precalc CUDA\n");
         fluxes_kernel_launcher_cuda::net_broadband_precalc(
                 *ncol, *nlev,
                 broadband_flux_dn, broadband_flux_up,
@@ -419,6 +426,7 @@ extern "C"
             Float* gpt_flux,
             Float* bnd_flux)
     {
+        printf("CvH: rte_sum_byband CUDA\n");
         fluxes_kernel_launcher_cuda::sum_byband(
                 *ncol, *nlev, *ngpt, *nbnd,
                 band_lims,
@@ -431,6 +439,7 @@ extern "C"
             int* ncol, int* nlev, int* ngpt, int* nbnd, int* band_lims,
             Float* bnd_flux_dn, Float* bnd_flux_up, Float* bnd_flux_net)
     {
+        printf("CvH: rte_net_byband_full CUDA\n");
         fluxes_kernel_launcher_cuda::net_byband_full(
                 *ncol, *nlev, *ngpt, *nbnd, band_lims,
                 bnd_flux_dn, bnd_flux_up, bnd_flux_net);

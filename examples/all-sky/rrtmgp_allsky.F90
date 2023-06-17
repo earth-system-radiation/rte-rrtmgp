@@ -150,8 +150,8 @@ program rte_rrtmgp_clouds_aerosols
   if(do_rce) then 
     allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
     allocate(q    (ncol, nlay),    o3(ncol, nlay))
-    !$acc        data create(   p_lay, t_lay, p_lev, t_lev, q, o3)
-    !$omp target data map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
+    !$acc        enter data create(   p_lay, t_lay, p_lev, t_lev, q, o3)
+    !$omp target enter data map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
     call compute_profiles(300._wp, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q, o3)
 
     call stop_on_err(gas_concs%init(gas_names))
@@ -396,13 +396,8 @@ program rte_rrtmgp_clouds_aerosols
   call system_clock(finish_all, clock_rate)
 
   ! Release GPU memory for p_lay, t_lay, p_lev, t_lev, q, o3)
-  if(do_rce) then 
-    !$acc        end data 
-    !$omp target end data 
-  else
-    !$acc exit data delete(p_lay, p_lev, t_lay, t_lev)
-    !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
-  end if 
+  !$acc exit data delete(p_lay, p_lev, t_lay, t_lev)
+  !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
   if(do_clouds) then 
     !$acc        exit data delete(     lwp, iwp, rel, rei)
     !$omp target exit data map(release:lwp, iwp, rel, rei)

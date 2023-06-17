@@ -461,8 +461,8 @@ contains
                z_trop + 2._wp * (z_top - z_trop)/nlay * [(i, i=1, nlay/2)]]
     z_lay(:) = 0.5_wp * (z_lev(1:nlay)  + z_lev(2:nlay+1))
     
-    !$acc        data copyin(z_lev, lay) create(   p_lay, t_lay, p_lev, t_lev, q, o3)
-    !$omp target data map(to:z_lev, lay) map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
+    !$acc        data copyin(z_lev, z_lay) create(   p_lay, t_lay, p_lev, t_lev, q, o3)
+    !$omp target data map(to:z_lev, z_lay) map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
 
     !$acc                         parallel loop    collapse(2) 
     !$omp target teams distribute parallel do simd collapse(2) 
@@ -486,13 +486,18 @@ contains
   end subroutine compute_profiles
   ! ---------------------------------------
   elemental function Tv(T, q)
-  real(wp), intent(in) :: T, q 
-  real(wp)             :: Tv
+    !$acc routine seq
+    !$omp declare target
+      
+    real(wp), intent(in) :: T, q 
+    real(wp)             :: Tv
 
-  Tv = (1. + 0.608*q) * T
+    Tv = (1. + 0.608*q) * T
   end function Tv
   ! ---------------------------------------
   elemental subroutine thermo(z, SST, p, T, q)
+    !$acc routine seq
+    !$omp declare target
     real(wp), intent(in)  :: z, SST   ! Height, SST
     real(wp), intent(out) :: p, T, q
 

@@ -64,6 +64,10 @@ extern "C"
                     *ncol, (*nlay+1), *ngpt,
                     gpt_flux_dn, acc_to_cuda(flux_dn_loc));
 
+            fluxes_kernel_launcher_cuda::sum_broadband(
+                    *ncol, (*nlay+1), *ngpt,
+                    gpt_flux_dir, acc_to_cuda(flux_dir_loc));
+
             Tools_gpu::free_gpu<Float>(gpt_flux_up);
             Tools_gpu::free_gpu<Float>(gpt_flux_dn);
             Tools_gpu::free_gpu<Float>(gpt_flux_dir);

@@ -221,12 +221,12 @@ extern "C"
     // OPTICAL PROPS - INCREMENT
     void rte_increment_1scalar_by_1scalar(
             int* ncol, int* nlay, int* ngpt,
-            Float* tau_inout, const Float* tau_in)
+            Float* tau_inout, Float* tau_in)
     {
         printf("CvH: rte_increment_1scalar_by_1scalar CUDA\n");
         optical_props_kernel_launcher_cuda::increment_1scalar_by_1scalar(
                 *ncol, *nlay, *ngpt,
-                tau_inout, tau_in);
+                acc_to_cuda(tau_inout), acc_to_cuda(tau_in));
     }
 
 
@@ -260,13 +260,13 @@ extern "C"
     void rte_increment_2stream_by_2stream(
             int* ncol, int* nlay, int* ngpt,
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
-            const Float* tau_in, const Float* ssa_in, const Float* g_in)
+            Float* tau_in, Float* ssa_in, Float* g_in)
     {
         printf("CvH: rte_increment_2stream_by_2stream CUDA\n");
         optical_props_kernel_launcher_cuda::increment_2stream_by_2stream(
                 *ncol, *nlay, *ngpt,
-                tau_inout, ssa_inout, g_inout,
-                tau_in, ssa_in, g_in);
+                acc_to_cuda(tau_inout), acc_to_cuda(ssa_inout), acc_to_cuda(g_inout),
+                acc_to_cuda(tau_in), acc_to_cuda(ssa_in), acc_to_cuda(g_in));
     }
 
 
@@ -309,14 +309,14 @@ extern "C"
     // OPTICAL PROPS - INCREMENT BYBND
     void rte_inc_1scalar_by_1scalar_bybnd(
             int* ncol, int* nlay, int* ngpt,
-            Float* tau_inout, const Float* tau_in,
+            Float* tau_inout, Float* tau_in,
             int* nbnd, int* band_lims_gpoint)
     {
         printf("CvH: rte_inc_1scalar_by_1scalar_bybnd CUDA\n");
         optical_props_kernel_launcher_cuda::inc_1scalar_by_1scalar_bybnd(
                 *ncol, *nlay, *ngpt,
-                tau_inout, tau_in,
-                *nbnd, band_lims_gpoint);
+                acc_to_cuda(tau_inout), acc_to_cuda(tau_in),
+                *nbnd, acc_to_cuda(band_lims_gpoint));
     }
 
 
@@ -352,15 +352,15 @@ extern "C"
     void rte_inc_2stream_by_2stream_bybnd(
             int* ncol, int* nlay, int* ngpt,
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
-            const Float* tau_in, const Float* ssa_in, const Float* g_in,
-            int* nbnd, const int* band_lims_gpoint)
+            Float* tau_in, Float* ssa_in, Float* g_in,
+            int* nbnd, int* band_lims_gpoint)
     {
         printf("CvH: rte_inc_2stream_by_2stream_bybnd CUDA\n");
         optical_props_kernel_launcher_cuda::inc_2stream_by_2stream_bybnd(
                 *ncol, *nlay, *ngpt,
-                tau_inout, ssa_inout, g_inout,
-                tau_in, ssa_in, g_in,
-                *nbnd, band_lims_gpoint);
+                acc_to_cuda(tau_inout), acc_to_cuda(ssa_inout), acc_to_cuda(g_inout),
+                acc_to_cuda(tau_in), acc_to_cuda(ssa_in), acc_to_cuda(g_in),
+                *nbnd, acc_to_cuda(band_lims_gpoint));
     }
 
 
@@ -368,7 +368,7 @@ extern "C"
             int* ncol, int* nlay, int* ngpt, int* nmom,
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
             Float* tau_in, Float* ssa_in, Float* p_in,
-            int* nbnd, const int* band_lims_gpoint)
+            int* nbnd, int* band_lims_gpoint)
     {
         throw std::runtime_error("inc_2stream_by_nstream_bynd is not implemented in CUDA");
     }
@@ -378,7 +378,7 @@ extern "C"
             int* ncol, int* nlay, int* ngpt,
             Float* tau_inout, Float* ssa_inout,
             Float* tau_in,
-            int* nbnd, const int* band_lims_gpoint)
+            int* nbnd, int* band_lims_gpoint)
     {
         throw std::runtime_error("inc_nstream_by_1scalar_bybnd is not implemented in CUDA");
     }
@@ -388,7 +388,7 @@ extern "C"
             int* ncol, int* nlay, int* ngpt, int* nmom1,
             Float* tau_inout, Float* ssa_inout, Float* p_inout,
             Float* tau_in, Float* ssa_in, Float* g_in,
-            int* nbnd, const int* band_lims_gpoint)
+            int* nbnd, int* band_lims_gpoint)
     {
         throw std::runtime_error("inc_nstream_by_2stream_bybnd is not implemented in CUDA");
     }
@@ -398,7 +398,7 @@ extern "C"
             int* ncol, int* nlay, int* ngpt, int* nmom1, int* nmom2,
             Float* tau_inout, Float* ssa_inout, Float* p_inout,
             Float* tau_in, Float* ssa_in, Float* p_in,
-            int* nbnd, const int* band_lims_gpoint)
+            int* nbnd, int* band_lims_gpoint)
     {
         throw std::runtime_error("inc_nstream_by_nstream_bybnd is not implemented in CUDA");
     }
@@ -412,7 +412,7 @@ extern "C"
         printf("CvH: delta_scale_2str_k CUDA\n");
         optical_props_kernel_launcher_cuda::delta_scale_2str_k(
             *ncol, *nlay, *ngpt,
-            tau_inout, ssa_inout, g_inout);
+            acc_to_cuda(tau_inout), acc_to_cuda(ssa_inout), acc_to_cuda(g_inout));
     }
 
 
@@ -485,7 +485,7 @@ extern "C"
         printf("CvH: rte_sum_broadband CUDA\n");
         fluxes_kernel_launcher_cuda::sum_broadband(
                 *ncol, *nlev, *ngpt,
-                gpt_flux, flux);
+                acc_to_cuda(gpt_flux), acc_to_cuda(flux));
     }
 
     void rte_net_broadband_full(
@@ -505,8 +505,8 @@ extern "C"
         printf("CvH: rte_net_broadband_precalc CUDA\n");
         fluxes_kernel_launcher_cuda::net_broadband_precalc(
                 *ncol, *nlev,
-                broadband_flux_dn, broadband_flux_up,
-                broadband_flux_net);
+                acc_to_cuda(broadband_flux_dn), acc_to_cuda(broadband_flux_up),
+                acc_to_cuda(broadband_flux_net));
     }
 
 

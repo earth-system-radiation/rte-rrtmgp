@@ -38,18 +38,50 @@ extern "C"
             Bool* has_dif_bc, Float* inc_flux_dif,
             Bool* do_broadband, Float* flux_up_loc, Float* flux_dn_loc, Float* flux_dir_loc)
     {
-        printf("CvH: sw_solver_2stream CUDA\n");
-        rte_kernel_launcher_cuda::sw_solver_2stream(
-                *ncol, *nlay, *ngpt, *top_at_1,
-                acc_to_cuda(tau), acc_to_cuda(ssa), acc_to_cuda(g),
-                acc_to_cuda(mu0),
-                acc_to_cuda(sfc_alb_dir), acc_to_cuda(sfc_alb_dif),
-                acc_to_cuda(inc_flux_dir),
-                acc_to_cuda(flux_up), acc_to_cuda(flux_dn), acc_to_cuda(flux_dir),
-                *has_dif_bc, acc_to_cuda(inc_flux_dif),
-                *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc), acc_to_cuda(flux_dir_loc));
-    }
+        // CvH: our CUDA kernels did not implement the do broadband due to negligible performance gains.
+        if (*do_broadband)
+        {
+            printf("CvH: sw_solver_2stream broadband CUDA\n");
+            Float* gpt_flux_up  = Tools_gpu::allocate_gpu<Float>((*ncol) * (*nlay+1) * (*ngpt));
+            Float* gpt_flux_dn  = Tools_gpu::allocate_gpu<Float>((*ncol) * (*nlay+1) * (*ngpt));
+            Float* gpt_flux_dir = Tools_gpu::allocate_gpu<Float>((*ncol) * (*nlay+1) * (*ngpt));
 
+            rte_kernel_launcher_cuda::sw_solver_2stream(
+                    *ncol, *nlay, *ngpt, *top_at_1,
+                    acc_to_cuda(tau), acc_to_cuda(ssa), acc_to_cuda(g),
+                    acc_to_cuda(mu0),
+                    acc_to_cuda(sfc_alb_dir), acc_to_cuda(sfc_alb_dif),
+                    acc_to_cuda(inc_flux_dir),
+                    gpt_flux_up, gpt_flux_dn, gpt_flux_dir,
+                    *has_dif_bc, acc_to_cuda(inc_flux_dif),
+                    *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc), acc_to_cuda(flux_dir_loc));
+
+            fluxes_kernel_launcher_cuda::sum_broadband(
+                    *ncol, (*nlay+1), *ngpt,
+                    gpt_flux_up, acc_to_cuda(flux_up_loc));
+
+            fluxes_kernel_launcher_cuda::sum_broadband(
+                    *ncol, (*nlay+1), *ngpt,
+                    gpt_flux_dn, acc_to_cuda(flux_dn_loc));
+
+            Tools_gpu::free_gpu<Float>(gpt_flux_up);
+            Tools_gpu::free_gpu<Float>(gpt_flux_dn);
+            Tools_gpu::free_gpu<Float>(gpt_flux_dir);
+        }
+        else
+        {
+            printf("CvH: sw_solver_2stream gpt CUDA (SHOULD NOT WORK WELL) \n");
+            rte_kernel_launcher_cuda::sw_solver_2stream(
+                    *ncol, *nlay, *ngpt, *top_at_1,
+                    acc_to_cuda(tau), acc_to_cuda(ssa), acc_to_cuda(g),
+                    acc_to_cuda(mu0),
+                    acc_to_cuda(sfc_alb_dir), acc_to_cuda(sfc_alb_dif),
+                    acc_to_cuda(inc_flux_dir),
+                    acc_to_cuda(flux_up), acc_to_cuda(flux_dn), acc_to_cuda(flux_dir),
+                    *has_dif_bc, acc_to_cuda(inc_flux_dif),
+                    *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc), acc_to_cuda(flux_dir_loc));
+        }
+    }
 
     // void lw_solver_noscat_gaussquad(
     void rte_lw_solver_noscat(
@@ -68,7 +100,6 @@ extern "C"
         // CVH: TMP SOLUTION
         Float* weights_gpu = Tools_gpu::allocate_gpu<Float>( (*nmus) );
         acc_memcpy_to_device(weights_gpu, weights, *nmus * sizeof(Float));
-
 
         Float* sfc_src_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * (*ncol) );
         if (*do_jacobians != 0)
@@ -419,7 +450,7 @@ extern "C"
     }
 
 
-
+    /*
     void rte_sum_byband(
             int* ncol, int* nlev, int* ngpt, int* nbnd,
             int* band_lims,
@@ -444,4 +475,5 @@ extern "C"
                 *ncol, *nlev, *ngpt, *nbnd, band_lims,
                 bnd_flux_dn, bnd_flux_up, bnd_flux_net);
     }
+    */
 }

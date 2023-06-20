@@ -15,7 +15,6 @@ program rte_rrtmgp_clouds_aerosols
                              only: load_cld_lutcoeff, load_cld_padecoeff
   use mo_load_aerosol_coefficients, &
                              only: load_aero_lutcoeff
-  use mo_garand_atmos_io,    only: read_atmos, write_lw_fluxes, write_sw_fluxes
   use mo_rte_config,         only: rte_config_checks
   implicit none
   ! ----------------------------------------------------------------------------------
@@ -95,13 +94,10 @@ program rte_rrtmgp_clouds_aerosols
 
   character(len=8) :: char_input
   integer :: nUserArgs, nloops, ncol, nlay
-  logical :: write_fluxes = .false.
+  ! logical :: write_fluxes = .false.
   logical :: do_clouds = .false., use_luts = .true. 
   logical :: do_aerosols = .false.
-  logical :: do_rce = .true. 
   integer, parameter :: ngas = 8
-!  character(len=3), dimension(ngas) &
-!                     :: gas_names = ['h2o', 'co2', 'o3 ', 'n2o', 'co ', 'ch4', 'o2 ', 'n2 ']
 
   character(len=256) :: input_file, k_dist_file, cloud_optics_file, aerosol_optics_file
   !
@@ -147,56 +143,21 @@ program rte_rrtmgp_clouds_aerosols
   end if 
   if (nUserArgs >  7) print *, "Ignoring command line arguments beyond the first seven..."
   ! -----------------------------------------------------------------------------------
-  if(do_rce) then 
-    allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
-    allocate(q    (ncol, nlay),    o3(ncol, nlay))
-    !$acc        enter data create(   p_lay, t_lay, p_lev, t_lev, q, o3)
-    !$omp target enter data map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
-    call compute_profiles(300._wp, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q, o3)
+  allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
+  allocate(q    (ncol, nlay),    o3(ncol, nlay))
+  !$acc        enter data create(   p_lay, t_lay, p_lev, t_lev, q, o3)
+  !$omp target enter data map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
+  call compute_profiles(300._wp, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q, o3)
 
-    call stop_on_err(gas_concs%init(gas_names))
-    call stop_on_err(gas_concs%set_vmr("h2o", q )) 
-    call stop_on_err(gas_concs%set_vmr("o3",  o3)) 
-    call stop_on_err(gas_concs%set_vmr("co2", 348.e-6_wp)) 
-    call stop_on_err(gas_concs%set_vmr("ch4", 1650.e-9_wp)) 
-    call stop_on_err(gas_concs%set_vmr("n2o", 306.e-9_wp)) 
-    call stop_on_err(gas_concs%set_vmr("n2",  0.7808_wp)) 
-    call stop_on_err(gas_concs%set_vmr("o2",  0.2095_wp)) 
-    call stop_on_err(gas_concs%set_vmr("co",  0._wp)) 
-  else
-    !
-    ! Read temperature, pressure, gas concentrations.
-    !   Arrays are allocated as they are read
-    !
-    call read_atmos(input_file,                 &
-                    p_lay, t_lay, p_lev, t_lev, &
-                    gas_concs_garand, col_dry)
-    deallocate(col_dry)
-    nlay = size(p_lay, 2)
-
-    ! For clouds we'll use the first column, repeated over and over
-    call stop_on_err(gas_concs%init(gas_names))
-    do igas = 1, ngas
-      call vmr_2d_to_1d(gas_concs, gas_concs_garand, gas_names(igas), size(p_lay, 1), nlay)
-    end do
-    !  If we trusted in Fortran allocate-on-assign we could skip the temp_array here
-    allocate(temp_array(ncol, nlay))
-    temp_array = spread(p_lay(1,:), dim = 1, ncopies=ncol)
-    call move_alloc(temp_array, p_lay)
-    allocate(temp_array(ncol, nlay))
-    temp_array = spread(t_lay(1,:), dim = 1, ncopies=ncol)
-    call move_alloc(temp_array, t_lay)
-    allocate(temp_array(ncol, nlay+1))
-    temp_array = spread(p_lev(1,:), dim = 1, ncopies=ncol)
-    call move_alloc(temp_array, p_lev)
-    allocate(temp_array(ncol, nlay+1))
-    temp_array = spread(t_lev(1,:), dim = 1, ncopies=ncol)
-    call move_alloc(temp_array, t_lev)
-
-    ! This puts pressure and temperature arrays on the GPU
-    !$acc enter data copyin(p_lay, p_lev, t_lay, t_lev)
-    !$omp target enter data map(to:p_lay, p_lev, t_lay, t_lev)
-  end if 
+  call stop_on_err(gas_concs%init(gas_names))
+  call stop_on_err(gas_concs%set_vmr("h2o", q )) 
+  call stop_on_err(gas_concs%set_vmr("o3",  o3)) 
+  call stop_on_err(gas_concs%set_vmr("co2", 348.e-6_wp)) 
+  call stop_on_err(gas_concs%set_vmr("ch4", 1650.e-9_wp)) 
+  call stop_on_err(gas_concs%set_vmr("n2o", 306.e-9_wp)) 
+  call stop_on_err(gas_concs%set_vmr("n2",  0.7808_wp)) 
+  call stop_on_err(gas_concs%set_vmr("o2",  0.2095_wp)) 
+  call stop_on_err(gas_concs%set_vmr("co",  0._wp)) 
   ! ----------------------------------------------------------------------------
   ! load data into classes
   call load_and_init(k_dist, k_dist_file, gas_concs)
@@ -417,17 +378,13 @@ program rte_rrtmgp_clouds_aerosols
   print *, "                - per column(ms):", (finish_all-start_all) / real(ncol*nloops) / (1.0e-3*clock_rate)
 #endif
 
+  if(.true.) call write_fluxes
+
   if(is_lw) then
-    !$acc exit data copyout(flux_up, flux_dn)
-    !$omp target exit data map(from:flux_up, flux_dn)
-    if(write_fluxes) call write_lw_fluxes(input_file, flux_up, flux_dn)
-    !$acc exit data delete(t_sfc, emis_sfc)
+    !$acc        exit data delete(     t_sfc, emis_sfc)
     !$omp target exit data map(release:t_sfc, emis_sfc)
   else
-    !$acc exit data copyout(flux_up, flux_dn, flux_dir)
-    !$omp target exit data map(from:flux_up, flux_dn, flux_dir)
-    if(write_fluxes) call write_sw_fluxes(input_file, flux_up, flux_dn, flux_dir)
-    !$acc exit data delete(sfc_alb_dir, sfc_alb_dif, mu0)
+    !$acc        exit data delete(     sfc_alb_dir, sfc_alb_dif, mu0)
     !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif, mu0)
   end if
 contains
@@ -527,33 +484,6 @@ contains
       error stop 1
     end if
   end subroutine stop_on_err
-  ! ----------------------------------------------------------------------------------
-  subroutine vmr_2d_to_1d(gas_concs, gas_concs_garand, name, sz1, sz2)
-    use mo_gas_concentrations, only: ty_gas_concs
-    use mo_rte_kind,           only: wp
-
-    type(ty_gas_concs), intent(in)    :: gas_concs_garand
-    type(ty_gas_concs), intent(inout) :: gas_concs
-    character(len=*),   intent(in)    :: name
-    integer,            intent(in)    :: sz1, sz2
-
-    real(wp) :: tmp(sz1, sz2), tmp_col(sz2)
-
-    !$acc        data create(   tmp, tmp_col)
-    !$omp target data map(alloc:tmp, tmp_col)
-    print *, "vmr_2d_to_1d " // name
-    print *, "   sizes", sz1, sz2
-    call stop_on_err(gas_concs_garand%get_vmr(name, tmp))
-    !$acc kernels
-    !$omp target
-    tmp_col(:) = tmp(1, :)
-    !$acc end kernels
-    !$omp end target
-
-    call stop_on_err(gas_concs%set_vmr       (name, tmp_col))
-    !$acc end data
-    !$omp end target data
-  end subroutine vmr_2d_to_1d
   ! --------------------------------------------------------------------------------------
   !
   subroutine compute_clouds 
@@ -731,4 +661,89 @@ contains
        enddo
     enddo
   end subroutine get_relhum
+  !--------------------------------------------------------------------------------------------------------------------
+  subroutine write_fluxes 
+    use netcdf
+    use mo_simple_netcdf
+    integer :: ncid, i, col_dim, lay_dim, lev_dim, varid
+    real(wp) :: vmr(ncol, nlay)
+    !
+    ! Write fluxes - make this optional? 
+    !
+
+    !
+    ! Define dimensions 
+    !
+    if(nf90_create("rrmtgp_allsky_" // merge("lw", "sw", is_lw) // ".nc",  NF90_CLOBBER, ncid) /= NF90_NOERR) &
+      call stop_on_err("rrtmgp_allsky: can't create file rrmtgp_allsky_" // merge("lw", "sw", is_lw) // ".nc")
+
+    if(nf90_def_dim(ncid, "col", ncol, col_dim) /= NF90_NOERR) &
+      call stop_on_err("rrtmgp_allsky: can't define col dimension")
+    if(nf90_def_dim(ncid, "lay", nlay, lay_dim) /= NF90_NOERR) &
+      call stop_on_err("rrtmgp_allsky: can't define lay dimension")
+    if(nf90_def_dim(ncid, "lev", nlay+1, lev_dim) /= NF90_NOERR) &
+      call stop_on_err("rrtmgp_allsky: can't define lev dimension")
+    
+    !
+    ! Define variables 
+    !
+    ! State 
+    !
+    if(nf90_def_var(ncid, "p_lev", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define p_lev variable")
+    if(nf90_def_var(ncid, "t_lev", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define t_lev variable")
+    if(nf90_def_var(ncid, "p_lay", NF90_DOUBLE, [col_dim, lay_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define p_lay variable")
+    if(nf90_def_var(ncid, "t_lay", NF90_DOUBLE, [col_dim, lay_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define t_lay variable")
+    if(nf90_def_var(ncid, "h2o",  NF90_DOUBLE, [col_dim, lay_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define h2o variable")
+    if(nf90_def_var(ncid, "o3",   NF90_DOUBLE, [col_dim, lay_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define o3 variable")
+    ! All the gases except h2o, o3 - write as attributes? 
+
+    !
+    ! Fluxes - definitions 
+    !
+    if(nf90_def_var(ncid, "flux_up", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define flux_up variable")
+    if(nf90_def_var(ncid, "flux_dn", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define flux_dm variable")
+    if(.not. is_lw) then 
+      if(nf90_def_var(ncid, "flux_dir", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
+          call stop_on_err("create_var: can't define flux_dir variable")
+    end if 
+    if(nf90_enddef(ncid) /= NF90_NOERR) &
+      call stop_on_err("rrtmgp_allsky: can't end redefinition??")
+
+    !
+    ! Write variables
+    !
+    ! State - writing 
+    !$acc        exit data copyout( p_lev, t_lev, p_lay, t_lay)
+    !$omp target exit data map(from:p_lev, t_lev, p_lay, t_lay)
+    call stop_on_err(write_field(ncid, "p_lev",  p_lev))
+    call stop_on_err(write_field(ncid, "t_lev",  t_lev))
+    call stop_on_err(write_field(ncid, "p_lay",  p_lay))
+    call stop_on_err(write_field(ncid, "t_lay",  t_lay))
+    call stop_on_err(gas_concs%get_vmr("h2o", vmr))
+    call stop_on_err(write_field(ncid, "h2o",    vmr))
+    call stop_on_err(gas_concs%get_vmr("o3",  vmr))
+    call stop_on_err(write_field(ncid, "o3",     vmr))
+
+    ! Fluxes - writing 
+    !$acc        exit data copyout( flux_up, flux_dn)
+    !$omp target exit data map(from:flux_up, flux_dn)
+    call stop_on_err(write_field(ncid, "flux_up",  flux_up))
+    call stop_on_err(write_field(ncid, "flux_dn",  flux_dn))
+    if(.not. is_lw) then 
+      !$acc        exit data copyout( flux_dir)
+      !$omp target exit data map(from:flux_dir)
+      call stop_on_err(write_field(ncid, "flux_dir",  flux_dir))
+    end if 
+
+    ! Close netCDF 
+    if(nf90_close(ncid) /= NF90_NOERR) call stop_on_err("rrtmgp_allsky: error closing file??")
+  end subroutine write_fluxes
 end program rte_rrtmgp_clouds_aerosols

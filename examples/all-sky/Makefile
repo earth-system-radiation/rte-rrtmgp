@@ -28,7 +28,8 @@ VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend # Needed for cloud_optics and aerosol
 #
 # Extra sources -- extensions to RRTMGP classes, shared infrastructure, local sources
 #
-ADDITIONS  = mo_load_coefficients.o mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.o
+ADDITIONS  = mo_load_coefficients.o mo_simple_netcdf.o 
+ADDITIONS += mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.o
 ADDITIONS += mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.o
 
 #
@@ -40,10 +41,10 @@ rrtmgp_allsky: $(ADDITIONS) rrtmgp_allsky.o
 
 rrtmgp_allsky.o: $(ADDITIONS) rrtmgp_allsky.F90
 
-mo_cloud_optics_rrtmgp.o: mo_cloud_optics_rrtmgp.F90
-mo_load_coefficients.o:   mo_simple_netcdf.o mo_load_coefficients.F90
-mo_load_cloud_coefficients.o: mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.F90
+mo_cloud_optics_rrtmgp.o:         mo_cloud_optics_rrtmgp.F90
 mo_aerosol_optics_rrtmgp_merra.o: mo_aerosol_optics_rrtmgp_merra.F90
+mo_load_coefficients.o:         mo_simple_netcdf.o mo_load_coefficients.F90
+mo_load_cloud_coefficients.o:   mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.F90
 mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.F90
 
 tests:
@@ -55,4 +56,4 @@ check:
 	# python ./compare-to-reference.py
 
 clean:
-	-rm rrtmgp_allsky *.o *.optrpt ../*.optrpt *.mod
+	-rm rrtmgp_allsky *.o *.optrpt ../*.optrpt *.mod *.nc

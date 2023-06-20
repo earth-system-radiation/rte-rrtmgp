@@ -32,14 +32,20 @@ VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR):$(GAS_OP
 # If using OpenACC/OpenMP files in *-kernels/accel take precendence  
 #
 ifeq ($(RTE_KERNELS), accel)
-	VPATH = ../cuda:$(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/cuda:$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
+	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
+endif
+ifeq ($(RTE_KERNELS), extern)
+	VPATH = ../cuda:$(RTE_DIR):$(RTE_KERNEL_DIR)/extern:$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/extern:$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
 endif
 
-librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
-	ar -rvs librte.a $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
+# librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
+# 	ar -rvs librte.a $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
 
-librtekernels.a: $(RTE_FORTRAN_KERNELS)
-	ar -rvs librtekernels.a $(RTE_FORTRAN_KERNELS)
+librte.a: $(RTE_CUDA_KERNELS) $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
+	ar -rvs librte.a $(RTE_CUDA_KERNELS) $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
+
+# librtekernels.a: $(RTE_FORTRAN_KERNELS)
+# 	ar -rvs librtekernels.a $(RTE_FORTRAN_KERNELS)
 
 librtef.a: $(RTE_FORTRAN_INTERFACE)
 	ar -rvs librtef.a $(RTE_FORTRAN_INTERFACE)
@@ -47,7 +53,7 @@ librtef.a: $(RTE_FORTRAN_INTERFACE)
 # librrtmgp.a: $(RRTMGP_FORTRAN_KERNELS)  $(RRTMGP_FORTRAN_INTERFACE)
 # 	ar -rvs librrtmgp.a $(RRTMGP_FORTRAN_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
 
-librrtmgp.a: $(RRTMGP_CUDA_KERNELS)  $(RRTMGP_FORTRAN_INTERFACE)
+librrtmgp.a: $(RRTMGP_CUDA_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
 	ar -rvs librrtmgp.a $(RRTMGP_CUDA_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
 
 librrtmgpkernels.a: $(RRTMGP_FORTRAN_KERNELS)
@@ -56,8 +62,8 @@ librrtmgpkernels.a: $(RRTMGP_FORTRAN_KERNELS)
 librrtmgpf.a: $(RRTMGP_FORTRAN_INTERFACE)
 	ar -rvs librrtmgpf.a $(RRTMGP_FORTRAN_INTERFACE)
 
-librrtmgpcudakernels.a: $(RRTMGP_CUDA_KERNELS)
-	ar -rvs librrtmgpcudakernels.a $(RRTMGP_CUDA_KERNELS)
+# librrtmgpcudakernels.a: $(RRTMGP_CUDA_KERNELS)
+# 	ar -rvs librrtmgpcudakernels.a $(RRTMGP_CUDA_KERNELS)
 
 clean:
 	rm -f *.optrpt *.mod *.o lib*.a

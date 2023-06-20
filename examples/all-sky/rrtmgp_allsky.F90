@@ -445,7 +445,7 @@ contains
         if (z > z_trop) then 
           q = q_t
           T = SST - gamma*z_trop/(1. + 0.608*q_0)
-          p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv(T, q))) )
+          p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv)) )
         end if 
         p_lay(icol,ilay) = p 
         t_lay(icol,ilay) = T
@@ -469,7 +469,7 @@ contains
         if (z > z_trop) then 
           q = q_t
           T = SST - gamma*z_trop/(1. + 0.608*q_0)
-          p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv(T, q))) )
+          p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv)) )
         end if 
         p_lev(icol,ilay) = p 
         t_lev(icol,ilay) = T

@@ -404,7 +404,7 @@ contains
 
     real(wp) :: z_lay(nlay), z_lev(nlay+1)
     real(wp) :: z, q, T, p
-    real(wp) :: p_hpa
+    real(wp) :: Tv, Tv0, p_hpa
     integer  :: icol, ilay, i
 
     real(wp), parameter :: z_trop = 15000._wp, z_top = 70.e3_wp
@@ -428,6 +428,10 @@ contains
     !$acc        enter data copyin(z_lev, z_lay) create(   p_lay, t_lay, p_lev, t_lev, q, o3)
     !$omp target enter data map(to:z_lev, z_lay) map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
 
+    !
+    ! The two loops are the same, except applied to layers and levels 
+    !   but nvfortran doesn't seems to support elemental procedures in OpenACC loops
+    !
     !$acc                         parallel loop    collapse(2) 
     !$omp target teams distribute parallel do simd collapse(2) 
     do ilay = 1, nlay 
@@ -435,11 +439,13 @@ contains
         z = z_lay(ilay) 
         q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
         T = SST - gamma*z / (1. + 0.608*q)    
-        p = p0 * (Tv(T, q)/Tv(SST, q_0))**(g/(Rd*gamma))
+        Tv  = (1. + 0.608*q  ) *   T
+        Tv0 = (1. + 0.608*q_0) * SST
+        p = p0 * (Tv/Tv0)**(g/(Rd*gamma))
         if (z > z_trop) then 
           q = q_t
           T = SST - gamma*z_trop/(1. + 0.608*q_0)
-          p = p0 * (Tv(T, q)/Tv(SST, q_0))**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv(T, q))) )
+          p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv(T, q))) )
         end if 
         p_lay(icol,ilay) = p 
         t_lay(icol,ilay) = T
@@ -457,27 +463,19 @@ contains
         z = z_lev(ilay) 
         q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
         T = SST - gamma*z / (1. + 0.608*q)    
-        p = p0 * (Tv(T, q)/Tv(SST, q_0))**(g/(Rd*gamma))
+        Tv  = (1. + 0.608*q  ) *   T
+        Tv0 = (1. + 0.608*q_0) * SST
+        p = p0 * (Tv/Tv0)**(g/(Rd*gamma))
         if (z > z_trop) then 
           q = q_t
           T = SST - gamma*z_trop/(1. + 0.608*q_0)
-          p = p0 * (Tv(T, q)/Tv(SST, q_0))**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv(T, q))) )
+          p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv(T, q))) )
         end if 
         p_lev(icol,ilay) = p 
         t_lev(icol,ilay) = T
       end do 
     end do 
   end subroutine compute_profiles
-  ! ---------------------------------------
-  elemental function Tv(T, q)
-    !$acc routine seq
-    !$omp declare target
-      
-    real(wp), intent(in) :: T, q 
-    real(wp)             :: Tv
-
-    Tv = (1. + 0.608*q) * T
-  end function Tv
   ! ----------------------------------------------------------------------------------
   subroutine stop_on_err(error_msg)
     use iso_fortran_env, only : error_unit

@@ -116,7 +116,7 @@ program rte_rrtmgp_clouds_aerosols
 
   !
   nUserArgs = command_argument_count()
-  if (nUserArgs <  5) call stop_on_err("Need to supply ncol nlay nreps input_file gas-optics [cloud-optics [aerosol-optics]]")
+  if (nUserArgs <  5) call stop_on_err("Usage: rrtmgp_allsky ncol nlay nreps input_file gas-optics [cloud-optics [aerosol-optics]]")
 
   call get_command_argument(1, char_input)
   read(char_input, '(i8)') ncol
@@ -425,8 +425,8 @@ contains
                z_trop + 2._wp * (z_top - z_trop)/nlay * [(i, i=1, nlay/2)]]
     z_lay(:) = 0.5_wp * (z_lev(1:nlay)  + z_lev(2:nlay+1))
     
-    !$acc        enter data copyin(z_lev, z_lay) create(   p_lay, t_lay, p_lev, t_lev, q, o3)
-    !$omp target enter data map(to:z_lev, z_lay) map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
+    !$acc        data copyin(z_lev, z_lay) 
+    !$omp target data map(to:z_lev, z_lay)
 
     !
     ! The two loops are the same, except applied to layers and levels 
@@ -477,6 +477,8 @@ contains
         t_lev(icol,ilay) = T
       end do 
     end do 
+    !$acc        end data
+    !$omp target end data
   end subroutine compute_profiles
   ! ----------------------------------------------------------------------------------
   subroutine stop_on_err(error_msg)

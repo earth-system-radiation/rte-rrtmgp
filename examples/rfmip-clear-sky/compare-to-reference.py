@@ -37,6 +37,9 @@ if __name__ == '__main__':
 
     failed = False
     for v in variables:
+        if np.any(np.isnan(ref.variables[v].values)):
+            raise Exception(
+                v + ": some ref values are missing. Now that is strange.")
         if np.all(np.isnan(tst.variables[v].values)):
             raise Exception(
                 v + ": all test values are missing. Were the tests run?")

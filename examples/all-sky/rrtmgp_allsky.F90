@@ -357,15 +357,10 @@ program rte_rrtmgp_clouds_aerosols
   call system_clock(finish_all, clock_rate)
 
   ! Release GPU memory for p_lay, t_lay, p_lev, t_lev, q, o3)
-  !$acc exit data delete(p_lay, p_lev, t_lay, t_lev)
+  !$acc        exit data delete(     p_lay, p_lev, t_lay, t_lev)
   !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
-  if(do_clouds) then 
-    !$acc        exit data delete(     lwp, iwp, rel, rei)
-    !$omp target exit data map(release:lwp, iwp, rel, rei)
-  end if 
-  !
-  ! TK - release aerosol memory
-  !
+
+  ! Memory for clouds and aerosols is released in write-fluxes 
 
 #if defined(_OPENACC) || defined(_OPENMP)
   avg = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
@@ -681,8 +676,8 @@ contains
     !
     ! Define dimensions 
     !
-    if(nf90_create("rrmtgp_allsky_" // merge("lw", "sw", is_lw) // ".nc",  NF90_CLOBBER, ncid) /= NF90_NOERR) &
-      call stop_on_err("rrtmgp_allsky: can't create file rrmtgp_allsky_" // merge("lw", "sw", is_lw) // ".nc")
+    if(nf90_create("rrtmgp-allsky-" // merge("lw", "sw", is_lw) // ".nc",  NF90_CLOBBER, ncid) /= NF90_NOERR) &
+      call stop_on_err("rrtmgp_allsky: can't create file rrmtgp-allsky-" // merge("lw", "sw", is_lw) // ".nc")
 
     if(nf90_def_dim(ncid, "col", ncol, col_dim) /= NF90_NOERR) &
       call stop_on_err("rrtmgp_allsky: can't define col dimension")
@@ -738,6 +733,14 @@ contains
     call stop_on_err(write_field(ncid, "h2o",    vmr))
     call stop_on_err(gas_concs%get_vmr("o3",  vmr))
     call stop_on_err(write_field(ncid, "o3",     vmr))
+
+    if(do_clouds) then 
+      !$acc        exit data delete(     lwp, iwp, rel, rei)
+      !$omp target exit data map(release:lwp, iwp, rel, rei)
+    end if 
+
+    if(do_aerosols) then 
+    end if 
 
     ! Fluxes - writing 
     !$acc        exit data copyout( flux_up, flux_dn)

@@ -43,8 +43,8 @@ rrtmgp_allsky.o: $(ADDITIONS) rrtmgp_allsky.F90
 
 mo_cloud_optics_rrtmgp.o:         mo_cloud_optics_rrtmgp.F90
 mo_aerosol_optics_rrtmgp_merra.o: mo_aerosol_optics_rrtmgp_merra.F90
-mo_load_coefficients.o:         mo_simple_netcdf.o mo_load_coefficients.F90
-mo_load_cloud_coefficients.o:   mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.F90
+mo_load_coefficients.o:         mo_simple_netcdf.o                                  mo_load_coefficients.F90
+mo_load_cloud_coefficients.o:   mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o         mo_load_cloud_coefficients.F90
 mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.F90
 
 tests:
@@ -52,8 +52,8 @@ tests:
 	$(RUN_CMD) ./rrtmgp_allsky 24 72 1 rrtmgp-allsky.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc ${RRTMGP_DATA}/rrtmgp-aerosols-merra-sw.nc 
 
 check:
-	echo "No checking of all sky results at this time"
-	# python ./compare-to-reference.py
+	python ./compare-to-reference.py --allsky_file rrtmgp-allsky-lw.nc
+	python ./compare-to-reference.py --allsky_file rrtmgp-allsky-sw.nc
 
 clean:
 	-rm rrtmgp_allsky *.o *.optrpt ../*.optrpt *.mod *.nc

@@ -75,6 +75,7 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
+        ref: feature-timing
     #
     # Cache RFMIP files
     #

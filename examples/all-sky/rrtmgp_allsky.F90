@@ -99,7 +99,7 @@ program rte_rrtmgp_clouds_aerosols
   logical :: do_aerosols = .false.
   integer, parameter :: ngas = 8
 
-  character(len=256) :: input_file, k_dist_file, cloud_optics_file, aerosol_optics_file
+  character(len=256) :: output_file, k_dist_file, cloud_optics_file, aerosol_optics_file
   !
   ! Timing variables
   !
@@ -116,7 +116,7 @@ program rte_rrtmgp_clouds_aerosols
 
   !
   nUserArgs = command_argument_count()
-  if (nUserArgs <  5) call stop_on_err("Usage: rrtmgp_allsky ncol nlay nreps input_file gas-optics [cloud-optics [aerosol-optics]]")
+  if (nUserArgs <  5) call stop_on_err("Usage: rrtmgp_allsky ncol nlay nreps output_file gas-optics [cloud-optics [aerosol-optics]]")
 
   call get_command_argument(1, char_input)
   read(char_input, '(i8)') ncol
@@ -130,7 +130,7 @@ program rte_rrtmgp_clouds_aerosols
   read(char_input, '(i8)') nloops
   if(nloops <= 0) call stop_on_err("Specify positive nreps (number of times to do ncol examples.")
 
-  call get_command_argument(4,input_file)
+  call get_command_argument(4,output_file)
   call get_command_argument(5,k_dist_file)
 
   if (nUserArgs >= 6) then 
@@ -666,7 +666,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------------
   subroutine write_fluxes 
     use netcdf
-    use mo_simple_netcdf
+    use mo_simple_netcdf, only: write_field
     integer :: ncid, i, col_dim, lay_dim, lev_dim, varid
     real(wp) :: vmr(ncol, nlay)
     !
@@ -676,8 +676,8 @@ contains
     !
     ! Define dimensions 
     !
-    if(nf90_create("rrtmgp-allsky-" // merge("lw", "sw", is_lw) // ".nc",  NF90_CLOBBER, ncid) /= NF90_NOERR) &
-      call stop_on_err("rrtmgp_allsky: can't create file rrmtgp-allsky-" // merge("lw", "sw", is_lw) // ".nc")
+    if(nf90_create(trim(output_file),  NF90_CLOBBER, ncid) /= NF90_NOERR) &
+      call stop_on_err("rrtmgp_allsky: can't create file " // trim(output_file))
 
     if(nf90_def_dim(ncid, "col", ncol, col_dim) /= NF90_NOERR) &
       call stop_on_err("rrtmgp_allsky: can't define col dimension")
@@ -691,30 +691,34 @@ contains
     !
     ! State 
     !
-    if(nf90_def_var(ncid, "p_lev", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
-        call stop_on_err("create_var: can't define p_lev variable")
-    if(nf90_def_var(ncid, "t_lev", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
-        call stop_on_err("create_var: can't define t_lev variable")
-    if(nf90_def_var(ncid, "p_lay", NF90_DOUBLE, [col_dim, lay_dim], varid) /= NF90_NOERR) &
-        call stop_on_err("create_var: can't define p_lay variable")
-    if(nf90_def_var(ncid, "t_lay", NF90_DOUBLE, [col_dim, lay_dim], varid) /= NF90_NOERR) &
-        call stop_on_err("create_var: can't define t_lay variable")
-    if(nf90_def_var(ncid, "h2o",  NF90_DOUBLE, [col_dim, lay_dim], varid) /= NF90_NOERR) &
-        call stop_on_err("create_var: can't define h2o variable")
-    if(nf90_def_var(ncid, "o3",   NF90_DOUBLE, [col_dim, lay_dim], varid) /= NF90_NOERR) &
-        call stop_on_err("create_var: can't define o3 variable")
-    ! All the gases except h2o, o3 - write as attributes? 
+    call create_var("p_lev", ncid, [col_dim, lev_dim])
+    call create_var("t_lev", ncid, [col_dim, lev_dim])
+    call create_var("p_lay", ncid, [col_dim, lay_dim])
+    call create_var("t_lay", ncid, [col_dim, lay_dim])
+    call create_var("h2o",   ncid, [col_dim, lay_dim])
+    call create_var("o3",    ncid, [col_dim, lay_dim])
 
+    ! All the gases except h2o, o3 - write as attributes? Or not bother? 
+
+    if(do_clouds) then 
+      call create_var("lwp", ncid, [col_dim, lay_dim])
+      call create_var("iwp", ncid, [col_dim, lay_dim])
+      call create_var("rel", ncid, [col_dim, lay_dim])
+      call create_var("rei", ncid, [col_dim, lay_dim])
+    end if 
+    if(do_aerosols) then 
+      if(nf90_def_var(ncid, "aero_type", NF90_SHORT, [col_dim, lay_dim], varid) /= NF90_NOERR) &
+        call stop_on_err("create_var: can't define variable aero_type")
+      call create_var("aero_size", ncid, [col_dim, lay_dim])
+      call create_var("aero_mass", ncid, [col_dim, lay_dim])
+   end if 
     !
     ! Fluxes - definitions 
     !
-    if(nf90_def_var(ncid, "flux_up", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
-        call stop_on_err("create_var: can't define flux_up variable")
-    if(nf90_def_var(ncid, "flux_dn", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
-        call stop_on_err("create_var: can't define flux_dm variable")
+    call create_var("flux_up", ncid, [col_dim, lev_dim])
+    call create_var("flux_dn", ncid, [col_dim, lev_dim])
     if(.not. is_lw) then 
-      if(nf90_def_var(ncid, "flux_dir", NF90_DOUBLE, [col_dim, lev_dim], varid) /= NF90_NOERR) &
-          call stop_on_err("create_var: can't define flux_dir variable")
+      call create_var("flux_dir", ncid, [col_dim, lev_dim])
     end if 
     if(nf90_enddef(ncid) /= NF90_NOERR) &
       call stop_on_err("rrtmgp_allsky: can't end redefinition??")
@@ -735,11 +739,22 @@ contains
     call stop_on_err(write_field(ncid, "o3",     vmr))
 
     if(do_clouds) then 
+      !$acc        exit data copyout( lwp, iwp, rel, rei)
+      !$omp target exit data map(from:lwp, iwp, rel, rei)
+      call stop_on_err(write_field(ncid, "lwp",  lwp))
+      call stop_on_err(write_field(ncid, "iwp",  iwp))
+      call stop_on_err(write_field(ncid, "rel",  rel))
+      call stop_on_err(write_field(ncid, "rei",  rei))
       !$acc        exit data delete(     lwp, iwp, rel, rei)
       !$omp target exit data map(release:lwp, iwp, rel, rei)
     end if 
 
     if(do_aerosols) then 
+      !$acc        exit data copyout( aero_size, aero_mass, aero_type)
+      !$omp target exit data map(from:aero_size, aero_mass, aero_type)
+      call stop_on_err(write_field(ncid, "aero_size",  aero_size))
+      call stop_on_err(write_field(ncid, "aero_mass",  aero_mass))
+      call stop_on_err(write_field(ncid, "aero_type",  aero_type))
     end if 
 
     ! Fluxes - writing 
@@ -756,4 +771,17 @@ contains
     ! Close netCDF 
     if(nf90_close(ncid) /= NF90_NOERR) call stop_on_err("rrtmgp_allsky: error closing file??")
   end subroutine write_fluxes
+  ! ---------------------------------------------------------
+  subroutine create_var(name, ncid, dim_ids)
+    use netcdf
+    character(len=*),      intent(in) :: name 
+    integer,               intent(in) :: ncid
+    integer, dimension(:), intent(in) :: dim_ids 
+
+    integer :: varid
+
+    if(nf90_def_var(ncid, trim(name), NF90_DOUBLE, dim_ids, varid) /= NF90_NOERR) &
+      call stop_on_err("create_var: can't define " // trim(name) // " variable")
+  end subroutine create_var
+  ! ---------------------------------------------------------
 end program rte_rrtmgp_clouds_aerosols

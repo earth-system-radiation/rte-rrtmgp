@@ -1,7 +1,10 @@
 #ifndef TOOLS_GPU_H
 #define TOOLS_GPU_H
 
+#if defined(RTE_RRTMGP_GPU_MEMPOOL_OWN)
 #include "Mem_pool_gpu.h"
+#endif
+#include <cstdio>
 
 #define cuda_safe_call(err) Tools_gpu::__cuda_safe_call(err, __FILE__, __LINE__)
 #define cuda_check_error()  Tools_gpu::__cuda_check_error(__FILE__, __LINE__)

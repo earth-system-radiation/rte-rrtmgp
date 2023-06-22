@@ -238,16 +238,6 @@ namespace Gas_optics_rrtmgp_kernels_cuda
     }
 
 
-    struct Gas_optical_depths_major_kernel
-    {
-        template<unsigned int I, unsigned int J, unsigned int K, class... Args>
-        static void launch(dim3 grid, dim3 block, Args... args)
-        {
-            gas_optical_depths_major_kernel<I, J, K><<<grid, block>>>(args...);
-        }
-    };
-
-
     struct Gas_optical_depths_minor_kernel
     {
         template<unsigned int I, unsigned int J, unsigned int K, class... Args>
@@ -297,13 +287,12 @@ namespace Gas_optics_rrtmgp_kernels_cuda
         if (tunings.count("gas_optical_depths_major_kernel") == 0)
         {
             Float* tau_tmp = Tools_gpu::allocate_gpu<Float>(ngpt*nlay*ncol);
-            std::tie(grid_gpu_maj, block_gpu_maj) =
-                tune_kernel_compile_time<Gas_optical_depths_major_kernel>(
+
+            std::tie(grid_gpu_maj, block_gpu_maj) = tune_kernel(
                     "gas_optical_depths_major_kernel",
                     dim3(ngpt, nlay, ncol),
-                    std::integer_sequence<unsigned int, 1, 2, 4, 8, 16, 24, 32, 48, 64>{},
-                    std::integer_sequence<unsigned int, 1, 2, 4>{},
-                    std::integer_sequence<unsigned int, 8, 16, 24, 32, 48, 64, 96, 128, 256>{},
+                    {1, 2, 4, 8, 16, 24, 32, 48, 64}, {1, 2, 4}, {8, 16, 24, 32, 48, 64, 96, 128, 256},
+                    gas_optical_depths_major_kernel,
                     ncol, nlay, nband, ngpt,
                     nflav, neta, npres, ntemp,
                     gpoint_flavor, band_lims_gpt,
@@ -322,11 +311,7 @@ namespace Gas_optics_rrtmgp_kernels_cuda
             block_gpu_maj = tunings["gas_optical_depths_major_kernel"].second;
         }
 
-        run_kernel_compile_time<Gas_optical_depths_major_kernel>(
-                std::integer_sequence<unsigned int, 1, 2, 4, 8, 16, 24, 32, 48, 64>{},
-                std::integer_sequence<unsigned int, 1, 2, 4>{},
-                std::integer_sequence<unsigned int, 8, 16, 24, 32, 48, 64, 96, 128, 256>{},
-                grid_gpu_maj, block_gpu_maj,
+        gas_optical_depths_major_kernel<<<grid_gpu_maj, block_gpu_maj>>>(
                 ncol, nlay, nband, ngpt,
                 nflav, neta, npres, ntemp,
                 gpoint_flavor, band_lims_gpt,

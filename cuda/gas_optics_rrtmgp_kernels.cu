@@ -293,12 +293,7 @@ void interpolation_kernel(
 }
 
 
-// #ifndef kernel_tuner
-// const int loop_unroll_factor_x = 1;
-// #endif
-
-
-template<int block_size_x, int block_size_y, int block_size_z, int max_gpt=16> __global__
+__global__
 void gas_optical_depths_major_kernel(
         const int ncol, const int nlay, const int nband, const int ngpt,
         const int nflav, const int neta, const int npres, const int ntemp,
@@ -345,179 +340,17 @@ void gas_optical_depths_major_kernel(
     }
 }
 
-#ifndef kernel_tuner
- #undef block_size_x
-#endif
+
+// Some ifdefs for kernel tuner.
 
 #ifndef kernel_tuner
- #define use_shared_tau 0
+#undef block_size_x
 #endif
 
-/*
-#if use_shared_tau
-template<typename Float, int block_size_x, int block_size_y, int block_size_z, int max_gpt=16> __global__
-void compute_tau_minor_absorption_kernel(
-        const int ncol, const int nlay, const int ngpt,
-        const int ngas, const int nflav, const int ntemp, const int neta,
-        const int nscale,
-        const int nminor,
-        const int nminork,
-        const int idx_h2o, const int idx_tropo,
-        const int* __restrict__ gpoint_flavor,
-        const Float* __restrict__ kminor,
-        const int* __restrict__ minor_limits_gpt,
-        const Bool* __restrict__ minor_scales_with_density,
-        const Bool* __restrict__ scale_by_complement,
-        const int* __restrict__ idx_minor,
-        const int* __restrict__ idx_minor_scaling,
-        const int* __restrict__ kminor_start,
-        const Float* __restrict__ play,
-        const Float* __restrict__ tlay,
-        const Float* __restrict__ col_gas,
-        const Float* __restrict__ fminor,
-        const int* __restrict__ jeta,
-        const int* __restrict__ jtemp,
-        const Bool* __restrict__ tropo,
-        Float* __restrict__ tau,
-        Float* __restrict__ tau_minor)
-{
-    // Fetch the three coordinates.
-    //original
-    const int icol = blockIdx.x * blockDim.x + threadIdx.x;
-    const int ilay = blockIdx.y * blockDim.y + threadIdx.y;
-    //swapped dimensions
-    //const int icol = blockIdx.y * blockDim.y + threadIdx.y;
-    //const int ilay = blockIdx.x * blockDim.x + threadIdx.x;
-
-    __shared__ Float sh_tau[max_gpt][block_size_y][block_size_x];
-    __shared__ Bool sh_active[block_size_y];
-    Bool active = 0;
-    if (threadIdx.x == 0)
-        sh_active[threadIdx.y] = 0;
-
-    if (ilay < nlay) { // no if on icol here as we need all threads in the x dimension
-
-        const int idx_collay = icol + ilay*ncol;
-
-        if ((icol < ncol) && tropo[idx_collay] == idx_tropo) {
-            sh_active[threadIdx.y] = 1;
-            active = 1;
-        }
-
-        __syncthreads();
-        if (sh_active[threadIdx.y] == 0) //check if any of the threads on this row are active, if not exit
-            return;
-
-        for (int imnr = 0; imnr < nscale; ++imnr) {
-            Float scaling = Float(0.);
-
-            if (active) {
-
-                const int ncl = ncol * nlay;
-                scaling = col_gas[idx_collay + idx_minor[imnr] * ncl];
-
-                if (minor_scales_with_density[imnr])
-                {
-                    const Float PaTohPa = 0.01;
-                    scaling *= PaTohPa * play[idx_collay] / tlay[idx_collay];
-
-                    if (idx_minor_scaling[imnr] > 0)
-                    {
-                        const int idx_collaywv = icol + ilay*ncol + idx_h2o*ncl;
-                        Float vmr_fact = Float(1.) / col_gas[idx_collay];
-                        Float dry_fact = Float(1.) / (Float(1.) + col_gas[idx_collaywv] * vmr_fact);
-
-                        if (scale_by_complement[imnr])
-                            scaling *= (Float(1.) - col_gas[idx_collay + idx_minor_scaling[imnr] * ncl] * vmr_fact * dry_fact);
-                        else
-                            scaling *= col_gas[idx_collay + idx_minor_scaling[imnr] * ncl] * vmr_fact * dry_fact;
-                    }
-                }
-
-
-            }
-
-
-                const int gpt_start = minor_limits_gpt[2*imnr]-1;
-                const int gpt_end = minor_limits_gpt[2*imnr+1];
-                const int band_gpt = gpt_end-gpt_start;
-
-                //could cache tau values here
-                //__syncthreads(); //removing sync here should be safe
-
-                //same access pattern as before, not much improvement expected for now
-                //for (int igpt=0; igpt<band_gpt; ++igpt) {
-                //    sh_tau[igpt][threadIdx.y][threadIdx.x] = tau[(igpt+gpt_start) + ilay*ngpt + icol*nlay*ngpt];
-                //}
-                //coalesced access
-
-                //const int icol = blockIdx.x * blockDim.x + threadIdx.x;
-                //const int ilay = blockIdx.y * blockDim.y + threadIdx.y;
-
-                const int block_icol = blockIdx.x * block_size_x;
-                for (int col_idx=0; col_idx<block_size_x; col_idx++) {
-                    if (block_icol+col_idx < ncol) {
-                        //threads in x cooperatively loop over the gpts
-                        //threads with different y do the same but for different ilay
-                        for (int igpt=threadIdx.x; igpt<band_gpt; igpt+=block_size_x) {
-                            sh_tau[igpt][threadIdx.y][col_idx] = tau[(igpt+gpt_start) + ilay*ngpt + (block_icol+col_idx)*nlay*ngpt];
-                        }
-                    }
-                }
-                __syncthreads();
-
-
-            if (active) {
-
-                const int gpt_offs = 1-idx_tropo;
-                const int iflav = gpoint_flavor[2*gpt_start + gpt_offs]-1;
-                const int idx_fcl2 = 2 * 2 * (iflav + icol*nflav + ilay*ncol*nflav);
-                const int idx_fcl1 = 2 * (iflav + icol*nflav + ilay*ncol*nflav);
-
-                const Float* kfminor = &fminor[idx_fcl2];
-                const Float* kin = &kminor[kminor_start[imnr]-1];
-                const int j0 = jeta[idx_fcl1];
-                const int j1 = jeta[idx_fcl1+1];
-                const int kjtemp = jtemp[idx_collay];
-
-                for (int igpt=0; igpt<band_gpt; ++igpt) {
-                    Float ltau_minor = kfminor[0] * kin[igpt + (j0-1)*nminork + (kjtemp-1)*neta*nminork] +
-                                    kfminor[1] * kin[igpt +  j0   *nminork + (kjtemp-1)*neta*nminork] +
-                                    kfminor[2] * kin[igpt + (j1-1)*nminork + kjtemp    *neta*nminork] +
-                                    kfminor[3] * kin[igpt +  j1   *nminork + kjtemp    *neta*nminork];
-
-                    sh_tau[igpt][threadIdx.y][threadIdx.x] += ltau_minor * scaling;
-                }
-
-
-            }
-
-
-                __syncthreads();
-                //same access pattern as before, not much improvement expected for now
-                //for (int igpt=0; igpt<band_gpt; ++igpt) {
-                //    tau[(igpt+gpt_start) + ilay*ngpt + icol*nlay*ngpt] = sh_tau[igpt][threadIdx.y][threadIdx.x];
-                //}
-
-                for (int col_idx=0; col_idx<block_size_x; col_idx++) {
-                    if (block_icol+col_idx < ncol) {
-                        //threads in x cooperatively loop over the gpts
-                        //threads with different y do the same but for different ilay
-                        for (int igpt=threadIdx.x; igpt<band_gpt; igpt+=block_size_x) {
-                            tau[(igpt+gpt_start) + ilay*ngpt + (block_icol+col_idx)*nlay*ngpt] = sh_tau[igpt][threadIdx.y][col_idx];
-                        }
-                    }
-                }
-
-                __syncthreads();
-
-
-        } // end of imnr loop over nscales
-
-    }
-}
+#ifndef kernel_tuner
+#define use_shared_tau 0
 #endif
-*/
+
 
 #if use_shared_tau == 0
 template<int block_size_x, int block_size_y, int block_size_z, int max_gpt=16> __global__

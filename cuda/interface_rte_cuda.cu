@@ -106,8 +106,8 @@ extern "C"
             Bool* do_jacobians, Float* sfc_src_jac, Float* flux_up_jac)
     {
         // CVH: TMP SOLUTION
-        // Float* weights_gpu = Tools_gpu::allocate_gpu<Float>( (*nmus) );
-        // acc_memcpy_to_device(weights_gpu, weights, *nmus * sizeof(Float));
+        Float* weights_gpu = Tools_gpu::allocate_gpu<Float>( (*nmus) );
+        acc_memcpy_to_device(weights_gpu, weights, *nmus * sizeof(Float));
 
         if (*do_broadband != 0)
         {
@@ -122,8 +122,8 @@ extern "C"
             {
                 Rte_solver_kernels_cuda::lw_solver_noscat(
                         *ncol, *nlay, *ngpt, *top_at_1, *nmus,
-                        acc_to_cuda(secants), acc_to_cuda(weights),
-                        // acc_to_cuda(secants), weights_gpu,
+                        // acc_to_cuda(secants), acc_to_cuda(weights),
+                        acc_to_cuda(secants), weights_gpu,
                         acc_to_cuda(tau), acc_to_cuda(lay_source),
                         acc_to_cuda(lev_source_inc), acc_to_cuda(lev_source_dec),
                         acc_to_cuda(sfc_emis), acc_to_cuda(sfc_src),
@@ -140,8 +140,8 @@ extern "C"
                 
                 Rte_solver_kernels_cuda::lw_solver_noscat(
                         *ncol, *nlay, *ngpt, *top_at_1, *nmus,
-                        acc_to_cuda(secants), acc_to_cuda(weights),
-                        // acc_to_cuda(secants), weights_gpu,
+                        // acc_to_cuda(secants), acc_to_cuda(weights),
+                        acc_to_cuda(secants), weights_gpu,
                         acc_to_cuda(tau), acc_to_cuda(lay_source),
                         acc_to_cuda(lev_source_inc), acc_to_cuda(lev_source_dec),
                         acc_to_cuda(sfc_emis), acc_to_cuda(sfc_src),
@@ -175,8 +175,8 @@ extern "C"
             {
                 Rte_solver_kernels_cuda::lw_solver_noscat(
                         *ncol, *nlay, *ngpt, *top_at_1, *nmus,
-                        acc_to_cuda(secants), acc_to_cuda(weights),
-                        // acc_to_cuda(secants), weights_gpu,
+                        // acc_to_cuda(secants), acc_to_cuda(weights),
+                        acc_to_cuda(secants), weights_gpu,
                         acc_to_cuda(tau), acc_to_cuda(lay_source),
                         acc_to_cuda(lev_source_inc), acc_to_cuda(lev_source_dec),
                         acc_to_cuda(sfc_emis), acc_to_cuda(sfc_src),
@@ -192,8 +192,8 @@ extern "C"
                 
                 Rte_solver_kernels_cuda::lw_solver_noscat(
                         *ncol, *nlay, *ngpt, *top_at_1, *nmus,
-                        acc_to_cuda(secants), acc_to_cuda(weights),
-                        // acc_to_cuda(secants), weights_gpu,
+                        // acc_to_cuda(secants), acc_to_cuda(weights),
+                        acc_to_cuda(secants), weights_gpu,
                         acc_to_cuda(tau), acc_to_cuda(lay_source),
                         acc_to_cuda(lev_source_inc), acc_to_cuda(lev_source_dec),
                         acc_to_cuda(sfc_emis), acc_to_cuda(sfc_src),
@@ -207,7 +207,7 @@ extern "C"
             }
         }
 
-        // Tools_gpu::free_gpu(weights_gpu);
+        Tools_gpu::free_gpu(weights_gpu);
     }
 
 

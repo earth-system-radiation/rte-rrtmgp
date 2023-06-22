@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <stdexcept>
 
-#include "Array.h"
+#include "array_subset.h"
 #include "types.h"
 #include "tools_gpu.h"
 

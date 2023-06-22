@@ -1,5 +1,3 @@
-#include "Types.h"
-
 __device__
 Float interpolate1D(const Float val,
                  const Float offset,

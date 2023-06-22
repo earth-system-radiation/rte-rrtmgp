@@ -332,7 +332,6 @@ void fill_kernel(
         a[idx] = v;
     }
 }
-
 #endif
 
 

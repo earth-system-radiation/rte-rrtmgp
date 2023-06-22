@@ -24,8 +24,7 @@
 
 #include <limits>
 
-#include "Array.h"
-#include "Types.h"
+#include "types.h"
 #include "tuner.h"
 
 namespace
@@ -33,7 +32,7 @@ namespace
     #include "optical_props_kernels.cu"
 }
 
-namespace optical_props_kernel_launcher_cuda
+namespace Optical_props_kernels_cuda
 {
     void increment_1scalar_by_1scalar(
             int ncol, int nlay, int ngpt,

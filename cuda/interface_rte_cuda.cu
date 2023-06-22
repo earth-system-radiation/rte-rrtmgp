@@ -1,17 +1,23 @@
 #include <openacc.h>
 #include <cstdio>
-#include <exception>
+#include <stdexcept>
 
-#include "Types.h"
+#include "Array.h"
+#include "types.h"
+#include "tools_gpu.h"
+
 
 // CvH: zero_array should move to rte kernels.
-#include "rrtmgp_kernel_launcher_cuda.h"
-#include "rte_kernel_launcher_cuda.h"
-#include "optical_props_kernel_launcher_cuda.h"
-#include "fluxes_kernel_launcher_cuda.h"
+#include "gas_optics_rrtmgp_kernels_cuda.h"
+#include "rte_solver_kernels_cuda.h"
+#include "optical_props_kernels_cuda.h"
+#include "fluxes_kernels_cuda.h"
 
 
-template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_deviceptr(ptr)); }
+namespace
+{
+    template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_deviceptr(ptr)); }
+}
 
 
 extern "C"
@@ -46,7 +52,7 @@ extern "C"
             Float* gpt_flux_dn  = Tools_gpu::allocate_gpu<Float>((*ncol) * (*nlay+1) * (*ngpt));
             Float* gpt_flux_dir = Tools_gpu::allocate_gpu<Float>((*ncol) * (*nlay+1) * (*ngpt));
 
-            rte_kernel_launcher_cuda::sw_solver_2stream(
+            Rte_solver_kernels_cuda::sw_solver_2stream(
                     *ncol, *nlay, *ngpt, *top_at_1,
                     acc_to_cuda(tau), acc_to_cuda(ssa), acc_to_cuda(g),
                     acc_to_cuda(mu0),
@@ -56,15 +62,15 @@ extern "C"
                     *has_dif_bc, acc_to_cuda(inc_flux_dif),
                     *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc), acc_to_cuda(flux_dir_loc));
 
-            fluxes_kernel_launcher_cuda::sum_broadband(
+            Fluxes_kernels_cuda::sum_broadband(
                     *ncol, (*nlay+1), *ngpt,
                     gpt_flux_up, acc_to_cuda(flux_up_loc));
 
-            fluxes_kernel_launcher_cuda::sum_broadband(
+            Fluxes_kernels_cuda::sum_broadband(
                     *ncol, (*nlay+1), *ngpt,
                     gpt_flux_dn, acc_to_cuda(flux_dn_loc));
 
-            fluxes_kernel_launcher_cuda::sum_broadband(
+            Fluxes_kernels_cuda::sum_broadband(
                     *ncol, (*nlay+1), *ngpt,
                     gpt_flux_dir, acc_to_cuda(flux_dir_loc));
 
@@ -75,7 +81,7 @@ extern "C"
         else
         {
             // printf("CvH: sw_solver_2stream gpt CUDA (SHOULD NOT WORK WELL) \n");
-            rte_kernel_launcher_cuda::sw_solver_2stream(
+            Rte_solver_kernels_cuda::sw_solver_2stream(
                     *ncol, *nlay, *ngpt, *top_at_1,
                     acc_to_cuda(tau), acc_to_cuda(ssa), acc_to_cuda(g),
                     acc_to_cuda(mu0),
@@ -114,7 +120,7 @@ extern "C"
 
             if (*do_jacobians != 0)
             {
-                rte_kernel_launcher_cuda::lw_solver_noscat(
+                Rte_solver_kernels_cuda::lw_solver_noscat(
                         *ncol, *nlay, *ngpt, *top_at_1, *nmus,
                         // acc_to_cuda(secants), acc_to_cuda(weights),
                         acc_to_cuda(secants), weights_gpu,
@@ -132,7 +138,7 @@ extern "C"
                 Float* sfc_src_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * (*ncol) );
                 Float* flux_up_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * ((*nlay)+1) * (*ncol) );
                 
-                rte_kernel_launcher_cuda::lw_solver_noscat(
+                Rte_solver_kernels_cuda::lw_solver_noscat(
                         *ncol, *nlay, *ngpt, *top_at_1, *nmus,
                         // acc_to_cuda(secants), acc_to_cuda(weights),
                         acc_to_cuda(secants), weights_gpu,
@@ -149,11 +155,11 @@ extern "C"
                 Tools_gpu::free_gpu(flux_up_jac_dummy);
             }
 
-            fluxes_kernel_launcher_cuda::sum_broadband(
+            Fluxes_kernels_cuda::sum_broadband(
                     *ncol, (*nlay+1), *ngpt,
                     gpt_flux_up, acc_to_cuda(flux_up_loc));
 
-            fluxes_kernel_launcher_cuda::sum_broadband(
+            Fluxes_kernels_cuda::sum_broadband(
                     *ncol, (*nlay+1), *ngpt,
                     gpt_flux_dn, acc_to_cuda(flux_dn_loc));
 
@@ -167,7 +173,7 @@ extern "C"
             Float* sfc_src_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * (*ncol) );
             if (*do_jacobians != 0)
             {
-                rte_kernel_launcher_cuda::lw_solver_noscat(
+                Rte_solver_kernels_cuda::lw_solver_noscat(
                         *ncol, *nlay, *ngpt, *top_at_1, *nmus,
                         // acc_to_cuda(secants), acc_to_cuda(weights),
                         acc_to_cuda(secants), weights_gpu,
@@ -184,7 +190,7 @@ extern "C"
                 Float* sfc_src_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * (*ncol) );
                 Float* flux_up_jac_dummy = Tools_gpu::allocate_gpu<Float>( (*ngpt) * ((*nlay)+1) * (*ncol) );
                 
-                rte_kernel_launcher_cuda::lw_solver_noscat(
+                Rte_solver_kernels_cuda::lw_solver_noscat(
                         *ncol, *nlay, *ngpt, *top_at_1, *nmus,
                         // acc_to_cuda(secants), acc_to_cuda(weights),
                         acc_to_cuda(secants), weights_gpu,
@@ -223,7 +229,7 @@ extern "C"
             Float* tau_inout, Float* tau_in)
     {
         // printf("CvH: rte_increment_1scalar_by_1scalar CUDA\n");
-        optical_props_kernel_launcher_cuda::increment_1scalar_by_1scalar(
+        Optical_props_kernels_cuda::increment_1scalar_by_1scalar(
                 *ncol, *nlay, *ngpt,
                 acc_to_cuda(tau_inout), acc_to_cuda(tau_in));
     }
@@ -262,7 +268,7 @@ extern "C"
             Float* tau_in, Float* ssa_in, Float* g_in)
     {
         // printf("CvH: rte_increment_2stream_by_2stream CUDA\n");
-        optical_props_kernel_launcher_cuda::increment_2stream_by_2stream(
+        Optical_props_kernels_cuda::increment_2stream_by_2stream(
                 *ncol, *nlay, *ngpt,
                 acc_to_cuda(tau_inout), acc_to_cuda(ssa_inout), acc_to_cuda(g_inout),
                 acc_to_cuda(tau_in), acc_to_cuda(ssa_in), acc_to_cuda(g_in));
@@ -312,7 +318,7 @@ extern "C"
             int* nbnd, int* band_lims_gpoint)
     {
         // printf("CvH: rte_inc_1scalar_by_1scalar_bybnd CUDA\n");
-        optical_props_kernel_launcher_cuda::inc_1scalar_by_1scalar_bybnd(
+        Optical_props_kernels_cuda::inc_1scalar_by_1scalar_bybnd(
                 *ncol, *nlay, *ngpt,
                 acc_to_cuda(tau_inout), acc_to_cuda(tau_in),
                 *nbnd, acc_to_cuda(band_lims_gpoint));
@@ -355,7 +361,7 @@ extern "C"
             int* nbnd, int* band_lims_gpoint)
     {
         // printf("CvH: rte_inc_2stream_by_2stream_bybnd CUDA\n");
-        optical_props_kernel_launcher_cuda::inc_2stream_by_2stream_bybnd(
+        Optical_props_kernels_cuda::inc_2stream_by_2stream_bybnd(
                 *ncol, *nlay, *ngpt,
                 acc_to_cuda(tau_inout), acc_to_cuda(ssa_inout), acc_to_cuda(g_inout),
                 acc_to_cuda(tau_in), acc_to_cuda(ssa_in), acc_to_cuda(g_in),
@@ -409,7 +415,7 @@ extern "C"
             Float* tau_inout, Float* ssa_inout, Float* g_inout)
     {
         // printf("CvH: delta_scale_2str_k CUDA\n");
-        optical_props_kernel_launcher_cuda::delta_scale_2str_k(
+        Optical_props_kernels_cuda::delta_scale_2str_k(
             *ncol, *nlay, *ngpt,
             acc_to_cuda(tau_inout), acc_to_cuda(ssa_inout), acc_to_cuda(g_inout));
     }
@@ -482,7 +488,7 @@ extern "C"
             Float* gpt_flux, Float* flux)
     {
         // printf("CvH: rte_sum_broadband CUDA\n");
-        fluxes_kernel_launcher_cuda::sum_broadband(
+        Fluxes_kernels_cuda::sum_broadband(
                 *ncol, *nlev, *ngpt,
                 acc_to_cuda(gpt_flux), acc_to_cuda(flux));
     }
@@ -502,7 +508,7 @@ extern "C"
             Float* broadband_flux_net)
     {
         // printf("CvH: rte_net_broadband_precalc CUDA\n");
-        fluxes_kernel_launcher_cuda::net_broadband_precalc(
+        Fluxes_kernels_cuda::net_broadband_precalc(
                 *ncol, *nlev,
                 acc_to_cuda(broadband_flux_dn), acc_to_cuda(broadband_flux_up),
                 acc_to_cuda(broadband_flux_net));
@@ -517,7 +523,7 @@ extern "C"
             Float* bnd_flux)
     {
         // printf("CvH: rte_sum_byband CUDA\n");
-        fluxes_kernel_launcher_cuda::sum_byband(
+        Fluxes_kernels_cuda::sum_byband(
                 *ncol, *nlev, *ngpt, *nbnd,
                 band_lims,
                 gpt_flux,
@@ -530,7 +536,7 @@ extern "C"
             Float* bnd_flux_dn, Float* bnd_flux_up, Float* bnd_flux_net)
     {
         // printf("CvH: rte_net_byband_full CUDA\n");
-        fluxes_kernel_launcher_cuda::net_byband_full(
+        Fluxes_kernels_cuda::net_byband_full(
                 *ncol, *nlev, *ngpt, *nbnd, band_lims,
                 bnd_flux_dn, bnd_flux_up, bnd_flux_net);
     }

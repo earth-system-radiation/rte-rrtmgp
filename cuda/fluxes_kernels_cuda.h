@@ -22,13 +22,13 @@
  *
  */
 
-#ifndef FLUXES_KERNEL_LAUNCHER_CUDA_H
-#define FLUXES_KERNEL_LAUNCHER_CUDA_H
+#ifndef FLUXES_KERNELS_CUDA_H
+#define FLUXES_KERNELS_CUDA_H
 
-#include "Types.h"
+#include "types.h"
 
 
-namespace fluxes_kernel_launcher_cuda
+namespace Fluxes_kernels_cuda
 {
     void sum_broadband(
             int ncol, int nlev, int ngpt,

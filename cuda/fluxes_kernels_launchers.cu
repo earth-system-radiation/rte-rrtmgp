@@ -1,4 +1,4 @@
-#include "fluxes_kernel_launcher_cuda.h"
+#include "fluxes_kernels_cuda.h"
 #include "tools_gpu.h"
 
 
@@ -8,7 +8,7 @@ namespace
 }
 
 
-namespace fluxes_kernel_launcher_cuda
+namespace Fluxes_kernels_cuda
 {
     void sum_broadband(
             int ncol, int nlev, int ngpt,

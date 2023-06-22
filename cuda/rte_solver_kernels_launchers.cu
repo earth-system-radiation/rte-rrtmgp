@@ -1,8 +1,7 @@
 #include <chrono>
 
-#include "rte_kernel_launcher_cuda.h"
+#include "rte_solver_kernels_cuda.h"
 #include "tools_gpu.h"
-#include "Array.h"
 #include "tuner.h"
 
 #include <iomanip>
@@ -14,7 +13,7 @@ namespace
 }
 
 
-namespace rte_kernel_launcher_cuda
+namespace Rte_solver_kernels_cuda
 {
     void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1,
                   const Float* inc_flux_dir, const Float* mu0, Float* gpt_flux_dir)
@@ -133,9 +132,9 @@ namespace rte_kernel_launcher_cuda
 
         // Upper boundary condition.
         if (inc_flux == nullptr)
-            rte_kernel_launcher_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn);
+            Rte_solver_kernels_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn);
         else
-            rte_kernel_launcher_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, inc_flux, flux_dn);
+            Rte_solver_kernels_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, inc_flux, flux_dn);
 
 
         // Step 1.
@@ -351,11 +350,11 @@ namespace rte_kernel_launcher_cuda
         dim3 grid_source(ncol, ngpt), block_source;
 
         // Step0. Upper boundary condition. At this stage, flux_dn contains the diffuse radiation only.
-        rte_kernel_launcher_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, inc_flux_dir, mu0, flux_dir);
+        Rte_solver_kernels_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, inc_flux_dir, mu0, flux_dir);
         if (inc_flux_dif == nullptr)
-            rte_kernel_launcher_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn);
+            Rte_solver_kernels_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, flux_dn);
         else
-            rte_kernel_launcher_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, inc_flux_dif, flux_dn);
+            Rte_solver_kernels_cuda::apply_BC(ncol, nlay, ngpt, top_at_1, inc_flux_dif, flux_dn);
 
 
         // Step 1.

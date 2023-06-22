@@ -22,14 +22,13 @@
  *
  */
 
-#ifndef RTE_KERNELS_CUDA_H
-#define RTE_KERNELS_CUDA_H
+#ifndef RTE_SOLVER_KERNELS_CUDA_H
+#define RTE_SOLVER_KERNELS_CUDA_H
 
-#include "Array.h"
-#include "Types.h"
+#include "types.h"
 
 
-namespace rte_kernel_launcher_cuda
+namespace Rte_solver_kernels_cuda
 {
     void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1,
                   const Float* inc_flux_dir, const Float* mu0, Float* gpt_flux_dir);

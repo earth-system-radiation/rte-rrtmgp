@@ -22,15 +22,13 @@
  *
  */
 
-#ifndef RRTMGP_KERNELS_CUDA_H
-#define RRTMGP_KERNELS_CUDA_H
+#ifndef GAS_OPTICS_RRTMGP_KERNELS_CUDA_H
+#define GAS_OPTICS_RRTMGP_KERNELS_CUDA_H
 
-#include "Array.h"
-#include "Types.h"
-// #include "Gas_concs.h"
+#include "types.h"
 
 
-namespace rrtmgp_kernel_launcher_cuda
+namespace Gas_optics_rrtmgp_kernels_cuda
 {
     void reorder123x321(const int ni, const int nj, const int nk,
             const Float* arr_in,  Float* arr_out);

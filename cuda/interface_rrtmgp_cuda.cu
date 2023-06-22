@@ -1,10 +1,16 @@
 #include <openacc.h>
 #include <cstdio>
+#include <stdexcept>
 
-#include "Types.h"
-#include "rrtmgp_kernel_launcher_cuda.h"
+#include "types.h"
+#include "gas_optics_rrtmgp_kernels_cuda.h"
 
-template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_deviceptr(ptr)); }
+
+namespace
+{
+    template<typename T> T* acc_to_cuda(T* ptr) { return static_cast<T*>(acc_deviceptr(ptr)); }
+}
+
 
 extern "C"
 {
@@ -30,7 +36,7 @@ extern "C"
             int* jpress)
     {
         // printf("CvH: interpolation CUDA\n");
-        rrtmgp_kernel_launcher_cuda::interpolation(
+        Gas_optics_rrtmgp_kernels_cuda::interpolation(
                 *ncol, *nlay,
                 *ngas, *nflav, *neta, *npres, *ntemp,
                 acc_to_cuda(flavor),
@@ -84,7 +90,7 @@ extern "C"
             int* jpress, Float* tau)
     {
         // printf("CvH: compute_tau_absorption CUDA\n");
-        rrtmgp_kernel_launcher_cuda::compute_tau_absorption(
+        Gas_optics_rrtmgp_kernels_cuda::compute_tau_absorption(
                 *ncol, *nlay, *nband, *ngpt,
                 *ngas, *nflav, *neta, *npres, *ntemp,
                 *nminorlower, *nminorklower,
@@ -128,7 +134,7 @@ extern "C"
             Float* tau_rayleigh)
     {
         // printf("CvH: compute_tau_rayleigh CUDA\n");
-        rrtmgp_kernel_launcher_cuda::compute_tau_rayleigh(
+        Gas_optics_rrtmgp_kernels_cuda::compute_tau_rayleigh(
                 *ncol, *nlay, *nband, *ngpt,
                 *ngas, *nflav, *neta, *npres, *ntemp,
                 acc_to_cuda(gpoint_flavor),
@@ -167,7 +173,7 @@ extern "C"
             Float* sfc_src_jac)
     {
         // printf("CvH: compute_planck_source CUDA\n");
-        rrtmgp_kernel_launcher_cuda::compute_planck_source(
+        Gas_optics_rrtmgp_kernels_cuda::compute_planck_source(
                 *ncol, *nlay, *nbnd, *ngpt,
                 *nflav, *neta, *npres, *ntemp,
                 *nPlanckTemp,
@@ -195,17 +201,17 @@ extern "C"
 
     void zero_array_1D(int* ni, Float* array)
     {
-        rrtmgp_kernel_launcher_cuda::zero_array(*ni, acc_to_cuda(array));
+        Gas_optics_rrtmgp_kernels_cuda::zero_array(*ni, acc_to_cuda(array));
     }
 
     void zero_array_2D(int* ni, int* nj, Float* array)
     {
-        rrtmgp_kernel_launcher_cuda::zero_array(*ni, *nj, acc_to_cuda(array));
+        Gas_optics_rrtmgp_kernels_cuda::zero_array(*ni, *nj, acc_to_cuda(array));
     }
 
     void zero_array_3D(int* ni, int* nj, int* nk, Float* array)
     {
-        rrtmgp_kernel_launcher_cuda::zero_array(*ni, *nj, *nk, acc_to_cuda(array));
+        Gas_optics_rrtmgp_kernels_cuda::zero_array(*ni, *nj, *nk, acc_to_cuda(array));
     }
 
     void zero_array_4D(int* ni, int* nj, int* nk, int* nl, Float* array)

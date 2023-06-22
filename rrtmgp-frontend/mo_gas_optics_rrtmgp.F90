@@ -260,10 +260,10 @@ contains
     !
     ! Gas optics
     !
-    !$acc enter data        copyin(play, plev, tlay) 
-    !$omp target enter data map(to:play, plev, tlay)
-    !$acc enter data           create(jtemp, jpress, tropo, fmajor, jeta)
-    !$omp target enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
+    !$acc         enter data copyin(play, plev, tlay) 
+    !$omp target  enter data map(to:play, plev, tlay)
+    !$acc         enter data create(   jtemp, jpress, tropo, fmajor, jeta)
+    !$omp target  enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
@@ -329,9 +329,9 @@ contains
     end if
     !$acc        exit data      delete(tsfc)
     !$omp target exit data map(release:tsfc)
-    !$acc             exit data delete(jtemp, jpress, tropo, fmajor, jeta)
+    !$acc        exit data delete(jtemp, jpress, tropo, fmajor, jeta) 
     !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
-    !$acc             exit data delete(play, plev, tlay)
+    !$acc        exit data delete(play, plev, tlay)
     !$omp target exit data map(release:play, plev, tlay)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
@@ -378,20 +378,20 @@ contains
     !
     ! Gas optics
     !
-    !$acc enter data        copyin(play, plev, tlay) 
-    !$omp target enter data map(to:play, plev, tlay)
-    !$acc enter data           create(jtemp, jpress, tropo, fmajor, jeta)
-    !$omp target enter data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
+    !$acc  data       copyin(play, plev, tlay) 
+    !$omp target data map(to:play, plev, tlay)
+    !$acc  data       create(   jtemp, jpress, tropo, fmajor, jeta)
+    !$omp target data map(alloc:jtemp, jpress, tropo, fmajor, jeta)
     error_msg = compute_gas_taus(this,                       &
                                  ncol, nlay, ngpt, nband,    &
                                  play, plev, tlay, gas_desc, &
                                  optical_props,              &
                                  jtemp, jpress, jeta, tropo, fmajor, &
                                  col_dry)
-    !$acc             exit data delete(jtemp, jpress, tropo, fmajor, jeta)
-    !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
-    !$acc             exit data delete(play, plev, tlay)
-    !$omp target exit data map(release:play, plev, tlay)
+    !$acc end         data
+    !$omp end target  data 
+    !$acc end         data
+    !$omp end target  data 
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -719,6 +719,7 @@ contains
                           ncol, nlay, ngpt, optical_props%p)
         end select
       end if
+      ! Interpolation coefficients copyout 
       !$acc end        data
       !$omp end target data
       if (present(col_dry)) then
@@ -743,6 +744,7 @@ contains
       !$acc exit data delete(optical_props)
 
     end if
+    ! play, plev, tlay
     !$acc end        data
     !$omp end target data
 
@@ -899,11 +901,9 @@ contains
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
     !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source_inc, sources%lev_source_dec) &
-    !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac)                         & 
-    !$acc             copyin(this%totplnk, this%gpoint_flavor)
+    !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac)
     !$omp target data                 map(from:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec) &
     !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac)
-    !$omp             map(to:this%totplnk, this%gpoint_flavor)
 
     !$acc kernels copyout(top_at_1)
     !$omp target map(from:top_at_1)

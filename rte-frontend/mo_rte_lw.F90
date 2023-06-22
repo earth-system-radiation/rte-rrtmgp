@@ -142,6 +142,7 @@ contains
                              0.2009319137_wp, 0.2292411064_wp, 0.0698269799_wp, 0._wp, &
                              0.1355069134_wp, 0.2034645680_wp, 0.1298475476_wp, 0.0311809710_wp], &
                              [max_gauss_pts, max_gauss_pts])
+    !$acc declare create(gauss_Ds, gauss_wts)
     ! ------------------------------------------------------------------------------------
     ncol  = optical_props%get_ncol()
     nlay  = optical_props%get_nlay()
@@ -310,7 +311,7 @@ contains
     ! Compute the radiative transfer...
     !
     !$acc        data create(   sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
-    !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
+    !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn) map(to:gauss_wts, gauss_Ds)
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     if(check_values) error_msg =  optical_props%validate()
     if(len_trim(error_msg) == 0) then ! Can't do an early return within OpenACC/MP data regions

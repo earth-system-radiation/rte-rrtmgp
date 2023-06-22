@@ -112,6 +112,7 @@ void lw_solver_noscat_step_1_kernel(
     {
         const int idx = icol + ilay*ncol + igpt*ncol*nlay;
         const int idx_D = icol + igpt*ncol;
+
         tau_loc[idx] = tau[idx] * D[idx_D];
         trans[idx] = exp(-tau_loc[idx]);
 

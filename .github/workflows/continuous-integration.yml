@@ -29,16 +29,26 @@ jobs:
       NCHOME: /dummy
       NFHOME: /usr
       RRTMGP_ROOT: ${{ github.workspace }}
+      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
       # Auxiliary variables:
       RFMIP_CACHEDIR: .testcache
     steps:
     #
-    # Checks-out repository under $GITHUB_WORKSPACE
+    # Check out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v3
+    - name: Check out code
+      uses: actions/checkout@v3
     #
+    # Check out data 
+    #
+    - name: Check out data
+      uses: actions/checkout@v3
+      with:
+        repository: earth-system-radiation/rrtmgp-data
+        path: rrtmgp-data
+    #    
     # Synchronize the package index
     #
     - name: Synchronize the package index
@@ -69,7 +79,6 @@ jobs:
         auto-activate-base: false
         # Use the cache properly:
         use-only-tar-bz2: true
-    #
     # Cache RFMIP files
     #
     - name: Cache RFMIP files

@@ -5,32 +5,12 @@
 import argparse
 import os
 import sys
-import urllib.request
 
 import numpy as np
 import xarray as xr
 
 tst_dir = "."
 rrtmgp_suffix = "_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"
-max_dwd_attempts = 3
-
-
-#
-# Construct a list of possible URLs for RTE+RRTMGP results for RFMIP from ESGF
-#
-def construct_esgf_files(var):
-    esgf_url_bases = [
-        "http://esgf-data1.llnl.gov/thredds/fileServer/css03_data/"
-        "CMIP6/RFMIP/RTE-RRTMGP-Consortium/RTE-RRTMGP-181204/"
-        "rad-irf/r1i1p1f1/Efx/",
-        "http://esgf3.dkrz.de/thredds/fileServer/"
-        "cmip6/RFMIP/RTE-RRTMGP-Consortium/RTE-RRTMGP-181204/"
-        "rad-irf/r1i1p1f1/Efx/"
-    ]
-    esgf_url_ver = "gn/v20191007/"
-    return [os.path.join(esgf_url_base, var, esgf_url_ver, var+rrtmgp_suffix)
-            for esgf_url_base in esgf_url_bases]
-
 
 #
 # Comparing reference and test results
@@ -39,10 +19,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Compares all-sky example output to file in reference "
                     "directory")
-    parser.add_argument("--ref_dir", type=str, default="reference",
+    parser.add_argument("--ref_dir", type=str, 
+                        default=os.path.join(os.environ["RRTMGP_DATA"], "examples", "rfmip-clear-sky", "reference"),
                         help="Directory where reference values are")
-    parser.add_argument("--download_reference", action="store_true",
-                        help="Download reference files even if they exist")
     parser.add_argument("--report_threshold", type=float, default=0.,
                         help="Threshold for reporting differences")
     parser.add_argument("--failure_threshold", type=float, default=1.e-5,
@@ -51,45 +30,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     variables = ['rlu', 'rld', 'rsu', 'rsd']
-    # Download reference data
-    #   If versions of all files exist in the reference directory, no need to
-    #   download (can be over-ridden)
-    if not all(
-            [os.path.exists(os.path.join(args.ref_dir, v + rrtmgp_suffix))
-             for v in variables]) or args.download_reference:
-        print("Downloading reference data")
-        os.makedirs(args.ref_dir, exist_ok=True)
-        for v in variables:
-            filename = v + rrtmgp_suffix
-            possible_urls = construct_esgf_files(v)
-            dwd_attempt_num = 1
-            dwd_success = False
-            while dwd_attempt_num <= max_dwd_attempts:
-                print("{0} (attempt {1})".format(filename, dwd_attempt_num))
-                for url in possible_urls:
-                    print('\tfrom {0}...'.format(url[:73]))
-                    try:
-                        urllib.request.urlretrieve(url, os.path.join(args.ref_dir, filename))
-                        dwd_success = True
-                        break
-                    except:
-                        pass
-
-                if dwd_success:
-                    break
-
-                dwd_attempt_num += 1
-
-            if not dwd_success:
-                raise Exception("Failed to download {0}".format(filename))
-
-    tst = xr.open_mfdataset(os.path.join(tst_dir, "r??" + rrtmgp_suffix),
+    tst = xr.open_mfdataset(os.path.join(tst_dir,      "r??" + rrtmgp_suffix),
                             combine='by_coords')
     ref = xr.open_mfdataset(os.path.join(args.ref_dir, "r??" + rrtmgp_suffix),
                             combine='by_coords')
 
     failed = False
     for v in variables:
+        if np.any(np.isnan(ref.variables[v].values)):
+            raise Exception(
+                v + ": some ref values are missing. Now that is strange.")
         if np.all(np.isnan(tst.variables[v].values)):
             raise Exception(
                 v + ": all test values are missing. Were the tests run?")

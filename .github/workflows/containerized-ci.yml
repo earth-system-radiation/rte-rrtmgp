@@ -57,6 +57,7 @@ jobs:
       NCHOME: /dummy
       NFHOME: /opt/netcdf-fortran
       RRTMGP_ROOT: ${{ github.workspace }}
+      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
@@ -68,6 +69,14 @@ jobs:
     # Checks-out repository under $GITHUB_WORKSPACE
     #
     - uses: actions/checkout@v3
+    #
+    # Check out data 
+    #
+    - name: Check out data
+      uses: actions/checkout@v3
+      with:
+        repository: earth-system-radiation/rrtmgp-data
+        path: rrtmgp-data
     #
     # Cache RFMIP files
     #

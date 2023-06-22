@@ -29,7 +29,7 @@ extern "C"
             int* jeta,
             int* jpress)
     {
-        printf("CvH: interpolation CUDA\n");
+        // printf("CvH: interpolation CUDA\n");
         rrtmgp_kernel_launcher_cuda::interpolation(
                 *ncol, *nlay,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -83,7 +83,7 @@ extern "C"
             int* jeta, int* jtemp,
             int* jpress, Float* tau)
     {
-        printf("CvH: compute_tau_absorption CUDA\n");
+        // printf("CvH: compute_tau_absorption CUDA\n");
         rrtmgp_kernel_launcher_cuda::compute_tau_absorption(
                 *ncol, *nlay, *nband, *ngpt,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -127,7 +127,7 @@ extern "C"
             Bool* tropo, int* jtemp,
             Float* tau_rayleigh)
     {
-        printf("CvH: compute_tau_rayleigh CUDA\n");
+        // printf("CvH: compute_tau_rayleigh CUDA\n");
         rrtmgp_kernel_launcher_cuda::compute_tau_rayleigh(
                 *ncol, *nlay, *nband, *ngpt,
                 *ngas, *nflav, *neta, *npres, *ntemp,
@@ -166,8 +166,8 @@ extern "C"
             Float* lev_src_dec,
             Float* sfc_src_jac)
     {
-        printf("CvH: compute_planck_source CUDA\n");
-        rrtmgp_kernel_launcher_cuda::Planck_source(
+        // printf("CvH: compute_planck_source CUDA\n");
+        rrtmgp_kernel_launcher_cuda::compute_planck_source(
                 *ncol, *nlay, *nbnd, *ngpt,
                 *nflav, *neta, *npres, *ntemp,
                 *nPlanckTemp,

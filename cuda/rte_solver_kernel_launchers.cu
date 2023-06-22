@@ -80,7 +80,7 @@ namespace rte_kernel_launcher_cuda
     }
 
 
-    void lw_solver_noscat_gaussquad(
+    void lw_solver_noscat(
             const int ncol, const int nlay, const int ngpt, const Bool top_at_1, const int nmus,
             const Float* secants, const Float* weights,
             const Float* tau, const Float* lay_source,

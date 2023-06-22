@@ -109,7 +109,7 @@ namespace rrtmgp_kernel_launcher_cuda
             const int* jeta, const int* jtemp,
             const int* jpress, Float* tau);
 
-    void Planck_source(
+    void compute_planck_source(
             const int ncol, const int nlay, const int nbnd, const int ngpt,
             const int nflav, const int neta, const int npres, const int ntemp,
             const int nPlanckTemp,

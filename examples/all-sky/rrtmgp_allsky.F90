@@ -557,9 +557,9 @@ contains
   ! --------------------------------------------------------------------------------------
   !
   subroutine compute_aerosols
-   real(wp), dimension(ncol,nlay) :: vmr_h2o ! h2o vmr
-   logical :: is_sulfate, is_dust, is_even_column 
-   ! 
+    real(wp), dimension(ncol,nlay) :: vmr_h2o ! h2o vmr
+    logical :: is_sulfate, is_dust, is_even_column 
+    ! 
     ! Variable and memory allocation 
     !
     if(is_sw) then
@@ -582,20 +582,21 @@ contains
     end select
     !
     ! Derive relative humidity from profile
-    !   relhum is on the CPU at this point 
+    !   Keep vmr_h2o on the GPU
     !
+    !$acc        data create(   vmr_h2o)
+    !$omp target data map(alloc:vmr_h2o)
     call stop_on_err(gas_concs%get_vmr("h2o",vmr_h2o))
-    allocate(relhum(ncol, nlay))
-    !$acc        enter data create(   relhum)
-    !$omp target enter data map(alloc:relhum)
-    call get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
     !
     ! Aerosol properties 
     ! 
     allocate(aero_type(ncol,nlay), aero_size(ncol,nlay), &
-             aero_mass(ncol,nlay))
-    !$acc        enter data create(   aero_type, aero_size, aero_mass)
-    !$omp target enter data map(alloc:aero_type, aero_size, aero_mass)
+             aero_mass(ncol,nlay), relhum   (ncol,nlay))
+    !$acc        enter data create(   aero_type, aero_size, aero_mass, relhum)
+    !$omp target enter data map(alloc:aero_type, aero_size, aero_mass, relhum)
+    call get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
+    !$acc end data
+    !$omp end target data
 
     ! Restrict sulfate aerosols to lower stratosphere (> 50 hPa = 50*100 Pa; < 100 hPa = 100*100 Pa)
     !   and dust aerosols to the lower troposphere (> 700 hPa; < 900 hPa), and
@@ -647,14 +648,14 @@ contains
     ! Local variables 
     integer :: i, k
 
-    real(wp) :: mmr_h2o             ! water mass mixing ratio
-    real(wp) :: q_lay               ! water specific humidity
+    real(wp) :: mmr_h2o          ! water mass mixing ratio
+    real(wp) :: q_lay            ! water specific humidity
     real(wp) :: q_lay_min, q_tmp, es_tmp
     real(wp) :: mwd, t_ref, rh
 
     ! Set constants
-    mwd = m_h2o/m_dry            ! ratio of water to dry air molecular weights
-    t_ref = 273.16_wp            ! reference temperature (K)
+    mwd       = m_h2o/m_dry      ! ratio of water to dry air molecular weights
+    t_ref     = 273.16_wp        ! reference temperature (K)
     q_lay_min = 1.e-7_wp         ! minimum water mass mixing ratio
     ! -------------------
 
@@ -738,8 +739,8 @@ contains
     ! Write variables
     !
     ! State - writing 
-    !$acc        update host (   p_lev, t_lev, p_lay, t_lay)
-    !$omp target update map(from:p_lev, t_lev, p_lay, t_lay)
+    !$acc        update host(p_lev, t_lev, p_lay, t_lay)
+    !$omp target update from(p_lev, t_lev, p_lay, t_lay)
     call stop_on_err(write_field(ncid, "p_lev",  p_lev))
     call stop_on_err(write_field(ncid, "t_lev",  t_lev))
     call stop_on_err(write_field(ncid, "p_lay",  p_lay))
@@ -751,8 +752,8 @@ contains
     call stop_on_err(write_field(ncid, "o3",     vmr))
 
     if(do_clouds) then 
-      !$acc        update host(    lwp, iwp, rel, rei)
-      !$omp target update map(from:lwp, iwp, rel, rei)
+      !$acc        update host(lwp, iwp, rel, rei)
+      !$omp target update from(lwp, iwp, rel, rei)
       call stop_on_err(write_field(ncid, "lwp",  lwp))
       call stop_on_err(write_field(ncid, "iwp",  iwp))
       call stop_on_err(write_field(ncid, "rel",  rel))
@@ -760,21 +761,21 @@ contains
     end if 
 
     if(do_aerosols) then 
-      !$acc        update host(    aero_size, aero_mass, aero_type)
-      !$omp target update map(from:aero_size, aero_mass, aero_type)
+      !$acc        update host(aero_size, aero_mass, aero_type)
+      !$omp target update from(aero_size, aero_mass, aero_type)
       call stop_on_err(write_field(ncid, "aero_size",  aero_size))
       call stop_on_err(write_field(ncid, "aero_mass",  aero_mass))
       call stop_on_err(write_field(ncid, "aero_type",  aero_type))
     end if 
 
     ! Fluxes - writing 
-    !$acc        update host(    flux_up, flux_dn)
-    !$omp target update map(from:flux_up, flux_dn)
+    !$acc        update host(flux_up, flux_dn)
+    !$omp target update from(flux_up, flux_dn)
     call stop_on_err(write_field(ncid, "flux_up",  flux_up))
     call stop_on_err(write_field(ncid, "flux_dn",  flux_dn))
     if(.not. is_lw) then 
-      !$acc        update host(    flux_dir)
-      !$omp target update map(from:flux_dir)
+      !$acc        update host(flux_dir)
+      !$omp target update from(flux_dir)
       call stop_on_err(write_field(ncid, "flux_dir",  flux_dir))
     end if 
 

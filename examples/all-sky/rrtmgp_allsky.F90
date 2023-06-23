@@ -1,4 +1,6 @@
 program rte_rrtmgp_allsky
+  use, intrinsic :: iso_fortran_env, & 
+                             only: output_unit
   use mo_rte_kind,           only: wp, i8, wl
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
@@ -104,7 +106,7 @@ program rte_rrtmgp_allsky
   ! Timing variables
   !
   integer(kind=i8)              :: start, finish, start_all, finish_all, clock_rate
-  real(wp)                      :: avg
+  real(wp)                      :: avg, mint
   integer(kind=i8), allocatable :: elapsed(:)
   ! NAR OpenMP CPU directives in compatible with OpenMP GPU directives
   !!$omp threadprivate( lw_sources, toa_flux, flux_up, flux_dn, flux_dir )
@@ -360,15 +362,18 @@ program rte_rrtmgp_allsky
   call system_clock(finish_all, clock_rate)
 
 #if defined(_OPENACC) || defined(_OPENMP)
-  avg = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
-
-  print *, "Execution times - min(s)        :", minval(elapsed) / real(clock_rate)
-  print *, "                - avg(s)        :", avg / real(clock_rate)
-  print *, "                - per column(ms):", avg / real(ncol) / (1.0e-3*clock_rate)
+  avg  = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
+  mint = minval(elapsed) 
 #else
-  print *, "Execution times - total(s)      :", (finish_all-start_all) / real(clock_rate)
-  print *, "                - per column(ms):", (finish_all-start_all) / real(ncol*nloops) / (1.0e-3*clock_rate)
-#endif
+  avg  = (finish_all-start_all) 
+  mint = avg
+#endif 
+  ! What to print? 
+  !   ncol, nlay, ngpt; are clouds used, are aerosols used; time per column, total, min; 
+  print *, " ncol   nlay   ngpt  clouds aerosols time_per_col_ms nloops time_total_s time_min_s"
+  write(output_unit, '(3(i6, 1x), 6x, 2(i1, 8x), 1x, f7.3, 1x, i6, 2x, 2(4x,f7.3))') & 
+    ncol, nlay, ngpt, merge(1,0,do_clouds), merge(1,0,do_aerosols),  & 
+    avg/(real(ncol*nloops) * (1.0e-3*clock_rate)),  nloops,  avg / real(clock_rate),  mint / real(clock_rate)
 
   if(.true.) call write_fluxes
 

@@ -383,11 +383,11 @@ program rte_rrtmgp_allsky
   ! Clouds and aerosols used enter data - we won't release explicitly 
 
   ! fluxes - but not flux_dir, which used enter data 
-  !$acc        end data 
-  !$omp target end data
+  !$acc end        data 
+  !$omp end target data
   ! p_lay etc
-  !$acc        end data 
-  !$omp target end data
+  !$acc end        data 
+  !$omp end target data
 contains
   ! ----------------------------------------------------------------------------------
   subroutine compute_profiles(SST, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q_lay, o3)
@@ -478,8 +478,8 @@ contains
         t_lev(icol,ilay) = T
       end do 
     end do 
-    !$acc        end data
-    !$omp target end data
+    !$acc end        data
+    !$omp end target data
   end subroutine compute_profiles
   ! ----------------------------------------------------------------------------------
   subroutine stop_on_err(error_msg)

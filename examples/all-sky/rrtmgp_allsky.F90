@@ -1,4 +1,4 @@
-program rte_rrtmgp_clouds_aerosols
+program rte_rrtmgp_allsky
   use mo_rte_kind,           only: wp, i8, wl
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
@@ -145,8 +145,8 @@ program rte_rrtmgp_clouds_aerosols
   ! -----------------------------------------------------------------------------------
   allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
   allocate(q    (ncol, nlay),    o3(ncol, nlay))
-  !$acc        enter data create(   p_lay, t_lay, p_lev, t_lev, q, o3)
-  !$omp target enter data map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
+  !$acc        data create(   p_lay, t_lay, p_lev, t_lev, q, o3)
+  !$omp target data map(alloc:p_lay, t_lay, p_lev, t_lev, q, o3)
   call compute_profiles(300._wp, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q, o3)
 
   call stop_on_err(gas_concs%init(gas_names))
@@ -214,7 +214,7 @@ program rte_rrtmgp_clouds_aerosols
       !$acc enter data copyin(atmos) create(atmos%tau, atmos%ssa, atmos%g)
       !$omp target enter data map(alloc:atmos%tau, atmos%ssa, atmos%g)
     class default
-      call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
+      call stop_on_err("rte_rrtmgp_allsky: Don't recognize the kind of optical properties ")
   end select
 
   ! ----------------------------------------------------------------------------
@@ -227,8 +227,8 @@ program rte_rrtmgp_clouds_aerosols
     !!$omp end parallel
     !
     allocate(sfc_alb_dir(nbnd, ncol), sfc_alb_dif(nbnd, ncol), mu0(ncol))
-    !$acc enter data create(sfc_alb_dir, sfc_alb_dif, mu0)
-    !$omp target enter data map(alloc:sfc_alb_dir, sfc_alb_dif, mu0)
+    !$acc         enter data create(   sfc_alb_dir, sfc_alb_dif, mu0)
+    !$omp target  enter data map(alloc:sfc_alb_dir, sfc_alb_dif, mu0)
     ! Ocean-ish values for no particular reason
     !$acc kernels
     !$omp target
@@ -244,8 +244,8 @@ program rte_rrtmgp_clouds_aerosols
     !!$omp end parallel
 
     allocate(t_sfc(ncol), emis_sfc(nbnd, ncol))
-    !$acc enter data create(t_sfc, emis_sfc)
-    !$omp target enter data map(alloc:t_sfc, emis_sfc)
+    !$acc         enter data create   (t_sfc, emis_sfc)
+    !$omp target  enter data map(alloc:t_sfc, emis_sfc)
     ! Surface temperature
     !$acc kernels
     !$omp target
@@ -262,8 +262,8 @@ program rte_rrtmgp_clouds_aerosols
   allocate(flux_up(ncol,nlay+1), flux_dn(ncol,nlay+1))
   !!$omp end parallel
 
-  !$acc enter data create(flux_up, flux_dn)
-  !$omp target enter data map(alloc:flux_up, flux_dn)
+  !$acc         data create(   flux_up, flux_dn)
+  !$omp target  data map(alloc:flux_up, flux_dn)
   if(is_sw) then
     allocate(flux_dir(ncol,nlay+1))
     !$acc enter data create(flux_dir)
@@ -305,6 +305,9 @@ program rte_rrtmgp_clouds_aerosols
     fluxes%flux_up => flux_up(:,:)
     fluxes%flux_dn => flux_dn(:,:)
     if(is_lw) then
+      !
+      ! Should we allocate these once, rather than once per loop? They're big. 
+      ! 
       !$acc        data create(   lw_sources, lw_sources%lay_source,     lw_sources%lev_source_inc) &
       !$acc             create(               lw_sources%lev_source_dec, lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
       !$omp target data map(alloc:            lw_sources%lay_source,     lw_sources%lev_source_inc) &
@@ -356,12 +359,6 @@ program rte_rrtmgp_clouds_aerosols
   !
   call system_clock(finish_all, clock_rate)
 
-  ! Release GPU memory for p_lay, t_lay, p_lev, t_lev, q, o3)
-  !$acc        exit data delete(     p_lay, p_lev, t_lay, t_lev)
-  !$omp target exit data map(release:p_lay, p_lev, t_lay, t_lev)
-
-  ! Memory for clouds and aerosols is released in write-fluxes 
-
 #if defined(_OPENACC) || defined(_OPENMP)
   avg = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
 
@@ -382,6 +379,15 @@ program rte_rrtmgp_clouds_aerosols
     !$acc        exit data delete(     sfc_alb_dir, sfc_alb_dif, mu0)
     !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif, mu0)
   end if
+
+  ! Clouds and aerosols used enter data - we won't release explicitly 
+
+  ! fluxes - but not flux_dir, which used enter data 
+  !$acc        end data 
+  !$omp target end data
+  ! p_lay etc
+  !$acc        end data 
+  !$omp target end data
 contains
   ! ----------------------------------------------------------------------------------
   subroutine compute_profiles(SST, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q_lay, o3)
@@ -511,7 +517,7 @@ contains
         !$acc enter data copyin(clouds) create(clouds%tau, clouds%ssa, clouds%g)
         !$omp target enter data map(alloc:clouds%tau, clouds%ssa, clouds%g)
       class default
-        call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
+        call stop_on_err("rte_rrtmgp_allsky: Don't recognize the kind of optical properties ")
     end select
     !
     ! Cloud physical properties 
@@ -565,28 +571,31 @@ contains
     select type(aerosols)
       class is (ty_optical_props_1scl)
         call stop_on_err(aerosols%alloc_1scl(ncol, nlay))
-        !$acc enter data copyin(aerosols) create(aerosols%tau)
-        !$omp target enter data map(alloc:aerosols%tau)
+        !$acc        enter data copyin(aerosols) create(aerosols%tau)
+        !$omp target enter data map              (alloc:aerosols%tau)
       class is (ty_optical_props_2str)
         call stop_on_err(aerosols%alloc_2str(ncol, nlay))
-        !$acc enter data copyin(aerosols) create(aerosols%tau, aerosols%ssa, aerosols%g)
-        !$omp target enter data map(alloc:aerosols%tau, aerosols%ssa, aerosols%g)
+        !$acc        enter data copyin(aerosols) create(aerosols%tau, aerosols%ssa, aerosols%g)
+        !$omp target enter data map              (alloc:aerosols%tau, aerosols%ssa, aerosols%g)
       class default
-        call stop_on_err("rte_rrtmgp_clouds_aerosols: Don't recognize the kind of optical properties ")
+        call stop_on_err("rte_rrtmgp_allsky: Don't recognize the kind of optical properties ")
     end select
     !
     ! Derive relative humidity from profile
+    !   relhum is on the CPU at this point 
     !
     call stop_on_err(gas_concs%get_vmr("h2o",vmr_h2o))
     allocate(relhum(ncol, nlay))
+    !$acc        enter data create(   relhum)
+    !$omp target enter data map(alloc:relhum)
     call get_relhum(ncol, nlay, p_lay, t_lay, vmr_h2o, relhum)
     !
     ! Aerosol properties 
     ! 
     allocate(aero_type(ncol,nlay), aero_size(ncol,nlay), &
-             aero_mass(ncol,nlay), aero_mask(ncol,nlay))
-    !$acc        enter data create(   aero_mask, aero_type, aero_size, aero_mass)
-    !$omp target enter data map(alloc:aero_mask, aero_type, aero_size, aero_mass)
+             aero_mass(ncol,nlay))
+    !$acc        enter data create(   aero_type, aero_size, aero_mass)
+    !$omp target enter data map(alloc:aero_type, aero_size, aero_mass)
 
     ! Restrict sulfate aerosols to lower stratosphere (> 50 hPa = 50*100 Pa; < 100 hPa = 100*100 Pa)
     !   and dust aerosols to the lower troposphere (> 700 hPa; < 900 hPa), and
@@ -650,6 +659,8 @@ contains
     ! -------------------
 
     ! Derive layer virtual temperature
+    !$acc                         parallel loop    collapse(2) copyin(p_lay, vmr_h2o, t_lay) copyout( relhum)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay, vmr_h2o, t_lay) map(from:relhum) 
     do i = 1, ncol 
        do k = 1, nlay
           ! Convert h2o vmr to mmr
@@ -727,44 +738,43 @@ contains
     ! Write variables
     !
     ! State - writing 
-    !$acc        exit data copyout( p_lev, t_lev, p_lay, t_lay)
-    !$omp target exit data map(from:p_lev, t_lev, p_lay, t_lay)
+    !$acc        update host (   p_lev, t_lev, p_lay, t_lay)
+    !$omp target update map(from:p_lev, t_lev, p_lay, t_lay)
     call stop_on_err(write_field(ncid, "p_lev",  p_lev))
     call stop_on_err(write_field(ncid, "t_lev",  t_lev))
     call stop_on_err(write_field(ncid, "p_lay",  p_lay))
     call stop_on_err(write_field(ncid, "t_lay",  t_lay))
+    ! Array vmr is on the host, not the device, but is copied-out
     call stop_on_err(gas_concs%get_vmr("h2o", vmr))
     call stop_on_err(write_field(ncid, "h2o",    vmr))
     call stop_on_err(gas_concs%get_vmr("o3",  vmr))
     call stop_on_err(write_field(ncid, "o3",     vmr))
 
     if(do_clouds) then 
-      !$acc        exit data copyout( lwp, iwp, rel, rei)
-      !$omp target exit data map(from:lwp, iwp, rel, rei)
+      !$acc        update host(    lwp, iwp, rel, rei)
+      !$omp target update map(from:lwp, iwp, rel, rei)
       call stop_on_err(write_field(ncid, "lwp",  lwp))
       call stop_on_err(write_field(ncid, "iwp",  iwp))
       call stop_on_err(write_field(ncid, "rel",  rel))
       call stop_on_err(write_field(ncid, "rei",  rei))
-      !$acc        exit data delete(     lwp, iwp, rel, rei)
-      !$omp target exit data map(release:lwp, iwp, rel, rei)
     end if 
 
     if(do_aerosols) then 
-      !$acc        exit data copyout( aero_size, aero_mass, aero_type)
-      !$omp target exit data map(from:aero_size, aero_mass, aero_type)
+      !$acc        update host(    aero_size, aero_mass, aero_type)
+      !$omp target update map(from:aero_size, aero_mass, aero_type)
       call stop_on_err(write_field(ncid, "aero_size",  aero_size))
       call stop_on_err(write_field(ncid, "aero_mass",  aero_mass))
       call stop_on_err(write_field(ncid, "aero_type",  aero_type))
     end if 
 
     ! Fluxes - writing 
-    !$acc        exit data copyout( flux_up, flux_dn)
-    !$omp target exit data map(from:flux_up, flux_dn)
+    !$acc        update host(    flux_up, flux_dn)
+    !$omp target update map(from:flux_up, flux_dn)
     call stop_on_err(write_field(ncid, "flux_up",  flux_up))
     call stop_on_err(write_field(ncid, "flux_dn",  flux_dn))
     if(.not. is_lw) then 
-      !$acc        exit data copyout( flux_dir)
-      !$omp target exit data map(from:flux_dir)
+      !$acc        update host(    flux_dir)
+      !$omp target update map(from:flux_dir)
       call stop_on_err(write_field(ncid, "flux_dir",  flux_dir))
     end if 
 
@@ -784,4 +794,4 @@ contains
       call stop_on_err("create_var: can't define " // trim(name) // " variable")
   end subroutine create_var
   ! ---------------------------------------------------------
-end program rte_rrtmgp_clouds_aerosols
+end program rte_rrtmgp_allsky

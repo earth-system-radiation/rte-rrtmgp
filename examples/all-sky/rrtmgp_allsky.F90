@@ -330,8 +330,8 @@ program rte_rrtmgp_allsky
       !$omp end target data
 
     else
-      !$acc        enter data create(   toa_flux)
-      !$omp target enter data map(alloc:toa_flux)
+      !$acc         data create(   toa_flux)
+      !$omp target  data map(alloc:toa_flux)
       fluxes%flux_dn_dir => flux_dir(:,:)
 
       call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
@@ -351,10 +351,9 @@ program rte_rrtmgp_allsky
                               mu0,   toa_flux, &
                               sfc_alb_dir, sfc_alb_dif, &
                               fluxes))
-      !$acc        exit data delete(     toa_flux)
-      !$omp target exit data map(release:toa_flux)
+      !$acc        end data   
+      !$omp end target data
     end if
-    !print *, "******************************************************************"
     call system_clock(finish, clock_rate)
     elapsed(iloop) = finish - start
   end do
@@ -377,6 +376,10 @@ program rte_rrtmgp_allsky
 
   if(.true.) call write_fluxes
 
+  call stop_on_err(fluxes%finalize())
+
+  ! Memory for bounday conditions on the GPU was allocated with unstructured data dataments 
+  !   (acc enter data). Deallocate it expliicity 
   if(is_lw) then
     !$acc        exit data delete(     t_sfc, emis_sfc)
     !$omp target exit data map(release:t_sfc, emis_sfc)
@@ -385,7 +388,36 @@ program rte_rrtmgp_allsky
     !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif, mu0)
   end if
 
-  ! Clouds and aerosols used enter data - we won't release explicitly 
+  ! Clouds and aerosols also used enter data  
+  if(do_clouds) then
+    !$acc        exit data delete(     cloud_mask, lwp, iwp, rel, rei)
+    !$omp target exit data map(release:cloud_mask, lwp, iwp, rel, rei)
+    select type(clouds)
+      class is (ty_optical_props_1scl)
+        !$acc        exit data delete     (clouds%tau, clouds)
+        !$omp target exit data map(release:clouds%tau)
+      class is (ty_optical_props_2str)
+        !$acc        exit data delete     (clouds%tau, clouds%ssa, clouds%g, clouds)
+        !$omp target exit data map(release:clouds%tau, clouds%ssa, clouds%g)
+    end select
+  end if
+  if(do_aerosols) then
+    !$acc        exit data delete(     aero_type, aero_size, aero_mass, relhum)
+    !$omp target exit data map(release:aero_type, aero_size, aero_mass, relhum)
+    select type(aerosols)
+      class is (ty_optical_props_1scl)
+        !$acc        exit data delete     (aerosols%tau, aerosols)
+        !$omp target exit data map(release:aerosols%tau)
+      class is (ty_optical_props_2str)
+        !$acc        exit data delete     (aerosols%tau, aerosols%ssa, aerosols%g, aerosols)
+        !$omp target exit data map(release:aerosols%tau, aerosols%ssa, aerosols%g)
+    end select
+  end if
+
+  if(.not. is_lw) then
+    !$acc        exit data delete(     flux_dir)
+    !$omp target exit data map(release:flux_dir)
+  end if
 
   ! fluxes - but not flux_dir, which used enter data 
   !$acc end        data 

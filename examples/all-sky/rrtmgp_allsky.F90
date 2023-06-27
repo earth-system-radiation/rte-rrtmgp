@@ -376,8 +376,6 @@ program rte_rrtmgp_allsky
 
   if(.true.) call write_fluxes
 
-  call stop_on_err(fluxes%finalize())
-
   ! Memory for bounday conditions on the GPU was allocated with unstructured data dataments 
   !   (acc enter data). Deallocate it expliicity 
   if(is_lw) then

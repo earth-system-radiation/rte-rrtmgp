@@ -423,7 +423,8 @@ contains
     real(wp), parameter :: gamma = 6.7e-3
     
     real(wp), parameter :: q_0 = 0.01864 ! for 300 K SST.
-
+    ! -------------------
+    Tv0 = (1. + 0.608*q_0) * SST
     !
     ! Split resolution above and below RCE tropopause (15 km or about 125 hPa)
     !
@@ -443,16 +444,16 @@ contains
     do ilay = 1, nlay 
       do icol = 1, ncol 
         z = z_lay(ilay) 
-        q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
-        T = SST - gamma*z / (1. + 0.608*q)    
-        Tv  = (1. + 0.608*q  ) *   T
-        Tv0 = (1. + 0.608*q_0) * SST
-        p = p0 * (Tv/Tv0)**(g/(Rd*gamma))
         if (z > z_trop) then 
           q = q_t
           T = SST - gamma*z_trop/(1. + 0.608*q_0)
           Tv  = (1. + 0.608*q  ) *   T
           p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv)) )
+        else 
+          q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
+          T = SST - gamma*z / (1. + 0.608*q)    
+          Tv  = (1. + 0.608*q  ) *   T
+          p = p0 * (Tv/Tv0)**(g/(Rd*gamma))
         end if 
         p_lay(icol,ilay) = p 
         t_lay(icol,ilay) = T
@@ -468,16 +469,16 @@ contains
     do ilay = 1, nlay+1
       do icol = 1, ncol 
         z = z_lev(ilay) 
-        q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
-        T = SST - gamma*z / (1. + 0.608*q)    
-        Tv  = (1. + 0.608*q  ) *   T
-        Tv0 = (1. + 0.608*q_0) * SST
-        p = p0 * (Tv/Tv0)**(g/(Rd*gamma))
         if (z > z_trop) then 
           q = q_t
           T = SST - gamma*z_trop/(1. + 0.608*q_0)
           Tv  = (1. + 0.608*q  ) *   T
           p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv)) )
+        else 
+          q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
+          T = SST - gamma*z / (1. + 0.608*q)    
+          Tv  = (1. + 0.608*q  ) *   T
+          p = p0 * (Tv/Tv0)**(g/(Rd*gamma))
         end if 
         p_lev(icol,ilay) = p 
         t_lev(icol,ilay) = T

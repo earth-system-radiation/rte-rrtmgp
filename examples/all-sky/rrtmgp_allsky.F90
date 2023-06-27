@@ -360,19 +360,15 @@ program rte_rrtmgp_allsky
   !
   call system_clock(finish_all, clock_rate)
 
-#if defined(_OPENACC) || defined(_OPENMP)
   avg  = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
   mint = minval(elapsed) 
-#else
-  avg  = (finish_all-start_all) 
-  mint = avg
-#endif 
+
   ! What to print? 
   !   ncol, nlay, ngpt; are clouds used, are aerosols used; time per column, total, min; 
   print *, " ncol   nlay   ngpt  clouds aerosols time_per_col_ms nloops time_total_s time_min_s"
   write(output_unit, '(3(i6, 1x), 6x, 2(i1, 8x), 1x, f7.3, 1x, i6, 2x, 2(4x,f7.3))') & 
     ncol, nlay, ngpt, merge(1,0,do_clouds), merge(1,0,do_aerosols),  & 
-    avg/(real(ncol*nloops) * (1.0e-3*clock_rate)),  nloops,  avg / real(clock_rate),  mint / real(clock_rate)
+    avg/(real(ncol) * (1.0e-3*clock_rate)),  nloops,  sum(elapsed) / real(clock_rate),  mint / real(clock_rate)
 
   if(.true.) call write_fluxes
 

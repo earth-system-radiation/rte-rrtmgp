@@ -54,7 +54,6 @@ if __name__ == '__main__':
     if(args.cloud_optics == "" and args.aerosol_optics != ""): 
         raise AssertionError("Need to supply cloud optics if providing aerosol optics")
 
-    print (args.output_file)
     # Every combo of ncol, nlay 
     for l in args.nlay: 
         for i in args.ncol: 

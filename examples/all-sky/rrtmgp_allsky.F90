@@ -287,7 +287,7 @@ program rte_rrtmgp_allsky
   !!$omp parallel do firstprivate(fluxes)
   do iloop = 1, nloops
     ! Omit the checks starting with the second iteration
-    if (iloop == 2) call rte_config_checks(logical(.false., wl))
+    if (iloop > 1) call rte_config_checks(logical(.false., wl))
 
     call system_clock(start)
     !
@@ -372,8 +372,10 @@ program rte_rrtmgp_allsky
 
   if(.true.) call write_fluxes
 
+  ! 
   ! Memory for bounday conditions on the GPU was allocated with unstructured data dataments 
   !   (acc enter data). Deallocate it expliicity 
+  !
   if(is_lw) then
     !$acc        exit data delete(     t_sfc, emis_sfc)
     !$omp target exit data map(release:t_sfc, emis_sfc)
@@ -381,8 +383,10 @@ program rte_rrtmgp_allsky
     !$acc        exit data delete(     sfc_alb_dir, sfc_alb_dif, mu0)
     !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif, mu0)
   end if
-
+  
+  !
   ! Clouds and aerosols also used enter data  
+  !
   if(do_clouds) then
     !$acc        exit data delete(     cloud_mask, lwp, iwp, rel, rei)
     !$omp target exit data map(release:cloud_mask, lwp, iwp, rel, rei)
@@ -394,6 +398,11 @@ program rte_rrtmgp_allsky
         !$acc        exit data delete     (clouds%tau, clouds%ssa, clouds%g, clouds)
         !$omp target exit data map(release:clouds%tau, clouds%ssa, clouds%g)
     end select
+    ! 
+    ! Explicit finalization of cloud optical properties - not really necessary since memory 
+    !   will be freed when the program ends, but useful for testing 
+    !
+    call clouds%finalize
   end if
   if(do_aerosols) then
     !$acc        exit data delete(     aero_type, aero_size, aero_mass, relhum)
@@ -406,8 +415,17 @@ program rte_rrtmgp_allsky
         !$acc        exit data delete     (aerosols%tau, aerosols%ssa, aerosols%g, aerosols)
         !$omp target exit data map(release:aerosols%tau, aerosols%ssa, aerosols%g)
     end select
+    ! 
+    ! Explicit finalization of aerosol optical properties - not really necessary since memory 
+    !   will be freed when the program ends, but useful for testing 
+    !
+    call aerosols%finalize
   end if
-
+  !
+  ! k-distribution
+  !
+  call k_dist%finalize
+  
   if(.not. is_lw) then
     !$acc        exit data delete(     flux_dir)
     !$omp target exit data map(release:flux_dir)

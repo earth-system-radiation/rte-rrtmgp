@@ -481,25 +481,23 @@ namespace Gas_optics_rrtmgp_kernels_cuda
 
         const Float delta_Tsurf = Float(1.);
 
-        const int block_gpt = 16;
+        const int block_col = 32;
         const int block_lay = 4;
-        const int block_col = 2;
 
-        const int grid_gpt = ngpt/block_gpt + (ngpt%block_gpt > 0);
-        const int grid_lay = nlay/block_lay + (nlay%block_lay > 0);
         const int grid_col = ncol/block_col + (ncol%block_col > 0);
+        const int grid_lay = nlay/block_lay + (nlay%block_lay > 0);
 
-        dim3 grid_gpu(grid_gpt, grid_lay, grid_col);
-        dim3 block_gpu(block_gpt, block_lay, block_col);
+        dim3 grid_gpu(grid_col, grid_lay);
+        dim3 block_gpu(block_col, block_lay);
         
         if (tunings.count("Planck_source_kernel") == 0)
         {
             std::tie(grid_gpu, block_gpu) = tune_kernel(
                     "Planck_source_kernel",
-                    dim3(ngpt, nlay, ncol),
-                    {1, 2, 4},
-                    {1, 2},
-                    {1, 2, 4, 8, 16, 32, 48, 64, 96, 128, 256},
+                    dim3(ncol, nlay),
+                    {1, 2, 4, 8, 16, 32, 48, 64, 96, 128, 256, 512},
+                    {1, 2, 4, 8, 16, 32, 48, 64, 96, 128, 256, 512},
+                    {1},
                     Planck_source_kernel,
                     ncol, nlay, nbnd, ngpt,
                     nflav, neta, npres, ntemp, nPlanckTemp,

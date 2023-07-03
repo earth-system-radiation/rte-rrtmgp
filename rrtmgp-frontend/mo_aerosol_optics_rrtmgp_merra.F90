@@ -287,6 +287,9 @@ contains
     nrh  = size(this%aero_rh,1)
     nval = size(this%aero_dust_tbl,1)
     nbnd = size(this%aero_dust_tbl,3)
+
+    !$acc        update host(this%merra_aero_bin_lims)
+    !$omp target update from(this%merra_aero_bin_lims)
     minSize = this%merra_aero_bin_lims(1,1)
     maxSize = this%merra_aero_bin_lims(2,nbin)
 

@@ -340,7 +340,7 @@ contains
     ! Aerosol size, relative humidity
     !
     if(check_values) then
-      if(any_vals_outside(aero_size, aeromsk, minSize, maxSize) &
+      if(any_vals_outside(aero_size, aeromsk, minSize, maxSize)) &
         error_msg = 'aerosol optics: requested aerosol size is out of bounds'
       if(any_vals_outside(relhum,    aeromsk, 0._wp, 1._wp)) &
         error_msg = 'aerosol optics: relative humidity fraction is out of bounds'

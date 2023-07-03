@@ -1,12 +1,14 @@
 RRTMGP_CUDA_KERNELS = \
   interface_rrtmgp_cuda.o \
   gas_optics_rrtmgp_kernels_launchers.o \
+  mem_pool_gpu.o \
 
 RTE_CUDA_KERNELS = \
   interface_rte_cuda.o \
   optical_props_kernels_launchers.o \
   rte_solver_kernels_launchers.o \
   fluxes_kernels_launchers.o \
+  mem_pool_gpu.o \
 
 
 ##################################
@@ -24,3 +26,5 @@ optical_props_kernels_launchers.o: optical_props_kernels_launchers.cu
 rte_solver_kernels_launchers.o: rte_solver_kernels_launchers.cu
 
 fluxes_kernels_launchers.o: fluxes_kernels_launchers.cu
+
+mem_pool_gpu.o: mem_pool_gpu.cu

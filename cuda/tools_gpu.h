@@ -2,7 +2,7 @@
 #define TOOLS_GPU_H
 
 #if defined(RTE_RRTMGP_GPU_MEMPOOL_OWN)
-#include "Mem_pool_gpu.h"
+#include "mem_pool_gpu.h"
 #endif
 #include <cstdio>
 

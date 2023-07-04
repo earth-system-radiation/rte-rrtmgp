@@ -77,29 +77,6 @@ jobs:
         path: rrtmgp-data
         ref: develop
     #
-    # Cache RFMIP files
-    #
-    - name: Cache RFMIP files
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.RFMIP_CACHEDIR }}
-        key: rfmip-files
-    #
-    # Stage RFMIP files
-    #
-    - name: Stage RFMIP files
-      run: |
-        if test ! -d "${RFMIP_CACHEDIR}"; then
-          mkdir -p "${RFMIP_CACHEDIR}"
-          ( cd "${RFMIP_CACHEDIR}" && python "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py" )
-        fi
-        for file in "${RFMIP_CACHEDIR}"/*; do
-          if test ! -d "${file}"; then
-            echo "copying '${file}'..."
-            cp "${file}" "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/"
-          fi
-        done
-    #
     # Build libraries, examples and tests
     #
     - name: Build libraries, examples and tests

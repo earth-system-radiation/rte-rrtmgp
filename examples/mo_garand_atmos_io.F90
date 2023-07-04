@@ -70,10 +70,14 @@ contains
     !   allocating on assignment. This may require explicit compiler support
     !   e.g. -assume realloc_lhs flag for Intel
     !
+    allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlev), t_lev(ncol, nlev))
     p_lay = read_field(ncid, 'p_lay', ncol, nlay)
     t_lay = read_field(ncid, 't_lay', ncol, nlay)
     p_lev = read_field(ncid, 'p_lev', ncol, nlev)
     t_lev = read_field(ncid, 't_lev', ncol, nlev)
+
+    print *, "in read_atmos: ncol, nlay are ", ncol, nlay
+    print *, "in read_atmos: p_lay is  ", size(p_lay, 1), size(p_lay, 2)
 
     call stop_on_err(gas_concs%init(gas_names))
     do igas = 1, ngas

@@ -49,7 +49,6 @@ jobs:
       FC: ftn
       FCFLAGS: ${{ matrix.fcflags }}
       # Make variables:
-      NFHOME: /dummy
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
@@ -68,6 +67,7 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
+        ref: develop
     #
     # Check out CUDA kernels if needed 
     #

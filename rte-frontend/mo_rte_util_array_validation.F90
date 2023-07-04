@@ -123,8 +123,8 @@ contains
 
     real(wp) :: minValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array, mask) map(from:minValue)
+    !$acc kernels copyin(array, mask)
+    !$omp target map(to: array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -140,8 +140,8 @@ contains
 
     real(wp) :: minValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array, mask) map(from:minValue)
+    !$acc kernels copyin(array, mask)
+    !$omp target map(to: array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -157,8 +157,8 @@ contains
 
     real(wp) :: minValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array, mask) map(from:minValue)
+    !$acc kernels copyin(array, mask)
+    !$omp target map(to: array, mask) map(from:minValue)
     minValue = minval(array, mask=mask)
     !$acc end kernels
     !$omp end target
@@ -249,8 +249,8 @@ contains
 
     real(wp) :: minValue, maxValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array, mask) map(from:minValue, maxValue)
+    !$acc kernels copyin(array, mask)
+    !$omp target map(to: array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
@@ -266,8 +266,8 @@ contains
 
     real(wp) :: minValue, maxValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array, mask) map(from:minValue, maxValue)
+    !$acc kernels copyin(array, mask)
+    !$omp target map(to: array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels
@@ -283,8 +283,8 @@ contains
 
     real(wp) :: minValue, maxValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array, mask) map(from:minValue, maxValue)
+    !$acc kernels copyin(array, mask)
+    !$omp target map(to: array, mask) map(from:minValue, maxValue)
     minValue = minval(array, mask=mask)
     maxValue = maxval(array, mask=mask)
     !$acc end kernels

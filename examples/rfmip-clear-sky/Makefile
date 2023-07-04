@@ -24,22 +24,6 @@ ifeq ($(RTE_KERNELS), extern)
 	LIBS += -c++libs -cuda
 endif
 
-#
-# General Purpose Timing Library https://jmrosinski.github.io/GPTL/
-# Set environment variable GPTL_DIR to the root of a GPTL installation to build
-#   the RFMIP example with timers
-#
-ifneq ($(origin GPTL_DIR),undefined)
-	#
-	# Timing library
-	#
-	FCINCLUDE += -I$(GPTL_DIR)/include
-	# Compiler specific
-	FCFLAGS   += -DUSE_TIMING
-	LDFLAGS   += -L$(GPTL_DIR)/lib
-	LIBS      += -lgptl
-endif
-
 VPATH = ../
 
 # Compilation rules

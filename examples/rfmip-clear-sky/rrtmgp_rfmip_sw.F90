@@ -81,13 +81,6 @@ program rrtmgp_rfmip_sw
   use mo_load_coefficients,  only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_sw_bc, determine_gas_names
-#ifdef USE_TIMING
-  !
-  ! Timing library
-  !
-  use gptl,                  only: gptlstart, gptlstop, gptlinitialize, gptlpr, gptlfinalize, gptlsetoption, &
-                                   gptlpercent, gptloverhead
-#endif
   implicit none
   ! --------------------------------------------------
   !
@@ -124,9 +117,6 @@ program rrtmgp_rfmip_sw
   !
   type(ty_gas_concs), dimension(:), allocatable  :: gas_conc_array
   real(wp), parameter :: deg_to_rad = acos(-1._wp)/180._wp
-#ifdef USE_TIMING
-  integer :: ret, i
-#endif
   ! -------------------------------------------------------------------------------------------------
   !
   ! Code starts
@@ -235,20 +225,9 @@ program rrtmgp_rfmip_sw
   !$acc enter data create (sfc_alb_spec, mu0)
   !$omp target enter data map(alloc:sfc_alb_spec, mu0)
   ! --------------------------------------------------
-#ifdef USE_TIMING
-  !
-  ! Initialize timers
-  !
-  ret = gptlsetoption (gptlpercent, 1)        ! Turn on "% of" print
-  ret = gptlsetoption (gptloverhead, 0)       ! Turn off overhead estimate
-  ret =  gptlinitialize()
-#endif
   !
   ! Loop over blocks
   !
-#ifdef USE_TIMING
-  do i = 1, 4
-#endif
   do b = 1, nblocks
     fluxes%flux_up => flux_up(:,:,b)
     fluxes%flux_dn => flux_dn(:,:,b)
@@ -256,18 +235,12 @@ program rrtmgp_rfmip_sw
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
     !
-#ifdef USE_TIMING
-    ret =  gptlstart('gas_optics (SW)')
-#endif
     call stop_on_err(k_dist%gas_optics(p_lay(:,:,b), &
                                        p_lev(:,:,b),       &
                                        t_lay(:,:,b),       &
                                        gas_conc_array(b),  &
                                        optical_props,      &
                                        toa_flux))
-#ifdef USE_TIMING
-    ret =  gptlstop('gas_optics (SW)')
-#endif
     ! Boundary conditions
     !   (This is partly to show how to keep work on GPUs using OpenACC in a host application)
     ! What's the total solar irradiance assumed by RRTMGP?
@@ -322,9 +295,6 @@ program rrtmgp_rfmip_sw
     ! ... and compute the spectrally-resolved fluxes, providing reduced values
     !    via ty_fluxes_broadband
     !
-#ifdef USE_TIMING
-    ret =  gptlstart('rte_sw')
-#endif
     call stop_on_err(rte_sw(optical_props,   &
                             top_at_1,        &
                             mu0,             &
@@ -332,9 +302,6 @@ program rrtmgp_rfmip_sw
                             sfc_alb_spec,    &
                             sfc_alb_spec,    &
                             fluxes))
-#ifdef USE_TIMING
-    ret =  gptlstop('rte_sw')
-#endif
     !
     ! Zero out fluxes for which the original solar zenith angle is > 90 degrees.
     !
@@ -348,11 +315,6 @@ program rrtmgp_rfmip_sw
   !
   ! End timers
   !
-#ifdef USE_TIMING
-  end do
-  ret = gptlpr(block_size)
-  ret = gptlfinalize()
-#endif
   !$acc exit data delete(optical_props%tau, optical_props%ssa, optical_props%g, optical_props)
   !$omp target exit data map(release:optical_props%tau, optical_props%ssa, optical_props%g)
   !$acc exit data delete(sfc_alb_spec, mu0)

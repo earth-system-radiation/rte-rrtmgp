@@ -5,6 +5,7 @@
 import argparse
 import os
 import sys
+import warnings
 
 import numpy as np
 import xarray as xr
@@ -13,6 +14,8 @@ import xarray as xr
 # Comparing reference and test results
 #
 if __name__ == '__main__':
+    warnings.simplefilter("ignore", xr.SerializationWarning)
+    
     parser = argparse.ArgumentParser(
         description="Compares all-sky example output to file in reference "
                     "directory")

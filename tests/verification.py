@@ -1,5 +1,6 @@
 import argparse
 import sys
+import warnings
 
 import xarray as xr
 import numpy  as np
@@ -28,6 +29,8 @@ def assert_equal(variants, reference):
 
 ########################################################################
 if __name__ == '__main__':
+    warnings.simplefilter("ignore", xr.SerializationWarning)
+ 
     parser = argparse.ArgumentParser(
         description="Compares all-sky example output to file in reference "
                     "directory")

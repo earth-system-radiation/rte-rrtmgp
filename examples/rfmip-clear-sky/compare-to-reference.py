@@ -5,9 +5,11 @@
 import argparse
 import os
 import sys
+import warnings 
 
 import numpy as np
 import xarray as xr
+
 
 tst_dir = "."
 rrtmgp_suffix = "_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"
@@ -16,6 +18,8 @@ rrtmgp_suffix = "_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc"
 # Comparing reference and test results
 #
 if __name__ == '__main__':
+    warnings.simplefilter("ignore", xr.SerializationWarning)
+    
     parser = argparse.ArgumentParser(
         description="Compares all-sky example output to file in reference "
                     "directory")

@@ -53,7 +53,6 @@ jobs:
       FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: ${{ matrix.fcflags }}
       # Make variables:
-      NCHOME: /dummy
       NFHOME: /opt/netcdf-fortran
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
@@ -76,6 +75,7 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
+        ref: feature-timing
     #
     # Cache RFMIP files
     #

@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Compares all-sky example output to file in reference "
                     "directory")
-    parser.add_argument("--allsky_file", type=str, default="rrtmgp-allsky.nc",
+    parser.add_argument("--allsky_file", type=str, default="rrtmgp-allsky-lw.nc",
                         dest="file",
                         help="Name of file inputs and outputs for "
                              "all-sky problem (same for test and reference)")
@@ -35,13 +35,13 @@ if __name__ == '__main__':
     ref = xr.open_dataset(ref_file)
 
     failed = False
-    for v in ['lw_flux_up', 'lw_flux_dn', 'sw_flux_up', 'sw_flux_dn',
-              'sw_flux_dir']:
+    for v in tst.variables:
+        if np.any(np.isnan(ref.variables[v].values)):
+            raise Exception(v + ": some ref values are missing. Now that is strange.")
         if np.all(np.isnan(tst.variables[v].values)):
             raise Exception("All test values are missing. Were the tests run?")
         if np.any(np.isnan(tst.variables[v].values)):
-            raise Exception(
-                "Some test values are missing. Now that is strange.")
+            raise Exception(v + ":Some test values are missing. Now that is strange.")
 
         # express as (tst-ref).variables[v].values when replacing reference file
         # to have same number of columns

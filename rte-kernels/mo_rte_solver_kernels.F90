@@ -656,7 +656,7 @@ contains
     ! --------------------------------
     integer             :: icol, ilay
     real(wp)            :: fact
-    real(wp), parameter :: tau_thresh = sqrt(epsilon(tau))
+    real(wp), parameter :: tau_thresh = sqrt(sqrt(epsilon(tau)))
     ! ---------------------------------------------------------------
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -664,11 +664,12 @@ contains
       ! Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
       !   is of order epsilon (smallest difference from 1. in working precision)
       !   Thanks to Peter Blossey
+      !   Updated to 3rd order series and lower threshold based on suggestion from Dmitry Alexeev (Nvidia)
       !
       if(tau(icol, ilay) > tau_thresh) then
         fact = (1._wp - trans(icol,ilay))/tau(icol,ilay) - trans(icol,ilay)
       else
-        fact = tau(icol, ilay) * (0.5_wp - 1._wp/3._wp*tau(icol, ilay))
+        fact = tau(icol, ilay) * (0.5_wp + tau(icol, ilay) * (- 1._wp/3._wp + tau(icol, ilay) * 1._wp/8._wp ) )
       end if
       !
       ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13

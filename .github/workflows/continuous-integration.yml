@@ -25,7 +25,7 @@ jobs:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.rte-kernels }}"
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
+      # FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
       # Make variables:
       NFHOME: /usr
       RRTMGP_ROOT: ${{ github.workspace }}

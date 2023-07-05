@@ -60,8 +60,8 @@ jobs:
       RUN_CMD:
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
       OMP_TARGET_OFFLOAD: DISABLED
-      # Auxiliary variables:
-      RFMIP_CACHEDIR: .testcache
+      FAILURE_THRESHOLD: 7.e-4
+
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE

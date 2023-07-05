@@ -1103,6 +1103,7 @@ contains
 
 
     ! Ancillary variables
+    real(wp), parameter :: min_k = 1.e4_wp * epsilon(1._wp) ! Suggestion from Chiel van Heerwaarden
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat, inc_flux
@@ -1144,7 +1145,7 @@ contains
           !   k = 0 for isotropic, conservative scattering; this lower limit on k
           !   gives relative error with respect to conservative solution
           !   of < 0.1% in Rdif down to tau = 10^-9
-          k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
+          k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), min_k))
           k_mu     = k * mu0_s
           exp_minusktau = exp(-tau_s*k)
           exp_minus2ktau = exp_minusktau * exp_minusktau

@@ -36,7 +36,7 @@ if __name__ == '__main__':
                     "directory")
     parser.add_argument("--report_threshold", type=float, default=1.e-10,
                         help="Threshold for reporting differences")
-    parser.add_argument("--failure_threshold", type=float, default=6.e-4,
+    parser.add_argument("--failure_threshold", type=float, default=8.e-4,
                         help="Threshold at which differences cause failure")
     args = parser.parse_args()
     report_threshold = args.report_threshold

@@ -58,10 +58,10 @@ tests:
 	    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc  
 
 check:
-	python ./compare-to-reference.py --allsky_file rrtmgp-allsky-lw.nc
-	python ./compare-to-reference.py --allsky_file rrtmgp-allsky-sw.nc
-	python ./compare-to-reference.py --allsky_file rrtmgp-allsky-lw-no-aerosols.nc
-	python ./compare-to-reference.py --allsky_file rrtmgp-allsky-sw-no-aerosols.nc
+	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky --file rrtmgp-allsky-lw.nc
+	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky --file rrtmgp-allsky-sw.nc
+	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky --file rrtmgp-allsky-lw-no-aerosols.nc
+	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky --file rrtmgp-allsky-sw-no-aerosols.nc
 
 clean:
 	-rm rrtmgp_allsky *.o *.optrpt ../*.optrpt *.mod *.nc

@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        fpmodel:     [DP, SP]
+        fpmodel: [DP, SP]
         include:
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel

@@ -105,7 +105,7 @@ jobs:
     # Generate validation plots
     #
     - name: Generate validation plots
-      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default'
+      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       working-directory: tests
       run: python validation-plots.py
     #

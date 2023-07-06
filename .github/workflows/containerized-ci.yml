@@ -20,7 +20,7 @@ jobs:
         include:
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
-          fcflags: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+          fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
           experimental: false
         # Set flags for Intel ifx Fortran Compiler
         - fortran-compiler: ifx
@@ -52,7 +52,7 @@ jobs:
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: ${{ matrix.fcflags }}
+      FCFLAGS: ${{ matrix.fcflags }} -DRTE_USE_${{ matrix.fpmodel}}
       # Make variables:
       NFHOME: /opt/netcdf-fortran
       RRTMGP_ROOT: ${{ github.workspace }}
@@ -95,9 +95,7 @@ jobs:
     #  
     - name: Relax failure threshold for single precision
       if: matrix.fpmodel == 'SP'
-      run: |
-        echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
-        echo 'FCFLAGS="$FCLAGS -DRTE_USE_SP">> $GITHUB_ENV'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #

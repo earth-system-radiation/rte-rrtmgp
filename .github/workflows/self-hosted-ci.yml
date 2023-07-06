@@ -19,6 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        fpmodel:     [DP, SP]
         include:
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
@@ -41,7 +42,7 @@ jobs:
     env:
       # Core variables:
       FC: ftn
-      FCFLAGS: ${{ matrix.fcflags }}
+      FCFLAGS: ${{ matrix.fcflags }} -DRTE_USE_${{ matrix.fpmodel}}
       # Make variables:
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data

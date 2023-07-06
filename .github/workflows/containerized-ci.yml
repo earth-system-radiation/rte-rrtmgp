@@ -20,7 +20,7 @@ jobs:
         include:
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
-          fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
+          fcflags: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
           experimental: false
         # Set flags for Intel ifx Fortran Compiler
         - fortran-compiler: ifx
@@ -112,7 +112,7 @@ jobs:
     # Upload validation plots
     #
     - name: Upload validation plots
-      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default'
+      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       uses: actions/upload-artifact@v3
       with:
         name: valdiation-plot

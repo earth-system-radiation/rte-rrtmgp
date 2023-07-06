@@ -3,7 +3,6 @@ on:
   push:
     branches-ignore:
     - documentation
-    - feature-cuda-kernels
   pull_request:
     branches-ignore:
     - documentation
@@ -48,7 +47,6 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
-        ref: feature-timing
     #    
     # Synchronize the package index
     #
@@ -80,28 +78,6 @@ jobs:
         auto-activate-base: false
         # Use the cache properly:
         use-only-tar-bz2: true
-    # Cache RFMIP files
-    #
-    - name: Cache RFMIP files
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.RFMIP_CACHEDIR }}
-        key: rfmip-files
-    #
-    # Stage RFMIP files
-    #
-    - name: Stage RFMIP files
-      run: |
-        if test ! -d "${RFMIP_CACHEDIR}"; then
-          mkdir -p "${RFMIP_CACHEDIR}"
-          ( cd "${RFMIP_CACHEDIR}" && python "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py" )
-        fi
-        for file in "${RFMIP_CACHEDIR}"/*; do
-          if test ! -d "${file}"; then
-            echo "copying '${file}'..."
-            cp "${file}" "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/"
-          fi
-        done
     #
     # Build libraries, examples and tests
     #

@@ -3,7 +3,6 @@ on:
   push:
     branches-ignore:
     - documentation
-    - feature-cuda-kernels
   pull_request:
     branches-ignore:
     - documentation
@@ -23,7 +22,7 @@ jobs:
         include:
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
-          compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c !cray-libsci_acc"
+          compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
           fcflags: "-O3 -acc -Mallocatable=03 -gopt"
           experimental: false
@@ -61,7 +60,6 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
-        ref: feature-timing
     #
     # Finalize build environment
     #

@@ -20,25 +20,25 @@ jobs:
         include:
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
-          fcflags: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08 -DRTE_USE_${{ matrix.fpmodel }}"
+          fcflags: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
           experimental: false
         # Set flags for Intel ifx Fortran Compiler
         - fortran-compiler: ifx
           rte-kernels: default
-          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08                                   -DRTE_USE_${{ matrix.fpmodel }}"
+          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
           experimental: false
         - fortran-compiler: ifx
           rte-kernels: accel
-          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64 -DRTE_USE_${{ matrix.fpmodel }}"
+          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64"
           experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
           rte-kernels: default
-          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk      -DRTE_USE_${{ matrix.fpmodel }}"
+          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
           experimental: false
         - fortran-compiler: nvfortran
           rte-kernels: accel
-          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc -DRTE_USE_${{ matrix.fpmodel }}"
+          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc"
           experimental: false
         # Set container images
         - fortran-compiler: ifort
@@ -95,7 +95,9 @@ jobs:
     #  
     - name: Relax failure threshold for single precision
       if: matrix.fpmodel == 'SP'
-      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
+      run: |
+        echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
+        echo 'FCFLAGS="$FCLAGS -DRTE_USE_SP">> $GITHUB_ENV'
     #
     # Compare the results
     #

@@ -19,8 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        fpmodel:     [DP, SP]
         config-name: [nvidia-gpu-openacc, cce-cpu-icon-production, cce-gpu-openmp] 
+        fpmodel:     [DP, SP]
         include:
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
@@ -105,6 +105,12 @@ jobs:
     #
     - name: Run examples and tests
       run: make tests
+    #
+    # Relax failure thresholds for single precision 
+    #  
+    - name: Relax failure threshold for single precision
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #

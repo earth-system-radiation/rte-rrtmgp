@@ -37,7 +37,7 @@ ADDITIONS += mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.o
 #
 all: rrtmgp_allsky
 
-rrtmgp_allsky: $(ADDITIONS) rrtmgp_allsky.o
+rrtmgp_allsky: $(ADDITIONS) rrtmgp_allsky.o $(RRTMGP_BUILD)/librte.a $(RRTMGP_BUILD)/librrtmgp.a
 
 rrtmgp_allsky.o: $(ADDITIONS) rrtmgp_allsky.F90
 

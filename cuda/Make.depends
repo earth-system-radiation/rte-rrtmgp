@@ -1,14 +1,14 @@
 RRTMGP_CUDA_KERNELS = \
   interface_rrtmgp_cuda.o \
   gas_optics_rrtmgp_kernels_launchers.o \
-  mem_pool_gpu.o \
+  tools_gpu.o
 
 RTE_CUDA_KERNELS = \
   interface_rte_cuda.o \
   optical_props_kernels_launchers.o \
   rte_solver_kernels_launchers.o \
   fluxes_kernels_launchers.o \
-  mem_pool_gpu.o \
+  tools_gpu.o
 
 
 ##################################
@@ -16,15 +16,15 @@ RTE_CUDA_KERNELS = \
 ##################################
 #
 #
-interface_rrtmgp_cuda.o: interface_rrtmgp_cuda.cu
-interface_rte_cuda.o: interface_rte_cuda.cu
+interface_rrtmgp_cuda.o: interface_rrtmgp_cuda.cu tools_gpu.h
+interface_rte_cuda.o: interface_rte_cuda.cu tools_gpu.h
 
-gas_optics_rrtmgp_kernels_launchers.o: gas_optics_rrtmgp_kernels_launchers.cu
+gas_optics_rrtmgp_kernels_launchers.o: gas_optics_rrtmgp_kernels_launchers.cu tools_gpu.h
 
-optical_props_kernels_launchers.o: optical_props_kernels_launchers.cu
+optical_props_kernels_launchers.o: optical_props_kernels_launchers.cu tools_gpu.h
 
-rte_solver_kernels_launchers.o: rte_solver_kernels_launchers.cu
+rte_solver_kernels_launchers.o: rte_solver_kernels_launchers.cu tools_gpu.h
 
-fluxes_kernels_launchers.o: fluxes_kernels_launchers.cu
+fluxes_kernels_launchers.o: fluxes_kernels_launchers.cu tools_gpu.h
 
-mem_pool_gpu.o: mem_pool_gpu.cu
+tools_gpu.o: tools_gpu.cu tools_gpu.h

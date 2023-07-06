@@ -10,6 +10,7 @@
 #define cuda_check_error()  Tools_gpu::__cuda_check_error(__FILE__, __LINE__)
 #define cuda_check_memory() Tools_gpu::__cuda_check_memory(__FILE__, __LINE__)
 
+void prepare_cuda_mempool();
 
 namespace Tools_gpu
 {
@@ -74,6 +75,7 @@ namespace Tools_gpu
         T* data_ptr = nullptr;
 
         #if defined(RTE_RRTMGP_GPU_MEMPOOL_CUDA)
+        prepare_cuda_mempool();
         cuda_safe_call(cudaMallocAsync((void **) &data_ptr, length*sizeof(T), 0));
         #elif defined(RTE_RRTMGP_GPU_MEMPOOL_OWN)
         data_ptr = (T*)(Memory_pool_gpu::get_instance().acquire(length*sizeof(T)));

@@ -19,7 +19,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        fpmodel: [DP, SP]
         include:
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
@@ -39,6 +38,7 @@ jobs:
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
           experimental: true
+        fpmodel: [DP, SP]
     env:
       # Core variables:
       FC: ftn

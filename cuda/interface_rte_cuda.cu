@@ -91,6 +91,8 @@ extern "C"
                     *has_dif_bc, acc_to_cuda(inc_flux_dif),
                     *do_broadband, acc_to_cuda(flux_up_loc), acc_to_cuda(flux_dn_loc), acc_to_cuda(flux_dir_loc));
         }
+
+        cuda_safe_call(cudaStreamSynchronize(0));
     }
 
     // void lw_solver_noscat_gaussquad(
@@ -208,6 +210,7 @@ extern "C"
         }
 
         Tools_gpu::free_gpu(weights_gpu);
+        cuda_safe_call(cudaStreamSynchronize(0));
     }
 
 

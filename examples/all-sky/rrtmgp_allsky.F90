@@ -370,7 +370,7 @@ program rte_rrtmgp_allsky
     ncol, nlay, ngpt, merge(1,0,do_clouds), merge(1,0,do_aerosols),  & 
     avg/(real(ncol) * (1.0e-3*clock_rate)),  nloops,  sum(elapsed) / real(clock_rate),  mint / real(clock_rate)
 
-  if(.true.) call write_fluxes
+  call write_fluxes
 
   ! 
   ! Memory for bounday conditions on the GPU was allocated with unstructured data dataments 
@@ -731,6 +731,7 @@ contains
     use mo_simple_netcdf, only: write_field
     integer :: ncid, i, col_dim, lay_dim, lev_dim, varid
     real(wp) :: vmr(ncol, nlay)
+    character(len=3) :: flux_prefix
     !
     ! Write fluxes - make this optional? 
     !
@@ -777,13 +778,16 @@ contains
     !
     ! Fluxes - definitions 
     !
-    call create_var("flux_up", ncid, [col_dim, lev_dim])
-    call create_var("flux_dn", ncid, [col_dim, lev_dim])
-    if(.not. is_lw) then 
-      call create_var("flux_dir", ncid, [col_dim, lev_dim])
+    if(is_sw) then 
+      flux_prefix = "sw_"
+      call create_var(flux_prefix // "flux_dir", ncid, [col_dim, lev_dim])
+    else
+      flux_prefix = "lw_"  
     end if 
+    call create_var(flux_prefix // "flux_up", ncid, [col_dim, lev_dim])
+    call create_var(flux_prefix //"flux_dn", ncid, [col_dim, lev_dim])
     if(nf90_enddef(ncid) /= NF90_NOERR) &
-      call stop_on_err("rrtmgp_allsky: can't end redefinition??")
+      call stop_on_err("rrtmgp_allsky: can't end file definition??")
 
     !
     ! Write variables
@@ -821,12 +825,12 @@ contains
     ! Fluxes - writing 
     !$acc        update host(flux_up, flux_dn)
     !$omp target update from(flux_up, flux_dn)
-    call stop_on_err(write_field(ncid, "flux_up",  flux_up))
-    call stop_on_err(write_field(ncid, "flux_dn",  flux_dn))
+    call stop_on_err(write_field(ncid, flux_prefix // "flux_up",  flux_up))
+    call stop_on_err(write_field(ncid, flux_prefix // "flux_dn",  flux_dn))
     if(.not. is_lw) then 
       !$acc        update host(flux_dir)
       !$omp target update from(flux_dir)
-      call stop_on_err(write_field(ncid, "flux_dir",  flux_dir))
+      call stop_on_err(write_field(ncid, flux_prefix // "flux_dir",  flux_dir))
     end if 
 
     ! Close netCDF 

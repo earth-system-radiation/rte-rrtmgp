@@ -15,7 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         fortran-compiler: [ifort, ifx, nvfortran]
-        rte-kernels: [default, accel]
         fpmodel:     [DP, SP]
         include:
         # Set flags for Intel Fortran Compiler Classic

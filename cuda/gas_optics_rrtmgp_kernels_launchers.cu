@@ -11,6 +11,8 @@
 namespace
 {
     #include "gas_optics_rrtmgp_kernels.cu"
+
+    using Tools_gpu::calc_grid_size;
 }
 
 
@@ -41,9 +43,10 @@ namespace Gas_optics_rrtmgp_kernels_cuda
         }
         else
         {
-            grid = tunings["reorder123x321_kernel"].first;
             block = tunings["reorder123x321_kernel"].second;
         }
+
+        grid = calc_grid_size(block, dim3(ni, nj, nk));
 
         reorder123x321_kernel<<<grid, block>>>(
                 ni, nj, nk, arr_in, arr_out);
@@ -54,14 +57,8 @@ namespace Gas_optics_rrtmgp_kernels_cuda
             const int ni, const int nj,
             const Float* arr_in, Float* arr_out)
     {
-        const int block_i = 32;
-        const int block_j = 16;
-
-        const int grid_i = ni/block_i + (ni%block_i > 0);
-        const int grid_j = nj/block_j + (nj%block_j > 0);
-
-        dim3 grid_gpu(grid_i, grid_j);
-        dim3 block_gpu(block_i, block_j);
+        dim3 block_gpu(32, 16, 1);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ni, nj));
 
         reorder12x21_kernel<<<grid_gpu, block_gpu>>>(
                 ni, nj, arr_in, arr_out);
@@ -70,16 +67,8 @@ namespace Gas_optics_rrtmgp_kernels_cuda
 
     void zero_array(const int ni, const int nj, const int nk, Float* arr)
     {
-        const int block_i = 32;
-        const int block_j = 16;
-        const int block_k = 1;
-
-        const int grid_i = ni/block_i + (ni%block_i > 0);
-        const int grid_j = nj/block_j + (nj%block_j > 0);
-        const int grid_k = nk/block_k + (nk%block_k > 0);
-
-        dim3 grid_gpu(grid_i, grid_j, grid_k);
-        dim3 block_gpu(block_i, block_j, block_k);
+        dim3 block_gpu(32, 16, 1);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ni, nj, nk));
 
         zero_array_kernel<<<grid_gpu, block_gpu>>>(
                 ni, nj, nk, arr);
@@ -120,16 +109,8 @@ namespace Gas_optics_rrtmgp_kernels_cuda
             int* jeta,
             int* jpress)
     {
-        const int block_col  = 4;
-        const int block_lay  = 2;
-        const int block_flav = 16;
-
-        const int grid_col  = ncol /block_col  + (ncol%block_col   > 0);
-        const int grid_lay  = nlay /block_lay  + (nlay%block_lay   > 0);
-        const int grid_flav = nflav/block_flav + (nflav%block_flav > 0);
-
-        dim3 grid_gpu(grid_col, grid_lay, grid_flav);
-        dim3 block_gpu(block_col, block_lay, block_flav);
+        dim3 block_gpu(4, 2, 16);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, nlay, nflav));
 
         Float tmin = std::numeric_limits<Float>::min();
         interpolation_kernel<<<grid_gpu, block_gpu>>>(
@@ -172,9 +153,10 @@ namespace Gas_optics_rrtmgp_kernels_cuda
         }
         else
         {
-            grid = tunings["combine_abs_and_rayleigh_kernel"].first;
             block = tunings["combine_abs_and_rayleigh_kernel"].second;
         }
+
+        grid = calc_grid_size(block, dim3(ncol, nlay, ngpt));
 
         combine_abs_and_rayleigh_kernel<<<grid, block>>>(
                 ncol, nlay, ngpt, tmin,
@@ -221,9 +203,10 @@ namespace Gas_optics_rrtmgp_kernels_cuda
         }
         else
         {
-            grid = tunings["compute_tau_rayleigh_kernel"].first;
             block = tunings["compute_tau_rayleigh_kernel"].second;
         }
+
+        grid = calc_grid_size(block, dim3(ncol, nlay));
 
         compute_tau_rayleigh_kernel<<<grid, block>>>(
                 ncol, nlay, nbnd, ngpt,
@@ -307,9 +290,10 @@ namespace Gas_optics_rrtmgp_kernels_cuda
         }
         else
         {
-            grid_gpu_maj = tunings["gas_optical_depths_major_kernel"].first;
             block_gpu_maj = tunings["gas_optical_depths_major_kernel"].second;
         }
+
+        grid_gpu_maj = calc_grid_size(block_gpu_maj, dim3(ngpt, nlay, ncol));
 
         gas_optical_depths_major_kernel<<<grid_gpu_maj, block_gpu_maj>>>(
                 ncol, nlay, nband, ngpt,
@@ -358,9 +342,10 @@ namespace Gas_optics_rrtmgp_kernels_cuda
         }
         else
         {
-            grid_gpu_min_1 = tunings["gas_optical_depths_minor_kernel_lower"].first;
             block_gpu_min_1 = tunings["gas_optical_depths_minor_kernel_lower"].second;
         }
+
+        grid_gpu_min_1 = calc_grid_size(block_gpu_min_1, dim3(1, nlay, ncol));
 
         run_kernel_compile_time<Gas_optical_depths_minor_kernel>(
                 std::integer_sequence<unsigned int, 1, 2, 4, 8, 16>{},
@@ -424,9 +409,10 @@ namespace Gas_optics_rrtmgp_kernels_cuda
         }
         else
         {
-            grid_gpu_min_2 = tunings["gas_optical_depths_minor_kernel_upper"].first;
             block_gpu_min_2 = tunings["gas_optical_depths_minor_kernel_upper"].second;
         }
+
+        grid_gpu_min_2 = calc_grid_size(block_gpu_min_2, dim3(1, nlay, ncol));
 
         run_kernel_compile_time<Gas_optical_depths_minor_kernel>(
                 std::integer_sequence<unsigned int, 1, 2, 4, 8, 16>{},
@@ -515,9 +501,10 @@ namespace Gas_optics_rrtmgp_kernels_cuda
         }
         else
         {
-            grid_gpu = tunings["Planck_source_kernel"].first;
             block_gpu = tunings["Planck_source_kernel"].second;
         }
+
+        grid_gpu = calc_grid_size(block_gpu, dim3(ncol, nlay));
 
         Planck_source_kernel<<<grid_gpu, block_gpu>>>(
                 ncol, nlay, nbnd, ngpt,

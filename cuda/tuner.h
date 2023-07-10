@@ -47,6 +47,7 @@ class Tuner
     private:
         Tuner(const std::string& filename)
         {
+            std::cout << "Constructing GPU tuner and loading kernel settings from disk" << std::endl;
             std::ifstream infile("rte_rrtmgp_kernel_tuning.txt");
             std::string name;
             std::array<unsigned int, 6> vals;

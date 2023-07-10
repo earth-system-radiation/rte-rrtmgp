@@ -19,7 +19,6 @@ jobs:
       fail-fast: false
       matrix:
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
-        rte-kernels: [default, accel]
         fpmodel:     [DP, SP]
     env:
       # Core variables:
@@ -29,7 +28,6 @@ jobs:
       NFHOME: /usr
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
-      RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
       FAILURE_THRESHOLD: 7.e-4
     steps:

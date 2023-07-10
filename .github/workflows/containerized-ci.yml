@@ -20,6 +20,7 @@ jobs:
         include:
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
+          rte-kernels: default
           fcflags: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
           experimental: false
         # Set flags for Intel ifx Fortran Compiler

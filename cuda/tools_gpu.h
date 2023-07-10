@@ -97,5 +97,14 @@ namespace Tools_gpu
         #endif
         data_ptr = nullptr;
     }
+
+    inline dim3 calc_grid_size(const dim3 block, const dim3 total)
+    {
+        const int grid_x = total.x/block.x + (total.x%block.x > 0);
+        const int grid_y = total.y/block.y + (total.y%block.y > 0);
+        const int grid_z = total.z/block.z + (total.z%block.z > 0);
+
+        return dim3(grid_x, grid_y, grid_z);
+    }
 }
 #endif

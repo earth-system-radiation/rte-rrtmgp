@@ -10,6 +10,8 @@
 namespace
 {
     #include "rte_solver_kernels.cu"
+
+    using Tools_gpu::calc_grid_size;
 }
 
 
@@ -116,6 +118,7 @@ namespace Rte_solver_kernels_cuda
         dim3 grid_gpu2d(grid_col2d, grid_gpt2d);
         dim3 block_gpu2d(block_col2d, block_gpt2d);
 
+        /*
         const int block_col3d = 96;
         const int block_lay3d = 1;
         const int block_gpt3d = 1;
@@ -126,6 +129,7 @@ namespace Rte_solver_kernels_cuda
 
         dim3 grid_gpu3d(grid_col3d, grid_lay3d, grid_gpt3d);
         dim3 block_gpu3d(block_col3d, block_lay3d, block_gpt3d);
+        */
 
         const int top_level = top_at_1 ? 0 : nlay;
 
@@ -169,9 +173,10 @@ namespace Rte_solver_kernels_cuda
         }
         else
         {
-            grid_1 = tunings["lw_step_1"].first;
             block_1 = tunings["lw_step_1"].second;
         }
+
+        grid_1 = calc_grid_size(block_1, dim3(ncol, nlay, ngpt));
 
         lw_solver_noscat_step_1_kernel<<<grid_1, block_1>>>(
                 ncol, nlay, ngpt, eps, top_at_1,
@@ -212,9 +217,10 @@ namespace Rte_solver_kernels_cuda
         }
         else
         {
-            grid_2 = tunings["lw_step_2"].first;
             block_2 = tunings["lw_step_2"].second;
         }
+
+        grid_2 = calc_grid_size(block_2, dim3(ncol, ngpt));
 
         lw_solver_noscat_step_2_kernel<<<grid_2, block_2>>>(
                 ncol, nlay, ngpt, eps, top_at_1,
@@ -255,9 +261,10 @@ namespace Rte_solver_kernels_cuda
         }
         else
         {
-            grid_3 = tunings["lw_step_3"].first;
             block_3 = tunings["lw_step_3"].second;
         }
+
+        grid_3 = calc_grid_size(block_3, dim3(ncol, nlay+1, ngpt));
 
         lw_solver_noscat_step_3_kernel<<<grid_3, block_3>>>(
                 ncol, nlay, ngpt, eps, top_at_1,
@@ -337,9 +344,9 @@ namespace Rte_solver_kernels_cuda
 
         Float* r_dif = Tools_gpu::allocate_gpu<Float>(opt_size);
         Float* t_dif = Tools_gpu::allocate_gpu<Float>(opt_size);
-        Float* r_dir = nullptr;
-        Float* t_dir = nullptr;
-        Float* t_noscat = nullptr;
+        // Float* r_dir = nullptr;
+        // Float* t_dir = nullptr;
+        // Float* t_noscat = nullptr;
         Float* source_up = Tools_gpu::allocate_gpu<Float>(opt_size);
         Float* source_dn = Tools_gpu::allocate_gpu<Float>(opt_size);
         Float* source_sfc = Tools_gpu::allocate_gpu<Float>(alb_size);
@@ -388,9 +395,10 @@ namespace Rte_solver_kernels_cuda
         }
         else
         {
-            grid_source = tunings["sw_source_2stream_kernel"].first;
             block_source = tunings["sw_source_2stream_kernel"].second;
         }
+
+        grid_source = calc_grid_size(block_source, dim3(ncol, ngpt));
 
         if (top_at_1)
         {
@@ -453,6 +461,8 @@ namespace Rte_solver_kernels_cuda
             grid_adding = tunings["sw_adding"].first;
             block_adding = tunings["sw_adding"].second;
         }
+
+        grid_adding = calc_grid_size(block_adding, dim3(ncol, ngpt));
 
         if (top_at_1)
         {

@@ -26,11 +26,16 @@
 
 #include "types.h"
 #include "tuner.h"
+#include "tools_gpu.h"
+
 
 namespace
 {
     #include "optical_props_kernels.cu"
+
+    using Tools_gpu::calc_grid_size;
 }
+
 
 namespace Optical_props_kernels_cuda
 {
@@ -136,9 +141,10 @@ namespace Optical_props_kernels_cuda
         }
         else
         {
-            grid = tunings["inc_2stream_by_2stream_bybnd_kernel"].first;
             block = tunings["inc_2stream_by_2stream_bybnd_kernel"].second;
         }
+
+        grid = calc_grid_size(block, dim3(ncol, nlay, ngpt));
 
         inc_2stream_by_2stream_bybnd_kernel<<<grid, block>>>(
                 ncol, nlay, ngpt, eps,

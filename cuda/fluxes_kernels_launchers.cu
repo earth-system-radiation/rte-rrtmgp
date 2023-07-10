@@ -5,6 +5,8 @@
 namespace
 {
     #include "fluxes_kernels.cu"
+
+    using Tools_gpu::calc_grid_size;
 }
 
 
@@ -14,14 +16,8 @@ namespace Fluxes_kernels_cuda
             int ncol, int nlev, int ngpt,
             const Float* gpt_flux, Float* flux)
     {
-        const int block_lev = 16;
-        const int block_col = 16;
-
-        const int grid_col = ncol/block_col + (ncol%block_col > 0);
-        const int grid_lev = nlev/block_lev + (nlev%block_lev > 0);
-
-        dim3 grid_gpu(grid_col, grid_lev);
-        dim3 block_gpu(block_col, block_lev);
+        dim3 block_gpu(16, 16);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, nlev));
 
         sum_broadband_kernel<<<grid_gpu, block_gpu>>>(ncol, nlev, ngpt, gpt_flux, flux);
     }
@@ -32,14 +28,8 @@ namespace Fluxes_kernels_cuda
             const Float* flux_dn, const Float* flux_up,
             Float* flux_net)
     {
-        const int block_lev = 16;
-        const int block_col = 16;
-
-        const int grid_col = ncol/block_col + (ncol%block_col > 0);
-        const int grid_lev = nlev/block_lev + (nlev%block_lev > 0);
-
-        dim3 grid_gpu(grid_col, grid_lev);
-        dim3 block_gpu(block_col, block_lev);
+        dim3 block_gpu(16, 16);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, nlev));
 
         net_broadband_precalc_kernel<<<grid_gpu, block_gpu>>>(ncol, nlev, flux_dn, flux_up, flux_net);
     }
@@ -51,16 +41,8 @@ namespace Fluxes_kernels_cuda
             const Float* gpt_flux,
             Float* bnd_flux)
     {
-        const int block_bnd = 1;
-        const int block_lev = 16;
-        const int block_col = 16;
-
-        const int grid_col = ncol/block_col + (ncol%block_col > 0);
-        const int grid_lev = nlev/block_lev + (nlev%block_lev > 0);
-        const int grid_bnd = nbnd/block_bnd + (nbnd%block_bnd > 0);
-
-        dim3 grid_gpu(grid_col, grid_lev, grid_bnd);
-        dim3 block_gpu(block_col, block_lev, grid_bnd);
+        dim3 block_gpu(16, 16, 1);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, nlev, nbnd));
 
         sum_byband_kernel<<<grid_gpu, block_gpu>>>(
                 ncol, nlev, ngpt, nbnd, band_lims,
@@ -72,16 +54,8 @@ namespace Fluxes_kernels_cuda
             int ncol, int nlev, int ngpt, int nbnd, const int* band_lims,
             const Float* bnd_flux_dn, const Float* bnd_flux_up, Float* bnd_flux_net)
     {
-        const int block_bnd = 1;
-        const int block_lev = 16;
-        const int block_col = 16;
-
-        const int grid_col = ncol/block_col + (ncol%block_col > 0);
-        const int grid_lev = nlev/block_lev + (nlev%block_lev > 0);
-        const int grid_bnd = nbnd/block_bnd + (nbnd%block_bnd > 0);
-
-        dim3 grid_gpu(grid_col, grid_lev, grid_bnd);
-        dim3 block_gpu(block_col, block_lev, grid_bnd);
+        dim3 block_gpu(16, 16, 1);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, nlev, nbnd));
 
         net_byband_full_kernel<<<grid_gpu, block_gpu>>>(
                 ncol, nlev, ngpt, nbnd, band_lims,

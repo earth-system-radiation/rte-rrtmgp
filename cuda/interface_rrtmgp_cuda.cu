@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "types.h"
+#include "tools_gpu.h"
 #include "gas_optics_rrtmgp_kernels_cuda.h"
 
 
@@ -56,6 +57,8 @@ extern "C"
                 acc_to_cuda(tropo),
                 acc_to_cuda(jeta),
                 acc_to_cuda(jpress));
+
+        cuda_safe_call(cudaStreamSynchronize(0));
     }
 
 
@@ -119,6 +122,8 @@ extern "C"
                 acc_to_cuda(tlay), acc_to_cuda(col_gas),
                 acc_to_cuda(jeta), acc_to_cuda(jtemp),
                 acc_to_cuda(jpress), acc_to_cuda(tau));
+
+        cuda_safe_call(cudaStreamSynchronize(0));
     }
 
 
@@ -144,6 +149,8 @@ extern "C"
                 acc_to_cuda(fminor), acc_to_cuda(jeta),
                 acc_to_cuda(tropo), acc_to_cuda(jtemp),
                 acc_to_cuda(tau_rayleigh));
+
+        cuda_safe_call(cudaStreamSynchronize(0));
     }
 
 
@@ -197,6 +204,8 @@ extern "C"
                 acc_to_cuda(lev_src_inc),
                 acc_to_cuda(lev_src_dec),
                 acc_to_cuda(sfc_src_jac));
+
+        cuda_safe_call(cudaStreamSynchronize(0));
     }
 
     void zero_array_1D(int* ni, Float* array)

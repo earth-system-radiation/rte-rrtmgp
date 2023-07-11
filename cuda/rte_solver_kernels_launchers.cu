@@ -20,14 +20,8 @@ namespace Rte_solver_kernels_cuda
     void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1,
                   const Float* inc_flux_dir, const Float* mu0, Float* gpt_flux_dir)
     {
-        const int block_col = 32;
-        const int block_gpt = 32;
-
-        const int grid_col = ncol/block_col + (ncol%block_col > 0);
-        const int grid_gpt = ngpt/block_gpt + (ngpt%block_gpt > 0);
-
-        dim3 grid_gpu(grid_col, grid_gpt);
-        dim3 block_gpu(block_col, block_gpt);
+        dim3 block_gpu(32, 32);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, ngpt));
 
         apply_BC_kernel<<<grid_gpu, block_gpu>>>(ncol, nlay, ngpt, top_at_1, inc_flux_dir, mu0, gpt_flux_dir);
     }
@@ -35,28 +29,17 @@ namespace Rte_solver_kernels_cuda
 
     void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1, Float* gpt_flux_dn)
     {
-        const int block_col = 32;
-        const int block_gpt = 32;
+        dim3 block_gpu(32, 32);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, ngpt));
 
-        const int grid_col = ncol/block_col + (ncol%block_col > 0);
-        const int grid_gpt = ngpt/block_gpt + (ngpt%block_gpt > 0);
-
-        dim3 grid_gpu(grid_col, grid_gpt);
-        dim3 block_gpu(block_col, block_gpt);
         apply_BC_kernel<<<grid_gpu, block_gpu>>>(ncol, nlay, ngpt, top_at_1, gpt_flux_dn);
     }
 
 
     void apply_BC(const int ncol, const int nlay, const int ngpt, const Bool top_at_1, const Float* inc_flux_dif, Float* gpt_flux_dn)
     {
-        const int block_col = 32;
-        const int block_gpt = 32;
-
-        const int grid_col = ncol/block_col + (ncol%block_col > 0);
-        const int grid_gpt = ngpt/block_gpt + (ngpt%block_gpt > 0);
-
-        dim3 grid_gpu(grid_col, grid_gpt);
-        dim3 block_gpu(block_col, block_gpt);
+        dim3 block_gpu(32, 32);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, ngpt));
 
         apply_BC_kernel<<<grid_gpu, block_gpu>>>(ncol, nlay, ngpt, top_at_1, inc_flux_dif, gpt_flux_dn);
     }
@@ -66,14 +49,8 @@ namespace Rte_solver_kernels_cuda
             const int ncol, const int ngpt, const int n_gauss_quad, const int max_gauss_pts,
             const Float* gauss_Ds, Float* secants)
     {
-        const int block_col = 32;
-        const int block_gpt = 32;
-
-        const int grid_col = ncol/block_col + (ncol%block_col > 0);
-        const int grid_gpt = ngpt/block_gpt + (ngpt%block_gpt > 0);
-
-        dim3 grid_gpu(grid_col, grid_gpt, n_gauss_quad);
-        dim3 block_gpu(block_col, block_gpt, 1);
+        dim3 block_gpu(32, 32);
+        dim3 grid_gpu = calc_grid_size(block_gpu, dim3(ncol, ngpt, n_gauss_quad));
 
         lw_secants_array_kernel<<<grid_gpu, block_gpu>>>(
                 ncol, ngpt, n_gauss_quad, max_gauss_pts,
@@ -109,27 +86,8 @@ namespace Rte_solver_kernels_cuda
         Float* radn_up = Tools_gpu::allocate_gpu<Float>(flx_size);
         Float* radn_up_jac = Tools_gpu::allocate_gpu<Float>(flx_size);
 
-        const int block_col2d = 64;
-        const int block_gpt2d = 2;
-
-        const int grid_col2d = ncol/block_col2d + (ncol%block_col2d > 0);
-        const int grid_gpt2d = ngpt/block_gpt2d + (ngpt%block_gpt2d > 0);
-
-        dim3 grid_gpu2d(grid_col2d, grid_gpt2d);
-        dim3 block_gpu2d(block_col2d, block_gpt2d);
-
-        /*
-        const int block_col3d = 96;
-        const int block_lay3d = 1;
-        const int block_gpt3d = 1;
-
-        const int grid_col3d = ncol/block_col3d + (ncol%block_col3d > 0);
-        const int grid_lay3d = (nlay+1)/block_lay3d + ((nlay+1)%block_lay3d > 0);
-        const int grid_gpt3d = ngpt/block_gpt3d + (ngpt%block_gpt3d > 0);
-
-        dim3 grid_gpu3d(grid_col3d, grid_lay3d, grid_gpt3d);
-        dim3 block_gpu3d(block_col3d, block_lay3d, block_gpt3d);
-        */
+        dim3 block_gpu2d(64, 2);
+        dim3 grid_gpu2d = calc_grid_size(block_gpu2d, dim3(ncol, ngpt));
 
         const int top_level = top_at_1 ? 0 : nlay;
 
@@ -344,9 +302,6 @@ namespace Rte_solver_kernels_cuda
 
         Float* r_dif = Tools_gpu::allocate_gpu<Float>(opt_size);
         Float* t_dif = Tools_gpu::allocate_gpu<Float>(opt_size);
-        // Float* r_dir = nullptr;
-        // Float* t_dir = nullptr;
-        // Float* t_noscat = nullptr;
         Float* source_up = Tools_gpu::allocate_gpu<Float>(opt_size);
         Float* source_dn = Tools_gpu::allocate_gpu<Float>(opt_size);
         Float* source_sfc = Tools_gpu::allocate_gpu<Float>(alb_size);

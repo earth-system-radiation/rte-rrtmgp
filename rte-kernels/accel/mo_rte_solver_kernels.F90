@@ -1200,6 +1200,12 @@ contains
                   ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
                    (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
                    2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
+            ! Final check that energy is not spuriously created, by recognizing that
+            ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
+            ! or penetrate through but be scattered on the way - the rest is absorbed
+            ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
+            Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))
+            Tdir    = max(0.0_wp, min(Tdir, (1.0_wp - Tnoscat - Rdir) ))
             source_up  (icol,lay_index,  igpt) =    Rdir * inc_flux
             source_dn  (icol,lay_index,  igpt) =    Tdir * inc_flux
             flux_dn_dir(icol,trans_index,igpt) = Tnoscat * inc_flux

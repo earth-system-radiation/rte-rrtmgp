@@ -5,6 +5,9 @@ import warnings
 import xarray as xr
 import numpy  as np
 
+REPORT  = os.getenv("REPORTING_THRESHOLD") if os.getenv("REPORTING_THRESHOLD") is not None else 1.e-10
+FAILURE = os.getenv("FAILURE_THRESHOLD")   if os.getenv("FAILURE_THRESHOLD")   is not None else 1.e-5
+
 
 def assert_equal(variants, reference):
     #
@@ -34,9 +37,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Compares all-sky example output to file in reference "
                     "directory")
-    parser.add_argument("--report_threshold", type=float, default=1.e-10,
+    parser.add_argument("--report_threshold", type=float, default=REPORT,
                         help="Threshold for reporting differences")
-    parser.add_argument("--failure_threshold", type=float, default=9.e-4,
+    parser.add_argument("--failure_threshold", type=float, default=FAILURE,
                         help="Threshold at which differences cause failure")
     args = parser.parse_args()
     report_threshold = args.report_threshold

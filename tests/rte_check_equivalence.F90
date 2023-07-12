@@ -1,4 +1,4 @@
- ! This code is part of Radiative Transfer for Energetics (RTE)
+! This code is part of Radiative Transfer for Energetics (RTE)
 !
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
@@ -23,6 +23,7 @@
   end subroutine stop_on_err
 ! ----------------------------------------------------------------------------------
 program rte_check_equivalence
+  use iso_fortran_env, only : error_unit
   !
   ! Exercise various paths through RTE+RRTMGP code that should result in the same answer
   !   Some sections test e.g. initialization and finalization 
@@ -56,7 +57,7 @@ program rte_check_equivalence
   real(wp), dimension(:,:),   allocatable :: sza ! Solar zenith angle (ncol, nexp)
 
   !
-  ! Local versions of variables - used
+  ! Local versions of variables
   !
   real(wp), dimension(:,:),     allocatable :: p_lay, t_lay, p_lev
   !
@@ -105,6 +106,7 @@ program rte_check_equivalence
   integer  :: icol, ilay, ibnd, iloop, igas
 
   integer  :: nUserArgs=0
+  logical  :: failed 
 
   character(len=32 ), &
             dimension(:), allocatable :: kdist_gas_names, rfmip_gas_games
@@ -116,6 +118,7 @@ program rte_check_equivalence
   !
   ! Parse command line for any file names, block size
   !
+  failed = .false. 
   nUserArgs = command_argument_count()
   if (nUserArgs <  2) call stop_on_err("Need to supply input_file k_distribution_file ")
   if (nUserArgs >  3) print *, "Ignoring command line arguments beyond the first three..."
@@ -258,7 +261,7 @@ program rte_check_equivalence
                             sfc_emis,        &
                             fluxes))
     if(.not. allclose(fluxes%flux_net, ref_flux_dn-ref_flux_up) )  &  
-      call stop_on_err("Net fluxes don't match when computed in tandem")
+      call report_err("Net fluxes don't match when computed in tandem")
     print *, "  Net fluxes"  
     nullify(fluxes%flux_net)
     ! -------------------------------------------------------
@@ -268,7 +271,7 @@ program rte_check_equivalence
     call lw_clear_sky_vr
     if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
-      call stop_on_err(" Vertical invariance failure")
+      call report_err(" Vertical invariance failure")
     print *, "  Vertical orientation invariance"
     ! -------------------------------------------------------
     !
@@ -277,7 +280,7 @@ program rte_check_equivalence
     call lw_clear_sky_subset
     if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
-      call stop_on_err("  Doing problem in subsets fails")
+      call report_err("  Doing problem in subsets fails")
     print *, "  Subsetting invariance"
     ! -------------------------------------------------------
     !
@@ -286,7 +289,7 @@ program rte_check_equivalence
     call lw_clear_sky_jaco
     if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
-      call stop_on_err("  Computing Jacobian changes fluxes")
+      call report_err("  Computing Jacobian changes fluxes")
     print *, "  Jacobian"
     ! -------------------------------------------------------
     !
@@ -300,7 +303,7 @@ program rte_check_equivalence
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
-      call stop_on_err("  halving/doubling fails")
+      call report_err("  halving/doubling fails")
 
     call increment_with_1scl
     call stop_on_err(rte_lw(atmos, top_at_1, &
@@ -309,7 +312,7 @@ program rte_check_equivalence
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
-      call stop_on_err("  Incrementing with 1scl fails")
+      call report_err("  Incrementing with 1scl fails")
 
     call increment_with_2str
     call stop_on_err(rte_lw(atmos, top_at_1, &
@@ -318,7 +321,7 @@ program rte_check_equivalence
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
-      call stop_on_err("  Incrementing with 2str fails")
+      call report_err("  Incrementing with 2str fails")
 
     call increment_with_nstr
     call stop_on_err(rte_lw(atmos, top_at_1, &
@@ -327,7 +330,7 @@ program rte_check_equivalence
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
-      call stop_on_err("  Incrementing with nstr fails")
+      call report_err("  Incrementing with nstr fails")
   else
     !
     ! Shortwave  
@@ -368,7 +371,7 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
-      call stop_on_err(" Vertical invariance failure")
+      call report_err(" Vertical invariance failure")
     print *, "  Vertical orientation invariance"
     ! -------------------------------------------------------
     !
@@ -378,7 +381,7 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
-      call stop_on_err("  Changing TSI subsets fails")
+      call report_err("  Changing TSI subsets fails")
     print *, "  TSI invariance"
     ! -------------------------------------------------------
     !
@@ -393,7 +396,7 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
-      call stop_on_err("  halving/doubling fails")
+      call report_err("  halving/doubling fails")
 
     call increment_with_1scl
     call stop_on_err(rte_sw(atmos, top_at_1, &
@@ -403,7 +406,7 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
-      call stop_on_err("  Incrementing with 1scl fails")
+      call report_err("  Incrementing with 1scl fails")
 
     call increment_with_2str
     call stop_on_err(rte_sw(atmos, top_at_1, &
@@ -413,7 +416,7 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
-      call stop_on_err("  Incrementing with 2str fails")
+      call report_err("  Incrementing with 2str fails")
 
     call increment_with_nstr
     call stop_on_err(rte_sw(atmos, top_at_1, &
@@ -423,24 +426,11 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
-      call stop_on_err("  Incrementing with nstr fails")
+      call report_err("  Incrementing with nstr fails")
  
   end if 
+  if(failed) error stop 1
 contains
-  ! ----------------------------------------------------------------------------
-  logical function allclose(array1, array2, tol)
-    real(wp), dimension(:,:), intent(in) :: array1, array2
-    real(wp), optional,       intent(in) :: tol 
-    
-    real(wp) :: tolerance 
-    if (present(tol)) then 
-      tolerance = tol 
-    else
-      tolerance = 2._wp
-    end if 
-
-    allclose = all(abs(array1-array2) <= tolerance * spacing(array1))
-  end function allclose 
   ! ----------------------------------------------------------------------------
   ! Longwave 
   ! ----------------------------------------------------------------------------
@@ -623,6 +613,30 @@ contains
   end subroutine sw_clear_sky_tsi
   ! ----------------------------------------------------------------------------
   ! General purpose routines
+  ! ----------------------------------------------------------------------------
+  logical function allclose(array1, array2, tol)
+    real(wp), dimension(:,:), intent(in) :: array1, array2
+    real(wp), optional,       intent(in) :: tol 
+    
+    real(wp) :: tolerance 
+    if (present(tol)) then 
+      tolerance = tol 
+    else
+      tolerance = 2._wp
+    end if 
+
+    allclose = all(abs(array1-array2) <= tolerance * spacing(array1))
+  end function allclose 
+  ! ----------------------------------------------------------------------------
+  subroutine report_err(error_msg)
+    use iso_fortran_env, only : error_unit
+    character(len=*), intent(in) :: error_msg
+
+    if(error_msg /= "") then
+      write (error_unit,*) trim(error_msg)
+      failed = .true.
+    end if
+  end subroutine report_err
   ! ----------------------------------------------------------------------------
   subroutine increment_with_1scl 
     type(ty_optical_props_1scl) :: transparent 

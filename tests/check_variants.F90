@@ -1,3 +1,16 @@
+! This code is part of Radiative Transfer for Energetics (RTE)
+!
+! Contacts: Robert Pincus and Eli Mlawer
+! email:  rrtmgp@aer.com
+!
+! Copyright 2015-  Atmospheric and Environmental Research,
+!    Regents of the University of Colorado,
+!    Trustees of Columbia University in the City of New York
+! All right reserved.
+!
+! Use and duplication is permitted under the terms of the
+!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
+
 subroutine stop_on_err(error_msg)
   use iso_fortran_env, only : error_unit
   character(len=*), intent(in) :: error_msg
@@ -10,13 +23,20 @@ subroutine stop_on_err(error_msg)
 end subroutine stop_on_err
 ! ----------------------------------------------------------------------------------
 !
-!
+! Exercise a range of alternative approaches to RFMIP clear sky problem 
+!   Accuracy is assessed relative to RFMIP submission with validation-plots.py 
+!   Serves also to exercise various code paths 
+! Longwave: 
+!   omiting level temperatures, use optimal angle, use three-angle integration, 
+!   two-stream solution; reduced-resolution k-distribution 
+! Shortwave: 
+!   reduced-resolution k-distribution 
 !
 program rte_clear_sky_regression
   use mo_rte_kind,           only: wp
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, &
-                                  ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
+                                   ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_source_functions,   only: ty_source_func_lw

@@ -107,7 +107,6 @@ program rte_check_equivalence
 
   integer  :: nUserArgs=0
   logical  :: failed
-  real(wp), parameter :: jacobian_accuracy = 1.e-10_wp 
 
   character(len=32 ), &
             dimension(:), allocatable :: kdist_gas_names, rfmip_gas_games
@@ -359,8 +358,10 @@ program rte_check_equivalence
     ! Comparision of fluxes with increased surface T aren't expected to match 
     !   fluxes + their Jacobian w.r.t. surface T exactly
     !
-    if (.not. allclose(tst_flux_up, ref_flux_up + jFluxUp, tol=30._wp)) &
+    if (.not. allclose(tst_flux_up, ref_flux_up + jFluxUp, tol=30._wp)) then
       call report_err("  Jacobian approx. differs from flux with perturbed surface T")
+      print *, maxval(abs(tst_flux_up - (ref_flux_up + jFluxUp))/spacing(tst_flux_up))
+    end if
     print *, "  Jacobian"
  else
     !
@@ -418,6 +419,11 @@ program rte_check_equivalence
     !
     ! Incrementing 
     !
+    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+                                       t_lay,        &
+                                       gas_concs,    &
+                                       atmos,        &
+                                       toa_flux))
     atmos%tau(:,:,:) = 0.5_wp * atmos%tau(:,:,:) 
     call stop_on_err(atmos%increment(atmos))
     call stop_on_err(rte_sw(atmos, top_at_1, &
@@ -429,6 +435,11 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
       call report_err("  halving/doubling fails")
 
+    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+                                       t_lay,        &
+                                       gas_concs,    &
+                                       atmos,        &
+                                       toa_flux))
     call increment_with_1scl
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
@@ -439,7 +450,12 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
       call report_err("  Incrementing with 1scl fails")
 
-    call increment_with_2str
+     call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+                                       t_lay,        &
+                                       gas_concs,    &
+                                       atmos,        &
+                                       toa_flux))
+   call increment_with_2str
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
@@ -449,6 +465,11 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
       call report_err("  Incrementing with 2str fails")
 
+    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+                                       t_lay,        &
+                                       gas_concs,    &
+                                       atmos,        &
+                                       toa_flux))
     call increment_with_nstr
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &

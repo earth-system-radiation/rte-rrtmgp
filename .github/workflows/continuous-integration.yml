@@ -32,6 +32,12 @@ jobs:
       FAILURE_THRESHOLD: 7.e-4
     steps:
     #
+    # Relax failure thresholds for single precision 
+    #  
+    - name: Relax failure threshold for single precision
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
+    #
     # Check out repository under $GITHUB_WORKSPACE
     #
     - name: Check out code
@@ -89,12 +95,6 @@ jobs:
     #
     - name: Run examples and tests
       run: make tests
-    #
-    # Relax failure thresholds for single precision 
-    #  
-    - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP'
-      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #

@@ -85,7 +85,7 @@ program rte_check_equivalence
   real(wp), dimension(:,:), target, &
                             allocatable :: ref_flux_up, ref_flux_dn, ref_flux_dir, & 
                                            tst_flux_up, tst_flux_dn, tst_flux_dir, &
-                                           heating_rate
+                                           heating_rate, jFluxUp
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
@@ -106,7 +106,8 @@ program rte_check_equivalence
   integer  :: icol, ilay, ibnd, iloop, igas
 
   integer  :: nUserArgs=0
-  logical  :: failed 
+  logical  :: failed
+  real(wp), parameter :: jacobian_accuracy = 1.e-10_wp 
 
   character(len=32 ), &
             dimension(:), allocatable :: kdist_gas_names, rfmip_gas_games
@@ -202,11 +203,17 @@ program rte_check_equivalence
   end if
   ! ----------------------------------------------------------------------------
   !
-  ! Fluxes
+  ! Fluxes, heat rates, Jacobians
   !
-  allocate(ref_flux_up(ncol,nlay+1), ref_flux_dn(ncol,nlay+1), ref_flux_dir(ncol,nlay+1), & 
-           tst_flux_up(ncol,nlay+1), tst_flux_dn(ncol,nlay+1), tst_flux_dir(ncol,nlay+1), & 
+  allocate(ref_flux_up(ncol,nlay+1), ref_flux_dn(ncol,nlay+1), & 
+           tst_flux_up(ncol,nlay+1), tst_flux_dn(ncol,nlay+1), & 
            heating_rate(ncol, nlay)) 
+  if(is_lw) then 
+    allocate(jFluxUp(ncol,nlay+1))
+  else
+    allocate(ref_flux_dir(ncol,nlay+1), tst_flux_dir(ncol,nlay+1))
+  end if 
+
   ! ----------------------------------------------------------------------------
   !
   ! Solvers
@@ -284,15 +291,6 @@ program rte_check_equivalence
     print *, "  Subsetting invariance"
     ! -------------------------------------------------------
     !
-    ! Computing Jacobian shouldn't change net fluxes 
-    !
-    call lw_clear_sky_jaco
-    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
-      call report_err("  Computing Jacobian changes fluxes")
-    print *, "  Jacobian"
-    ! -------------------------------------------------------
-    !
     ! Incrementing  
     !
     atmos%tau(:,:,:) = 0.5_wp * atmos%tau(:,:,:) 
@@ -331,7 +329,40 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err("  Incrementing with nstr fails")
-  else
+    print *, "  Incrementing"
+    ! -------------------------------------------------------
+    !
+    ! Computing Jacobian shouldn't change net fluxes 
+    !
+    call stop_on_err(rte_lw(atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes,          &
+                            flux_up_Jac = jFluxUp))
+    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
+      call report_err("  Computing Jacobian changes fluxes")
+    !
+    ! Increase surface temperature by 1K and recompute fluxes 
+    !
+    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+                                       t_lay, sfc_t + 1._wp, &
+                                       gas_concs,    &
+                                       atmos,        &
+                                       lw_sources,   &
+                                       tlev = t_lev))
+    call stop_on_err(rte_lw(atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    !
+    ! Comparision of fluxes with increased surface T aren't expected to match 
+    !   fluxes + their Jacobian w.r.t. surface T exactly
+    !
+    if (maxval(abs(tst_flux_up - (ref_flux_up + jFluxUp))) > jacobian_accuracy) &
+      call report_err("  Jacobian approx. differs from flux with perturbed surface T")
+    print *, "  Jacobian"
+ else
     !
     ! Shortwave  
     !
@@ -427,7 +458,7 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 4._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
       call report_err("  Incrementing with nstr fails")
- 
+    print *, "  Incrementing"
   end if 
   if(failed) error stop 1
 contains
@@ -519,16 +550,6 @@ contains
     end do
 
   end subroutine lw_clear_sky_subset
-  ! ----------------------------------------------------------------------------
-  subroutine lw_clear_sky_jaco
-    real(wp), dimension(ncol,nlay+1) :: jFluxUp
-
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
-                            fluxes,          &
-                            flux_up_Jac = jFluxUp))
-  end subroutine lw_clear_sky_jaco
   ! ----------------------------------------------------------------------------
   !  Shortwave 
   ! ----------------------------------------------------------------------------

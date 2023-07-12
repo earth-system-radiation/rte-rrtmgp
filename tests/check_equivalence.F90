@@ -408,16 +408,18 @@ program rte_check_equivalence
     ! -------------------------------------------------------
     !
     ! Scaling incoming flux
+    !   Threshold of 4x spacing() works on CPUs but 8x is needed for GPUs
     !
     call sw_clear_sky_tsi
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 4._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 4._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 4._wp))    &  
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
       call report_err("  Changing TSI fails")
     print *, "  TSI invariance"
     ! -------------------------------------------------------
     !
     ! Incrementing 
+    !   Threshold of 4x spacing() works in double precision 
     !
     call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
                                        t_lay,        &

@@ -359,7 +359,7 @@ program rte_check_equivalence
     ! Comparision of fluxes with increased surface T aren't expected to match 
     !   fluxes + their Jacobian w.r.t. surface T exactly
     !
-    if (maxval(abs(tst_flux_up - (ref_flux_up + jFluxUp))) > jacobian_accuracy) &
+    if (.not. allclose(tst_flux_up, ref_flux_up + jFluxUp, tol=30._wp)) &
       call report_err("  Jacobian approx. differs from flux with perturbed surface T")
     print *, "  Jacobian"
  else

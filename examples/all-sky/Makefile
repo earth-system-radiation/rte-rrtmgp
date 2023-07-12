@@ -48,14 +48,7 @@ mo_load_cloud_coefficients.o:   mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o     
 mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.F90
 
 tests:
-	$(RUN_CMD) ./rrtmgp_allsky 24 72 1 rrtmgp-allsky-lw.nc \
-	    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc ${RRTMGP_DATA}/rrtmgp-aerosols-merra-lw.nc 
-	$(RUN_CMD) ./rrtmgp_allsky 24 72 1 rrtmgp-allsky-sw.nc \
-	    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc ${RRTMGP_DATA}/rrtmgp-aerosols-merra-sw.nc 
-	$(RUN_CMD) ./rrtmgp_allsky 24 72 1 rrtmgp-allsky-lw-no-aerosols.nc \
-	    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc 
-	$(RUN_CMD) ./rrtmgp_allsky 24 72 1 rrtmgp-allsky-sw-no-aerosols.nc \
-	    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc  
+	$(RUN_CMD) bash all_tests.sh  
 
 check:
 	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \

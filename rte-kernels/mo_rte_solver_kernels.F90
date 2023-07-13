@@ -656,7 +656,7 @@ contains
     ! --------------------------------
     integer             :: icol, ilay
     real(wp)            :: fact
-    real(wp), parameter :: tau_thresh = sqrt(epsilon(tau))
+    real(wp), parameter :: tau_thresh = sqrt(sqrt(epsilon(tau)))
     ! ---------------------------------------------------------------
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -664,11 +664,12 @@ contains
       ! Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
       !   is of order epsilon (smallest difference from 1. in working precision)
       !   Thanks to Peter Blossey
+      !   Updated to 3rd order series and lower threshold based on suggestion from Dmitry Alexeev (Nvidia)
       !
       if(tau(icol, ilay) > tau_thresh) then
         fact = (1._wp - trans(icol,ilay))/tau(icol,ilay) - trans(icol,ilay)
       else
-        fact = tau(icol, ilay) * (0.5_wp - 1._wp/3._wp*tau(icol, ilay))
+        fact = tau(icol, ilay) * (0.5_wp + tau(icol, ilay) * (- 1._wp/3._wp + tau(icol, ilay) * 1._wp/8._wp ) )
       end if
       !
       ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
@@ -1042,6 +1043,7 @@ contains
 
 
     ! Ancillary variables
+    real(wp), parameter :: min_k = 1.e4_wp * epsilon(1._wp) ! Suggestion from Chiel van Heerwaarden
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat
@@ -1082,8 +1084,7 @@ contains
         !   k = 0 for isotropic, conservative scattering; this lower limit on k
         !   gives relative error with respect to conservative solution
         !   of < 0.1% in Rdif down to tau = 10^-9
-        k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
-        k_mu     = k * mu0_s
+        k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), min_k))
         exp_minusktau = exp(-tau_s*k)
         exp_minus2ktau = exp_minusktau * exp_minusktau
 
@@ -1101,6 +1102,7 @@ contains
         !   levels with mu0 <= 0 have no direct beam and hence no source for diffuse light
         !
         if(mu0_s > 0._wp) then
+          k_mu     = k * mu0_s
           !
           ! Equation 14, multiplying top and bottom by exp(-k*tau)
           !   and rearranging to avoid div by 0.
@@ -1137,6 +1139,13 @@ contains
                 ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
                  (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
                  2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
+          ! Final check that energy is not spuriously created, by recognizing that
+          ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
+          ! or penetrate through but be scattered on the way - the rest is absorbed
+          ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
+          Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))
+          Tdir    = max(0.0_wp, min(Tdir, (1.0_wp - Tnoscat - Rdir) ))
+
           source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
           source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
           dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)

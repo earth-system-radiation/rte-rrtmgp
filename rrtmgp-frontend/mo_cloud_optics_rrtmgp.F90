@@ -90,16 +90,16 @@ contains
   !
   ! ------------------------------------------------------------------------------
   function load_lut(this, band_lims_wvn, &
-                    radliq_lwr, radliq_upr, radliq_fac, &
-                    radice_lwr, radice_upr, radice_fac, &
+                    radliq_lwr, radliq_upr, &
+                    radice_lwr, radice_upr, &
                     lut_extliq, lut_ssaliq, lut_asyliq, &
                     lut_extice, lut_ssaice, lut_asyice) result(error_msg)
     class(ty_cloud_optics_rrtmgp),     intent(inout) :: this
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! Spectral discretization
     ! Lookup table interpolation constants
     ! Lower and upper bounds of the tables; also the constant for calculating interpolation indices for liquid
-    real(wp),                   intent(in   ) :: radliq_lwr, radliq_upr, radliq_fac
-    real(wp),                   intent(in   ) :: radice_lwr, radice_upr, radice_fac
+    real(wp),                   intent(in   ) :: radliq_lwr, radliq_upr
+    real(wp),                   intent(in   ) :: radice_lwr, radice_upr
     ! LUT coefficients
     ! Extinction, single-scattering albedo, and asymmetry parameter for liquid and ice respectively
     real(wp), dimension(:,:),   intent(in)    :: lut_extliq, lut_ssaliq, lut_asyliq

@@ -1,3 +1,4 @@
+import warnings
 import urllib.request
 import colorcet as cc
 import matplotlib as mpl
@@ -60,6 +61,7 @@ def construct_lbl_esgf_root(var, esgf_node="llnl"):
 
 ########################################################################
 if __name__ == '__main__':
+    warnings.simplefilter("ignore", xr.SerializationWarning)
     #
     # Reference values from LBLRTM - download locally, since OpenDAP access is so inconsistent 
     #

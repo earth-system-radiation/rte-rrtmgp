@@ -45,10 +45,13 @@ ADDITIONS += mo_solar_variability.o
 #
 # Targets
 #
-all: clear_sky_regression test_zenith_angle_spherical_correction
+all: check_variants check_equivalence test_zenith_angle_spherical_correction
 
-clear_sky_regression:   $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.o
-clear_sky_regression.o: $(ADDITIONS) $(LIB_DEPS) clear_sky_regression.F90
+check_equivalence:   $(ADDITIONS) $(LIB_DEPS) check_equivalence.o
+check_equivalence.o: $(ADDITIONS) $(LIB_DEPS) check_equivalence.F90
+
+check_variants:   $(ADDITIONS) $(LIB_DEPS) check_variants.o
+check_variants.o: $(ADDITIONS) $(LIB_DEPS) check_variants.F90
 
 test_zenith_angle_spherical_correction:   mo_zenith_angle_spherical_correction.o mo_rcemip_profiles.o $(ADDITIONS) $(LIB_DEPS) test_zenith_angle_spherical_correction.o
 test_zenith_angle_spherical_correction.o: mo_zenith_angle_spherical_correction.o mo_rcemip_profiles.o $(ADDITIONS) $(LIB_DEPS) test_zenith_angle_spherical_correction.F90
@@ -65,12 +68,10 @@ mo_simple_netcdf.o:     $(LIB_DEPS) mo_simple_netcdf.F90
 
 .PHONY: tests
 tests:
-	cp ${RRTMGP_ROOT}/examples/rfmip-clear-sky/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
-	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
-	$(RUN_CMD) ./clear_sky_regression test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
-
+	cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
+	$(RUN_CMD) bash all_tests.sh
 check:
-	python verification.py
+	echo "Nothing to check in tests/"
 
 clean:
 	-rm clear_sky_regression *.o *.optrpt *.mod

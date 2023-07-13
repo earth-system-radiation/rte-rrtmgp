@@ -19,6 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        config-name: [nvidia-gpu-openacc, cce-cpu-icon-production, cce-gpu-openmp] 
+        fpmodel:     [DP, SP]
         include:
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
@@ -41,12 +43,13 @@ jobs:
     env:
       # Core variables:
       FC: ftn
-      FCFLAGS: ${{ matrix.fcflags }}
+      FCFLAGS: ${{ matrix.fcflags }} -DRTE_USE_${{ matrix.fpmodel}}
       # Make variables:
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
+      FAILURE_THRESHOLD: 7.e-4
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -102,6 +105,12 @@ jobs:
     #
     - name: Run examples and tests
       run: make tests
+    #
+    # Relax failure thresholds for single precision 
+    #  
+    - name: Relax failure threshold for single precision
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #

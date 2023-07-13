@@ -16,42 +16,43 @@ jobs:
       matrix:
         fortran-compiler: [ifort, ifx, nvfortran]
         rte-kernels: [default, accel]
+        fpmodel:     [DP, SP]
         include:
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
-          fcflags: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
+          fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
           experimental: false
         # Set flags for Intel ifx Fortran Compiler
         - fortran-compiler: ifx
           rte-kernels: default
-          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"
+          fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08
           experimental: false
         - fortran-compiler: ifx
           rte-kernels: accel
-          fcflags: "-debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64"
+          fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64
           experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
           rte-kernels: default
-          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
+          fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk
           experimental: false
         - fortran-compiler: nvfortran
           rte-kernels: accel
-          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc"
+          fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc
           experimental: false
         # Set container images
         - fortran-compiler: ifort
-          image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
         - fortran-compiler: ifx
-          image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort"
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
         - fortran-compiler: nvfortran
-          image: "ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvfortran"
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvfortran
     container:
       image: ${{ matrix.image }}
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: ${{ matrix.fcflags }}
+      FCFLAGS: ${{ matrix.fcflags }} -DRTE_USE_${{ matrix.fpmodel}}
       # Make variables:
       NFHOME: /opt/netcdf-fortran
       RRTMGP_ROOT: ${{ github.workspace }}
@@ -60,8 +61,8 @@ jobs:
       RUN_CMD:
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
       OMP_TARGET_OFFLOAD: DISABLED
-      # Auxiliary variables:
-      RFMIP_CACHEDIR: .testcache
+      FAILURE_THRESHOLD: 7.e-4
+
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -90,6 +91,12 @@ jobs:
     - name: Run examples and tests
       run: make tests
     #
+    # Relax failure thresholds for single precision 
+    #  
+    - name: Relax failure threshold for single precision
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
+    #
     # Compare the results
     #
     - name: Compare the results
@@ -98,14 +105,14 @@ jobs:
     # Generate validation plots
     #
     - name: Generate validation plots
-      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default'
+      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       working-directory: tests
       run: python validation-plots.py
     #
     # Upload validation plots
     #
     - name: Upload validation plots
-      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default'
+      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       uses: actions/upload-artifact@v3
       with:
         name: valdiation-plot

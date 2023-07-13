@@ -19,21 +19,24 @@ jobs:
       fail-fast: false
       matrix:
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
-        rte-kernels: [default, accel]
+        fpmodel:     [DP, SP]
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.fpmodel }}"
       # Make variables:
-      NCHOME: /dummy
       NFHOME: /usr
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
-      RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
-      # Auxiliary variables:
-      RFMIP_CACHEDIR: .testcache
+      FAILURE_THRESHOLD: 7.e-4
     steps:
+    #
+    # Relax failure thresholds for single precision 
+    #  
+    - name: Relax failure threshold for single precision
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Check out repository under $GITHUB_WORKSPACE
     #

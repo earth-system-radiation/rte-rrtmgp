@@ -113,8 +113,22 @@ contains
             ratio_eta_half = vmr_ref(itropo,igases(1),(jtemp(icol,ilay)+itemp-1)) / &
                              vmr_ref(itropo,igases(2),(jtemp(icol,ilay)+itemp-1))
             col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igases(1)) + ratio_eta_half * col_gas(icol,ilay,igases(2))
-            eta = merge(col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
-                        col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix))
+            ! Keep this commented lines. Fortran does allow for
+            ! substantial optimizations and in this merge cases may
+            ! happen that all expressions are evaluated and so create
+            ! a division by zero. In the if construct this should be
+            ! save. Merge is the way to do it in general inside of
+            ! loops, but sometimes it may not work.
+            !
+            ! eta = merge(col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
+            !             col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix))
+            !
+            ! In essence: do not turn it back to merge(...)!
+            if (col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix)) then
+              eta = col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav)
+            else
+              eta = 0.5_wp
+            endif
             loceta = eta * float(neta-1)
             jeta(itemp,icol,ilay,iflav) = min(int(loceta)+1, neta-1)
             feta = mod(loceta, 1.0_wp)

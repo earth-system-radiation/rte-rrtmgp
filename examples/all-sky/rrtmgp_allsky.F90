@@ -14,7 +14,7 @@ program rte_rrtmgp_allsky
   use mo_rte_sw,             only: rte_sw
   use mo_load_coefficients,  only: load_and_init
   use mo_load_cloud_coefficients, &
-                             only: load_cld_lutcoeff, load_cld_padecoeff
+                             only: load_cld_lutcoeff
   use mo_load_aerosol_coefficients, &
                              only: load_aero_lutcoeff
   use mo_rte_config,         only: rte_config_checks
@@ -91,7 +91,7 @@ program rte_rrtmgp_allsky
   !
   logical :: top_at_1, is_sw, is_lw
 
-  integer  :: nbnd, ngpt
+  integer  :: nbnd, ngpt, nspec
   integer  :: icol, ilay, ibnd, iloop, igas
 
   character(len=8) :: char_input
@@ -165,16 +165,16 @@ program rte_rrtmgp_allsky
   call load_and_init(k_dist, k_dist_file, gas_concs)
   is_sw = k_dist%source_is_external()
   is_lw = .not. is_sw
+  ! ----------------------------------------------------------------------------
+  !
+  ! Problem sizes
+  !
+  nbnd = k_dist%get_nband()
+  ngpt = k_dist%get_ngpt()
+  top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
+
   if (do_clouds) then 
-    !
-    ! Should also try with Pade calculations
-    !  call load_cld_padecoeff(cloud_optics, cloud_optics_file)
-    !
-    if(use_luts) then
-      call load_cld_lutcoeff (cloud_optics, cloud_optics_file)
-    else
-      call load_cld_padecoeff(cloud_optics, cloud_optics_file)
-    end if
+    call load_cld_lutcoeff(cloud_optics, cloud_optics_file, ngpt, nspec)
     call stop_on_err(cloud_optics%set_ice_roughness(2))
   end if
 
@@ -184,14 +184,6 @@ program rte_rrtmgp_allsky
     !
     call load_aero_lutcoeff (aerosol_optics, aerosol_optics_file)
   end if 
-
-  ! ----------------------------------------------------------------------------
-  !
-  ! Problem sizes
-  !
-  nbnd = k_dist%get_nband()
-  ngpt = k_dist%get_ngpt()
-  top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
 
   ! ----------------------------------------------------------------------------
   ! LW calculations neglect scattering; SW calculations use the 2-stream approximation
@@ -294,7 +286,7 @@ program rte_rrtmgp_allsky
     ! Cloud optics
     !
     if(do_clouds) & 
-      call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+      call stop_on_err(cloud_optics%cloud_optics(nspec, lwp, iwp, rel, rei, clouds))
     !
     ! Aerosol optics
     !

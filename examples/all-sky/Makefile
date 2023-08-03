@@ -57,6 +57,9 @@ check:
 	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
 	       --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir  \
 	       --file rrtmgp-allsky-lw-no-aerosols.nc rrtmgp-allsky-sw-no-aerosols.nc
+	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
+	       --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir  \
+	       --file rrtmgp-allsky-lw-no-aerosols-gpt-clouds.nc rrtmgp-allsky-sw-no-aerosols-gpt-clouds.nc
 
 clean:
 	-rm rrtmgp_allsky *.o *.optrpt ../*.optrpt *.mod *.nc

@@ -546,8 +546,12 @@ contains
     else
       allocate(ty_optical_props_1scl::clouds)
     end if
-    ! Clouds optical props are defined by band
-    call stop_on_err(clouds%init(k_dist%get_band_lims_wavenumber()))
+    ! Clouds optical props are defined by band or by g-point
+    if (nspec .eq. ngpt) then
+      call stop_on_err(clouds%init(k_dist%get_band_lims_wavenumber(),k_dist%get_band_lims_gpoint()))
+    else
+      call stop_on_err(clouds%init(k_dist%get_band_lims_wavenumber()))
+    endif
 
     select type(clouds)
       class is (ty_optical_props_1scl)

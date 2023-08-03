@@ -72,33 +72,34 @@ contains
   !    by spectral band or by g-point.
   !
   ! ------------------------------------------------------------------------------
-  function load_cloud_optics(this, ngpnt, nspec, band_lims_wvn, &
+  function load_cloud_optics(this, ngpnt, nspec, &
+                             band_lims_gpt, band_lims_wvn, &
                              radliq_lwr, radliq_upr, &
                              radice_lwr, radice_upr, &
                              extliq, ssaliq, asyliq, &
                              extice, ssaice, asyice) result(error_msg)
 
     class(ty_cloud_optics_rrtmgp), intent(inout) :: this
-    integer,                    intent(in   ) :: ngpnt
-    integer,                    intent(in   ) :: nspec
-    real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! Spectral discretization
+    integer,                    intent(in   ) :: ngpnt         ! number of g-points from spectral discretization
+    integer,                    intent(in   ) :: nspec         ! number of bands or g-points from cloud optics tables
+    integer,  dimension(:,:),   intent(in   ) :: band_lims_gpt ! beginning and ending g-points for each band
+    real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! beginning and ending wavenumbers for each band
     ! Lookup table interpolation constants
     ! Lower and upper bounds of the tables; also the constant for calculating interpolation indices for liquid
     real(wp),                   intent(in   ) :: radliq_lwr, radliq_upr
     real(wp),                   intent(in   ) :: radice_lwr, radice_upr
     ! LUT coefficients
     ! Extinction, single-scattering albedo, and asymmetry parameter for liquid and ice respectively
-    real(wp), dimension(:,:),   intent(in)    :: extliq, ssaliq, asyliq
-    real(wp), dimension(:,:,:), intent(in)    :: extice, ssaice, asyice
+    real(wp), dimension(:,:),   intent(in   ) :: extliq, ssaliq, asyliq
+    real(wp), dimension(:,:,:), intent(in   ) :: extice, ssaice, asyice
     character(len=128)    :: error_msg
     ! -------
     !
     ! Local variables
     !
     integer               :: nrghice, nsize_liq, nsize_ice
-    integer               :: ngpts,nbnd
 
-    error_msg = this%init(band_lims_wvn, name="RRTMGP cloud optics")
+    error_msg = this%init(band_lims_wvn, band_lims_gpt, name="RRTMGP cloud optics")
     !
     ! LUT coefficient dimensions
     !
@@ -230,6 +231,7 @@ contains
     integer  :: icol, ilay, ispec
     ! scalars for total tau, tau*ssa
     real(wp) :: tau, taussa
+
     ! ----------------------------------------
     !
     ! Error checking
@@ -267,8 +269,8 @@ contains
     ! Spectral consistency
     !
     if(check_values) then
-      if(.not. this%bands_are_equal(optical_props) .or. .not. this%gpoints_are_equal(optical_props)) &
-        error_msg = "cloud optics: optical properties don't have the same band or g-point structure"
+      if(.not. this%bands_are_equal(optical_props)) &
+        error_msg = "cloud optics: optical properties don't have the same band structure"
       if(error_msg /= "") return
     end if
 
@@ -454,7 +456,6 @@ contains
     real(wp),    dimension(ncol,nlay),       intent(in) :: lwp, re
     real(wp),                                intent(in) :: step_size, offset
     real(wp),    dimension(nsteps,   nspec), intent(in) :: tau_table, ssa_table, asy_table
-!    real(wp),    dimension(ncol,nlay,nspec)             :: tau, taussa, taussag
     real(wp),    dimension(ncol,nlay,nspec), intent(out):: tau, taussa, taussag
     ! ---------------------------
     integer  :: icol, ilay, ispec

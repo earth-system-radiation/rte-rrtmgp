@@ -30,6 +30,7 @@ contains
     ! Local variables
     integer :: ncid, nband, nrghice, nsize_liq, nsize_ice
 
+    integer,  dimension(:,:), allocatable                :: band_lims_gpt
     real(wp), dimension(:,:), allocatable                :: band_lims_wvn
     ! Lookup table interpolation constants
     real(wp) :: radliq_lwr          ! liquid particle size lower bound for interpolation
@@ -61,7 +62,9 @@ contains
     nsize_ice = get_dim_size(ncid,'nsize_ice')
 
     ! Read band wavenumber limits
-    allocate(band_lims_wvn(2, nband))
+    allocate(band_lims_gpt(2, nband), &
+             band_lims_wvn(2, nband))
+    band_lims_gpt = read_field(ncid, 'bnd_limits_gpt', 2, nband)
     band_lims_wvn = read_field(ncid, 'bnd_limits_wavenumber', 2, nband)
 
     ! Read LUT constants
@@ -97,7 +100,8 @@ contains
     endif
 
     ncid = nf90_close(ncid)
-    call stop_on_err(cloud_spec%load_cloud_optics(ngpnt, nspec, band_lims_wvn,   &
+    call stop_on_err(cloud_spec%load_cloud_optics(ngpnt, nspec, &
+                                                  band_lims_gpt, band_lims_wvn, &
                                                   radliq_lwr, radliq_upr, &
                                                   radice_lwr, radice_upr, &
                                                   extliq, ssaliq, asyliq, &

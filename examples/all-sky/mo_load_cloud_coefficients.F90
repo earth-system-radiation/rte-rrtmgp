@@ -21,17 +21,18 @@ contains
   !
   ! read cloud optical property LUT coefficients from NetCDF file
   !
-  subroutine load_cld_lutcoeff(cloud_spec, cld_coeff_file, ngpnt, nspec)
-    class(ty_cloud_optics_rrtmgp), intent(inout) :: cloud_spec
-    character(len=*),              intent(in   ) :: cld_coeff_file
-    integer,                       intent(in   ) :: ngpnt
-    integer,                       intent(  out) :: nspec
+  subroutine load_cld_lutcoeff(cloud_spec, cld_coeff_file, ngpnt, nspec, &
+                               band_lims_gpt, band_lims_wvn)
+    class(ty_cloud_optics_rrtmgp),         intent(inout) :: cloud_spec
+    character(len=*),                      intent(in   ) :: cld_coeff_file
+    integer,                               intent(in   ) :: ngpnt
+    integer,                               intent(  out) :: nspec
+    integer,  dimension(:,:), allocatable, intent(  out) :: band_lims_gpt
+    real(wp), dimension(:,:), allocatable, intent(  out) :: band_lims_wvn
     ! -----------------
     ! Local variables
     integer :: ncid, nband, nrghice, nsize_liq, nsize_ice
 
-    integer,  dimension(:,:), allocatable                :: band_lims_gpt
-    real(wp), dimension(:,:), allocatable                :: band_lims_wvn
     ! Lookup table interpolation constants
     real(wp) :: radliq_lwr          ! liquid particle size lower bound for interpolation
     real(wp) :: radliq_upr          ! liquid particle size upper bound for interpolation
@@ -100,7 +101,7 @@ contains
     endif
 
     ncid = nf90_close(ncid)
-    call stop_on_err(cloud_spec%load_cloud_optics(ngpnt, nspec, &
+    call stop_on_err(cloud_spec%load_cloud_optics(ngpnt, nband, nspec, &
                                                   band_lims_gpt, band_lims_wvn, &
                                                   radliq_lwr, radliq_upr, &
                                                   radice_lwr, radice_upr, &

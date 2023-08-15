@@ -670,7 +670,7 @@ contains
     !
     !$acc        data create(   Rdif, Tdif, source_up, source_dn, source_srf)
     !$omp target data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf)
-    call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dif, &
+    call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dir, &
                            tau, ssa, g,                                  &
                            Rdif, Tdif, source_dn, source_up, source_srf, gpt_flux_dir)
 

@@ -67,12 +67,12 @@ jobs:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     #
     # Check out data 
     #
     - name: Check out data
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data

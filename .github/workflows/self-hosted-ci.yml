@@ -61,12 +61,12 @@ jobs:
     # Checks-out repository under $GITHUB_WORKSPACE
     #
     - name: Check out Fortran code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
     #
     # Check out data 
     #
     - name: Check out data
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data

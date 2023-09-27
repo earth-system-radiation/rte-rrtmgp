@@ -87,10 +87,9 @@ jobs:
         mkdir '${{ matrix.build-dir }}'
         # Use the cached RFMIP files:
         ln -s "${GITHUB_WORKSPACE}/${RFMIP_CACHEDIR}" '${{ matrix.build-dir }}'
-        # Suppress an attempt to create the cache directory when running 'make'
-        # in case the cache is missing (the attempt fails because 'mkdir -p' is
-        # requested to overwrite the symlink that we create above):
-        mkdir -p "${RFMIP_CACHEDIR}" && touch "${RFMIP_CACHEDIR}/.dirstamp"
+        # Create the cache directory in case the cache is missing and the
+        # directory does not exist yet:
+        mkdir -p "${RFMIP_CACHEDIR}"
     #
     # Configure
     #
@@ -100,10 +99,8 @@ jobs:
         test 'x${{ matrix.fpmodel }}' = xSP && enable_sp=yes || enable_sp=no
         "${GITHUB_WORKSPACE}/configure" \
           --disable-silent-rules \
-          --enable-examples \
           --enable-single-precision="${enable_sp}" \
           --enable-tests \
-          --with-netcdf-fortran \
         || { cat ./config.log; exit 1; }
     #
     # Build
@@ -118,7 +115,10 @@ jobs:
       working-directory: ${{ matrix.build-dir }}
       run: |
         make -j check || {
-          find . -name '*.test.log' -print -exec cat {} ';'
+          find . -name '*.test' | sort | sed 's|.test$|.log|' | while read file; do
+            echo "$file"
+            cat "$file"
+          done
           exit 1
         }
     #
@@ -137,4 +137,4 @@ jobs:
       working-directory: ${{ matrix.build-dir }}
       run: |
         make -j distclean
-        test "x$(ls -A .)" = x || { find .; exit 1; }
+        test "x$(find . -type f)" = x || { find . -type f; exit 1; }

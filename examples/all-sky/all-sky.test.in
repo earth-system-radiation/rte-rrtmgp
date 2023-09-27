@@ -2,9 +2,12 @@
 
 set -e
 
-@TESTS_DISABLED@exit 77
+@TESTS_ENABLED_FALSE@exit 77
 
-RRTMGP_DATA=${RRTMGP_DATA-'@top_builddir@/@testcachedir@'}
+(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
+cd '@abs_builddir@'
+
+RRTMGP_DATA=${RRTMGP_DATA-'@abs_top_builddir@/@testcachedir@'}
 
 @LAUNCH_PREFIX@ @SHELL@ - <<_EOF
 set -e
@@ -14,8 +17,8 @@ set -e
 ./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-sw-no-aerosols.nc "${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc" "${RRTMGP_DATA}/rrtmgp-clouds-sw.nc"
 _EOF
 
-FAILURE_THRESHOLD='7.e-4'
-@SP_ENABLED@FAILURE_THRESHOLD='3.5e-1'
+@SP_ENABLED_FALSE@FAILURE_THRESHOLD='7.e-4'
+@SP_ENABLED_TRUE@FAILURE_THRESHOLD='3.5e-1'
 export FAILURE_THRESHOLD
-@PYTHON@ '@top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/all-sky/reference" --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir --file rrtmgp-allsky-lw.nc rrtmgp-allsky-sw.nc
-@PYTHON@ '@top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/all-sky/reference" --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir --file rrtmgp-allsky-lw-no-aerosols.nc rrtmgp-allsky-sw-no-aerosols.nc
+@PYTHON@ '@abs_top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/all-sky/reference" --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir --file rrtmgp-allsky-lw.nc rrtmgp-allsky-sw.nc
+@PYTHON@ '@abs_top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/all-sky/reference" --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir --file rrtmgp-allsky-lw-no-aerosols.nc rrtmgp-allsky-sw-no-aerosols.nc

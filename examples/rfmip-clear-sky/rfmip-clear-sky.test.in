@@ -2,9 +2,12 @@
 
 set -e
 
-@TESTS_DISABLED@exit 77
+@TESTS_ENABLED_FALSE@exit 77
 
-RRTMGP_DATA=${RRTMGP_DATA-'@top_builddir@/@testcachedir@'}
+(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
+cd '@abs_builddir@'
+
+RRTMGP_DATA=${RRTMGP_DATA-'@abs_top_builddir@/@testcachedir@'}
 
 inoutputs='
 rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
@@ -25,7 +28,7 @@ set -e
 ./rrtmgp_rfmip_sw@EXEEXT@ 8 "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc" "${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc"
 _EOF
 
-FAILURE_THRESHOLD='7.e-4'
-@SP_ENABLED@FAILURE_THRESHOLD='3.5e-1'
+@SP_ENABLED_FALSE@FAILURE_THRESHOLD='7.e-4'
+@SP_ENABLED_TRUE@FAILURE_THRESHOLD='3.5e-1'
 export FAILURE_THRESHOLD
-@PYTHON@ '@top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/rfmip-clear-sky/reference" --var rld rlu rsd rsu --file ${inoutputs}
+@PYTHON@ '@abs_top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/rfmip-clear-sky/reference" --var rld rlu rsd rsu --file ${inoutputs}

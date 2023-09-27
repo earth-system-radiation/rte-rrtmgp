@@ -37,17 +37,13 @@ The configure scripts supports the following use cases:
     # With OpenMP:
     ./configure --enable-gpu=openmp
     ```
-3. If you want to build the [examples](#examples) by default (otherwise, they are built only for testing, i.e. when you call `make check`):
-    ```bash
-    ./configure --enable-examples
-    ```
-4. If you want to make sure that the tests are built and run (otherwise, the tests might be skipped):
+3. If you want to make sure that the tests are built and run (otherwise, the tests might be skipped):
     ```bash
     ./configure --enable-tests
     ```
-5. If yout want to use [NetCDF Fortran library](https://www.unidata.ucar.edu/software/netcdf/docs-fortran/) (required for testing) from a non-standard directory:
+4. If yout want to use [NetCDF Fortran library](https://www.unidata.ucar.edu/software/netcdf/docs-fortran/) (required for testing) from a non-standard directory:
     ```bash
-    ./configure --with-netcdf-fortran=/path/to/netcdf-fortran
+    ./configure --with-netcdf-root=/path/to/netcdf-fortran
     ```
 
 ## Examples

@@ -2,9 +2,12 @@
 
 set -e
 
-@TESTS_DISABLED@exit 77
+@TESTS_ENABLED_FALSE@exit 77
 
-RRTMGP_DATA=${RRTMGP_DATA-'@top_builddir@/@testcachedir@'}
+(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
+cd '@abs_builddir@'
+
+RRTMGP_DATA=${RRTMGP_DATA-'@abs_top_builddir@/@testcachedir@'}
 
 # The tests write to the input file, therefore we copy it instead of symlinking:
 inoutput='test_atmospheres.nc'

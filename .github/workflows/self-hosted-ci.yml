@@ -105,6 +105,9 @@ jobs:
     - name: Check
       run: |
         make -j8 check || {
-          find . -name '*.test.log' -print -exec cat {} ';'
+          find . -name '*.test' | sort | sed 's|.test$|.log|' | while read file; do
+            echo "$file"
+            cat "$file"
+          done
           exit 1
         }

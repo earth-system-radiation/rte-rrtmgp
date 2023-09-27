@@ -582,41 +582,37 @@ PACKAGE_BUGREPORT=''
 PACKAGE_URL='https://github.com/earth-system-radiation/rte-rrtmgp'
 
 ac_unique_file="rte-frontend/mo_rte_sw.F90"
-ac_subst_vars='LTLIBOBJS
+ac_subst_vars='am__EXEEXT_FALSE
+am__EXEEXT_TRUE
+LTLIBOBJS
 LIBOBJS
-INSTALL_DATA
-INSTALL_SCRIPT
-INSTALL_PROGRAM
 LN_S
-MKDIR_P
-LAUNCH_PREFIX
+RANLIB
+CURL
 testcachedir
-TESTS_DISABLED
-TESTS_ENABLED
-EXAMPLES_DISABLED
-EXAMPLES_ENABLED
-DL_CMD
+LAUNCH_PREFIX
+TESTS_ENABLED_FALSE
+TESTS_ENABLED_TRUE
 PYTHON
-ARFLAGS
-AR
 NETCDF_FCLIBS
 NETCDF_FCFLAGS
-SP_ENABLED
-GPU_DISABLED
-GPU_ENABLED
-DEFAULT_VERBOSITY
+GPU_ENABLED_FALSE
+GPU_ENABLED_TRUE
 DEPGEN_FCFLAGS
-FCDEF_PP
-FCINCORDER_PP
-FCINCFLAG_PP
-FCINCORDER
-FCINCFLAG
-FCMODOUT
-FCMODINC
-FCMODUC
-FCMODEXT
-FC_VERSION
-FC_VENDOR
+SP_ENABLED_FALSE
+SP_ENABLED_TRUE
+USE_CBOOL_FALSE
+USE_CBOOL_TRUE
+RPATH_FCFLAGS
+FC_PP_DEF
+FC_INC_ORDER_PP_f90
+FC_INC_FLAG_PP_f90
+FC_INC_ORDER
+FC_INC_FLAG
+FC_MOD_FILE_EXT
+FC_MOD_FILE_UPPER
+FC_MOD_OUT
+FC_MOD_IN
 FCFLAGS_F90
 OBJEXT
 EXEEXT
@@ -624,6 +620,40 @@ ac_ct_FC
 LDFLAGS
 FCFLAGS
 FC
+am__include
+MAINT
+MAINTAINER_MODE_FALSE
+MAINTAINER_MODE_TRUE
+AM_BACKSLASH
+AM_DEFAULT_VERBOSITY
+AM_DEFAULT_V
+AM_V
+CSCOPE
+ETAGS
+CTAGS
+am__untar
+am__tar
+AMTAR
+am__leading_dot
+SET_MAKE
+AWK
+mkdir_p
+MKDIR_P
+INSTALL_STRIP_PROGRAM
+STRIP
+install_sh
+MAKEINFO
+AUTOHEADER
+AUTOMAKE
+AUTOCONF
+ACLOCAL
+VERSION
+PACKAGE
+CYGPATH_W
+am__isrc
+INSTALL_DATA
+INSTALL_SCRIPT
+INSTALL_PROGRAM
 target_alias
 host_alias
 build_alias
@@ -661,17 +691,20 @@ PACKAGE_VERSION
 PACKAGE_TARNAME
 PACKAGE_NAME
 PATH_SEPARATOR
-SHELL'
+SHELL
+am__quote'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_silent_rules
+enable_maintainer_mode
 enable_rpaths
-enable_gpu
 enable_single_precision
-enable_examples
+enable_gpu
 enable_tests
-with_netcdf_fortran
+with_netcdf_root
+with_netcdf_include
+with_netcdf_lib
 '
       ac_precious_vars='build_alias
 host_alias
@@ -682,8 +715,6 @@ LDFLAGS
 LIBS
 NETCDF_FCFLAGS
 NETCDF_FCLIBS
-AR
-ARFLAGS
 PYTHON
 LAUNCH_PREFIX'
 
@@ -1282,6 +1313,11 @@ Fine tuning of the installation directories:
 _ACEOF
 
   cat <<\_ACEOF
+
+Program names:
+  --program-prefix=PREFIX            prepend PREFIX to installed program names
+  --program-suffix=SUFFIX            append SUFFIX to installed program names
+  --program-transform-name=PROGRAM   run sed PROGRAM on installed program names
 _ACEOF
 fi
 
@@ -1296,27 +1332,31 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-silent-rules   less verbose build output (undo: "make V=1")
-                          [default=yes]
+  --disable-silent-rules  verbose build output (undo: "make V=0")
+  --enable-maintainer-mode
+                          enable make rules and dependencies not useful (and
+                          sometimes confusing) to the casual installer
   --enable-rpaths         add directories specified with -L flags in LDFLAGS
                           and LIBS to the runtime library search paths (RPATH)
                           [default=yes]
+  --enable-single-precision
+                          enable single-precision floating-point model
+                          [default=no]
   --enable-gpu            enable GPU kernels. The value of the argument must
                           be one of the following [default=no]:
                             openacc|yes  enable OpenACC support
                             openmp       enable OpenMP support
                             no           disable GPU offload
-  --enable-single-precision
-                          enable single-precision floating-point model
-                          [default=no]
-  --enable-examples       enable examples [default=no]
   --enable-tests          enable tests [default=auto]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-netcdf-fortran=<yes|no|directory>
-                          location of NetCDF Fortran library (lib and include
-                          subdirs)
+  --with-netcdf-root=NETCDF_ROOT
+                          root search path for NetCDF headers and libraries
+  --with-netcdf-include=DIR
+                          search path for NetCDF headers [NETCDF_ROOT/include]
+  --with-netcdf-lib=DIR   search path for NetCDF libraries [NETCDF_ROOT/lib]
 
 Some influential environment variables:
   FC          Fortran compiler command
@@ -1325,12 +1365,10 @@ Some influential environment variables:
               nonstandard directory <lib dir>
   LIBS        libraries to pass to the linker, e.g. -l<library>
   NETCDF_FCFLAGS
-              exact Fortran compiler flags enabling NetCDF Fortran
+              exact Fortran compiler flags enabling NetCDF
   NETCDF_FCLIBS
-              exact linker flags enabling NetCDF Fortran when linking with
-              Fortran compiler
-  AR          archiver command
-  ARFLAGS     archiver flags
+              exact linker flags enabling NetCDF when linking with Fortran
+              compiler
   PYTHON      Python interpreter command
   LAUNCH_PREFIX
               execution prefix for the tests (e.g. interactive job submission
@@ -1884,6 +1922,697 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+am__api_version='1.16'
+
+# Find a good install program.  We prefer a C program (faster),
+# so one script is as good as another.  But avoid the broken or
+# incompatible versions:
+# SysV /etc/install, /usr/sbin/install
+# SunOS /usr/etc/install
+# IRIX /sbin/install
+# AIX /bin/install
+# AmigaOS /C/install, which installs bootblocks on floppy discs
+# AIX 4 /usr/bin/installbsd, which doesn't work without a -g flag
+# AFS /usr/afsws/bin/install, which mishandles nonexistent args
+# SVR4 /usr/ucb/install, which tries to use the nonexistent group "staff"
+# OS/2's system install, which has a completely different semantic
+# ./install, which can be erroneously created by make from ./install.sh.
+# Reject install programs that cannot install multiple files.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a BSD-compatible install" >&5
+$as_echo_n "checking for a BSD-compatible install... " >&6; }
+if test -z "$INSTALL"; then
+if ${ac_cv_path_install+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    # Account for people who put trailing slashes in PATH elements.
+case $as_dir/ in #((
+  ./ | .// | /[cC]/* | \
+  /etc/* | /usr/sbin/* | /usr/etc/* | /sbin/* | /usr/afsws/bin/* | \
+  ?:[\\/]os2[\\/]install[\\/]* | ?:[\\/]OS2[\\/]INSTALL[\\/]* | \
+  /usr/ucb/* ) ;;
+  *)
+    # OSF1 and SCO ODT 3.0 have their own names for install.
+    # Don't use installbsd from OSF since it installs stuff as root
+    # by default.
+    for ac_prog in ginstall scoinst install; do
+      for ac_exec_ext in '' $ac_executable_extensions; do
+	if as_fn_executable_p "$as_dir/$ac_prog$ac_exec_ext"; then
+	  if test $ac_prog = install &&
+	    grep dspmsg "$as_dir/$ac_prog$ac_exec_ext" >/dev/null 2>&1; then
+	    # AIX install.  It has an incompatible calling convention.
+	    :
+	  elif test $ac_prog = install &&
+	    grep pwplus "$as_dir/$ac_prog$ac_exec_ext" >/dev/null 2>&1; then
+	    # program-specific install script used by HP pwplus--don't use.
+	    :
+	  else
+	    rm -rf conftest.one conftest.two conftest.dir
+	    echo one > conftest.one
+	    echo two > conftest.two
+	    mkdir conftest.dir
+	    if "$as_dir/$ac_prog$ac_exec_ext" -c conftest.one conftest.two "`pwd`/conftest.dir" &&
+	      test -s conftest.one && test -s conftest.two &&
+	      test -s conftest.dir/conftest.one &&
+	      test -s conftest.dir/conftest.two
+	    then
+	      ac_cv_path_install="$as_dir/$ac_prog$ac_exec_ext -c"
+	      break 3
+	    fi
+	  fi
+	fi
+      done
+    done
+    ;;
+esac
+
+  done
+IFS=$as_save_IFS
+
+rm -rf conftest.one conftest.two conftest.dir
+
+fi
+  if test "${ac_cv_path_install+set}" = set; then
+    INSTALL=$ac_cv_path_install
+  else
+    # As a last resort, use the slow shell script.  Don't cache a
+    # value for INSTALL within a source directory, because that will
+    # break other packages using the cache if that directory is
+    # removed, or if the value is a relative name.
+    INSTALL=$ac_install_sh
+  fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $INSTALL" >&5
+$as_echo "$INSTALL" >&6; }
+
+# Use test -z because SunOS4 sh mishandles braces in ${var-val}.
+# It thinks the first close brace ends the variable substitution.
+test -z "$INSTALL_PROGRAM" && INSTALL_PROGRAM='${INSTALL}'
+
+test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
+
+test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether build environment is sane" >&5
+$as_echo_n "checking whether build environment is sane... " >&6; }
+# Reject unsafe characters in $srcdir or the absolute working directory
+# name.  Accept space and tab only in the latter.
+am_lf='
+'
+case `pwd` in
+  *[\\\"\#\$\&\'\`$am_lf]*)
+    as_fn_error $? "unsafe absolute working directory name" "$LINENO" 5;;
+esac
+case $srcdir in
+  *[\\\"\#\$\&\'\`$am_lf\ \	]*)
+    as_fn_error $? "unsafe srcdir value: '$srcdir'" "$LINENO" 5;;
+esac
+
+# Do 'set' in a subshell so we don't clobber the current shell's
+# arguments.  Must try -L first in case configure is actually a
+# symlink; some systems play weird games with the mod time of symlinks
+# (eg FreeBSD returns the mod time of the symlink's containing
+# directory).
+if (
+   am_has_slept=no
+   for am_try in 1 2; do
+     echo "timestamp, slept: $am_has_slept" > conftest.file
+     set X `ls -Lt "$srcdir/configure" conftest.file 2> /dev/null`
+     if test "$*" = "X"; then
+	# -L didn't work.
+	set X `ls -t "$srcdir/configure" conftest.file`
+     fi
+     if test "$*" != "X $srcdir/configure conftest.file" \
+	&& test "$*" != "X conftest.file $srcdir/configure"; then
+
+	# If neither matched, then we have a broken ls.  This can happen
+	# if, for instance, CONFIG_SHELL is bash and it inherits a
+	# broken ls alias from the environment.  This has actually
+	# happened.  Such a system could not be considered "sane".
+	as_fn_error $? "ls -t appears to fail.  Make sure there is not a broken
+  alias in your environment" "$LINENO" 5
+     fi
+     if test "$2" = conftest.file || test $am_try -eq 2; then
+       break
+     fi
+     # Just in case.
+     sleep 1
+     am_has_slept=yes
+   done
+   test "$2" = conftest.file
+   )
+then
+   # Ok.
+   :
+else
+   as_fn_error $? "newly created file is older than distributed files!
+Check your system clock" "$LINENO" 5
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+# If we didn't sleep, we still need to ensure time stamps of config.status and
+# generated files are strictly newer.
+am_sleep_pid=
+if grep 'slept: no' conftest.file >/dev/null 2>&1; then
+  ( sleep 1 ) &
+  am_sleep_pid=$!
+fi
+
+rm -f conftest.file
+
+test "$program_prefix" != NONE &&
+  program_transform_name="s&^&$program_prefix&;$program_transform_name"
+# Use a double $ so make ignores it.
+test "$program_suffix" != NONE &&
+  program_transform_name="s&\$&$program_suffix&;$program_transform_name"
+# Double any \ or $.
+# By default was `s,x,x', remove it if useless.
+ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
+program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
+
+# Expand $ac_aux_dir to an absolute path.
+am_aux_dir=`cd "$ac_aux_dir" && pwd`
+
+if test x"${MISSING+set}" != xset; then
+  MISSING="\${SHELL} '$am_aux_dir/missing'"
+fi
+# Use eval to expand $SHELL
+if eval "$MISSING --is-lightweight"; then
+  am_missing_run="$MISSING "
+else
+  am_missing_run=
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: 'missing' script is too old or missing" >&5
+$as_echo "$as_me: WARNING: 'missing' script is too old or missing" >&2;}
+fi
+
+if test x"${install_sh+set}" != xset; then
+  case $am_aux_dir in
+  *\ * | *\	*)
+    install_sh="\${SHELL} '$am_aux_dir/install-sh'" ;;
+  *)
+    install_sh="\${SHELL} $am_aux_dir/install-sh"
+  esac
+fi
+
+# Installed binaries are usually stripped using 'strip' when the user
+# run "make install-strip".  However 'strip' might not be the right
+# tool to use in cross-compilation environments, therefore Automake
+# will honor the 'STRIP' environment variable to overrule this program.
+if test "$cross_compiling" != no; then
+  if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}strip", so it can be a program name with args.
+set dummy ${ac_tool_prefix}strip; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_STRIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$STRIP"; then
+  ac_cv_prog_STRIP="$STRIP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_STRIP="${ac_tool_prefix}strip"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+STRIP=$ac_cv_prog_STRIP
+if test -n "$STRIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STRIP" >&5
+$as_echo "$STRIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_STRIP"; then
+  ac_ct_STRIP=$STRIP
+  # Extract the first word of "strip", so it can be a program name with args.
+set dummy strip; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_STRIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_STRIP"; then
+  ac_cv_prog_ac_ct_STRIP="$ac_ct_STRIP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_STRIP="strip"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_STRIP=$ac_cv_prog_ac_ct_STRIP
+if test -n "$ac_ct_STRIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_STRIP" >&5
+$as_echo "$ac_ct_STRIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_STRIP" = x; then
+    STRIP=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    STRIP=$ac_ct_STRIP
+  fi
+else
+  STRIP="$ac_cv_prog_STRIP"
+fi
+
+fi
+INSTALL_STRIP_PROGRAM="\$(install_sh) -c -s"
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a thread-safe mkdir -p" >&5
+$as_echo_n "checking for a thread-safe mkdir -p... " >&6; }
+if test -z "$MKDIR_P"; then
+  if ${ac_cv_path_mkdir+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/opt/sfw/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in mkdir gmkdir; do
+	 for ac_exec_ext in '' $ac_executable_extensions; do
+	   as_fn_executable_p "$as_dir/$ac_prog$ac_exec_ext" || continue
+	   case `"$as_dir/$ac_prog$ac_exec_ext" --version 2>&1` in #(
+	     'mkdir (GNU coreutils) '* | \
+	     'mkdir (coreutils) '* | \
+	     'mkdir (fileutils) '4.1*)
+	       ac_cv_path_mkdir=$as_dir/$ac_prog$ac_exec_ext
+	       break 3;;
+	   esac
+	 done
+       done
+  done
+IFS=$as_save_IFS
+
+fi
+
+  test -d ./--version && rmdir ./--version
+  if test "${ac_cv_path_mkdir+set}" = set; then
+    MKDIR_P="$ac_cv_path_mkdir -p"
+  else
+    # As a last resort, use the slow shell script.  Don't cache a
+    # value for MKDIR_P within a source directory, because that will
+    # break other packages using the cache if that directory is
+    # removed, or if the value is a relative name.
+    MKDIR_P="$ac_install_sh -d"
+  fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDIR_P" >&5
+$as_echo "$MKDIR_P" >&6; }
+
+for ac_prog in gawk mawk nawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_AWK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$AWK"; then
+  ac_cv_prog_AWK="$AWK" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AWK="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+AWK=$ac_cv_prog_AWK
+if test -n "$AWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
+$as_echo "$AWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$AWK" && break
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} sets \$(MAKE)" >&5
+$as_echo_n "checking whether ${MAKE-make} sets \$(MAKE)... " >&6; }
+set x ${MAKE-make}
+ac_make=`$as_echo "$2" | sed 's/+/p/g; s/[^a-zA-Z0-9_]/_/g'`
+if eval \${ac_cv_prog_make_${ac_make}_set+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat >conftest.make <<\_ACEOF
+SHELL = /bin/sh
+all:
+	@echo '@@@%%%=$(MAKE)=@@@%%%'
+_ACEOF
+# GNU make sometimes prints "make[1]: Entering ...", which would confuse us.
+case `${MAKE-make} -f conftest.make 2>/dev/null` in
+  *@@@%%%=?*=@@@%%%*)
+    eval ac_cv_prog_make_${ac_make}_set=yes;;
+  *)
+    eval ac_cv_prog_make_${ac_make}_set=no;;
+esac
+rm -f conftest.make
+fi
+if eval test \$ac_cv_prog_make_${ac_make}_set = yes; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  SET_MAKE=
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  SET_MAKE="MAKE=${MAKE-make}"
+fi
+
+rm -rf .tst 2>/dev/null
+mkdir .tst 2>/dev/null
+if test -d .tst; then
+  am__leading_dot=.
+else
+  am__leading_dot=_
+fi
+rmdir .tst 2>/dev/null
+
+# Check whether --enable-silent-rules was given.
+if test "${enable_silent_rules+set}" = set; then :
+  enableval=$enable_silent_rules;
+fi
+
+case $enable_silent_rules in # (((
+  yes) AM_DEFAULT_VERBOSITY=0;;
+   no) AM_DEFAULT_VERBOSITY=1;;
+    *) AM_DEFAULT_VERBOSITY=1;;
+esac
+am_make=${MAKE-make}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $am_make supports nested variables" >&5
+$as_echo_n "checking whether $am_make supports nested variables... " >&6; }
+if ${am_cv_make_support_nested_variables+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if $as_echo 'TRUE=$(BAR$(V))
+BAR0=false
+BAR1=true
+V=1
+am__doit:
+	@$(TRUE)
+.PHONY: am__doit' | $am_make -f - >/dev/null 2>&1; then
+  am_cv_make_support_nested_variables=yes
+else
+  am_cv_make_support_nested_variables=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_make_support_nested_variables" >&5
+$as_echo "$am_cv_make_support_nested_variables" >&6; }
+if test $am_cv_make_support_nested_variables = yes; then
+    AM_V='$(V)'
+  AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
+else
+  AM_V=$AM_DEFAULT_VERBOSITY
+  AM_DEFAULT_V=$AM_DEFAULT_VERBOSITY
+fi
+AM_BACKSLASH='\'
+
+if test "`cd $srcdir && pwd`" != "`pwd`"; then
+  # Use -I$(srcdir) only when $(srcdir) != ., so that make's output
+  # is not polluted with repeated "-I."
+  am__isrc=' -I$(srcdir)'
+  # test to see if srcdir already configured
+  if test -f $srcdir/config.status; then
+    as_fn_error $? "source directory already configured; run \"make distclean\" there first" "$LINENO" 5
+  fi
+fi
+
+# test whether we have cygpath
+if test -z "$CYGPATH_W"; then
+  if (cygpath --version) >/dev/null 2>/dev/null; then
+    CYGPATH_W='cygpath -w'
+  else
+    CYGPATH_W=echo
+  fi
+fi
+
+
+# Define the identity of the package.
+ PACKAGE='rte-rrtmgp'
+ VERSION='1.7'
+
+
+cat >>confdefs.h <<_ACEOF
+#define PACKAGE "$PACKAGE"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define VERSION "$VERSION"
+_ACEOF
+
+# Some tools Automake needs.
+
+ACLOCAL=${ACLOCAL-"${am_missing_run}aclocal-${am__api_version}"}
+
+
+AUTOCONF=${AUTOCONF-"${am_missing_run}autoconf"}
+
+
+AUTOMAKE=${AUTOMAKE-"${am_missing_run}automake-${am__api_version}"}
+
+
+AUTOHEADER=${AUTOHEADER-"${am_missing_run}autoheader"}
+
+
+MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
+
+# For better backward compatibility.  To be removed once Automake 1.9.x
+# dies out for good.  For more background, see:
+# <https://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
+# <https://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
+mkdir_p='$(MKDIR_P)'
+
+# We need awk for the "check" target (and possibly the TAP driver).  The
+# system "awk" is bad on some platforms.
+# Always define AMTAR for backward compatibility.  Yes, it's still used
+# in the wild :-(  We should find a proper way to deprecate it ...
+AMTAR='$${TAR-tar}'
+
+
+# We'll loop over all known methods to create a tar archive until one works.
+_am_tools='gnutar  pax cpio none'
+
+am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
+
+
+
+
+
+# Variables for tags utilities; see am/tags.am
+if test -z "$CTAGS"; then
+  CTAGS=ctags
+fi
+
+if test -z "$ETAGS"; then
+  ETAGS=etags
+fi
+
+if test -z "$CSCOPE"; then
+  CSCOPE=cscope
+fi
+
+
+
+# POSIX will say in a future version that running "rm -f" with no argument
+# is OK; and we want to be able to make that assumption in our Makefile
+# recipes.  So use an aggressive probe to check that the usage we want is
+# actually supported "in the wild" to an acceptable degree.
+# See automake bug#10828.
+# To make any issue more visible, cause the running configure to be aborted
+# by default if the 'rm' program in use doesn't match our expectations; the
+# user can still override this though.
+if rm -f && rm -fr && rm -rf; then : OK; else
+  cat >&2 <<'END'
+Oops!
+
+Your 'rm' program seems unable to run without file operands specified
+on the command line, even when the '-f' option is present.  This is contrary
+to the behaviour of most rm programs out there, and not conforming with
+the upcoming POSIX standard: <http://austingroupbugs.net/view.php?id=542>
+
+Please tell bug-automake@gnu.org about your system, including the value
+of your $PATH and any error possibly output before this message.  This
+can help us improve future automake versions.
+
+END
+  if test x"$ACCEPT_INFERIOR_RM_PROGRAM" = x"yes"; then
+    echo 'Configuration will proceed anyway, since you have set the' >&2
+    echo 'ACCEPT_INFERIOR_RM_PROGRAM variable to "yes"' >&2
+    echo >&2
+  else
+    cat >&2 <<'END'
+Aborting the configuration process, to ensure you take notice of the issue.
+
+You can download and install GNU coreutils to get an 'rm' implementation
+that behaves properly: <https://www.gnu.org/software/coreutils/>.
+
+If you want to complete the configuration process using your problematic
+'rm' anyway, export the environment variable ACCEPT_INFERIOR_RM_PROGRAM
+to "yes", and re-run configure.
+
+END
+    as_fn_error $? "Your 'rm' program is bad, sorry." "$LINENO" 5
+  fi
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable maintainer-specific portions of Makefiles" >&5
+$as_echo_n "checking whether to enable maintainer-specific portions of Makefiles... " >&6; }
+    # Check whether --enable-maintainer-mode was given.
+if test "${enable_maintainer_mode+set}" = set; then :
+  enableval=$enable_maintainer_mode; USE_MAINTAINER_MODE=$enableval
+else
+  USE_MAINTAINER_MODE=no
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_MAINTAINER_MODE" >&5
+$as_echo "$USE_MAINTAINER_MODE" >&6; }
+   if test $USE_MAINTAINER_MODE = yes; then
+  MAINTAINER_MODE_TRUE=
+  MAINTAINER_MODE_FALSE='#'
+else
+  MAINTAINER_MODE_TRUE='#'
+  MAINTAINER_MODE_FALSE=
+fi
+
+  MAINT=$MAINTAINER_MODE_TRUE
+
+
+# Check whether --enable-silent-rules was given.
+if test "${enable_silent_rules+set}" = set; then :
+  enableval=$enable_silent_rules;
+fi
+
+case $enable_silent_rules in # (((
+  yes) AM_DEFAULT_VERBOSITY=0;;
+   no) AM_DEFAULT_VERBOSITY=1;;
+    *) AM_DEFAULT_VERBOSITY=0;;
+esac
+am_make=${MAKE-make}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $am_make supports nested variables" >&5
+$as_echo_n "checking whether $am_make supports nested variables... " >&6; }
+if ${am_cv_make_support_nested_variables+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if $as_echo 'TRUE=$(BAR$(V))
+BAR0=false
+BAR1=true
+V=1
+am__doit:
+	@$(TRUE)
+.PHONY: am__doit' | $am_make -f - >/dev/null 2>&1; then
+  am_cv_make_support_nested_variables=yes
+else
+  am_cv_make_support_nested_variables=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_make_support_nested_variables" >&5
+$as_echo "$am_cv_make_support_nested_variables" >&6; }
+if test $am_cv_make_support_nested_variables = yes; then
+    AM_V='$(V)'
+  AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
+else
+  AM_V=$AM_DEFAULT_VERBOSITY
+  AM_DEFAULT_V=$AM_DEFAULT_VERBOSITY
+fi
+AM_BACKSLASH='\'
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} supports the include directive" >&5
+$as_echo_n "checking whether ${MAKE-make} supports the include directive... " >&6; }
+cat > confinc.mk << 'END'
+am__doit:
+	@echo this is the am__doit target >confinc.out
+.PHONY: am__doit
+END
+am__include="#"
+am__quote=
+# BSD make does it like this.
+echo '.include "confinc.mk" # ignored' > confmf.BSD
+# Other make implementations (GNU, Solaris 10, AIX) do it like this.
+echo 'include confinc.mk # ignored' > confmf.GNU
+_am_result=no
+for s in GNU BSD; do
+  { echo "$as_me:$LINENO: ${MAKE-make} -f confmf.$s && cat confinc.out" >&5
+   (${MAKE-make} -f confmf.$s && cat confinc.out) >&5 2>&5
+   ac_status=$?
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); }
+  case $?:`cat confinc.out 2>/dev/null` in #(
+  '0:this is the am__doit target') :
+    case $s in #(
+  BSD) :
+    am__include='.include' am__quote='"' ;; #(
+  *) :
+    am__include='include' am__quote='' ;;
+esac ;; #(
+  *) :
+     ;;
+esac
+  if test "$am__include" != "#"; then
+    _am_result="yes ($s style)"
+    break
+  fi
+done
+rm -f confinc.* confmf.*
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${_am_result}" >&5
+$as_echo "${_am_result}" >&6; }
+
+
 ac_ext=${ac_fc_srcext-f}
 ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
@@ -2332,6 +3061,96 @@ ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_fc_compiler_gnu
 
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler vendor" >&5
+$as_echo_n "checking for Fortran compiler vendor... " >&6; }
+if ${acx_cv_fc_compiler_vendor+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if $FC --version 2>/dev/null | grep '^\(ifort\|ifx\) (IFORT)' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=intel
+elif $FC -V 2>&1 | grep '^NAG Fortran Compiler Release' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=nag
+elif $FC -V 2>/dev/null| grep '^Copyright.*\(The Portland Group\|NVIDIA CORPORATION\)' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=portland
+elif $FC -V 2>&1 | grep '^Cray Fortran' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=cray
+elif $FC --version 2>&1 | grep '^Copyright.*NEC Corporation' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=nec
+elif $FC --version 2>/dev/null | grep '^GNU Fortran' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=gnu
+elif $FC --version 2>&1 | grep '^AMD clang version' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=amd
+elif $FC -V 2>&1 | grep '^f18 compiler' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=flang
+elif $FC --version 2>&1 | grep 'clang version' >/dev/null 2>&1; then :
+  acx_cv_fc_compiler_vendor=flang
+else
+  acx_cv_fc_compiler_vendor=unknown
+fi
+      rm -f a.out a.out.dSYM a.exe b.out
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_compiler_vendor" >&5
+$as_echo "$acx_cv_fc_compiler_vendor" >&6; }
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler version" >&5
+$as_echo_n "checking for Fortran compiler version... " >&6; }
+if ${acx_cv_fc_compiler_version+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $acx_cv_fc_compiler_vendor in #(
+  intel) :
+    acx_cv_fc_compiler_version=`$FC --version 2>/dev/null | sed -n 's/^ifort (IFORT) \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+         if test -n "$acx_cv_fc_compiler_version"; then :
+  acx_cv_fc_compiler_version="classic:${acx_cv_fc_compiler_version}"
+else
+  acx_cv_fc_compiler_version=`$FC --version 2>/dev/null | sed -n 's/^ifx (IFORT) \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+            if test -n "$acx_cv_fc_compiler_version"; then :
+  acx_cv_fc_compiler_version="oneapi:${acx_cv_fc_compiler_version}"
+fi
+fi ;; #(
+  nag) :
+    acx_cv_fc_compiler_version=`$FC -V 2>&1 | sed -n 's/^NAG Fortran Compiler Release \([0-9][0-9]*\.[0-9][0-9]*\).*Build \([0-9][0-9]*\)/\1.\2/p'` ;; #(
+  portland) :
+    acx_cv_fc_compiler_version=`$FC -V 2>/dev/null | sed -n 's/\(pgfortran\|pgf90\) \([0-9][0-9]*\.[0-9][0-9]*\)-\([0-9][0-9]*\).*/\2.\3/p'`
+         if test -n "$acx_cv_fc_compiler_version"; then :
+  acx_cv_fc_compiler_version="pg:${acx_cv_fc_compiler_version}"
+else
+  acx_cv_fc_compiler_version=`$FC -V 2>/dev/null | sed -n 's/nvfortran \([0-9][0-9]*\.[0-9][0-9]*\)-\([0-9][0-9]*\).*/\1.\2/p'`
+            if test -n "$acx_cv_fc_compiler_version"; then :
+  acx_cv_fc_compiler_version="nv:${acx_cv_fc_compiler_version}"
+fi
+fi ;; #(
+  cray) :
+    acx_cv_fc_compiler_version=`$FC -V 2>&1 | sed -n 's/.*[vV]ersion \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'` ;; #(
+  nec) :
+    acx_cv_fc_compiler_version=`$FC --version 2>&1 | sed -n 's/^nfort (NFORT) \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'` ;; #(
+  gnu) :
+    acx_cv_fc_compiler_version=`$FC -dumpfullversion 2>/dev/null | sed -n '/^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$/p'`
+         if test -z "$acx_cv_fc_compiler_version"; then :
+  acx_cv_fc_compiler_version=`$FC -dumpversion 2>/dev/null | sed -n '/^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$/p'`
+fi ;; #(
+  amd) :
+    acx_cv_fc_compiler_version=`$FC --version 2>/dev/null | sed -n 's/.*AOCC_\([0-9][0-9]*\)[._]\([0-9][0-9]*\)[._]\([0-9][0-9]*\).*/\1.\2.\3/p'` ;; #(
+  flang) :
+    acx_cv_fc_compiler_version=`$FC -V 2>&1 | sed -n 's/.*version \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)/\1/p'`
+         if test -n "$acx_cv_fc_compiler_version"; then :
+  acx_cv_fc_compiler_version="f18:${acx_cv_fc_compiler_version}"
+else
+  acx_cv_fc_compiler_version=`$FC --version 2>/dev/null | sed -n 's/.*version \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
+            if test -n "$acx_cv_fc_compiler_version"; then :
+  acx_cv_fc_compiler_version="classic:${acx_cv_fc_compiler_version}"
+fi
+fi ;; #(
+  *) :
+    acx_cv_fc_compiler_version=unknown ;;
+esac
+      rm -f a.out a.out.dSYM a.exe b.out
+      if test -z "$acx_cv_fc_compiler_version"; then :
+  acx_cv_fc_compiler_version=unknown
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_compiler_version" >&5
+$as_echo "$acx_cv_fc_compiler_version" >&6; }
 
 
    acx_ext_save=$ac_ext
@@ -2412,102 +3231,6 @@ else
 fi
 
 
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler vendor" >&5
-$as_echo_n "checking for Fortran compiler vendor... " >&6; }
-if ${acx_cv_fc_compiler_vendor+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if $FC --version 2>/dev/null | grep '^\(ifort\|ifx\) (IFORT)' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=intel
-elif $FC -V 2>&1 | grep '^NAG Fortran Compiler Release' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=nag
-elif $FC -V 2>/dev/null| grep '^Copyright.*\(The Portland Group\|NVIDIA CORPORATION\)' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=portland
-elif $FC -V 2>&1 | grep '^Cray Fortran' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=cray
-elif $FC --version 2>&1 | grep '^Copyright.*NEC Corporation' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=nec
-elif $FC --version 2>/dev/null | grep '^GNU Fortran' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=gnu
-elif $FC --version 2>&1 | grep '^AMD clang version' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=amd
-elif $FC -V 2>&1 | grep '^f18 compiler' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=flang
-elif $FC --version 2>&1 | grep 'clang version' >/dev/null 2>&1; then :
-  acx_cv_fc_compiler_vendor=flang
-else
-  acx_cv_fc_compiler_vendor=unknown
-fi
-      rm -f a.out a.out.dSYM a.exe b.out
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_compiler_vendor" >&5
-$as_echo "$acx_cv_fc_compiler_vendor" >&6; }
-
-FC_VENDOR=$acx_cv_fc_compiler_vendor
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler version" >&5
-$as_echo_n "checking for Fortran compiler version... " >&6; }
-if ${acx_cv_fc_compiler_version+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $acx_cv_fc_compiler_vendor in #(
-  intel) :
-    acx_cv_fc_compiler_version=`$FC --version 2>/dev/null | sed -n 's/^ifort (IFORT) \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
-         if test -n "$acx_cv_fc_compiler_version"; then :
-  acx_cv_fc_compiler_version="classic:${acx_cv_fc_compiler_version}"
-else
-  acx_cv_fc_compiler_version=`$FC --version 2>/dev/null | sed -n 's/^ifx (IFORT) \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
-            if test -n "$acx_cv_fc_compiler_version"; then :
-  acx_cv_fc_compiler_version="oneapi:${acx_cv_fc_compiler_version}"
-fi
-fi ;; #(
-  nag) :
-    acx_cv_fc_compiler_version=`$FC -V 2>&1 | sed -n 's/^NAG Fortran Compiler Release \([0-9][0-9]*\.[0-9][0-9]*\).*Build \([0-9][0-9]*\)/\1.\2/p'` ;; #(
-  portland) :
-    acx_cv_fc_compiler_version=`$FC -V 2>/dev/null | sed -n 's/\(pgfortran\|pgf90\) \([0-9][0-9]*\.[0-9][0-9]*\)-\([0-9][0-9]*\).*/\2.\3/p'`
-         if test -n "$acx_cv_fc_compiler_version"; then :
-  acx_cv_fc_compiler_version="pg:${acx_cv_fc_compiler_version}"
-else
-  acx_cv_fc_compiler_version=`$FC -V 2>/dev/null | sed -n 's/nvfortran \([0-9][0-9]*\.[0-9][0-9]*\)-\([0-9][0-9]*\).*/\1.\2/p'`
-            if test -n "$acx_cv_fc_compiler_version"; then :
-  acx_cv_fc_compiler_version="nv:${acx_cv_fc_compiler_version}"
-fi
-fi ;; #(
-  cray) :
-    acx_cv_fc_compiler_version=`$FC -V 2>&1 | sed -n 's/.*[vV]ersion \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'` ;; #(
-  nec) :
-    acx_cv_fc_compiler_version=`$FC --version 2>&1 | sed -n 's/^nfort (NFORT) \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'` ;; #(
-  gnu) :
-    acx_cv_fc_compiler_version=`$FC -dumpfullversion 2>/dev/null | sed -n '/^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$/p'`
-         if test -z "$acx_cv_fc_compiler_version"; then :
-  acx_cv_fc_compiler_version=`$FC -dumpversion 2>/dev/null | sed -n '/^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$/p'`
-fi ;; #(
-  amd) :
-    acx_cv_fc_compiler_version=`$FC --version 2>/dev/null | sed -n 's/.*AOCC_\([0-9][0-9]*\)[._]\([0-9][0-9]*\)[._]\([0-9][0-9]*\).*/\1.\2.\3/p'` ;; #(
-  flang) :
-    acx_cv_fc_compiler_version=`$FC -V 2>&1 | sed -n 's/.*version \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)/\1/p'`
-         if test -n "$acx_cv_fc_compiler_version"; then :
-  acx_cv_fc_compiler_version="f18:${acx_cv_fc_compiler_version}"
-else
-  acx_cv_fc_compiler_version=`$FC --version 2>/dev/null | sed -n 's/.*version \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p'`
-            if test -n "$acx_cv_fc_compiler_version"; then :
-  acx_cv_fc_compiler_version="classic:${acx_cv_fc_compiler_version}"
-fi
-fi ;; #(
-  *) :
-    acx_cv_fc_compiler_version=unknown ;;
-esac
-      rm -f a.out a.out.dSYM a.exe b.out
-      if test -z "$acx_cv_fc_compiler_version"; then :
-  acx_cv_fc_compiler_version=unknown
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_compiler_version" >&5
-$as_echo "$acx_cv_fc_compiler_version" >&6; }
-
-FC_VERSION=$acx_cv_fc_compiler_version
-
-
                acx_fc_line_length_none_in_cache=no
    if ${acx_cv_fc_line_length_unlimited+:} false; then :
   case $acx_cv_fc_line_length_unlimited in #(
@@ -2586,6 +3309,137 @@ fi
 fi
 
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler flag needed to specify search paths for module files" >&5
+$as_echo_n "checking for Fortran compiler flag needed to specify search paths for module files... " >&6; }
+if ${acx_cv_fc_module_in_flag+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  acx_cv_fc_module_in_flag=unknown
+mkdir conftest.dir
+cd conftest.dir
+cat > conftest.$ac_ext <<_ACEOF
+
+      module conftest_module
+      implicit none
+      public
+      contains
+      subroutine conftest_routine
+      write(*,'(a)') 'gotcha!'
+      end subroutine
+      end module
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  cd ..
+   ac_fc_module_flag_FCFLAGS_save=$FCFLAGS
+   for ac_flag in -M -I '-I ' '-M ' -p '-mod ' '-module ' '-Am -I'; do
+     FCFLAGS="$ac_fc_module_flag_FCFLAGS_save ${ac_flag}conftest.dir ${ac_flag}conftest.dir"
+     cat > conftest.$ac_ext <<_ACEOF
+
+      program main
+      use conftest_module, only : conftest_routine
+      implicit none
+      call conftest_routine
+      end program
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  acx_cv_fc_module_in_flag="$ac_flag"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     if test "$acx_cv_fc_module_in_flag" != unknown; then
+       break
+     fi
+   done
+   FCFLAGS=$ac_fc_module_flag_FCFLAGS_save
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -rf conftest.dir
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_module_in_flag" >&5
+$as_echo "$acx_cv_fc_module_in_flag" >&6; }
+if test "$acx_cv_fc_module_in_flag" != unknown; then
+    :
+else
+    :
+fi
+                  if test "x$acx_cv_fc_module_in_flag" = xunknown; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "unable to detect Fortran compiler flag needed to specify search paths for module files
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  FC_MOD_IN=$acx_cv_fc_module_in_flag
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler flag needed to specify output path for module files" >&5
+$as_echo_n "checking for Fortran compiler flag needed to specify output path for module files... " >&6; }
+if ${acx_cv_fc_module_out_flag+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  mkdir conftest.dir conftest.dir/sub
+cd conftest.dir
+acx_cv_fc_module_out_flag=unknown
+ac_fc_module_output_flag_FCFLAGS_save=$FCFLAGS
+for ac_flag in -J '-J ' -fmod= -moddir= +moddir= -qmoddir= '-mdir ' '-mod ' \
+	      '-module ' -M '-Am -M' '-e m -J '; do
+  FCFLAGS="$ac_fc_module_output_flag_FCFLAGS_save ${ac_flag}sub"
+  cat > conftest.$ac_ext <<_ACEOF
+
+      module conftest_module
+      implicit none
+      public
+      contains
+      subroutine conftest_routine
+      write(*,'(a)') 'gotcha!'
+      end subroutine
+      end module
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  cd sub
+     cat > conftest.$ac_ext <<_ACEOF
+
+      program main
+      use conftest_module, only : conftest_routine
+      implicit none
+      call conftest_routine
+      end program
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  acx_cv_fc_module_out_flag="$ac_flag"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     cd ..
+     if test "$acx_cv_fc_module_out_flag" != unknown; then
+       break
+     fi
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+done
+FCFLAGS=$ac_fc_module_output_flag_FCFLAGS_save
+cd ..
+rm -rf conftest.dir
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_module_out_flag" >&5
+$as_echo "$acx_cv_fc_module_out_flag" >&6; }
+if test "$acx_cv_fc_module_out_flag" != unknown; then
+    :
+else
+    :
+fi
+                  if test "x$acx_cv_fc_module_out_flag" = xunknown; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "unable to detect Fortran compiler flag needed to specify output path for module files
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  FC_MOD_OUT=$acx_cv_fc_module_out_flag
+
+fi
+
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler module file naming template" >&5
 $as_echo_n "checking for Fortran compiler module file naming template... " >&6; }
    if ${acx_cv_fc_module_naming_upper+:} false && ${acx_cv_fc_module_naming_ext+:} false; then :
@@ -2653,140 +3507,9 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: name.$acx_cv_fc_module_naming_ext" >&5
 $as_echo "name.$acx_cv_fc_module_naming_ext" >&6; }
 fi
-      FCMODEXT="$acx_cv_fc_module_naming_ext"
+      FC_MOD_FILE_UPPER=$acx_cv_fc_module_naming_upper
 
-   FCMODUC="$acx_cv_fc_module_naming_upper"
-
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler flag needed to specify search paths for module files" >&5
-$as_echo_n "checking for Fortran compiler flag needed to specify search paths for module files... " >&6; }
-if ${acx_cv_fc_module_in_flag+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  acx_cv_fc_module_in_flag=unknown
-mkdir conftest.dir
-cd conftest.dir
-cat > conftest.$ac_ext <<_ACEOF
-
-      module conftest_module
-      implicit none
-      public
-      contains
-      subroutine conftest_routine
-      write(*,'(a)') 'gotcha!'
-      end subroutine
-      end module
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  cd ..
-   ac_fc_module_flag_FCFLAGS_save=$FCFLAGS
-   for ac_flag in -M -I '-I ' '-M ' -p '-mod ' '-module ' '-Am -I'; do
-     FCFLAGS="$ac_fc_module_flag_FCFLAGS_save ${ac_flag}conftest.dir ${ac_flag}conftest.dir"
-     cat > conftest.$ac_ext <<_ACEOF
-
-      program main
-      use conftest_module, only : conftest_routine
-      implicit none
-      call conftest_routine
-      end program
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_module_in_flag="$ac_flag"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-     if test "$acx_cv_fc_module_in_flag" != unknown; then
-       break
-     fi
-   done
-   FCFLAGS=$ac_fc_module_flag_FCFLAGS_save
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-rm -rf conftest.dir
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_module_in_flag" >&5
-$as_echo "$acx_cv_fc_module_in_flag" >&6; }
-if test "$acx_cv_fc_module_in_flag" != unknown; then
-    :
-else
-    :
-fi
-                  if test "x$acx_cv_fc_module_in_flag" = xunknown; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "unable to detect Fortran compiler flag needed to specify search paths for module files
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  FCMODINC="$acx_cv_fc_module_in_flag"
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler flag needed to specify output path for module files" >&5
-$as_echo_n "checking for Fortran compiler flag needed to specify output path for module files... " >&6; }
-if ${acx_cv_fc_module_out_flag+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  mkdir conftest.dir conftest.dir/sub
-cd conftest.dir
-acx_cv_fc_module_out_flag=unknown
-ac_fc_module_output_flag_FCFLAGS_save=$FCFLAGS
-for ac_flag in -J '-J ' -fmod= -moddir= +moddir= -qmoddir= '-mdir ' '-mod ' \
-	      '-module ' -M '-Am -M' '-e m -J '; do
-  FCFLAGS="$ac_fc_module_output_flag_FCFLAGS_save ${ac_flag}sub"
-  cat > conftest.$ac_ext <<_ACEOF
-
-      module conftest_module
-      implicit none
-      public
-      contains
-      subroutine conftest_routine
-      write(*,'(a)') 'gotcha!'
-      end subroutine
-      end module
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  cd sub
-     cat > conftest.$ac_ext <<_ACEOF
-
-      program main
-      use conftest_module, only : conftest_routine
-      implicit none
-      call conftest_routine
-      end program
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_module_out_flag="$ac_flag"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-     cd ..
-     if test "$acx_cv_fc_module_out_flag" != unknown; then
-       break
-     fi
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-done
-FCFLAGS=$ac_fc_module_output_flag_FCFLAGS_save
-cd ..
-rm -rf conftest.dir
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_module_out_flag" >&5
-$as_echo "$acx_cv_fc_module_out_flag" >&6; }
-if test "$acx_cv_fc_module_out_flag" != unknown; then
-    :
-else
-    :
-fi
-                  if test "x$acx_cv_fc_module_out_flag" = xunknown; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "unable to detect Fortran compiler flag needed to specify output path for module files
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  FCMODOUT="$acx_cv_fc_module_out_flag"
+   FC_MOD_FILE_EXT=$acx_cv_fc_module_naming_ext
 
 fi
 
@@ -2830,10 +3553,10 @@ $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "unable to detect Fortran compiler flag needed to specify search paths for the \"INCLUDE\" statement
 See \`config.log' for more details" "$LINENO" 5; }
 else
-  FCINCFLAG="$acx_cv_fc_ftn_include_flag"
+  FC_INC_FLAG=$acx_cv_fc_ftn_include_flag
 
 fi
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler search path order for the \"INCLUDE\" statement" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler search path order for the \"INCLUDE\" statement" >&5
 $as_echo_n "checking for Fortran compiler search path order for the \"INCLUDE\" statement... " >&6; }
 if ${acx_cv_fc_ftn_include_order+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -2911,12 +3634,11 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_ftn_include_order" >&5
 $as_echo "$acx_cv_fc_ftn_include_order" >&6; }
    if test "x$acx_cv_fc_ftn_include_order" = xunknown; then :
-  FCINCORDER='src,flg'
-
+  FC_INC_ORDER=src,flg
 else
-  FCINCORDER="$acx_cv_fc_ftn_include_order"
-
+  FC_INC_ORDER=$acx_cv_fc_ftn_include_order
 fi
+
 
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler flag needed to specify search paths for the quoted form of the \"#include\" directive" >&5
@@ -2959,7 +3681,7 @@ $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "unable to detect Fortran compiler flag needed to specify search paths for the quoted form of the \"#include\" directive
 See \`config.log' for more details" "$LINENO" 5; }
 else
-  FCINCFLAG_PP="$acx_cv_fc_pp_include_flag"
+  FC_INC_FLAG_PP_f90=$acx_cv_fc_pp_include_flag
 
 fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler search path order for the quoted form of the \"#include\" directive" >&5
@@ -3040,12 +3762,11 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_pp_include_order" >&5
 $as_echo "$acx_cv_fc_pp_include_order" >&6; }
    if test "x$acx_cv_fc_pp_include_order" = xunknown; then :
-  FCINCORDER_PP='inc,flg'
-
+  FC_INC_ORDER_PP_f90=inc,flg
 else
-  FCINCORDER_PP="$acx_cv_fc_pp_include_order"
-
+  FC_INC_ORDER_PP_f90=$acx_cv_fc_pp_include_order
 fi
+
 
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler flag needed to define a preprocessor macro" >&5
@@ -3084,7 +3805,7 @@ $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "unable to detect Fortran compiler flag needed to define a preprocessor macro
 See \`config.log' for more details" "$LINENO" 5; }
 else
-  FCDEF_PP="$acx_cv_fc_macro_flag"
+  FC_PP_DEF=$acx_cv_fc_macro_flag
 
 fi
 
@@ -3117,62 +3838,6 @@ as_fn_error $? "Fortran module 'ISO_C_BINDING' is not available
 See \`config.log' for more details" "$LINENO" 5; }
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether switching to C_BOOL type is required" >&5
-$as_echo_n "checking whether switching to C_BOOL type is required... " >&6; }
-if ${acx_cv_fc_use_cbool+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  acx_cv_fc_use_cbool=unknown
-   cat > conftest.$ac_ext <<_ACEOF
-      subroutine conftest_foo(a) bind(C)
-      use iso_c_binding
-      implicit none
-#ifdef RTE_USE_CBOOL
-      integer, parameter :: wl = c_bool
-#else
-      integer, parameter :: wl = kind(.true.)
-#endif
-      logical(wl) :: a
-      end subroutine
-_ACEOF
-   if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_use_cbool=no
-else
-  acx_save_FCFLAGS=$FCFLAGS
-      as_fn_append FCFLAGS " ${FCDEF_PP}RTE_USE_CBOOL"
-      if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_use_cbool=yes
-fi
-rm -f core conftest.err conftest.$ac_objext
-      FCFLAGS=$acx_save_FCFLAGS
-fi
-rm -f core conftest.err conftest.$ac_objext
-   rm -f conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_use_cbool" >&5
-$as_echo "$acx_cv_fc_use_cbool" >&6; }
-if test "x$acx_cv_fc_use_cbool" = xyes; then :
-  as_fn_append FCFLAGS " ${FCDEF_PP}RTE_USE_CBOOL"
-fi
-
-DEPGEN_FCFLAGS=''
-
-
-# Check whether --enable-silent-rules was given.
-if test "${enable_silent_rules+set}" = set; then :
-  enableval=$enable_silent_rules; if test x"$enableval" != xno; then :
-  enable_silent_rules=yes
-fi
-else
-  enable_silent_rules=yes
-fi
-
-
-DEFAULT_VERBOSITY=0
-
-if test "x$enable_silent_rules" = xno; then :
-  DEFAULT_VERBOSITY=1
-fi
 
 # Check whether --enable-rpaths was given.
 if test "${enable_rpaths+set}" = set; then :
@@ -3183,6 +3848,9 @@ else
   enable_rpaths=yes
 fi
 
+
+acx_lib_search_flags='-L'
+RPATH_FCFLAGS=''
 
 if test "x$enable_rpaths" = xyes; then :
      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran compiler flag needed to add a directory to the runtime library search path" >&5
@@ -3213,19 +3881,20 @@ $as_echo "$acx_cv_fc_rpath_flag" >&6; }
 esac
    done
    for acx_L_arg in $acx_L_args; do
-     case ' '$LDFLAGS' ' in #(
+     case ' '$RPATH_FCFLAGS' ' in #(
   *' '"$acx_cv_fc_rpath_flag$acx_L_arg"' '*) :
      ;; #(
   ' '' ') :
-    as_fn_append LDFLAGS "$acx_cv_fc_rpath_flag$acx_L_arg" ;; #(
+    as_fn_append RPATH_FCFLAGS "$acx_cv_fc_rpath_flag$acx_L_arg" ;; #(
   *) :
-    as_fn_append LDFLAGS ' '; as_fn_append LDFLAGS "$acx_cv_fc_rpath_flag$acx_L_arg" ;;
+    as_fn_append RPATH_FCFLAGS ' '; as_fn_append RPATH_FCFLAGS "$acx_cv_fc_rpath_flag$acx_L_arg" ;;
 esac
    done
    acx_shlib_rpath_flags_check_result=no
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran compiler accepts the automatically generated RPATH flags" >&5
 $as_echo_n "checking whether Fortran compiler accepts the automatically generated RPATH flags... " >&6; }
-
+   acx_save_LDFLAGS=$LDFLAGS
+      LDFLAGS="$RPATH_FCFLAGS $LDFLAGS"
    cat > conftest.$ac_ext <<_ACEOF
       program main
 
@@ -3236,7 +3905,7 @@ if ac_fn_fc_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-
+   LDFLAGS=$acx_save_LDFLAGS
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_shlib_rpath_flags_check_result" >&5
 $as_echo "$acx_shlib_rpath_flags_check_result" >&6; }
    if test "x$acx_shlib_rpath_flags_check_result" = xyes; then :
@@ -3244,10 +3913,118 @@ $as_echo "$acx_shlib_rpath_flags_check_result" >&6; }
 else
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Fortran compiler does not accept the automatically generated RPATH flags
+as_fn_error $? "Fortran compiler does not accept the automatically generated RPATH flags '$RPATH_FCFLAGS'
 See \`config.log' for more details" "$LINENO" 5; }
 fi
+   as_fn_append acx_lib_search_flags " '$acx_cv_fc_rpath_flag'"
 fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether switching to C_BOOL type is required" >&5
+$as_echo_n "checking whether switching to C_BOOL type is required... " >&6; }
+if ${acx_cv_fc_use_cbool+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  acx_cv_fc_use_cbool=unknown
+   cat > conftest.$ac_ext <<_ACEOF
+      subroutine conftest_foo(a) bind(C)
+      use iso_c_binding
+      implicit none
+#ifdef RTE_USE_CBOOL
+      integer, parameter :: wl = c_bool
+#else
+      integer, parameter :: wl = kind(.true.)
+#endif
+      logical(wl) :: a
+      end subroutine
+_ACEOF
+   if ac_fn_fc_try_compile "$LINENO"; then :
+  acx_cv_fc_use_cbool=no
+else
+  acx_save_FCFLAGS=$FCFLAGS
+      as_fn_append FCFLAGS " ${FC_PP_DEF}RTE_USE_CBOOL"
+      if ac_fn_fc_try_compile "$LINENO"; then :
+  acx_cv_fc_use_cbool=yes
+fi
+rm -f core conftest.err conftest.$ac_objext
+      FCFLAGS=$acx_save_FCFLAGS
+fi
+rm -f core conftest.err conftest.$ac_objext
+   rm -f conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_use_cbool" >&5
+$as_echo "$acx_cv_fc_use_cbool" >&6; }
+ if test "x$acx_cv_fc_use_cbool" = xyes; then
+  USE_CBOOL_TRUE=
+  USE_CBOOL_FALSE='#'
+else
+  USE_CBOOL_TRUE='#'
+  USE_CBOOL_FALSE=
+fi
+
+
+# Check whether --enable-single-precision was given.
+if test "${enable_single_precision+set}" = set; then :
+  enableval=$enable_single_precision; if test x"$enableval" != xno; then :
+  enable_single_precision=yes
+fi
+else
+  enable_single_precision=no
+fi
+
+
+if test "x$enable_single_precision" = xno; then :
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the Fortran preprocessor macro RTE_USE_SP is defined" >&5
+$as_echo_n "checking whether the Fortran preprocessor macro RTE_USE_SP is defined... " >&6; }
+if ${acx_cv_fc_macro_RTE_USE_SP_defined+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat > conftest.$ac_ext <<_ACEOF
+      program main
+#ifdef RTE_USE_SP
+#else
+      choke me
+#endif
+      end
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  acx_cv_fc_macro_RTE_USE_SP_defined=yes
+else
+  cat > conftest.$ac_ext <<_ACEOF
+      program main
+#ifndef RTE_USE_SP
+#else
+      choke me
+#endif
+      end
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  acx_cv_fc_macro_RTE_USE_SP_defined=no
+else
+  acx_cv_fc_macro_RTE_USE_SP_defined=unsupported
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_macro_RTE_USE_SP_defined" >&5
+$as_echo "$acx_cv_fc_macro_RTE_USE_SP_defined" >&6; }
+   acx_macro_defined=$acx_cv_fc_macro_RTE_USE_SP_defined
+
+   if test "x$acx_macro_defined" = xyes; then :
+  as_fn_error $? "Single-precision floating-point model is enabled via FCFLAGS: either enable it via the configure option (--enable-single-precision) or remove the definition of the RTE_USE_SP preprocessor macro from FCFLAGS" "$LINENO" 5
+fi
+fi
+ if test "x$enable_single_precision" = xyes; then
+  SP_ENABLED_TRUE=
+  SP_ENABLED_FALSE='#'
+else
+  SP_ENABLED_TRUE='#'
+  SP_ENABLED_FALSE=
+fi
+
+
+DEPGEN_FCFLAGS=''
+
 
 # Check whether --enable-gpu was given.
 if test "${enable_gpu+set}" = set; then :
@@ -3313,7 +4090,95 @@ else
   as_fn_append FCFLAGS " $acx_cv_fc_openacc_flag"
 fi
 
-   acx_cv_fc_macro__OPENACC_defined=${acx_cv_fc_macro__OPENACC_defined-yes}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the value of the Fortran preprocessor macro _OPENACC" >&5
+$as_echo_n "checking for the value of the Fortran preprocessor macro _OPENACC... " >&6; }
+if ${acx_cv_fc_macro__OPENACC_value+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  acx_cv_fc_macro__OPENACC_value=unknown
+      if test "x$cross_compiling" = xno; then :
+  cat > conftest.$ac_ext <<_ACEOF
+#ifndef _OPENACC
+      choke me
+#else
+      subroutine p_str(s)
+      implicit none
+      character(len=*) :: s
+      write(*, "(a)") """"//s//""""
+      end subroutine
+
+      subroutine p_int(i)
+      implicit none
+      integer :: i
+      write(*, "(i0)") i
+      end subroutine
+
+      subroutine p_none()
+      write(*, "(a)") ""
+      end subroutine
+
+      program main
+      implicit none
+      interface p_val
+      subroutine p_str(s)
+      implicit none
+      character(len=*) :: s
+      end subroutine
+      subroutine p_int(i)
+      implicit none
+      integer :: i
+      end subroutine
+      subroutine p_none()
+      end subroutine
+      end interface
+      call p_val(_OPENACC)
+      end
+#endif
+_ACEOF
+if ac_fn_fc_try_link "$LINENO"; then :
+  acx_exec_result=`./conftest$ac_exeext 2>&5`
+            if test $? -eq 0; then :
+  acx_cv_fc_macro__OPENACC_value=$acx_exec_result
+fi
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+      if test "x$acx_cv_fc_macro__OPENACC_value" = xunknown; then :
+  set dummy 202111 202011 201911 201811 201711 201510 201308 201306 201111; shift
+            while test $# != 0; do
+              cat > conftest.$ac_ext <<_ACEOF
+      program main
+#if _OPENACC == _CONFTEST_UNDEFINED_OR_EMPTY || _OPENACC != $1
+      choke me
+#endif
+      end
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  acx_cv_fc_macro__OPENACC_value=$1
+                 set dummy; shift
+else
+  shift
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+            done
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_macro__OPENACC_value" >&5
+$as_echo "$acx_cv_fc_macro__OPENACC_value" >&6; }
+   acx_macro_value=$acx_cv_fc_macro__OPENACC_value
+
+   if test "x$acx_macro_value" = xunknown; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unable to detect supported OpenACC version (at least version 2.6 is required): the compilation of GPU kernels might fail" >&5
+$as_echo "$as_me: WARNING: unable to detect supported OpenACC version (at least version 2.6 is required): the compilation of GPU kernels might fail" >&2;}
+      as_fn_append DEPGEN_FCFLAGS " ${FC_PP_DEF}_OPENACC"
+else
+  if test "$acx_macro_value" -lt 201711 >&5 2>&1; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Fortran compiler does not support OpenACC 2.6 (201711): the compilation of GPU kernels might fail" >&5
+$as_echo "$as_me: WARNING: Fortran compiler does not support OpenACC 2.6 (201711): the compilation of GPU kernels might fail" >&2;}
+fi
+      as_fn_append DEPGEN_FCFLAGS " ${FC_PP_DEF}_OPENACC=$acx_macro_value"
+fi
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the Fortran preprocessor macro _OPENMP is defined" >&5
 $as_echo_n "checking whether the Fortran preprocessor macro _OPENMP is defined... " >&6; }
 if ${acx_cv_fc_macro__OPENMP_defined+:} false; then :
@@ -3404,224 +4269,7 @@ else
   as_fn_append FCFLAGS " $acx_cv_fc_openmp_flag"
 fi
 
-   acx_cv_fc_macro__OPENMP_defined=${acx_cv_fc_macro__OPENMP_defined-yes}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the Fortran preprocessor macro _OPENACC is defined" >&5
-$as_echo_n "checking whether the Fortran preprocessor macro _OPENACC is defined... " >&6; }
-if ${acx_cv_fc_macro__OPENACC_defined+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat > conftest.$ac_ext <<_ACEOF
-      program main
-#ifdef _OPENACC
-#else
-      choke me
-#endif
-      end
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro__OPENACC_defined=yes
-else
-  cat > conftest.$ac_ext <<_ACEOF
-      program main
-#ifndef _OPENACC
-#else
-      choke me
-#endif
-      end
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro__OPENACC_defined=no
-else
-  acx_cv_fc_macro__OPENACC_defined=unsupported
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_macro__OPENACC_defined" >&5
-$as_echo "$acx_cv_fc_macro__OPENACC_defined" >&6; }
-   acx_macro_defined=$acx_cv_fc_macro__OPENACC_defined
-
-   if test "x$acx_macro_defined" = xyes; then :
-  as_fn_error $? "Fortran compiler enables OpenACC support by default: either enable GPU kernels with OpenACC support (--enable-gpu=openacc) or set FCFLAGS accordingly to disable OpenACC" "$LINENO" 5
-fi ;; #(
-  *) :
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the Fortran preprocessor macro _OPENACC is defined" >&5
-$as_echo_n "checking whether the Fortran preprocessor macro _OPENACC is defined... " >&6; }
-if ${acx_cv_fc_macro__OPENACC_defined+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat > conftest.$ac_ext <<_ACEOF
-      program main
-#ifdef _OPENACC
-#else
-      choke me
-#endif
-      end
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro__OPENACC_defined=yes
-else
-  cat > conftest.$ac_ext <<_ACEOF
-      program main
-#ifndef _OPENACC
-#else
-      choke me
-#endif
-      end
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro__OPENACC_defined=no
-else
-  acx_cv_fc_macro__OPENACC_defined=unsupported
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_macro__OPENACC_defined" >&5
-$as_echo "$acx_cv_fc_macro__OPENACC_defined" >&6; }
-   acx_macro_defined=$acx_cv_fc_macro__OPENACC_defined
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the Fortran preprocessor macro _OPENMP is defined" >&5
-$as_echo_n "checking whether the Fortran preprocessor macro _OPENMP is defined... " >&6; }
-if ${acx_cv_fc_macro__OPENMP_defined+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat > conftest.$ac_ext <<_ACEOF
-      program main
-#ifdef _OPENMP
-#else
-      choke me
-#endif
-      end
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro__OPENMP_defined=yes
-else
-  cat > conftest.$ac_ext <<_ACEOF
-      program main
-#ifndef _OPENMP
-#else
-      choke me
-#endif
-      end
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro__OPENMP_defined=no
-else
-  acx_cv_fc_macro__OPENMP_defined=unsupported
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_macro__OPENMP_defined" >&5
-$as_echo "$acx_cv_fc_macro__OPENMP_defined" >&6; }
-   acx_macro_defined=$acx_cv_fc_macro__OPENMP_defined
-    ;;
-esac
-
-if test "x$acx_cv_fc_macro__OPENACC_defined" = xyes; then :
-     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the value of the Fortran preprocessor macro _OPENACC" >&5
-$as_echo_n "checking for the value of the Fortran preprocessor macro _OPENACC... " >&6; }
-if ${acx_cv_fc_macro__OPENACC_value+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  acx_cv_fc_macro__OPENACC_value=unknown
-      if test "x$cross_compiling" = xno; then :
-  cat > conftest.$ac_ext <<_ACEOF
-#ifndef _OPENACC
-      choke me
-#else
-      subroutine p_str(s)
-      implicit none
-      character(len=*) :: s
-      write(*, "(a)") """"//s//""""
-      end subroutine
-
-      subroutine p_int(i)
-      implicit none
-      integer :: i
-      write(*, "(i0)") i
-      end subroutine
-
-      subroutine p_none()
-      write(*, "(a)") ""
-      end subroutine
-
-      program main
-      implicit none
-      interface p_val
-      subroutine p_str(s)
-      implicit none
-      character(len=*) :: s
-      end subroutine
-      subroutine p_int(i)
-      implicit none
-      integer :: i
-      end subroutine
-      subroutine p_none()
-      end subroutine
-      end interface
-      call p_val(_OPENACC)
-      end
-#endif
-_ACEOF
-if ac_fn_fc_try_link "$LINENO"; then :
-  acx_exec_result=`./conftest$ac_exeext 2>&5`
-            if test $? -eq 0; then :
-  acx_cv_fc_macro__OPENACC_value=$acx_exec_result
-fi
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-      if test "x$acx_cv_fc_macro__OPENACC_value" = xunknown; then :
-  set dummy 201711 201510 201308 201306 201111; shift
-            while test $# != 0; do
-              cat > conftest.$ac_ext <<_ACEOF
-      program main
-#if _OPENACC == _CONFTEST_UNDEFINED_OR_EMPTY || _OPENACC != $1
-      choke me
-#endif
-      end
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro__OPENACC_value=$1
-                 set dummy; shift
-else
-  shift
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-            done
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_macro__OPENACC_value" >&5
-$as_echo "$acx_cv_fc_macro__OPENACC_value" >&6; }
-   acx_macro_value=$acx_cv_fc_macro__OPENACC_value
-
-   if test "x$acx_macro_value" = xunknown; then :
-  as_fn_append DEPGEN_FCFLAGS " ${FCDEF_PP}_OPENACC"
-else
-  as_fn_append DEPGEN_FCFLAGS " ${FCDEF_PP}_OPENACC=$acx_macro_value"
-fi
-   if test "x$enable_gpu" = xno; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GPU kernels are disabled but Fortran compiler defines _OPENACC macro: the compilation might be inconsistent" >&5
-$as_echo "$as_me: WARNING: GPU kernels are disabled but Fortran compiler defines _OPENACC macro: the compilation might be inconsistent" >&2;}
-else
-  if test x"$acx_cv_fc_macro__OPENACC_value" = xunknown; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unable to detect supported OpenACC version (at least version 2.6 is required): the compilation of GPU kernels might fail" >&5
-$as_echo "$as_me: WARNING: unable to detect supported OpenACC version (at least version 2.6 is required): the compilation of GPU kernels might fail" >&2;}
-elif test "$acx_cv_fc_macro__OPENACC_value" -lt 201711 >&5 2>&1; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Fortran compiler does not support OpenACC 2.6 (201711): the compilation of GPU kernels might fail" >&5
-$as_echo "$as_me: WARNING: Fortran compiler does not support OpenACC 2.6 (201711): the compilation of GPU kernels might fail" >&2;}
-fi
-fi
-fi
-
-if test "x$acx_cv_fc_macro__OPENMP_defined" = xyes; then :
-     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the value of the Fortran preprocessor macro _OPENMP" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the value of the Fortran preprocessor macro _OPENMP" >&5
 $as_echo_n "checking for the value of the Fortran preprocessor macro _OPENMP... " >&6; }
 if ${acx_cv_fc_macro__OPENMP_value+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -3676,7 +4324,7 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 fi
       if test "x$acx_cv_fc_macro__OPENMP_value" = xunknown; then :
-  set dummy 201511 201307 201107 200805 200505 200011 199911 199710; shift
+  set dummy 202111 202011 201811 201511 201307 201107 200805 200505 200011 199911 199710; shift
             while test $# != 0; do
               cat > conftest.$ac_ext <<_ACEOF
       program main
@@ -3700,104 +4348,108 @@ $as_echo "$acx_cv_fc_macro__OPENMP_value" >&6; }
    acx_macro_value=$acx_cv_fc_macro__OPENMP_value
 
    if test "x$acx_macro_value" = xunknown; then :
-  as_fn_append DEPGEN_FCFLAGS " ${FCDEF_PP}_OPENMP"
-else
-  as_fn_append DEPGEN_FCFLAGS " ${FCDEF_PP}_OPENMP=$acx_macro_value"
-fi
-   if test "x$enable_gpu" = xno; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GPU kernels are disabled but Fortran compiler defines _OPENMP macro: the compilation might be inconsistent" >&5
-$as_echo "$as_me: WARNING: GPU kernels are disabled but Fortran compiler defines _OPENMP macro: the compilation might be inconsistent" >&2;}
-else
-  if test x"$acx_cv_fc_macro__OPENMP_value" = xunknown; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unable to detect supported OpenMP version (at least version 4.0 is required): the compilation of GPU kernels might fail" >&5
 $as_echo "$as_me: WARNING: unable to detect supported OpenMP version (at least version 4.0 is required): the compilation of GPU kernels might fail" >&2;}
-elif test "$acx_cv_fc_macro__OPENMP_value" -lt 201307 >&5 2>&1; then :
+      as_fn_append DEPGEN_FCFLAGS " ${FC_PP_DEF}_OPENMP"
+else
+  if test "$acx_macro_value" -lt 201711 >&5 2>&1; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Fortran compiler does not support OpenMP 4.0 (201307): the compilation of GPU kernels might fail" >&5
 $as_echo "$as_me: WARNING: Fortran compiler does not support OpenMP 4.0 (201307): the compilation of GPU kernels might fail" >&2;}
 fi
+      as_fn_append DEPGEN_FCFLAGS " ${FC_PP_DEF}_OPENMP=$acx_macro_value"
 fi
-fi
-
-if test "x$enable_gpu" = xno; then :
-  GPU_ENABLED='#'
-
-   GPU_DISABLED=''
-
-else
-  GPU_ENABLED=''
-
-   GPU_DISABLED='#'
-
-fi
-
-# Check whether --enable-single-precision was given.
-if test "${enable_single_precision+set}" = set; then :
-  enableval=$enable_single_precision; if test x"$enableval" != xno; then :
-  enable_single_precision=yes
-fi
-else
-  enable_single_precision=no
-fi
-
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the Fortran preprocessor macro RTE_USE_SP is defined" >&5
-$as_echo_n "checking whether the Fortran preprocessor macro RTE_USE_SP is defined... " >&6; }
-if ${acx_cv_fc_macro_RTE_USE_SP_defined+:} false; then :
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the Fortran preprocessor macro _OPENACC is defined" >&5
+$as_echo_n "checking whether the Fortran preprocessor macro _OPENACC is defined... " >&6; }
+if ${acx_cv_fc_macro__OPENACC_defined+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   cat > conftest.$ac_ext <<_ACEOF
       program main
-#ifdef RTE_USE_SP
+#ifdef _OPENACC
 #else
       choke me
 #endif
       end
 _ACEOF
 if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro_RTE_USE_SP_defined=yes
+  acx_cv_fc_macro__OPENACC_defined=yes
 else
   cat > conftest.$ac_ext <<_ACEOF
       program main
-#ifndef RTE_USE_SP
+#ifndef _OPENACC
 #else
       choke me
 #endif
       end
 _ACEOF
 if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_cv_fc_macro_RTE_USE_SP_defined=no
+  acx_cv_fc_macro__OPENACC_defined=no
 else
-  acx_cv_fc_macro_RTE_USE_SP_defined=unsupported
+  acx_cv_fc_macro__OPENACC_defined=unsupported
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_macro_RTE_USE_SP_defined" >&5
-$as_echo "$acx_cv_fc_macro_RTE_USE_SP_defined" >&6; }
-   acx_macro_defined=$acx_cv_fc_macro_RTE_USE_SP_defined
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_fc_macro__OPENACC_defined" >&5
+$as_echo "$acx_cv_fc_macro__OPENACC_defined" >&6; }
+   acx_macro_defined=$acx_cv_fc_macro__OPENACC_defined
 
-if test "x$enable_single_precision" = xyes; then :
-  if test "x$acx_macro_defined" = xno; then :
-  as_fn_append FCFLAGS " ${FCDEF_PP}RTE_USE_SP"
-fi
-   SP_ENABLED=''
-
+   if test "x$acx_macro_defined" = xyes; then :
+  as_fn_error $? "Fortran compiler enables OpenACC support by default: either enable GPU kernels with OpenACC support (--enable-gpu=openacc) or set FCFLAGS accordingly to disable OpenACC" "$LINENO" 5
+fi ;; #(
+  *) :
+      for acx_macro in _OPENACC _OPENMP; do
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the Fortran preprocessor macro $acx_macro is defined" >&5
+$as_echo_n "checking whether the Fortran preprocessor macro $acx_macro is defined... " >&6; }
+if { as_var=acx_cv_fc_macro_`$as_echo "$acx_macro" | $as_tr_sh`_defined; eval \${$as_var+:} false; }; then :
+  $as_echo_n "(cached) " >&6
 else
-  if test "x$acx_macro_defined" = xyes; then :
-  as_fn_error $? "Single-precision floating-point model is enabled via FCFLAGS: either enable it via the configure option (--enable-single-precision) or remove the definition of the RTE_USE_SP preprocessor macro from FCFLAGS" "$LINENO" 5
-fi
-   SP_ENABLED='#'
-
-fi
-
-# Check whether --enable-examples was given.
-if test "${enable_examples+set}" = set; then :
-  enableval=$enable_examples; if test x"$enableval" != xno; then :
-  enable_examples=yes
-fi
+  cat > conftest.$ac_ext <<_ACEOF
+      program main
+#ifdef $acx_macro
+#else
+      choke me
+#endif
+      end
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  eval "acx_cv_fc_macro_`$as_echo "$acx_macro" | $as_tr_sh`_defined=yes"
 else
-  enable_examples=no
+  cat > conftest.$ac_ext <<_ACEOF
+      program main
+#ifndef $acx_macro
+#else
+      choke me
+#endif
+      end
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+  eval "acx_cv_fc_macro_`$as_echo "$acx_macro" | $as_tr_sh`_defined=no"
+else
+  eval "acx_cv_fc_macro_`$as_echo "$acx_macro" | $as_tr_sh`_defined=unsupported"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+eval ac_res=\$acx_cv_fc_macro_`$as_echo "$acx_macro" | $as_tr_sh`_defined
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+   eval acx_macro_defined=\$acx_cv_fc_macro_`$as_echo "$acx_macro" | $as_tr_sh`_defined
+
+     if test "x$acx_macro_defined" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GPU kernels are disabled but Fortran compiler defines $acx_macro macro: the compilation might be inconsistent" >&5
+$as_echo "$as_me: WARNING: GPU kernels are disabled but Fortran compiler defines $acx_macro macro: the compilation might be inconsistent" >&2;}
+fi
+   done ;;
+esac
+ if test "x$enable_gpu" != xno; then
+  GPU_ENABLED_TRUE=
+  GPU_ENABLED_FALSE='#'
+else
+  GPU_ENABLED_TRUE='#'
+  GPU_ENABLED_FALSE=
 fi
 
 
@@ -3811,32 +4463,66 @@ else
 fi
 
 
-netcdf_fortran_requested=no
+eval "set dummy $acx_lib_search_flags; shift"
 
-# Check whether --with-netcdf-fortran was given.
-if test "${with_netcdf_fortran+set}" = set; then :
-  withval=$with_netcdf_fortran; if test x"$withval" != xno; then :
-  netcdf_fortran_requested=yes
+# Check whether --with-netcdf-root was given.
+if test "${with_netcdf_root+set}" = set; then :
+  withval=$with_netcdf_root;
 fi
+
+
+# Check whether --with-netcdf-include was given.
+if test "${with_netcdf_include+set}" = set; then :
+  withval=$with_netcdf_include;
 else
-  with_netcdf_fortran=yes
+  if ${with_netcdf_root+:} false; then :
+  with_netcdf_include="${with_netcdf_root}/include"
+fi
+fi
+
+
+      if ${with_netcdf_include+:} false; then :
+  for acx_flag in "${FC_MOD_IN}"; do
+           case " "$acx_fc_NetCDF_inc_search_args" " in #(
+  *" ""${acx_flag}${with_netcdf_include}"" "*) :
+     ;; #(
+  " "" ") :
+    as_fn_append acx_fc_NetCDF_inc_search_args "${acx_flag}${with_netcdf_include}" ;; #(
+  *) :
+    as_fn_append acx_fc_NetCDF_inc_search_args " "; as_fn_append acx_fc_NetCDF_inc_search_args "${acx_flag}${with_netcdf_include}" ;;
+esac
+         done
+fi
+
+
+# Check whether --with-netcdf-lib was given.
+if test "${with_netcdf_lib+set}" = set; then :
+  withval=$with_netcdf_lib;
+else
+  if ${with_netcdf_root+:} false; then :
+  with_netcdf_lib="${with_netcdf_root}/lib"
+fi
+fi
+
+
+      if ${with_netcdf_lib+:} false; then :
+  for acx_flag in "$@"; do
+           case " "$acx_fc_NetCDF_lib_search_args" " in #(
+  *" ""${acx_flag}${with_netcdf_lib}"" "*) :
+     ;; #(
+  " "" ") :
+    as_fn_append acx_fc_NetCDF_lib_search_args "${acx_flag}${with_netcdf_lib}" ;; #(
+  *) :
+    as_fn_append acx_fc_NetCDF_lib_search_args " "; as_fn_append acx_fc_NetCDF_lib_search_args "${acx_flag}${with_netcdf_lib}" ;;
+esac
+         done
 fi
 
 
 
-
-if test x"$with_netcdf_fortran" != xno; then :
-  acx_inc_search_args=
-   acx_lib_search_args=
-   if test x"$with_netcdf_fortran" != xyes; then :
-  acx_inc_search_args="${FCMODINC}$with_netcdf_fortran/include"
-      acx_lib_search_args="-L$with_netcdf_fortran/lib"
-      if test "x$enable_rpaths" = xyes; then :
-  as_fn_append acx_lib_search_args " ${acx_cv_fc_rpath_flag}$with_netcdf_fortran/lib"
-fi
-fi
-   acx_save_FCFLAGS=$FCFLAGS
-   NETCDF_FCFLAGS=${NETCDF_FCFLAGS-$acx_inc_search_args}
+if test x"$enable_tests" != xno; then :
+  acx_save_FCFLAGS=$FCFLAGS
+   NETCDF_FCFLAGS=${NETCDF_FCFLAGS-$acx_fc_NetCDF_inc_search_args}
    FCFLAGS="$NETCDF_FCFLAGS $acx_save_FCFLAGS"
          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Fortran module NETCDF" >&5
 $as_echo_n "checking for Fortran module NETCDF... " >&6; }
@@ -3876,7 +4562,7 @@ _ACEOF
       if ${NETCDF_FCLIBS+:} false; then :
   set dummy "$NETCDF_FCLIBS"
 else
-  set dummy ''  "$acx_lib_search_args -lnetcdff" "$acx_lib_search_args -lnetcdff -lnetcdf"
+  set dummy ''  "$acx_fc_NetCDF_lib_search_args -lnetcdff" "$acx_fc_NetCDF_lib_search_args -lnetcdff -lnetcdf"
 fi
       shift
       for acx_libs in "$@"; do
@@ -3906,99 +4592,29 @@ fi
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
 $as_echo "unknown" >&6; }
-      with_netcdf_fortran=no
+      if test "x$enable_tests" = xyes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Fortran function NF90_OPEN is not available
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  enable_tests=no
+fi
 fi
 
 else
-  with_netcdf_fortran=no
+  if test "x$enable_tests" = xyes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Fortran module NETCDF is not available
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  enable_tests=no
+fi
 fi
 
    FCFLAGS=$acx_save_FCFLAGS
 fi
-
-if test "x$with_netcdf_fortran" = xno; then :
-  if test "x$netcdf_fortran_requested" = xyes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "NetCDF Fortran is not available
-See \`config.log' for more details" "$LINENO" 5; }
-fi
-   if test "x$enable_examples" = xyes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "NetCDF Fortran is not available: unable to build the examples
-See \`config.log' for more details" "$LINENO" 5; }
-fi
-   if test x"$enable_tests" = xyes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "NetCDF Fortran is not available: unable to build the tests
-See \`config.log' for more details" "$LINENO" 5; }
-elif test x"$enable_tests" = xauto; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: NetCDF Fortran is not available: unable to build the tests" >&5
-$as_echo "$as_me: WARNING: NetCDF Fortran is not available: unable to build the tests" >&2;}
-      enable_tests=no
-fi
-   NETCDF_FCFLAGS=;NETCDF_FCLIBS=
-fi
-
-
-
-ARFLAGS=${ARFLAGS-cr}
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ar" >&5
-$as_echo_n "checking for ar... " >&6; }
-   if ${acx_cv_prog_AR+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if ${AR+:} false; then :
-  set dummy "$AR"
-else
-  set dummy ar
-fi
-      shift
-      for acx_candidate in "$@"; do
-        cat > conftest.$ac_ext <<_ACEOF
-      program main
-
-      end
-_ACEOF
-if ac_fn_fc_try_compile "$LINENO"; then :
-  acx_ar_try="$acx_candidate ${ARFLAGS} libconftest.a conftest.$ac_objext >&5"
-      { { ac_try="$acx_ar_try"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$acx_ar_try") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }
-      rm -f libconftest.a
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   test "$ac_status" -eq 0
-        if test $? -eq 0; then :
-  acx_cv_prog_AR=$acx_candidate
-           break
-fi
-      done
-fi
-
-   if ${acx_cv_prog_AR+:} false; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_prog_AR" >&5
-$as_echo "$acx_cv_prog_AR" >&6; }
-      AR=$acx_cv_prog_AR
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
-$as_echo "unknown" >&6; }
-      { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "unable to find ar
-See \`config.log' for more details" "$LINENO" 5; }
-fi
-
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for python" >&5
 $as_echo_n "checking for python... " >&6; }
@@ -4012,7 +4628,7 @@ else
 fi
       shift
       for acx_candidate in "$@"; do
-        acx_python_try="$acx_candidate $srcdir/mkhelper/depgen.py -h >&5"
+        acx_python_try="$acx_candidate $srcdir/mkhelper/depgen.py -h >/dev/null"
    { { ac_try="$acx_python_try"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
@@ -4052,7 +4668,7 @@ if ${acx_cv_python_test_compatible+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   acx_cv_python_test_compatible=no
-      acx_python_try="$PYTHON -c 'import sys; import sys; exit(sys.version_info[0:2] < (3, 8))' >&5"
+      acx_python_try="$PYTHON -c 'import sys; exit(sys.version_info[0:2] < (3, 8))' >/dev/null"
       { { ac_try="$acx_python_try"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
@@ -4071,15 +4687,13 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_python_test_compatible" >&5
 $as_echo "$acx_cv_python_test_compatible" >&6; }
    if test "x$acx_cv_python_test_compatible" = xno; then :
-  if test "x$enable_tests" = xauto; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $PYTHON is not compatible with the tests" >&5
-$as_echo "$as_me: WARNING: $PYTHON is not compatible with the tests" >&2;}
-         enable_tests=no
-else
+  if test "x$enable_tests" = xyes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "$PYTHON is not compatible with the tests
 See \`config.log' for more details" "$LINENO" 5; }
+else
+  enable_tests=no
 fi
 fi
 fi
@@ -4094,13 +4708,13 @@ except:
        'xarray>=0.12.2' 'import xarray; exit(tuple(map(int, xarray.__version__.split("."))) < (0, 12, 2))' \
        'dask.array' 'import dask.array'
    while test $# -gt 1; do
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Python module '$1' is available" >&5
-$as_echo_n "checking whether Python module '$1' is available... " >&6; }
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Python module $1 is available" >&5
+$as_echo_n "checking whether Python module $1 is available... " >&6; }
 if { as_var=acx_cv_has_pymodule_`$as_echo "$1" | $as_tr_sh`; eval \${$as_var+:} false; }; then :
   $as_echo_n "(cached) " >&6
 else
   eval "acx_cv_has_pymodule_`$as_echo "$1" | $as_tr_sh`=no"
-        acx_pymodule_try="$PYTHON -c '$2' >&5"
+        acx_pymodule_try="$PYTHON -c '$2' >/dev/null"
         { { ac_try="$acx_pymodule_try"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
@@ -4121,15 +4735,13 @@ eval ac_res=\$acx_cv_has_pymodule_`$as_echo "$1" | $as_tr_sh`
 $as_echo "$ac_res" >&6; }
      eval as_val=\$acx_cv_has_pymodule_`$as_echo "$1" | $as_tr_sh`
    if test "x$as_val" = xno; then :
-  if test "x$enable_tests" = xauto; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Python module '$1' is not available: unable to run the tests" >&5
-$as_echo "$as_me: WARNING: Python module '$1' is not available: unable to run the tests" >&2;}
-           enable_tests=no
-else
+  if test "x$enable_tests" = xyes; then :
   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Python module '$1' is not available: unable to run the tests
+as_fn_error $? "Python module $1 is not available: unable to run the tests
 See \`config.log' for more details" "$LINENO" 5; }
+else
+  enable_tests=no
 fi
         break
 fi
@@ -4138,116 +4750,112 @@ fi
    set dummy; shift
 fi
 
-if test x"$enable_tests" != xno; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for download command" >&5
-$as_echo_n "checking for download command... " >&6; }
-if ${acx_cv_prog_DL_CMD+:} false; then :
-  $as_echo_n "(cached) " >&6
+ if test "x$enable_tests" != xno; then
+  TESTS_ENABLED_TRUE=
+  TESTS_ENABLED_FALSE='#'
 else
-  if ${DL_CMD+:} false; then :
-  acx_cv_prog_DL_CMD=$DL_CMD
-else
-  acx_cv_prog_DL_CMD=unknown
-         for acx_candidate in wget curl; do
-           case `$acx_candidate --version 2>/dev/null` in #(
-  *'curl '*) :
-    acx_cv_prog_DL_CMD="$acx_candidate -sL"; break ;; #(
-  *'GNU Wget'*) :
-    acx_cv_prog_DL_CMD="$acx_candidate -qO-"; break ;; #(
-  *) :
-     ;;
-esac
-         done
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_cv_prog_DL_CMD" >&5
-$as_echo "$acx_cv_prog_DL_CMD" >&6; }
-   if test "x$acx_cv_prog_DL_CMD" = xunknown; then :
-  if test "x$enable_tests" = xauto; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unable to find a download command for the tests" >&5
-$as_echo "$as_me: WARNING: Unable to find a download command for the tests" >&2;}
-         enable_tests=no
-else
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Unable to find a download command for the tests
-See \`config.log' for more details" "$LINENO" 5; }
-fi
-else
-  DL_CMD=$acx_cv_prog_DL_CMD
-
-fi
+  TESTS_ENABLED_TRUE='#'
+  TESTS_ENABLED_FALSE=
 fi
 
-if test "x$enable_examples" = xno; then :
-  EXAMPLES_ENABLED='#'
 
-   EXAMPLES_DISABLED=''
-
-else
-  EXAMPLES_ENABLED=''
-
-   EXAMPLES_DISABLED='#'
-
-fi
-
-if test "x$enable_tests" = xno; then :
-  TESTS_ENABLED='#'
-
-   TESTS_DISABLED=''
-
-else
-  TESTS_ENABLED=''
-
-   TESTS_DISABLED='#'
-
-fi
 testcachedir='.testcache'
 
 
+CURL=${CURL-"${am_missing_run}curl"}
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a thread-safe mkdir -p" >&5
-$as_echo_n "checking for a thread-safe mkdir -p... " >&6; }
-if test -z "$MKDIR_P"; then
-  if ${ac_cv_path_mkdir+:} false; then :
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ranlib; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_RANLIB+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH$PATH_SEPARATOR/opt/sfw/bin
+  if test -n "$RANLIB"; then
+  ac_cv_prog_RANLIB="$RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
-    for ac_prog in mkdir gmkdir; do
-	 for ac_exec_ext in '' $ac_executable_extensions; do
-	   as_fn_executable_p "$as_dir/$ac_prog$ac_exec_ext" || continue
-	   case `"$as_dir/$ac_prog$ac_exec_ext" --version 2>&1` in #(
-	     'mkdir (GNU coreutils) '* | \
-	     'mkdir (coreutils) '* | \
-	     'mkdir (fileutils) '4.1*)
-	       ac_cv_path_mkdir=$as_dir/$ac_prog$ac_exec_ext
-	       break 3;;
-	   esac
-	 done
-       done
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_RANLIB="${ac_tool_prefix}ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
   done
 IFS=$as_save_IFS
 
 fi
-
-  test -d ./--version && rmdir ./--version
-  if test "${ac_cv_path_mkdir+set}" = set; then
-    MKDIR_P="$ac_cv_path_mkdir -p"
-  else
-    # As a last resort, use the slow shell script.  Don't cache a
-    # value for MKDIR_P within a source directory, because that will
-    # break other packages using the cache if that directory is
-    # removed, or if the value is a relative name.
-    MKDIR_P="$ac_install_sh -d"
-  fi
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDIR_P" >&5
-$as_echo "$MKDIR_P" >&6; }
+RANLIB=$ac_cv_prog_RANLIB
+if test -n "$RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RANLIB" >&5
+$as_echo "$RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_RANLIB"; then
+  ac_ct_RANLIB=$RANLIB
+  # Extract the first word of "ranlib", so it can be a program name with args.
+set dummy ranlib; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_RANLIB+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_RANLIB"; then
+  ac_cv_prog_ac_ct_RANLIB="$ac_ct_RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_RANLIB="ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_RANLIB=$ac_cv_prog_ac_ct_RANLIB
+if test -n "$ac_ct_RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_RANLIB" >&5
+$as_echo "$ac_ct_RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_RANLIB" = x; then
+    RANLIB=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    RANLIB=$ac_ct_RANLIB
+  fi
+else
+  RANLIB="$ac_cv_prog_RANLIB"
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
 $as_echo_n "checking whether ln -s works... " >&6; }
@@ -4260,99 +4868,6 @@ else
 $as_echo "no, using $LN_S" >&6; }
 fi
 
-# Find a good install program.  We prefer a C program (faster),
-# so one script is as good as another.  But avoid the broken or
-# incompatible versions:
-# SysV /etc/install, /usr/sbin/install
-# SunOS /usr/etc/install
-# IRIX /sbin/install
-# AIX /bin/install
-# AmigaOS /C/install, which installs bootblocks on floppy discs
-# AIX 4 /usr/bin/installbsd, which doesn't work without a -g flag
-# AFS /usr/afsws/bin/install, which mishandles nonexistent args
-# SVR4 /usr/ucb/install, which tries to use the nonexistent group "staff"
-# OS/2's system install, which has a completely different semantic
-# ./install, which can be erroneously created by make from ./install.sh.
-# Reject install programs that cannot install multiple files.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a BSD-compatible install" >&5
-$as_echo_n "checking for a BSD-compatible install... " >&6; }
-if test -z "$INSTALL"; then
-if ${ac_cv_path_install+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    # Account for people who put trailing slashes in PATH elements.
-case $as_dir/ in #((
-  ./ | .// | /[cC]/* | \
-  /etc/* | /usr/sbin/* | /usr/etc/* | /sbin/* | /usr/afsws/bin/* | \
-  ?:[\\/]os2[\\/]install[\\/]* | ?:[\\/]OS2[\\/]INSTALL[\\/]* | \
-  /usr/ucb/* ) ;;
-  *)
-    # OSF1 and SCO ODT 3.0 have their own names for install.
-    # Don't use installbsd from OSF since it installs stuff as root
-    # by default.
-    for ac_prog in ginstall scoinst install; do
-      for ac_exec_ext in '' $ac_executable_extensions; do
-	if as_fn_executable_p "$as_dir/$ac_prog$ac_exec_ext"; then
-	  if test $ac_prog = install &&
-	    grep dspmsg "$as_dir/$ac_prog$ac_exec_ext" >/dev/null 2>&1; then
-	    # AIX install.  It has an incompatible calling convention.
-	    :
-	  elif test $ac_prog = install &&
-	    grep pwplus "$as_dir/$ac_prog$ac_exec_ext" >/dev/null 2>&1; then
-	    # program-specific install script used by HP pwplus--don't use.
-	    :
-	  else
-	    rm -rf conftest.one conftest.two conftest.dir
-	    echo one > conftest.one
-	    echo two > conftest.two
-	    mkdir conftest.dir
-	    if "$as_dir/$ac_prog$ac_exec_ext" -c conftest.one conftest.two "`pwd`/conftest.dir" &&
-	      test -s conftest.one && test -s conftest.two &&
-	      test -s conftest.dir/conftest.one &&
-	      test -s conftest.dir/conftest.two
-	    then
-	      ac_cv_path_install="$as_dir/$ac_prog$ac_exec_ext -c"
-	      break 3
-	    fi
-	  fi
-	fi
-      done
-    done
-    ;;
-esac
-
-  done
-IFS=$as_save_IFS
-
-rm -rf conftest.one conftest.two conftest.dir
-
-fi
-  if test "${ac_cv_path_install+set}" = set; then
-    INSTALL=$ac_cv_path_install
-  else
-    # As a last resort, use the slow shell script.  Don't cache a
-    # value for INSTALL within a source directory, because that will
-    # break other packages using the cache if that directory is
-    # removed, or if the value is a relative name.
-    INSTALL=$ac_install_sh
-  fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $INSTALL" >&5
-$as_echo "$INSTALL" >&6; }
-
-# Use test -z because SunOS4 sh mishandles braces in ${var-val}.
-# It thinks the first close brace ends the variable substitution.
-test -z "$INSTALL_PROGRAM" && INSTALL_PROGRAM='${INSTALL}'
-
-test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
-
-test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
-
 
 ac_config_files="$ac_config_files examples/all-sky/all-sky.test examples/rfmip-clear-sky/rfmip-clear-sky.test tests/check_equivalence.test tests/check_variants.test tests/test_zenith_angle_spherical_correction.test"
 
@@ -4360,7 +4875,7 @@ ac_config_files="$ac_config_files examples/all-sky/all-sky.test examples/rfmip-c
 ac_config_files="$ac_config_files Makefile"
 
 
-ac_config_commands="$ac_config_commands depfiles"
+ac_config_commands="$ac_config_commands fortran_dependencies"
 
 
 cat >confcache <<\_ACEOF
@@ -4508,6 +5023,42 @@ LIBOBJS=$ac_libobjs
 LTLIBOBJS=$ac_ltlibobjs
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking that generated files are newer than configure" >&5
+$as_echo_n "checking that generated files are newer than configure... " >&6; }
+   if test -n "$am_sleep_pid"; then
+     # Hide warnings about reused PIDs.
+     wait $am_sleep_pid 2>/dev/null
+   fi
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: done" >&5
+$as_echo "done" >&6; }
+ if test -n "$EXEEXT"; then
+  am__EXEEXT_TRUE=
+  am__EXEEXT_FALSE='#'
+else
+  am__EXEEXT_TRUE='#'
+  am__EXEEXT_FALSE=
+fi
+
+if test -z "${MAINTAINER_MODE_TRUE}" && test -z "${MAINTAINER_MODE_FALSE}"; then
+  as_fn_error $? "conditional \"MAINTAINER_MODE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_CBOOL_TRUE}" && test -z "${USE_CBOOL_FALSE}"; then
+  as_fn_error $? "conditional \"USE_CBOOL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${SP_ENABLED_TRUE}" && test -z "${SP_ENABLED_FALSE}"; then
+  as_fn_error $? "conditional \"SP_ENABLED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${GPU_ENABLED_TRUE}" && test -z "${GPU_ENABLED_FALSE}"; then
+  as_fn_error $? "conditional \"GPU_ENABLED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${TESTS_ENABLED_TRUE}" && test -z "${TESTS_ENABLED_FALSE}"; then
+  as_fn_error $? "conditional \"TESTS_ENABLED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0
@@ -4975,6 +5526,7 @@ ac_pwd='$ac_pwd'
 srcdir='$srcdir'
 INSTALL='$INSTALL'
 MKDIR_P='$MKDIR_P'
+AWK='$AWK'
 test -n "\$AWK" || AWK=awk
 _ACEOF
 
@@ -5081,7 +5633,7 @@ do
     "tests/check_variants.test") CONFIG_FILES="$CONFIG_FILES tests/check_variants.test" ;;
     "tests/test_zenith_angle_spherical_correction.test") CONFIG_FILES="$CONFIG_FILES tests/test_zenith_angle_spherical_correction.test" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
+    "fortran_dependencies") CONFIG_COMMANDS="$CONFIG_COMMANDS fortran_dependencies" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -5516,9 +6068,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
     "tests/check_equivalence.test":F) chmod a+x "$ac_file" ;;
     "tests/check_variants.test":F) chmod a+x "$ac_file" ;;
     "tests/test_zenith_angle_spherical_correction.test":F) chmod a+x "$ac_file" ;;
-    "depfiles":C) ${MAKE-make} dummy-depend >/dev/null 2>&5
-   sleep 1
-   touch Makefile ;;
+    "fortran_dependencies":C) touch Makefile.exe.deps Makefile.lib.deps; sleep 1; touch Makefile ;;
 
   esac
 done # for ac_tag

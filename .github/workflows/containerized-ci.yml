@@ -90,12 +90,10 @@ jobs:
       run: |
         test 'x${{ matrix.fpmodel }}' = xSP && enable_sp=yes || enable_sp=no
         ./configure \
-          --disable-examples \
           --disable-silent-rules \
           --enable-gpu='${{ matrix.enable-gpu }}' \
           --enable-single-precision="${enable_sp}" \
           --enable-tests \
-          --with-netcdf-fortran \
           ${{ matrix.extra-config-args }} \
         || { cat ./config.log; exit 1; }
     #
@@ -109,7 +107,10 @@ jobs:
     - name: Check
       run: |
         make -j check || {
-          find . -name '*.test.log' -print -exec cat {} ';'
+          find . -name '*.test' | sort | sed 's|.test$|.log|' | while read file; do
+            echo "$file"
+            cat "$file"
+          done
           exit 1
         }
     #

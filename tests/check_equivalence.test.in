@@ -2,9 +2,12 @@
 
 set -e
 
-@TESTS_DISABLED@exit 77
+@TESTS_ENABLED_FALSE@exit 77
 
-RRTMGP_DATA=${RRTMGP_DATA-'@top_builddir@/@testcachedir@'}
+(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
+cd '@abs_builddir@'
+
+RRTMGP_DATA=${RRTMGP_DATA-'@abs_top_builddir@/@testcachedir@'}
 
 input="${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
 

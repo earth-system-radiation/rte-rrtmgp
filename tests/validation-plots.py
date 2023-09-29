@@ -74,8 +74,9 @@ if __name__ == '__main__':
                 urllib.request.urlretrieve(construct_lbl_esgf_root(v),
                                            v + lbl_suffix)
             except:
-                urllib.request.urlretrieve(construct_lbl_esgf_root(v),
-                                           v + lbl_suffix, node="dkrz")
+                urllib.request.urlretrieve(
+                    construct_lbl_esgf_root(v, esgf_node="dkrz"),
+                    v + lbl_suffix)
         except:
             raise Exception("Failed to download {0}".format(v + lbl_suffix))
 

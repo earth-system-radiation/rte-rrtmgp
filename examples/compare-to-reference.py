@@ -17,10 +17,6 @@ import os
 import warnings
 import xarray as xr
 
-REPORT = os.getenv("REPORTING_THRESHOLD") if os.getenv(
-    "REPORTING_THRESHOLD") is not None else 0.
-FAILURE = os.getenv("FAILURE_THRESHOLD") if os.getenv(
-    "FAILURE_THRESHOLD") is not None else 1.e-5
 #
 # Comparing reference and test results
 #
@@ -38,10 +34,10 @@ if __name__ == '__main__':
     parser.add_argument("--variables", type=str, nargs='+', default=None,
                         help="Name[s] of files to compare")
     parser.add_argument("--report_threshold", type=float,
-                        default=REPORT,
+                        default=os.getenv("REPORTING_THRESHOLD", 0.),
                         help="Threshold for reporting differences")
     parser.add_argument("--failure_threshold", type=float,
-                        default=FAILURE,
+                        default=os.getenv("FAILURE_THRESHOLD", 1.e-5),
                         help="Threshold at which differences cause failure "
                              "(for continuous integration)")
     args = parser.parse_args()

@@ -13,27 +13,27 @@ defaults:
 
 jobs:
   CI:
-    runs-on: 
-      labels: cscs-ci 
+    runs-on:
+      labels: cscs-ci
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
-        config-name: [nvidia-gpu-openacc, cce-cpu-icon-production, cce-gpu-openmp] 
-        fpmodel:     [DP, SP]
+        config-name: [nvidia-gpu-openacc, cce-cpu-icon-production, cce-gpu-openmp]
+        fpmodel: [DP, SP]
         include:
+        # The tests are not experimental by default:
+        - experimental: false
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
           fcflags: "-O3 -acc -Mallocatable=03 -gopt"
-          experimental: false
         - config-name: cce-cpu-icon-production
           rte-kernels: default
           compiler-modules: "PrgEnv-cray"
           # Production flags for Icon model
           fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
-          experimental: false
         - config-name: cce-gpu-openmp
           rte-kernels: accel
           compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
@@ -56,7 +56,7 @@ jobs:
     #
     - uses: actions/checkout@v3
     #
-    # Check out data 
+    # Check out data
     #
     - name: Check out data
       uses: actions/checkout@v3
@@ -106,8 +106,8 @@ jobs:
     - name: Run examples and tests
       run: make tests
     #
-    # Relax failure thresholds for single precision 
-    #  
+    # Relax failure thresholds for single precision
+    #
     - name: Relax failure threshold for single precision
       if: matrix.fpmodel == 'SP'
       run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV

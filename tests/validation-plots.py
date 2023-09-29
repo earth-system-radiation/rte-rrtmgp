@@ -27,7 +27,7 @@ def make_comparison_plot(variants, labels, reference, vscale, col_dim="site"):
     # Make a plot comparing differences with respect to reference
     #
     if type(variants) is not list:
-        make_comparison_plot([variants], [labels], reference, vscale)
+        make_comparison_plot([variants], [labels], reference, vscale, col_dim)
     else:
         for i in np.arange(0, len(variants)):
             delta = variants[i] - reference

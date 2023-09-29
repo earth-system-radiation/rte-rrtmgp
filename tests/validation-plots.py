@@ -22,21 +22,23 @@ def rms(diff, col_dim):
     return np.sqrt(np.square(diff).mean(dim=col_dim))
 
 
-def make_comparison_plot(variants, labels, reference, vscale, col_dim="site"):
+def make_comparison_plot(variants, labels, reference, vscale, colors,
+                         col_dim="site"):
     #
     # Make a plot comparing differences with respect to reference
     #
     if type(variants) is not list:
-        make_comparison_plot([variants], [labels], reference, vscale, col_dim)
+        make_comparison_plot([variants], [labels], reference, vscale, colors,
+                             col_dim)
     else:
         for i in np.arange(0, len(variants)):
             delta = variants[i] - reference
             plt.plot(mae(delta, col_dim),
                      vscale, '-',
-                     color=cols[i], label=labels[i])
+                     color=colors[i], label=labels[i])
             plt.plot(rms(delta, col_dim),
                      vscale, '--',
-                     color=cols[i])
+                     color=colors[i])
         # Reverse vertical ordering
         plt.legend()
         # Reverse vertical ordering
@@ -59,7 +61,7 @@ def construct_lbl_esgf_root(var, esgf_node="llnl"):
 
 
 ########################################################################
-if __name__ == '__main__':
+def main():
     warnings.simplefilter("ignore", xr.SerializationWarning)
     #
     # Reference values from LBLRTM - download locally, since OpenDAP access is
@@ -148,7 +150,8 @@ if __name__ == '__main__':
                                          "fewer points + optimal-angle",
                                          "3-angle", "2-stream", "rescaled"],
                                  reference=r,
-                                 vscale=plev / 100.)
+                                 vscale=plev / 100.,
+                                 colors=cols)
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Error (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
@@ -170,7 +173,8 @@ if __name__ == '__main__':
             make_comparison_plot(v,
                                  labels=["no-tlev", "2str"],
                                  reference=r,
-                                 vscale=plev / 100.)
+                                 vscale=plev / 100.,
+                                 colors=cols)
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Difference (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
@@ -192,9 +196,14 @@ if __name__ == '__main__':
             make_comparison_plot(v,
                                  labels=["default", "fewer-g-points"],
                                  reference=r,
-                                 vscale=plev / 100.)
+                                 vscale=plev / 100.,
+                                 colors=cols)
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Error (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
             pdf.savefig()
             plt.close()
+
+
+if __name__ == '__main__':
+    main()

@@ -22,8 +22,7 @@ def rms(diff, col_dim):
     return np.sqrt(np.square(diff).mean(dim=col_dim))
 
 
-def make_comparison_plot(variants, labels, reference, vscale, col_dim="site",
-                         lay_dim="layer"):
+def make_comparison_plot(variants, labels, reference, vscale, col_dim="site"):
     #
     # Make a plot comparing differences with respect to reference
     #

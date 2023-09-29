@@ -3,8 +3,9 @@
 # This script downloads and/or creates files needed for the RFMIP off-line test
 # cases
 #
-import subprocess
 import sys
+
+import subprocess
 import urllib.request
 from pathlib import Path
 

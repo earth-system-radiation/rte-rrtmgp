@@ -3,7 +3,6 @@
 # This script runs runs RRTMGP on the RFMIP off-line test cases
 #
 import argparse
-import glob
 import os
 import subprocess
 
@@ -15,11 +14,13 @@ rte_rrtmgp_dir = os.path.join("..", "..")
 rfmip_dir = "."
 # Code should be run in the rfmip_dir directory
 
-conds_file         = os.path.join(os.environ["RRTMGP_DATA"],
-                   "examples", "rfmip-clear-sky", "inputs",
-                   "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc")
-lw_gas_coeffs_file = os.path.join(os.environ["RRTMGP_DATA"], "rrtmgp-gas-lw-g256.nc")
-sw_gas_coeffs_file = os.path.join(os.environ["RRTMGP_DATA"], "rrtmgp-gas-sw-g224.nc")
+conds_file = os.path.join(
+    os.environ["RRTMGP_DATA"], "examples", "rfmip-clear-sky", "inputs",
+    "multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc")
+lw_gas_coeffs_file = os.path.join(
+    os.environ["RRTMGP_DATA"], "rrtmgp-gas-lw-g256.nc")
+sw_gas_coeffs_file = os.path.join(
+    os.environ["RRTMGP_DATA"], "rrtmgp-gas-sw-g224.nc")
 
 rfmip_lw_exe_name = "./rrtmgp_rfmip_lw"
 rfmip_sw_exe_name = "./rrtmgp_rfmip_sw"

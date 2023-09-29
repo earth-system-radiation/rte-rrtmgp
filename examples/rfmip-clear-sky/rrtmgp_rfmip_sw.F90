@@ -86,8 +86,8 @@ program rrtmgp_rfmip_sw
   !
   ! Local variables
   !
-  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc', &
-                        kdist_file = 'coefficients_sw.nc'
+  character(len=256) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc'
+  character(len=132) :: kdist_file = 'coefficients_sw.nc'
   character(len=132) :: flxdn_file, flxup_file
   integer            :: nargs, ncol, nlay, nbnd, ngpt, nexp, nblocks, block_size, forcing_index
   logical            :: top_at_1

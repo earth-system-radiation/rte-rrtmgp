@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
-        fpmodel:     [DP, SP]
+        fpmodel: [DP, SP]
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
@@ -32,8 +32,8 @@ jobs:
       FAILURE_THRESHOLD: 7.e-4
     steps:
     #
-    # Relax failure thresholds for single precision 
-    #  
+    # Relax failure thresholds for single precision
+    #
     - name: Relax failure threshold for single precision
       if: matrix.fpmodel == 'SP'
       run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
@@ -43,7 +43,7 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
     #
-    # Check out data 
+    # Check out data
     #
     - name: Check out data
       uses: actions/checkout@v4
@@ -51,7 +51,7 @@ jobs:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
         ref: develop
-    #    
+    #
     # Synchronize the package index
     #
     - name: Synchronize the package index

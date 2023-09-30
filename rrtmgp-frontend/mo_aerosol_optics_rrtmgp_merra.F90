@@ -204,7 +204,7 @@ contains
     if(allocated(this%merra_aero_bin_lims)) then
       deallocate(this%merra_aero_bin_lims, this%aero_rh)
       !$acc        exit data delete(     this%merra_aero_bin_lims, this%aero_rh) 
-      !$omp target exit data map(release:this%merra_aero_bin_lims, this%aero_rh) &
+      !$omp target exit data map(release:this%merra_aero_bin_lims, this%aero_rh)
     end if
 
     ! Lookup table aerosol optics coefficients

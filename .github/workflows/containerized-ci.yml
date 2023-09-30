@@ -16,17 +16,17 @@ jobs:
       matrix:
         fortran-compiler: [ifort, ifx, nvfortran]
         rte-kernels: [default, accel]
-        fpmodel:     [DP, SP]
+        fpmodel: [DP, SP]
         include:
+        # The tests are not experimental by default:
+        - experimental: false
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
           fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
-          experimental: false
-        # Set flags for Intel ifx Fortran Compiler
+        # Set flags for Intel Fortran Compiler
         - fortran-compiler: ifx
           rte-kernels: default
           fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08
-          experimental: false
         - fortran-compiler: ifx
           rte-kernels: accel
           fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64
@@ -35,11 +35,9 @@ jobs:
         - fortran-compiler: nvfortran
           rte-kernels: default
           fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk
-          experimental: false
         - fortran-compiler: nvfortran
           rte-kernels: accel
           fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc
-          experimental: false
         # Set container images
         - fortran-compiler: ifort
           image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
@@ -69,7 +67,7 @@ jobs:
     #
     - uses: actions/checkout@v4
     #
-    # Check out data 
+    # Check out data
     #
     - name: Check out data
       uses: actions/checkout@v4
@@ -91,8 +89,8 @@ jobs:
     - name: Run examples and tests
       run: make tests
     #
-    # Relax failure thresholds for single precision 
-    #  
+    # Relax failure thresholds for single precision
+    #
     - name: Relax failure threshold for single precision
       if: matrix.fpmodel == 'SP'
       run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV

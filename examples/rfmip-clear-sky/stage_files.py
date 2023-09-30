@@ -3,8 +3,9 @@
 # This script downloads and/or creates files needed for the RFMIP off-line test
 # cases
 #
-import subprocess
 import sys
+
+import subprocess
 import urllib.request
 from pathlib import Path
 
@@ -39,13 +40,6 @@ Path(conds_file).unlink(missing_ok=True)
 print("Downloading RFMIP input files")
 urllib.request.urlretrieve(conds_url, conds_file)
 
-generate_templates = False
-if generate_templates:
-    print("Downloading scripts for generating output templates")
-    urllib.request.urlretrieve(templ_scr_url, templ_scr)
-    subprocess.run(
-        [sys.executable, templ_scr, "--source_id", "RTE-RRTMGP-181204"])
-else:
-    print("Downloading output templates")
-    for f in output_files:
-        urllib.request.urlretrieve(conds_url.replace(conds_file, f), f)
+print("Downloading output templates")
+for f in output_files:
+    urllib.request.urlretrieve(conds_url.replace(conds_file, f), f)

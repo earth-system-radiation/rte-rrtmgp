@@ -20,6 +20,7 @@ module mo_rte_util_array
   interface zero_array
     module procedure zero_array_1D, zero_array_2D, zero_array_3D, zero_array_4D
   end interface
+  public :: zero_array
 contains
  !-------------------------------------------------------------------------------------------------
   ! Initializing arrays to 0

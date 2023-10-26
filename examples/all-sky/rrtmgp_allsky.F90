@@ -388,7 +388,11 @@ program rte_rrtmgp_allsky
   ! Clouds and aerosols also used enter data  
   !
   if(do_clouds) then
+#ifndef _CRAYFTN
+    ! ACCWA cloud_mask is already deallocated, Cray does not currently allow
+    ! ACCWA delete in that case
     !$acc        exit data delete(     cloud_mask, lwp, iwp, rel, rei)
+#endif
     !$omp target exit data map(release:cloud_mask, lwp, iwp, rel, rei)
     select type(clouds)
       class is (ty_optical_props_1scl)

@@ -311,10 +311,10 @@ contains
     ! --------------
 
     !$acc  parallel loop collapse(3) &
-    !$acc&     copyin(p2(:1,:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:ngpt),tau2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt),g1(:ncol,:nlay,:ngpt))
+    !$acc&     copyin(p2) &
+    !$acc&     copy(ssa1) &
+    !$acc&     copyin(ssa2) &
+    !$acc&     copy(tau1,g1)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:p2) &
     !$omp& map(tofrom:ssa1) &
@@ -893,8 +893,8 @@ contains
     integer :: icol, ilay, igpt
 
     !$acc parallel loop collapse(3) &
-    !$acc&     copyout(array_out(:cole-cols+1,:nlay,:ngpt)) &
-    !$acc&     copyin(array_in(cols:cole,:nlay,:ngpt))
+    !$acc&     copyout(array_out) &
+    !$acc&     copyin(array_in)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(from:array_out) &
     !$omp& map(to:array_in)

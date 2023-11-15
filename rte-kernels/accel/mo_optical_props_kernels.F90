@@ -140,9 +140,15 @@ contains
     ! --------------
     ! --------------
 
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1)
+    !$acc data copyin(tau2)
+
+    !$acc  parallel loop collapse(3) 
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:tau2) &
     !$omp& map(tofrom:tau1)
@@ -153,6 +159,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_1scalar_by_1scalar
   ! ---------------------------------
   ! increment 1scalar by 2stream
@@ -167,10 +176,15 @@ contains
     ! --------------
     ! --------------
 
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:ngpt))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1)
+    !$acc data copyin(tau2, ssa2)
+
+    !$acc  parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:tau2) &
     !$omp& map(tofrom:tau1) &
@@ -183,6 +197,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_1scalar_by_2stream
   ! ---------------------------------
   ! increment 1scalar by nstream
@@ -196,11 +213,15 @@ contains
     integer  :: icol, ilay, igpt
     ! --------------
     ! --------------
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1)
+    !$acc data copyin(tau2, ssa2)
 
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:ngpt))
+    !$acc  parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:tau2) &
     !$omp& map(tofrom:tau1) &
@@ -213,6 +234,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_1scalar_by_nstream
   ! ---------------------------------
   ! ---------------------------------
@@ -228,11 +252,15 @@ contains
     real(wp) :: tau12
     ! --------------
     ! --------------
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1)
+    !$acc data copyin(tau2)
 
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt))
+    !$acc  parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:ssa1) &
     !$omp& map(to:tau2) &
@@ -249,6 +277,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_2stream_by_1scalar
   ! ---------------------------------
   ! increment 2stream by 2stream
@@ -263,12 +294,15 @@ contains
     real(wp) :: tau12, tauscat12
     ! --------------
     ! --------------
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1, g1)
+    !$acc data copyin(tau2, ssa2, g2)
 
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copyin(g2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:ngpt),tau2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt),g1(:ncol,:nlay,:ngpt))
+    !$acc  parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:g2) &
     !$omp& map(tofrom:ssa1) &
@@ -293,6 +327,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_2stream_by_2stream
   ! ---------------------------------
   ! increment 2stream by nstream
@@ -309,12 +346,15 @@ contains
     real(wp) :: tau12, tauscat12
     ! --------------
     ! --------------
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1, g1)
+    !$acc data copyin(tau2, ssa2, p2)
 
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copyin(p2) &
-    !$acc&     copy(ssa1) &
-    !$acc&     copyin(ssa2) &
-    !$acc&     copy(tau1,g1)
+    !$acc  parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:p2) &
     !$omp& map(tofrom:ssa1) &
@@ -339,6 +379,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_2stream_by_nstream
   ! ---------------------------------
   ! ---------------------------------
@@ -354,11 +397,15 @@ contains
     real(wp) :: tau12
     ! --------------
     ! --------------
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1)
+    !$acc data copyin(tau2)
 
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt))
+    !$acc  parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:ssa1) &
     !$omp& map(to:tau2) &
@@ -375,6 +422,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_nstream_by_1scalar
   ! ---------------------------------
   ! increment nstream by 2stream
@@ -393,13 +443,15 @@ contains
     integer  :: imom  !TK
     ! --------------
     ! --------------
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1, p1)
+    !$acc data copyin(tau2, ssa2, g2)
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(p1(:nmom1,:ncol,:nlay,:ngpt),ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(g2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:ngpt))
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:p1, ssa1) &
     !$omp& map(to:ssa2) &
@@ -430,6 +482,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_nstream_by_2stream
   ! ---------------------------------
   ! increment nstream by nstream
@@ -449,12 +504,15 @@ contains
     ! --------------
     ! --------------
     mom_lim = min(nmom1, nmom2)
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1, p1)
+    !$acc data copyin(tau2, ssa2, p2)
 
-    !$acc  parallel loop collapse(3) &
-    !$acc&     copyin(p2(:mom_lim,:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:ngpt),tau2(:ncol,:nlay,:ngpt)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt),p1(:mom_lim,:ncol,:nlay,:ngpt))
+    !$acc  parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:p2) &
     !$omp& map(tofrom:ssa1) &
@@ -481,6 +539,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine increment_nstream_by_nstream
   ! ---------------------------------
   !
@@ -498,10 +559,15 @@ contains
     integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims ! Starting and ending gpoint for each band
     integer :: ibnd, igpt, icol, ilay
 
-    !$acc parallel loop collapse(3) &
-    !$acc& copyin(tau2(:ncol,:nlay,:nbnd)) &
-    !$acc& copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc& copyin(gpt_lims(:,:nbnd))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1)
+    !$acc data copyin(tau2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:tau2) &
     !$omp& map(tofrom:tau1) &
@@ -517,6 +583,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_1scalar_by_1scalar_bybnd
   ! ---------------------------------
   ! increment 1scalar by 2stream
@@ -530,10 +599,15 @@ contains
     integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims ! Starting and ending gpoint for each band
     integer :: ibnd, igpt, icol, ilay
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:nbnd),ssa2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gpt_lims(:,:nbnd))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1)
+    !$acc data copyin(tau2, ssa2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:tau2, ssa2) &
     !$omp& map(tofrom:tau1) &
@@ -549,6 +623,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_1scalar_by_2stream_bybnd
   ! ---------------------------------
   ! increment 1scalar by nstream
@@ -562,10 +639,15 @@ contains
     integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims ! Starting and ending gpoint for each band
     integer :: ibnd, igpt, icol, ilay
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(gpt_lims(:,:nbnd),tau2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:nbnd))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1)
+    !$acc data copyin(tau2, ssa2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:gpt_lims, tau2) &
     !$omp& map(tofrom:tau1) &
@@ -581,6 +663,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_1scalar_by_nstream_bybnd
 
     ! ---------------------------------
@@ -597,11 +682,15 @@ contains
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gpt_lims(:,:nbnd))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1)
+    !$acc data copyin(tau2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:tau1) &
     !$omp& map(to:tau2) &
@@ -621,6 +710,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_2stream_by_1scalar_bybnd
   ! ---------------------------------
   ! increment 2stream by 2stream
@@ -635,13 +727,15 @@ contains
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12, tauscat12
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:nbnd),ssa2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gpt_lims(:,:nbnd)) &
-    !$acc&     copy(g1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(g2(:ncol,:nlay,:nbnd))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1, g1)
+    !$acc data copyin(tau2, ssa2, g2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:tau1) &
     !$omp& map(to:tau2, ssa2) &
@@ -670,6 +764,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_2stream_by_2stream_bybnd
   ! ---------------------------------
   ! increment 2stream by nstream
@@ -687,12 +784,15 @@ contains
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12, tauscat12
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:nbnd),ssa2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(p2(:1,:ncol,:nlay,:nbnd),gpt_lims(:,:nbnd)) &
-    !$acc&     copy(g1(:ncol,:nlay,:ngpt))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1, g1)
+    !$acc data copyin(tau2, ssa2, p2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:tau1) &
     !$omp& map(to:tau2, ssa2) &
@@ -720,6 +820,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_2stream_by_nstream_bybnd
   ! ---------------------------------
   ! ---------------------------------
@@ -736,11 +839,15 @@ contains
     integer  :: icol, ilay, igpt, ibnd
     real(wp) :: tau12
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gpt_lims(:,:nbnd))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1)
+    !$acc data copyin(tau2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:tau1) &
     !$omp& map(to:tau2) &
@@ -760,6 +867,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_nstream_by_1scalar_bybnd
   ! ---------------------------------
   ! increment nstream by 2stream
@@ -779,12 +889,15 @@ contains
     real(wp) :: temp_mom ! TK
     integer  :: imom  !TK
 
-    !$acc parallel loop collapse(3) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt),p1(:nmom1,:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copyin(gpt_lims(:,:nbnd),g2(:ncol,:nlay,:nbnd))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1, p1)
+    !$acc data copyin(tau2, ssa2, g2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(tofrom:tau1) &
     !$omp& map(to:ssa2) &
@@ -817,6 +930,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_nstream_by_2stream_bybnd
   ! ---------------------------------
   ! increment nstream by nstream
@@ -837,14 +953,15 @@ contains
     real(wp) :: tau12, tauscat12
 
     mom_lim = min(nmom1, nmom2)
-    !$acc parallel loop collapse(3) &
-    !$acc&     copyin(p2(:mom_lim,:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(ssa1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(ssa2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(tau1(:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(tau2(:ncol,:nlay,:nbnd)) &
-    !$acc&     copy(p1(:mom_lim,:ncol,:nlay,:ngpt)) &
-    !$acc&     copyin(gpt_lims(:,:nbnd))
+    ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
+    ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
+    ! it as present (as present counter of tau2, having the same memory address) 
+    ! is not necessarily decrement yet, and copyout action is not carried out
+    ! (present_or_copyout semantic)
+    !$acc data copy(tau1, ssa1, p1)
+    !$acc data copyin(tau2, ssa2, p2, gpt_lims)
+
+    !$acc parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:p2) &
     !$omp& map(tofrom:ssa1) &
@@ -876,6 +993,9 @@ contains
         end do
       end do
     end do
+
+  !$acc end data
+  !$acc end data
   end subroutine inc_nstream_by_nstream_bybnd
   ! ---------------------------------
   ! -------------------------------------------------------------------------------------------------

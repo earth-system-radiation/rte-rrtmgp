@@ -266,7 +266,7 @@ contains
       !$omp target teams distribute parallel do simd
       do icol = 1,ncol
         itropo_lower(icol,1) = 1
-#if defined(__NVCOMPILER)
+#if ( defined(_CRAYFTN) && defined(_OPENMP) ) || defined(__NVCOMPILER)
         itropo_upper(icol,2) = nlay
         call minmaxloc(icol, tropo, play, itropo_lower(icol,2), itropo_upper(icol,1))
 #else

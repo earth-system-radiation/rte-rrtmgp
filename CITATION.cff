@@ -9,11 +9,15 @@ authors:
     orcid: "https://orcid.org/0000-0002-9578-0649"
   - family-names: Alexeev
     given-names: Dmitry 
+  - family-names: Adamidis
+    given-names: Panos
   - family-names: Hillman
     given-names: Benjamin R. 
   - family-names: Norman
     given-names: Matthew
     orcid: "https://orcid.org/0000-0003-4764-3348"
+  - family-names: Pfister
+    given-names: Erik 
   - family-names: Polonsky
     given-names: Igor N.
   - family-names: Romero
@@ -21,7 +25,11 @@ authors:
   - family-names: Wehe
     given-names: Andre
 type: software
+repository-code: "https://github.com/earth-system-radiaton/rte-rrtmgp"
+license: BSD-3-Clause
 date-released: "2023-05-30"
+version: 1.7
+
 abstract: "RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. 
   RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions. The fluxes are normally summarized or reduced via a user extensible class."
 identifiers:
@@ -34,7 +42,22 @@ keywords:
   - "radiative transfer"
   - "climate model"
   - research
-license: BSD-3-Clause
 message: "If you use this software, please cite it using these metadata."
-repository-code: "https://github.com/earth-system-radiaton/rte-rrtmgp"
-version: 1.7
+
+references:
+  - authors:
+    - family-names: Pincus
+      given-names: Robert
+    - family-names: Mlawer
+      given-names: Eli J.
+    - family-names: Delamere
+      given-names: Jennifer S.
+    doi: 10.1029/2019MS001621
+    journal: "Journal of Advances in Modeling Earth Systems"
+    scope: "This paper describes the design, concepts, and version 1.0 of the software"
+    title: "Balancing Accuracy, Efficiency, and Flexibility in Radiation Calculations for Dynamical Models"
+    type: article
+    volume: 11
+    number: 10
+    pages: 3074-3089
+    year: 2019

@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+title: "RTE+RRTMGP"
+authors:
+  - family-names: Pincus
+    given-names: Robert
+    orcid: "https://orcid.org/0000-0002-0016-3470"
+  - family-names: Iacono
+    given-names: Michael J. 
+    orcid: "https://orcid.org/0000-0002-9578-0649"
+  - family-names: Alexeev
+    given-names: Dmitry 
+  - family-names: Hillman
+    given-names: Benjamin R. 
+  - family-names: Norman
+    given-names: Matthew
+    orcid: "https://orcid.org/0000-0003-4764-3348"
+  - family-names: Polonsky
+    given-names: Igor N.
+  - family-names: Romero
+    given-names: Nicols A. 
+  - family-names: Wehe
+    given-names: Andre
+type: software
+date-released: "2023-05-30"
+abstract: "RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. 
+  RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions. The fluxes are normally summarized or reduced via a user extensible class."
+identifiers:
+  - description: "All versions"
+    type: doi
+    value: 10.5281/zenodo.3403172
+keywords:
+  - "RTE+RRTMGP"
+  - "atmospheric radiation"
+  - "radiative transfer"
+  - "climate model"
+  - research
+license: BSD-3-Clause
+message: "If you use this software, please cite it using these metadata."
+repository-code: "https://github.com/earth-system-radiaton/rte-rrtmgp"
+version: 1.7

@@ -13,45 +13,56 @@ defaults:
 
 jobs:
   CI:
-    runs-on: daint
+    runs-on:
+      labels: cscs-ci
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
+        config-name: [nvidia-gpu-openacc, cce-cpu-icon-production, cce-gpu-openmp]
+        fpmodel: [DP, SP]
         include:
-        - config-name: nvidia-gpu-acc
-          rte-kernels: openacc
+        # The tests are not experimental by default:
+        - experimental: false
+        - config-name: nvidia-gpu-openacc
+          rte-kernels: accel
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
           # Generic accelerator flag
           fcflags: "-O3 -acc -Mallocatable=03 -gopt"
-          experimental: false
         - config-name: cce-cpu-icon-production
           rte-kernels: default
           compiler-modules: "PrgEnv-cray"
           # Production flags for Icon model
           fcflags: "-hadd_paren -r am -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hnoacc -O1,cache0"
-          experimental: false
         - config-name: cce-gpu-openmp
-          rte-kernels: openacc
-          compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05"
+          rte-kernels: accel
+          compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
           experimental: true
     env:
       # Core variables:
       FC: ftn
-      FCFLAGS: ${{ matrix.fcflags }}
+      FCFLAGS: ${{ matrix.fcflags }} -DRTE_USE_${{ matrix.fpmodel}}
       # Make variables:
-      NCHOME: /dummy
-      NFHOME: /dummy
       RRTMGP_ROOT: ${{ github.workspace }}
+      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
+      FAILURE_THRESHOLD: 7.e-4
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
     - uses: actions/checkout@v3
+    #
+    # Check out data
+    #
+    - name: Check out data
+      uses: actions/checkout@v3
+      with:
+        repository: earth-system-radiation/rrtmgp-data
+        path: rrtmgp-data
     #
     # Finalize build environment
     #
@@ -68,12 +79,18 @@ jobs:
         #     python3 -m venv /scratch/snx3000/rpincus/rte-rrtmgp-python
         #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install --upgrade pip
         #     /scratch/snx3000/rpincus/rte-rrtmgp-python/bin/pip3 install dask[array] netCDF4 numpy xarray
-        echo "PATH=\"/scratch/snx3000/rpincus/rte-rrtmgp-python/bin:\${PATH}\"" >> "${BASH_ENV}"
+        echo 'PATH="/scratch/snx3000/rpincus/rte-rrtmgp-python/bin:${PATH}"' >> "${BASH_ENV}"
         # Make bash run the above on startup:
         echo "BASH_ENV=${BASH_ENV}" >> "${GITHUB_ENV}"
         # Compiler needs more temporary space than normally available:
         tmpdir='${{ github.workspace }}/tmp'
         mkdir "${tmpdir}" && echo "TMPDIR=${tmpdir}" >> "${GITHUB_ENV}"
+        # We use the "non-default products" for the tests
+        # (see https://support.hpe.com/hpesc/public/docDisplay?docId=a00113984en_us&page=Modify_Linking_Behavior_to_Use_Non-default_Libraries.html):
+        echo 'LD_LIBRARY_PATH="${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"' >> "${BASH_ENV}"
+        # SLURM jobs, user home directories and HDF5 file locking are
+        # incompatible on Daint:
+        echo 'HDF5_USE_FILE_LOCKING=FALSE' >> "${GITHUB_ENV}"
     #
     # Build libraries, examples and tests
     #
@@ -87,6 +104,12 @@ jobs:
     #
     - name: Run examples and tests
       run: make tests
+    #
+    # Relax failure thresholds for single precision
+    #
+    - name: Relax failure threshold for single precision
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #

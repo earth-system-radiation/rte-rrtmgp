@@ -10,63 +10,70 @@ on:
 jobs:
   Containerized-CI:
     runs-on: ubuntu-22.04
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         fortran-compiler: [ifort, ifx, nvfortran]
-        rte-kernels: [default, openacc]
+        rte-kernels: [default, accel]
+        fpmodel: [DP, SP]
         include:
+        # The tests are not experimental by default:
+        - experimental: false
+        # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
-          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
-          image: "earthsystemradiation/rte-rrtmgp-ci:ifort"
+          fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
+        # Set flags for Intel Fortran Compiler
         - fortran-compiler: ifx
-          fcflags: "-m64 -g  -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"
-          image: "earthsystemradiation/rte-rrtmgp-ci:ifort"
+          rte-kernels: default
+          fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08
+        - fortran-compiler: ifx
+          rte-kernels: accel
+          fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64
+          experimental: true
+        # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
-          fcflags: "-Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk"
-          image: "earthsystemradiation/rte-rrtmgp-ci:nvfortran"
+          rte-kernels: default
+          fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk
+        - fortran-compiler: nvfortran
+          rte-kernels: accel
+          fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc
+        # Set container images
+        - fortran-compiler: ifort
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
+        - fortran-compiler: ifx
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
+        - fortran-compiler: nvfortran
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvfortran
     container:
       image: ${{ matrix.image }}
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: ${{ matrix.fcflags }}
+      FCFLAGS: ${{ matrix.fcflags }} -DRTE_USE_${{ matrix.fpmodel}}
       # Make variables:
-      NCHOME: /dummy
       NFHOME: /opt/netcdf-fortran
       RRTMGP_ROOT: ${{ github.workspace }}
+      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD:
-      # Auxiliary variables:
-      RFMIP_CACHEDIR: /home/runner/rfmip-files
+      # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
+      OMP_TARGET_OFFLOAD: DISABLED
+      FAILURE_THRESHOLD: 7.e-4
+
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     #
-    # Cache RFMIP files
+    # Check out data
     #
-    - name: Cache RFMIP files
-      uses: actions/cache@v3
+    - name: Check out data
+      uses: actions/checkout@v4
       with:
-        path: ${{ env.RFMIP_CACHEDIR }}
-        key: rfmip-files
-    #
-    # Stage RFMIP files
-    #
-    - name: Stage RFMIP files
-      run: |
-        if test ! -d "${RFMIP_CACHEDIR}"; then
-          mkdir -p "${RFMIP_CACHEDIR}" && cd "${RFMIP_CACHEDIR}"
-          python "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py"
-        fi
-        for file in "${RFMIP_CACHEDIR}"/*; do
-          if test ! -d "${file}"; then
-            echo "copying '${file}'..."
-            cp "${file}" "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/"
-          fi
-        done
+        repository: earth-system-radiation/rrtmgp-data
+        path: rrtmgp-data
     #
     # Build libraries, examples and tests
     #
@@ -81,6 +88,12 @@ jobs:
     - name: Run examples and tests
       run: make tests
     #
+    # Relax failure thresholds for single precision
+    #
+    - name: Relax failure threshold for single precision
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
+    #
     # Compare the results
     #
     - name: Compare the results
@@ -89,14 +102,14 @@ jobs:
     # Generate validation plots
     #
     - name: Generate validation plots
-      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default'
+      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       working-directory: tests
       run: python validation-plots.py
     #
     # Upload validation plots
     #
     - name: Upload validation plots
-      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default'
+      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       uses: actions/upload-artifact@v3
       with:
         name: valdiation-plot

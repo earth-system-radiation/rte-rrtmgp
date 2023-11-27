@@ -9,10 +9,7 @@ md_extensions: markdown.extensions.toc
 author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
-title: RTE Fortran interfaces
-src_dir: ../../rte
-exclude_dir: ../../rte/kernels
-exclude_dir: ../../rte/kernels-openacc
+title: RTE Fortran interfaces-frontend
 output_dir: ../../public/reference/rte-fortran-interface
 ...
 

@@ -19,24 +19,37 @@ jobs:
       fail-fast: false
       matrix:
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
-        rte-kernels: [default, openacc]
+        fpmodel: [DP, SP]
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -g -DRTE_USE_CBOOL"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.fpmodel }}"
       # Make variables:
-      NCHOME: /dummy
       NFHOME: /usr
       RRTMGP_ROOT: ${{ github.workspace }}
-      RTE_KERNELS: ${{ matrix.rte-kernels }}
+      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RUN_CMD:
-      # Auxiliary variables:
-      RFMIP_CACHEDIR: /home/runner/rfmip-files
+      FAILURE_THRESHOLD: 7.e-4
     steps:
     #
-    # Checks-out repository under $GITHUB_WORKSPACE
+    # Relax failure thresholds for single precision
     #
-    - uses: actions/checkout@v3
+    - name: Relax failure threshold for single precision
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
+    #
+    # Check out repository under $GITHUB_WORKSPACE
+    #
+    - name: Check out code
+      uses: actions/checkout@v4
+    #
+    # Check out data
+    #
+    - name: Check out data
+      uses: actions/checkout@v4
+      with:
+        repository: earth-system-radiation/rrtmgp-data
+        path: rrtmgp-data
     #
     # Synchronize the package index
     #
@@ -68,29 +81,6 @@ jobs:
         auto-activate-base: false
         # Use the cache properly:
         use-only-tar-bz2: true
-    #
-    # Cache RFMIP files
-    #
-    - name: Cache RFMIP files
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.RFMIP_CACHEDIR }}
-        key: rfmip-files
-    #
-    # Stage RFMIP files
-    #
-    - name: Stage RFMIP files
-      run: |
-        if test ! -d "${RFMIP_CACHEDIR}"; then
-          mkdir -p "${RFMIP_CACHEDIR}" && cd "${RFMIP_CACHEDIR}"
-          python "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/stage_files.py"
-        fi
-        for file in "${RFMIP_CACHEDIR}"/*; do
-          if test ! -d "${file}"; then
-            echo "copying '${file}'..."
-            cp "${file}" "${GITHUB_WORKSPACE}/examples/rfmip-clear-sky/"
-          fi
-        done
     #
     # Build libraries, examples and tests
     #

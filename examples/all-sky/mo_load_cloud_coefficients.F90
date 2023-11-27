@@ -5,7 +5,8 @@ module mo_load_cloud_coefficients
                               ty_optical_props_1scl, &
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
-  use mo_cloud_optics,  only: ty_cloud_optics
+  use mo_cloud_optics_rrtmgp, & 
+                        only: ty_cloud_optics_rrtmgp
   use mo_simple_netcdf, only: read_field, read_string, var_exists, get_dim_size, &
                               write_field, create_dim, create_var
   use netcdf
@@ -21,7 +22,7 @@ contains
   ! read cloud optical property LUT coefficients from NetCDF file
   !
   subroutine load_cld_lutcoeff(cloud_spec, cld_coeff_file)
-    class(ty_cloud_optics),     intent(inout) :: cloud_spec
+    class(ty_cloud_optics_rrtmgp),     intent(inout) :: cloud_spec
     character(len=*),           intent(in   ) :: cld_coeff_file
     ! -----------------
     ! Local variables
@@ -59,10 +60,8 @@ contains
     ! Read LUT constants
     radliq_lwr = read_field(ncid, 'radliq_lwr')
     radliq_upr = read_field(ncid, 'radliq_upr')
-    radliq_fac = read_field(ncid, 'radliq_fac')
     radice_lwr = read_field(ncid, 'radice_lwr')
     radice_upr = read_field(ncid, 'radice_upr')
-    radice_fac = read_field(ncid, 'radice_fac')
 
     ! Allocate cloud property lookup table input arrays
     allocate(lut_extliq(nsize_liq, nband), &
@@ -82,8 +81,8 @@ contains
 
     ncid = nf90_close(ncid)
     call stop_on_err(cloud_spec%load(band_lims_wvn,                      &
-                                     radliq_lwr, radliq_upr, radliq_fac, &
-                                     radice_lwr, radice_upr, radice_fac, &
+                                     radliq_lwr, radliq_upr,             &
+                                     radice_lwr, radice_upr,             &
                                      lut_extliq, lut_ssaliq, lut_asyliq, &
                                      lut_extice, lut_ssaice, lut_asyice))
   end subroutine load_cld_lutcoeff
@@ -91,7 +90,7 @@ contains
   ! read cloud optical property Pade coefficients from NetCDF file
   !
   subroutine load_cld_padecoeff(cloud_spec, cld_coeff_file)
-    class(ty_cloud_optics),       intent(inout) :: cloud_spec
+    class(ty_cloud_optics_rrtmgp),       intent(inout) :: cloud_spec
     character(len=*),             intent(in   ) :: cld_coeff_file
     ! -----------------
     ! Local variables

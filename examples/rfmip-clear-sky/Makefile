@@ -17,22 +17,6 @@ FCINCLUDE += -I$(NFHOME)/include
 LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
-#
-# General Purpose Timing Library https://jmrosinski.github.io/GPTL/
-# Set environment variable GPTL_DIR to the root of a GPTL installation to build
-#   the RFMIP example with timers
-#
-ifneq ($(origin GPTL_DIR),undefined)
-	#
-	# Timing library
-	#
-	FCINCLUDE += -I$(GPTL_DIR)/include
-	# Compiler specific
-	FCFLAGS   += -DUSE_TIMING
-	LDFLAGS   += -L$(GPTL_DIR)/lib
-	LIBS      += -lgptl
-endif
-
 VPATH = ../
 
 # Compilation rules
@@ -73,7 +57,9 @@ tests: multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc \
 	$(RUN_CMD) ./rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
 
 check:
-	cd ${RRTMGP_ROOT}/examples/rfmip-clear-sky && python ./compare-to-reference.py --fail=7.e-4
+	python ${RRTMGP_ROOT}/examples/compare-to-reference.py \
+	       --ref_dir ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/rfmip-clear-sky \
+	       --var rld rlu rsd rsu --file r??_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
 
 clean:
 	-rm rrtmgp_rfmip_sw rrtmgp_rfmip_lw *.o *.mod *.optrpt *.nc

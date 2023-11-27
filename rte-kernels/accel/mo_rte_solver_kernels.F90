@@ -151,11 +151,7 @@ contains
     !$acc        data copyin(sfc_srcJac) create(   gpt_Jac) if(do_Jacobians)
     !$omp target data map(to:sfc_srcJac) map(alloc:gpt_Jac) if(do_Jacobians)
 
-#ifdef _CRAYFTN
-    !$acc parallel loop present(An, Cn, gpt_Jac, g) collapse(3)
-#else
     !$acc parallel loop no_create(An, Cn, gpt_Jac, g) collapse(3)
-#endif
     !$omp target teams distribute parallel do simd collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
@@ -200,11 +196,7 @@ contains
     !
     ! Surface reflection and emission
     !
-#ifdef _CRAYFTN
-    !$acc                         parallel loop    collapse(2) present(gpt_Jac, sfc_srcJac)
-#else
     !$acc                         parallel loop    collapse(2) no_create(gpt_Jac, sfc_srcJac)
-#endif
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
@@ -670,7 +662,7 @@ contains
     !
     !$acc        data create(   Rdif, Tdif, source_up, source_dn, source_srf)
     !$omp target data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf)
-    call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dif, &
+    call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dir, &
                            tau, ssa, g,                                  &
                            Rdif, Tdif, source_dn, source_up, source_srf, gpt_flux_dir)
 
@@ -736,18 +728,19 @@ contains
                                                ! Source function at layer edges
                                                ! Down at the bottom of the layer, up at the top
     ! --------------------------------
-    real(wp), parameter  :: tau_thresh = sqrt(epsilon(tau))
+    real(wp), parameter  :: tau_thresh = sqrt(sqrt(epsilon(tau)))
     real(wp)             :: fact
     ! ---------------------------------------------------------------
     !
     ! Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
     !   is of order epsilon (smallest difference from 1. in working precision)
     !   Thanks to Peter Blossey
+    !   Updated to 3rd order series and lower threshold based on suggestion from Dmitry Alexeev (Nvidia)
     !
     if(tau > tau_thresh) then
       fact = (1._wp - trans)/tau - trans
     else
-      fact = tau * (0.5_wp - 1._wp/3._wp*tau)
+      fact = tau * (0.5_wp + tau * (-1._wp/3._wp + tau * 1._wp/8._wp) )
     end if
     !
     ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
@@ -824,11 +817,7 @@ contains
       !
       ! Top of domain is index 1
       !
-#ifdef _CRAYFTN
-      !$acc  parallel loop collapse(2) present(radn_upJac)
-#else
       !$acc  parallel loop collapse(2) no_create(radn_upJac)
-#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -847,11 +836,7 @@ contains
       !
       ! Top of domain is index nlay+1
       !
-#ifdef _CRAYFTN
-      !$acc  parallel loop collapse(2) present(radn_upJac)
-#else
       !$acc  parallel loop collapse(2) no_create(radn_upJac)
-#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -1102,6 +1087,7 @@ contains
 
 
     ! Ancillary variables
+    real(wp), parameter :: min_k = 1.e4_wp * epsilon(1._wp) ! Suggestion from Chiel van Heerwaarden
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat, inc_flux
@@ -1143,7 +1129,7 @@ contains
           !   k = 0 for isotropic, conservative scattering; this lower limit on k
           !   gives relative error with respect to conservative solution
           !   of < 0.1% in Rdif down to tau = 10^-9
-          k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), 1.e-12_wp))
+          k = sqrt(max((gamma1 - gamma2) * (gamma1 + gamma2), min_k))
           k_mu     = k * mu0_s
           exp_minusktau = exp(-tau_s*k)
           exp_minus2ktau = exp_minusktau * exp_minusktau
@@ -1198,6 +1184,12 @@ contains
                   ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
                    (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
                    2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
+            ! Final check that energy is not spuriously created, by recognizing that
+            ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
+            ! or penetrate through but be scattered on the way - the rest is absorbed
+            ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
+            Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))
+            Tdir    = max(0.0_wp, min(Tdir, (1.0_wp - Tnoscat - Rdir) ))
             source_up  (icol,lay_index,  igpt) =    Rdir * inc_flux
             source_dn  (icol,lay_index,  igpt) =    Tdir * inc_flux
             flux_dn_dir(icol,trans_index,igpt) = Tnoscat * inc_flux
@@ -1392,11 +1384,7 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
       ! Top of domain is index 1
       !
       ! Downward propagation
-#ifdef _CRAYFTN
-      !$acc                         parallel loop    collapse(2) present(radn_up_Jac)
-#else
       !$acc                         parallel loop    collapse(2) no_create(radn_up_Jac)
-#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -1431,11 +1419,7 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
         enddo
       enddo
     else
-#ifdef _CRAYFTN
-      !$acc  parallel loop collapse(2) present(radn_up_Jac)
-#else
       !$acc  parallel loop collapse(2) no_create(radn_up_Jac)
-#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol

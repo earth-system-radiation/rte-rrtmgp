@@ -407,7 +407,6 @@ contains
       !$omp target teams distribute parallel do simd
       do ilay = 1, size(array,2)
         do icol = 1, size(array,1)
-          !print *, (size(this%concs))
 #ifdef _CRAYFTN
            array(icol,ilay) = p(icol,ilay)
 #else

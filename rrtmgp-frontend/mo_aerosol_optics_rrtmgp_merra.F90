@@ -54,7 +54,7 @@ module mo_aerosol_optics_rrtmgp_merra
   ! index identifiers for aerosol optical property tables
   integer, parameter, private :: ext = 1                 ! extinction
   integer, parameter, private :: ssa = 2                 ! single scattering albedo
-  integer, parameter, private :: g = 3                   ! asymmetry parameter
+  integer, parameter, private :: g   = 3                 ! asymmetry parameter
 
   private
   ! -----------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ module mo_aerosol_optics_rrtmgp_merra
     ! Table upper and lower aerosol size (radius) bin limits (microns)
     real(wp),dimension(:,:), allocatable :: merra_aero_bin_lims     ! Dimensions (pair,nbin)
     ! Table relative humidity values
-    real(wp),dimension(:), allocatable :: aero_rh(:)
+    real(wp),dimension(:),   allocatable :: aero_rh(:)
     !
     ! The aerosol tables themselves.
     ! extinction (m2/kg)
@@ -83,10 +83,9 @@ module mo_aerosol_optics_rrtmgp_merra
     !
     ! -----
   contains
-    generic,   public :: load  => load_lut
-    procedure, public :: finalize
-    procedure, public :: aerosol_optics
-
+    generic,   public  :: load  => load_lut
+    procedure, public  :: finalize
+    procedure, public  :: aerosol_optics
     ! Internal procedures
     procedure, private :: load_lut
   end type ty_aerosol_optics_rrtmgp_merra
@@ -162,41 +161,35 @@ contains
     allocate(this%aero_rh(nrh))
     ! Allocate LUT coefficients
     allocate(this%aero_dust_tbl(nval, nbin, nband), &
-             this%aero_salt_tbl(nval, nrh, nbin, nband), &
-             this%aero_sulf_tbl(nval, nrh, nband), &
+             this%aero_salt_tbl(nrh, nval, nbin, nband), &
+             this%aero_sulf_tbl(nrh, nval, nband), &
              this%aero_bcar_tbl(nval, nband), &
-             this%aero_bcar_rh_tbl(nval, nrh, nband), &
+             this%aero_bcar_rh_tbl(nrh, nval, nband), &
              this%aero_ocar_tbl(nval, nband), &
-             this%aero_ocar_rh_tbl(nval, nrh, nband))
-    !$acc enter data create(this)                                               &
-    !$acc            create(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl)  &
-    !$acc            create(this%aero_bcar_tbl, this%aero_bcar_rh_tbl)          &
-    !$acc            create(this%aero_ocar_tbl, this%aero_ocar_rh_tbl)          &
-    !$acc            create(this%merra_aero_bin_lims, this%aero_rh)
-    !$omp target enter data &
-    !$omp map(alloc:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl) &
-    !$omp map(alloc:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  &
-    !$omp map(alloc:this%aero_ocar_tbl, this%aero_ocar_rh_tbl)                  &
-    !$omp map(alloc:this%merra_aero_bin_lims, this%aero_rh)
-
-
-    ! Load LUT coefficients
-    !$acc kernels
-    !$omp target
+             this%aero_ocar_rh_tbl(nrh, nval, nband))
+    
+    ! Copy LUT coefficients
     this%merra_aero_bin_lims = merra_aero_bin_lims
     this%aero_rh             = aero_rh
     this%aero_dust_tbl = aero_dust_tbl
-    this%aero_salt_tbl = aero_salt_tbl
-    this%aero_sulf_tbl = aero_sulf_tbl
     this%aero_bcar_tbl = aero_bcar_tbl
-    this%aero_bcar_rh_tbl = aero_bcar_rh_tbl
     this%aero_ocar_tbl = aero_ocar_tbl
-    this%aero_ocar_rh_tbl = aero_ocar_rh_tbl
-    !$acc end kernels
-    !$omp end target
-    !
 
+    this%aero_salt_tbl    = reshape( aero_salt_tbl,    shape=(/nrh, nval, nbin, nband/), order=(/2,1,3,4/) )
+    this%aero_sulf_tbl    = reshape( aero_sulf_tbl,    shape=(/nrh, nval,       nband/), order=(/2,1,3/) )
+    this%aero_bcar_rh_tbl = reshape( aero_bcar_rh_tbl, shape=(/nrh, nval,       nband/), order=(/2,1,3/) )
+    this%aero_ocar_rh_tbl = reshape( aero_ocar_rh_tbl, shape=(/nrh, nval,       nband/), order=(/2,1,3/) )
 
+    !$acc enter data create(this)                                               &
+    !$acc            copyin(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl)  &
+    !$acc            copyin(this%aero_bcar_tbl, this%aero_bcar_rh_tbl)          &
+    !$acc            copyin(this%aero_ocar_tbl, this%aero_ocar_rh_tbl)          &
+    !$acc            copyin(this%merra_aero_bin_lims, this%aero_rh)
+    !$omp target enter data &
+    !$omp map(to:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl) &
+    !$omp map(to:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  &
+    !$omp map(to:this%aero_ocar_tbl, this%aero_ocar_rh_tbl)                  &
+    !$omp map(to:this%merra_aero_bin_lims, this%aero_rh)
 
   end function load_lut
   !--------------------------------------------------------------------------------------------------------------------
@@ -209,16 +202,13 @@ contains
 
     ! Lookup table aerosol optics interpolation arrays
     if(allocated(this%merra_aero_bin_lims)) then
-
       deallocate(this%merra_aero_bin_lims, this%aero_rh)
+      !$acc        exit data delete(     this%merra_aero_bin_lims, this%aero_rh) 
+      !$omp target exit data map(release:this%merra_aero_bin_lims, this%aero_rh)
     end if
 
     ! Lookup table aerosol optics coefficients
     if(allocated(this%aero_dust_tbl)) then
-
-      deallocate(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl, &
-                 this%aero_bcar_tbl, this%aero_bcar_rh_tbl, &
-                 this%aero_ocar_tbl, this%aero_ocar_rh_tbl)
       !$acc exit data delete(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl)  &
       !$acc           delete(this%aero_bcar_tbl, this%aero_bcar_rh_tbl) &
       !$acc           delete(this%aero_ocar_tbl, this%aero_ocar_rh_tbl) &
@@ -226,6 +216,9 @@ contains
       !$omp target exit data map(release:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl) &
       !$omp                  map(release:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  & 
       !$omp                  map(release:this%aero_ocar_tbl, this%aero_ocar_rh_tbl) 
+      deallocate(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl, &
+                 this%aero_bcar_tbl, this%aero_bcar_rh_tbl, &
+                 this%aero_ocar_tbl, this%aero_ocar_rh_tbl)
     end if
 
   end subroutine finalize
@@ -271,6 +264,8 @@ contains
     integer  :: icol, ilay, ibnd, ibin
     ! scalars for total tau, tau*ssa
     real(wp) :: tau, taussa
+    ! Scalars to work around OpenACC/OMP issues
+    real(wp) :: minSize,  maxSize
 
     ! ----------------------------------------
     !
@@ -290,6 +285,11 @@ contains
     nrh  = size(this%aero_rh,1)
     nval = size(this%aero_dust_tbl,1)
     nbnd = size(this%aero_dust_tbl,3)
+
+    !$acc        update host(this%merra_aero_bin_lims)
+    !$omp target update from(this%merra_aero_bin_lims)
+    minSize = this%merra_aero_bin_lims(1,1)
+    maxSize = this%merra_aero_bin_lims(2,nbin)
 
     !
     ! Array sizes
@@ -322,14 +322,14 @@ contains
       if(error_msg /= "") return
     end if
 
-    !$acc data        copyin(aero_type, aero_size, aero_mass, relhum)       &
-    !$acc      create(atau, ataussa, ataussag, aeromsk)
-    !$omp target data map(to:aero_type, aero_size, aero_mass, relhum) &
-    !$omp   map(alloc:atau, ataussa, ataussag, aeromsk) 
+    !$acc data        copyin(aero_type, aero_size, aero_mass, relhum) 
+    !$omp target data map(to:aero_type, aero_size, aero_mass, relhum) 
     !
     ! Aerosol mask; don't need aerosol optics if there's no aerosol
     !
-    !$acc parallel loop gang vector default(none) collapse(2)
+    !$acc data           create(aeromsk)
+    !$omp target data map(alloc:aeromsk) 
+    !$acc              parallel loop default(present) collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -341,13 +341,18 @@ contains
     ! Aerosol size, relative humidity
     !
     if(check_values) then
-      if(any_vals_outside(aero_size, aeromsk, &
-        this%merra_aero_bin_lims(1,1), this%merra_aero_bin_lims(2,nbin))) &
+      if(any_vals_outside(aero_size, aeromsk, minSize, maxSize)) &
         error_msg = 'aerosol optics: requested aerosol size is out of bounds'
-      if(any_vals_outside(relhum, 0._wp, 1._wp)) &
+      if(any_vals_outside(relhum,    aeromsk, 0._wp, 1._wp)) &
         error_msg = 'aerosol optics: relative humidity fraction is out of bounds'
     end if
+    ! Release aerosol mask 
+    !$acc end data
+    !$omp end target data 
+
     if(error_msg == "") then
+      !$acc data           create(atau, ataussa, ataussag)
+      !$omp target data map(alloc:atau, ataussa, ataussag) 
       !
       !
       ! ----------------------------------------
@@ -379,7 +384,7 @@ contains
       !
       select type(optical_props)
       type is (ty_optical_props_1scl)
-        !$acc parallel loop gang vector default(none) collapse(3) &
+        !$acc parallel loop gang vector default(present) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau)
@@ -392,7 +397,7 @@ contains
           end do
         end do
       type is (ty_optical_props_2str)
-        !$acc parallel loop gang vector default(none) collapse(3) &
+        !$acc parallel loop gang vector default(present) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau, optical_props%ssa, optical_props%g)
@@ -411,9 +416,11 @@ contains
       type is (ty_optical_props_nstr)
         error_msg = "aerosol optics: n-stream calculations not yet supported"
       end select
+      !$acc end data
+      !$omp end target data
     end if 
     !$acc end data
-    !$omp end target data
+    !$omp end target data 
   end function aerosol_optics
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -442,11 +449,11 @@ contains
     real(wp),    dimension(nrh),           intent(in) :: aero_rh
 
     real(wp),    dimension(nval,    nbin,nbnd), intent(in) :: aero_dust_tbl
-    real(wp),    dimension(nval,nrh,nbin,nbnd), intent(in) :: aero_salt_tbl
-    real(wp),    dimension(nval,nrh,     nbnd), intent(in) :: aero_sulf_tbl
-    real(wp),    dimension(nval,nrh,     nbnd), intent(in) :: aero_bcar_rh_tbl
+    real(wp),    dimension(nrh,nval,nbin,nbnd), intent(in) :: aero_salt_tbl
+    real(wp),    dimension(nrh,nval,     nbnd), intent(in) :: aero_sulf_tbl
+    real(wp),    dimension(nrh,nval,     nbnd), intent(in) :: aero_bcar_rh_tbl
     real(wp),    dimension(nval,         nbnd), intent(in) :: aero_bcar_tbl
-    real(wp),    dimension(nval,nrh,     nbnd), intent(in) :: aero_ocar_rh_tbl
+    real(wp),    dimension(nrh,nval,     nbnd), intent(in) :: aero_ocar_rh_tbl
     real(wp),    dimension(nval,         nbnd), intent(in) :: aero_ocar_tbl
 
     real(wp),    dimension(ncol,nlay,nbnd), intent(out) :: tau, taussa, taussag
@@ -498,28 +505,28 @@ contains
              ! sea-salt
              case(merra_aero_salt)
                tau    (icol,ilay,ibnd) = mass  (icol,ilay) * &
-                                         linear_interp_aero_table(aero_salt_tbl(ext,:,ibin,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_salt_tbl(:,ext,ibin,ibnd),irh1,irh2,rdrh)
                taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_salt_tbl(ssa,:,ibin,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_salt_tbl(:,ssa,ibin,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_salt_tbl(g,  :,ibin,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_salt_tbl(:,g,  ibin,ibnd),irh1,irh2,rdrh)
 
              ! sulfate
              case(merra_aero_sulf)
                tau    (icol,ilay,ibnd) = mass  (icol,ilay) * &
-                                         linear_interp_aero_table(aero_sulf_tbl(ext,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_sulf_tbl(:,ext,ibnd),irh1,irh2,rdrh)
                taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_sulf_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_sulf_tbl(:,ssa,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_sulf_tbl(g,  :,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_sulf_tbl(:,g,  ibnd),irh1,irh2,rdrh)
              ! black carbon - hydrophilic
              case(merra_aero_bcar_rh)
                tau    (icol,ilay,ibnd) = mass  (icol,ilay) * &
-                                         linear_interp_aero_table(aero_bcar_rh_tbl(ext,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_bcar_rh_tbl(:,ext,ibnd),irh1,irh2,rdrh)
                taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_bcar_rh_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_bcar_rh_tbl(:,ssa,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_bcar_rh_tbl(g,  :,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_bcar_rh_tbl(:,g,  ibnd),irh1,irh2,rdrh)
              ! black carbon - hydrophobic
              case(merra_aero_bcar)
                tau    (icol,ilay,ibnd) = mass  (icol,ilay)      * aero_bcar_tbl(ext,ibnd)
@@ -528,11 +535,11 @@ contains
              ! organic carbon - hydrophilic
              case(merra_aero_ocar_rh)
                tau    (icol,ilay,ibnd) = mass  (icol,ilay) * &
-                                         linear_interp_aero_table(aero_ocar_rh_tbl(ext,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_ocar_rh_tbl(:,ext,ibnd),irh1,irh2,rdrh)
                taussa (icol,ilay,ibnd) = tau   (icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_ocar_rh_tbl(ssa,:,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_ocar_rh_tbl(:,ssa,ibnd),irh1,irh2,rdrh)
                taussag(icol,ilay,ibnd) = taussa(icol,ilay,ibnd) * &
-                                         linear_interp_aero_table(aero_ocar_rh_tbl(g,  :,ibnd),irh1,irh2,rdrh)
+                                         linear_interp_aero_table(aero_ocar_rh_tbl(:,g,  ibnd),irh1,irh2,rdrh)
              ! organic carbon - hydrophobic
              case(merra_aero_ocar)
                tau    (icol,ilay,ibnd) = mass  (icol,ilay)      * aero_ocar_tbl(ext,ibnd)

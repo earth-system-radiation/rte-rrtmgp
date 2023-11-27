@@ -63,7 +63,6 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
-        ref: develop
     #
     # Finalize build environment
     #

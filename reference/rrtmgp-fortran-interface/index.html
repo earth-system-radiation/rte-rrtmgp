@@ -52,7 +52,6 @@
             <li><a href="./lists/files.html">Source Files</a></li>
             <li><a href="./lists/modules.html">Modules</a></li>
             <li><a href="./lists/procedures.html">Procedures</a></li>
-            <li><a href="./lists/absint.html">Abstract Interfaces</a></li>
                    <li><a href="./lists/types.html">Derived Types</a></li>
        
             </ul>
@@ -61,7 +60,6 @@
 <li class="visible-xs hidden-sm visible-lg"><a href="./lists/files.html">Source Files</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="./lists/modules.html">Modules</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="./lists/procedures.html">Procedures</a></li>
-<li class="visible-xs hidden-sm visible-lg"><a href="./lists/absint.html">Abstract Interfaces</a></li>
                              <li class="visible-xs hidden-sm visible-lg"><a href="./lists/types.html">Derived Types</a></li>
           </ul>
         <form action="./search.html" class="navbar-form navbar-right" role="search">
@@ -92,7 +90,7 @@ the <code>gas_optics()</code> and other procedure(s) defined by the  <a href="./
 abstract class. The class is used to compute the spectrally-varying optical properties of the
 gaseous atmosphere given temperature, pressure, and gas concentrations. Each instance of the
 variable is <a href="./type/ty_gas_optics_rrtmgp.html#boundprocedure-load">"loaded"</a> with data from netCDF
-files in the <code>rrtmgp/data</code> directory. Depending on the data provided the variable can be used
+files in the <code>$RRTMGP_DATA</code> directory. Depending on the data provided the variable can be used
 or radiation emitted by the atmosphere and surface ("longwave") of for for radiation emitted
 by the planet's star ("shortwave").</p>
 <p>The class implements both the longwave/internal sources and
@@ -128,35 +126,28 @@ There is a search bar in the top right.</p>
       <div class="row">
         <div class="col-xs-6 col-sm-3">
               <h3>Source Files</h3>
-              <ul>                    <li><a href='./sourcefile/mo_gas_concentrations.f90.html'>mo_gas_concentrations.F90</a></li>
-                    <li><a href='./sourcefile/mo_gas_optics.f90.html'>mo_gas_optics.F90</a></li>
+              <ul>                    <li><a href='./sourcefile/mo_aerosol_optics_rrtmgp_merra.f90.html'>mo_aerosol_optics_rrtmgp_merra.F90</a></li>
+                    <li><a href='./sourcefile/mo_cloud_optics_rrtmgp.f90.html'>mo_cloud_optics_rrtmgp.F90</a></li>
                     <li><a href='./sourcefile/mo_gas_optics_rrtmgp.f90.html'>mo_gas_optics_rrtmgp.F90</a></li>
-                    <li><a href='./sourcefile/mo_rrtmgp_constants.f90.html'>mo_rrtmgp_constants.F90</a></li>
-                    <li><a href='./sourcefile/mo_rrtmgp_util_string.f90.html'>mo_rrtmgp_util_string.F90</a></li>
 </ul>
           </div>
 		  <div class="col-xs-6 col-sm-3">
               <h3>Modules</h3>
-              <ul>                    <li><a href='./module/mo_gas_concentrations.html'>mo_gas_concentrations</a></li>
-                    <li><a href='./module/mo_gas_optics.html'>mo_gas_optics</a></li>
+              <ul>                    <li><a href='./module/mo_aerosol_optics_rrtmgp_merra.html'>mo_aerosol_optics_rrtmgp_merra</a></li>
+                    <li><a href='./module/mo_cloud_optics_rrtmgp.html'>mo_cloud_optics_rrtmgp</a></li>
                     <li><a href='./module/mo_gas_optics_rrtmgp.html'>mo_gas_optics_rrtmgp</a></li>
-                    <li><a href='./module/mo_rrtmgp_constants.html'>mo_rrtmgp_constants</a></li>
-                    <li><a href='./module/mo_rrtmgp_util_string.html'>mo_rrtmgp_util_string</a></li>
 </ul>
           </div>
 		  <div class="col-xs-6 col-sm-3">
               <h3>Procedures</h3>
               <ul>                    <li><a href='./proc/get_col_dry.html'>get_col_dry</a></li>
-                    <li><a href='./proc/init_constants.html'>init_constants</a></li>
-                    <li><a href='./proc/lower_case.html'>lower_case</a></li>
-                    <li><a href='./proc/string_in_array.html'>string_in_array</a></li>
-                    <li><a href='./proc/string_loc_in_array.html'>string_loc_in_array</a></li>
+                    <li><a href='./interface/pade_eval.html'>pade_eval</a></li>
 </ul>
           </div>
 		  <div class="col-xs-6 col-sm-3">
               <h3>Derived Types</h3>
-              <ul>                    <li><a href='./type/ty_gas_concs.html'>ty_gas_concs</a></li>
-                    <li><a href='./type/ty_gas_optics.html'>ty_gas_optics</a></li>
+              <ul>                    <li><a href='./type/ty_aerosol_optics_rrtmgp_merra.html'>ty_aerosol_optics_rrtmgp_merra</a></li>
+                    <li><a href='./type/ty_cloud_optics_rrtmgp.html'>ty_cloud_optics_rrtmgp</a></li>
                     <li><a href='./type/ty_gas_optics_rrtmgp.html'>ty_gas_optics_rrtmgp</a></li>
 </ul>
           </div>

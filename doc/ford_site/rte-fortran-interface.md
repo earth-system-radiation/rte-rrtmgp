@@ -10,6 +10,7 @@ author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
 title: RTE Fortran interfaces-frontend
+src_dir: ../../rte-frontend
 output_dir: ../../public/reference/rte-fortran-interface
 ...
 
@@ -39,7 +40,7 @@ There is a search bar in the top right.
 Return to the [Documentation overview] or the [reference overview].
 
 [Documentation overview]: ../../index.html
-[reference overview]: ../../reference.html
+[reference overview]:    ../index.html
 
 <!---
 ## How to Read This Documentation

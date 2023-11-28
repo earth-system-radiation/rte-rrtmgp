@@ -8,26 +8,37 @@ To build any of the executables in `examples/` or `tests` the locations of the C
 need to be set via environment variables `NCHOME` and `NFHOME`, and the variable `RRTMGP_ROOT` must be set to the
 root of the RTE+RRTMGP installation.
 
-## Gnu Fortran
-`FC: gfortran-8` or `gfortran-9` or `gfortran-10`
+## Gnu Fortran 
+(see also the [continuous integration](https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/continuous-integration.yml))
+`FC: `gfortran-10` or `gfortran-11` or `gfortran-12`
 ### Debugging flags
 `FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DRTE_USE_CBOOL"`  
 ### Even stricter debugging flags
 `FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fbacktrace -finit-real=nan -DRTE_USE_CBOOL -pedantic -g -Wall"`  
 
-## Intel Fortran
+## Intel Fortran Classic 
+(see also the [continuous integration](https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml))
 `FC: ifort`  
 ### Debugging flags
 `FCFLAGS: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"`  
 ### Optimization flags:  
 `FCFLAGS:"-m64 -O3 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132"`
 
+## Intel Fortran 
+(LLVM, see also the [continuous integration](https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml))
+`FC: ifort`  
+### Debugging flags
+`FCFLAGS: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"`  
+### Using OpenMP GPU offload 
+See [this open issue](https://github.com/earth-system-radiation/rte-rrtmgp/issues/194)
+
 ## NVFortran
-`FC: nvfortran` (if using the Nvidia HPC SDK)
+(see also the see also the [continuous integration](https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml))
+`FC: nvfortran`
 ### Debugging flags
 `FCFLAGS: "-g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mallocatable=03  -Mpreprocess"`
 ### Optimization flags:  
-`FCFLAGS: "-g -O3 -fast -Minfo -Mallocatable=03 -Mpreprocess"`
+`FCFLAGS: "-O3 -fast -Minfo -Mallocatable=03 -Mpreprocess"`
 
 ## HPE CCE for GPU using OpenMP-acc: crayftn   -- requires at least CCE 14.0.0
 `FC: crayftn`

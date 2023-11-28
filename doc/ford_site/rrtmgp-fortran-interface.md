@@ -36,9 +36,9 @@ The user interface uses the [ty_gas_concs](./module/mo_gas_concentrations.html) 
 to represent the volume mixing ratios needed as input. Output suitable for
 scattering emission, two-stream, or multi-stream calculations are provided
 depending on which sub-class of RTE's
-[ty_optical_props_arry](./rte-fortran-interface/module/mo_optical_props.html#type-ty_optical_props_arry)
+[ty_optical_props_arry](../rte-fortran-interface/module/mo_optical_props.html#type-ty_optical_props_arry)
 are provided. Planck source functions, if requested, are reported in a variable
-of type [ty_source_func_lw.](./rte-fortran-interface/type/ty_source_func_lw.html)
+of type [ty_source_func_lw.](../rte-fortran-interface/type/ty_source_func_lw.html)
 
 The listings below may not be exhaustive.
 To see the full listings use the links at the top of the page.
@@ -47,4 +47,3 @@ There is a search bar in the top right.
 Return to the [Documentation overview] or the [reference overview].
 
 [Documentation overview]: ../../index.html
-[reference overview]: ../../reference.html

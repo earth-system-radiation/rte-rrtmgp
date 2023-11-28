@@ -38,7 +38,7 @@ Two examples are provided in `examples/`, one for clear skies and one including 
 
 Code releases are archived at Zenodo. All releases are available at 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3403172.svg)](https://doi.org/10.5281/zenodo.3403172). 
-The current release is available at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7521518.svg)](https://doi.org/10.5281/zenodo.7521518)
+The current release is available at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7521518.svg)](https://doi.org/10.5281/zenodo.10211873)
 
 Please cite the code using these DOIs and the information in the `CITATION.cff` file in addition to the reference [paper](https://doi.org/10.1029/2019MS001621)
 

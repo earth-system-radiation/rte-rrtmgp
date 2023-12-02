@@ -1,7 +1,9 @@
 ---
 layout: "page"
-title: "How to build the libraries, tests, and examples, run the tests, and verify the results"
+title: "How to build and run tests"
 ---
+How to build the libraries, tests, and examples, run the tests, and verify the results
+
 ## In a nutshell 
 In the root directory: 
 - `make libs`  makes the RTE and RRTMGP libraries, the unit tests, and the examples 

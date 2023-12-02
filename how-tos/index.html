@@ -31,7 +31,7 @@
           </span>
         </label>
 
-        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a></div>
+        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">How to build and test</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a></div>
       </nav></div>
 </header>
 <main class="page-content" aria-label="Content">
@@ -43,25 +43,11 @@
   </header>
 
   <div class="post-content">
-    <h1 id="how-to-guides-will-live-here">How-to guides will live here</h1>
+    <h1 id="how-to-guides">How-to guides</h1>
 
-<h2 id="how-to-build-run-and-test-the-libraries-examples-and-unit-testing-codes">How-to: build, run, and test the libraries, examples, and unit-testing codes.</h2>
-
-<ol>
-  <li>Set environment variables <code class="language-plaintext highlighter-rouge">FC</code> (the Fortran 2003 compiler) and <code class="language-plaintext highlighter-rouge">FCFLAGS</code> (compiler flags). Examples are provided in the <code class="language-plaintext highlighter-rouge">Compiler-flags.md</code> file.</li>
-  <li>Set environment variables <code class="language-plaintext highlighter-rouge">RRTMGP_ROOT</code> to the top-level RTE+RRTMGP directory and <code class="language-plaintext highlighter-rouge">RTE_KERNELS</code> to <code class="language-plaintext highlighter-rouge">accel</code> if you want the OpenACC/OpenMP kernels rather than the default.</li>
-  <li><code class="language-plaintext highlighter-rouge">make libs</code> in the top-level directory will make the RTE and RRTMGP libraries.</li>
-  <li>The examples and testing codes use netCDF. Set the variables <code class="language-plaintext highlighter-rouge">NCHOME</code> and <code class="language-plaintext highlighter-rouge">NFHOME</code> to the roots of the C and Fortran netCDF installations.</li>
-  <li>Download the RRTMGP data either by cloning the <a href="https://github.com/earth-system-radiation/rrtmgp-data">data repository</a> or from the <a href="https://doi.org/10.5281/zenodo.7988260">Zenodo archive</a>. Set the environment variable <code class="language-plaintext highlighter-rouge">RRTMGP_DATA</code> to the root of this directory.</li>
-  <li><code class="language-plaintext highlighter-rouge">make tests</code> to will build and run the test.</li>
-  <li>Evaluating the results of the tests requires <code class="language-plaintext highlighter-rouge">Python</code> and the packages described in <code class="language-plaintext highlighter-rouge">environment.yml</code>. Comparisons can be made with <code class="language-plaintext highlighter-rouge">make check</code> in the top level directory.</li>
-  <li><code class="language-plaintext highlighter-rouge">make</code> invoked without a target in the top level attempts all three steps.</li>
-</ol>
-
-<h3 id="building-and-testing-using-gnu-make">Building and testing using (Gnu) make</h3>
-
-<p>Sergey Kosukhin and his colleagues at the Max Planck Institute for Meteorology
-maintain the <code class="language-plaintext highlighter-rouge">autoconf</code> branch which adds Gnu <code class="language-plaintext highlighter-rouge">autotools</code> building to <code class="language-plaintext highlighter-rouge">main</code> branch.</p>
+<ul>
+  <li>How to <a href="https://earth-system-radiation.github.io/rte-rrtmgp/how-tos/build-and-test.html">build and test</a></li>
+</ul>
 
   </div>
 

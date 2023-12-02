@@ -9,13 +9,13 @@ RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 # LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_BUILD)
 #
-# netcdf library, module files
-# Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
-#
-FCINCLUDE += -I$(NFHOME)/include
+# netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 
+#FCINCLUDE += -I$(NFHOME)/include
+
+# netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
+#LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LDFLAGS   += -L$(RRTMGP_BUILD)
 LIBS      += -lrte -lrrtmgp
-LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
 VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky

@@ -36,9 +36,11 @@ to the root of this directory.
 
 ## Example compiler flags 
 
+In these examples `FC` is the Fortran compilers using flags `FCFLAGS`
+
 ### Gnu Fortran 
 (see also the [continuous integration](https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/continuous-integration.yml))
-`FC: `gfortran-10` or `gfortran-11` or `gfortran-12`
+`FC`: `gfortran-10` or `gfortran-11` or `gfortran-12`
 #### Debugging flags
 `FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DRTE_USE_CBOOL"`  
 #### Even stricter debugging flags

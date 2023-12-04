@@ -79,9 +79,11 @@ to the root of this directory.</p>
 
 <h2 id="example-compiler-flags">Example compiler flags</h2>
 
+<p>In these examples <code class="language-plaintext highlighter-rouge">FC</code> is the Fortran compilers using flags <code class="language-plaintext highlighter-rouge">FCFLAGS</code></p>
+
 <h3 id="gnu-fortran">Gnu Fortran</h3>
 <p>(see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/continuous-integration.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC: </code>gfortran-10<code class="language-plaintext highlighter-rouge"> or </code>gfortran-11<code class="language-plaintext highlighter-rouge"> or </code>gfortran-12`</p>
+<code class="language-plaintext highlighter-rouge">FC</code>: <code class="language-plaintext highlighter-rouge">gfortran-10</code> or <code class="language-plaintext highlighter-rouge">gfortran-11</code> or <code class="language-plaintext highlighter-rouge">gfortran-12</code></p>
 <h4 id="debugging-flags">Debugging flags</h4>
 <p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan -DRTE_USE_CBOOL"</code></p>
 <h4 id="even-stricter-debugging-flags">Even stricter debugging flags</h4>

@@ -40,11 +40,11 @@ jobs:
           fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc
         # Set container images
         - fortran-compiler: ifort
-          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:oneapi
         - fortran-compiler: ifx
-          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:oneapi
         - fortran-compiler: nvfortran
-          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvfortran
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvhpc
     container:
       image: ${{ matrix.image }}
     env:

@@ -13,6 +13,7 @@ defaults:
 
 jobs:
   CI:
+    if: github.repository == 'earth-system-radiation/rte-rrtmgp'
     runs-on:
       labels: cscs-ci
     continue-on-error: ${{ matrix.experimental }}

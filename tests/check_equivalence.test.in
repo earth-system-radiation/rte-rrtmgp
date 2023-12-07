@@ -1,0 +1,17 @@
+#!@SHELL@
+
+set -e
+
+@TESTS_DISABLED@exit 77
+
+RRTMGP_DATA=${RRTMGP_DATA-'@top_builddir@/@testcachedir@'}
+
+input="${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
+
+@LAUNCH_PREFIX@ @SHELL@ - <<_EOF
+set -e
+./check_equivalence@EXEEXT@ "${input}" "${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc"
+./check_equivalence@EXEEXT@ "${input}" "${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc"
+./check_equivalence@EXEEXT@ "${input}" "${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc"
+./check_equivalence@EXEEXT@ "${input}" "${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc"
+_EOF

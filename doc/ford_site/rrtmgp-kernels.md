@@ -10,7 +10,8 @@ author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
 title: RRTMGP kernels
-src_dir: ../../rrtmgp/kernels
+src_dir: ../../rrtmgp-kernels
+exclude_dir: ../../rrtmgp-kernels/accel
 output_dir: ../../public/reference/rrtmgp-kernels
 ...
 
@@ -23,4 +24,4 @@ There is a search bar in the top right.
 Return to the [Documentation overview] or the [reference overview].
 
 [Documentation overview]: ../../index.html
-[reference overview]: ../../reference.html
+[reference overview]:    ../index.html

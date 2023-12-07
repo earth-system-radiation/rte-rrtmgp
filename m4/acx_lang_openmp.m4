@@ -1,24 +1,39 @@
+# Copyright (c) 2018-2024, MPI-M
+#
+# Author: Sergey Kosukhin <sergey.kosukhin@mpimet.mpg.de>
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
 # ACX_LANG_OPENMP_FLAG([ACTION-IF-SUCCESS],
 #                      [ACTION-IF-FAILURE = FAILURE])
-# -----------------------------------------------------------------------------
-# Originally taken from the master branch of Autoconf where it is a part of
-# AC_OPENMP.
 # -----------------------------------------------------------------------------
 # Finds the compiler flag needed to enable OpenMP support. The result is either
 # "unknown", or the actual compiler flag required to enable OpenMP support,
 # which may be an empty string.
-#
-# Known flags:
-# Intel >= 16: -qopenmp
-# NAG, Intel < 16: -openmp
-# GNU: -fopenmp
-# Cray: -homp
-# SGI, PGI: -mp
-# SunPRO: -xopenmp
-# Tru64 Compaq C: -omp
-# IBM XL: -qsmp=omp
-# NEC SX: -Popenmp
-# Lahey Fortran: --openmp
 #
 # If successful, runs ACTION-IF-SUCCESS, otherwise runs ACTION-IF-FAILURE
 # (defaults to failing with an error message).
@@ -34,8 +49,10 @@
 # acx_cv_[]_AC_LANG_ABBREV[]_macro__OPENMP_value shell variable. The possible
 # (successful) values of the variable are dates, which map to the versions of
 # the standard in the following way:
+#   202111 5.2
 #   202011 5.1
 #   201811 5.0
+#   201511 4.5
 #   201307 4.0
 #   201107 3.1
 #   200805 3.0
@@ -54,8 +71,7 @@ support])
      [acx_cache_var=unknown
       acx_save_[]_AC_LANG_PREFIX[]FLAGS=$[]_AC_LANG_PREFIX[]FLAGS
       AC_LANG_CONFTEST([_ACX_LANG_OPENMP])
-      for acx_lang_openmp_flag in '' -qopenmp -openmp -fopenmp -homp -mp dnl
--xopenmp -omp -qsmp=omp -Popenmp --openmp; do
+      for acx_lang_openmp_flag in '' -qopenmp -openmp -fopenmp -homp -mp; do
         _AC_LANG_PREFIX[]FLAGS="${acx_save_[]_AC_LANG_PREFIX[]FLAGS} dnl
 $acx_lang_openmp_flag"
         AC_LINK_IFELSE([], [acx_cache_var=$acx_lang_openmp_flag])

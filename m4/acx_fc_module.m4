@@ -1,8 +1,35 @@
+# Copyright (c) 2018-2024, MPI-M
+#
+# Author: Sergey Kosukhin <sergey.kosukhin@mpimet.mpg.de>
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
 # ACX_FC_MODULE_IN_FLAG([ACTION-IF-SUCCESS],
 #                       [ACTION-IF-FAILURE = FAILURE])
-# -----------------------------------------------------------------------------
-# Originally taken from the master branch of Autoconf where it is known as
-# AC_FC_MODULE_FLAG.
 # -----------------------------------------------------------------------------
 # Finds the Fortran compiler flag needed to specify module search paths.
 #
@@ -12,68 +39,42 @@
 # The flag is cached in the acx_cv_fc_module_in_flag variable, which may
 # contain a significant trailing whitespace.
 #
-# Known flags:
-# gfortran: -Idir, -I dir (-M dir, -Mdir (deprecated),
-#                          -Jdir for writing)
-# g95: -I dir (-fmod=dir for writing)
-# SUN: -Mdir, -M dir (-moddir=dir for writing;
-#                     -Idir for includes is also searched)
-# HP: -Idir, -I dir (+moddir=dir for writing)
-# IBM: -Idir (-qmoddir=dir for writing)
-# Intel: -Idir -I dir (-mod dir for writing)
-# Absoft: -pdir
-# Lahey: -mod dir
-# Cray: -module dir, -p dir (-J dir for writing)
-#       -e m is needed to enable writing .mod files at all
-# Compaq: -Idir
-# NAGWare: -I dir
-# PathScale: -I dir  (but -module dir is looked at first)
-# Portland: -module dir (first -module also names dir for writing)
-# Fujitsu: -Am -Idir (-Mdir for writing is searched first, then '.',
-#                     then -I)
-#                    (-Am indicates how module information is saved)
+# The implementation patches the standard Autoconf macro AC_FC_MODULE_FLAG to
+# reduce the number of LANG switches and to avoid false negative results with
+# the GFortran '-fmodule-private' flag.
 #
 AC_DEFUN([ACX_FC_MODULE_IN_FLAG],
   [AC_LANG_ASSERT([Fortran])dnl
-   AC_CACHE_CHECK([for Fortran compiler flag needed to specify search paths dnl
-for module files],
-     [acx_cv_fc_module_in_flag],
-     [acx_cv_fc_module_in_flag=unknown
-      AS_MKDIR_P([conftest.dir])
-      cd conftest.dir
-      AC_COMPILE_IFELSE([AC_LANG_SOURCE(
-[[      module conftest_module
+   m4_pushdef([ac_cv_fc_module_flag], [acx_cv_fc_module_in_flag])dnl
+   m4_pushdef([AC_CACHE_CHECK],
+     m4_bpatsubst(m4_dquote(m4_defn([AC_CACHE_CHECK])),
+       [\$][1],
+       [for Fortran compiler flag needed to specify search paths for module dnl
+files]))dnl
+   m4_pushdef([AC_SUBST], [dn][l ])dnl
+   m4_pushdef([AC_CONFIG_COMMANDS_PRE], [dn][l ])dnl
+   m4_pushdef([acx_orig_macro],
+     m4_bpatsubsts(m4_dquote(m4_defn([AC_FC_MODULE_FLAG])),
+       [^      module conftest_module], [\&
       implicit none
-      public
-      contains
-      subroutine conftest_routine
-      end subroutine
-      end module]])],
-        [cd ..
-         acx_save_FCFLAGS=$FCFLAGS
-         AC_LANG_CONFTEST([AC_LANG_PROGRAM([],
-[[      use conftest_module, only : conftest_routine
-      implicit none
-      call conftest_routine()]])])
-         for acx_flag in -M -I '-I ' '-M ' -p '-mod ' '-module ' '-Am -I'; do
-           FCFLAGS="$acx_save_FCFLAGS ${acx_flag}conftest.dir dnl
-dnl Add the flag twice to prevent matching an output flag.
-${acx_flag}conftest.dir"
-           AC_COMPILE_IFELSE([], [acx_cv_fc_module_in_flag=$acx_flag])
-           test "x$acx_cv_fc_module_in_flag" != xunknown && break
-         done
-         rm -f conftest.$ac_ext
-         FCFLAGS=$acx_save_FCFLAGS])
-      rm -rf conftest.dir])
+      public],
+       [^      use conftest_module], [\&, only : conftest_routine
+      implicit none],
+       [AC_LANG_P\(OP\|USH\)(\[?Fortran\]?)], [dn][l ],
+       [FC_MODINC=.*], [dn][l ],
+       [^ *#], [dn][l ]))dnl
+   acx_orig_macro([:], [:])dnl
+   m4_popdef([acx_orig_macro])dnl
+   m4_popdef([AC_SUBST])dnl
+   m4_popdef([AC_CONFIG_COMMANDS_PRE])dnl
+   m4_popdef([AC_CACHE_CHECK])dnl
+   m4_popdef([ac_cv_fc_module_flag])dnl
    AS_VAR_IF([acx_cv_fc_module_in_flag], [unknown], [m4_default([$2],
      [AC_MSG_FAILURE([unable to detect Fortran compiler flag needed to dnl
 specify search paths for module files])])], [$1])])
 
 # ACX_FC_MODULE_OUT_FLAG([ACTION-IF-SUCCESS],
 #                        [ACTION-IF-FAILURE = FAILURE])
-# -----------------------------------------------------------------------------
-# Originally taken from the master branch of Autoconf where it is known as
-# AC_FC_MODULE_OUTPUT_FLAG.
 # -----------------------------------------------------------------------------
 # Finds the Fortran compiler flag needed to specify module output path.
 #
@@ -83,51 +84,46 @@ specify search paths for module files])])], [$1])])
 # The flag is cached in the acx_cv_fc_module_out_flag variable, which may
 # contain a significant trailing whitespace.
 #
-# See ACX_FC_MODULE_IN_FLAG for the known flags.
+# The implementation patches the standard Autoconf macro
+# AC_FC_MODULE_OUTPUT_FLAG to reduce the number of LANG switches and to avoid
+# false negative results with the GFortran '-fmodule-private' flag.
 #
 AC_DEFUN([ACX_FC_MODULE_OUT_FLAG],
   [AC_LANG_ASSERT([Fortran])dnl
-   AC_CACHE_CHECK([for Fortran compiler flag needed to specify output path dnl
-for module files],
-     [acx_cv_fc_module_out_flag],
-     [acx_cv_fc_module_out_flag=unknown
-      AS_MKDIR_P([conftest.dir/sub])
-      cd conftest.dir
-      acx_save_FCFLAGS=$FCFLAGS
-      AC_LANG_CONFTEST([AC_LANG_PROGRAM([],
-[[      use conftest_module, only : conftest_routine
+   m4_pushdef([ac_cv_fc_module_output_flag], [acx_cv_fc_module_out_flag])dnl
+   m4_pushdef([AC_CACHE_CHECK],
+     m4_bpatsubst(m4_dquote(m4_defn([AC_CACHE_CHECK])),
+       [\$][1],
+       [for Fortran compiler flag needed to specify output path for module dnl
+files]))dnl
+   m4_pushdef([AC_SUBST], [dn][l ])dnl
+   m4_pushdef([AC_CONFIG_COMMANDS_PRE], [dn][l ])dnl
+   m4_pushdef([acx_orig_macro],
+     m4_bpatsubsts(m4_dquote(m4_defn([AC_FC_MODULE_OUTPUT_FLAG])),
+       [^      module conftest_module], [\&
       implicit none
-      call conftest_routine()]])])
-      mv conftest.$ac_ext sub/conftest.$ac_ext
-      AC_LANG_CONFTEST([AC_LANG_SOURCE(
-[[      module conftest_module
-      implicit none
-      public
-      contains
-      subroutine conftest_routine
-      end subroutine
-      end module]])])
-      for acx_flag in -J '-J ' -fmod= -moddir= +moddir= -qmoddir= '-mdir ' dnl
-'-mod ' '-module ' -M '-Am -M' '-e m -J '; do
-        FCFLAGS="${acx_flag}sub $acx_save_FCFLAGS"
-        AC_COMPILE_IFELSE([],
-          [cd sub
-           AC_COMPILE_IFELSE([], [acx_cv_fc_module_out_flag=$acx_flag])
-           cd ..])
-        test "x$acx_cv_fc_module_out_flag" != xunknown && break
-      done
-      FCFLAGS=$acx_save_FCFLAGS
-      cd ..
-      rm -rf conftest.dir])
+      public],
+       [^      use conftest_module], [\&, only : conftest_routine
+      implicit none],
+       [AC_LANG_P\(OP\|USH\)(\[?Fortran\]?)], [dn][l ],
+       [FC_MODOUT=.*], [dn][l ],
+       [^ *#], [dn][l ]))dnl
+   m4_version_prereq([2.70], [],
+     [m4_define([acx_orig_macro],
+        m4_bpatsubsts(m4_dquote(m4_defn([acx_orig_macro])),
+          ['-mod '], ['-mdir ' \&],))])dnl
+   acx_orig_macro([:], [:])dnl
+   m4_popdef([acx_orig_macro])dnl
+   m4_popdef([AC_SUBST])dnl
+   m4_popdef([AC_CONFIG_COMMANDS_PRE])dnl
+   m4_popdef([AC_CACHE_CHECK])dnl
+   m4_popdef([ac_cv_fc_module_output_flag])dnl
    AS_VAR_IF([acx_cv_fc_module_out_flag], [unknown], [m4_default([$2],
      [AC_MSG_FAILURE([unable to detect Fortran compiler flag needed to dnl
 specify output path for module files])])], [$1])])
 
 # ACX_FC_MODULE_NAMING([ACTION-IF-SUCCESS],
 #                      [ACTION-IF-FAILURE = FAILURE])
-# -----------------------------------------------------------------------------
-# Originally taken from the master branch of Autoconf where it is known as
-# AC_FC_MODULE_EXTENSION.
 # -----------------------------------------------------------------------------
 # Finds the Fortran compiler module file naming template.
 #
@@ -184,8 +180,8 @@ sed -n 's,CONFTEST_MODULE\.,,p'`],
 sed -n 's,conftest_module\.,,p'`])])])
       cd ..
       rm -rf conftest.dir])
-   AS_IF([test x"$acx_cv_fc_module_naming_upper" = xunknown || dnl
-test x"$acx_cv_fc_module_naming_ext" = xunknown],
+   AS_IF([test "x$acx_cv_fc_module_naming_upper" = xunknown || dnl
+test "x$acx_cv_fc_module_naming_ext" = xunknown],
      [AC_MSG_RESULT([unknown])
       m4_default([$2], [AC_MSG_FAILURE([unable to detect Fortran compiler dnl
 module file naming template])])],

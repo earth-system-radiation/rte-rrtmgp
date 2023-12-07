@@ -6,80 +6,38 @@
 *.pyc
 *.pyo
 .dirstamp
-/Makefile
-/config.cache
-/config.log
-/config.status
-/examples/**/*.test
-/tests/**/*.test
+/**/examples/**/*.test
+/**/tests/**/*.test
+Makefile
 __pycache__
+config.cache
+config.log
+config.status
 
 # Build stage files:
+*.L
 *.a
+*.acc.s
 *.o
-/examples/all-sky/rrtmgp_allsky
-/examples/rfmip-clear-sky/rrtmgp_rfmip_lw
-/examples/rfmip-clear-sky/rrtmgp_rfmip_sw
-/mod/*
+/**/examples/all-sky/rrtmgp_allsky
+/**/examples/rfmip-clear-sky/rrtmgp_rfmip_lw
+/**/examples/rfmip-clear-sky/rrtmgp_rfmip_sw
+/**/mod/*
 
 # Test stage files:
-/.testcache/*
-/examples/**/*.test.log
-/examples/all-sky/rrtmgp-allsky.nc
-/examples/rfmip-clear-sky/*.nc
-/examples/rfmip-clear-sky/timing.*
-/tests/**/*.test.log
-/tests/clear_sky_regression
-/tests/test_atmospheres.nc
-/tests/test_zenith_angle_spherical_correction
-/tests/validation-figures.pdf
+/**/.testcache/*
+/**/examples/**/*.nc
+/**/examples/**/*.test.log
+/**/tests/*.nc
+/**/tests/*.pdf
+/**/tests/*.test.log
+/**/tests/check_equivalence
+/**/tests/check_variants
+/**/tests/test_zenith_angle_spherical_correction
 
 # Dist stage files:
-/rte+rrtmgp-*.tar*
+/**/rte+rrtmgp-*.tar*
 
 # MacOS files:
 *.dSYM
 .DS_Store
-
-# Original .gitignore:
-
-# Module files
-*.mod
-
-# Libraries
-*.a
-
-# Object files
-*.o
-
-# Dependency files
-*.d
-
-# Fortran module files
-*.mod
-*.mod.proxy
-
-# Intel vectorization reports
-*.optrpt
-
-# Netcdf file during testing
-examples/*/*.nc
-examples/*/*/*.nc
-
-# Jupyter notebooks
-.ipynb_checkpoints
-
-# Intel code coverage
-*.dyn
-*.dpi
-*.spi
-*.spl
-*.HTML
-*.html
-*.gif
-
-# gh-pages directory
-public
-
-# Ruby stuff
-**/Gemfile.lock

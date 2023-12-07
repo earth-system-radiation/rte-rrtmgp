@@ -1,9 +1,10 @@
 AC_PREREQ([2.69])
-AC_INIT([rte+rrtmgp], [1.6], [], [],
+AC_INIT([rte+rrtmgp], [1.7], [], [],
   [https://github.com/earth-system-radiation/rte-rrtmgp])
 AC_CONFIG_MACRO_DIR([m4])
+m4_pattern_forbid([^A[SC]X_])dnl
 AC_CONFIG_AUX_DIR([config])
-AC_CONFIG_SRCDIR([rte/mo_rte_sw.F90])
+AC_CONFIG_SRCDIR([rte-frontend/mo_rte_sw.F90])
 
 dnl Check Fortran compiler:
 AC_PROG_FC
@@ -173,6 +174,24 @@ AS_VAR_IF([enable_gpu], [no],
   [AC_SUBST([GPU_ENABLED], [''])
    AC_SUBST([GPU_DISABLED], ['#'])])
 
+AC_ARG_ENABLE([single-precision],
+  [AC_HELP_STRING([--enable-single-precision],
+     [enable single-precision floating-point model @<:@default=no@:>@])],
+  [AS_IF([test x"$enableval" != xno], [enable_single_precision=yes])],
+  [enable_single_precision=no])
+
+ACX_LANG_MACRO_CHECK_DEFINED([RTE_USE_SP])
+AS_VAR_IF([enable_single_precision], [yes],
+  [AS_VAR_IF([acx_macro_defined], [no],
+     [AS_VAR_APPEND([FCFLAGS], [" ${FCDEF_PP}RTE_USE_SP"])])
+   AC_SUBST([SP_ENABLED], [''])],
+  [AS_VAR_IF([acx_macro_defined], [yes],
+     [AC_MSG_ERROR([Single-precision floating-point model is enabled via dnl
+FCFLAGS: either enable it via the configure option dnl
+(--enable-single-precision) or remove the definition of the RTE_USE_SP dnl
+preprocessor macro from FCFLAGS])])
+   AC_SUBST([SP_ENABLED], ['#'])])
+
 AC_ARG_ENABLE([examples],
   [AC_HELP_STRING([--enable-examples],
      [enable examples @<:@default=no@:>@])],
@@ -240,50 +259,6 @@ tests])],
       enable_tests=no])
    NETCDF_FCFLAGS=;NETCDF_FCLIBS=])
 
-dnl Check GPTL-Fortran:
-gptl_fortran_requested=no
-AC_ARG_WITH([gptl-fortran],
-  [AC_HELP_STRING([--with-gptl-fortran=<yes|no|directory>],
-     [location of GPTL Fortran library (lib and include subdirs)])],
-  [AS_IF([test x"$withval" != xno], [gptl_fortran_requested=yes])],
-  [with_gptl_fortran=no])
-AC_ARG_VAR([GPTL_FCFLAGS],
-  [exact Fortran compiler flags enabling GPTL Fortran])
-AC_ARG_VAR([GPTL_FCLIBS],
-  [exact linker flags enabling GPTL Fortran when linking with Fortran compiler])
-
-AS_IF([test x"$with_gptl_fortran" != xno],
-  [acx_inc_search_args=
-   acx_lib_search_args=
-   AS_IF([test x"$with_gptl_fortran" != xyes],
-     [acx_inc_search_args="${FCMODINC}$with_gptl_fortran/include"
-      acx_lib_search_args="-L$with_gptl_fortran/lib"
-      AS_VAR_IF([enable_rpaths], [yes],
-        [AS_VAR_APPEND([acx_lib_search_args],
-           [" ${acx_cv_fc_rpath_flag}$with_gptl_fortran/lib"])])])
-   acx_save_FCFLAGS=$FCFLAGS
-   GPTL_FCFLAGS=${GPTL_FCFLAGS-$acx_inc_search_args}
-   FCFLAGS="$GPTL_FCFLAGS $acx_save_FCFLAGS"
-   ACX_FC_MODULE_CHECK([gptl],
-     [ACX_LANG_LIB_SEARCH([GPTL_FCLIBS], [gptlstart],
-        [ASX_PREPEND_LDFLAGS([$acx_lib_search_args],
-           [-lgptlf], [-lgptlf -lgptl])],
-        [GPTL_FCLIBS=$acx_cv_fc_lib_func_GPTLSTART],
-        [with_gptl_fortran=no],
-        [AC_LANG_PROGRAM([],
-[[      use gptl, only: gptlstart
-      implicit none
-      integer :: status
-      status = gptlstart('conftest')]])])],
-     [with_gptl_fortran=no])
-   FCFLAGS=$acx_save_FCFLAGS])
-
-AS_VAR_IF([with_gptl_fortran], [no],
-  [AS_VAR_IF([gptl_fortran_requested], [yes],
-     [AC_MSG_FAILURE([GPTL Fortran is not available])])
-   GPTL_FCFLAGS=;GPTL_FCLIBS=],
-  [AS_VAR_APPEND([FCFLAGS], [" ${FCDEF_PP}USE_TIMING"])])
-
 dnl Check AR and ARFLAGS:
 AC_ARG_VAR([AR], [archiver command])
 AC_ARG_VAR([ARFLAGS], [archiver flags])
@@ -323,10 +298,14 @@ AS_IF([test x"$enable_tests" != xno],
 
 dnl We need some additional Python modules for the tests:
 AS_IF([test x"$enable_tests" != xno],
-  [set 'numpy'             'import numpy' \
-       'netCDF4'           'import netCDF4' \
-       'xarray (v0.12.2+)' 'import xarray; exit(tuple(map(int, xarray.__version__.split("."))) < (0, 12, 2))' \
-       'dask.array'        'import dask.array'
+  [set 'numpy' 'import numpy' \
+       'netCDF4 or h5netcdf+scipy' 'try:
+    import netCDF4
+except:
+    import h5netcdf
+    import scipy' \
+       'xarray>=0.12.2' 'import xarray; exit(tuple(map(int, xarray.__version__.split("."))) < (0, 12, 2))' \
+       'dask.array' 'import dask.array'
    while test $[]@%:@ -gt 1; do
      m4_pushdef([acx_cache_var], [acx_cv_has_pymodule_[]AS_TR_SH([$][1])])dnl
      AC_CACHE_CHECK([whether Python module '$[]1' is available],
@@ -347,6 +326,27 @@ unable to run the tests])])
      m4_popdef([acx_cache_var])dnl
    done
    set dummy; shift])
+
+dnl We need a way to download the test data:
+AS_IF([test x"$enable_tests" != xno],
+  [AC_CACHE_CHECK([for download command], [acx_cv_prog_DL_CMD],
+     [AS_VAR_SET_IF([DL_CMD],
+        [acx_cv_prog_DL_CMD=$DL_CMD],
+        [acx_cv_prog_DL_CMD=unknown
+         for acx_candidate in wget curl; do
+           AS_CASE([`$acx_candidate --version 2>/dev/null`],
+             [*'curl '*],
+             [acx_cv_prog_DL_CMD="$acx_candidate -sL"; break],
+             [*'GNU Wget'*],
+             [acx_cv_prog_DL_CMD="$acx_candidate -qO-"; break],
+             [])
+         done])])
+   AS_VAR_IF([acx_cv_prog_DL_CMD], [unknown],
+     [AS_VAR_IF([enable_tests], [auto],
+        [AC_MSG_WARN([Unable to find a download command for the tests])
+         enable_tests=no],
+        [AC_MSG_FAILURE([Unable to find a download command for the tests])])],
+     [AC_SUBST([DL_CMD], [$acx_cv_prog_DL_CMD])])])
 
 AS_VAR_IF([enable_examples], [no],
   [AC_SUBST([EXAMPLES_ENABLED], ['#'])
@@ -371,7 +371,8 @@ AC_PROG_INSTALL
 AC_CONFIG_FILES([
    examples/all-sky/all-sky.test
    examples/rfmip-clear-sky/rfmip-clear-sky.test
-   tests/clear_sky_regression.test
+   tests/check_equivalence.test
+   tests/check_variants.test
    tests/test_zenith_angle_spherical_correction.test
 ], [chmod a+x "$ac_file"])
 

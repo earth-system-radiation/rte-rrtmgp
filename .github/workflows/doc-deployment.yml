@@ -12,7 +12,7 @@ jobs:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     #
     # Synchronize the package index
     #
@@ -70,7 +70,7 @@ jobs:
     # Deploy documentation
     #
     - name: Deploy API Documentation
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+      uses: JamesIves/github-pages-deploy-action@v4.4.3
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages

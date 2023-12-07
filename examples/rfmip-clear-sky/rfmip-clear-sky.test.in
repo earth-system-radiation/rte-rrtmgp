@@ -1,13 +1,31 @@
 #!@SHELL@
+
+set -e
+
 @TESTS_DISABLED@exit 77
 
-# The tests write to the input files, therefore we copy them instead of symlinking:
-for file in "@top_builddir@/@testcachedir@"/*; do
-  # Skip directories explicitly to avoid warnings:
-  test -d "${file}" || cp "${file}" ./
+RRTMGP_DATA=${RRTMGP_DATA-'@top_builddir@/@testcachedir@'}
+
+inoutputs='
+rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+'
+
+# The tests write to the input files, therefore we copy them instead of
+# symlinking:
+for inoutput in ${inoutputs}; do
+  cp "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/${inoutput}" "${inoutput}"
 done
 
-@LAUNCH_PREFIX@ ./rrtmgp_rfmip_lw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc @top_srcdir@/rrtmgp/data/rrtmgp-data-lw-g256-2018-12-04.nc || exit 1
-@LAUNCH_PREFIX@ ./rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc @top_srcdir@/rrtmgp/data/rrtmgp-data-sw-g224-2018-12-04.nc || exit 1
+@LAUNCH_PREFIX@ @SHELL@ - <<_EOF
+set -e
+./rrtmgp_rfmip_lw@EXEEXT@ 8 "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc" "${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc"
+./rrtmgp_rfmip_sw@EXEEXT@ 8 "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc" "${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc"
+_EOF
 
-@PYTHON@ @srcdir@/compare-to-reference.py --fail=7.e-4 --ref_dir="@top_builddir@/@testcachedir@/rfmip-clear-sky"
+FAILURE_THRESHOLD='7.e-4'
+@SP_ENABLED@FAILURE_THRESHOLD='3.5e-1'
+export FAILURE_THRESHOLD
+@PYTHON@ '@top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/rfmip-clear-sky/reference" --var rld rlu rsd rsu --file ${inoutputs}

@@ -1,3 +1,33 @@
+# Copyright (c) 2018-2024, MPI-M
+#
+# Author: Sergey Kosukhin <sergey.kosukhin@mpimet.mpg.de>
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
 # ASX_TR_ARG(EXPRESSION)
 # -----------------------------------------------------------------------------
 # Transforms EXPRESSION into shell code that generates a name for a command
@@ -74,3 +104,34 @@ AC_DEFUN([ASX_ESCAPE_SINGLE_QUOTE],
   [AS_CASE([AS_VAR_GET([$1])], [*\'*],
      [AS_VAR_SET([$1], [`AS_ECHO(["AS_VAR_GET([$1])"]) | dnl
 sed "s/'/'\\\\\\\\''/g"`])])])
+
+# ASX_SRCDIRS(BUILD-DIR-NAME)
+# -----------------------------------------------------------------------------
+# Receives a normalized (i.e. does not contain '/./', '..', etc.) path
+# BUILD-DIR-NAME to a directory relative to the top build directory and emits
+# shell code that sets the following variables:
+#     1) ac_builddir - path to BUILD-DIR-NAME relative to BUILD-DIR-NAME
+#                      (i.e. always equals to '.');
+#     2) ac_abs_builddir - absolute path to BUILD-DIR-NAME;
+#     3) ac_top_builddir_sub - path to the top build directory relative to
+#                              BUILD-DIR-NAME (i.e. equals to '.' if
+#                              BUILD-DIR-NAME is the top build directory);
+#     4) ac_top_build_prefix - empty if ac_top_builddir_sub equals to '.' and
+#                              path to the top build directory relative to
+#                              BUILD-DIR-NAME with a trailing slash, otherwise;
+#     5) ac_abs_top_builddir - absolute path to the top build directory;
+#     6) ac_srcdir - path to <top-srcdir>/BUILD-DIR-NAME relative to
+#                    BUILD-DIR-NAME where <top-srcdir> is the top source
+#                    directory (i.e. equals to the path from BUILD-DIR-NAME to
+#                    its respective source directory);
+#     7) ac_abs_srcdir - absolute path to <top-srcdir>/BUILD-DIR-NAME where
+#                        <top-srcdir> is the top source directory (i.e. equals
+#                        to the absolute path to the source directory that
+#                        corresponds to BUILD-DIR-NAME);
+#     8) ac_top_srcdir - path to the top source directory relative to
+#                        BUILD-DIR-NAME;
+#     9) ac_abs_top_srcdir - absolute path to the top source directory.
+#
+AC_DEFUN([ASX_SRCDIRS],
+  [AC_REQUIRE_SHELL_FN([acx_subdir_srcdirs_fn], [], [_AC_SRCDIRS(["$[]1"])])dnl
+   acx_subdir_srcdirs_fn $1])

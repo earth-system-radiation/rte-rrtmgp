@@ -2,7 +2,8 @@ import colorcet as cc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sb
+import urllib.request
+import warnings
 import xarray as xr
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -21,44 +22,71 @@ def rms(diff, col_dim):
     return np.sqrt(np.square(diff).mean(dim=col_dim))
 
 
-def make_comparison_plot(variants, labels, reference, vscale, col_dim="site",
-                         lay_dim="layer"):
+def make_comparison_plot(variants, labels, reference, vscale, colors,
+                         col_dim="site"):
     #
     # Make a plot comparing differences with respect to reference
     #
     if type(variants) is not list:
-        make_comparison_plot([variants], [labels], reference, vscale)
+        make_comparison_plot([variants], [labels], reference, vscale, colors,
+                             col_dim)
     else:
         for i in np.arange(0, len(variants)):
             delta = variants[i] - reference
             plt.plot(mae(delta, col_dim),
                      vscale, '-',
-                     color=cols[i], label=labels[i])
+                     color=colors[i], label=labels[i])
             plt.plot(rms(delta, col_dim),
                      vscale, '--',
-                     color=cols[i])
+                     color=colors[i])
         # Reverse vertical ordering
         plt.legend()
         # Reverse vertical ordering
         plt.ylim(vscale.max(), vscale.min())
 
 
-def construct_lbl_esgf_name(var, esgf_node="llnl"):
+def construct_lbl_esgf_root(var, esgf_node="llnl"):
     #
-    # For a given variable name, provide the OpenDAP URL for the LBLRM
+    # For a given variable name, provide the https URL for the LBLRM
     # line-by-line results
     #
-    prefix = ("http://esgf3.dkrz.de/thredds/dodsC/cmip6/RFMIP/AER/LBLRTM-12-8/"
-              "rad-irf/r1i1p1f1/Efx/")
+    model = "LBLRTM-12-8"
+    prefix = ("http://esgf3.dkrz.de/thredds/fileServer/cmip6/RFMIP/AER/" +
+              model + "/rad-irf/r1i1p1f1/Efx/")
     if esgf_node == "llnl":
-        prefix = ("http://esgf-data1.llnl.gov/thredds/dodsC/css03_data/"
-                  "CMIP6/RFMIP/AER/LBLRTM-12-8/rad-irf/r1i1p1f1/Efx/")
+        prefix = ("http://esgf-data1.llnl.gov/thredds/fileServer/css03_data/"
+                  "CMIP6/RFMIP/AER/" + model + "/rad-irf/r1i1p1f1/Efx/")
     return (prefix + var + "/gn/v20190514/" + var +
-            "_Efx_LBLRTM-12-8_rad-irf_r1i1p1f1_gn.nc")
+            "_Efx_" + model + "_rad-irf_r1i1p1f1_gn.nc")
 
 
 ########################################################################
-if __name__ == '__main__':
+def main():
+    warnings.simplefilter("ignore", xr.SerializationWarning)
+    #
+    # Reference values from LBLRTM - download locally, since OpenDAP access is
+    # so inconsistent
+    #
+    fluxes = ["rsd", "rsu", "rld", "rlu"]
+    lbl_suffix = "_Efx_LBLRTM-12-8_rad-irf_r1i1p1f1_gn.nc"
+    for v in fluxes:
+        try:
+            try:
+                urllib.request.urlretrieve(construct_lbl_esgf_root(v),
+                                           v + lbl_suffix)
+            except:
+                urllib.request.urlretrieve(
+                    construct_lbl_esgf_root(v, esgf_node="dkrz"),
+                    v + lbl_suffix)
+        except:
+            raise Exception("Failed to download {0}".format(v + lbl_suffix))
+
+    lbl = xr.open_mfdataset([v + lbl_suffix for v in fluxes],
+                            combine="by_coords").sel(expt=0)
+
+    #
+    # Open the test results
+    #
     gp = xr.open_dataset("test_atmospheres.nc")
     #
     # Does the flux plus the Jacobian equal a calculation with perturbed surface
@@ -67,14 +95,6 @@ if __name__ == '__main__':
     gp['lw_flux_up_from_deriv'] = gp.lw_flux_up + gp.lw_jaco_up
     gp.lw_flux_up_from_deriv.attrs = {
         "description": "LW flux up, surface T+1K, computed from Jacobian"}
-    try:
-        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, esgf_node="dkrz")
-                                 for v in ["rsd", "rsu", "rld", "rlu"]],
-                                combine="by_coords").sel(expt=0)
-    except:
-        lbl = xr.open_mfdataset([construct_lbl_esgf_name(v, esgf_node="llnl")
-                                 for v in ["rsd", "rsu", "rld", "rlu"]],
-                                combine="by_coords").sel(expt=0)
     ########################################################################
     #
     # The RFMIP cases are on an irregular pressure grid so we can't compute
@@ -130,7 +150,8 @@ if __name__ == '__main__':
                                          "fewer points + optimal-angle",
                                          "3-angle", "2-stream", "rescaled"],
                                  reference=r,
-                                 vscale=plev / 100.)
+                                 vscale=plev / 100.,
+                                 colors=cols)
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Error (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
@@ -152,7 +173,8 @@ if __name__ == '__main__':
             make_comparison_plot(v,
                                  labels=["no-tlev", "2str"],
                                  reference=r,
-                                 vscale=plev / 100.)
+                                 vscale=plev / 100.,
+                                 colors=cols)
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Difference (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
@@ -174,9 +196,14 @@ if __name__ == '__main__':
             make_comparison_plot(v,
                                  labels=["default", "fewer-g-points"],
                                  reference=r,
-                                 vscale=plev / 100.)
+                                 vscale=plev / 100.,
+                                 colors=cols)
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Error (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
             pdf.savefig()
             plt.close()
+
+
+if __name__ == '__main__':
+    main()

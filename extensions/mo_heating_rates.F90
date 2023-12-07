@@ -16,8 +16,10 @@
 module mo_heating_rates
   use mo_rte_kind,         only: wp, wl
   use mo_rte_config,       only: check_extents
-  use mo_rte_util_array,   only: extents_are, any_vals_less_than
-  use mo_rrtmgp_constants, only: cp_dry, grav ! Only needed for heating rate calculation
+  use mo_rte_util_array_validation, & 
+                           only: extents_are, any_vals_less_than
+  use mo_gas_optics_constants, & 
+                           only: cp_dry, grav ! Only needed for heating rate calculation
   implicit none
   private
   interface compute_heating_rate

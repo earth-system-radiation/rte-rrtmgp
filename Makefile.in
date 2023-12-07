@@ -18,6 +18,7 @@ PACKAGE_TARNAME= @PACKAGE_NAME@-@PACKAGE_VERSION@
 AR= @AR@
 DEPGEN= ${PYTHON} $(srcdir)/mkhelper/depgen.py
 DEPLIST= ${PYTHON} $(srcdir)/mkhelper/deplist.py
+DL_CMD= @DL_CMD@
 FC= @FC@
 GIT= git
 INSTALL= @INSTALL@
@@ -29,7 +30,7 @@ TAR= tar
 
 # Fortran compiler flags:
 FCFLAGS= @FCFLAGS@
-makefile_FCFLAGS= @FCMODINC@$(moddir) @FCMODOUT@$(moddir) @NETCDF_FCFLAGS@ @GPTL_FCFLAGS@
+makefile_FCFLAGS= @FCMODINC@$(moddir) @FCMODOUT@$(moddir) @NETCDF_FCFLAGS@
 
 # Archiver flags:
 ARFLAGS= @ARFLAGS@
@@ -37,13 +38,13 @@ ARFLAGS= @ARFLAGS@
 # Linker flags and libraries:
 LDFLAGS= @LDFLAGS@
 LIBS= @LIBS@
-makefile_LIBS= @NETCDF_FCLIBS@ @GPTL_FCLIBS@
+makefile_LIBS= @NETCDF_FCLIBS@
 
 # Dependency generator flags:
 DEPGEN_F90=  --src-root='@srcdir@' --pp-enable --pp-eval-expr --fc-enable \
              --pp-inc-flag='@FCINCFLAG_PP@' --pp-inc-order='@FCINCORDER_PP@' --pp-macro-flag='@FCDEF_PP@' \
              --fc-mod-ext='@FCMODEXT@.proxy' --fc-mod-upper='@FCMODUC@' --fc-inc-flag='@FCINCFLAG@' \
-             --fc-inc-order='@FCINCORDER@' --fc-mod-dir-flag='@FCMODOUT@' --fc-external-mods='netcdf,gptl'
+             --fc-inc-order='@FCINCORDER@' --fc-mod-dir-flag='@FCMODOUT@' --fc-external-mods='netcdf'
 DEPGEN_FCFLAGS= @DEPGEN_FCFLAGS@
 
 # Silent rule prefixes:
@@ -58,17 +59,22 @@ endif
 
 lib_LIBRARIES= librrtmgp.a librte.a
 
-librte_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rte -name '*.F90'))
+librte_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rte-frontend $(srcdir)/rte-kernels -name '*.F90'))
 # If GPU kernels are disabled, simply filter-out the respective source files:
-@GPU_DISABLED@librte_a_SOURCES:= $(filter-out rte/kernels-openacc/%,$(librte_a_SOURCES))
+@GPU_DISABLED@librte_a_SOURCES:= $(filter-out rte-kernels/accel/%,$(librte_a_SOURCES))
 # Otherwise, filter-out non-GPU files that have GPU versions and keep the rest:
-@GPU_ENABLED@librte_a_SOURCES:= $(filter-out $(patsubst rte/kernels-openacc/%,rte/kernels/%,$(filter rte/kernels-openacc/%,$(librte_a_SOURCES))),$(librte_a_SOURCES))
+@GPU_ENABLED@librte_a_SOURCES:= $(filter-out $(patsubst rte-kernels/accel/%,rte-kernels/%,$(filter rte-kernels/accel/%,$(librte_a_SOURCES))),$(librte_a_SOURCES))
 
-librrtmgp_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rrtmgp -name '*.F90'))
+librrtmgp_a_SOURCES= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/rrtmgp-frontend $(srcdir)/rrtmgp-kernels $(srcdir)/gas-optics -name '*.F90'))
+# Filter-out files that are not supposed to be part of the library:
+librrtmgp_a_ignored_SOURCES= \
+  rrtmgp-frontend/mo_aerosol_optics_rrtmgp_merra.F90 \
+  rrtmgp-frontend/mo_cloud_optics_rrtmgp.F90
+librrtmgp_a_SOURCES:= $(filter-out $(librrtmgp_a_ignored_SOURCES),$(librrtmgp_a_SOURCES))
 # If GPU kernels are disabled, simply filter-out the respective source files:
-@GPU_DISABLED@librrtmgp_a_SOURCES:= $(filter-out rrtmgp/kernels-openacc/%,$(librrtmgp_a_SOURCES))
+@GPU_DISABLED@librrtmgp_a_SOURCES:= $(filter-out rrtmgp-kernels/accel/%,$(librrtmgp_a_SOURCES))
 # Otherwise, filter-out non-GPU files that have GPU versions and keep the rest:
-@GPU_ENABLED@librrtmgp_a_SOURCES:= $(filter-out $(patsubst rrtmgp/kernels-openacc/%,rrtmgp/kernels/%,$(filter rrtmgp/kernels-openacc/%,$(librrtmgp_a_SOURCES))),$(librrtmgp_a_SOURCES))
+@GPU_ENABLED@librrtmgp_a_SOURCES:= $(filter-out $(patsubst rrtmgp-kernels/accel/%,rrtmgp-kernels/%,$(filter rrtmgp-kernels/accel/%,$(librrtmgp_a_SOURCES))),$(librrtmgp_a_SOURCES))
 
 # Dependency files of the libraries:
 lib_dep_files= $(addsuffix .d,$(librte_a_SOURCES) $(librrtmgp_a_SOURCES))
@@ -79,28 +85,33 @@ noinst_PROGRAMS=
 check_PROGRAMS=
 # Common list of source files of all programs:
 prog_SOURCES=
-@EXAMPLES_ENABLED@noinst_PROGRAMS+=                                    \
-@EXAMPLES_ENABLED@    examples/all-sky/rrtmgp_allsky@EXEEXT@           \
+@EXAMPLES_ENABLED@noinst_PROGRAMS+= \
+@EXAMPLES_ENABLED@    examples/all-sky/rrtmgp_allsky@EXEEXT@ \
 @EXAMPLES_ENABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@ \
 @EXAMPLES_ENABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@
 @EXAMPLES_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions -name '*.F90'))
+# The ignored files actually belong to examples/all-sky/rrtmgp_allsky@EXEEXT@:
+@EXAMPLES_ENABLED@prog_SOURCES+= $(librrtmgp_a_ignored_SOURCES)
 
 @TESTS_ENABLED@check_PROGRAMS+= \
-@TESTS_ENABLED@    tests/clear_sky_regression@EXEEXT@ \
+@TESTS_ENABLED@    tests/check_equivalence@EXEEXT@ \
+@TESTS_ENABLED@    tests/check_variants@EXEEXT@ \
 @TESTS_ENABLED@    tests/test_zenith_angle_spherical_correction@EXEEXT@
 @TESTS_ENABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/tests -name '*.F90'))
 
 @TESTS_ENABLED@@EXAMPLES_DISABLED@check_PROGRAMS+= \
-@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/all-sky/rrtmgp_allsky@EXEEXT@           \
+@TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/all-sky/rrtmgp_allsky@EXEEXT@ \
 @TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@ \
 @TESTS_ENABLED@@EXAMPLES_DISABLED@    examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@
 @TESTS_ENABLED@@EXAMPLES_DISABLED@prog_SOURCES+= $(patsubst $(srcdir)/%,%,$(shell find $(srcdir)/examples $(srcdir)/extensions -name '*.F90'))
+# The ignored files actually belong to examples/all-sky/rrtmgp_allsky@EXEEXT@:
+@TESTS_ENABLED@@EXAMPLES_DISABLED@prog_SOURCES+= $(librrtmgp_a_ignored_SOURCES)
 
 # Dependency files of the programs:
 prog_dep_files= $(addsuffix .d,$(prog_SOURCES))
 
 # List of directories that need to be created:
-dir_files= $(addsuffix .dirstamp,$(sort $(dir $(lib_dep_files) $(prog_dep_files))) $(moddir)/) 
+dir_files= $(addsuffix .dirstamp,$(sort $(dir $(lib_dep_files) $(prog_dep_files))) $(moddir)/)
 
 # Selective search path:
 vpath %.F90 $(srcdir)
@@ -131,14 +142,12 @@ mostlyclean:
 
 # Delete files generated at the building stage:
 clean: mostlyclean
-	rm -rf examples/all-sky/all-sky.test.log \
-	       examples/all-sky/rrtmgp-allsky.nc \
+	rm -rf examples/all-sky/*.nc \
+	       examples/all-sky/*.test.log \
 	       examples/rfmip-clear-sky/*.nc \
-	       examples/rfmip-clear-sky/rfmip-clear-sky.test.log \
-	       examples/rfmip-clear-sky/timing.* \
-	       tests/clear_sky_regression.test.log \
-	       tests/test_atmospheres.nc \
-	       tests/test_zenith_angle_spherical_correction.test.log \
+	       examples/rfmip-clear-sky/*.test.log \
+	       tests/*.nc \
+	       tests/*.test.log \
 	       $(testcachedir)
 	find . -name '*.pyc' -delete -o -name '*.pyo' -delete -o -name '__pycache__' -delete
 
@@ -147,10 +156,9 @@ clean: mostlyclean
 distclean: clean
 	rm -f $(lib_dep_files) $(prog_dep_files)
 	rm -f $(dir_files)
-	rm -rf examples/all-sky/all-sky.test \
-	       examples/rfmip-clear-sky/rfmip-clear-sky.test \
-	       tests/clear_sky_regression.test \
-	       tests/test_zenith_angle_spherical_correction.test
+	rm -rf examples/all-sky/*.test \
+	       examples/rfmip-clear-sky/*.test \
+	       tests/*.test
 	@for dir in $(moddir); do \
           if test -d "$$dir"; then \
             echo "find '$$dir' -type d -empty -delete"; \
@@ -158,7 +166,7 @@ distclean: clean
           fi; \
         done
 	@test '.' = '$(srcdir)' || \
-	  for dir in rte rrtmgp examples extensions tests; do \
+	  for dir in rte-frontend rte-kernels rrtmgp-frontend rrtmgp-kernels gas-optics examples extensions tests; do \
 	    if test -d "$$dir"; then \
 	      echo "find '$$dir' -type d -empty -delete"; \
 	      find "$$dir" -type d -empty -delete; \
@@ -205,7 +213,8 @@ $(lib_LIBRARIES): | $(dir_files)
 examples/all-sky/rrtmgp_allsky@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/all-sky/rrtmgp_allsky.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 examples/rfmip-clear-sky/rrtmgp_rfmip_lw@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/rfmip-clear-sky/rrtmgp_rfmip_lw.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 examples/rfmip-clear-sky/rrtmgp_rfmip_sw@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t examples/rfmip-clear-sky/rrtmgp_rfmip_sw.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
-tests/clear_sky_regression@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t tests/clear_sky_regression.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
+tests/check_equivalence@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t tests/check_equivalence.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
+tests/check_variants@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t tests/check_variants.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 tests/test_zenith_angle_spherical_correction@EXEEXT@: $(filter %.@OBJEXT@,$(shell $(DEPLIST) -t tests/test_zenith_angle_spherical_correction.@OBJEXT@ -f $(prog_dep_files))) $(lib_LIBRARIES)
 
 $(noinst_PROGRAMS) $(check_PROGRAMS): | $(dir_files)
@@ -231,20 +240,18 @@ sanitize-mod-proxies:
 %/.dirstamp:
 	$(silent_MKDIR)@MKDIR_P@ $(@D) && touch $@
 
-# We try not to depend on the contents of 'stage_files.py'. Therefore, we
-# introduce the following sentinel file, which gets created once the script is
-# run successfully inside the test cache directory. The drawback is that we
-# cannot recover in case one of the downloaded files is accidentally deleted:
+TEST_DATA_TAG= df02975ab93165b34a59f0d04b4ae6148fe5127c
 $(testcachedir)/.cache:| $(testcachedir)/.dirstamp
 	@cd $(@D) && \
-	${PYTHON} @abs_top_srcdir@/examples/rfmip-clear-sky/stage_files.py && \
+	echo "Fetching test input data..." && \
+	{ { { { $(DL_CMD) https://github.com/earth-system-radiation/rrtmgp-data/archive/$(TEST_DATA_TAG).tar.gz || echo $$? >&3; } | $(TAR) xz --strip-components=1 >&4; echo $$? >&3; } 3>&1; } | { read xs; exit $$xs; } } 4>&1 && \
 	touch $(@F)
 
 # Fortran dependency generation rule:
 %.F90.d: %.F90 Makefile | $(dir_files)
 	$(silent_DEPGEN)$(DEPGEN) $(DEPGEN_F90) -o $@ --obj-name $(@:.F90.d=.@OBJEXT@) -i $< -- $(DEPGEN_FCFLAGS) $(makefile_FCFLAGS) $(FCFLAGS)
 
-# Dummy dependency file generation rule (called by config.status): 
+# Dummy dependency file generation rule (called by config.status):
 dummy-depend: | $(dir_files)
 	@for file in $(lib_dep_files) $(prog_dep_files); do \
 	  test -e "$$file" || touch "$$file"; \

@@ -115,6 +115,7 @@ contains
     real(wp)                         :: ssal, wb, scaleTau
     real(wp), dimension(ncol,nlay  ) :: An, Cn
     real(wp), dimension(ncol,nlay+1) :: gpt_flux_Jac
+    real(wp), dimension(ncol,nlay+1) :: lev_source
     ! ------------------------------------
     ! Which way is up?
     ! Level Planck sources for upward and downward radiation
@@ -198,8 +199,14 @@ contains
       !
       ! Source function for diffuse radiation
       !
-      call lw_source_noscat(ncol, nlay, &
-                            lay_source(:,:,igpt), lev_source_up(:,:,igpt), lev_source_dn(:,:,igpt), &
+      !
+      ! If we combine sources here we don't need the pointers or assignments above 
+      !
+      call lw_combine_sources(ncol, nlay, top_at_1, &
+                              lev_source_inc(:,:,igpt), lev_source_dec(:,:,igpt), &
+                              lev_source)
+      call lw_source_noscat(ncol, nlay, top_at_1, &
+                            lay_source(:,:,igpt), lev_source, &
                             tau_loc, trans, source_dn, source_up)
       !
       ! Transport down
@@ -642,29 +649,37 @@ contains
   ! See Clough et al., 1992, doi: 10.1029/92JD01419, Eq 13
   !
   ! ---------------------------------------------------------------
-  subroutine lw_source_noscat(ncol, nlay, lay_source, lev_source_up, lev_source_dn, tau, trans, &
+  subroutine lw_source_noscat(ncol, nlay, top_at_1, lay_source, lev_source, tau, trans, &
                               source_dn, source_up)
-    integer,                         intent(in) :: ncol, nlay
-    real(wp), dimension(ncol, nlay), intent(in) :: lay_source, & ! Planck source at layer center
-                                                   lev_source_up, & ! Planck source at levels (layer edges),
-                                                   lev_source_dn, & !   increasing/decreasing layer index
-                                                   tau,        & ! Optical path (tau/mu)
-                                                   trans         ! Transmissivity (exp(-tau))
-    real(wp), dimension(ncol, nlay), intent(out):: source_dn, source_up
+    integer,                           intent(in) :: ncol, nlay
+    logical(wl),                       intent(in) :: top_at_1
+    real(wp), dimension(ncol, nlay  ), intent(in) :: lay_source, & ! Planck source at layer center
+                                                     tau,        & ! Optical path (tau/mu)
+                                                     trans         ! Transmissivity (exp(-tau))
+    real(wp), dimension(ncol, nlay+1), intent(in) :: lev_source    ! Planck source at levels (layer edges)
+    real(wp), dimension(ncol, nlay  ), target, & 
+                                       intent(out):: source_dn, source_up
                                                                    ! Source function at layer edges
                                                                    ! Down at the bottom of the layer, up at the top
     ! --------------------------------
+    real(wp), dimension(:,:), pointer :: source_inc, source_dec 
     integer             :: icol, ilay
     real(wp)            :: fact
     real(wp), parameter :: tau_thresh = sqrt(sqrt(epsilon(tau)))
     ! ---------------------------------------------------------------
+    if (top_at_1) then 
+      source_inc => source_dn 
+      source_dec => source_up
+    else
+      source_inc => source_up
+      source_dec => source_dn
+    end if 
     do ilay = 1, nlay
       do icol = 1, ncol
       !
-      ! Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
+      ! Weighting factor. Use 3rd order series expansion when rounding error (~tau^2)
       !   is of order epsilon (smallest difference from 1. in working precision)
-      !   Thanks to Peter Blossey
-      !   Updated to 3rd order series and lower threshold based on suggestion from Dmitry Alexeev (Nvidia)
+      !   Thanks to Peter Blossey (UW) for the idea and Dmitry Alexeev (Nvidia) for suggesting 3rd order
       !
       if(tau(icol, ilay) > tau_thresh) then
         fact = (1._wp - trans(icol,ilay))/tau(icol,ilay) - trans(icol,ilay)
@@ -674,11 +689,20 @@ contains
       !
       ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
       !
-      source_dn(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source_dn(icol,ilay) + &
-                              2._wp * fact * (lay_source(icol,ilay) - lev_source_dn(icol,ilay))
-      source_up(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source_up(icol,ilay  ) + &
-                              2._wp * fact * (lay_source(icol,ilay) - lev_source_up(icol,ilay))
-      end do
+      source_inc(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay+1) + &
+                              2._wp * fact * (lay_source(icol,ilay) - lev_source(icol,ilay+1))
+      source_dec(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay ) + &
+                              2._wp * fact * (lay_source(icol,ilay) - lev_source(icol,ilay  ))
+      !
+      ! Even better - omit the layer Planck source (not working so well)
+      !
+      if(.false.) then 
+        source_inc(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay+1) + &
+                                fact * (lev_source(icol,ilay  ) - lev_source(icol,ilay+1))
+        source_dec(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay ) + &
+                                fact * (lev_source(icol,ilay+1) - lev_source(icol,ilay  ))
+      end if 
+      end do 
     end do
   end subroutine lw_source_noscat
   ! -------------------------------------------------------------------------------------------------

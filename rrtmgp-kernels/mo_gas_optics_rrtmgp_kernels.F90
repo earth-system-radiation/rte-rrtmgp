@@ -676,7 +676,7 @@ contains
 
     ! compute level source irradiances for each g-point
     do icol = 1, ncol
-      planck_function(icol,       1,1:nbnd) = interpolate1D(tlev(icol,     1),temp_ref_min, totplnk_delta, totplnk)
+      planck_function  (icol,     1,1:nbnd) = interpolate1D(tlev(icol,     1),temp_ref_min, totplnk_delta, totplnk)
     end do
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -692,13 +692,13 @@ contains
       gptE = band_lims_gpt(2, ibnd)
       do igpt = gptS, gptE
         do icol = 1, ncol
-          lev_src(icol,     1,igpt) = pfrac(icol,   1,igpt) * planck_function(icol,1,ibnd)
+          lev_src(icol,     1,igpt) = pfrac(icol,   1,igpt) * planck_function(icol,     1,ibnd)
         end do
         do ilay = 2, nlay
           do icol = 1, ncol
             lev_src(icol,ilay,igpt) = sqrt(pfrac(icol,ilay-1, igpt) *  & 
                                            pfrac(icol,ilay,   igpt)) & 
-                                                            * planck_function(icol,ilay+1,ibnd)
+                                                            * planck_function(icol,ilay,  ibnd)
           end do
         end do
         do icol = 1, ncol

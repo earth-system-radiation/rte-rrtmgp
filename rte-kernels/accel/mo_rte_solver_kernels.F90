@@ -914,50 +914,6 @@ contains
     !$acc exit data copyout(gamma1, gamma2, Rdif, Tdif)
     !$omp target exit data map(from:gamma1, gamma2, Rdif, Tdif)
   end subroutine lw_two_stream
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! Source function combination
-  ! RRTMGP provides two source functions at each level
-  !   using the spectral mapping from each of the adjascent layers.
-  !   Need to combine these for use in two-stream calculation.
-  !
-  ! -------------------------------------------------------------------------------------------------
-  subroutine lw_combine_sources(ncol, nlay, ngpt, top_at_1, &
-                                lev_src_inc, lev_src_dec, lev_source)
-    integer,                                 intent(in ) :: ncol, nlay, ngpt
-    logical(wl),                             intent(in ) :: top_at_1
-    real(wp), dimension(ncol, nlay  , ngpt), intent(in ) :: lev_src_inc, lev_src_dec
-    real(wp), dimension(ncol, nlay+1, ngpt), intent(out) :: lev_source
-
-    integer :: icol, ilay, igpt
-    ! ---------------------------------------------------------------
-    ! ---------------------------------
-    !$acc enter data copyin(lev_src_inc, lev_src_dec)
-    !$omp target enter data map(to:lev_src_inc, lev_src_dec)
-    !$acc enter data create(lev_source)
-    !$omp target enter data map(alloc:lev_source)
-
-    !$acc  parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay+1
-        do icol = 1,ncol
-          if(ilay == 1) then
-            lev_source(icol, ilay, igpt) =      lev_src_dec(icol, ilay,   igpt)
-          else if (ilay == nlay+1) then
-            lev_source(icol, ilay, igpt) =      lev_src_inc(icol, ilay-1, igpt)
-          else
-            lev_source(icol, ilay, igpt) = sqrt(lev_src_dec(icol, ilay, igpt) * &
-                                                lev_src_inc(icol, ilay-1, igpt))
-          end if
-        end do
-      end do
-    end do
-    !$acc exit data delete (lev_src_inc, lev_src_dec)
-    !$omp target exit data map(release:lev_src_inc, lev_src_dec)
-    !$acc exit data copyout(lev_source)
-    !$omp target exit data map(from:lev_source)
-  end subroutine lw_combine_sources
   ! ---------------------------------------------------------------
   !
   ! Compute LW source function for upward and downward emission at levels using linear-in-tau assumption

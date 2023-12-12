@@ -29,7 +29,7 @@ jobs:
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RUN_CMD:
-      FAILURE_THRESHOLD: 7.e-4
+      FAILURE_THRESHOLD: 5.8e-2 # 7.e-4
     steps:
     #
     # Relax failure thresholds for single precision

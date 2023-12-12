@@ -571,7 +571,7 @@ contains
                     fmajor, jeta, tropo, jtemp, jpress,    &
                     gpoint_bands, band_lims_gpt,           &
                     pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, &
-                    sfc_src, lay_src, lev_src_inc, lev_src_dec, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
+                    sfc_src, lay_src, lev_src, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
     integer,                                    intent(in) :: ncol, nlay, nbnd, ngpt
       !! input dimensions 
     integer,                                    intent(in) :: nflav, neta, npres, ntemp, nPlanckTemp
@@ -597,11 +597,10 @@ contains
     real(wp), dimension(nPlanckTemp,nbnd),        intent(in) :: totplnk       !! Total Planck function by band at each temperature 
     integer,  dimension(2,ngpt),                  intent(in) :: gpoint_flavor !! major gas flavor (pair) by upper/lower, g-point
 
-    real(wp), dimension(ncol,     ngpt), intent(out) :: sfc_src  !! Planck emssion from the surface 
-    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lay_src  !! Planck emssion from layer centers
-    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lev_src_inc, lev_src_dec
-      !! Planck emission at layer boundaries, using spectral mapping in the direction of propagation 
-    real(wp), dimension(ncol,     ngpt), intent(out) :: sfc_source_Jac 
+    real(wp), dimension(ncol,       ngpt), intent(out) :: sfc_src  !! Planck emission from the surface 
+    real(wp), dimension(ncol,nlay,  ngpt), intent(out) :: lay_src  !! Planck emission from layer centers
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: lev_src  !! Planck emission from layer boundaries
+    real(wp), dimension(ncol,       ngpt), intent(out) :: sfc_source_Jac 
       !! Jacobian (derivative) of the surface Planck source with respect to surface temperature 
     ! -----------------
     ! local
@@ -675,11 +674,13 @@ contains
       end do
     end do
 
-    ! compute level source irradiances for each g-point, one each for upward and downward paths
+    ! compute level source irradiances for each g-point
+    do icol = 1, ncol
+      planck_function(icol,       1,1:nbnd) = interpolate1D(tlev(icol,     1),temp_ref_min, totplnk_delta, totplnk)
+    end do
     do ilay = 1, nlay
       do icol = 1, ncol
-      planck_function(icol,     1,1:nbnd) = interpolate1D(tlev(icol,     1),temp_ref_min, totplnk_delta, totplnk)
-      planck_function(icol,ilay+1,1:nbnd) = interpolate1D(tlev(icol,ilay+1),temp_ref_min, totplnk_delta, totplnk)
+        planck_function(icol,ilay+1,1:nbnd) = interpolate1D(tlev(icol,ilay+1),temp_ref_min, totplnk_delta, totplnk)
       end do
     end do
 
@@ -690,11 +691,18 @@ contains
       gptS = band_lims_gpt(1, ibnd)
       gptE = band_lims_gpt(2, ibnd)
       do igpt = gptS, gptE
-        do ilay = 1, nlay
+        do icol = 1, ncol
+          lev_src(icol,     1,igpt) = pfrac(icol,   1,igpt) * planck_function(icol,1,ibnd)
+        end do
+        do ilay = 2, nlay
           do icol = 1, ncol
-            lev_src_inc(icol,ilay,igpt) = pfrac(icol,ilay,igpt) *planck_function(icol,ilay+1,ibnd)
-            lev_src_dec(icol,ilay,igpt) = pfrac(icol,ilay,igpt) *planck_function(icol,ilay  ,ibnd)
+            lev_src(icol,ilay,igpt) = sqrt(pfrac(icol,ilay-1, igpt) *  & 
+                                           pfrac(icol,ilay,   igpt)) & 
+                                                            * planck_function(icol,ilay+1,ibnd)
           end do
+        end do
+        do icol = 1, ncol
+          lev_src(icol,nlay+1,igpt) = pfrac(icol,nlay,igpt) * planck_function(icol,nlay+1,ibnd)
         end do
       end do
     end do

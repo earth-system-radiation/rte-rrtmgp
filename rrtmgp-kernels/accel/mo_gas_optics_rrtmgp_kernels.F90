@@ -639,8 +639,9 @@ contains
           if (ilay == 1) then 
             lev_src(icol,ilay,  igpt) = pfrac * planck_function_1
           else if (ilay == nlay) then 
-            planck_function_1 = interpolate1D(tlev(icol,nlay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
-            lev_src(icol,nlay+1,igpt) = pfrac * planck_function_1
+            lev_src(icol,ilay,  igpt) = pfrac * planck_function_1
+            planck_function_2 = interpolate1D(tlev(icol,nlay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+            lev_src(icol,nlay+1,igpt) = pfrac * planck_function_2
           else
             pfrac_m1 = &
               interpolate3D(one, fmajor(:,:,:,icol,ilay-1,iflav), pfracin, &

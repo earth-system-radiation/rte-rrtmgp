@@ -109,7 +109,5 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with: 
         gcov: true
-        gcov_include: |
-          tests/check_equivalence.F90
-          tests/check_variants.F90
-          examples/*/*.F90
+        gcov_include: examples/*/*.F90
+          

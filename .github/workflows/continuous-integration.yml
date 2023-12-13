@@ -103,7 +103,7 @@ jobs:
     # Code coverage
     #
     - name: Code coverage 
-      if: ${{ matrix.fortran-compiler }} == "gfortran-12" & ${{ matrix.fpmodel }} == "DP"
       uses: codecov/codecov-action@v3
+      if: ${{ matrix.fortran-compiler }} == "gfortran-12" & ${{ matrix.fpmodel }} == "DP"
       env:
-        CODECOV_TOKEN: $${{ secrets.CODECOV_TOKEN }}
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

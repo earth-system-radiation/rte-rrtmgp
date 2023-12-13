@@ -23,7 +23,7 @@ jobs:
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.fpmodel }}"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.fpmodel }} -fprofile-arcs -ftest-coverage"
       # Make variables:
       FCINCLUDE: -I/usr/include
       RRTMGP_ROOT: ${{ github.workspace }}
@@ -99,3 +99,11 @@ jobs:
     #
     - name: Compare the results
       run: make check
+    #
+    # Code coverage
+    #
+    - name: Code coverage 
+      if: ${{ matrix.fortran-compiler }} == "gfortran-12" & ${{ matrix.fpmodel }} == "DP"
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: $${{ secrets.CODECOV_TOKEN }}

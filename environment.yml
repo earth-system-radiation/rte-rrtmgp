@@ -2,15 +2,17 @@
 # Python modules below are needed to run tests, check results and generate validation plots
 #
 name: rte_rrtmgp_test
-
+channels:
+  - conda-forge
+  - nodefaults
 dependencies:
-  - conda-forge::python=3.9
-  - conda-forge::urllib3
-  - conda-forge::netcdf4
-  - conda-forge::xarray
-  - conda-forge::dask
-  - conda-forge::numpy
-  - conda-forge::scipy
-  - conda-forge::matplotlib
-  - conda-forge::seaborn
-  - conda-forge::colorcet
+  - python=3.11
+  - urllib3
+  - netcdf4
+  - xarray
+  - dask
+  - numpy
+  - scipy
+  - matplotlib
+  - seaborn
+  - colorcet

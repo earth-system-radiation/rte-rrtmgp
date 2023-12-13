@@ -3,19 +3,22 @@
 #    Also include gfortran and netCDF for development
 #
 name: rte_rrtmgp_dev
+channels:
+  - conda-forge
+  - nodefaults
 dependencies:
-  - conda-forge::python=3.9
-  - conda-forge::urllib3
-  - conda-forge::netcdf4
-  - conda-forge::xarray
-  - conda-forge::dask
-  - conda-forge::numpy
-  - conda-forge::scipy
-  - conda-forge::matplotlib
-  - conda-forge::seaborn
-  - conda-forge::colorcet
-  - conda-forge::gfortran
-  - conda-forge::netcdf-fortran
+  - python=3.11
+  - urllib3
+  - netcdf4
+  - xarray
+  - dask
+  - numpy
+  - scipy
+  - matplotlib
+  - seaborn
+  - colorcet
+  - gfortran
+  - netcdf-fortran
 variables:
   FC: gfortran
   # Debugging flags below

@@ -573,7 +573,7 @@ contains
                     fmajor, jeta, tropo, jtemp, jpress,    &
                     gpoint_bands, band_lims_gpt,           &
                     pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, &
-                    sfc_src, lay_src, lev_src_inc, lev_src_dec, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
+                    sfc_src, lay_src, lev_src, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
     integer,                                    intent(in) :: ncol, nlay, nbnd, ngpt
     integer,                                    intent(in) :: nflav, neta, npres, ntemp, nPlanckTemp
     real(wp),    dimension(ncol,nlay  ),        intent(in) :: tlay
@@ -593,10 +593,10 @@ contains
     real(wp), dimension(nPlanckTemp,nbnd),        intent(in) :: totplnk
     integer,  dimension(2,ngpt),                  intent(in) :: gpoint_flavor
 
-    real(wp), dimension(ncol,     ngpt), intent(out) :: sfc_src
-    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lay_src
-    real(wp), dimension(ncol,nlay,ngpt), intent(out) :: lev_src_inc, lev_src_dec
-    real(wp), dimension(ncol,     ngpt), intent(out) :: sfc_source_Jac
+    real(wp), dimension(ncol,       ngpt), intent(out) :: sfc_src
+    real(wp), dimension(ncol,nlay,  ngpt), intent(out) :: lay_src
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: lev_src
+    real(wp), dimension(ncol,       ngpt), intent(out) :: sfc_source_Jac
     ! -----------------
     ! local
     real(wp), parameter                             :: delta_Tsurf = 1.0_wp
@@ -604,14 +604,14 @@ contains
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
     integer  :: gptS, gptE
     real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
-    real(wp) :: pfrac
+    real(wp) :: pfrac, pfrac_m1 ! Planck fraction in this layer and the one below 
     real(wp) :: planck_function_1, planck_function_2
     ! -----------------
 
     !$acc        data copyin(   tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor) &
-    !$acc             copyout(  sfc_src,lay_src,lev_src_inc,lev_src_dec,sfc_source_Jac)
+    !$acc             copyout(  sfc_src,lay_src,lev_src,sfc_source_Jac)
     !$omp target data map(   to:tlay,tlev,tsfc,fmajor,jeta,tropo,jtemp,jpress,gpoint_bands,pfracin,totplnk,gpoint_flavor) &
-    !$omp             map(from: sfc_src,lay_src,lev_src_inc,lev_src_dec,sfc_source_Jac)
+    !$omp             map(from: sfc_src,lay_src,lev_src,sfc_source_Jac)
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
     !$acc parallel loop tile(128,2)
@@ -625,19 +625,29 @@ contains
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           itropo = merge(1,2,tropo(icol,ilay))  !WS moved itropo inside loop for GPU
           iflav = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
+          ! interpolation in temperature, pressure, and eta
           pfrac = &
-            ! interpolation in temperature, pressure, and eta
             interpolate3D(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           igpt, jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
+
           ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
           planck_function_1 = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
-          lay_src(icol,ilay,igpt) = pfrac * planck_function_1
-          ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
-          planck_function_1 = interpolate1D(tlev(icol,ilay),   temp_ref_min, totplnk_delta, totplnk(:,ibnd))
-          planck_function_2 = interpolate1D(tlev(icol,ilay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
-          lev_src_dec(icol,ilay,igpt) = pfrac * planck_function_1
-          lev_src_inc(icol,ilay,igpt) = pfrac * planck_function_2
+          lay_src  (icol,ilay,igpt) = pfrac * planck_function_1
 
+          ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
+          planck_function_1 = interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+          if (ilay == 1) then 
+            lev_src(icol,ilay,  igpt) = pfrac * planck_function_1
+          else if (ilay == nlay) then 
+            lev_src(icol,ilay,  igpt) = pfrac * planck_function_1
+            planck_function_2 = interpolate1D(tlev(icol,nlay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+            lev_src(icol,nlay+1,igpt) = pfrac * planck_function_2
+          else
+            pfrac_m1 = &
+              interpolate3D(one, fmajor(:,:,:,icol,ilay-1,iflav), pfracin, &
+                            igpt, jeta(:,icol,ilay-1,iflav), jtemp(icol,ilay-1),jpress(icol,ilay-1)+itropo)
+            lev_src(icol,ilay,  igpt) = sqrt(pfrac * pfrac_m1) * planck_function_1
+          end if 
           if (ilay == sfc_lay) then
             planck_function_1 = interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk(:,ibnd))
             planck_function_2 = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk(:,ibnd))
@@ -645,10 +655,8 @@ contains
             sfc_source_Jac(icol,igpt) = pfrac * (planck_function_2 - planck_function_1)
           end if
         end do ! igpt
-
       end do ! icol
     end do ! ilay
-
     !$acc end        data
     !$omp end target data
   end subroutine compute_Planck_source

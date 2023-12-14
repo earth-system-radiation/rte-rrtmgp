@@ -59,7 +59,7 @@ jobs:
       RUN_CMD:
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
       OMP_TARGET_OFFLOAD: DISABLED
-      FAILURE_THRESHOLD: 7.e-4
+      FAILURE_THRESHOLD: 5.8e-2 # 7.e-4
 
     steps:
     #

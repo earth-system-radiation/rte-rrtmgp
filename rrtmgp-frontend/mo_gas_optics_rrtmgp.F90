@@ -890,9 +890,9 @@ contains
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
-    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source_inc, sources%lev_source_dec) &
+    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source) &
     !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac)
-    !$omp target data                 map(from:sources%lay_source, sources%lev_source_inc, sources%lev_source_dec) &
+    !$omp target data                 map(from:sources%lay_source, sources%lev_source) &
     !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac)
 
     !$acc kernels copyout(top_at_1)
@@ -907,7 +907,7 @@ contains
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sources%sfc_source, sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                sources%sfc_source, sources%lay_source, sources%lev_source, &
                 sources%sfc_source_Jac)
     !$acc end        data
     !$omp end target data

@@ -851,7 +851,7 @@ contains
     ! Source function needs temperature at interfaces/levels and at layer centers
     !   Allocate small local array for tlev unconditionally
     !
-    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source).    &
+    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source)     &
     !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac) & 
     !$acc              create(tlev_arr)
     !$omp target data                 map(from:sources%lay_source, sources%lev_source)     &

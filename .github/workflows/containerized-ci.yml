@@ -22,7 +22,7 @@ jobs:
         - experimental: false
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
-          fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
+          fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08 -prof-gen=srcpos
         # Set flags for Intel Fortran Compiler
         - fortran-compiler: ifx
           rte-kernels: default
@@ -98,6 +98,27 @@ jobs:
     #
     - name: Compare the results
       run: make check
+    #
+    # Code coverage XML
+    #
+    - name: Code coverage XML
+      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
+      working-directory: tests
+      run: |
+        profmerge
+        codecov -prj RTE+RRTMGP -spi $RRTMGP_ROOT/build/pgopti.spi -dpi pgopti.dpi -xmlfcvrg rrtmgp.xml
+    #
+    # Code coverage upload 
+    #
+    - name: Code coverage upload
+      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      with: 
+        directory: tests
+        files: rrtmgp.xml
+ 
     #
     # Generate validation plots
     #

@@ -116,7 +116,6 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with: 
-        directory: tests
         files: rrtmgp.xml
  
     #

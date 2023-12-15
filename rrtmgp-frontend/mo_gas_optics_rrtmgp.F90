@@ -304,30 +304,21 @@ contains
 
     !
     ! Interpolate source function
+    ! present status of optional argument is passed to source()
     !
-    if(present(tlev)) then
-      !
-      ! present status of optional argument should be passed to source()
-      !   but isn't with PGI 19.10
-      !
-      error_msg = source(this,                               &
-                         ncol, nlay, nband, ngpt,            &
-                         play, plev, tlay, tsfc,             &
-                         jtemp, jpress, jeta, tropo, fmajor, &
-                         sources,                            &
-                         tlev)
-      !$acc exit data delete(tlev)
+    error_msg = source(this,                               &
+                       ncol, nlay, nband, ngpt,            &
+                       play, plev, tlay, tsfc,             &
+                       jtemp, jpress, jeta, tropo, fmajor, &
+                       sources,                            &
+                       tlev)
+    if(present(tlev)) then   
+      !$acc        exit data      delete(tlev)
       !$omp target exit data map(release:tlev)
-    else
-      error_msg = source(this,                               &
-                         ncol, nlay, nband, ngpt,            &
-                         play, plev, tlay, tsfc,             &
-                         jtemp, jpress, jeta, tropo, fmajor, &
-                         sources)
-    end if
-    !$acc exit data delete(tsfc)
+    end if 
+    !$acc        exit data      delete(tsfc)
     !$omp target exit data map(release:tsfc)
-    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
+    !$acc        exit data      delete(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------

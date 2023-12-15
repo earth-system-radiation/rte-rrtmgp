@@ -102,7 +102,7 @@ program rte_clear_sky_regression
   !
   ! Inputs to RRTMGP
   !
-  logical :: top_at_1, is_sw, is_lw
+  logical :: is_sw, is_lw
 
   integer  :: ncol, nlay, nbnd, ngpt, nexp
   integer  :: icol, ilay, ibnd, iloop, igas
@@ -168,7 +168,6 @@ program rte_clear_sky_regression
   !
   nbnd = k_dist%get_nband()
   ngpt = k_dist%get_ngpt()
-  top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
   ! ----------------------------------------------------------------------------
   !
   !  Boundary conditions
@@ -260,9 +259,9 @@ contains
                                        atmos,        &
                                        lw_sources,   &
                                        tlev = t_lev))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      & 
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes))
     call write_broadband_field(input_file, flux_up,  "lw_flux_up",  "LW flux up")
     call write_broadband_field(input_file, flux_dn,  "lw_flux_dn",  "LW flux dn")
@@ -276,9 +275,9 @@ contains
     !
     nullify(fluxes%flux_up)
     nullify(fluxes%flux_dn)
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes))
     call write_broadband_field(input_file, flux_net, "lw_flux_net_2", "LW flux net, direct")
     fluxes%flux_up => flux_up
@@ -296,9 +295,9 @@ contains
                                        gas_concs,    &
                                        atmos,        &
                                        lw_sources))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes))
     call write_broadband_field(input_file, flux_up, "lw_flux_up_notlev", "LW flux up, no level temperatures")
     call write_broadband_field(input_file, flux_dn, "lw_flux_dn_notlev", "LW flux dn, no level temperatures")
@@ -314,9 +313,9 @@ contains
                                        atmos,        &
                                        lw_sources,   &
                                        tlev = t_lev))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,  &
                             fluxes, n_gauss_angles=3))
     call write_broadband_field(input_file, flux_up, "lw_flux_up_3ang", "LW flux up, three quadrature angles")
     call write_broadband_field(input_file, flux_dn, "lw_flux_dn_3ang", "LW flux dn, three quadrature angles")
@@ -334,9 +333,9 @@ contains
                                        lw_sources,   &
                                        tlev = t_lev))
     call stop_on_err(k_dist%compute_optimal_angles(atmos, lw_Ds))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes, lw_Ds=lw_Ds))
     call write_broadband_field(input_file, flux_up, "lw_flux_up_optang", "LW flux up, single optimal angles")
     call write_broadband_field(input_file, flux_dn, "lw_flux_dn_optang", "LW flux dn, single optimal angles")
@@ -354,10 +353,10 @@ contains
                                        atmos,        &
                                        lw_sources,   &
                                        tlev=t_lev))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
-                            fluxes,          &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
+                            fluxes,     &
                             flux_up_Jac = jFluxUp))
     call write_broadband_field(input_file, flux_up, "lw_flux_up_jaco", "LW flux up, computing Jaobians")
     call write_broadband_field(input_file, flux_dn, "lw_flux_dn_jaco", "LW flux dn, computing Jaobians")
@@ -369,9 +368,9 @@ contains
                                        atmos,        &
                                        lw_sources,   &
                                        tlev=t_lev))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes))
     call write_broadband_field(input_file, flux_up, "lw_flux_up_stp1", "LW flux up, surface T+1K")
     call write_broadband_field(input_file, flux_dn, "lw_flux_dn_stp1", "LW flux dn, surface T+1K")
@@ -390,16 +389,16 @@ contains
                                        atmos,        &
                                        lw_sources,   &
                                        tlev=t_lev))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes))
     call write_broadband_field(input_file, flux_up, "lw_flux_up_1rescl", "LW flux up, clear-sky _1rescl")
     call write_broadband_field(input_file, flux_dn, "lw_flux_dn_1rescl", "LW flux dn, clear-sky _1rescl")
 
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes, use_2stream=.true.))
     call write_broadband_field(input_file, flux_up, "lw_flux_up_2str", "LW flux up, clear-sky _2str")
     call write_broadband_field(input_file, flux_dn, "lw_flux_dn_2str", "LW flux dn, clear-sky _2str")
@@ -418,9 +417,9 @@ contains
                                          atmos,        &
                                          lw_sources,   &
                                          tlev = t_lev))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes))
     call write_broadband_field(input_file, flux_up,  "lw_flux_up_alt",  "LW flux up, fewer g-points")
     call write_broadband_field(input_file, flux_dn,  "lw_flux_dn_alt",  "LW flux dn, fewer g-points")
@@ -431,9 +430,9 @@ contains
                                                      vert_dim_name = "layer")
 
     call stop_on_err(k_dist_2%compute_optimal_angles(atmos, lw_Ds))
-    call stop_on_err(rte_lw(atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
+    call stop_on_err(rte_lw(atmos,      &
+                            lw_sources, &
+                            sfc_emis,   &
                             fluxes, lw_Ds=lw_Ds))
     call write_broadband_field(input_file, flux_up,  "lw_flux_up_alt_oa",  "LW flux up, fewer g-points, opt. angle")
     call write_broadband_field(input_file, flux_dn,  "lw_flux_dn_alt_oa",  "LW flux dn, fewer g-points, opt. angle")
@@ -469,8 +468,7 @@ contains
     rfmip_tsi_scale(:,:) = spread(tsi_3d(:,1)/rrtmgp_tsi, dim=2, ncopies=ngpt)
     toa_flux(:,:) = toa_flux(:,:) * rfmip_tsi_scale(:,:)
 
-    call stop_on_err(rte_sw(atmos, top_at_1, &
-                            mu0,   toa_flux, &
+    call stop_on_err(rte_sw(atmos, mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
     !
@@ -500,8 +498,7 @@ contains
     rfmip_tsi_scale(:,:) = spread(tsi_3d(:,1)/rrtmgp_tsi, dim=2, ncopies=k_dist_2%get_ngpt())
     toa_flux(:,:) = toa_flux(:,:) * rfmip_tsi_scale(:,:)
 
-    call stop_on_err(rte_sw(atmos, top_at_1, &
-                            mu0,   toa_flux, &
+    call stop_on_err(rte_sw(atmos, mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
     !

@@ -90,7 +90,6 @@ program rrtmgp_rfmip_sw
   character(len=132) :: kdist_file = 'coefficients_sw.nc'
   character(len=132) :: flxdn_file, flxup_file
   integer            :: nargs, ncol, nlay, nbnd, ngpt, nexp, nblocks, block_size, forcing_index
-  logical            :: top_at_1
   integer            :: b, icol, ibnd, igpt
   character(len=4)   :: block_size_char, forcing_index_char = '1'
 
@@ -166,10 +165,6 @@ program rrtmgp_rfmip_sw
   ! Allocation on assignment within reading routines
   !
   call read_and_block_pt(rfmip_file, block_size, p_lay, p_lev, t_lay, t_lev)
-  !
-  ! Are the arrays ordered in the vertical with 1 at the top or the bottom of the domain?
-  !
-  top_at_1 = p_lay(1, 1, 1) < p_lay(1, nlay, 1)
 
   !
   ! Read the gas concentrations and surface properties
@@ -193,7 +188,10 @@ program rrtmgp_rfmip_sw
   !   is set to 10^-3 Pa. Here we pretend the layer is just a bit less deep.
   !   This introduces an error but shows input sanitizing.
   !
-  if(top_at_1) then
+  !
+  ! Are the arrays ordered in the vertical with 1 at the top or the bottom of the domain?
+  !
+  if(p_lay(1, 1, 1) < p_lay(1, nlay, 1)) then
     p_lev(:,1,:) = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
   else
     p_lev(:,nlay+1,:) &
@@ -296,7 +294,6 @@ program rrtmgp_rfmip_sw
     !    via ty_fluxes_broadband
     !
     call stop_on_err(rte_sw(optical_props,   &
-                            top_at_1,        &
                             mu0,             &
                             toa_flux,        &
                             sfc_alb_spec,    &

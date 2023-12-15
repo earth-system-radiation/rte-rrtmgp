@@ -89,7 +89,7 @@ program rte_rrtmgp_allsky
   !
   ! Inputs to RRTMGP
   !
-  logical :: top_at_1, is_sw, is_lw
+  logical :: is_sw, is_lw
 
   integer  :: nbnd, ngpt
   integer  :: icol, ilay, ibnd, iloop, igas
@@ -191,7 +191,6 @@ program rte_rrtmgp_allsky
   !
   nbnd = k_dist%get_nband()
   ngpt = k_dist%get_ngpt()
-  top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
 
   ! ----------------------------------------------------------------------------
   ! LW calculations neglect scattering; SW calculations use the 2-stream approximation
@@ -251,7 +250,7 @@ program rte_rrtmgp_allsky
     ! Surface temperature
     !$acc kernels
     !$omp target
-    t_sfc = t_lev(1, merge(nlay+1, 1, top_at_1))
+    t_sfc = t_lev(1, merge(nlay+1, 1, atmos%top_is_at_1()))
     emis_sfc = 0.98_wp
     !$acc end kernels
     !$omp end target
@@ -322,9 +321,9 @@ program rte_rrtmgp_allsky
                                          tlev = t_lev))
       if(do_clouds)   call stop_on_err(clouds%increment(atmos))
       if(do_aerosols) call stop_on_err(aerosols%increment(atmos))
-      call stop_on_err(rte_lw(atmos, top_at_1, &
-                              lw_sources,      &
-                              emis_sfc,        &
+      call stop_on_err(rte_lw(atmos,      &
+                              lw_sources, &
+                              emis_sfc,   &
                               fluxes))
       !$acc        end data
       !$omp end target data
@@ -347,8 +346,7 @@ program rte_rrtmgp_allsky
         call stop_on_err(aerosols%delta_scale())
         call stop_on_err(aerosols%increment(atmos))
       end if 
-      call stop_on_err(rte_sw(atmos, top_at_1, &
-                              mu0,   toa_flux, &
+      call stop_on_err(rte_sw(atmos, mu0,   toa_flux, &
                               sfc_alb_dir, sfc_alb_dif, &
                               fluxes))
       !$acc        end data   

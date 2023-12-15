@@ -53,14 +53,12 @@ module mo_rte_sw
 
 contains
   ! -------------------------------------------------------------------------------------------------
-  function rte_sw_mu0_bycol(atmos, top_at_1, &
+  function rte_sw_mu0_bycol(atmos,           &
                   mu0, inc_flux,             &
                   sfc_alb_dir, sfc_alb_dif,  &
                   fluxes, inc_flux_dif) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: atmos
       !! Optical properties provided as arrays
-    logical,                      intent(in   ) :: top_at_1
-      !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
     real(wp), dimension(:),       intent(in   ) :: mu0
       !! cosine of solar zenith angle (ncol) - will be assumed constant with height
     real(wp), dimension(:,:),     intent(in   ) :: inc_flux
@@ -94,22 +92,19 @@ contains
       end do
     end do
 
-    error_msg = rte_sw_mu0_full(atmos, top_at_1, &
-                    mu0_bylay, inc_flux,         &
-                    sfc_alb_dir, sfc_alb_dif,    &
+    error_msg = rte_sw_mu0_full(atmos,        &
+                    mu0_bylay, inc_flux,      &
+                    sfc_alb_dir, sfc_alb_dif, &
                     fluxes, inc_flux_dif)
     !$acc end data
     !$omp end target data
   end function rte_sw_mu0_bycol
   ! -------------------------------------------------------------------------------------------------
-  function rte_sw_mu0_full(atmos, top_at_1, &
-                  mu0, inc_flux,            &
-                  sfc_alb_dir, sfc_alb_dif, &
-                  fluxes, inc_flux_dif) result(error_msg)
+  function rte_sw_mu0_full(atmos, mu0, inc_flux, &
+                           sfc_alb_dir, sfc_alb_dif,      &
+                           fluxes, inc_flux_dif) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: atmos
       !! Optical properties provided as arrays
-    logical,                      intent(in   ) :: top_at_1
-      !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
     real(wp), dimension(:,:),     intent(in   ) :: mu0
       !! cosine of solar zenith angle (ncol, nlay)
     real(wp), dimension(:,:),     intent(in   ) :: inc_flux
@@ -293,8 +288,9 @@ contains
           !
           ! Direct beam only - for completeness, unlikely to be used in practice
           !
-          call sw_solver_noscat(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                                atmos%tau, mu0, inc_flux,                &
+          call sw_solver_noscat(ncol, nlay, ngpt,                 &
+                                logical(atmos%top_is_at_1(), wl), &
+                                atmos%tau, mu0, inc_flux,         &
                                 gpt_flux_dir)
           call zero_array(ncol, nlay+1, ngpt, gpt_flux_up)
           !
@@ -308,7 +304,8 @@ contains
           !
           ! two-stream calculation with scattering
           !
-          call sw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
+          call sw_solver_2stream(ncol, nlay, ngpt,                        &
+                                 logical(atmos%top_is_at_1(), wl),        &
                                  atmos%tau, atmos%ssa, atmos%g, mu0,      &
                                  sfc_alb_dir_gpt, sfc_alb_dif_gpt,        &
                                              inc_flux,                    &
@@ -348,7 +345,7 @@ contains
           !
           ! ...or reduce spectral fluxes to desired output quantities
           !
-          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir)
+          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, atmos, atmos%top_is_at_1(), gpt_flux_dir)
       end select
     end if ! In case of an error we exit here
 

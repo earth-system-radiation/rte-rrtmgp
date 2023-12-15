@@ -252,11 +252,16 @@ contains
     integer,     dimension(2,    size(play,dim=1),size(play,dim=2), get_nflav(this)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband
+    logical :: temp
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)
     ngpt  = this%get_ngpt()
     nband = this%get_nband()
+    !
+    ! Vertical orientation
+    !
+    call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
     !
     ! Gas optics
     !
@@ -311,7 +316,7 @@ contains
       !   but isn't with PGI 19.10
       !
       error_msg = source(this,                               &
-                         ncol, nlay, nband, ngpt,            &
+                         ncol, nlay, nband, ngpt, optical_props%top_is_at_1(),  &
                          play, plev, tlay, tsfc,             &
                          jtemp, jpress, jeta, tropo, fmajor, &
                          sources,                            &
@@ -320,7 +325,7 @@ contains
       !$omp target exit data map(release:tlev)
     else
       error_msg = source(this,                               &
-                         ncol, nlay, nband, ngpt,            &
+                         ncol, nlay, nband, ngpt, optical_props%top_is_at_1(),  &
                          play, plev, tlay, tsfc,             &
                          jtemp, jpress, jeta, tropo, fmajor, &
                          sources)
@@ -329,6 +334,7 @@ contains
     !$omp target exit data map(release:tsfc)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
+
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
   !
@@ -372,6 +378,10 @@ contains
     ngas  = this%get_ngas()
     nflav = get_nflav(this)
     !
+    ! Vertical orientation
+    !
+    call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
+    !
     ! Gas optics
     !
     !$acc enter data create(jtemp, jpress, tropo, fmajor, jeta)
@@ -384,6 +394,7 @@ contains
                                  col_dry)
     !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
+
     if(error_msg  /= '') return
 
     ! ----------------------------------------------------------
@@ -824,7 +835,7 @@ contains
   ! Compute Planck source functions at layer centers and levels
   !
   function source(this,                               &
-                  ncol, nlay, nbnd, ngpt,             &
+                  ncol, nlay, nbnd, ngpt, top_at_1,   &
                   play, plev, tlay, tsfc,             &
                   jtemp, jpress, jeta, tropo, fmajor, &
                   sources,                            & ! Planck sources
@@ -833,6 +844,7 @@ contains
     ! inputs
     class(ty_gas_optics_rrtmgp),    intent(in ) :: this
     integer,                               intent(in   ) :: ncol, nlay, nbnd, ngpt
+    logical,                               intent(in   ) :: top_at_1
     real(wp), dimension(ncol,nlay),        intent(in   ) :: play   ! layer pressures [Pa, mb]
     real(wp), dimension(ncol,nlay+1),      intent(in   ) :: plev   ! level pressures [Pa, mb]
     real(wp), dimension(ncol,nlay),        intent(in   ) :: tlay   ! layer temperatures [K]
@@ -849,7 +861,6 @@ contains
                                       optional, target :: tlev          ! level temperatures [K]
     character(len=128)                                 :: error_msg
     ! ----------------------------------------------------------
-    logical(wl)                                  :: top_at_1
     integer                                      :: icol, ilay
     ! Variables for temperature at layer edges [K] (ncol, nlay+1)
     real(wp), dimension(   ncol,nlay+1), target  :: tlev_arr
@@ -895,18 +906,12 @@ contains
     !$omp target data                 map(from:sources%lay_source, sources%lev_source) &
     !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac)
 
-    !$acc kernels copyout(top_at_1)
-    !$omp target map(from:top_at_1)
-    top_at_1 = play(1,1) < play(1, nlay)
-    !$acc end kernels
-    !$omp end target
-
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
-                tlay, tlev_wk, tsfc, merge(nlay, 1, top_at_1), &
-                fmajor, jeta, tropo, jtemp, jpress,                    &
+                tlay, tlev_wk, tsfc, merge(nlay, 1, logical(top_at_1, wl)), &
+                fmajor, jeta, tropo, jtemp, jpress,                         &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
-                this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
+                this%totplnk_delta, this%totplnk, this%gpoint_flavor,       &
                 sources%sfc_source, sources%lay_source, sources%lev_source, &
                 sources%sfc_source_Jac)
     !$acc end        data

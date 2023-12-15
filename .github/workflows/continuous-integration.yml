@@ -99,15 +99,4 @@ jobs:
     #
     - name: Compare the results
       run: make check
-    #
-    # Code coverage
-    #
-    - name: Code coverage 
-      uses: codecov/codecov-action@v3
-      if: ${{ matrix.fortran-compiler }} == "gfortran-12"
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      with: 
-        gcov: true
-        gcov_include: examples/*/*.F90
           

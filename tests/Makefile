@@ -66,6 +66,10 @@ mo_load_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_load_coefficients.F90
 mo_rfmip_io.o.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_rfmip_io.F90
 mo_simple_netcdf.o:     $(LIB_DEPS) mo_simple_netcdf.F90
 
+rte_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_unit_tests.F90
+rte_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_unit_tests.o
+
+
 .PHONY: tests
 tests:
 	cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc

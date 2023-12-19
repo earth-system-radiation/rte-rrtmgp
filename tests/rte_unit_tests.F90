@@ -27,7 +27,7 @@ program rte_unit_tests
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
-  use mo_testing_utils,      only: allclose, stop_on_err, report_err
+  use mo_testing_utils,      only: allclose, stop_on_err, report_err, in_rad_eq
   implicit none
   ! ----------------------------------------------------------------------------------
   !
@@ -52,4 +52,19 @@ program rte_unit_tests
   !     Increment with 3 variants of transparent media
   !     Divide by two and increment 
   !   Test the application of the boundary condition? 
+
+  integer :: i 
+  real(wp), dimension(8), parameter :: sfc_t     = [(285._wp, i = 1, 4), (310._wp, i = 1, 4) ]
+  real(wp), dimension(8), parameter :: total_tau = [([0.1_wp, 1._wp, 10._wp, 50._wp], i = 1, 2)]
+  real(wp), dimension(8)            :: olr 
+  real(wp), parameter :: sigma = 5.670374419e-8_wp
+
+  olr = (2._wp * sigma * sfc_t**4)/(1 + total_tau)
+  print *, sfc_t
+  print *, total_tau
+  print *, olr
+
+  print *, in_rad_eq(sfc_t, total_tau, OLR)
+  
+
 end program rte_unit_tests

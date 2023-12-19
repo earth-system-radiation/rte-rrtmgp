@@ -41,8 +41,7 @@ program rte_unit_tests
   !     net fluxes are constant with height 
   !     net fluxes on- and off-line are the same (this tests ty_fluxes_broadband)
   !     heating rates? couldn't check correctness 
-  !   Then use an example to test invariance 
-  !     to vertical orientation 
+  !   Then use an example to test invariance to vertical orientation 
   !     subsetting
   !     maybe not to incrementing since we're restrictied to a single solver 
   !     vertical discretization? Maybe just check boundary fluxes
@@ -53,18 +52,117 @@ program rte_unit_tests
   !     Divide by two and increment 
   !   Test the application of the boundary condition? 
 
-  integer :: i 
-  real(wp), dimension(8), parameter :: sfc_t     = [(285._wp, i = 1, 4), (310._wp, i = 1, 4) ]
-  real(wp), dimension(8), parameter :: total_tau = [([0.1_wp, 1._wp, 10._wp, 50._wp], i = 1, 2)]
-  real(wp), dimension(8)            :: olr 
-  real(wp), parameter :: sigma = 5.670374419e-8_wp
+  real(wp), parameter :: pi = acos(-1._wp)
+  integer,  parameter :: ncol = 8, nlay = 10
+  integer             :: icol, ilay
+  !
+  ! Longwave tests - gray radiative equilibrium
+  !
+  real(wp), parameter :: sigma = 5.670374419e-8_wp ! Stefan-Boltzmann constant 
+  real(wp), dimension(ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
+                                                       (310._wp, icol = 1,ncol/2)]
+  real(wp), dimension(ncol), parameter :: lw_total_tau = [([0.1_wp, 1._wp, 10._wp, 50._wp], icol = 1, ncol/4)]
+  real(wp), dimension(ncol), parameter :: sfc_emis     = 1._wp
+  real(wp), dimension(ncol)            :: olr 
 
-  olr = (2._wp * sigma * sfc_t**4)/(1 + total_tau)
-  print *, sfc_t
-  print *, total_tau
-  print *, olr
+  type(ty_optical_props_1scl) :: lw_atmos 
+  type(ty_source_func_lw)     :: lw_sources
+  type(ty_fluxes_broadband)   :: fluxes
+  logical                     :: top_at_1
+  real(wp), dimension(ncol,nlay+1), target :: &
+                                 ref_flux_up, ref_flux_dn, ref_flux_net
 
-  print *, in_rad_eq(sfc_t, total_tau, OLR)
+  ! ------------------------------------------------------------------------------------------------------
   
+  top_at_1 = .true. 
+  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+
+  fluxes%flux_up => ref_flux_up(:,:)
+  fluxes%flux_dn => ref_flux_dn(:,:)
+  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                          lw_sources,         &
+                          sfc_emis = reshape(sfc_emis, [1,ncol]), &
+                          fluxes = fluxes))
+
+  olr = (2._wp * sigma * sfc_t(:)**4)/(2 + lw_total_tau(:))
+  print *, sigma * sfc_t**4 , "olr sfc T"
+  print *, "Up flux, bottom to top"
+  do ilay = nlay+1, 1, -1
+    print *, ref_flux_up(:,ilay) 
+  end do
+  print *, olr , "olr"
+  print *, olr - ref_flux_up(:,1), "diff"
+
+  print *
+  print *, "Net flux, bottom to top"
+  do ilay = nlay+1, 1, -1
+    print *, ref_flux_dn(:,ilay)  - ref_flux_up(:,ilay) 
+  end do
+
+  if (.false.) then 
+    print *, lw_total_tau
+    print *, olr
+    print *, in_rad_eq(sfc_t, lw_total_tau, OLR)
+  end if 
+  ! ------------------------------------------------------------------------------------
+contains 
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Define an atmosphere in gray radiative equillibrium 
+  !   See, for example, section 2 of Weaver and Rmanathan 1995 https://doi.org/10.1029/95JD00770
+  !
+  subroutine gray_rad_equil(sfc_t, total_tau, nlay, top_at_1, atmos, sources)
+    real(wp), dimension(:), intent(in) :: sfc_t, total_tau
+    integer,                intent(in) :: nlay 
+    logical,                intent(in) :: top_at_1
+    type(ty_optical_props_1scl), intent(inout) :: atmos 
+    type(ty_source_func_lw),     intent(inout) :: sources 
+
+    integer                          :: ncol
+    real(wp), dimension(size(sfc_t)) :: t_lay, olr
+
+    ncol = size(sfc_t)
+    !
+    ! Set up a gray spectral distribution - one band, one g-point
+    !
+    call stop_on_err(atmos%init(band_lims_wvn = reshape([0._wp, 3250._wp], shape = [2, 1]), & 
+                                band_lims_gpt = reshape([1,     1],        shape = [2, 1]), & 
+                                name = "Gray atmosphere"))
+    call stop_on_err(atmos%alloc_1scl(ncol, nlay))
+
+    !
+    ! Divide optical depth evenly among layers 
+    !
+    atmos%tau(1:ncol,1:nlay,1) = spread(total_tau(1:ncol)/real(nlay, wp), dim=2, ncopies=nlay)
+
+    !
+    ! Longwave sources 
+    !
+    olr(:) = (2._wp * sigma * sfc_t(:)**4)/(2 + lw_total_tau(:))
+
+    call stop_on_err(sources%alloc(ncol, nlay, atmos))
+    sources%sfc_source(:,1) = sigma/pi * sfc_t**4
+    if (top_at_1) then
+      ilay = 1
+          sources%lev_source(:,ilay,  1) = 0.5_wp * olr(:) * & 
+                                           (1._wp +  sum(atmos%tau(:,:ilay,1),dim=2))
+      do ilay = 2, nlay+1
+        sources%lev_source(:,ilay,  1) = 0.5_wp * olr(:) * & 
+                                         (1._wp +  sum(atmos%tau(:,:ilay-1,1),dim=2))
+        sources%lay_source(:,ilay-1,1) = 0.5_wp * (sources%lev_source(:,ilay,  1) + & 
+                                                   sources%lev_source(:,ilay-1,1))
+      end do
+    else
+      call stop_on_err("Can't do top /= 1 yet")
+    end if 
+
+    print *, "Sources, top to bottom"
+    do ilay = 1, nlay+1
+      print *, sources%lev_source(:,ilay,  1) 
+    end do
+
+
+  ! ------------------------------------------------------------------------------------
+  end subroutine gray_rad_equil
 
 end program rte_unit_tests

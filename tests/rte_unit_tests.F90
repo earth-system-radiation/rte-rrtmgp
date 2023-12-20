@@ -85,22 +85,23 @@ program rte_unit_tests
                           fluxes = fluxes))
 
   olr = (2._wp * sigma * sfc_t(:)**4)/(2 + lw_total_tau(:))
-  print *, sigma * sfc_t**4 , "olr sfc T"
+  print '(8(f7.2, 2x), "implied OLR")', olr
+  print '(8(f7.2, 2x), "olr/pi at sfc T")', sigma/pi * sfc_t**4 
   print *, "Up flux, bottom to top"
   do ilay = nlay+1, 1, -1
-    print *, ref_flux_up(:,ilay) 
+    print '(8(f7.2, 2x))', ref_flux_up(:,ilay) 
   end do
-  print *, olr , "olr"
-  print *, olr - ref_flux_up(:,1), "diff"
+  print '(8(f7.2, 2x), "olr")', olr 
+  print '(8(f7.2, 2x), "diff")', olr - ref_flux_up(:,1)
 
   print *
   print *, "Net flux, bottom to top"
   do ilay = nlay+1, 1, -1
-    print *, ref_flux_dn(:,ilay)  - ref_flux_up(:,ilay) 
+    print '(8(f7.2, 2x))', ref_flux_dn(:,ilay)  - ref_flux_up(:,ilay) 
   end do
 
   if (.false.) then 
-    print *, lw_total_tau
+    print '(8(f7.2, 2x))', lw_total_tau
     print *, olr
     print *, in_rad_eq(sfc_t, lw_total_tau, OLR)
   end if 
@@ -136,21 +137,21 @@ contains
     atmos%tau(1:ncol,1:nlay,1) = spread(total_tau(1:ncol)/real(nlay, wp), dim=2, ncopies=nlay)
 
     !
-    ! Longwave sources 
+    ! Longwave sources - for broadband these are sigma/pi T^4
+    !   I have to figure out where the factor of pi comes from
     !
-    olr(:) = (2._wp * sigma * sfc_t(:)**4)/(2 + lw_total_tau(:))
+    olr(:) = (2._wp * sigma * sfc_t(:)**4)/(2 + lw_total_tau(:)) ! Equation 6b with f0 = OLR
 
     call stop_on_err(sources%alloc(ncol, nlay, atmos))
     sources%sfc_source(:,1) = sigma/pi * sfc_t**4
     if (top_at_1) then
       ilay = 1
-          sources%lev_source(:,ilay,  1) = 0.5_wp * olr(:) * & 
-                                           (1._wp +  sum(atmos%tau(:,:ilay,1),dim=2))
+          sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) 
       do ilay = 2, nlay+1
-        sources%lev_source(:,ilay,  1) = 0.5_wp * olr(:) * & 
-                                         (1._wp +  sum(atmos%tau(:,:ilay-1,1),dim=2))
-        sources%lay_source(:,ilay-1,1) = 0.5_wp * (sources%lev_source(:,ilay,  1) + & 
-                                                   sources%lev_source(:,ilay-1,1))
+        sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) * & 
+                                           (1._wp +  sum(atmos%tau(:,:ilay-1,1),dim=2))
+        sources%lay_source(:,ilay-1,1) = 0.5_wp/pi * (sources%lev_source(:,ilay,  1) + & 
+                                                      sources%lev_source(:,ilay-1,1))
       end do
     else
       call stop_on_err("Can't do top /= 1 yet")
@@ -158,7 +159,7 @@ contains
 
     print *, "Sources, top to bottom"
     do ilay = 1, nlay+1
-      print *, sources%lev_source(:,ilay,  1) 
+      print '(8(f7.2, 2x))', sources%lev_source(:,ilay,  1) 
     end do
 
 

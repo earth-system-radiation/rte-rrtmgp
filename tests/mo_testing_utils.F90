@@ -12,11 +12,12 @@
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! ----------------------------------------------------------------------------
 module mo_testing_utils
-  use iso_fortran_env,   only: error_unit
-  use mo_rte_kind,       only: wp
-  use mo_rte_util_array, only: zero_array
-  use mo_optical_props,  only: ty_optical_props_arry, ty_optical_props_1scl, & 
-                               ty_optical_props_2str, ty_optical_props_nstr
+  use iso_fortran_env,     only: error_unit
+  use mo_rte_kind,         only: wp
+  use mo_rte_util_array,   only: zero_array
+  use mo_optical_props,    only: ty_optical_props_arry, ty_optical_props_1scl, & 
+                                 ty_optical_props_2str, ty_optical_props_nstr
+  use mo_source_functions, only: ty_source_func_lw
   implicit none
   public 
 
@@ -81,27 +82,23 @@ contains
     end if
   end subroutine stop_on_err
   ! ----------------------------------------------------------------------------
-  !
-  ! Does this set of surface temperatures and OLRs satisfy gray radiative equillibrium? 
-  !
-  logical function in_rad_eq(sfc_t, total_tau, OLR)
-    ! Assumed rank arrays - Fortran 2018 
-    real(wp), dimension(:), intent(in) :: sfc_t, total_tau, OLR
+  subroutine check_fluxes(flux_1, flux_2, status, message)  
+    real(wp), dimension(:,:), intent(in) :: flux_1, flux_2
+    logical                              :: status
+    character(len=*),         intent(in) :: message
 
-    ! Approximate value of Stefan-Boltzmann constant 
-    real(wp), parameter :: sigma = 5.670374419e-8_wp
-
-    in_rad_eq = allclose(sqrt(sqrt((OLR * (1+total_tau))/(2._wp * sigma)) ), & 
-                         sfc_t)
-
-  end function in_rad_eq
+    if(.not. allclose(flux_1, flux_2))  then 
+      status = .false. 
+      call report_err("    " // trim(message))
+    end if 
+  end subroutine check_fluxes
   ! ----------------------------------------------------------------------------
   !
   ! Adding transparent (tau = 0) optical properties 
-  !   These routines test allocation, incrementing, and 
+  !   These routines test allocation, validation, incrementing, and 
   !   finalization for optical properties 
   !   Fluxes should not change 
-  ! Should these be extended to test with GPUs? 
+  ! Should these be extended to test end-to-end with GPUs? 
   !
   ! ----------------------------------------------------------------------------
   subroutine increment_with_1scl(atmos)
@@ -117,6 +114,7 @@ contains
     call stop_on_err(transparent%alloc_1scl(ncol, nlay, atmos))
     call zero_array (ncol, nlay, ngpt, transparent%tau)
     call stop_on_err(transparent%increment(atmos))
+    call stop_on_err(atmos%validate())
     call transparent%finalize() 
   end subroutine increment_with_1scl 
   ! -------
@@ -135,6 +133,7 @@ contains
     call zero_array (ncol, nlay, ngpt, transparent%ssa)
     call zero_array (ncol, nlay, ngpt, transparent%g)
     call stop_on_err(transparent%increment(atmos))
+    call stop_on_err(atmos%validate())
     call transparent%finalize() 
   end subroutine increment_with_2str 
   ! -------
@@ -154,8 +153,36 @@ contains
     call zero_array (      ncol, nlay, ngpt, transparent%ssa)
     call zero_array (nmom, ncol, nlay, ngpt, transparent%p)
     call stop_on_err(transparent%increment(atmos))
+    call stop_on_err(atmos%validate())
     call transparent%finalize() 
   end subroutine increment_with_nstr 
   ! ----------------------------------------------------------------------------
+  !
+  ! Vertically reverse
+  ! 
+  subroutine vr(atmos, sources)
+    class(ty_optical_props_arry), intent(inout) :: atmos
+    type(ty_source_func_lw), optional, & 
+                                  intent(inout) :: sources
 
+    integer :: nlay
+    nlay = atmos%get_nlay()
+
+    atmos%tau = atmos%tau(:,nlay:1:-1,:)
+
+    select type (atmos)
+      type is (ty_optical_props_2str)
+        atmos%ssa = atmos%ssa(:,nlay:1:-1,:)
+        atmos%g   = atmos%g  (:,nlay:1:-1,:)
+      type is (ty_optical_props_nstr)
+        atmos%ssa = atmos%ssa(:,nlay:1:-1,:)
+        atmos%p   = atmos%p(:,:,nlay:1:-1,:)
+    end select    
+
+    if(present(sources)) then 
+      sources%lev_source = sources%lev_source(:,nlay+1:1:-1,:)
+      sources%lay_source = sources%lay_source(:,nlay  :1:-1,:)
+    end if                           
+  end subroutine vr
+  ! ----------------------------------------------------------------------------
 end module mo_testing_utils

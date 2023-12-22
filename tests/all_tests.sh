@@ -1,3 +1,4 @@
+./rte_unit_tests
 ./check_equivalence test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc 
 ./check_equivalence test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc 
 ./check_equivalence test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc 

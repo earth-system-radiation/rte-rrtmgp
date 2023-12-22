@@ -41,6 +41,7 @@ program rte_check_equivalence
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
   use mo_load_coefficients,  only: load_and_init
+  use mo_testing_utils,      only: increment_with_1scl, increment_with_2str, increment_with_nstr
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty,  &
                                    read_and_block_lw_bc, read_and_block_sw_bc, determine_gas_names
   use mo_simple_netcdf,      only: get_dim_size, read_field
@@ -302,7 +303,7 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err("  halving/doubling fails")
 
-    call increment_with_1scl
+    call increment_with_1scl(atmos)
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &
@@ -311,7 +312,7 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err("  Incrementing with 1scl fails")
 
-    call increment_with_2str
+    call increment_with_2str(atmos)
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &
@@ -320,7 +321,7 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err("  Incrementing with 2str fails")
 
-    call increment_with_nstr
+    call increment_with_nstr(atmos)
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &
@@ -437,7 +438,7 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
       call report_err("  halving/doubling fails")
 
-    call increment_with_1scl
+    call increment_with_1scl(atmos)
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
@@ -452,7 +453,7 @@ program rte_check_equivalence
                                        gas_concs,    &
                                        atmos,        &
                                        toa_flux))
-   call increment_with_2str
+   call increment_with_2str(atmos)
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 6._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
@@ -463,7 +464,7 @@ program rte_check_equivalence
                                        gas_concs,    &
                                        atmos,        &
                                        toa_flux))
-    call increment_with_nstr
+    call increment_with_nstr(atmos)
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
@@ -672,38 +673,7 @@ contains
       failed = .true.
     end if
   end subroutine report_err
-  ! ----------------------------------------------------------------------------
-  subroutine increment_with_1scl 
-    type(ty_optical_props_1scl) :: transparent 
 
-    call stop_on_err(transparent%alloc_1scl(ncol, nlay, k_dist))
-    call zero_array (ncol, nlay, ngpt, transparent%tau)
-    call stop_on_err(transparent%increment(atmos))
-    call transparent%finalize() 
-  end subroutine increment_with_1scl 
-  ! -------
-  subroutine increment_with_2str 
-    type(ty_optical_props_2str) :: transparent 
-
-    call stop_on_err(transparent%alloc_2str(ncol, nlay, k_dist))
-    call zero_array (ncol, nlay, ngpt, transparent%tau)
-    call zero_array (ncol, nlay, ngpt, transparent%ssa)
-    call zero_array (ncol, nlay, ngpt, transparent%g)
-    call stop_on_err(transparent%increment(atmos))
-    call transparent%finalize() 
-  end subroutine increment_with_2str 
-  ! -------
-  subroutine increment_with_nstr 
-   type(ty_optical_props_nstr) :: transparent 
-   integer, parameter :: nmom = 4
-
-    call stop_on_err(transparent%alloc_nstr(nmom, ncol, nlay, k_dist))
-    call zero_array (      ncol, nlay, ngpt, transparent%tau)
-    call zero_array (      ncol, nlay, ngpt, transparent%ssa)
-    call zero_array (nmom, ncol, nlay, ngpt, transparent%p)
-    call stop_on_err(transparent%increment(atmos))
-    call transparent%finalize() 
-  end subroutine increment_with_nstr 
  ! ----------------------------------------------------------------------------
   subroutine make_optical_props_1scl(k_dist)
     class (ty_optical_props), intent(in) :: k_dist

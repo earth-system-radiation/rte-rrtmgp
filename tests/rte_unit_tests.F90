@@ -27,23 +27,24 @@ program rte_unit_tests
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
-  use mo_testing_utils,      only: allclose, stop_on_err, report_err, in_rad_eq
+  use mo_testing_utils,      only: allclose, stop_on_err, report_err, check_fluxes, &
+                                   vr, & 
+                                   increment_with_1scl, increment_with_2str, increment_with_nstr
   implicit none
   ! ----------------------------------------------------------------------------------
   !
-  ! Do we vary the number of columns? Layers? 
-  !   For gray radiative equilibrium: 
-  !   We want 
-  !     several optical thickness values and several surface temperatures - let's say 8 in total 
-  !     even and uneven discretizations in tau?
-  !   Want to check correctness
-  !     OLR, surface T, and optical depth have the relationships we expect 
-  !     net fluxes are constant with height 
-  !     net fluxes on- and off-line are the same (this tests ty_fluxes_broadband)
-  !     heating rates? couldn't check correctness 
+  ! Longwave tests use gray radiative equilibrium from
+  !   e.g. Weaver and Rmanathan 1995 https://doi.org/10.1029/95JD00770 
+  !   Net flux is constant with height, OLR is known from surface temperature
+  ! Tests include 
+  !   Solutions match analytic results 
+  !   Net fluxes = down - up when computed in various combos (net only, up/down only, all three)
+  !     using ty_broadband_flues
+  !   Answers are invariant to 
+  !     number of columns (subsets)
+  !     adding transparent optical properties 
+  !
   !   Then use an example to test invariance to vertical orientation 
-  !     subsetting
-  !     maybe not to incrementing since we're restrictied to a single solver 
   !     vertical discretization? Maybe just check boundary fluxes
   !     *Jacobian
   !     *Computing Jacobian shouldn't change net fluxes 
@@ -60,23 +61,31 @@ program rte_unit_tests
   !
   real(wp), parameter :: sigma = 5.670374419e-8_wp, & ! Stefan-Boltzmann constant 
                          D     = 1.66_wp              ! Diffusivity angle, from single-angle RRTMGP solver
-  real(wp), dimension(ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
-                                                       (310._wp, icol = 1,ncol/2)]
-  real(wp), dimension(ncol), parameter :: lw_total_tau = [([0.1_wp, 1._wp, 10._wp, 50._wp], icol = 1, ncol/4)]
-  real(wp), dimension(ncol), parameter :: sfc_emis     = 1._wp 
+  real(wp), dimension(  ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
+                                                         (310._wp, icol = 1,ncol/2)]
+  real(wp), dimension(  ncol), parameter :: lw_total_tau = [([0.1_wp, 1._wp, 10._wp, 50._wp], icol = 1, ncol/4)]
+  real(wp), dimension(1,ncol), parameter :: sfc_emis   = 1._wp
 
   type(ty_optical_props_1scl) :: lw_atmos 
   type(ty_source_func_lw)     :: lw_sources
   type(ty_fluxes_broadband)   :: fluxes
   logical                     :: top_at_1
   real(wp), dimension(ncol,nlay+1), target :: &
-                                 ref_flux_up, ref_flux_dn, ref_flux_net
+                                 ref_flux_up, ref_flux_dn, ref_flux_net, & 
+                                 tst_flux_up, tst_flux_dn, tst_flux_net
 
   logical :: passed 
 
   ! ------------------------------------------------------------------------------------------------------
-  
   top_at_1 = .true. 
+  ! ------------------------------------------------------------------------------------------------------
+  ! 
+  ! Longwave tests
+  !
+  ! ------------------------------------------------------------------------------------------------------
+  !
+  ! Gray radiative equillibrium 
+  !
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
 
   fluxes%flux_up  => ref_flux_up (:,:)
@@ -86,26 +95,81 @@ program rte_unit_tests
                           lw_sources,         &
                           sfc_emis = reshape(sfc_emis, [1,ncol]), &
                           fluxes = fluxes))
+  !
+  ! Is the solution correct (does it satisfy the profile for radiative equilibrium?)
+  !   Error reporting happens inside check_gray_rad_equil()
+  !
+  passed = check_gray_rad_equil(sfc_t, lw_total_tau, top_at_1, ref_flux_up, ref_flux_net)
+  print *, "Gray radiative equilibrium"
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Net fluxes on- vs off-line
+  !  Are the net fluxes correct?
+  !
+  if(.not. allclose(ref_flux_net, ref_flux_dn-ref_flux_up)) then 
+    passed = .false.
+    call report_err("  LW: net fluxes don't match down-up")
+  end if
+  !
+  ! Compute only net fluxes 
+  !
+  nullify(fluxes%flux_up)
+  nullify(fluxes%flux_dn)
+  call stop_on_err(rte_lw(lw_atmos, top_at_1,  &
+                          lw_sources, sfc_emis,&
+                          fluxes = fluxes))
+  call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
+                    passed, "Net fluxes computed alone doesn'tt match down-up computed separately")
+  !
+  ! Compute only up and down  fluxes 
+  !
+  fluxes%flux_up  => tst_flux_up (:,:)
+  fluxes%flux_dn  => tst_flux_dn (:,:)
+  call stop_on_err(rte_lw(lw_atmos,   top_at_1, &
+                          lw_sources, sfc_emis, &
+                          fluxes = fluxes))
+  call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
+                    passed, "net fluxes don't match down-up computed together")
+  print *, "  Longwave net flux variants"
+  ! -------------------------------------------------------
+  !
+  ! Subsets of atmospheric columns 
+  !
+  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call lw_clear_sky_subset
+  call check_fluxes(tst_flux_up, ref_flux_up, &  
+                    passed, "Doing problem in subsets fails")
+  call check_fluxes(tst_flux_dn, ref_flux_dn, &  
+                    passed, "Doing problem in subsets fails")
 
-  passed = check_gray_rad_equil(sfc_t, lw_total_tau, top_at_1, &
-                                ref_flux_up, ref_flux_net)
+  print *, "  Subsetting invariance"
+  ! -------------------------------------------------------
+  !
+  ! Vertically-reverse
+  !
+  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call vr(lw_atmos, lw_sources)
+  call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
+                          lw_sources, sfc_emis, &
+                          fluxes = fluxes))
+  call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
+                    passed, "Doing problem upside down fails")
+  call check_fluxes(tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, &  
+                    passed, "Doing problem upside down fails")
+  print *, "  Vertical orientation invariance"
 
+
+  passed = passed .and. check_incrementing(lw_atmos, ref_flux_up, ref_flux_up)
+  print *, "  Incrementing invariance"
+
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Done
+  !
   print *, "Unit tests done"
   if(.not. passed) error stop 1
-
   ! ------------------------------------------------------------------------------------
 contains 
-  ! ------------------------------------------------------------------------------------
-  !
-  ! Incoming energy = OLR in gray radiative equilibirum
-  !   Equation 6b of Weaver and Rmanathan 1995 https://doi.org/10.1029/95JD00770 with with f0 = OLR 
-  !
-  elemental function gray_rad_equil_olr(T, tau)
-    real(wp), intent(in) :: T, tau
-    real(wp)             :: gray_rad_equil_olr
-
-    gray_rad_equil_olr = (2._wp * sigma * T**4)/(2 + D * tau) 
-  end function gray_rad_equil_olr
   ! ------------------------------------------------------------------------------------
   !
   ! Define an atmosphere in gray radiative equillibrium 
@@ -143,7 +207,9 @@ contains
 
     call stop_on_err(sources%alloc(ncol, nlay, atmos))
     sources%sfc_source(:,1) = sigma/pi * sfc_t**4
-    if (top_at_1) then
+    !
+    ! Calculation with top_at_1
+    !
       ilay = 1
           sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) 
       do ilay = 2, nlay+1
@@ -155,13 +221,18 @@ contains
         sources%lay_source(:,ilay-1,1) = 0.5_wp * (sources%lev_source(:,ilay,  1) + & 
                                                    sources%lev_source(:,ilay-1,1))
       end do
-    else
-      call stop_on_err("Can't do top /= 1 yet")
+    if (.not. top_at_1) then
+      !
+      ! Reverse vertical ordering of source functions
+      !
+      sources%lev_source(:,1:nlay+1,1) = sources%lev_source(:,nlay+1:1:-1,1)
+      sources%lay_source(:,1:nlay,  1) = sources%lay_source(:,nlay  :1:-1,1)
     end if 
   end subroutine gray_rad_equil
   ! ------------------------------------------------------------------------------------
   !
   ! Check that solutions are in gray radiative equilibrium 
+  !   We could use this to check heating rates but we'd have to make up pressure levels... 
   !
   function check_gray_rad_equil(sfc_T, lw_tau, top_at_1, up_flux, net_flux)
     real(wp), dimension(:),   intent(in) :: sfc_T, lw_tau
@@ -184,7 +255,9 @@ contains
       check_gray_rad_equil = .false.
     end if 
     !
-    ! Check that net fluxes are constant with height -  fairly relaxed threshold w.r.t. spacing() 
+    ! Check that net fluxes are constant with height
+    !  Fairly relaxed threshold w.r.t. spacing() because net flux is small relative to 
+    !  large up and down fluxes that vary with tau
     !
     if(.not. allclose(net_flux(:,:), & 
                       spread(net_flux(:,1), dim=2, ncopies=size(net_flux,2)), &
@@ -193,6 +266,126 @@ contains
       check_gray_rad_equil = .false.
     end if 
   end function check_gray_rad_equil
-
   ! ------------------------------------------------------------------------------------
+  !
+  ! Incoming energy = OLR in gray radiative equilibirum
+  !   Equation 6b of Weaver and Rmanathan 1995 https://doi.org/10.1029/95JD00770 with with f0 = OLR 
+  !
+  elemental function gray_rad_equil_olr(T, tau)
+    real(wp), intent(in) :: T, tau
+    real(wp)             :: gray_rad_equil_olr
+
+    gray_rad_equil_olr = (2._wp * sigma * T**4)/(2 + D * tau) 
+  end function gray_rad_equil_olr
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Invariance tests
+  !
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Clear-sky longwave fluxes, half the columns at a time
+  !   We're counting on ncol being even
+  !
+  subroutine lw_clear_sky_subset
+    type(ty_optical_props_1scl) :: atmos_subset
+    type(ty_source_func_lw)     :: sources_subset
+    type(ty_fluxes_broadband)   :: fluxes ! Use local variable
+    real(wp), dimension(lw_atmos%get_ncol()/2,       & 
+                        lw_atmos%get_nlay()+1), target &
+                                :: up, dn
+    integer :: i, colS, colE
+    integer :: ncol, nlay 
+
+    ncol = lw_atmos%get_ncol()
+    nlay = lw_atmos%get_nlay()
+    call stop_on_err(atmos_subset%init(lw_atmos))
+    fluxes%flux_up => up
+    fluxes%flux_dn => dn
+    do i = 1, 2
+      colS = ((i-1) * ncol/2) + 1
+      colE = i * ncol/2
+      call stop_on_err(lw_atmos%get_subset  (colS, ncol/2, atmos_subset))
+      call stop_on_err(lw_sources%get_subset(colS, ncol/2, sources_subset))
+      call stop_on_err(rte_lw(atmos_subset, top_at_1,  &
+                              sources_subset,          &
+                              sfc_emis(:,colS:colE), &
+                              fluxes))
+      tst_flux_up(colS:colE,:) = up
+      tst_flux_dn(colS:colE,:) = dn
+    end do
+  end subroutine lw_clear_sky_subset
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Tests incrementing: 
+  !   Dividing optical depth in two and adding it back gives the same answer
+  !   Adding transparent optical properties of any type gives the same answer
+  ! It would be more prudent to save the initial values in atmos and increment 
+  !   fresh each time... 
+  !
+  function check_incrementing(lw_atmos, ref_flux_up, ref_flux_dn)
+    type(ty_optical_props_1scl), intent(inout) :: lw_atmos
+    real(wp), dimension(:,:),    intent(in)    :: ref_flux_up, ref_flux_dn
+    logical                                    :: check_incrementing
+
+    check_incrementing = .true. 
+    fluxes%flux_up  => tst_flux_up (:,:)
+    fluxes%flux_dn  => tst_flux_dn (:,:)
+    !
+    ! divide optical depth in half, then add it back 
+    !
+    call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+    lw_atmos%tau(:,:,:) = 0.5_wp * lw_atmos%tau(:,:,:) 
+    call stop_on_err(lw_atmos%increment(lw_atmos))
+    call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn) ) then
+      call report_err("  halving/doubling fails")
+      check_incrementing = .false.
+    end if 
+    
+    !
+    ! Incrementing with transparent (tau=0) sets of properties 
+    !   Tests validate() as well 
+    !
+    call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+    call increment_with_1scl(lw_atmos)
+    call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn) ) then  
+      call report_err("  Incrementing with 1scl fails")
+      check_incrementing = .false. 
+    end if 
+
+    call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+    call increment_with_2str(lw_atmos)
+    call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn) ) then
+      call report_err("  Incrementing with 2str fails")
+      check_incrementing = .false. 
+    end if 
+
+    call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+    call increment_with_nstr(lw_atmos)
+    call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn) ) then
+      call report_err("  Incrementing with nstr fails")
+      check_incrementing = .false.
+    end if
+  end function check_incrementing
+  ! ------------------------------------------------------------------------------------
+
 end program rte_unit_tests

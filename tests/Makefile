@@ -34,7 +34,7 @@ VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)
 ADDITIONS  = mo_heating_rates.o mo_compute_bc.o mo_rrtmgp_clr_all_sky.o
 # File I/O
 ADDITIONS += mo_load_coefficients.o mo_simple_netcdf.o mo_rfmip_io.o
-ADDITIONS += mo_testing_io.o
+ADDITIONS += mo_testing_io.o mo_testing_utils.o 
 # Cloud optics
 CLOUDS    += mo_cloud_sampling.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.o mo_garand_atmos_io.o
 # Solar variability

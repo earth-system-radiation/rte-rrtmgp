@@ -38,19 +38,18 @@ program rte_unit_tests
   !   Net flux is constant with height, OLR is known from surface temperature
   ! Tests include 
   !   Solutions match analytic results 
-  !   Net fluxes = down - up when computed in various combos (net only, up/down only, all three)
+  !   Net fluxes = down-up when computed in various combos (net only, up/down only, all three)
   !     using ty_broadband_flues
   !   Answers are invariant to 
-  !     number of columns (subsets)
-  !     adding transparent optical properties 
+  !     Extracting subsets
+  !     Vertical orientation
+  !     Adding transparent optical properties 
+  ! Longwave specific tests: 
+  !   Computing the Jacibian doesn't change fluxes
+  !   Fluxes inferred from Jacobian are close to fluxes with perturbed surface T. (TODO)
   !
-  !   Then use an example to test invariance to vertical orientation 
-  !     vertical discretization? Maybe just check boundary fluxes
-  !     *Jacobian
-  !     *Computing Jacobian shouldn't change net fluxes 
-  !   Expand testing to optical properties 1_scl? 
-  !     Increment with 3 variants of transparent media
-  !     Divide by two and increment 
+  ! Other possibilites: 
+  !   Vertical discretization? Maybe just check boundary fluxes
   !   Test the application of the boundary condition? 
 
   real(wp), parameter :: pi = acos(-1._wp)
@@ -63,7 +62,8 @@ program rte_unit_tests
                          D     = 1.66_wp              ! Diffusivity angle, from single-angle RRTMGP solver
   real(wp), dimension(  ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
                                                          (310._wp, icol = 1,ncol/2)]
-  real(wp), dimension(  ncol), parameter :: lw_total_tau = [([0.1_wp, 1._wp, 10._wp, 50._wp], icol = 1, ncol/4)]
+  real(wp), dimension(  ncol), parameter :: lw_total_tau = [([0.1_wp, 1._wp, 10._wp, 50._wp], &
+                                                             icol=1, ncol/4)]
   real(wp), dimension(1,ncol), parameter :: sfc_emis   = 1._wp
 
   type(ty_optical_props_1scl) :: lw_atmos 
@@ -72,7 +72,8 @@ program rte_unit_tests
   logical                     :: top_at_1
   real(wp), dimension(ncol,nlay+1), target :: &
                                  ref_flux_up, ref_flux_dn, ref_flux_net, & 
-                                 tst_flux_up, tst_flux_dn, tst_flux_net
+                                 tst_flux_up, tst_flux_dn, tst_flux_net, & 
+                                 jFluxUp
 
   logical :: passed 
 
@@ -106,10 +107,7 @@ program rte_unit_tests
   ! Net fluxes on- vs off-line
   !  Are the net fluxes correct?
   !
-  if(.not. allclose(ref_flux_net, ref_flux_dn-ref_flux_up)) then 
-    passed = .false.
-    call report_err("  LW: net fluxes don't match down-up")
-  end if
+  call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, passed, "net fluxes don't match down-up")
   !
   ! Compute only net fluxes 
   !
@@ -121,7 +119,7 @@ program rte_unit_tests
   call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
                     passed, "Net fluxes computed alone doesn'tt match down-up computed separately")
   !
-  ! Compute only up and down  fluxes 
+  ! Compute only up and down fluxes 
   !
   fluxes%flux_up  => tst_flux_up (:,:)
   fluxes%flux_dn  => tst_flux_dn (:,:)
@@ -137,9 +135,8 @@ program rte_unit_tests
   !
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call lw_clear_sky_subset
-  call check_fluxes(tst_flux_up, ref_flux_up, &  
-                    passed, "Doing problem in subsets fails")
-  call check_fluxes(tst_flux_dn, ref_flux_dn, &  
+  call check_fluxes(tst_flux_up, ref_flux_up, &
+                    tst_flux_dn, ref_flux_dn, &  
                     passed, "Doing problem in subsets fails")
 
   print *, "  Subsetting invariance"
@@ -153,14 +150,47 @@ program rte_unit_tests
                           lw_sources, sfc_emis, &
                           fluxes = fluxes))
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
-                    passed, "Doing problem upside down fails")
-  call check_fluxes(tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, &  
+                    tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "Doing problem upside down fails")
   print *, "  Vertical orientation invariance"
 
-
+  ! -------------------------------------------------------
+  !
+  ! Incrementing with tranparent 
+  !
   passed = passed .and. check_incrementing(lw_atmos, ref_flux_up, ref_flux_up)
   print *, "  Incrementing invariance"
+  ! -------------------------------------------------------
+  !
+  ! Computing Jacobian shouldn't change net fluxes 
+  !
+  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                          lw_sources,      &
+                          sfc_emis,        &
+                          fluxes,          &
+                          flux_up_Jac = jFluxUp))
+  call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
+                    passed, "Computing Jacobian changes fluxes")
+  !
+  ! Increase surface temperature by 1K and recompute fluxes - can't just increase surface T by 1K
+  !
+  if(.false.) then 
+    call gray_rad_equil(sfc_t + 1._wp, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+    call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                            lw_sources,      &
+                            sfc_emis,        &
+                            fluxes))
+    !
+    ! Comparision of fluxes with increased surface T aren't expected to match 
+    !   fluxes + their Jacobian w.r.t. surface T exactly
+    !
+    if (.not. allclose(tst_flux_up, ref_flux_up + jFluxUp, tol=30._wp)) then
+      call report_err("  Jacobian approx. differs from flux with perturbed surface T")
+      print *, maxval(abs(tst_flux_up - (ref_flux_up + jFluxUp))/spacing(tst_flux_up))
+    end if
+  end if 
+  print *, "  Jacobian"
 
   ! ------------------------------------------------------------------------------------
   !

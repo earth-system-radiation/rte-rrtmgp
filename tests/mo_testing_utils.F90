@@ -24,6 +24,10 @@ module mo_testing_utils
   interface allclose
     module procedure allclose_1, allclose_2
   end interface allclose
+
+  interface check_fluxes
+    module procedure check_fluxes_1pair, check_fluxes_2pair
+  end interface check_fluxes
 contains
   ! ----------------------------------------------------------------------------
   !
@@ -82,7 +86,7 @@ contains
     end if
   end subroutine stop_on_err
   ! ----------------------------------------------------------------------------
-  subroutine check_fluxes(flux_1, flux_2, status, message)  
+  subroutine check_fluxes_1pair(flux_1, flux_2, status, message)  
     real(wp), dimension(:,:), intent(in) :: flux_1, flux_2
     logical                              :: status
     character(len=*),         intent(in) :: message
@@ -91,7 +95,19 @@ contains
       status = .false. 
       call report_err("    " // trim(message))
     end if 
-  end subroutine check_fluxes
+  end subroutine check_fluxes_1pair
+  ! ----------------------------------------------------------------------------
+  subroutine check_fluxes_2pair(flux_1, flux_2, flux_3, flux_4, status, message)  
+    real(wp), dimension(:,:), intent(in) :: flux_1, flux_2, flux_3, flux_4
+    logical                              :: status
+    character(len=*),         intent(in) :: message
+
+    if(.not. (allclose(flux_1, flux_2) .and. & 
+              allclose(flux_3, flux_4))) then 
+      status = .false. 
+      call report_err("    " // trim(message))
+    end if 
+  end subroutine check_fluxes_2pair
   ! ----------------------------------------------------------------------------
   !
   ! Adding transparent (tau = 0) optical properties 

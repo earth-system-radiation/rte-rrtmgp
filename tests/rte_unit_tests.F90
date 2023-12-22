@@ -15,8 +15,8 @@ program rte_unit_tests
   !
   ! Exercise various paths through RTE code including solvers, optical properties, fluxes
   !   Tests are run on idealized problems with analytic solutions (e.g. radiative equilibrium)
-  !   Some sections test e.g. initialization and finalization 
-  !   Others compare two sets of fluxes which should be the same, e.g. with respect to vertical ordering 
+  !   Solutions are checked for correctness where possible 
+  !   Some tests check invariance, e.g. with respect to vertical ordering 
   !
   use mo_rte_kind,           only: wp
   use mo_optical_props,      only: ty_optical_props, &

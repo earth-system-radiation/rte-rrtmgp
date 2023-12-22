@@ -45,7 +45,7 @@ ADDITIONS += mo_solar_variability.o
 #
 # Targets
 #
-all: check_variants check_equivalence test_zenith_angle_spherical_correction
+all: check_variants check_equivalence test_zenith_angle_spherical_correction rte_unit_tests
 
 check_equivalence:   $(ADDITIONS) $(LIB_DEPS) check_equivalence.o
 check_equivalence.o: $(ADDITIONS) $(LIB_DEPS) check_equivalence.F90

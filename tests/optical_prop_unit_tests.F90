@@ -48,6 +48,10 @@ program optical_prop_unit_tests
   ref_1scl%tau(1:ncol,1:nlay,1) = spread(total_tau(1:ncol)/real(nlay, wp), dim=2, ncopies=nlay)
   passed = .true. 
   ! ----------------------------------------------------------------------------
+  !
+  ! Incrementing with transparent (tau=0) sets of optical properties 
+  !
+  ! ----------------------------------------------------------------------------
   print *, "  Incrementing 1scl"
   !
   ! Increment 1scl 
@@ -141,6 +145,34 @@ program optical_prop_unit_tests
   end if 
 
   call tst_2str%finalize()
+  ! ----------------------------------------------------------------------------
+  print *, "Halving/doubling optical thickness"
+  !
+  ! Adding two media of half optical thickness to recover original values 
+  !
+  call make_copy_1scl
+  tst_1scl%tau = 0.5_wp * tst_1scl%tau 
+  call stop_on_err(tst_1scl%increment(tst_1scl))
+  if(.not. ops_match(tst_1scl, ref_1scl)) then 
+    call report_err("1scl half/double fails")
+    passed = .false. 
+  end if 
+
+  call make_copy_2str
+  tst_2str%tau = 0.5_wp * tst_2str%tau 
+  call stop_on_err(tst_2str%increment(tst_2str))
+  if(.not. ops_match(tst_2str, ref_2str)) then 
+    call report_err("2str half/double fails")
+    passed = .false. 
+  end if 
+
+  call make_copy_nstr
+  tst_nstr%tau = 0.5_wp * tst_nstr%tau 
+  call stop_on_err(tst_nstr%increment(tst_nstr))
+  if(.not. ops_match(tst_nstr, ref_nstr)) then 
+    call report_err("nstr half/double fails")
+    passed = .false. 
+  end if 
   ! ----------------------------------------------------------------------------
   if (.not. passed) call stop_on_err("Optical props unit tests fail")
   print *, "Optical properties unit testing finished"

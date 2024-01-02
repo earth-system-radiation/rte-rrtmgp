@@ -66,6 +66,8 @@ program rte_unit_tests
                                                             0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
   real(wp), dimension(1,ncol), parameter :: sfc_emis   = 1._wp
 
+  real(wp), parameter :: jacobian_tolerance = 3.e-2_wp  ! How closely should upward fluxes from Jacobian match perturbations? 
+
   type(ty_optical_props_1scl) :: lw_atmos 
   type(ty_source_func_lw)     :: lw_sources
   type(ty_fluxes_broadband)   :: fluxes
@@ -107,6 +109,7 @@ program rte_unit_tests
   ! Net fluxes on- vs off-line
   !  Are the net fluxes correct?
   !
+  print *, "  Longwave net flux variants"
   call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, passed, "net fluxes don't match down-up")
   !
   ! Compute only net fluxes 
@@ -128,22 +131,22 @@ program rte_unit_tests
                           fluxes = fluxes))
   call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
                     passed, "net fluxes don't match down-up computed together")
-  print *, "  Longwave net flux variants"
   ! -------------------------------------------------------
   !
   ! Subsets of atmospheric columns 
   !
+  print *, "  Subsetting invariance"
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call lw_clear_sky_subset
   call check_fluxes(tst_flux_up, ref_flux_up, &
                     tst_flux_dn, ref_flux_dn, &  
                     passed, "Doing problem in subsets fails")
 
-  print *, "  Subsetting invariance"
   ! -------------------------------------------------------
   !
   ! Vertically-reverse
   !
+  print *, "  Vertical orientation invariance"
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call vr(lw_atmos, lw_sources)
   call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
@@ -152,18 +155,33 @@ program rte_unit_tests
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "Doing problem upside down fails")
-  print *, "  Vertical orientation invariance"
 
+  ! -------------------------------------------------------
+  !
+  ! divide optical depth in half, then add it back 
+  !
+  print *, "  Halving/doubling invariance"
+  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  lw_atmos%tau(:,:,:) = 0.5_wp * lw_atmos%tau(:,:,:) 
+  call stop_on_err(lw_atmos%increment(lw_atmos))
+  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                          lw_sources,      &
+                          sfc_emis,        &
+                          fluxes))
+  call check_fluxes(tst_flux_up, ref_flux_up, &  
+                    tst_flux_dn, ref_flux_dn, & 
+                    passed, "Halving/doubling fails")
   ! -------------------------------------------------------
   !
   ! Incrementing with tranparent 
   !
-  passed = passed .and. check_incrementing(lw_atmos, ref_flux_up, ref_flux_up)
   print *, "  Incrementing invariance"
+  passed = passed .and. check_incrementing()
   ! -------------------------------------------------------
   !
   ! Computing Jacobian shouldn't change net fluxes 
   !
+  print *, "  Jacobian"
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call stop_on_err(rte_lw(lw_atmos, top_at_1, &
                           lw_sources,      &
@@ -173,9 +191,10 @@ program rte_unit_tests
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
                     passed, "Computing Jacobian changes fluxes")
   !
-  ! Increase surface temperature by 1K and recompute fluxes
+  ! Increase surface temperature in source function by 1K and recompute fluxes
   !
-  lw_sources%sfc_source(:,1) = sigma/pi * (sfc_t + 1._wp)**4
+  lw_sources%sfc_source    (:,1) =         sigma/pi * (sfc_t + 1._wp)**4
+  lw_sources%sfc_source_Jac(:,1) = 4._wp * sigma/pi * (sfc_t + 1._wp)**3
   call stop_on_err(rte_lw(lw_atmos, top_at_1, &
                           lw_sources,      &
                           sfc_emis,        &
@@ -184,11 +203,12 @@ program rte_unit_tests
   ! Comparision of fluxes with increased surface T aren't expected to match 
   !   fluxes + their Jacobian w.r.t. surface T exactly
   !
-  if (.not. allclose(tst_flux_up, ref_flux_up + jFluxUp, tol=32._wp)) then
+  print '("    Jacobian accurate to within ", f7.3, "%")', & 
+    maxval((tst_flux_up - ref_flux_up + jFluxUp)/tst_flux_up * 100._wp)
+  if (maxval((tst_flux_up - ref_flux_up + jFluxUp)/tst_flux_up) > jacobian_tolerance) then
     call report_err("  Jacobian approx. differs from flux with perturbed surface T")
-    print *, maxval(abs(tst_flux_up - (ref_flux_up + jFluxUp))/spacing(tst_flux_up))
+    passed = .false. 
   end if 
-  print *, "  Jacobian"
 
   ! ------------------------------------------------------------------------------------
   !
@@ -234,12 +254,13 @@ contains
     olr(:) = gray_rad_equil_olr(sfc_t, lw_total_tau)
 
     call stop_on_err(sources%alloc(ncol, nlay, atmos))
-    sources%sfc_source(:,1) = sigma/pi * sfc_t**4
+    sources%sfc_source    (:,1) =         sigma/pi * sfc_t**4
+    sources%sfc_source_Jac(:,1) = 4._wp * sigma/pi * sfc_t**3
     !
     ! Calculation with top_at_1
     !
       ilay = 1
-          sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) 
+        sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) 
       do ilay = 2, nlay+1
         sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) * & 
                                            (1._wp + D * sum(atmos%tau(:,:ilay-1,1),dim=2))
@@ -350,29 +371,12 @@ contains
   ! It would be more prudent to save the initial values in atmos and increment 
   !   fresh each time... 
   !
-  function check_incrementing(lw_atmos, ref_flux_up, ref_flux_dn)
-    type(ty_optical_props_1scl), intent(inout) :: lw_atmos
-    real(wp), dimension(:,:),    intent(in)    :: ref_flux_up, ref_flux_dn
+  function check_incrementing()
     logical                                    :: check_incrementing
 
+    logical :: passed 
+
     check_incrementing = .true. 
-    fluxes%flux_up  => tst_flux_up (:,:)
-    fluxes%flux_dn  => tst_flux_dn (:,:)
-    !
-    ! divide optical depth in half, then add it back 
-    !
-    call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
-    lw_atmos%tau(:,:,:) = 0.5_wp * lw_atmos%tau(:,:,:) 
-    call stop_on_err(lw_atmos%increment(lw_atmos))
-    call stop_on_err(rte_lw(lw_atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
-                            fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn) ) then
-      call report_err("  halving/doubling fails")
-      check_incrementing = .false.
-    end if 
     
     !
     ! Incrementing with transparent (tau=0) sets of properties 
@@ -384,11 +388,10 @@ contains
                             lw_sources,      &
                             sfc_emis,        &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn) ) then  
-      call report_err("  Incrementing with 1scl fails")
-      check_incrementing = .false. 
-    end if 
+    call check_fluxes(tst_flux_up, ref_flux_up, & 
+                      tst_flux_dn, ref_flux_dn, &
+                      passed, "Incrementing with 1scl fails")
+    check_incrementing = check_incrementing .and. passed 
 
     call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
     call increment_with_2str(lw_atmos)
@@ -396,11 +399,11 @@ contains
                             lw_sources,      &
                             sfc_emis,        &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn) ) then
-      call report_err("  Incrementing with 2str fails")
-      check_incrementing = .false. 
-    end if 
+    call check_fluxes(tst_flux_up, ref_flux_up, & 
+                      tst_flux_dn, ref_flux_dn, &
+                      passed, "Incrementing with 2str fails")
+    check_incrementing = check_incrementing .and. passed 
+
 
     call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
     call increment_with_nstr(lw_atmos)
@@ -408,11 +411,10 @@ contains
                             lw_sources,      &
                             sfc_emis,        &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn) ) then
-      call report_err("  Incrementing with nstr fails")
-      check_incrementing = .false.
-    end if
+    call check_fluxes(tst_flux_up, ref_flux_up, & 
+                      tst_flux_dn, ref_flux_dn, &
+                      check_incrementing, "Incrementing with nstr fails")
+    check_incrementing = check_incrementing .and. passed 
   end function check_incrementing
   ! ------------------------------------------------------------------------------------
 

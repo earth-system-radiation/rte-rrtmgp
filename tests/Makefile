@@ -73,7 +73,13 @@ rte_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_unit_tests.o
 .PHONY: tests
 tests:
 	cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
-	$(RUN_CMD) bash all_tests.sh
+	$(RUN_CMD) (./rte_unit_tests && \
+		        ./check_equivalence test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc && \
+				./check_equivalence test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc && \
+				./check_equivalence test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc && \
+				./check_variants    test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc && \
+				./check_variants    test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc )
+
 check:
 	echo "Nothing to check in tests/"
 

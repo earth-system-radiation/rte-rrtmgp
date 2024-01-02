@@ -22,8 +22,12 @@ module mo_testing_utils
   public 
 
   interface allclose
-    module procedure allclose_1, allclose_2
+    module procedure allclose_1, allclose_2, allclose_3, allclose_4
   end interface allclose
+
+  interface ops_match
+    module procedure ops_match_1scl, ops_match_2str, ops_match_nstr
+  end interface ops_match
 
   interface check_fluxes
     module procedure check_fluxes_1pair, check_fluxes_2pair
@@ -61,6 +65,65 @@ contains
 
     allclose_2= all(abs(array1-array2) <= tolerance * spacing(array1))
   end function allclose_2
+  ! ----------------------------------------------------------------------------
+  logical function allclose_3(array1, array2, tol)
+    real(wp), dimension(:,:,:), intent(in) :: array1, array2
+    real(wp), optional,         intent(in) :: tol 
+    
+    real(wp) :: tolerance 
+    if (present(tol)) then 
+      tolerance = tol 
+    else
+      tolerance = 2._wp
+    end if 
+
+    allclose_3= all(abs(array1-array2) <= tolerance * spacing(array1))
+  end function allclose_3
+  ! ----------------------------------------------------------------------------
+  logical function allclose_4(array1, array2, tol)
+    real(wp), dimension(:,:,:,:), intent(in) :: array1, array2
+    real(wp), optional,           intent(in) :: tol 
+    
+    real(wp) :: tolerance 
+    if (present(tol)) then 
+      tolerance = tol 
+    else
+      tolerance = 2._wp
+    end if 
+
+    allclose_4= all(abs(array1-array2) <= tolerance * spacing(array1))
+  end function allclose_4
+  ! ----------------------------------------------------------------------------
+  !
+  ! Compare two sets of optical properties; return false if abs(x-y) > tol*spacing(x) for any element
+  !
+  ! ----------------------------------------------------------------------------
+  logical function ops_match_1scl(values_1, values_2, tol)
+    class(ty_optical_props_1scl), intent(in) :: values_1, values_2
+    real(wp), optional,           intent(in) :: tol 
+
+    ops_match_1scl = allclose(values_1%tau, values_2%tau, tol)
+  end function ops_match_1scl
+  ! ----------------------------------------------------------------------------
+  logical function ops_match_2str(values_1, values_2, tol)
+    class(ty_optical_props_2str), intent(in) :: values_1, values_2
+    real(wp), optional,           intent(in) :: tol 
+
+    ops_match_2str = allclose(values_1%tau, values_2%tau, tol) .and. & 
+                     allclose(values_1%ssa, values_2%ssa, tol) .and. &
+                     allclose(values_1%g  , values_2%g  , tol)
+  end function ops_match_2str
+  ! ----------------------------------------------------------------------------
+  logical function ops_match_nstr(values_1, values_2, tol)
+    class(ty_optical_props_nstr), intent(in) :: values_1, values_2
+    real(wp), optional,           intent(in) :: tol 
+
+    ops_match_nstr = allclose(values_1%tau, values_2%tau, tol) .and. & 
+                     allclose(values_1%ssa, values_2%ssa, tol) .and. &
+                     allclose(values_1%p  , values_2%p  , tol)
+  end function ops_match_nstr
+  ! ----------------------------------------------------------------------------
+
   ! ----------------------------------------------------------------------------
   !
   ! Error report - print to screen with or without exit

@@ -62,8 +62,8 @@ program rte_unit_tests
                          D     = 1.66_wp              ! Diffusivity angle, from single-angle RRTMGP solver
   real(wp), dimension(  ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
                                                          (310._wp, icol = 1,ncol/2)]
-  real(wp), dimension(  ncol), parameter :: lw_total_tau = [([0.1_wp, 1._wp, 10._wp, 50._wp], &
-                                                             icol=1, ncol/4)]
+  real(wp), dimension(  ncol), parameter :: lw_total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
+                                                            0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
   real(wp), dimension(1,ncol), parameter :: sfc_emis   = 1._wp
 
   type(ty_optical_props_1scl) :: lw_atmos 

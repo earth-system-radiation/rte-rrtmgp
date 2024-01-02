@@ -173,22 +173,20 @@ program rte_unit_tests
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
                     passed, "Computing Jacobian changes fluxes")
   !
-  ! Increase surface temperature by 1K and recompute fluxes - can't just increase surface T by 1K
+  ! Increase surface temperature by 1K and recompute fluxes
   !
-  if(.false.) then 
-    call gray_rad_equil(sfc_t + 1._wp, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
-    call stop_on_err(rte_lw(lw_atmos, top_at_1, &
-                            lw_sources,      &
-                            sfc_emis,        &
-                            fluxes))
-    !
-    ! Comparision of fluxes with increased surface T aren't expected to match 
-    !   fluxes + their Jacobian w.r.t. surface T exactly
-    !
-    if (.not. allclose(tst_flux_up, ref_flux_up + jFluxUp, tol=30._wp)) then
-      call report_err("  Jacobian approx. differs from flux with perturbed surface T")
-      print *, maxval(abs(tst_flux_up - (ref_flux_up + jFluxUp))/spacing(tst_flux_up))
-    end if
+  lw_sources%sfc_source(:,1) = sigma/pi * (sfc_t + 1._wp)**4
+  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                          lw_sources,      &
+                          sfc_emis,        &
+                          fluxes))
+  !
+  ! Comparision of fluxes with increased surface T aren't expected to match 
+  !   fluxes + their Jacobian w.r.t. surface T exactly
+  !
+  if (.not. allclose(tst_flux_up, ref_flux_up + jFluxUp, tol=32._wp)) then
+    call report_err("  Jacobian approx. differs from flux with perturbed surface T")
+    print *, maxval(abs(tst_flux_up - (ref_flux_up + jFluxUp))/spacing(tst_flux_up))
   end if 
   print *, "  Jacobian"
 

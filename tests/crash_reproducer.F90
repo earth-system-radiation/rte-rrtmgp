@@ -19,7 +19,7 @@ program crash_reproducer
   real(wp), dimension(  ncol), parameter :: lw_total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
                                                             0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
   
-  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1)
+  ! call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1)
   print *, gray_rad_equil_olr(sfc_t, lw_total_tau)
 contains 
   ! ------------------------------------------------------------------------------------

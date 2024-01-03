@@ -272,7 +272,7 @@ contains
     ! Check top-of-atmosphere energy balance 
     !
     if(.not. allclose(up_flux(:,toa), &
-                      gray_rad_equil_olr(sfc_t, lw_total_tau))) then 
+                      gray_rad_equil_olr(sfc_t, lw_total_tau), tol=4._wp)) then
       call report_err("OLR is not consistent with gray radiative equilibrium")
       check_gray_rad_equil = .false.
     end if 

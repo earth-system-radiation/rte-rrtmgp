@@ -293,11 +293,11 @@ contains
   ! Incoming energy = OLR in gray radiative equilibirum
   !   Equation 6b of Weaver and Rmanathan 1995 https://doi.org/10.1029/95JD00770 with with f0 = OLR 
   !
-  elemental function gray_rad_equil_olr(T, tau)
-    real(wp), intent(in) :: T, tau
-    real(wp)             :: gray_rad_equil_olr
+  function gray_rad_equil_olr(T, tau)
+    real(wp), dimension(:), intent(in) :: T, tau
+    real(wp), dimension(size(T))       :: gray_rad_equil_olr
 
-    gray_rad_equil_olr = (2._wp * sigma * T**4)/(2 + D * tau) 
+    gray_rad_equil_olr(:) = (2._wp * sigma * T(:)**4)/(2 + D * tau(:)) 
   end function gray_rad_equil_olr
   ! ------------------------------------------------------------------------------------
   !

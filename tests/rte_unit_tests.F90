@@ -180,7 +180,7 @@ program rte_unit_tests
   ! Comparision of fluxes with increased surface T aren't expected to match 
   !   fluxes + their Jacobian w.r.t. surface T exactly
   !
-  print '("    Jacobian accurate to within ", f7.3, "%")', & 
+  print '("    Jacobian accurate to within ", f6.2, "%")', & 
     maxval((tst_flux_up - ref_flux_up + jFluxUp)/tst_flux_up * 100._wp)
 
   ! ------------------------------------------------------------------------------------

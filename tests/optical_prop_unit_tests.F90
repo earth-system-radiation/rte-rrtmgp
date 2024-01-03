@@ -46,6 +46,22 @@ program optical_prop_unit_tests
   ! Divide optical depth evenly among layers 
   !
   ref_1scl%tau(1:ncol,1:nlay,1) = spread(total_tau(1:ncol)/real(nlay, wp), dim=2, ncopies=nlay)
+  !
+  ! 2- and n-stream optical properties 
+  !
+  call stop_on_err(ref_2str%alloc_2str(ncol, nlay, ref_1scl))
+  ref_2str%tau = ref_1scl%tau
+  ref_2str%ssa = ssa
+  ref_2str%g   = g
+
+  call stop_on_err(ref_nstr%alloc_nstr(nmom, ncol, nlay, ref_1scl))
+  ref_nstr%tau = ref_1scl%tau
+  ref_nstr%ssa = ssa
+  ! Henyey-Greenstein phase function 
+  do imom = 1, nmom
+    ref_nstr%p(imom,:,:,:) = g**imom
+  end do 
+
   passed = .true. 
   ! ----------------------------------------------------------------------------
   !
@@ -83,11 +99,6 @@ program optical_prop_unit_tests
   !
   ! Increment 2str 
   !
-  call stop_on_err(ref_2str%alloc_2str(ncol, nlay, ref_1scl))
-  ref_2str%tau = ref_1scl%tau
-  ref_2str%ssa = ssa
-  ref_2str%g   = g
-
   call make_copy_2str
   call increment_with_1scl(tst_2str)
   if(.not. ops_match(tst_2str, ref_2str)) then 
@@ -115,14 +126,6 @@ program optical_prop_unit_tests
   !
   ! Increment nstr 
   !
-  call stop_on_err(ref_nstr%alloc_nstr(nmom, ncol, nlay, ref_1scl))
-  ref_nstr%tau = ref_1scl%tau
-  ref_nstr%ssa = ssa
-  ! Henyey-Greenstein phase function 
-  do imom = 1, nmom
-    ref_nstr%p(imom,:,:,:) = g**imom
-  end do 
-
   call make_copy_nstr
   call increment_with_1scl(tst_nstr)
   if(.not. ops_match(tst_nstr, ref_nstr)) then 
@@ -146,7 +149,7 @@ program optical_prop_unit_tests
 
   call tst_2str%finalize()
   ! ----------------------------------------------------------------------------
-  print *, "Halving/doubling optical thickness"
+  print *, "  Halving/doubling optical thickness"
   !
   ! Adding two media of half optical thickness to recover original values 
   !
@@ -174,8 +177,20 @@ program optical_prop_unit_tests
     passed = .false. 
   end if 
   ! ----------------------------------------------------------------------------
+  print *, "  Delta scaling"
+  !
+  ! Delta-scale with forward-fraction f=0 (i.e. Rayleigh scattering)
+  !
+  call make_copy_2str
+  call stop_on_err(tst_2str%delta_scale(spread(spread(spread(0._wp, 1, ncol), 2, nlay), 3, 1)))
+  if(.not. ops_match(tst_2str, ref_2str)) then 
+    call report_err("2str half/double fails")
+    passed = .false. 
+  end if 
+  ! ----------------------------------------------------------------------------
   if (.not. passed) call stop_on_err("Optical props unit tests fail")
   print *, "Optical properties unit testing finished"
+  ! ----------------------------------------------------------------------------
 contains 
   ! ----------------------------------------------------------------------------
   !

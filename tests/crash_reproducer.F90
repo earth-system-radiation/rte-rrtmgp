@@ -1,13 +1,10 @@
 program crash_reproducer
   use, intrinsic :: iso_c_binding, only: c_float, c_double, c_long, c_int, c_bool
   implicit none
-  integer, parameter :: dp = c_double, sp = c_float, i8 = c_long, i4 = c_int
-  integer, parameter :: wp = dp
+  integer, parameter :: wp = c_double
 
-  real(wp), parameter :: pi = acos(-1._wp)
-  integer,  parameter :: ncol = 8, nlay = 16
-  integer             :: icol, ilay
-  logical             :: top_at_1 = .true. 
+  integer,  parameter :: ncol = 8, nlay=16
+  integer             :: icol
   !
   ! Longwave tests - gray radiative equilibrium
   !
@@ -19,8 +16,8 @@ program crash_reproducer
   real(wp), dimension(  ncol), parameter :: lw_total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
                                                             0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
   
-  ! call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1)
-  print *, gray_rad_equil_olr(sfc_t, lw_total_tau)
+  print '("Return vector-valued function: ", 8(f6.2, 2x))', gray_rad_equil_olr(sfc_t, lw_total_tau)
+  call gray_rad_equil(sfc_t, lw_total_tau, nlay, .true.)
 contains 
   ! ------------------------------------------------------------------------------------
   !
@@ -31,16 +28,11 @@ contains
     real(wp), dimension(:), intent(in) :: sfc_t, total_tau
     integer,                intent(in) :: nlay 
     logical,                intent(in) :: top_at_1
-
-    integer                          :: ncol
-
-    ncol = size(sfc_t)
-
     !
     ! Longwave sources - for broadband these are sigma/pi T^4
     !   (isotropic radiation)
     !
-    Print *, gray_rad_equil_olr(sfc_t, lw_total_tau)
+    print '("Called from within subroutine: ", 8(f6.2, 2x))', gray_rad_equil_olr(sfc_t, lw_total_tau)
 
   end subroutine gray_rad_equil
   ! ------------------------------------------------------------------------------------

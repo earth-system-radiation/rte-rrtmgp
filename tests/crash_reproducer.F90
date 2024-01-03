@@ -33,7 +33,6 @@ contains
     logical,                intent(in) :: top_at_1
 
     integer                          :: ncol
-    real(wp), dimension(size(sfc_t)) :: t_lay, olr
 
     ncol = size(sfc_t)
 
@@ -41,7 +40,7 @@ contains
     ! Longwave sources - for broadband these are sigma/pi T^4
     !   (isotropic radiation)
     !
-    olr = gray_rad_equil_olr(sfc_t, lw_total_tau)
+    Print *, gray_rad_equil_olr(sfc_t, lw_total_tau)
 
   end subroutine gray_rad_equil
   ! ------------------------------------------------------------------------------------

@@ -87,7 +87,7 @@ program rte_unit_tests
   !
   ! Gray radiative equillibrium 
   !
-  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call gray_rad_equil(sfc_t(1:ncol), lw_total_tau(1:ncol), nlay, top_at_1, lw_atmos, lw_sources)
 
   fluxes%flux_up  => ref_flux_up (:,:)
   fluxes%flux_dn  => ref_flux_dn (:,:)
@@ -297,11 +297,7 @@ contains
     real(wp), dimension(:), intent(in) :: T, tau
     real(wp), dimension(size(T))       :: gray_rad_equil_olr
 
-    integer :: icol
-    
-    do icol = 1, size(T)
-      gray_rad_equil_olr(icol) = (2._wp * sigma * T(icol)**4)/(2 + D * tau(icol)) 
-    end do
+    gray_rad_equil_olr(:) = (2._wp * sigma * T(:)**4)/(2 + D * tau(:)) 
   end function gray_rad_equil_olr
   ! ------------------------------------------------------------------------------------
   !

@@ -297,7 +297,11 @@ contains
     real(wp), dimension(:), intent(in) :: T, tau
     real(wp), dimension(size(T))       :: gray_rad_equil_olr
 
-    gray_rad_equil_olr(:) = (2._wp * sigma * T(:)**4)/(2 + D * tau(:)) 
+    integer :: icol
+    
+    do icol = 1, size(T)
+      gray_rad_equil_olr(icol) = (2._wp * sigma * T(icol)**4)/(2 + D * tau(icol)) 
+    end do
   end function gray_rad_equil_olr
   ! ------------------------------------------------------------------------------------
   !

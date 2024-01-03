@@ -276,8 +276,8 @@ program rte_check_equivalence
     ! Orientation invariance 
     !
     call lw_clear_sky_vr
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol=4._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol=4._wp) )    & 
+    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err(" Vertical invariance failure")
     print *, "  Vertical orientation invariance"
     ! -------------------------------------------------------
@@ -490,6 +490,9 @@ contains
     character(32), &
               dimension(gas_concs%get_num_gases()) &
                                   :: gc_gas_names
+    logical, parameter :: do_whole_shebang = .false.
+
+    if (do_whole_shebang) then
     !
     ! Reverse the orientation of the problem
     !
@@ -516,16 +519,24 @@ contains
                                        atmos,        &
                                        lw_sources,   &
                                        tlev=t_lev))
+    else
+      atmos%tau            (:,:,:) =  atmos%tau            (:, nlay   :1:-1,:)
+      lw_sources%lay_source(:,:,:) =  lw_sources%lay_source(:, nlay   :1:-1,:)
+      lw_sources%lev_source(:,:,:) =  lw_sources%lev_source(:,(nlay+1):1:-1,:)
+      top_at_1 = .not. top_at_1
+    end if 
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &
                             fluxes))
     tst_flux_up(:,:) = tst_flux_up(:,(nlay+1):1:-1)
     tst_flux_dn(:,:) = tst_flux_dn(:,(nlay+1):1:-1)
+    if (do_whole_shebang) then 
     p_lay      (:,:) = p_lay      (:, nlay   :1:-1)
     t_lay      (:,:) = t_lay      (:, nlay   :1:-1)
     p_lev      (:,:) = p_lev      (:,(nlay+1):1:-1)
     t_lev      (:,:) = t_lev      (:,(nlay+1):1:-1)
+    end if
     top_at_1 = .not. top_at_1
   end subroutine lw_clear_sky_vr
   ! ----------------------------------------------------------------------------

@@ -53,7 +53,7 @@ program rte_unit_tests
   !   Test the application of the boundary condition? 
 
   real(wp), parameter :: pi = acos(-1._wp)
-  integer,  parameter :: ncol = 8, nlay = 10
+  integer,  parameter :: ncol = 8, nlay = 16
   integer             :: icol, ilay
   !
   ! Longwave tests - gray radiative equilibrium
@@ -224,7 +224,7 @@ contains
     ! Longwave sources - for broadband these are sigma/pi T^4
     !   (isotropic radiation)
     !
-    olr(:) = gray_rad_equil_olr(sfc_t, lw_total_tau)
+    olr = gray_rad_equil_olr(sfc_t, lw_total_tau)
 
     call stop_on_err(sources%alloc(ncol, nlay, atmos))
     sources%sfc_source    (:,1) =         sigma/pi * sfc_t**4

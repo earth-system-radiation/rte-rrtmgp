@@ -43,18 +43,18 @@ contains
     integer :: i 
 
     print '("Looped from within subroutine: ", 8(f6.2, 2x))', & 
-       [(gray_rad_equil_olr(sfc_t(i), lw_total_tau(i)), i = 1, size(sfc_t))]
+       [(gray_rad_equil_olr_s(sfc_t(i), lw_total_tau(i)), i = 1, size(sfc_t))]
     print '("Called from within subroutine: ", 8(f6.2, 2x))', gray_rad_equil_olr(sfc_t, lw_total_tau)
   end subroutine gray_rad_equil
   ! ------------------------------------------------------------------------------------
   !
   ! Function version - scalar
   !
-  function gray_rad_equil_olr(T, tau)
+  function gray_rad_equil_olr_s(T, tau)
     real(wp),  intent(in) :: T, tau
-    real(wp),             :: gray_rad_equil_olr
+    real(wp)              :: gray_rad_equil_olr_s
 
-    gray_rad_equil_olr = (2._wp * sigma * T**4)/(2 + D*tau) 
-  end function gray_rad_equil_olr
+    gray_rad_equil_olr_s = (2._wp * sigma * T**4)/(2 + D*tau) 
+  end function gray_rad_equil_olr_s
   ! ------------------------------------------------------------------------------------
 end program crash_reproducer 

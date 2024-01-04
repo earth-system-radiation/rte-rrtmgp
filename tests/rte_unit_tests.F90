@@ -136,7 +136,7 @@ program rte_unit_tests
   !
   print *, "  Subsetting invariance"
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
-  call lw_clear_sky_subset
+  call lw_clear_sky_subset(lw_atmos, lw_sources, sfc_emis)
   call check_fluxes(tst_flux_up, ref_flux_up, &
                     tst_flux_dn, ref_flux_dn, &  
                     passed, "Doing problem in subsets fails")
@@ -309,7 +309,11 @@ contains
   ! Clear-sky longwave fluxes, half the columns at a time
   !   We're counting on ncol being even
   !
-  subroutine lw_clear_sky_subset
+  subroutine lw_clear_sky_subset(lw_atmos, lw_sources, sfc_emis)
+    type(ty_optical_props_1scl), intent(inout) :: lw_atmos
+    type(ty_source_func_lw),     intent(inout) :: lw_sources
+    real(wp), dimension(:,:),    intent(in   ) :: sfc_emis
+
     type(ty_optical_props_1scl) :: atmos_subset
     type(ty_source_func_lw)     :: sources_subset
     type(ty_fluxes_broadband)   :: fluxes ! Use local variable

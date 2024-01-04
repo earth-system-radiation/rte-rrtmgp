@@ -204,7 +204,7 @@ contains
     type(ty_source_func_lw),     intent(inout) :: sources 
 
     integer                          :: ncol
-    real(wp), dimension(size(sfc_t)) :: t_lay, olr
+    real(wp), dimension(size(sfc_t)) :: olr
 
     ncol = size(sfc_t)
     !
@@ -272,7 +272,7 @@ contains
     ! Check top-of-atmosphere energy balance 
     !
     if(.not. allclose(up_flux(:,toa), &
-                      gray_rad_equil_olr(sfc_t, lw_total_tau), tol=4._wp)) then
+                      gray_rad_equil_olr(sfc_t, lw_tau), tol=4._wp)) then
       call report_err("OLR is not consistent with gray radiative equilibrium")
       check_gray_rad_equil = .false.
     end if 

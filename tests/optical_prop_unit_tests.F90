@@ -190,6 +190,7 @@ program optical_prop_unit_tests
   ! ----------------------------------------------------------------------------
   if (.not. passed) call stop_on_err("Optical props unit tests fail")
   print *, "Optical properties unit testing finished"
+  print *
   ! ----------------------------------------------------------------------------
 contains 
   ! ----------------------------------------------------------------------------

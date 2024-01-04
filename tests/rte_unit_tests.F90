@@ -65,9 +65,11 @@ program rte_unit_tests
   real(wp), dimension(  ncol), parameter :: lw_total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
                                                             0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
   real(wp), dimension(1,ncol), parameter :: sfc_emis   = 1._wp
+  real(wp), dimension(ncol,1), parameter :: lw_Ds      = D     ! Diffusivity angle - use default value for all columns
 
   type(ty_optical_props_1scl) :: lw_atmos 
   type(ty_source_func_lw)     :: lw_sources
+  type(ty_optical_props_2str) :: sw_atmos 
   type(ty_fluxes_broadband)   :: fluxes
   logical                     :: top_at_1
   real(wp), dimension(ncol,nlay+1), target :: &
@@ -168,7 +170,7 @@ program rte_unit_tests
                           fluxes,          &
                           flux_up_Jac = jFluxUp))
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
-                    passed, "Computing Jacobian changes fluxes")
+                    passed, "Computing Jacobian changes fluxes fails")
   !
   ! Increase surface temperature in source function by 1K and recompute fluxes
   !
@@ -184,12 +186,44 @@ program rte_unit_tests
   !
   print '("    Jacobian accurate to within ", f6.2, "%")', & 
     maxval((tst_flux_up - ref_flux_up + jFluxUp)/tst_flux_up * 100._wp)
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Using Tang approach for purely absorbing problem should be the same 
+  !
+  print *, "  Two-stream optical properties"
+  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call stop_on_err(sw_atmos%alloc_2str(ncol, nlay, lw_atmos))
+  sw_atmos%tau = lw_atmos%tau
+  sw_atmos%ssa = 0._wp
+  sw_atmos%g   = 0._wp
+
+  call stop_on_err(rte_lw(sw_atmos, top_at_1, &
+                          lw_sources,      &
+                          sfc_emis,        &
+                          fluxes,          &
+                          flux_up_Jac = jFluxUp))
+  call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
+                    passed, "Using two-stream properties fails")
+  call sw_atmos%finalize()
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Specifying diffusivity angle
+  !
+  print *, "  Specified transport angle"
+  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+                          lw_sources,      &
+                          sfc_emis,        &
+                          fluxes,          &
+                          lw_Ds = lw_Ds))
+  call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
+                    passed, "Specifying diffusivity angle D fails")
 
   ! ------------------------------------------------------------------------------------
   !
   ! Done
   !
   print *, "Unit tests done"
+  print *
   if(.not. passed) error stop 1
   ! ------------------------------------------------------------------------------------
 contains 

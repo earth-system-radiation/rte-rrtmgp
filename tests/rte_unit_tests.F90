@@ -60,11 +60,11 @@ program rte_unit_tests
   !
   real(wp), parameter :: sigma = 5.670374419e-8_wp, & ! Stefan-Boltzmann constant 
                          D     = 1.66_wp              ! Diffusivity angle, from single-angle RRTMGP solver
-  real(wp), dimension(  ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
-                                                         (310._wp, icol = 1,ncol/2)]
-  real(wp), dimension(  ncol), parameter :: lw_total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
-                                                            0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
-  real(wp), dimension(1,ncol), parameter :: sfc_emis   = 1._wp
+  real(wp), dimension(    ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
+                                                           (310._wp, icol = 1,ncol/2)]
+  real(wp), dimension(    ncol), parameter :: lw_total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
+                                                              0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
+  real(wp), dimension(1:1,ncol), parameter :: sfc_emis   = 1._wp
 
   type(ty_optical_props_1scl) :: lw_atmos 
   type(ty_source_func_lw)     :: lw_sources
@@ -93,9 +93,9 @@ program rte_unit_tests
   fluxes%flux_dn  => ref_flux_dn (:,:)
   fluxes%flux_net => ref_flux_net(:,:)
   call stop_on_err(rte_lw(lw_atmos, top_at_1, &
-                          lw_sources,         &
-                          sfc_emis = reshape(sfc_emis, [1,ncol]), &
-                          fluxes = fluxes))
+                          lw_sources, &
+                          sfc_emis,   &
+                          fluxes))
   !
   ! Is the solution correct (does it satisfy the profile for radiative equilibrium?)
   !   Error reporting happens inside check_gray_rad_equil()

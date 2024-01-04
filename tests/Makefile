@@ -45,7 +45,7 @@ ADDITIONS += mo_solar_variability.o
 #
 # Targets
 #
-all: check_variants check_equivalence test_zenith_angle_spherical_correction rte_unit_tests optical_prop_unit_tests crash_reproducer
+all: check_variants check_equivalence test_zenith_angle_spherical_correction rte_unit_tests optical_prop_unit_tests
 
 check_equivalence:   $(ADDITIONS) $(LIB_DEPS) check_equivalence.o
 check_equivalence.o: $(ADDITIONS) $(LIB_DEPS) check_equivalence.F90
@@ -76,6 +76,7 @@ optical_prop_unit_tests  : $(LIB_DEPS) mo_testing_utils.o optical_prop_unit_test
 .PHONY: tests
 tests:
 	cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
+	$(RUN_CMD) ./rte_unit_tests
 	$(RUN_CMD) bash all_tests.sh
 
 

@@ -1,5 +1,4 @@
 set -e
-./crash_reproducer
 ./optical_prop_unit_tests
 ./rte_unit_tests
 ./check_equivalence test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc

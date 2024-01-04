@@ -29,7 +29,7 @@ contains
     real(wp), dimension(:), intent(in) :: T, tau
     real(wp), dimension(size(T))       :: gray_rad_equil_olr
 
-    gray_rad_equil_olr(:) = (2._wp * sigma * T(:)**4)/(2 + D * tau(:)) 
+    gray_rad_equil_olr = (2._wp * sigma * T**4)/(2 + D*tau) 
   end function gray_rad_equil_olr
   ! ------------------------------------------------------------------------------------
   !
@@ -39,11 +39,22 @@ contains
     real(wp), dimension(:), intent(in) :: sfc_t, total_tau
     integer,                intent(in) :: nlay 
     logical,                intent(in) :: top_at_1
-    !
-    ! Longwave sources - for broadband these are sigma/pi T^4
-    !   (isotropic radiation)
-    !
+ 
+    integer :: i 
+
+    print '("Looped from within subroutine: ", 8(f6.2, 2x))', & 
+       [(gray_rad_equil_olr(sfc_t(i), lw_total_tau(i)), i = 1, size(sfc_t))]
     print '("Called from within subroutine: ", 8(f6.2, 2x))', gray_rad_equil_olr(sfc_t, lw_total_tau)
   end subroutine gray_rad_equil
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Function version - scalar
+  !
+  function gray_rad_equil_olr(T, tau)
+    real(wp),  intent(in) :: T, tau
+    real(wp),             :: gray_rad_equil_olr
+
+    gray_rad_equil_olr = (2._wp * sigma * T**4)/(2 + D*tau) 
+  end function gray_rad_equil_olr
   ! ------------------------------------------------------------------------------------
 end program crash_reproducer 

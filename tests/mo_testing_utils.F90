@@ -237,7 +237,7 @@ contains
   end subroutine increment_with_nstr 
   ! ----------------------------------------------------------------------------
   !
-  ! Vertically reverse
+  ! Vertically reverse optical
   ! 
   subroutine vr(atmos, sources)
     class(ty_optical_props_arry), intent(inout) :: atmos
@@ -245,6 +245,7 @@ contains
                                   intent(inout) :: sources
 
     integer :: nlay
+    ! -----------------------
     nlay = atmos%get_nlay()
 
     atmos%tau = atmos%tau(:,nlay:1:-1,:)

@@ -116,7 +116,7 @@ program rte_unit_tests
   nullify(fluxes%flux_dn)
   call stop_on_err(rte_lw(lw_atmos, top_at_1,  &
                           lw_sources, sfc_emis,&
-                          fluxes = fluxes))
+                          fluxes))
   call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
                     passed, "Net fluxes computed alone doesn'tt match down-up computed separately")
   !
@@ -126,7 +126,7 @@ program rte_unit_tests
   fluxes%flux_dn  => tst_flux_dn (:,:)
   call stop_on_err(rte_lw(lw_atmos,   top_at_1, &
                           lw_sources, sfc_emis, &
-                          fluxes = fluxes))
+                          fluxes))
   call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
                     passed, "net fluxes don't match down-up computed together")
   ! -------------------------------------------------------
@@ -147,12 +147,14 @@ program rte_unit_tests
   print *, "  Vertical orientation invariance"
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call vr(lw_atmos, lw_sources)
-  call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
+  top_at_1 = .not. top_at_1
+  call stop_on_err(rte_lw(lw_atmos,   top_at_1, &
                           lw_sources, sfc_emis, &
-                          fluxes = fluxes))
+                          fluxes))
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "Doing problem upside down fails")
+  top_at_1 = .not. top_at_1
 
   ! -------------------------------------------------------
   !

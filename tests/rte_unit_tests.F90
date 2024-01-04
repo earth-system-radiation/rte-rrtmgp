@@ -79,7 +79,6 @@ program rte_unit_tests
 
   ! ------------------------------------------------------------------------------------------------------
   top_at_1 = .true. 
-  print *, "sizes of sfc_emis", size(sfc_emis,1), size(sfc_emis,2)
   ! ------------------------------------------------------------------------------------------------------
   ! 
   ! Longwave tests
@@ -322,13 +321,12 @@ contains
                                 :: up, dn
     integer :: i, colS, colE
     integer :: ncol, nlay 
-
+    ! ------------------------------
     ncol = lw_atmos%get_ncol()
     nlay = lw_atmos%get_nlay()
     call stop_on_err(atmos_subset%init(lw_atmos))
     fluxes%flux_up => up
     fluxes%flux_dn => dn
-    print *, "sizes of sfc_emis in the subroutine", size(sfc_emis,1), size(sfc_emis,2)
 
     do i = 1, 2
       colS = ((i-1) * ncol/2) + 1

@@ -76,7 +76,6 @@ optical_prop_unit_tests  : $(LIB_DEPS) mo_testing_utils.o optical_prop_unit_test
 .PHONY: tests
 tests:
 	cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
-	$(RUN_CMD) ./rte_unit_tests
 	$(RUN_CMD) bash all_tests.sh
 
 

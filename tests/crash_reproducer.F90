@@ -43,8 +43,8 @@ contains
     integer :: i 
 
     print '("Looped from within subroutine: ", 8(f6.2, 2x))', & 
-       [(gray_rad_equil_olr_s(sfc_t(i), lw_total_tau(i)), i = 1, size(sfc_t))]
-    print '("Called from within subroutine: ", 8(f6.2, 2x))', gray_rad_equil_olr(sfc_t, lw_total_tau)
+       [(gray_rad_equil_olr_s(sfc_t(i), total_tau(i)), i = 1, size(sfc_t))]
+    print '("Called from within subroutine: ", 8(f6.2, 2x))', gray_rad_equil_olr(sfc_t, total_tau)
   end subroutine gray_rad_equil
   ! ------------------------------------------------------------------------------------
   !

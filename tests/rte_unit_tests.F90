@@ -224,7 +224,7 @@ contains
     ! Longwave sources - for broadband these are sigma/pi T^4
     !   (isotropic radiation)
     !
-    ! olr = gray_rad_equil_olr(sfc_t, lw_total_tau)
+    olr(:) = gray_rad_equil_olr(sfc_t, total_tau)
 
     call stop_on_err(sources%alloc(ncol, nlay, atmos))
     sources%sfc_source    (:,1) =         sigma/pi * sfc_t**4
@@ -233,9 +233,9 @@ contains
     ! Calculation with top_at_1
     !
       ilay = 1
-        sources%lev_source(:,ilay,  1) = 0.5_wp/pi * gray_rad_equil_olr(sfc_t, lw_total_tau)
+        sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:)
       do ilay = 2, nlay+1
-        sources%lev_source(:,ilay,  1) = 0.5_wp/pi * gray_rad_equil_olr(sfc_t, lw_total_tau) * & 
+        sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) * & 
                                            (1._wp + D * sum(atmos%tau(:,:ilay-1,1),dim=2))
         !
         ! The source is linear in optical depth so layer source is average of edges

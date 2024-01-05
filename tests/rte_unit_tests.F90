@@ -54,7 +54,8 @@ program rte_unit_tests
 
   real(wp), parameter :: pi = acos(-1._wp)
   integer,  parameter :: ncol = 8, nlay = 16
-  integer             :: icol, ilay
+  integer,  parameter :: nmu0 = 2
+  integer             :: icol, ilay, imu0
   !
   ! Longwave tests - gray radiative equilibrium
   !
@@ -67,14 +68,25 @@ program rte_unit_tests
   real(wp), dimension(1,ncol), parameter :: sfc_emis   = 1._wp
   real(wp), dimension(ncol,1), parameter :: lw_Ds      = D     ! Diffusivity angle - use default value for all columns
 
+  !
+  ! Shorteave tests - thin atmosphere 
+  !
+  real(wp), dimension(2),      parameter :: g   = [0.85_wp,  0.65_wp], &
+                                            tau = [1.e-4_wp, 1.e-2_wp], &
+                                            ssa = 1._wp - & 
+                                                  [1.e-4_wp, 1.e-2_wp]
+  real(wp), dimension(nmu0),   parameter :: mu0 = [1._wp, 0.5_wp]
+  real(wp), dimension(1,ncol), parameter :: sfc_albedo   = 0._wp
+  real(wp), dimension(ncol,1), parameter :: toa_flux     = 1._wp
+
   type(ty_optical_props_1scl) :: lw_atmos 
   type(ty_source_func_lw)     :: lw_sources
   type(ty_optical_props_2str) :: sw_atmos 
   type(ty_fluxes_broadband)   :: fluxes
   logical                     :: top_at_1
   real(wp), dimension(ncol,nlay+1), target :: &
-                                 ref_flux_up, ref_flux_dn, ref_flux_net, & 
-                                 tst_flux_up, tst_flux_dn, tst_flux_net, & 
+                                 ref_flux_up, ref_flux_dn, ref_flux_dir, ref_flux_net, & 
+                                 tst_flux_up, tst_flux_dn, tst_flux_dir, tst_flux_net, & 
                                  jFluxUp
 
   logical :: passed 
@@ -89,6 +101,7 @@ program rte_unit_tests
   !
   ! Gray radiative equillibrium 
   !
+  print *, "Gray radiative equilibrium"
   call gray_rad_equil(sfc_t(1:ncol), lw_total_tau(1:ncol), nlay, top_at_1, lw_atmos, lw_sources)
 
   fluxes%flux_up  => ref_flux_up (:,:)
@@ -103,7 +116,6 @@ program rte_unit_tests
   !   Error reporting happens inside check_gray_rad_equil()
   !
   passed = check_gray_rad_equil(sfc_t, lw_total_tau, top_at_1, ref_flux_up, ref_flux_net)
-  print *, "Gray radiative equilibrium"
   ! ------------------------------------------------------------------------------------
   !
   ! Net fluxes on- vs off-line
@@ -149,14 +161,12 @@ program rte_unit_tests
   print *, "  Vertical orientation invariance"
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call vr(lw_atmos, lw_sources)
-  top_at_1 = .not. top_at_1
-  call stop_on_err(rte_lw(lw_atmos,   top_at_1, &
+  call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
                           lw_sources, sfc_emis, &
                           fluxes))
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "Doing problem upside down fails")
-  top_at_1 = .not. top_at_1
 
   ! -------------------------------------------------------
   !
@@ -220,6 +230,29 @@ program rte_unit_tests
 
   ! ------------------------------------------------------------------------------------
   !
+  ! Shortwave tests - thin atmospheres
+  !
+  ! ------------------------------------------------------------------------------------
+  print *, "Thin, scattering atmospheres"
+  call stop_on_err(sw_atmos%alloc_2str(ncol, nlay, lw_atmos))
+  call thin_scattering(tau, ssa, g, nlay, sw_atmos)
+
+  fluxes%flux_up  => ref_flux_up (:,:)
+  fluxes%flux_dn  => ref_flux_dn (:,:)
+  fluxes%flux_dn_dir => ref_flux_dir(:,:)
+  fluxes%flux_net => ref_flux_net(:,:)
+  call stop_on_err(rte_sw(sw_atmos, top_at_1, &
+                          spread(mu0(1), 1, ncol), & 
+                          toa_flux,          &
+                          sfc_albedo, sfc_albedo, &
+                          fluxes))
+  !
+  ! Is the solution correct
+  !   Error reporting happens inside check_gray_rad_equil()
+  !
+  passed = check_thin_scattering(sw_atmos, spread(mu0(1), 1, ncol), top_at_1, & 
+                                  ref_flux_up, ref_flux_dn, ref_flux_dir)
+  ! ------------------------------------------------------------------------------------
   ! Done
   !
   print *, "Unit tests done"
@@ -335,6 +368,86 @@ contains
 
     gray_rad_equil_olr(:) = (2._wp * sigma * T(:)**4)/(2 + D * tau(:)) 
   end function gray_rad_equil_olr
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Define an atmosphere in gray radiative equillibrium 
+  !   See, for example, section 2 of Weaver and Rmanathan 1995 https://doi.org/10.1029/95JD00770
+  !
+  subroutine thin_scattering(tau, ssa, g, nlay, atmos)
+    real(wp), dimension(:), intent(in) :: tau, ssa, g
+    integer,                intent(in) :: nlay 
+    type(ty_optical_props_2str), intent(inout) :: atmos 
+
+    integer :: ntau, nssa, ng, ncol
+    integer :: i, j, k
+    real(wp), dimension(size(tau)*size(ssa)*size(g)) & 
+            :: temp
+
+    ntau = size(tau); nssa = size(ssa); ng = size(g)
+    ncol = ntau*nssa*ng
+    if(ncol /= atmos%get_ncol()) call stop_on_err("Number of SW columns incompatible")
+    !
+    ! Set up a gray spectral distribution - one band, one g-point
+    !
+    call stop_on_err(atmos%init(band_lims_wvn = reshape([3250._wp, 1.e5_wp], shape = [2, 1]), & 
+                                band_lims_gpt = reshape([1,     1],          shape = [2, 1]), & 
+                                name = "Gray SW atmosphere"))
+    call stop_on_err(atmos%alloc_2str(ncol, nlay))
+
+    temp = [(((tau(i), k = 1, 1      ), i = 1, ntau), j = 1, nssa*ng)]
+    !
+    ! Divide optical depth evenly among layers 
+    !
+    atmos%tau(1:ncol,1:nlay,1) = spread(temp(1:ncol)/real(nlay, wp), dim=2, ncopies=nlay)
+    !
+    ! ... and make the medium uniform 
+    !
+    temp = [(((ssa(i), k = 1, ntau   ), i = 1, nssa), j = 1, ng)]
+    atmos%ssa(1:ncol,1:nlay,1) = spread(temp(1:ncol),                dim=2, ncopies=nlay)
+    temp = [(((g  (i), k = 1, ntau*ng), i = 1, ng  ), j = 1, 1 )]
+    atmos%g  (1:ncol,1:nlay,1) = spread(temp(1:ncol),                dim=2, ncopies=nlay)
+
+    print *, "Original values"
+    print '("tau: ", 8(e9.3,2x))', sum(atmos%tau(:,:,1),dim=2)
+    print '("ssa: ", 8(e9.3,2x))',     atmos%ssa(:,1,1)
+    print '("g  : ", 8(e9.3,2x))',     atmos%g  (:,1,1)
+    print *
+    !
+    ! Delta-scale 
+    !
+    call stop_on_err(atmos%delta_scale())
+
+  end subroutine thin_scattering
+  ! ------------------------------------------------------------------------------------
+  function check_thin_scattering(atmos, mu0, top_at_1, ref_flux_up, ref_flux_dn, ref_flux_dir)
+    type(ty_optical_props_2str), intent(in) :: atmos 
+    real(wp), dimension(:),      intent(in) :: mu0
+    logical,                     intent(in) :: top_at_1
+    real(wp), dimension(:,:),    intent(in) :: ref_flux_up, ref_flux_dn, ref_flux_dir
+    logical                                 :: check_thin_scattering
+
+    real(wp), dimension(atmos%get_ncol()) :: gamma3, R, T ! Reflectance, transmittance 
+    
+    check_thin_scattering = .true.
+    !
+    ! Solutions for small tau
+    !   Meador and Weaver 1980, 10.1175/1520-0469(1980)037<0630:TSATRT>2.0.CO;2
+    !   Equation 19 using the same gamma3 as in RTE (and gamma3+gamma4=1)
+    ! ssa and g are assumed to be vertically uniform
+    !
+    gamma3(:) = (2._wp - 3._wp * mu0(:) * atmos%g(:,1,1)) * .25_wp
+    R(:) = (atmos%ssa(:,1,1)*sum(atmos%tau(:,:,1),dim=2))/mu0(:) * gamma3(:)
+
+    print '("tau: ", 8(e9.3,2x))', sum(atmos%tau(:,:,1),dim=2)
+    print '("ssa: ", 8(e9.3,2x))',     atmos%ssa(:,1,1)
+    print '("g  : ", 8(e9.3,2x))',     atmos%g  (:,1,1)
+    print *
+    print '("R  : ", 8(e9.3,2x))', R
+    print '("RTE: ", 8(e9.3,2x))', ref_flux_up(:,1)
+    print '("Dif: ", 8(e9.3,2x))', R(:) - ref_flux_up(:,1)
+    print '("Rel: ", 8(f9.2,2x))', (R(:) - ref_flux_up(:,1))/ref_flux_up(:,1) * 100._wp
+
+  end function check_thin_scattering
   ! ------------------------------------------------------------------------------------
   !
   ! Invariance tests

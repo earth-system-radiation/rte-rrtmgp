@@ -253,6 +253,62 @@ program rte_unit_tests
   passed = check_thin_scattering(sw_atmos, spread(mu0(1), 1, ncol), top_at_1, & 
                                   ref_flux_up, ref_flux_dn, ref_flux_dir)
   ! ------------------------------------------------------------------------------------
+  !
+  ! Net fluxes on- vs off-line
+  !  Are the net fluxes correct?
+  !
+  print *, "  Shortwave net flux variants"
+  call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, passed, "net fluxes don't match down-up")
+  !
+  ! Compute only net fluxes 
+  !
+  nullify(fluxes%flux_up)
+  nullify(fluxes%flux_dn)
+  call stop_on_err(rte_sw(sw_atmos, top_at_1, &
+                          spread(mu0(1), 1, ncol), & 
+                          toa_flux,          &
+                          sfc_albedo, sfc_albedo, &
+                          fluxes))
+  call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
+                    passed, "Net fluxes computed alone doesn't match down-up computed separately")
+  !
+  ! Compute only up and down fluxes 
+  !
+  fluxes%flux_up  => tst_flux_up (:,:)
+  fluxes%flux_dn  => tst_flux_dn (:,:)
+  call stop_on_err(rte_sw(sw_atmos, top_at_1, &
+                          spread(mu0(1), 1, ncol), & 
+                          toa_flux,          &
+                          sfc_albedo, sfc_albedo, &
+                          fluxes))
+  call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
+                    passed, "net fluxes don't match down-up computed together")
+  ! -------------------------------------------------------
+  !
+  ! Subsets of atmospheric columns 
+  !
+  print *, "  Subsetting invariance"
+  call sw_clear_sky_subset(sw_atmos, sfc_albedo)
+  call check_fluxes(tst_flux_up, ref_flux_up, &
+                    tst_flux_dn, ref_flux_dn, &  
+                    passed, "Doing problem in subsets fails")
+  ! -------------------------------------------------------
+  !
+  ! Vertically-reverse
+  !
+  print *, "  Vertical orientation invariance"
+  call thin_scattering(tau, ssa, g, nlay, sw_atmos)
+  call vr(sw_atmos)
+  call stop_on_err(rte_sw(sw_atmos, .not. top_at_1, &
+                          spread(mu0(1), 1, ncol), & 
+                          toa_flux,          &
+                          sfc_albedo, sfc_albedo, &
+                          fluxes))
+  call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
+                    tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
+                    passed, "Doing problem upside down fails")
+  call vr(sw_atmos)
+  ! ------------------------------------------------------------------------------------
   ! Done
   !
   print *, "Unit tests done"
@@ -469,10 +525,9 @@ contains
                         lw_atmos%get_nlay()+1), target &
                                 :: up, dn
     integer :: i, colS, colE
-    integer :: ncol, nlay 
+    integer :: ncol
     ! ------------------------------
     ncol = lw_atmos%get_ncol()
-    nlay = lw_atmos%get_nlay()
     call stop_on_err(atmos_subset%init(lw_atmos))
     fluxes%flux_up => up
     fluxes%flux_dn => dn
@@ -490,6 +545,41 @@ contains
       tst_flux_dn(colS:colE,:) = dn
     end do
   end subroutine lw_clear_sky_subset
+  ! ------------------------------------------------------------------------------------
+  !
+  ! Clear-sky longwave fluxes, half the columns at a time
+  !   We're counting on ncol being even
+  !
+  subroutine sw_clear_sky_subset(sw_atmos, sfc_albedo)
+    type(ty_optical_props_2str), intent(inout) :: sw_atmos
+    real(wp), dimension(:,:),    intent(in   ) :: sfc_albedo
+
+    type(ty_optical_props_2str) :: atmos_subset
+    type(ty_fluxes_broadband)   :: fluxes ! Use local variable
+    real(wp), dimension(sw_atmos%get_ncol()/2,       & 
+                        sw_atmos%get_nlay()+1), target &
+                                :: up, dn
+    integer :: i, colS, colE
+    integer :: ncol
+    ! ------------------------------
+    ncol = sw_atmos%get_ncol()
+    call stop_on_err(atmos_subset%init(sw_atmos))
+    fluxes%flux_up => up
+    fluxes%flux_dn => dn
+
+    do i = 1, 2
+      colS = ((i-1) * ncol/2) + 1
+      colE = i * ncol/2
+      call stop_on_err(sw_atmos%get_subset(colS, ncol/2, atmos_subset))
+      call stop_on_err(rte_sw(atmos_subset, top_at_1, &
+                              spread(mu0(1), 1, ncol/2), & 
+                              toa_flux(colS:colE,:),     &
+                              sfc_albedo(:,colS:colE), sfc_albedo(:,colS:colE), &
+                              fluxes))
+      tst_flux_up(colS:colE,:) = up
+      tst_flux_dn(colS:colE,:) = dn
+    end do
+  end subroutine sw_clear_sky_subset
   ! ------------------------------------------------------------------------------------
 
 end program rte_unit_tests

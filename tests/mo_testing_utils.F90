@@ -248,12 +248,12 @@ contains
     ! -----------------------
     nlay = atmos%get_nlay()
 
-    atmos%tau = atmos%tau(:,nlay:1:-1,:)
+    atmos%tau(:,:,:) = atmos%tau(:,nlay:1:-1,:)
 
     select type (atmos)
       type is (ty_optical_props_2str)
         atmos%ssa(:,:,:) = atmos%ssa(:,nlay:1:-1,:)
-        atmos%g  (:,:,:)= atmos%g  (:,nlay:1:-1,:)
+        atmos%g  (:,:,:)= atmos%g   (:,nlay:1:-1,:)
       type is (ty_optical_props_nstr)
         atmos%ssa(:,:,:) = atmos%ssa(:,nlay:1:-1,:)
         atmos%p(:,:,:,:) = atmos%p(:,:,nlay:1:-1,:)

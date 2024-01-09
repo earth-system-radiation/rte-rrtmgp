@@ -172,9 +172,11 @@ program rte_unit_tests
   call check_fluxes(tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "LW: doing problem upside down fails (dn)")
 
-  print *, "down"
-  print *, ref_flux_up
-  print *, tst_flux_up(:,nlay+1:1:-1)
+  print *, "up"
+  print *, ref_flux_up(1:4,:)
+  do ilay = nlay+1, 1, -1
+    print *, tst_flux_up(1:4, ilay)
+  end do 
   ! -------------------------------------------------------
   !
   ! Computing Jacobian shouldn't change net fluxes 

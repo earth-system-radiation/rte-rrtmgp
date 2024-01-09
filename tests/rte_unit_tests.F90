@@ -78,6 +78,7 @@ program rte_unit_tests
   real(wp), dimension(nmu0),   parameter :: mu0 = [1._wp, 0.5_wp]
   real(wp), dimension(1,ncol), parameter :: sfc_albedo   = 0._wp
   real(wp), dimension(ncol,1), parameter :: toa_flux     = 1._wp
+  real(wp), dimension(ncol)              :: mu0_arr
 
   type(ty_optical_props_1scl) :: lw_atmos 
   type(ty_source_func_lw)     :: lw_sources
@@ -88,7 +89,7 @@ program rte_unit_tests
                                  ref_flux_up, ref_flux_dn, ref_flux_dir, ref_flux_net, & 
                                  tst_flux_up, tst_flux_dn, tst_flux_dir, tst_flux_net, & 
                                  jFluxUp
-  real(wp), dimension(ncol,nlay+1), target :: temp ! Workaround for nvfortran 
+  real(wp), dimension(:), pointer :: toa, sfc
 
   logical :: passed 
 
@@ -238,78 +239,113 @@ program rte_unit_tests
   call stop_on_err(sw_atmos%alloc_2str(ncol, nlay, lw_atmos))
   call thin_scattering(tau, ssa, g, nlay, sw_atmos)
 
-  fluxes%flux_up  => ref_flux_up (:,:)
-  fluxes%flux_dn  => ref_flux_dn (:,:)
-  fluxes%flux_dn_dir => ref_flux_dir(:,:)
-  fluxes%flux_net => ref_flux_net(:,:)
-  call stop_on_err(rte_sw(sw_atmos, top_at_1, &
-                          spread(mu0(1), 1, ncol), & 
-                          toa_flux,          &
-                          sfc_albedo, sfc_albedo, &
-                          fluxes))
-  !
-  ! Is the solution correct
-  !   Error reporting happens inside check_gray_rad_equil()
-  !
-  passed = check_thin_scattering(sw_atmos, spread(mu0(1), 1, ncol), top_at_1, & 
-                                  ref_flux_up, ref_flux_dn, ref_flux_dir)
+  do imu0 = 1, nmu0
+    print '("  mu0 = ", f4.2)', mu0(imu0)
+    mu0_arr = mu0(imu0)
+    fluxes%flux_up  => ref_flux_up (:,:)
+    fluxes%flux_dn  => ref_flux_dn (:,:)
+    fluxes%flux_dn_dir => ref_flux_dir(:,:)
+    fluxes%flux_net => ref_flux_net(:,:)
+    call stop_on_err(rte_sw(sw_atmos, top_at_1, &
+                            mu0_arr, & 
+                            toa_flux,          &
+                            sfc_albedo, sfc_albedo, &
+                            fluxes))
+    !
+    ! Is the solution correct
+    !   Error reporting happens inside check_thin_scattering()
+    !
+    ! passed = check_thin_scattering(sw_atmos, spread(mu0(1), 1, ncol), top_at_1, & 
+    !                                ref_flux_up, ref_flux_dn, ref_flux_dir)
+    if(imu0 == 1) passed = .true.
+    !
+    ! Check direct beam
+    !
+    if(top_at_1) then 
+      sfc => ref_flux_dir(:,nlay+1)
+    else
+      sfc => ref_flux_dir(:,     1)
+    end if   
+    if(.not. allclose(sfc, & 
+                      toa_flux(:,1)*mu0_arr*exp(-sum(sw_atmos%tau(:,:,1),dim=2)/mu0_arr), tol=8._wp)) then 
+      passed = .false.
+      call report_err("Direct flux doesn't match")
+    end if    
+    ! ------------------------------------------------------------------------------------
+    !
+    ! Net fluxes on- vs off-line
+    !  Are the net fluxes correct?
+    !
+    print *, "  Shortwave net flux variants"
+    call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, passed, "net fluxes don't match down-up")
+    !
+    ! Compute only net fluxes 
+    !
+    nullify(fluxes%flux_up)
+    nullify(fluxes%flux_dn)
+    call stop_on_err(rte_sw(sw_atmos, top_at_1, &
+                            mu0_arr, & 
+                            toa_flux,          &
+                            sfc_albedo, sfc_albedo, &
+                            fluxes))
+    call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
+                      passed, "SW: net fluxes computed alone doesn't match down-up computed separately")
+    !
+    ! Compute only up and down fluxes 
+    !
+    fluxes%flux_up  => tst_flux_up (:,:)
+    fluxes%flux_dn  => tst_flux_dn (:,:)
+    call stop_on_err(rte_sw(sw_atmos, top_at_1, &
+                            mu0_arr, & 
+                            toa_flux,          &
+                            sfc_albedo, sfc_albedo, &
+                            fluxes))
+    call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
+                      passed, "SW: net fluxes don't match down-up computed together")
+    ! -------------------------------------------------------
+    !
+    ! Subsets of atmospheric columns 
+    !
+    print *, "  Subsetting invariance"
+    call sw_clear_sky_subset(sw_atmos, mu0_arr, toa_flux, sfc_albedo)
+    call check_fluxes(tst_flux_up, ref_flux_up, &
+                      tst_flux_dn, ref_flux_dn, &  
+                      passed, "SW: doing problem in subsets fails")
+    ! -------------------------------------------------------
+    !
+    ! Vertically-reverse
+    !
+    print *, "  Vertical orientation invariance"
+    call thin_scattering(tau, ssa, g, nlay, sw_atmos)
+    call vr(sw_atmos)
+    call stop_on_err(rte_sw(sw_atmos, .not. top_at_1, &
+                            mu0_arr, & 
+                            toa_flux,          &
+                            sfc_albedo, sfc_albedo, &
+                            fluxes))
+    call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
+                      tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
+                      passed, "SW: doing problem upside down fails")
+    call vr(sw_atmos)
+    ! -------------------------------------------------------
+    !
+    ! Linear in TOA flux
+    !
+    print *, "  Linear in TOA flux"
+    block
+      integer, parameter :: factor = 2._wp
+      call thin_scattering(tau, ssa, g, nlay, sw_atmos)
+      call stop_on_err(rte_sw(sw_atmos, top_at_1, &
+                              mu0_arr, & 
+                              toa_flux * factor,       &
+                              sfc_albedo, sfc_albedo, &
+                              fluxes))
+      call check_fluxes(tst_flux_up/factor, ref_flux_up, &  
+                        tst_flux_dn/factor, ref_flux_dn, & 
+                        passed, "SW: linearity in TOA flux fails")
+    end block 
   ! ------------------------------------------------------------------------------------
-  !
-  ! Net fluxes on- vs off-line
-  !  Are the net fluxes correct?
-  !
-  print *, "  Shortwave net flux variants"
-  call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, passed, "net fluxes don't match down-up")
-  !
-  ! Compute only net fluxes 
-  !
-  nullify(fluxes%flux_up)
-  nullify(fluxes%flux_dn)
-  call stop_on_err(rte_sw(sw_atmos, top_at_1, &
-                          spread(mu0(1), 1, ncol), & 
-                          toa_flux,          &
-                          sfc_albedo, sfc_albedo, &
-                          fluxes))
-  call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
-                    passed, "SW: net fluxes computed alone doesn't match down-up computed separately")
-  !
-  ! Compute only up and down fluxes 
-  !
-  fluxes%flux_up  => tst_flux_up (:,:)
-  fluxes%flux_dn  => tst_flux_dn (:,:)
-  call stop_on_err(rte_sw(sw_atmos, top_at_1, &
-                          spread(mu0(1), 1, ncol), & 
-                          toa_flux,          &
-                          sfc_albedo, sfc_albedo, &
-                          fluxes))
-  call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
-                    passed, "SW: net fluxes don't match down-up computed together")
-  ! -------------------------------------------------------
-  !
-  ! Subsets of atmospheric columns 
-  !
-  print *, "  Subsetting invariance"
-  call sw_clear_sky_subset(sw_atmos, mu0(1), toa_flux, sfc_albedo)
-  call check_fluxes(tst_flux_up, ref_flux_up, &
-                    tst_flux_dn, ref_flux_dn, &  
-                    passed, "SW: doing problem in subsets fails")
-  ! -------------------------------------------------------
-  !
-  ! Vertically-reverse
-  !
-  print *, "  Vertical orientation invariance"
-  call thin_scattering(tau, ssa, g, nlay, sw_atmos)
-  call vr(sw_atmos)
-  call stop_on_err(rte_sw(sw_atmos, .not. top_at_1, &
-                          spread(mu0(1), 1, ncol), & 
-                          toa_flux,          &
-                          sfc_albedo, sfc_albedo, &
-                          fluxes))
-  call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
-                    tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
-                    passed, "SW: doing problem upside down fails")
-  call vr(sw_atmos)
-  ! ------------------------------------------------------------------------------------
+  end do 
   ! Done
   !
   print *, "Unit tests done"
@@ -555,7 +591,7 @@ contains
   !
   subroutine sw_clear_sky_subset(sw_atmos, mu0, toa_flux, sfc_albedo)
     type(ty_optical_props_2str), intent(inout) :: sw_atmos
-    real(wp),                    intent(in   ) :: mu0
+    real(wp), dimension(:),      intent(in   ) :: mu0
     real(wp), dimension(:,:),    intent(in   ) :: toa_flux, sfc_albedo
 
     type(ty_optical_props_2str) :: atmos_subset
@@ -575,9 +611,9 @@ contains
       colS = ((i-1) * ncol/2) + 1
       colE = i * ncol/2
       call stop_on_err(sw_atmos%get_subset(colS, ncol/2, atmos_subset))
-      call stop_on_err(rte_sw(atmos_subset, top_at_1,      &
-                              spread(mu0, 1, colE-colS+1), & 
-                              toa_flux(colS:colE,:),       &
+      call stop_on_err(rte_sw(atmos_subset, top_at_1, &
+                              mu0(colS:colE),         & 
+                              toa_flux(colS:colE,:),  &
                               sfc_albedo(:,colS:colE), sfc_albedo(:,colS:colE), &
                               fluxes))
       tst_flux_up(colS:colE,:) = up

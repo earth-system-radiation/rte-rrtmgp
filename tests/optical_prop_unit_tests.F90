@@ -184,7 +184,7 @@ program optical_prop_unit_tests
   call make_copy_2str
   call stop_on_err(tst_2str%delta_scale(spread(spread(spread(0._wp, 1, ncol), 2, nlay), 3, 1)))
   if(.not. ops_match(tst_2str, ref_2str)) then 
-    call report_err("2str half/double fails")
+    call report_err("2str delta-scaling with f=0 fails")
     passed = .false. 
   end if 
   ! ----------------------------------------------------------------------------

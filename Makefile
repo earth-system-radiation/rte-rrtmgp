@@ -11,8 +11,8 @@ libs:
 	make -C examples/rfmip-clear-sky -j
 
 tests:
-	# make -C examples/rfmip-clear-sky tests
-	# make -C examples/all-sky         tests
+	make -C examples/rfmip-clear-sky tests
+	make -C examples/all-sky         tests
 	make -C tests                    tests
 
 check:

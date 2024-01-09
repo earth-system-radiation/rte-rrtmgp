@@ -168,10 +168,20 @@ program rte_unit_tests
   !
   ! Using array notation with negative step size seems to make the values negative 
   !   in nvfortran? 
+  print *, "*** array syntax"
+  print *, "tst, dn "
+  print '(4(f8.3, 2x))', tst_flux_dn(1:4,nlay+1:1:-1)
+  print *, "ref, dn "
+  print '(4(f8.3, 2x))', ref_flux_dn(1:4,:)
+  print *, "tst, up "
+  print '(4(f8.3, 2x))', tst_flux_up(1:4,nlay+1:1:-1)
+  print *, "ref, up "
+  print '(4(f8.3, 2x))', ref_flux_up(1:4,:)
 #ifdef __NVCOMPILER
   print *, "*** doing loops"
   print *, "up"
   do ilay = nlay+1, 1, -1
+    print *, "ilay = ", nlay+1-ilay+1, ilay
     print '("tst: ", 4(f8.3, 2x))', tst_flux_up(1:4,nlay+1-ilay+1)
     print '("ref: ", 4(f8.3, 2x))', ref_flux_up(1:4,ilay)
   end do 
@@ -183,8 +193,9 @@ program rte_unit_tests
 
   print *, "dn"
   do ilay = nlay+1, 1, -1
-    print *, "tst:", tst_flux_dn(1:4,nlay+1-ilay+1)
-    print *, "ref:", ref_flux_dn(1:4,ilay)
+    print *, "ilay = ", nlay+1-ilay+1, ilay
+    print '("tst: ", 4(f8.3, 2x))', tst_flux_dn(1:4,nlay+1-ilay+1)
+    print '("ref: ", 4(f8.3, 2x))', ref_flux_dn(1:4,ilay)
   end do 
   do ilay = nlay+1, 1, -1
    temp(:,ilay) = tst_flux_dn(:,nlay+1-ilay+1)

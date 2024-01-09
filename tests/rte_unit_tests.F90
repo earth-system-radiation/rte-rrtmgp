@@ -169,14 +169,23 @@ program rte_unit_tests
   ! Using array notation with negative step size seems to make the values negative 
   !   in nvfortran? 
 #ifdef __NVCOMPILER
+  print *, "*** doing loops"
+  print *, "up"
+  do ilay = nlay+1, 1, -1
+    print *, tst_flux_up(:,nlay+1-ilay+1)
+  end do 
+
   do ilay = nlay+1, 1, -1
     temp(:,ilay) = tst_flux_up(:,nlay+1-ilay+1)
   end do 
   tst_flux_up(:,:) = temp(:,:)
+
+  print *, "dn"
   do ilay = nlay+1, 1, -1
-    temp(:,ilay) = tst_flux_dn(:,nlay+1-ilay+1)
+   temp(:,ilay) = tst_flux_dn(:,nlay+1-ilay+1)
   end do 
   tst_flux_dn(:,:) = temp(:,:)
+
   call check_fluxes(tst_flux_up, ref_flux_up, &  
                     tst_flux_dn, ref_flux_dn, & 
                     passed, "LW: doing problem upside down fails")

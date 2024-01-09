@@ -161,7 +161,17 @@ program rte_unit_tests
   !
   print *, "  Vertical orientation invariance"
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  print *, "Initial "
+  print *, "Level sources "
+  print '(4(f7.3, 2x))', lw_sources%lev_source(1:4,:,1)
+  print *, "Layer sources "
+  print '(4(f7.3, 2x))', lw_sources%lay_source(1:4,:,1)
   call vr(lw_atmos, lw_sources)
+  print *, "VR "
+  print *, "Level sources "
+  print '(4(f7.3, 2x))', lw_sources%lev_source(1:4,:,1)
+  print *, "Layer sources "
+  print '(4(f7.3, 2x))', lw_sources%lay_source(1:4,:,1)
   call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
                           lw_sources, sfc_emis, &
                           fluxes))

@@ -132,7 +132,7 @@ program rte_unit_tests
                           lw_sources, sfc_emis,&
                           fluxes))
   call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
-                    passed, "Net fluxes computed alone doesn'tt match down-up computed separately")
+                    passed, "LW net fluxes computed alone doesn'tt match down-up computed separately")
   !
   ! Compute only up and down fluxes 
   !
@@ -142,7 +142,7 @@ program rte_unit_tests
                           lw_sources, sfc_emis, &
                           fluxes))
   call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
-                    passed, "net fluxes don't match down-up computed together")
+                    passed, "LW net fluxes don't match down-up computed together")
   ! -------------------------------------------------------
   !
   ! Subsets of atmospheric columns 
@@ -152,7 +152,7 @@ program rte_unit_tests
   call lw_clear_sky_subset(lw_atmos, lw_sources, sfc_emis)
   call check_fluxes(tst_flux_up, ref_flux_up, &
                     tst_flux_dn, ref_flux_dn, &  
-                    passed, "Doing problem in subsets fails")
+                    passed, "LW: doing problem in subsets fails")
 
   ! -------------------------------------------------------
   !
@@ -166,7 +166,7 @@ program rte_unit_tests
                           fluxes))
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
-                    passed, "Doing problem upside down fails")
+                    passed, "LW: doing problem upside down fails")
 
   ! -------------------------------------------------------
   !
@@ -180,7 +180,7 @@ program rte_unit_tests
                           fluxes,          &
                           flux_up_Jac = jFluxUp))
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
-                    passed, "Computing Jacobian changes fluxes fails")
+                    passed, "LW: computing Jacobian changes fluxes fails")
   !
   ! Increase surface temperature in source function by 1K and recompute fluxes
   !
@@ -213,7 +213,7 @@ program rte_unit_tests
                           fluxes,          &
                           flux_up_Jac = jFluxUp))
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
-                    passed, "Using two-stream properties fails")
+                    passed, "LW: using two-stream properties fails")
   call sw_atmos%finalize()
   ! ------------------------------------------------------------------------------------
   !
@@ -226,13 +226,15 @@ program rte_unit_tests
                           fluxes,          &
                           lw_Ds = lw_Ds))
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
-                    passed, "Specifying diffusivity angle D fails")
+                    passed, "LW: specifying diffusivity angle D fails")
 
   ! ------------------------------------------------------------------------------------
   !
   ! Shortwave tests - thin atmospheres
   !
   ! ------------------------------------------------------------------------------------
+  stop ! TODO take this out
+
   print *, "Thin, scattering atmospheres"
   call stop_on_err(sw_atmos%alloc_2str(ncol, nlay, lw_atmos))
   call thin_scattering(tau, ssa, g, nlay, sw_atmos)
@@ -270,7 +272,7 @@ program rte_unit_tests
                           sfc_albedo, sfc_albedo, &
                           fluxes))
   call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
-                    passed, "Net fluxes computed alone doesn't match down-up computed separately")
+                    passed, "SW: net fluxes computed alone doesn't match down-up computed separately")
   !
   ! Compute only up and down fluxes 
   !
@@ -282,7 +284,7 @@ program rte_unit_tests
                           sfc_albedo, sfc_albedo, &
                           fluxes))
   call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
-                    passed, "net fluxes don't match down-up computed together")
+                    passed, "SW: net fluxes don't match down-up computed together")
   ! -------------------------------------------------------
   !
   ! Subsets of atmospheric columns 
@@ -291,7 +293,7 @@ program rte_unit_tests
   call sw_clear_sky_subset(sw_atmos, mu0(1), toa_flux, sfc_albedo)
   call check_fluxes(tst_flux_up, ref_flux_up, &
                     tst_flux_dn, ref_flux_dn, &  
-                    passed, "Doing problem in subsets fails")
+                    passed, "SW: doing problem in subsets fails")
   ! -------------------------------------------------------
   !
   ! Vertically-reverse
@@ -306,7 +308,7 @@ program rte_unit_tests
                           fluxes))
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
-                    passed, "Doing problem upside down fails")
+                    passed, "SW: doing problem upside down fails")
   call vr(sw_atmos)
   ! ------------------------------------------------------------------------------------
   ! Done

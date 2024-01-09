@@ -167,6 +167,10 @@ program rte_unit_tests
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "LW: doing problem upside down fails")
+  call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
+                    passed, "LW: doing problem upside down fails (up)")
+  call check_fluxes(tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
+                    passed, "LW: doing problem upside down fails (dn)")
 
   ! -------------------------------------------------------
   !
@@ -233,7 +237,7 @@ program rte_unit_tests
   ! Shortwave tests - thin atmospheres
   !
   ! ------------------------------------------------------------------------------------
-  stop ! TODO take this out
+  if( passed) stop else error stop 1
 
   print *, "Thin, scattering atmospheres"
   call stop_on_err(sw_atmos%alloc_2str(ncol, nlay, lw_atmos))

@@ -88,6 +88,7 @@ program rte_unit_tests
                                  ref_flux_up, ref_flux_dn, ref_flux_dir, ref_flux_net, & 
                                  tst_flux_up, tst_flux_dn, tst_flux_dir, tst_flux_net, & 
                                  jFluxUp
+  real(wp), dimension(ncol,nlay+1), target :: temp ! Workaround for nvfortran 
 
   logical :: passed 
 
@@ -164,19 +165,26 @@ program rte_unit_tests
   call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
                           lw_sources, sfc_emis, &
                           fluxes))
+  !
+  ! Using array notation with negative step size seems to make the values negative 
+  !   in nvfortran? 
+#ifdef __NVCOMPILER
+  do ilay = nlay+1, 1, -1
+    temp(:,ilay) = tst_flux_up(:,nlay+1-ilay+1)
+  end do 
+  tst_flux_up(:,:) = temp(:,:)
+  do ilay = nlay+1, 1, -1
+    temp(:,ilay) = tst_flux_dn(:,nlay+1-ilay+1)
+  end do 
+  tst_flux_dn(:,:) = temp(:,:)
+  call check_fluxes(tst_flux_up, ref_flux_up, &  
+                    tst_flux_dn, ref_flux_dn, & 
+                    passed, "LW: doing problem upside down fails")
+#else
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "LW: doing problem upside down fails")
-  call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
-                    passed, "LW: doing problem upside down fails (up)")
-  call check_fluxes(tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
-                    passed, "LW: doing problem upside down fails (dn)")
-
-  print *, "up"
-  print *, ref_flux_up(1:4,:)
-  do ilay = nlay+1, 1, -1
-    print *, tst_flux_up(1:4, ilay)
-  end do 
+#endif 
   ! -------------------------------------------------------
   !
   ! Computing Jacobian shouldn't change net fluxes 

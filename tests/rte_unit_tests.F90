@@ -237,7 +237,8 @@ program rte_unit_tests
   ! Shortwave tests - thin atmospheres
   !
   ! ------------------------------------------------------------------------------------
-  if( passed) stop else error stop 1
+  if(.not. passed) error stop 1
+  stop
 
   print *, "Thin, scattering atmospheres"
   call stop_on_err(sw_atmos%alloc_2str(ncol, nlay, lw_atmos))

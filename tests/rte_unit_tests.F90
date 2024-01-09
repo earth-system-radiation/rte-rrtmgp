@@ -172,7 +172,8 @@ program rte_unit_tests
   print *, "*** doing loops"
   print *, "up"
   do ilay = nlay+1, 1, -1
-    print *, tst_flux_up(:,nlay+1-ilay+1)
+    print '("tst: ", 4(f8.3, 2x))', tst_flux_up(1:4,nlay+1-ilay+1)
+    print '("ref: ", 4(f8.3, 2x))', ref_flux_up(1:4,ilay)
   end do 
 
   do ilay = nlay+1, 1, -1
@@ -181,6 +182,10 @@ program rte_unit_tests
   tst_flux_up(:,:) = temp(:,:)
 
   print *, "dn"
+  do ilay = nlay+1, 1, -1
+    print *, "tst:", tst_flux_dn(1:4,nlay+1-ilay+1)
+    print *, "ref:", ref_flux_dn(1:4,ilay)
+  end do 
   do ilay = nlay+1, 1, -1
    temp(:,ilay) = tst_flux_dn(:,nlay+1-ilay+1)
   end do 

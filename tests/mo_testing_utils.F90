@@ -237,7 +237,7 @@ contains
   end subroutine increment_with_nstr 
   ! ----------------------------------------------------------------------------
   !
-  ! Vertically reverse optical
+  ! Vertically reverse optical properties
   ! 
   subroutine vr(atmos, sources)
     class(ty_optical_props_arry), intent(inout) :: atmos
@@ -252,16 +252,16 @@ contains
 
     select type (atmos)
       type is (ty_optical_props_2str)
-        atmos%ssa = atmos%ssa(:,nlay:1:-1,:)
-        atmos%g   = atmos%g  (:,nlay:1:-1,:)
+        atmos%ssa(:,:,:) = atmos%ssa(:,nlay:1:-1,:)
+        atmos%g  (:,:,:)= atmos%g  (:,nlay:1:-1,:)
       type is (ty_optical_props_nstr)
-        atmos%ssa = atmos%ssa(:,nlay:1:-1,:)
-        atmos%p   = atmos%p(:,:,nlay:1:-1,:)
+        atmos%ssa(:,:,:) = atmos%ssa(:,nlay:1:-1,:)
+        atmos%p(:,:,:,:) = atmos%p(:,:,nlay:1:-1,:)
     end select    
 
     if(present(sources)) then 
-      sources%lev_source = sources%lev_source(:,nlay+1:1:-1,:)
-      sources%lay_source = sources%lay_source(:,nlay  :1:-1,:)
+      sources%lev_source(:,:,:) = sources%lev_source(:,nlay+1:1:-1,:)
+      sources%lay_source(:,:,:) = sources%lay_source(:,nlay  :1:-1,:)
     end if                           
   end subroutine vr
   ! ----------------------------------------------------------------------------

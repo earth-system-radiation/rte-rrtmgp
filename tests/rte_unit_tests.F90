@@ -161,65 +161,13 @@ program rte_unit_tests
   !
   print *, "  Vertical orientation invariance"
   call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
-  print *, "Initial "
-  print *, "Level sources "
-  print '(4(f7.3, 2x))', lw_sources%lev_source(1:4,:,1)
-  print *, "Layer sources "
-  print '(4(f7.3, 2x))', lw_sources%lay_source(1:4,:,1)
   call vr(lw_atmos, lw_sources)
-  print *, "VR "
-  print *, "Level sources "
-  print '(4(f7.3, 2x))', lw_sources%lev_source(1:4,:,1)
-  print *, "Layer sources "
-  print '(4(f7.3, 2x))', lw_sources%lay_source(1:4,:,1)
   call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
                           lw_sources, sfc_emis, &
                           fluxes))
-  !
-  ! Using array notation with negative step size seems to make the values negative 
-  !   in nvfortran? 
-  print *, "*** array syntax"
-  print *, "tst, dn "
-  print '(4(f8.3, 2x))', tst_flux_dn(1:4,nlay+1:1:-1)
-  print *, "ref, dn "
-  print '(4(f8.3, 2x))', ref_flux_dn(1:4,:)
-  print *, "tst, up "
-  print '(4(f8.3, 2x))', tst_flux_up(1:4,nlay+1:1:-1)
-  print *, "ref, up "
-  print '(4(f8.3, 2x))', ref_flux_up(1:4,:)
-#ifdef __NVCOMPILER
-  print *, "*** doing loops"
-  print *, "up"
-  do ilay = nlay+1, 1, -1
-    print *, "ilay = ", nlay+1-ilay+1, ilay
-    print '("tst: ", 4(f8.3, 2x))', tst_flux_up(1:4,nlay+1-ilay+1)
-    print '("ref: ", 4(f8.3, 2x))', ref_flux_up(1:4,ilay)
-  end do 
-
-  do ilay = nlay+1, 1, -1
-    temp(:,ilay) = tst_flux_up(:,nlay+1-ilay+1)
-  end do 
-  tst_flux_up(:,:) = temp(:,:)
-
-  print *, "dn"
-  do ilay = nlay+1, 1, -1
-    print *, "ilay = ", nlay+1-ilay+1, ilay
-    print '("tst: ", 4(f8.3, 2x))', tst_flux_dn(1:4,nlay+1-ilay+1)
-    print '("ref: ", 4(f8.3, 2x))', ref_flux_dn(1:4,ilay)
-  end do 
-  do ilay = nlay+1, 1, -1
-   temp(:,ilay) = tst_flux_dn(:,nlay+1-ilay+1)
-  end do 
-  tst_flux_dn(:,:) = temp(:,:)
-
-  call check_fluxes(tst_flux_up, ref_flux_up, &  
-                    tst_flux_dn, ref_flux_dn, & 
-                    passed, "LW: doing problem upside down fails")
-#else
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "LW: doing problem upside down fails")
-#endif 
   ! -------------------------------------------------------
   !
   ! Computing Jacobian shouldn't change net fluxes 
@@ -285,8 +233,6 @@ program rte_unit_tests
   ! Shortwave tests - thin atmospheres
   !
   ! ------------------------------------------------------------------------------------
-  if(.not. passed) error stop 1
-  stop
 
   print *, "Thin, scattering atmospheres"
   call stop_on_err(sw_atmos%alloc_2str(ncol, nlay, lw_atmos))
@@ -518,11 +464,13 @@ contains
     temp = [(((g  (i), k = 1, ntau*ng), i = 1, ng  ), j = 1, 1 )]
     atmos%g  (1:ncol,1:nlay,1) = spread(temp(1:ncol),                dim=2, ncopies=nlay)
 
+    if(.false.) then
     print *, "Original values"
     print '("tau: ", 8(e9.3,2x))', sum(atmos%tau(:,:,1),dim=2)
     print '("ssa: ", 8(e9.3,2x))',     atmos%ssa(:,1,1)
     print '("g  : ", 8(e9.3,2x))',     atmos%g  (:,1,1)
     print *
+    end if
     !
     ! Delta-scale 
     !
@@ -548,7 +496,7 @@ contains
     !
     gamma3(:) = (2._wp - 3._wp * mu0(:) * atmos%g(:,1,1)) * .25_wp
     R(:) = (atmos%ssa(:,1,1)*sum(atmos%tau(:,:,1),dim=2))/mu0(:) * gamma3(:)
-
+    if(.false.) then
     print '("tau: ", 8(e9.3,2x))', sum(atmos%tau(:,:,1),dim=2)
     print '("ssa: ", 8(e9.3,2x))',     atmos%ssa(:,1,1)
     print '("g  : ", 8(e9.3,2x))',     atmos%g  (:,1,1)
@@ -557,7 +505,7 @@ contains
     print '("RTE: ", 8(e9.3,2x))', ref_flux_up(:,1)
     print '("Dif: ", 8(e9.3,2x))', R(:) - ref_flux_up(:,1)
     print '("Rel: ", 8(f9.2,2x))', (R(:) - ref_flux_up(:,1))/ref_flux_up(:,1) * 100._wp
-
+    end if 
   end function check_thin_scattering
   ! ------------------------------------------------------------------------------------
   !

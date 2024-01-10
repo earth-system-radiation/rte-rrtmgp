@@ -45,7 +45,7 @@ ADDITIONS += mo_solar_variability.o
 #
 # Targets
 #
-all: check_variants check_equivalence test_zenith_angle_spherical_correction rte_unit_tests optical_prop_unit_tests
+all: check_variants check_equivalence test_zenith_angle_spherical_correction rte_unit_tests optical_prop_unit_tests rte_lw_solver_unit_tests
 
 check_equivalence:   $(ADDITIONS) $(LIB_DEPS) check_equivalence.o
 check_equivalence.o: $(ADDITIONS) $(LIB_DEPS) check_equivalence.F90
@@ -71,6 +71,10 @@ rte_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_unit_tests.o
 
 optical_prop_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o optical_prop_unit_tests.F90
 optical_prop_unit_tests  : $(LIB_DEPS) mo_testing_utils.o optical_prop_unit_tests.o
+
+rte_lw_solver_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_lw_solver_unit_tests.F90
+rte_lw_solver_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_lw_solver_unit_tests.o
+
 
 
 .PHONY: tests

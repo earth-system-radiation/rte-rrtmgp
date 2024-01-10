@@ -13,10 +13,10 @@
 ! ----------------------------------------------------------------------------
 program rte_lw_solver_unit_tests
   !
-  ! Exercise various paths through RTE code including solvers, optical properties, fluxes
-  !   Tests are run on idealized problems with analytic solutions (e.g. radiative equilibrium)
-  !   Solutions are checked for correctness where possible 
-  !   Some tests check invariance, e.g. with respect to vertical ordering 
+  ! Exercise various paths through RTE LW solvers
+  !   Tests are run on an idealized problem (radiative equilibirum) 
+  !   and checked for correctness against known analytic solution
+  !   Beyond correctness tests check invariance, e.g. with respect to vertical ordering 
   !
   use mo_rte_kind,           only: wp
   use mo_optical_props,      only: ty_optical_props, &
@@ -26,7 +26,6 @@ program rte_lw_solver_unit_tests
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
-  use mo_rte_sw,             only: rte_sw
   use mo_testing_utils,      only: allclose, stop_on_err, report_err, check_fluxes, &
                                    vr, & 
                                    increment_with_1scl, increment_with_2str, increment_with_nstr
@@ -54,8 +53,7 @@ program rte_lw_solver_unit_tests
 
   real(wp), parameter :: pi = acos(-1._wp)
   integer,  parameter :: ncol = 8, nlay = 16
-  integer,  parameter :: nmu0 = 2
-  integer             :: icol, ilay, imu0
+  integer             :: icol, ilay
   !
   ! Longwave tests - gray radiative equilibrium
   !
@@ -63,8 +61,8 @@ program rte_lw_solver_unit_tests
                          D     = 1.66_wp              ! Diffusivity angle, from single-angle RRTMGP solver
   real(wp), dimension(  ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
                                                          (310._wp, icol = 1,ncol/2)]
-  real(wp), dimension(  ncol), parameter :: lw_total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
-                                                            0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
+  real(wp), dimension(  ncol), parameter :: total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
+                                                         0.1_wp, 1._wp, 10._wp, 50._wp] ! Would be nice to parameterize 
   real(wp), dimension(1,ncol), parameter :: sfc_emis   = 1._wp
   real(wp), dimension(ncol,1), parameter :: lw_Ds      = D     ! Diffusivity angle - use default value for all columns
 
@@ -92,7 +90,7 @@ program rte_lw_solver_unit_tests
   ! Gray radiative equillibrium 
   !
   print *, "Using gray radiative equilibrium"
-  call gray_rad_equil(sfc_t(1:ncol), lw_total_tau(1:ncol), nlay, top_at_1, lw_atmos, lw_sources)
+  call gray_rad_equil(sfc_t(1:ncol), total_tau(1:ncol), nlay, top_at_1, lw_atmos, lw_sources)
 
   fluxes%flux_up  => ref_flux_up (:,:)
   fluxes%flux_dn  => ref_flux_dn (:,:)
@@ -105,13 +103,13 @@ program rte_lw_solver_unit_tests
   ! Is the solution correct (does it satisfy the profile for radiative equilibrium?)
   !   Error reporting happens inside check_gray_rad_equil()
   !
-  passed = check_gray_rad_equil(sfc_t, lw_total_tau, top_at_1, ref_flux_up, ref_flux_net)
+  passed = check_gray_rad_equil(sfc_t, total_tau, top_at_1, ref_flux_up, ref_flux_net)
   ! ------------------------------------------------------------------------------------
   !
   ! Net fluxes on- vs off-line
   !  Are the net fluxes correct?
   !
-  print *, "  Longwave net flux variants"
+  print *, "  Net flux variants"
   call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, passed, "net fluxes don't match down-up")
   !
   ! Compute only net fluxes 
@@ -122,7 +120,7 @@ program rte_lw_solver_unit_tests
                           lw_sources, sfc_emis,&
                           fluxes))
   call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
-                    passed, "LW net fluxes computed alone doesn'tt match down-up computed separately")
+                    passed, "Net fluxes computed alone doesn'tt match down-up computed separately")
   !
   ! Compute only up and down fluxes 
   !
@@ -138,38 +136,38 @@ program rte_lw_solver_unit_tests
   ! Subsets of atmospheric columns 
   !
   print *, "  Subsetting invariance"
-  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call gray_rad_equil(sfc_t, total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call clear_sky_subset(lw_atmos, lw_sources, sfc_emis, tst_flux_up, tst_flux_dn)
   call check_fluxes(tst_flux_up, ref_flux_up, &
                     tst_flux_dn, ref_flux_dn, &  
-                    passed, "LW: doing problem in subsets fails")
+                    passed, "Doing problem in subsets fails")
 
   ! -------------------------------------------------------
   !
   ! Vertically-reverse
   !
   print *, "  Vertical orientation invariance"
-  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call gray_rad_equil(sfc_t, total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call vr(lw_atmos, lw_sources)
   call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
                           lw_sources, sfc_emis, &
                           fluxes))
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
-                    passed, "LW: doing problem upside down fails")
+                    passed, "Doing problem upside down fails")
   ! -------------------------------------------------------
   !
   ! Computing Jacobian shouldn't change net fluxes 
   !
   print *, "  Jacobian"
-  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call gray_rad_equil(sfc_t, total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call stop_on_err(rte_lw(lw_atmos, top_at_1, &
                           lw_sources,      &
                           sfc_emis,        &
                           fluxes,          &
                           flux_up_Jac = jFluxUp))
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
-                    passed, "LW: computing Jacobian changes fluxes fails")
+                    passed, "Computing Jacobian changes fluxes fails")
   !
   ! Increase surface temperature in source function by 1K and recompute fluxes
   !
@@ -190,7 +188,7 @@ program rte_lw_solver_unit_tests
   ! Using Tang approach for purely absorbing problem should be the same 
   !
   print *, "  Two-stream optical properties"
-  call gray_rad_equil(sfc_t, lw_total_tau, nlay, top_at_1, lw_atmos, lw_sources)
+  call gray_rad_equil(sfc_t, total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call stop_on_err(sw_atmos%alloc_2str(ncol, nlay, lw_atmos))
   sw_atmos%tau = lw_atmos%tau
   sw_atmos%ssa = 0._wp
@@ -202,7 +200,7 @@ program rte_lw_solver_unit_tests
                           fluxes,          &
                           flux_up_Jac = jFluxUp))
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
-                    passed, "LW: using two-stream properties fails")
+                    passed, "Using two-stream properties fails")
   call sw_atmos%finalize()
   ! ------------------------------------------------------------------------------------
   !
@@ -215,12 +213,12 @@ program rte_lw_solver_unit_tests
                           fluxes,          &
                           lw_Ds = lw_Ds))
   call check_fluxes(tst_flux_up, ref_flux_up, tst_flux_dn, ref_flux_dn, &  
-                    passed, "LW: specifying diffusivity angle D fails")
+                    passed, "Specifying diffusivity angle D fails")
 
   ! ------------------------------------------------------------------------------------
   ! Done
   !
-  print *, "RTE LW solver unit tests"
+  print *, "RTE LW solver unit tests done"
   print *
   if(.not. passed) error stop 1
   ! ------------------------------------------------------------------------------------

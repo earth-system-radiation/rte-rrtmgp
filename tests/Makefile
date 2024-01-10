@@ -45,7 +45,7 @@ ADDITIONS += mo_solar_variability.o
 #
 # Targets
 #
-all: check_variants check_equivalence test_zenith_angle_spherical_correction rte_unit_tests optical_prop_unit_tests rte_lw_solver_unit_tests
+all: check_variants check_equivalence test_zenith_angle_spherical_correction rte_sw_solver_unit_tests rte_optic_prop_unit_tests rte_lw_solver_unit_tests
 
 check_equivalence:   $(ADDITIONS) $(LIB_DEPS) check_equivalence.o
 check_equivalence.o: $(ADDITIONS) $(LIB_DEPS) check_equivalence.F90
@@ -66,15 +66,14 @@ mo_load_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_load_coefficients.F90
 mo_rfmip_io.o.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_rfmip_io.F90
 mo_simple_netcdf.o:     $(LIB_DEPS) mo_simple_netcdf.F90
 
-rte_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_unit_tests.F90
-rte_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_unit_tests.o
-
-optical_prop_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o optical_prop_unit_tests.F90
-optical_prop_unit_tests  : $(LIB_DEPS) mo_testing_utils.o optical_prop_unit_tests.o
+rte_optic_prop_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_optic_prop_unit_tests.F90
+rte_optic_prop_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_optic_prop_unit_tests.o
 
 rte_lw_solver_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_lw_solver_unit_tests.F90
 rte_lw_solver_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_lw_solver_unit_tests.o
 
+rte_sw_solver_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_sw_solver_unit_tests.F90
+rte_sw_solver_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_sw_solver_unit_tests.o
 
 
 .PHONY: tests

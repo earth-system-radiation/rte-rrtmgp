@@ -64,7 +64,7 @@ jobs:
     # Cache Conda packages
     #
     - name: Cache Conda packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/conda_pkgs_dir
         key: conda-pkgs

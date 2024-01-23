@@ -452,7 +452,7 @@ program rte_check_equivalence
                                        gas_concs,    &
                                        atmos,        &
                                        toa_flux))
-   call increment_with_2str(atmos)
+   call increment_with_2str
    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  

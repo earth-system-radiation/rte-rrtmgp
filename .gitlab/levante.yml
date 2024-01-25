@@ -1,0 +1,73 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+
+include:
+  - project: 'anw_dienste/ci-templates'
+    file: '.slurm-ci.yml'
+
+variables:
+  SCHEDULER_PARAMETERS: >-
+    --account=mh0287
+    --partition=gpu
+    --gpus=1
+    --time=05:00
+
+.build-common:
+  extends: .default
+  variables:
+    # Core variables:
+    FC: /sw/spack-levante/nvhpc-22.5-v4oky3/Linux_x86_64/22.5/compilers/bin/nvfortran
+    #   Production flags for ICON model:
+    FCFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda11.7 -DRTE_USE_${FPMODEL}
+    # Convenience variables:
+    NFHOME: /sw/spack-levante/netcdf-fortran-4.5.4-syv4qr
+    NCHOME: /sw/spack-levante/netcdf-c-4.9.0-gc7kgj
+    PYHOME: /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg
+    #   Suppress an irrelevant but annoying error message:
+    PROJ_LIB: ${PYHOME}/share/proj
+    # Make variables:
+    FCINCLUDE: -I${NFHOME}/include
+    LDFLAGS: -L${NFHOME}/lib -L${NCHOME}/lib
+    RRTMGP_ROOT: ${CI_PROJECT_DIR}
+    RRTMGP_DATA: ${CI_PROJECT_DIR}/rrtmgp-data
+    RTE_KERNELS: accel
+  before_script:
+    - module purge
+    - module load git
+    # Extend the existing environment variables:
+    - export PATH="${PYHOME}/bin:${PATH}"
+    - export LD_LIBRARY_PATH="${NFHOME}/lib:${NCHOME}/lib:${LD_LIBRARY_PATH-}"
+    # The -Mstack_arrays compiler flag requires a large stack:
+    - ulimit -s unlimited
+  script:
+    #
+    # Build libraries, examples and tests
+    #
+    - ${FC} --version
+    - make libs
+    - make -C build separate-libs
+    #
+    # Check out data
+    #
+    - git clone --depth 1 https://github.com/earth-system-radiation/rrtmgp-data.git "${RRTMGP_DATA}"
+    #
+    # Run examples and tests
+    #
+    - make tests
+    #
+    # Compare the results
+    #
+    - make check
+
+nvhpc-gpu-openacc-DP:
+  extends: .build-common
+  variables:
+    FPMODEL: DP
+    FAILURE_THRESHOLD: "7.e-4"
+
+nvhpc-gpu-openacc-SP:
+  extends: .build-common
+  variables:
+    FPMODEL: SP
+    FAILURE_THRESHOLD: "3.5e-1"

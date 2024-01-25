@@ -278,6 +278,10 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up, tol=4._wp) .or. &
        .not. allclose(tst_flux_dn, ref_flux_dn, tol=4._wp) )    &
       call report_err(" Vertical invariance failure")
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol=4._wp)) & 
+      print *, "up:", maxval((tst_flux_up - ref_flux_up)/spacing(tst_flux_up))  
+    if(.not. allclose(tst_flux_dn, ref_flux_dn, tol=4._wp)) & 
+      print *, "dn:", maxval((tst_flux_dn - ref_flux_dn)/spacing(tst_flux_dn))  
     print *, "  Vertical orientation invariance"
     ! -------------------------------------------------------
     !

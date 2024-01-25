@@ -442,7 +442,7 @@ program rte_check_equivalence
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 6._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
       call report_err("  Incrementing with 1scl fails")

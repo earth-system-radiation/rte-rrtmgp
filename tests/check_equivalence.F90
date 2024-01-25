@@ -545,7 +545,7 @@ contains
       t_lay      (:,:) = t_lay      (:, nlay   :1:-1)
       p_lev      (:,:) = p_lev      (:,(nlay+1):1:-1)
       t_lev      (:,:) = t_lev      (:,(nlay+1):1:-1)
-    end do 
+    end if
     top_at_1 = .not. top_at_1
   end subroutine lw_clear_sky_vr
   ! ----------------------------------------------------------------------------

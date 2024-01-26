@@ -9,42 +9,74 @@ include:
 variables:
   SCHEDULER_PARAMETERS: >-
     --account=mh0287
-    --partition=gpu
-    --gpus=1
     --time=05:00
+    ${EXTRA_SCHEDULER_PARAMETERS}
+  EXTRA_SCHEDULER_PARAMETERS:
 
-.build-common:
+.gpu:
   extends: .default
+  variables:
+    EXTRA_SCHEDULER_PARAMETERS: >-
+      --partition=gpu
+      --gpus=1
+
+.cpu:
+  extends: .default
+  variables:
+    EXTRA_SCHEDULER_PARAMETERS: >-
+      --partition=shared
+
+.nvhpc:
   variables:
     # Core variables:
     FC: /sw/spack-levante/nvhpc-22.5-v4oky3/Linux_x86_64/22.5/compilers/bin/nvfortran
-    #   Production flags for ICON model:
-    FCFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda11.7 -DRTE_USE_${FPMODEL}
     # Convenience variables:
+    VERSION_FCFLAGS: --version
     NFHOME: /sw/spack-levante/netcdf-fortran-4.5.4-syv4qr
     NCHOME: /sw/spack-levante/netcdf-c-4.9.0-gc7kgj
+
+.nag:
+  variables:
+    # Core variables:
+    FC: /sw/spack-levante/nag-7.1-lqjbej/bin/nagfor
+    # Convenience variables:
+    VERSION_FCFLAGS: -V
+    NFHOME: /sw/spack-levante/netcdf-fortran-4.5.3-5di6qe
+    NCHOME: /sw/spack-levante/netcdf-c-4.8.1-vbnli5
+
+.dp:
+  variables:
+    FPMODEL: DP
+    FAILURE_THRESHOLD: "7.e-4"
+
+.sp:
+  variables:
+    FPMODEL: SP
+    FAILURE_THRESHOLD: "3.5e-1"
+
+.common:
+  variables:
     PYHOME: /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg
-    #   Suppress an irrelevant but annoying error message:
+    # Suppress an irrelevant but annoying error message:
     PROJ_LIB: ${PYHOME}/share/proj
     # Make variables:
     FCINCLUDE: -I${NFHOME}/include
     LDFLAGS: -L${NFHOME}/lib -L${NCHOME}/lib
     RRTMGP_ROOT: ${CI_PROJECT_DIR}
     RRTMGP_DATA: ${CI_PROJECT_DIR}/rrtmgp-data
-    RTE_KERNELS: accel
   before_script:
     - module purge
     - module load git
     # Extend the existing environment variables:
     - export PATH="${PYHOME}/bin:${PATH}"
     - export LD_LIBRARY_PATH="${NFHOME}/lib:${NCHOME}/lib:${LD_LIBRARY_PATH-}"
-    # The -Mstack_arrays compiler flag requires a large stack:
+    # Some tests require a large stack:
     - ulimit -s unlimited
   script:
     #
     # Build libraries, examples and tests
     #
-    - ${FC} --version
+    - ${FC} ${VERSION_FCFLAGS}
     - make libs
     - make -C build separate-libs
     #
@@ -60,14 +92,61 @@ variables:
     #
     - make check
 
-nvhpc-gpu-openacc-DP:
-  extends: .build-common
+.nvhpc-gpu-openacc:
+  extends:
+    - .gpu
+    - .nvhpc
+    - .common
   variables:
-    FPMODEL: DP
-    FAILURE_THRESHOLD: "7.e-4"
+    # Compiler flags used for ICON model:
+    FCFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda11.7 -DRTE_USE_${FPMODEL}
+    RTE_KERNELS: accel
+
+.nag-cpu:
+  extends:
+    - .cpu
+    - .nag
+    - .common
+  variables:
+    # Compiler flags used for ICON model:
+    FCFLAGS: -Wc=/sw/spack-levante/gcc-11.2.0-bcn7mb/bin/gcc -f2008 -colour -w=uep -g -gline -O0 -float-store -nan -Wc,-g -Wc,-pipe -Wc,--param,max-vartrack-size=200000000 -Wc,-mno-fma -C=all -DRTE_USE_CBOOL -DRTE_USE_${FPMODEL}
+
+.nag-cpu-default:
+  extends: .nag-cpu
+  variables:
+    RTE_KERNELS: default
+
+.nag-cpu-accel:
+  extends: .nag-cpu
+  variables:
+    RTE_KERNELS: accel
+
+nvhpc-gpu-openacc-DP:
+  extends:
+    - .dp
+    - .nvhpc-gpu-openacc
 
 nvhpc-gpu-openacc-SP:
-  extends: .build-common
-  variables:
-    FPMODEL: SP
-    FAILURE_THRESHOLD: "3.5e-1"
+  extends:
+    - .sp
+    - .nvhpc-gpu-openacc
+
+#nag-cpu-default-DP:
+#  extends:
+#    - .dp
+#    - .nag-cpu-default
+
+nag-cpu-default-SP:
+  extends:
+    - .sp
+    - .nag-cpu-default
+
+nag-cpu-accel-DP:
+  extends:
+    - .dp
+    - .nag-cpu-accel
+
+#nag-cpu-accel-SP:
+#  extends:
+#    - .sp
+#    - .nag-cpu-accel

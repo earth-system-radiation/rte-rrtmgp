@@ -624,7 +624,7 @@ contains
           ibnd = gpoint_bands(igpt)
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           itropo = merge(1,2,tropo(icol,ilay))  !WS moved itropo inside loop for GPU
-          iflav = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
+          iflav  = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
           ! interpolation in temperature, pressure, and eta
           pfrac = &
             interpolate3D(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
@@ -634,20 +634,22 @@ contains
           planck_function_1 = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
           lay_src  (icol,ilay,igpt) = pfrac * planck_function_1
 
-          ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
+          ! Compute level source irradiance for g-point
           planck_function_1 = interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
           if (ilay == 1) then 
             lev_src(icol,ilay,  igpt) = pfrac * planck_function_1
-          else if (ilay == nlay) then 
-            lev_src(icol,ilay,  igpt) = pfrac * planck_function_1
-            planck_function_2 = interpolate1D(tlev(icol,nlay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
-            lev_src(icol,nlay+1,igpt) = pfrac * planck_function_2
           else
+            itropo = merge(1,2,tropo(icol,ilay-1))  !WS moved itropo inside loop for GPU
+            iflav  = gpoint_flavor(itropo, igpt) !eta interpolation depends on band's flavor
             pfrac_m1 = &
               interpolate3D(one, fmajor(:,:,:,icol,ilay-1,iflav), pfracin, &
                             igpt, jeta(:,icol,ilay-1,iflav), jtemp(icol,ilay-1),jpress(icol,ilay-1)+itropo)
             lev_src(icol,ilay,  igpt) = sqrt(pfrac * pfrac_m1) * planck_function_1
           end if 
+          if (ilay == nlay) then
+            planck_function_1 = interpolate1D(tlev(icol,nlay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
+            lev_src(icol,nlay+1,igpt) = pfrac * planck_function_1
+          end if
           if (ilay == sfc_lay) then
             planck_function_1 = interpolate1D(tsfc(icol)              , temp_ref_min, totplnk_delta, totplnk(:,ibnd))
             planck_function_2 = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk(:,ibnd))

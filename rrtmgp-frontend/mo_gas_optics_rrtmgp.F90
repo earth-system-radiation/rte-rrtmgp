@@ -304,17 +304,25 @@ contains
 
     !
     ! Interpolate source function
-    ! present status of optional argument is passed to source()
+    ! present status of optional argument should be passed to source()
+    !    but nvfortran (and PGI Fortran before it) do not do so
     !
-    error_msg = source(this,                               &
-                       ncol, nlay, nband, ngpt,            &
-                       play, plev, tlay, tsfc,             &
-                       jtemp, jpress, jeta, tropo, fmajor, &
-                       sources,                            &
-                       tlev)
     if(present(tlev)) then   
+      error_msg = source(this,                               &
+                         ncol, nlay, nband, ngpt,            &
+                         play, plev, tlay, tsfc,             &
+                         jtemp, jpress, jeta, tropo, fmajor, &
+                         sources,                            &
+                         tlev)
       !$acc        exit data      delete(tlev)
       !$omp target exit data map(release:tlev)
+    else 
+      error_msg = source(this,                               &
+                         ncol, nlay, nband, ngpt,            &
+                         play, plev, tlay, tsfc,             &
+                         jtemp, jpress, jeta, tropo, fmajor, &
+                         sources)
+
     end if 
     !$acc        exit data      delete(tsfc)
     !$omp target exit data map(release:tsfc)

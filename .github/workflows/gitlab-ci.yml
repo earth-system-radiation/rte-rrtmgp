@@ -29,7 +29,7 @@ jobs:
     # Check out GitHub repository
     #
     - name: Check out GitHub repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     #
@@ -59,10 +59,24 @@ jobs:
   levante:
     runs-on: ubuntu-latest
     needs: levante-init
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
-        config-name: [nvhpc-gpu-openacc-DP, nvhpc-gpu-openacc-SP]
+        config-name:
+          - nvhpc-gpu-openacc-DP
+          - nvhpc-gpu-openacc-SP
+          #- nag-cpu-default-DP
+          - nag-cpu-default-SP
+          - nag-cpu-accel-DP
+          #- nag-cpu-accel-SP
+        include:
+          # The tests are not experimental by default:
+          - experimental: false
+          - config-name: nag-cpu-accel-DP
+            experimental: true
+          #- config-name: nag-cpu-accel-SP
+          #  experimental: true
     steps:
     #
     # Build, run and check (fetch the log)
@@ -87,3 +101,4 @@ jobs:
         password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
         ref-type: tag
         ref-name: ${{ needs.levante-init.outputs.ref-name }}
+        force: true

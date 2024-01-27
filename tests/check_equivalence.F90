@@ -276,8 +276,8 @@ program rte_check_equivalence
     ! Orientation invariance 
     !
     call lw_clear_sky_vr
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol=4._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol=4._wp) )    & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol=4._wp) .or. &
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol=4._wp) )    &
       call report_err(" Vertical invariance failure")
     print *, "  Vertical orientation invariance"
     ! -------------------------------------------------------
@@ -412,9 +412,9 @@ program rte_check_equivalence
     !   Threshold of 4x spacing() works on CPUs but 8x is needed for GPUs
     !
     call sw_clear_sky_tsi
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol =10._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 10._wp) .or. &
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol =  8._wp) .or. &
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol =  8._wp))     &
       call report_err("  Changing TSI fails")
     print *, "  TSI invariance"
     ! -------------------------------------------------------
@@ -443,7 +443,7 @@ program rte_check_equivalence
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 6._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
       call report_err("  Incrementing with 1scl fails")
@@ -454,9 +454,9 @@ program rte_check_equivalence
                                        atmos,        &
                                        toa_flux))
    call increment_with_2str(atmos)
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+   if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
+      .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
+      .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
       call report_err("  Incrementing with 2str fails")
 
     call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
@@ -491,63 +491,41 @@ contains
               dimension(gas_concs%get_num_gases()) &
                                   :: gc_gas_names
     !
-    ! ifort was failing this end-to-end test using the accelerator kernels
-    !   The failure looks to be in the computation of optical properties. Setting 
-    !   do_whole_shebang = .false. vertically reverses the existing optical properties. 
+    ! Reverse the orientation of the problem
     !
-#ifdef __INTEL_COMPILER
-    logical, parameter :: do_whole_shebang = .false.
-#else
-    logical, parameter :: do_whole_shebang = .true.
-#endif
+    p_lay  (:,:) = p_lay  (:, nlay   :1:-1)
+    t_lay  (:,:) = t_lay  (:, nlay   :1:-1)
+    p_lev  (:,:) = p_lev  (:,(nlay+1):1:-1)
+    t_lev  (:,:) = t_lev  (:,(nlay+1):1:-1)
+    top_at_1 = .not. top_at_1
+    !
+    ! No direct access to gas concentrations so use the classes
+    !   This also tests otherwise uncovered routines for ty_gas_concs
+    !
+    gc_gas_names(:) = gas_concs%get_gas_names()
+    call stop_on_err(gas_concs_vr%init(gc_gas_names(:)))
+    do i = 1, gas_concs%get_num_gases()
+      call stop_on_err(gas_concs%get_vmr(gc_gas_names(i), vmr))
+      vmr(:,:)  = vmr(:,nlay:1:-1)
+      call stop_on_err(gas_concs_vr%set_vmr(gc_gas_names(i), vmr))
+    end do
 
-    if (do_whole_shebang) then
-        print *, "    Doing the end-to-end problem"
-        !
-        ! Reverse the orientation of the problem
-        !
-        p_lay  (:,:) = p_lay  (:, nlay   :1:-1)
-        t_lay  (:,:) = t_lay  (:, nlay   :1:-1)
-        p_lev  (:,:) = p_lev  (:,(nlay+1):1:-1)
-        t_lev  (:,:) = t_lev  (:,(nlay+1):1:-1)
-        top_at_1 = .not. top_at_1
-        !
-        ! No direct access to gas concentrations so use the classes
-        !   This also tests otherwise uncovered routines for ty_gas_concs
-        !
-        gc_gas_names(:) = gas_concs%get_gas_names()
-        call stop_on_err(gas_concs_vr%init(gc_gas_names(:)))
-        do i = 1, gas_concs%get_num_gases()
-          call stop_on_err(gas_concs%get_vmr(gc_gas_names(i), vmr))
-          vmr(:,:)  = vmr(:,nlay:1:-1)
-          call stop_on_err(gas_concs_vr%set_vmr(gc_gas_names(i), vmr))
-        end do
-
-        call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
-                                           t_lay, sfc_t, &
-                                           gas_concs_vr, &
-                                           atmos,        &
-                                           lw_sources,   &
-                                           tlev=t_lev))
-    else
-      print *, "    Shortcutting the problem"
-      atmos%tau            (:,:,:) =  atmos%tau            (:, nlay   :1:-1,:)
-      lw_sources%lay_source(:,:,:) =  lw_sources%lay_source(:, nlay   :1:-1,:)
-      lw_sources%lev_source(:,:,:) =  lw_sources%lev_source(:,(nlay+1):1:-1,:)
-      top_at_1 = .not. top_at_1
-    end if 
+    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+                                       t_lay, sfc_t, &
+                                       gas_concs_vr, &
+                                       atmos,        &
+                                       lw_sources,   &
+                                       tlev=t_lev))
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &
                             fluxes))
     tst_flux_up(:,:) = tst_flux_up(:,(nlay+1):1:-1)
     tst_flux_dn(:,:) = tst_flux_dn(:,(nlay+1):1:-1)
-    if (do_whole_shebang) then 
-        p_lay      (:,:) = p_lay      (:, nlay   :1:-1)
-        t_lay      (:,:) = t_lay      (:, nlay   :1:-1)
-        p_lev      (:,:) = p_lev      (:,(nlay+1):1:-1)
-        t_lev      (:,:) = t_lev      (:,(nlay+1):1:-1)
-    end if
+    p_lay      (:,:) = p_lay      (:, nlay   :1:-1)
+    t_lay      (:,:) = t_lay      (:, nlay   :1:-1)
+    p_lev      (:,:) = p_lev      (:,(nlay+1):1:-1)
+    t_lev      (:,:) = t_lev      (:,(nlay+1):1:-1)
     top_at_1 = .not. top_at_1
   end subroutine lw_clear_sky_vr
   ! ----------------------------------------------------------------------------

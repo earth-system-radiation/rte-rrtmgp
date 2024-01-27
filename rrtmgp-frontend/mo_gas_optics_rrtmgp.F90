@@ -304,30 +304,29 @@ contains
 
     !
     ! Interpolate source function
+    ! present status of optional argument should be passed to source()
+    !    but nvfortran (and PGI Fortran before it) do not do so
     !
-    if(present(tlev)) then
-      !
-      ! present status of optional argument should be passed to source()
-      !   but isn't with PGI 19.10
-      !
+    if(present(tlev)) then   
       error_msg = source(this,                               &
                          ncol, nlay, nband, ngpt,            &
                          play, plev, tlay, tsfc,             &
                          jtemp, jpress, jeta, tropo, fmajor, &
                          sources,                            &
                          tlev)
-      !$acc exit data delete(tlev)
+      !$acc        exit data      delete(tlev)
       !$omp target exit data map(release:tlev)
-    else
+    else 
       error_msg = source(this,                               &
                          ncol, nlay, nband, ngpt,            &
                          play, plev, tlay, tsfc,             &
                          jtemp, jpress, jeta, tropo, fmajor, &
                          sources)
-    end if
-    !$acc exit data delete(tsfc)
+
+    end if 
+    !$acc        exit data      delete(tsfc)
     !$omp target exit data map(release:tsfc)
-    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
+    !$acc        exit data      delete(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
   end function gas_optics_int
   !------------------------------------------------------------------------------------------
@@ -858,7 +857,15 @@ contains
     error_msg = ""
     !
     ! Source function needs temperature at interfaces/levels and at layer centers
+    !   Allocate small local array for tlev unconditionally
     !
+    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source)     &
+    !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac) & 
+    !$acc              create(tlev_arr)
+    !$omp target data                 map(from:sources%lay_source, sources%lev_source)     &
+    !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac) &
+    !$omp           map(alloc:tlev_arr)
+
     if (present(tlev)) then
       !   Users might have provided these
       tlev_wk => tlev
@@ -868,32 +875,30 @@ contains
       ! Interpolate temperature to levels if not provided
       !   Interpolation and extrapolation at boundaries is weighted by pressure
       !
+     !$acc                parallel loop gang vector
+     !$omp target teams distribute parallel do simd 
       do icol = 1, ncol
-         tlev_arr(icol,1) = tlay(icol,1) &
+         tlev_arr(icol,1)      = tlay(icol,1) &
                            + (plev(icol,1)-play(icol,1))*(tlay(icol,2)-tlay(icol,1))  &
-              &                                           / (play(icol,2)-play(icol,1))
+                                                          / (play(icol,2)-play(icol,1))
+         tlev_arr(icol,nlay+1) = tlay(icol,nlay)                                                             &
+                                + (plev(icol,nlay+1)-play(icol,nlay))*(tlay(icol,nlay)-tlay(icol,nlay-1))  &
+                                                          / (play(icol,nlay)-play(icol,nlay-1))
       end do
-      do ilay = 2, nlay
+     !$acc                parallel loop gang vector collapse(2) 
+     !$omp target teams distribute parallel do simd collapse(2)
+     do ilay = 2, nlay
         do icol = 1, ncol
            tlev_arr(icol,ilay) = (play(icol,ilay-1)*tlay(icol,ilay-1)*(plev(icol,ilay  )-play(icol,ilay)) &
                                 +  play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay))) /  &
                                   (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)))
         end do
       end do
-      do icol = 1, ncol
-         tlev_arr(icol,nlay+1) = tlay(icol,nlay)                                                             &
-                                + (plev(icol,nlay+1)-play(icol,nlay))*(tlay(icol,nlay)-tlay(icol,nlay-1))  &
-                                                                      / (play(icol,nlay)-play(icol,nlay-1))
-      end do
     end if
 
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
-    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source) &
-    !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac)
-    !$omp target data                 map(from:sources%lay_source, sources%lev_source) &
-    !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac)
 
     !$acc kernels copyout(top_at_1)
     !$omp target map(from:top_at_1)

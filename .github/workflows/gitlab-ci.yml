@@ -1,0 +1,104 @@
+name: GitLab CI
+on:
+  push:
+    branches-ignore:
+    - documentation
+  pull_request:
+    branches-ignore:
+    - documentation
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  #
+  # Deferred GitLab pipelines on Levante at DKRZ (see .gitlab/levante.yml):
+  #
+  levante-init:
+    if: |
+      github.repository_owner == 'earth-system-radiation' &&
+        ( github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.owner.login == github.repository_owner )
+    runs-on: ubuntu-latest
+    outputs:
+      ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
+      pipeline-id: ${{ steps.gl-trigger-pipeline.outputs.pipeline-id }}
+    steps:
+    #
+    # Check out GitHub repository
+    #
+    - name: Check out GitHub repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    #
+    # Push to GitLab repository
+    #
+    - name: Push to GitLab repository
+      id: g-push-rev
+      uses: "skosukhin/git-ci-hub-lab/g-push-rev@v1"
+      with:
+        remote-url: ${{ vars.DKRZ_GITLAB_SERVER }}/${{ vars.DKRZ_GITLAB_PROJECT }}.git
+        password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
+        ref-type: tag
+        ref-message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        force-push: true
+    #
+    # Trigger GitLab CI/CD Pipeline
+    #
+    - name: Trigger GitLab CI/CD Pipeline
+      id: gl-trigger-pipeline
+      uses: "skosukhin/git-ci-hub-lab/gl-trigger-pipeline@v1"
+      with:
+        server-url: ${{ vars.DKRZ_GITLAB_SERVER }}
+        project-name: ${{ vars.DKRZ_GITLAB_PROJECT }}
+        token: ${{ secrets.DKRZ_GITLAB_TRIGGER_TOKEN }}
+        ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
+        expected-sha: ${{ github.sha }}
+  levante:
+    runs-on: ubuntu-latest
+    needs: levante-init
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config-name:
+          - nvhpc-gpu-openacc-DP
+          - nvhpc-gpu-openacc-SP
+          #- nag-cpu-default-DP
+          - nag-cpu-default-SP
+          - nag-cpu-accel-DP
+          #- nag-cpu-accel-SP
+        include:
+          # The tests are not experimental by default:
+          - experimental: false
+          - config-name: nag-cpu-accel-DP
+            experimental: true
+          #- config-name: nag-cpu-accel-SP
+          #  experimental: true
+    steps:
+    #
+    # Build, run and check (fetch the log)
+    #
+    - name: Build, run and check (fetch the log)
+      uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
+      with:
+        server-url: ${{ vars.DKRZ_GITLAB_SERVER }}
+        project-name: ${{ vars.DKRZ_GITLAB_PROJECT }}
+        token: ${{ secrets.DKRZ_GITLAB_TOKEN }}
+        pipeline-id: ${{ needs.levante-init.outputs.pipeline-id }}
+        job-name: ${{ matrix.config-name }}
+  levante-cleanup:
+    runs-on: ubuntu-latest
+    needs: [levante-init, levante]
+    if: always() && needs.levante-init.result != 'skipped'
+    continue-on-error: true
+    steps:
+    - uses: "skosukhin/git-ci-hub-lab/g-delete-ref@v1"
+      with:
+        remote-url: ${{ vars.DKRZ_GITLAB_SERVER }}/${{ vars.DKRZ_GITLAB_PROJECT }}.git
+        password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
+        ref-type: tag
+        ref-name: ${{ needs.levante-init.outputs.ref-name }}
+        force: true

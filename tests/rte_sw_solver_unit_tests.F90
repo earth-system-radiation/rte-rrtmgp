@@ -37,14 +37,13 @@ program rte_sw_solver_unit_tests
   !   Beyond correctness tests check invariance, e.g. with respect to vertical ordering 
   ! Tests include 
   !   Net fluxes = down-up when computed in various combos (net only, up/down only, all three)
-  !     using ty_broadband_flues
+  !     using ty_broadband_fluxes
   !   Answers are invariant to 
   !     Extracting subsets
   !     Vertical orientation
   !     Adding transparent optical properties 
   ! Shortwave specific tests: 
   !   Solutions are linear in TOA flux
-  !   Fluxes inferred from Jacobian are close to fluxes with perturbed surface T. (TODO)
   !
   ! Other possibilites: 
   !   Vertical discretization? Maybe just check boundary fluxes
@@ -125,6 +124,9 @@ program rte_sw_solver_unit_tests
     if(.not. allclose(sfc, & 
                       toa_flux(:,1)*mu0_arr*exp(-sum(atmos%tau(:,:,1),dim=2)/mu0_arr), tol=10._wp)) then 
       passed = .false.
+      print *, & 
+        "Max difference in direct flux:", &
+        maxval(abs(sfc - toa_flux(:,1)*mu0_arr*exp(-sum(atmos%tau(:,:,1),dim=2)/mu0_arr))/spacing(sfc))
       call report_err("Direct flux doesn't match")
     end if    
     ! ------------------------------------------------------------------------------------

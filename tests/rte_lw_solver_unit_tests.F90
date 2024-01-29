@@ -152,9 +152,15 @@ program rte_lw_solver_unit_tests
   call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
                           lw_sources, sfc_emis, &
                           fluxes))
-  call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
-                    tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
-                    passed, "Doing problem upside down fails")
+  !
+  ! Seems like these fluxes should be bitwise identical regardless of orientation 
+  !   but nvfortran 22.5 on Levante has differences of up to 3*spacing()
+  !
+  if (.not. allclose(tst_flux_up(:,nlay+1:1:-1), ref_flux_up) .and. &  
+            allclose(tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, tol=3._wp)) then
+    passed = .false. 
+    call report_err("    " // "Doing problem upside down fails")
+  end if
   call vr(lw_atmos, lw_sources)
   ! -------------------------------------------------------
   !

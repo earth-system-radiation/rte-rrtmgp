@@ -155,6 +155,7 @@ program rte_lw_solver_unit_tests
   call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                     tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                     passed, "Doing problem upside down fails")
+  call vr(lw_atmos, lw_sources)
   ! -------------------------------------------------------
   !
   ! Computing Jacobian shouldn't change net fluxes 

@@ -156,8 +156,8 @@ contains
 
     if(.not. allclose(flux_1, flux_2))  then 
       status = .false. 
-      print *, "Max diffs rel. to scaling: ", & 
-        maxval((flux_1 - flux_2)/spacing(flux_1))
+      print *, "check_fluxes: max diffs rel. to scaling: ", & 
+        maxval(abs(flux_1 - flux_2)/spacing(flux_1))
       call report_err("    " // trim(message))
     end if 
   end subroutine check_fluxes_1pair
@@ -170,9 +170,9 @@ contains
     if(.not. (allclose(flux_1, flux_2) .and. & 
               allclose(flux_3, flux_4))) then 
       status = .false. 
-      print *, "Max diffs rel. to scaling: ", & 
-        maxval((flux_1 - flux_2)/spacing(flux_1)), &
-        maxval((flux_3 - flux_4)/spacing(flux_3))
+      print *, "check_fluxes: max diffs rel. to scaling: ", & 
+        maxval(abs(flux_1 - flux_2)/spacing(flux_1)), &
+        maxval(abs(flux_3 - flux_4)/spacing(flux_3))
       call report_err("    " // trim(message))
     end if 
   end subroutine check_fluxes_2pair

@@ -32,8 +32,9 @@ VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)
 # Extra sources -- extensions to RRTMGP classes, shared infrastructure, local sources
 #
 ADDITIONS  = mo_heating_rates.o mo_compute_bc.o mo_rrtmgp_clr_all_sky.o
+ADDITIONS += mo_gas_optics_defs_rrtmgp.o
 # File I/O
-ADDITIONS += mo_load_coefficients.o mo_simple_netcdf.o mo_rfmip_io.o
+ADDITIONS += mo_simple_netcdf.o mo_rfmip_io.o
 ADDITIONS += mo_testing_io.o mo_testing_utils.o 
 # Cloud optics
 CLOUDS    += mo_cloud_sampling.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.o mo_garand_atmos_io.o
@@ -61,6 +62,8 @@ mo_testing_io.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_testing_io.F90
 mo_cloud_optics_rrtmgp.o:     $(LIB_DEPS) mo_cloud_optics_rrtmgp.F90
 mo_load_cloud_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coefficients.F90
 mo_cloud_sampling.o:          $(LIB_DEPS) mo_cloud_sampling.F90
+
+mo_gas_optics_defs_rrtmgp.o: $(LIB_DEPS) mo_testing_utils.o mo_simple_netcdf.o mo_gas_optics_defs_rrtmgp.F90
 
 mo_load_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_load_coefficients.F90
 mo_rfmip_io.o.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_rfmip_io.F90

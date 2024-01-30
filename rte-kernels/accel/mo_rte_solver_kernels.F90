@@ -790,7 +790,7 @@ contains
     logical(wl),                           intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: trans      ! transmissivity = exp(-tau)
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_up  ! Diffuse radiation emitted by the layer
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up    ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_up    ! Radiances [W/m2-str]
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables

@@ -73,10 +73,6 @@ jobs:
         include:
           # The tests are not experimental by default:
           - experimental: false
-          - config-name: nag-cpu-accel-DP
-            experimental: true
-          #- config-name: nag-cpu-accel-SP
-          #  experimental: true
     steps:
     #
     # Build, run and check (fetch the log)

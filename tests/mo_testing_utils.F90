@@ -19,7 +19,10 @@ module mo_testing_utils
                                  ty_optical_props_2str, ty_optical_props_nstr
   use mo_source_functions, only: ty_source_func_lw
   implicit none
-  public 
+  private 
+  public :: allclose, ops_match, check_fluxes
+  public :: stop_on_err, report_err
+  public :: increment_with_1scl, increment_with_2str, increment_with_nstr, vr
 
   interface allclose
     module procedure allclose_1, allclose_2, allclose_3, allclose_4

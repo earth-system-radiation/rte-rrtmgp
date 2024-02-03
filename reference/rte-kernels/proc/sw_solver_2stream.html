@@ -130,19 +130,19 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~26"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~26"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ngpt~26"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngpt~3"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ngpt</strong></td><td><p>Number of columns, layers, g-points</p></td>
@@ -154,19 +154,19 @@
   <td><strong>top_at_1</strong></td><td><p>ilay = 1 is the top of the atmosphere?</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>tau</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ssa~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-ssa~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>ssa</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-g~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-g~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>g</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
@@ -305,48 +305,48 @@
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M202.39,-87.08C216.21,-95.75 235.52,-107.53 253,-117 255.71,-118.47 258.55,-119.95 261.41,-121.41"/>
 <polygon fill="#000000" stroke="#000000" points="260.02,-124.63 270.54,-125.96 263.14,-118.37 260.02,-124.63"/>
 </g>
-<!-- proc~zero_array_3d -->
-<g id="proc~~sw_solver_2stream~~CallsGraph_node4" class="node">
-<title>proc~zero_array_3d</title>
-<g id="a_proc~~sw_solver_2stream~~CallsGraph_node4"><a xlink:href=".././proc/zero_array_3d.html" xlink:title="zero_array_3D">
-<polygon fill="#d9534f" stroke="#d9534f" points="342,-108 253,-108 253,-84 342,-84 342,-108"/>
-<text text-anchor="middle" x="297.5" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array_3D</text>
-</a>
-</g>
-</g>
-<!-- interface~zero_array&#45;&gt;proc~zero_array_3d -->
-<g id="proc~~sw_solver_2stream~~CallsGraph_edge3" class="edge">
-<title>interface~zero_array&#45;&gt;proc~zero_array_3d</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M217.1,-81.24C225.23,-82.75 234.12,-84.41 242.92,-86.04"/>
-<polygon fill="#000000" stroke="#000000" points="242.29,-89.49 252.76,-87.87 243.57,-82.6 242.29,-89.49"/>
-</g>
 <!-- proc~zero_array_4d -->
-<g id="proc~~sw_solver_2stream~~CallsGraph_node5" class="node">
+<g id="proc~~sw_solver_2stream~~CallsGraph_node4" class="node">
 <title>proc~zero_array_4d</title>
-<g id="a_proc~~sw_solver_2stream~~CallsGraph_node5"><a xlink:href=".././proc/zero_array_4d.html" xlink:title="zero_array_4D">
-<polygon fill="#d9534f" stroke="#d9534f" points="342,-66 253,-66 253,-42 342,-42 342,-66"/>
-<text text-anchor="middle" x="297.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array_4D</text>
+<g id="a_proc~~sw_solver_2stream~~CallsGraph_node4"><a xlink:href=".././proc/zero_array_4d.html" xlink:title="zero_array_4D">
+<polygon fill="#d9534f" stroke="#d9534f" points="342,-108 253,-108 253,-84 342,-84 342,-108"/>
+<text text-anchor="middle" x="297.5" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array_4D</text>
 </a>
 </g>
 </g>
 <!-- interface~zero_array&#45;&gt;proc~zero_array_4d -->
-<g id="proc~~sw_solver_2stream~~CallsGraph_edge4" class="edge">
+<g id="proc~~sw_solver_2stream~~CallsGraph_edge3" class="edge">
 <title>interface~zero_array&#45;&gt;proc~zero_array_4d</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M217.1,-68.76C225.23,-67.25 234.12,-65.59 242.92,-63.96"/>
-<polygon fill="#000000" stroke="#000000" points="243.57,-67.4 252.76,-62.13 242.29,-60.51 243.57,-67.4"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M217.1,-81.24C225.23,-82.75 234.12,-84.41 242.92,-86.04"/>
+<polygon fill="#000000" stroke="#000000" points="242.29,-89.49 252.76,-87.87 243.57,-82.6 242.29,-89.49"/>
 </g>
 <!-- proc~zero_array_2d -->
-<g id="proc~~sw_solver_2stream~~CallsGraph_node6" class="node">
+<g id="proc~~sw_solver_2stream~~CallsGraph_node5" class="node">
 <title>proc~zero_array_2d</title>
-<g id="a_proc~~sw_solver_2stream~~CallsGraph_node6"><a xlink:href=".././proc/zero_array_2d.html" xlink:title="zero_array_2D">
-<polygon fill="#d9534f" stroke="#d9534f" points="342,-24 253,-24 253,0 342,0 342,-24"/>
-<text text-anchor="middle" x="297.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array_2D</text>
+<g id="a_proc~~sw_solver_2stream~~CallsGraph_node5"><a xlink:href=".././proc/zero_array_2d.html" xlink:title="zero_array_2D">
+<polygon fill="#d9534f" stroke="#d9534f" points="342,-66 253,-66 253,-42 342,-42 342,-66"/>
+<text text-anchor="middle" x="297.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array_2D</text>
 </a>
 </g>
 </g>
 <!-- interface~zero_array&#45;&gt;proc~zero_array_2d -->
-<g id="proc~~sw_solver_2stream~~CallsGraph_edge5" class="edge">
+<g id="proc~~sw_solver_2stream~~CallsGraph_edge4" class="edge">
 <title>interface~zero_array&#45;&gt;proc~zero_array_2d</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M217.1,-68.76C225.23,-67.25 234.12,-65.59 242.92,-63.96"/>
+<polygon fill="#000000" stroke="#000000" points="243.57,-67.4 252.76,-62.13 242.29,-60.51 243.57,-67.4"/>
+</g>
+<!-- proc~zero_array_3d -->
+<g id="proc~~sw_solver_2stream~~CallsGraph_node6" class="node">
+<title>proc~zero_array_3d</title>
+<g id="a_proc~~sw_solver_2stream~~CallsGraph_node6"><a xlink:href=".././proc/zero_array_3d.html" xlink:title="zero_array_3D">
+<polygon fill="#d9534f" stroke="#d9534f" points="342,-24 253,-24 253,0 342,0 342,-24"/>
+<text text-anchor="middle" x="297.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array_3D</text>
+</a>
+</g>
+</g>
+<!-- interface~zero_array&#45;&gt;proc~zero_array_3d -->
+<g id="proc~~sw_solver_2stream~~CallsGraph_edge5" class="edge">
+<title>interface~zero_array&#45;&gt;proc~zero_array_3d</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M202.39,-62.92C216.21,-54.25 235.52,-42.47 253,-33 255.71,-31.53 258.55,-30.05 261.41,-28.59"/>
 <polygon fill="#000000" stroke="#000000" points="263.14,-31.63 270.54,-24.04 260.02,-25.37 263.14,-31.63"/>
 </g>
@@ -441,7 +441,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2023 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2024 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

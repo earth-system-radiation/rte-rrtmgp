@@ -100,3 +100,106 @@ jobs:
         ref-type: tag
         ref-name: ${{ needs.levante-init.outputs.ref-name }}
         force: true
+  #
+  # Deferred GitLab pipelines on Lumi at CSC (see .gitlab/lumi.yml):
+  #
+  lumi-init:
+    if: |
+      github.repository_owner == 'earth-system-radiation' &&
+        ( github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.owner.login == github.repository_owner )
+    runs-on: ubuntu-latest
+    outputs:
+      ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
+      pipeline-id: ${{ steps.gl-create-pipeline.outputs.pipeline-id }}
+    steps:
+    #
+    # Check out GitHub repository
+    #
+    - name: Check out GitHub repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    #
+    # Push to GitLab repository
+    #
+    - name: Push to GitLab repository
+      id: g-push-rev
+      uses: "skosukhin/git-ci-hub-lab/g-push-rev@v1"
+      with:
+        remote-url: ${{ vars.GITLAB_SERVER }}/${{ vars.GITLAB_PROJECT }}.git
+        password: ${{ secrets.GITLAB_TOKEN }}
+        rev-id: ${{ github.sha }}
+        rev-signing-format: ssh
+        rev-signing-key: ${{ secrets.GITLAB_SIGNING_KEY }}
+        ref-type: tag
+        ref-message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        force-push: true
+    #
+    # Create GitLab CI/CD Pipeline
+    #
+    - name: Create GitLab CI/CD Pipeline
+      id: gl-create-pipeline
+      uses: "skosukhin/git-ci-hub-lab/gl-create-pipeline@v1"
+      with:
+        server-url: ${{ vars.GITLAB_SERVER }}
+        project-name: ${{ vars.GITLAB_PROJECT }}
+        token: ${{ secrets.GITLAB_TOKEN }}
+        ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
+        expected-sha: ${{ steps.g-push-rev.outputs.ref-commit }}
+    #
+    # Set up Python virtual environment (fetch the log)
+    #
+    - name: Set up Python virtual environment (fetch the log)
+      uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
+      with:
+        server-url: ${{ vars.GITLAB_SERVER }}
+        project-name: ${{ vars.GITLAB_PROJECT }}
+        token: ${{ secrets.GITLAB_TOKEN }}
+        pipeline-id: ${{ steps.gl-create-pipeline.outputs.pipeline-id }}
+        job-name: setup-python
+  lumi:
+    runs-on: ubuntu-latest
+    needs: lumi-init
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config-name:
+          - cce-gpu-openacc-DP
+          - cce-gpu-openacc-SP
+        include:
+          # The tests are not experimental by default:
+          - experimental: false
+    steps:
+    #
+    # Build, run and check (fetch the log)
+    #
+    - name: Build, run and check (fetch the log)
+      uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
+      with:
+        server-url: ${{ vars.GITLAB_SERVER }}
+        project-name: ${{ vars.GITLAB_PROJECT }}
+        token: ${{ secrets.GITLAB_TOKEN }}
+        pipeline-id: ${{ needs.lumi-init.outputs.pipeline-id }}
+        job-name: ${{ matrix.config-name }}
+  lumi-cleanup:
+    runs-on: ubuntu-latest
+    needs: [lumi-init, lumi]
+    if: always() && needs.lumi-init.result != 'skipped'
+    continue-on-error: true
+    steps:
+    - uses: "skosukhin/git-ci-hub-lab/gl-cancel-pipeline@v1"
+      with:
+        server-url: ${{ vars.GITLAB_SERVER }}
+        project-name: ${{ vars.GITLAB_PROJECT }}
+        token: ${{ secrets.GITLAB_TOKEN }}
+        pipeline-id: ${{ needs.lumi-init.outputs.pipeline-id }}
+    - uses: "skosukhin/git-ci-hub-lab/gl-delete-ref@v1"
+      with:
+        server-url: ${{ vars.GITLAB_SERVER }}
+        project-name: ${{ vars.GITLAB_PROJECT }}
+        token: ${{ secrets.GITLAB_TOKEN }}
+        ref-type: tag
+        ref-name: ${{ needs.lumi-init.outputs.ref-name }}
+        force: true

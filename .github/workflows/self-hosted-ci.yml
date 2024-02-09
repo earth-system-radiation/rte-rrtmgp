@@ -1,8 +1,9 @@
 name: Self-hosted CI
 on:
   push:
-    branches-ignore:
-    - documentation
+    branches:
+    - main
+    - develop
   pull_request:
     branches-ignore:
     - documentation

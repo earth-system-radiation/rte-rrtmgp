@@ -6,7 +6,7 @@ on:
   pull_request:
     branches-ignore:
     - documentation
-workflow_dispatch:
+  workflow_dispatch:
 
 defaults:
   run:

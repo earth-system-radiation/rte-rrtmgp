@@ -1,11 +1,13 @@
 name: GitLab CI
 on:
   push:
-    branches-ignore:
-    - documentation
+    branches:
+    - main
+    - develop
   pull_request:
     branches-ignore:
     - documentation
+  workflow_dispatch:
 
 defaults:
   run:

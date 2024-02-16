@@ -182,6 +182,14 @@ program rte_sw_solver_unit_tests
     call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                       tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
                       passed, "Doing problem upside down fails")
+    print *, "test flux"
+    do ilay = nlay+1, 1, -1 
+      print *, tst_flux_up(1:4, ilay)
+    end do 
+    print *, "ref flux"
+    do ilay = 1, nlay+1
+      print *, ref_flux_up(1:4, ilay)
+    end do 
     call vr(atmos)
     ! -------------------------------------------------------
     !

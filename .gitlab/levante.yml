@@ -77,8 +77,8 @@ variables:
     # Build libraries, examples and tests
     #
     - ${FC} ${VERSION_FCFLAGS}
-    - make libs
-    - make -C build separate-libs
+    - make -j8 libs
+    - make -j8 -C build separate-libs
     #
     # Check out data
     #
@@ -86,11 +86,11 @@ variables:
     #
     # Run examples and tests
     #
-    - make tests
+    - make -j8 tests
     #
     # Compare the results
     #
-    - make check
+    - make -j8 check
 
 .nvhpc-gpu-openacc:
   extends:

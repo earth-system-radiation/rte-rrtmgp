@@ -89,15 +89,15 @@ jobs:
     - name: Build libraries, examples and tests
       run: |
         $FC --version
-        make libs
-        make -C build separate-libs
+        make -j4 libs
+        make -j4 -C build separate-libs
     #
     # Run examples and tests
     #
     - name: Run examples and tests
-      run: make tests
+      run: make -j4 tests
     #
     # Compare the results
     #
     - name: Compare the results
-      run: make check
+      run: make -j4 check

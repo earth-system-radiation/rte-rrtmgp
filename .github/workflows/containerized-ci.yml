@@ -80,8 +80,8 @@ jobs:
       if: matrix.fortran-compiler != 'ifx' || matrix.rte-kernels != 'accel'
       run: |
         $FC --version
-        make libs
-        make -C build separate-libs
+        make -j4 libs
+        make -j4 -C build separate-libs
     #
     # Build libraries, examples and tests (expect failure)
     #
@@ -90,7 +90,7 @@ jobs:
       shell: bash
       run: |
         $FC --version
-        make libs 2> >(tee make.err >&2) && {
+        make -j4 libs 2> >(tee make.err >&2) && {
           echo "Unexpected success"
           exit 1
         } || {
@@ -106,7 +106,7 @@ jobs:
     #
     - name: Run examples and tests
       if: steps.build-success.outcome != 'skipped'
-      run: make tests
+      run: make -j4 tests
     #
     # Relax failure thresholds for single precision
     #
@@ -118,7 +118,7 @@ jobs:
     #
     - name: Compare the results
       if: steps.build-success.outcome != 'skipped'
-      run: make check
+      run: make -j4 check
     #
     # Generate validation plots
     #

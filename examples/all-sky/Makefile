@@ -50,10 +50,10 @@ tests:
 	$(RUN_CMD) bash all_tests.sh  
 
 check:
-	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
+	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
 	       --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir  \
 	       --file rrtmgp-allsky-lw.nc rrtmgp-allsky-sw.nc
-	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
+	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
 	       --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir  \
 	       --file rrtmgp-allsky-lw-no-aerosols.nc rrtmgp-allsky-sw-no-aerosols.nc
 

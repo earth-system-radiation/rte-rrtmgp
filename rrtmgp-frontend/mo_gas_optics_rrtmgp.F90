@@ -1728,10 +1728,10 @@ contains
   !
   subroutine finalize(this)
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
-    real(wp),      dimension(:),     allocatable :: press_ref,  press_ref_log, temp_ref
 
     if(this%is_loaded()) then
       !$acc exit data delete(this%gas_names, this%vmr_ref, this%flavor) &
+      !$acc           delete(this%press_ref, this%press_ref_log, this%temp_ref) &
       !$acc           delete(this%gpoint_flavor, this%kmajor)  &
       !$acc           delete(this%minor_limits_gpt_lower) &
       !$acc           delete(this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
@@ -1742,6 +1742,7 @@ contains
       !$acc           delete(this%idx_minor_upper, this%idx_minor_scaling_upper)  &
       !$acc           delete(this%kminor_start_upper, this%kminor_upper)
       !$omp target exit data map(release:this%gas_names, this%vmr_ref, this%flavor) &
+      !$omp map(release:this%press_ref, this%press_ref_log, this%temp_ref)
       !$omp map(release:this%gpoint_flavor, this%kmajor)  &
       !$omp map(release:this%minor_limits_gpt_lower) &
       !$omp map(release:this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
@@ -1752,6 +1753,7 @@ contains
       !$omp map(release:this%idx_minor_upper, this%idx_minor_scaling_upper)  &
       !$omp map(release:this%kminor_start_upper, this%kminor_upper)
       deallocate(this%gas_names, this%vmr_ref, this%flavor, this%gpoint_flavor, this%kmajor)
+      deallocate(this%press_ref, this%press_ref_log, this%temp_ref)
       deallocate(this%minor_limits_gpt_lower, &
                  this%minor_scales_with_density_lower, this%scale_by_complement_lower, &
                  this%idx_minor_lower, this%idx_minor_scaling_lower, this%kminor_start_lower, this%kminor_lower)

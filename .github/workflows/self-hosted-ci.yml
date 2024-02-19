@@ -18,15 +18,12 @@ jobs:
     if: github.repository == 'earth-system-radiation/rte-rrtmgp'
     runs-on:
       labels: cscs-ci
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         config-name: [nvidia-gpu-openacc, cce-cpu-icon-production, cce-gpu-openmp]
         fpmodel: [DP, SP]
         include:
-        # The tests are not experimental by default:
-        - experimental: false
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
@@ -42,7 +39,6 @@ jobs:
           compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
-          experimental: true
     env:
       # Core variables:
       FC: ftn

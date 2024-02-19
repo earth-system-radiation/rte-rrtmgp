@@ -61,7 +61,6 @@ jobs:
   levante:
     runs-on: ubuntu-latest
     needs: levante-init
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,9 +71,6 @@ jobs:
           - nag-cpu-default-SP
           - nag-cpu-accel-DP
           #- nag-cpu-accel-SP
-        include:
-          # The tests are not experimental by default:
-          - experimental: false
     steps:
     #
     # Build, run and check (fetch the log)
@@ -161,16 +157,12 @@ jobs:
   lumi:
     runs-on: ubuntu-latest
     needs: lumi-init
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         config-name:
           - cce-gpu-openacc-DP
           - cce-gpu-openacc-SP
-        include:
-          # The tests are not experimental by default:
-          - experimental: false
     steps:
     #
     # Build, run and check (fetch the log)

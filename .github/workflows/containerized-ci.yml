@@ -12,7 +12,6 @@ on:
 jobs:
   Containerized-CI:
     runs-on: ubuntu-22.04
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -20,8 +19,6 @@ jobs:
         rte-kernels: [default, accel]
         fpmodel: [DP, SP]
         include:
-        # The tests are not experimental by default:
-        - experimental: false
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
           fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
@@ -32,7 +29,6 @@ jobs:
         - fortran-compiler: ifx
           rte-kernels: accel
           fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64
-          experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
           rte-kernels: default

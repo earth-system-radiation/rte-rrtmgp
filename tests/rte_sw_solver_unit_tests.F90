@@ -73,6 +73,10 @@ program rte_sw_solver_unit_tests
   real(wp), dimension(ncol,nlay+1), target :: &
                                  ref_flux_up, ref_flux_dn, ref_flux_dir, ref_flux_net, & 
                                  tst_flux_up, tst_flux_dn, tst_flux_dir, tst_flux_net
+#ifdef __NVCOMPILER
+  ! We need the following temporary variables to circumvent the -Mbounds issue:
+  real(wp), dimension(ncol, nlay+1) :: tst_flux_up_reversed, ref_flux_dn_reversed
+#endif
   real(wp), dimension(:), pointer :: sfc
 
   logical :: passed 

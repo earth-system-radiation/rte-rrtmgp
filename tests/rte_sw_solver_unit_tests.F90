@@ -183,8 +183,16 @@ program rte_sw_solver_unit_tests
                             toa_flux,          &
                             sfc_albedo, sfc_albedo, &
                             fluxes))
+#ifdef __NVCOMPILER
+  ! The -Mbounds flag breaks the actual arrays that are passed to check_fluxes
+  tst_flux_up_reversed = tst_flux_up(:,nlay+1:1:-1)
+  ref_flux_dn_reversed = tst_flux_dn(:,nlay+1:1:-1)
+  call check_fluxes(tst_flux_up_reversed, ref_flux_up, &
+                    ref_flux_dn_reversed, ref_flux_dn, &
+#else
     call check_fluxes(tst_flux_up(:,nlay+1:1:-1), ref_flux_up, &  
                       tst_flux_dn(:,nlay+1:1:-1), ref_flux_dn, & 
+#endif
                       passed, "Doing problem upside down fails")
     call vr(atmos)
     ! -------------------------------------------------------

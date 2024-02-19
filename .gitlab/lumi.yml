@@ -126,5 +126,5 @@ cce-gpu-openacc-DP:
 
 cce-gpu-openacc-SP:
   extends:
-    - .dp
+    - .sp
     - .cce-gpu-openacc

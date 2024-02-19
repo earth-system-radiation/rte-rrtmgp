@@ -41,8 +41,8 @@ contains
   ! Compare two arrays; return false if abs(x-y) > tol*spacing(x) for any element
   !
   ! ----------------------------------------------------------------------------
-  logical function allclose_1(array1, array2, tol)
-    real(wp), dimension(:), intent(in) :: array1, array2
+  logical function allclose_1(tst_array, ref_array, tol)
+    real(wp), dimension(:), intent(in) :: tst_array, ref_array
     real(wp), optional,     intent(in) :: tol 
     
     real(wp) :: tolerance 
@@ -52,11 +52,11 @@ contains
       tolerance = 2._wp
     end if 
 
-    allclose_1 = all(abs(array1-array2) <= tolerance * spacing(array1))
+    allclose_1 = all(abs(tst_array-ref_array) <= tolerance * spacing(ref_array))
   end function allclose_1
   ! ----------------------------------------------------------------------------
-  logical function allclose_2(array1, array2, tol)
-    real(wp), dimension(:,:), intent(in) :: array1, array2
+  logical function allclose_2(tst_array, ref_array, tol)
+    real(wp), dimension(:,:), intent(in) :: tst_array, ref_array
     real(wp), optional,       intent(in) :: tol 
     
     real(wp) :: tolerance 
@@ -66,11 +66,11 @@ contains
       tolerance = 2._wp
     end if 
 
-    allclose_2= all(abs(array1-array2) <= tolerance * spacing(array1))
+    allclose_2= all(abs(tst_array-ref_array) <= tolerance * spacing(ref_array))
   end function allclose_2
   ! ----------------------------------------------------------------------------
-  logical function allclose_3(array1, array2, tol)
-    real(wp), dimension(:,:,:), intent(in) :: array1, array2
+  logical function allclose_3(tst_array, ref_array, tol)
+    real(wp), dimension(:,:,:), intent(in) :: tst_array, ref_array
     real(wp), optional,         intent(in) :: tol 
     
     real(wp) :: tolerance 
@@ -80,11 +80,11 @@ contains
       tolerance = 2._wp
     end if 
 
-    allclose_3= all(abs(array1-array2) <= tolerance * spacing(array1))
+    allclose_3= all(abs(tst_array-ref_array) <= tolerance * spacing(ref_array))
   end function allclose_3
   ! ----------------------------------------------------------------------------
-  logical function allclose_4(array1, array2, tol)
-    real(wp), dimension(:,:,:,:), intent(in) :: array1, array2
+  logical function allclose_4(tst_array, ref_array, tol)
+    real(wp), dimension(:,:,:,:), intent(in) :: tst_array, ref_array
     real(wp), optional,           intent(in) :: tol 
     
     real(wp) :: tolerance 
@@ -94,36 +94,36 @@ contains
       tolerance = 2._wp
     end if 
 
-    allclose_4= all(abs(array1-array2) <= tolerance * spacing(array1))
+    allclose_4= all(abs(tst_array-ref_array) <= tolerance * spacing(ref_array))
   end function allclose_4
   ! ----------------------------------------------------------------------------
   !
   ! Compare two sets of optical properties; return false if abs(x-y) > tol*spacing(x) for any element
   !
   ! ----------------------------------------------------------------------------
-  logical function ops_match_1scl(values_1, values_2, tol)
-    class(ty_optical_props_1scl), intent(in) :: values_1, values_2
+  logical function ops_match_1scl(tst_values, ref_values, tol)
+    class(ty_optical_props_1scl), intent(in) :: tst_values, ref_values
     real(wp), optional,           intent(in) :: tol 
 
-    ops_match_1scl = allclose(values_1%tau, values_2%tau, tol)
+    ops_match_1scl = allclose(tst_values%tau, ref_values%tau, tol)
   end function ops_match_1scl
   ! ----------------------------------------------------------------------------
-  logical function ops_match_2str(values_1, values_2, tol)
-    class(ty_optical_props_2str), intent(in) :: values_1, values_2
+  logical function ops_match_2str(tst_values, ref_values, tol)
+    class(ty_optical_props_2str), intent(in) :: tst_values, ref_values
     real(wp), optional,           intent(in) :: tol 
 
-    ops_match_2str = allclose(values_1%tau, values_2%tau, tol) .and. & 
-                     allclose(values_1%ssa, values_2%ssa, tol) .and. &
-                     allclose(values_1%g  , values_2%g  , tol)
+    ops_match_2str = allclose(tst_values%tau, ref_values%tau, tol) .and. & 
+                     allclose(tst_values%ssa, ref_values%ssa, tol) .and. &
+                     allclose(tst_values%g  , ref_values%g  , tol)
   end function ops_match_2str
   ! ----------------------------------------------------------------------------
-  logical function ops_match_nstr(values_1, values_2, tol)
-    class(ty_optical_props_nstr), intent(in) :: values_1, values_2
+  logical function ops_match_nstr(tst_values, ref_values, tol)
+    class(ty_optical_props_nstr), intent(in) :: tst_values, ref_values
     real(wp), optional,           intent(in) :: tol 
 
-    ops_match_nstr = allclose(values_1%tau, values_2%tau, tol) .and. & 
-                     allclose(values_1%ssa, values_2%ssa, tol) .and. &
-                     allclose(values_1%p  , values_2%p  , tol)
+    ops_match_nstr = allclose(tst_values%tau, ref_values%tau, tol) .and. & 
+                     allclose(tst_values%ssa, ref_values%ssa, tol) .and. &
+                     allclose(tst_values%p  , ref_values%p  , tol)
   end function ops_match_nstr
   ! ----------------------------------------------------------------------------
 

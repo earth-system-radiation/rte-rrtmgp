@@ -12,7 +12,6 @@ on:
 jobs:
   Containerized-CI:
     runs-on: ubuntu-22.04
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -20,8 +19,6 @@ jobs:
         rte-kernels: [default, accel]
         fpmodel: [DP, SP]
         include:
-        # The tests are not experimental by default:
-        - experimental: false
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
           fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
@@ -32,7 +29,6 @@ jobs:
         - fortran-compiler: ifx
           rte-kernels: accel
           fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64
-          experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
           rte-kernels: default
@@ -77,28 +73,51 @@ jobs:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
     #
-    # Build libraries, examples and tests
+    # Build libraries, examples and tests (expect success)
     #
-    - name: Build libraries, examples and tests
+    - name: Build libraries, examples and tests (expect success)
+      id: build-success
+      if: matrix.fortran-compiler != 'ifx' || matrix.rte-kernels != 'accel'
       run: |
         $FC --version
         make libs
         make -C build separate-libs
     #
+    # Build libraries, examples and tests (expect failure)
+    #
+    - name: Build libraries, examples and tests (expect failure)
+      if: steps.build-success.outcome == 'skipped'
+      shell: bash
+      run: |
+        $FC --version
+        make libs 2> >(tee make.err >&2) && {
+          echo "Unexpected success"
+          exit 1
+        } || {
+          grep make.err -e 'Internal compiler error' && {
+            echo "Expected failure"
+          } || {
+            echo "Unexpected failure"
+            exit 1
+          }
+        }
+    #
     # Run examples and tests
     #
     - name: Run examples and tests
+      if: steps.build-success.outcome != 'skipped'
       run: make tests
     #
     # Relax failure thresholds for single precision
     #
     - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP'
+      if: matrix.fpmodel == 'SP' && steps.build-success.outcome != 'skipped'
       run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #
     - name: Compare the results
+      if: steps.build-success.outcome != 'skipped'
       run: make check
     #
     # Generate validation plots

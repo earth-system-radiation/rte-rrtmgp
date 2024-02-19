@@ -18,15 +18,12 @@ jobs:
     if: github.repository == 'earth-system-radiation/rte-rrtmgp'
     runs-on:
       labels: cscs-ci
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         config-name: [nvidia-gpu-openacc, cce-cpu-icon-production, cce-gpu-openmp]
         fpmodel: [DP, SP]
         include:
-        # The tests are not experimental by default:
-        - experimental: false
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
@@ -42,7 +39,6 @@ jobs:
           compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
-          experimental: true
     env:
       # Core variables:
       FC: ftn
@@ -103,18 +99,31 @@ jobs:
         make libs
         make -C build separate-libs
     #
-    # Run examples and tests
+    # Run examples and tests (expect success)
     #
-    - name: Run examples and tests
+    - name: Run examples and tests (expect success)
+      id: run-success
+      if: matrix.config-name != 'cce-gpu-openmp'
       run: make tests
+    #
+    # Run examples and tests (expect failure)
+    #
+    - name: Run examples and tests (expect failure)
+      if: steps.run-success.outcome == 'skipped'
+      run: |
+        make tests && {
+          echo "Unexpected success"
+          exit 1
+        } || echo "Expected failure"
     #
     # Relax failure thresholds for single precision
     #
     - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP'
+      if: matrix.fpmodel == 'SP' && steps.run-success.outcome != 'skipped'
       run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #
     - name: Compare the results
+      if: steps.run-success.outcome != 'skipped'
       run: make check

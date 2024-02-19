@@ -66,7 +66,7 @@ mo_cloud_sampling.o:          $(LIB_DEPS) mo_cloud_sampling.F90
 mo_gas_optics_defs_rrtmgp.o: $(LIB_DEPS) mo_testing_utils.o mo_simple_netcdf.o mo_gas_optics_defs_rrtmgp.F90
 
 mo_load_coefficients.o: $(LIB_DEPS) mo_simple_netcdf.o mo_load_coefficients.F90
-mo_rfmip_io.o.o:        $(LIB_DEPS) mo_simple_netcdf.o mo_rfmip_io.F90
+mo_rfmip_io.o:          $(LIB_DEPS) mo_simple_netcdf.o mo_rfmip_io.F90
 mo_simple_netcdf.o:     $(LIB_DEPS) mo_simple_netcdf.F90
 
 rte_optic_prop_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_optic_prop_unit_tests.F90

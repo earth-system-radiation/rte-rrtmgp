@@ -96,22 +96,22 @@ jobs:
     - name: Build libraries, examples and tests
       run: |
         $FC --version
-        make libs
-        make -C build separate-libs
+        make -j8 libs
+        make -j8 -C build separate-libs
     #
     # Run examples and tests (expect success)
     #
     - name: Run examples and tests (expect success)
       id: run-success
       if: matrix.config-name != 'cce-gpu-openmp'
-      run: make tests
+      run: make -j8 tests
     #
     # Run examples and tests (expect failure)
     #
     - name: Run examples and tests (expect failure)
       if: steps.run-success.outcome == 'skipped'
       run: |
-        make tests && {
+        make -j8 tests && {
           echo "Unexpected success"
           exit 1
         } || echo "Expected failure"
@@ -126,4 +126,4 @@ jobs:
     #
     - name: Compare the results
       if: steps.run-success.outcome != 'skipped'
-      run: make check
+      run: make -j8 check

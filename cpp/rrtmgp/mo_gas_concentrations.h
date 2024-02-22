@@ -4,6 +4,9 @@
 #include "rrtmgp_const.h"
 #include "mo_rrtmgp_util_string.h"
 
+#include <vector>
+#include <string>
+
 // This code is part of RRTM for GCM Applications - Parallel (RRTMGP)
 //
 // Contacts: Robert Pincus and Eli Mlawer
@@ -28,11 +31,12 @@
 class GasConcs {
 public:
   static int constexpr GAS_NOT_IN_LIST = -1;
-  string1d gas_name;  // List of gas names defined upon init
-  real3d   concs;     // List of gas concentrations (ngas,ncol,nlay)
-  int      ncol;
-  int      nlay;
-  int      ngas;
+
+  string1dv gas_name;  // List of gas names defined upon init
+  real3d    concs;     // List of gas concentrations (ngas,ncol,nlay)
+  int       ncol;
+  int       nlay;
+  int       ngas;
 
 
   GasConcs() {
@@ -48,7 +52,7 @@ public:
 
 
   void reset() {
-    gas_name = string1d();  // Dealloc
+    gas_name = string1dv();  // Dealloc
     concs    = real3d();    // Dealloc
     ncol = 0;
     nlay = 0;
@@ -56,32 +60,29 @@ public:
   }
 
 
-  void init(string1d const &gas_names , int ncol , int nlay) {
-    using yakl::intrinsics::size;
-
+  void init(string1dv const &gas_names , int ncol , int nlay) {
     this->reset();
-    this->ngas = size(gas_names,1);
+    this->ngas = gas_names.size();
     this->ncol = ncol;
     this->nlay = nlay;
 
     // Transform gas names to lower case, check for empty strings, check for duplicates
-    for (int i=1; i<=ngas; i++) {
-      gas_names(i) = lower_case( gas_names(i) );
+    for (int i=0; i<ngas; i++) {
       // Empty string
-      if (gas_names(i) == "") { stoprun("ERROR: GasConcs::init(): must provide non-empty gas names"); }
+      if (gas_names[i] == "") { stoprun("ERROR: GasConcs::init(): must provide non-empty gas names"); }
       // Duplicate gas name
-      for (int j=i+1; j<=ngas; j++) {
-        if ( gas_names(i) == gas_names(j) ) { stoprun("GasConcs::init(): duplicate gas names aren't allowed"); }
+      for (int j=i+1; j<ngas; j++) {
+        if ( lower_case(gas_names[i]) == lower_case(gas_names[j]) ) { stoprun("GasConcs::init(): duplicate gas names aren't allowed"); }
       }
     }
-    
+
     // Allocate
-    this->gas_name = string1d("gas_name",ngas);
+    this->gas_name = string1dv(ngas);
     this->concs    = real3d  ("concs"   ,ncol,nlay,ngas);
 
     // Assign gas names
-    for (int i=1; i<=ngas; i++) {
-      this->gas_name(i) = gas_names(i);
+    for (int i=0; i<ngas; i++) {
+      this->gas_name[i] = lower_case(gas_names[i]);
     }
   }
 
@@ -186,18 +187,15 @@ public:
     });
   }
 
+  int get_num_gases() const { return gas_name.size(); }
 
-  int get_num_gases() const { return yakl::intrinsics::size(gas_name,1); }
-  
-
-  string1d get_gas_names() const { return gas_name; }
-
+  string1dv get_gas_names() const { return gas_name; }
 
   // find gas in list; GAS_NOT_IN_LIST if not found
   int find_gas(std::string gas) const {
     if (ngas == 0) { return GAS_NOT_IN_LIST; }
-    for (int igas=1; igas<=ngas; igas++) {
-      if ( lower_case(gas) == this->gas_name(igas) ) {
+    for (int igas=0; igas<ngas; igas++) {
+      if ( lower_case(gas) == this->gas_name[igas] ) {
         return igas;
       }
     }
@@ -209,10 +207,16 @@ public:
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
 
-                               std::cout << "ncol      : " << ncol       << "\n";
-                               std::cout << "nlay      : " << nlay       << "\n";
-                               std::cout << "ngas      : " << ngas       << "\n";
-    if (allocated(gas_name)) { std::cout << "gas_name  : " << gas_name   << "\n"; }
+    std::cout << "ncol      : " << ncol       << "\n";
+    std::cout << "nlay      : " << nlay       << "\n";
+    std::cout << "ngas      : " << ngas       << "\n";
+    if (allocated(gas_name)) {
+      std::cout << "gas_name  : ";
+      for (auto& item : gas_name) {
+        std::cout << item << " ";
+      }
+      std::cout << "\n";
+    }
     if (allocated(concs   )) { std::cout << "sum(concs): " << sum(concs) << "\n"; }
   }
 

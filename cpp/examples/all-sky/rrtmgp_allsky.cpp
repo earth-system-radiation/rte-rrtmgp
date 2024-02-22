@@ -19,6 +19,7 @@ bool constexpr print_norms  = true;
 
 int main(int argc , char **argv) {
 
+  Kokkos::initialize(argc, argv);
   yakl::init();
 
   {
@@ -313,6 +314,7 @@ int main(int argc , char **argv) {
 
   }
 
+  Kokkos::finalize();
   yakl::finalize();
 }
 

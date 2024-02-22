@@ -3,7 +3,6 @@
 
 #include "rrtmgp_const.h"
 
-
 inline std::string lower_case( std::string in ) {
   std::for_each( in.begin() , in.end() , [] (char & c) { c = ::tolower(c); } );
   return in;
@@ -21,6 +20,21 @@ inline bool string_in_array(std::string str, string1d const &arr) {
 inline int string_loc_in_array(std::string str, string1d const &arr) {
   for (int i=1; i <= yakl::intrinsics::size(arr); i++) {
     if ( lower_case(str) == lower_case(arr(i)) ) { return i; }
+  }
+  return -1;
+}
+
+inline bool string_in_array(std::string str, string1dv const &arr) {
+  for (const auto& item : arr) {
+    if ( lower_case(str) == lower_case(item) ) { return true; }
+  }
+  return false;
+}
+
+
+inline int string_loc_in_array(std::string str, string1dv const &arr) {
+  for (int i=0; i < arr.size(); i++) {
+    if ( lower_case(str) == lower_case(arr[i]) ) { return i+1; } // use 1-based idx for now
   }
   return -1;
 }

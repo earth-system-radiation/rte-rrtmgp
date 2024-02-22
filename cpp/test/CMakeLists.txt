@@ -13,16 +13,14 @@ endif()
 # some reason (leads to segfaults). So instead, the allsky build will just pull
 # in all the RRTMGP source and build and link all at once.
 add_subdirectory(${YAKL_HOME} ./yakl)
+add_subdirectory(${Kokkos_DIR} ./kokkos)
 add_subdirectory(../ ./rrtmgp)
 add_subdirectory(../examples/all-sky ./allsky)
 add_subdirectory(./allsky_fortran ./allsky_fortran)
 add_subdirectory(./allsky_fortran_openacc ./allsky_fortran_openacc)
 
 # Add unit test script commands
-add_test(NAME allsky_lw COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test_lw.sh)
-add_test(NAME allsky_sw COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test_sw.sh)
-add_test(NAME allsky_lw_r COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test_lw_r.sh)
-add_test(NAME allsky_sw_r COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test_sw_r.sh)
-
-
-
+add_test(NAME allsky_lw COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build/test_lw.sh)
+add_test(NAME allsky_sw COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build/test_sw.sh)
+add_test(NAME allsky_lw_r COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build/test_lw_r.sh)
+add_test(NAME allsky_sw_r COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build/test_sw_r.sh)

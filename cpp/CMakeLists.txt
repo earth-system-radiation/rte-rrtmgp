@@ -16,7 +16,7 @@ set(CXX_SRC
 
 # Add RRTMGP as a library and make sure we link against YAKL
 add_library(rrtmgp STATIC ${CXX_SRC})
-target_link_libraries(rrtmgp yakl)
+target_link_libraries(rrtmgp yakl Kokkos::kokkos)
 
 # Special compile flags for C++ source
 include(${YAKL_HOME}/yakl_utils.cmake)

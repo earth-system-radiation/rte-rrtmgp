@@ -5,8 +5,10 @@ cd ${YAKLHOME}
 git rev-parse HEAD >& $savedir/../../yakl-git-hash.txt
 cd $savedir
 
+this_dir=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
+
 # Clean previous build
-./cmakeclean.sh
+$this_dir/cmakeclean.sh
 
 # Configure new build
 cmake                                          \
@@ -18,9 +20,9 @@ cmake                                          \
   -DYAKL_F90_FLAGS="${YAKL_F90_FLAGS}"         \
   -DYAKL_ARCH="$YAKL_ARCH"                     \
   -DYAKL_HOME="$YAKLHOME"                      \
+  -DKokkos_DIR="$KOKKOSHOME"                   \
   -DCXX_LINK="$CXX_LINK"                       \
   -DF90_LINK="$F90_LINK"                       \
   -DCMAKE_Fortran_MODULE_DIRECTORY="`pwd`/fortran_module_files" \
   -DCMAKE_CUDA_ARCHITECTURES=OFF               \
-  ..
-
+  $this_dir/..

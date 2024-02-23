@@ -11,6 +11,73 @@
 
 namespace conv {
 
+// Copied from EKAT
+#define IMPL_THROW_RRT(condition, msg, exception_type)    \
+do {                                                      \
+  if ( ! (condition) ) {                                  \
+    std::stringstream _ss_;                               \
+    _ss_ << "\n FAIL:\n" << #condition  << "\n";          \
+    _ss_ << "\n" << msg;                                  \
+    throw exception_type(_ss_.str());                     \
+  }                                                       \
+} while(0)
+
+#define RRT_REQUIRE(condition, msg) IMPL_THROW_RRT(condition, msg, std::runtime_error)
+
+// Copied from EKAT
+template<typename T, int N>
+struct DataND {
+  using type = typename DataND<T,N-1>::type*;
+};
+template<typename T>
+struct DataND<T,0> {
+  using type = T;
+};
+
+template <typename Layout, typename Container>
+Layout get_layout(const Container& dims)
+{
+  Layout result;
+  int dimitr = 0;
+  for (const auto& dim : dims) {
+    result.dimension[dimitr++] = dim;
+  }
+  return result;
+}
+
+template <typename YArray, typename KView>
+void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview)
+{
+  using yakl::intrinsics::size;
+
+  constexpr auto krank = KView::rank;
+  const auto yrank = yarray.get_rank();
+
+  RRT_REQUIRE(krank == yrank, "Rank mismatch");
+
+  auto hkview = Kokkos::create_mirror_view(kview);
+  Kokkos::deep_copy(hkview, kview);
+  auto hyarray = yarray.createHostCopy();
+
+  for (auto r = 0; r < krank; ++r) {
+    RRT_REQUIRE(kview.extent(r) == size(yarray,r+1), "Dim mismatch for rank: " << r);
+  }
+
+  auto total_size = kview.size();
+  for (auto i = 0; i < total_size; ++i) {
+    RRT_REQUIRE(hkview.data()[i] == yarray.data()[i], "Data mismatch");
+  }
+}
+
+template <typename YArray, typename KView>
+void compare_all_yakl_to_kokkos(const std::vector<YArray>& yarrays, const std::vector<KView>& kviews)
+{
+  RRT_REQUIRE(yarrays.size() == kviews.size(), "Mismatched vector lengths");
+  for (size_t i = 0; i < yarrays.size(); ++i) {
+    compare_yakl_to_kokkos(yarrays[i], kviews[i]);
+  }
+}
+
 //Error reporting routine for the PNetCDF I/O
 /** @private */
 inline void ncwrap( int ierr , int line ) {
@@ -371,6 +438,13 @@ public:
   /** @brief Write an entire Array at once */
   template <class View>
   void write(const View& arr, std::string varName , std::vector<std::string> dimNames) {
+    using myStyle = typename View::array_layout;
+    using myMem   = typename View::memory_space;
+    using T       = typename View::non_const_data_type;
+    constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
+    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+    constexpr auto rank = View::rank;
+
     if (rank != dimNames.size()) { throw std::runtime_error("dimNames.size() != Array's rank"); }
     std::vector<NcDim> dims(rank); // List of dimensions for this variable
     // Make sure the dimensions are in there and are the right sizes
@@ -386,7 +460,7 @@ public:
         }
         tmp = dimLoc;
       }
-      if (myStyle == styleC) {
+      if (is_c_layout) {
         dims[i] = tmp;
       } else {
         dims[rank-1-i] = tmp;
@@ -401,7 +475,7 @@ public:
       auto varDims = var.getDims();
       if (varDims.size() != rank) { throw std::runtime_error("Existing variable's rank != array's rank"); }
       for (int i=0; i < varDims.size(); i++) {
-        if (myStyle == styleC) {
+        if (is_c_layout) {
           if (varDims[i].getSize() != arr.extent(i)) {
             throw std::runtime_error("Existing variable's dimension sizes are not the same as the array's");
           }
@@ -413,8 +487,10 @@ public:
       }
     }
 
-    if (myMem == memDevice) {
-      var.putVar(arr.createHostCopy().data());
+    if (is_device_mem) {
+      auto hv = Kokkos::create_mirror_view(arr);
+      Kokkos::deep_copy(hv, arr);
+      var.putVar(hv.data());
     } else {
       var.putVar(arr.data());
     }
@@ -448,6 +524,13 @@ public:
   template <typename View>
   void write1(const View& arr , std::string varName , std::vector<std::string> dimNames ,
               int ind , std::string ulDimName="unlim" ) {
+    using myStyle = typename View::array_layout;
+    using myMem   = typename View::memory_space;
+    using T       = typename View::non_const_data_type;
+    constexpr bool is_c_layout = std::is_same<myStyle, Kokkos::LayoutRight>::value;
+    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+    constexpr auto rank = View::rank;
+
     if (rank != dimNames.size()) { throw std::runtime_error("dimNames.size() != Array's rank"); }
     std::vector<NcDim> dims(rank+1); // List of dimensions for this variable
     // Get the unlimited dimension or create it if it doesn't exist
@@ -468,10 +551,10 @@ public:
         }
         tmp = dimLoc;
       }
-      if (myStyle == styleC) {
-        dims[1+i] = tmp;
+      if (is_c_layout) {
+        dims[i] = tmp;
       } else {
-        dims[1+rank-1-i] = tmp;
+        dims[rank-1-i] = tmp;
       }
     }
     // Make sure the variable is there and is the right dimension
@@ -481,16 +564,16 @@ public:
     } else {
       if ( var.getType() != getType<T>() ) { throw std::runtime_error("Existing variable's type != array's type"); }
       auto varDims = var.getDims();
-      if (varDims.size() != rank+1) {
+      if (varDims.size() != rank) {
         throw std::runtime_error("Existing variable's rank != array's rank");
       }
-      for (int i=1; i < varDims.size(); i++) {
-        if (myStyle == styleC) {
-          if (varDims[i].getSize() != arr.extent(i-1)) {
+      for (int i=0; i < varDims.size(); i++) {
+        if (is_c_layout) {
+          if (varDims[i].getSize() != arr.extent(i)) {
             throw std::runtime_error("Existing variable's dimension sizes are not the same as the array's");
           }
         } else {
-          if (varDims[1+rank-i].getSize() != arr.extent(i-1)) {
+          if (varDims[rank-1-i].getSize() != arr.extent(i)) {
             throw std::runtime_error("Existing variable's dimension sizes are not the same as the array's");
           }
         }
@@ -505,8 +588,10 @@ public:
       start[i] = 0;
       count[i] = dims[i].getSize();
     }
-    if (myMem == memDevice) {
-      var.putVar(start,count,arr.createHostCopy().data());
+    if (is_device_mem) {
+      auto hv = Kokkos::create_mirror_view(arr);
+      Kokkos::deep_copy(hv, arr);
+      var.putVar(start,count,hv.data());
     } else {
       var.putVar(start,count,arr.data());
     }
@@ -515,45 +600,54 @@ public:
 
   /** @brief Read an entire Array */
   template <typename View>
-  void read(const View& arr , std::string varName) {
+  void read(View& arr , std::string varName) {
+    using myStyle = typename View::array_layout;
+    using myMem   = typename View::memory_space;
+    using T       = typename View::non_const_data_type;
+    constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
+    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+    constexpr auto rank = View::rank;
+
     // Make sure the variable is there and is the right dimension
     auto var = file.getVar(varName);
     std::vector<int> dimSizes(rank);
     if ( ! var.isNull() ) {
       auto varDims = var.getDims();
       if (varDims.size() != rank) { throw std::runtime_error("Existing variable's rank != array's rank"); }
-      if (myStyle == styleC) {
+      if (is_c_layout) {
         for (int i=0; i < varDims.size(); i++) { dimSizes[i] = varDims[i].getSize(); }
-      } else if (myStyle == styleFortran) {
+      } else {
         for (int i=0; i < varDims.size(); i++) { dimSizes[i] = varDims[varDims.size()-1-i].getSize(); }
       }
-      bool createArr = ! arr.initialized();
-      if (arr.initialized()) {
-        for (int i=0; i < dimSizes.size(); i++) {
-          if (dimSizes[i] != arr.extent(i)) {
-            createArr = true;
-          }
+      bool createArr = false;
+      for (int i=0; i < dimSizes.size(); i++) {
+        if (dimSizes[i] != arr.extent(i)) {
+          createArr = true;
+          break;
         }
       }
-      if (createArr) { arr = Array<T,rank,myMem,myStyle>(varName.c_str(),dimSizes); }
+      if (createArr) {
+        arr = View("read arr", get_layout<myStyle>(dimSizes));
+      }
     } else { throw std::runtime_error("Variable does not exist"); }
 
-    if (myMem == memDevice) {
-      auto arrHost = arr.createHostCopy();
+    if (is_device_mem) {
+      auto arrHost = Kokkos::create_mirror_view(arr);
       if (std::is_same<T,bool>::value) {
-        Array<int,rank,memHost,myStyle> tmp("tmp",dimSizes);
-        var.getVar(tmp.data());
-        for (int i=0; i < arr.totElems(); i++) { arrHost.data()[i] = tmp.data()[i] == 1; }
+        bool* tmp = new bool[arr.size()];
+        var.getVar(tmp);
+        for (size_t i=0; i < arr.size(); ++i) { arrHost.data()[i] = (tmp[i] == 1); }
+        delete[] tmp;
       } else {
         var.getVar(arrHost.data());
       }
-      arrHost.deep_copy_to(arr);
-      fence();
+      Kokkos::deep_copy(arr, arrHost);
     } else {
       if (std::is_same<T,bool>::value) {
-        Array<int,rank,memHost,myStyle> tmp("tmp",dimSizes);
-        var.getVar(tmp.data());
-        for (int i=0; i < arr.totElems(); i++) { arr.data()[i] = tmp.data()[i] == 1; }
+        bool* tmp = new bool[arr.size()];
+        var.getVar(tmp);
+        for (size_t i=0; i < arr.size(); ++i) { arr.data()[i] = (tmp[i] == 1); }
+        delete[] tmp;
       } else {
         var.getVar(arr.data());
       }
@@ -562,16 +656,18 @@ public:
 
 
   /** @brief Read a single scalar value */
-  template <class T>
+  template <class T,
+            typename std::enable_if<!Kokkos::is_view<T>::value>::type* = nullptr>
   void read(T &arr , std::string varName) {
     auto var = file.getVar(varName);
     if ( var.isNull() ) { throw std::runtime_error("Variable does not exist"); }
-    var.getVar(&arr);
+    var.getVar(arr.data());
   }
 
 
   /** @brief Write a single scalar value */
-  template <class T>
+  template <class T,
+            typename std::enable_if<!Kokkos::is_view<T>::value>::type* = nullptr>
   void write(T arr , std::string varName) {
     auto var = file.getVar(varName);
     if ( var.isNull() ) {

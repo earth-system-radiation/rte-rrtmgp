@@ -53,7 +53,7 @@ void read_atmos_yakl(std::string input_file, real2d &p_lay, real2d &t_lay, real2
 
   int ngas = 8;
   std::vector<std::string> gas_names = {
-    "h2o", "co2", ,"o3", "n2o", "co", "ch4", "o2", "n2"
+    "h2o", "co2", "o3", "n2o", "co", "ch4", "o2", "n2"
   };
 
   // Initialize GasConcs object with an "ncol" given from the calling program
@@ -89,7 +89,7 @@ void read_atmos_yakl(std::string input_file, real2d &p_lay, real2d &t_lay, real2
   io.close();
 }
 
-void read_atmos_kokkos(std::string input_file, real2dk &p_layk, real2dk &t_layk, real2dk &p_levk, real2dk &t_levk,
+void read_atmos_kokkos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk &p_lev, real2dk &t_lev,
                        GasConcs &gas_concs, real2dk &col_dry, int ncol) {
   using Kokkos::parallel_for;
 
@@ -99,10 +99,10 @@ void read_atmos_kokkos(std::string input_file, real2dk &p_layk, real2dk &t_layk,
   int nlay = io.getDimSize("lay");
   int nlev = io.getDimSize("lev");
 
-  p_layk = real2dk("p_lay",ncol,nlay);
-  t_layk = real2dk("t_lay",ncol,nlay);
-  p_levk = real2dk("p_lev",ncol,nlev);
-  t_levk = real2dk("t_lev",ncol,nlev);
+  p_lay = real2dk("p_lay",ncol,nlay);
+  t_lay = real2dk("t_lay",ncol,nlay);
+  p_lev = real2dk("p_lev",ncol,nlev);
+  t_lev = real2dk("t_lev",ncol,nlev);
 
   real2dk tmp2d;
   // p_lay
@@ -122,50 +122,49 @@ void read_atmos_kokkos(std::string input_file, real2dk &p_layk, real2dk &t_layk,
   // p_lev
   io.read(tmp2d,"p_lev");
   parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
-    for (int ilay=0 ; ilay < nlay ; ++ilay) {
+    for (int ilev=0 ; ilev < nlev ; ++ilev) {
       p_lev(icol,ilev) = tmp2d(0,ilev);
     }
   });
   // t_lev
   io.read(tmp2d,"t_lev");
   parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
-    for (int ilay=0 ; ilay < nlay ; ++ilay) {
+    for (int ilev=0 ; ilev < nlev ; ++ilev) {
       t_lev(icol,ilev) = tmp2d(0,ilev);
     }
   });
 
   int ngas = 8;
   std::vector<std::string> gas_names = {
-    "h2o", "co2", ,"o3", "n2o", "co", "ch4", "o2", "n2"
+    "h2o", "co2", "o3", "n2o", "co", "ch4", "o2", "n2"
   };
 
   // Initialize GasConcs object with an "ncol" given from the calling program
   gas_concs.init(gas_names,ncol,nlay);
 
-  tmp2d = real2d();     // Reset the tmp2d variable
+  tmp2d = real2dk();     // Reset the tmp2d variable
   for (auto& gas_name : gas_names) {
     std::string vmr_name = "vmr_"+gas_name;
     if ( ! io.varExists(vmr_name) ) { stoprun("ERROR: gas does not exist in input file"); }
     // Read in 2-D varaible
     io.read(tmp2d,vmr_name);
     // Create 1-D variable with just the first column
-    real1d tmp1d("tmp1d",nlay);
-    // for (int i=1 ; i <= nlay ; i++) {
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(nlay) , YAKL_LAMBDA (int i) {
-      tmp1d(i) = tmp2d(1,i);
+    real1dk tmp1d("tmp1d",nlay);
+    parallel_for( nlay, KOKKOS_LAMBDA (int i) {
+      tmp1d(i) = tmp2d(0,i);
     });
     // Call set_vmr with only the first column from the data file copied among all of the model columns
     gas_concs.set_vmr( gas_name , tmp1d );
   }
 
   if ( io.varExists("col_dry") ) {
-    col_dry = real2d("col_dry",ncol,nlay);
-    tmp2d = real2d();     // Reset the tmp2d variable
+    col_dry = real2dk("col_dry",ncol,nlay);
+    tmp2d = real2dk();     // Reset the tmp2d variable
     io.read(tmp2d,"col_dry");
-    // for (int ilay=1 ; ilay <= nlay ; ilay++) {
-    //   for (int icol=1 ; icol <= ncol ; icol++) {
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA( int ilay, int icol) {
-      col_dry(icol,ilay) = tmp2d(1,ilay);
+    parallel_for( nlay, KOKKOS_LAMBDA( int ilay) {
+      for (int icol = 0; icol < ncol; ++icol) {
+        col_dry(icol,ilay) = tmp2d(1,ilay);
+      }
     });
   }
 
@@ -178,12 +177,12 @@ void read_atmos_kokkos(std::string input_file, real2dk &p_layk, real2dk &t_layk,
 // In the end, all model columns will be identical
 void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_lev, real2d &t_lev,
                 GasConcs &gas_concs, real2d &col_dry, int ncol) {
-  real2d p_layk, t_layk, p_levk, t_levk, col_dryk;
+  real2dk p_layk, t_layk, p_levk, t_levk, col_dryk;
   read_atmos_yakl(input_file, p_lay, t_lay, p_lev, t_lev, gas_concs, col_dry, ncol);
   read_atmos_kokkos(input_file, p_layk, t_layk, p_levk, t_levk, gas_concs, col_dryk, ncol);
-  compare_yakl_to_kokkos(
-    {p_lay, t_lay, p_lev, t_lev, col_dry},
-    {p_layk, t_layk, p_levk, t_levk, col_dryk});
+  std::vector<real2d> yarrays = {p_lay, t_lay, p_lev, t_lev, col_dry};
+  std::vector<real2dk> kviews = {p_layk, t_layk, p_levk, t_levk, col_dryk};
+  conv::compare_all_yakl_to_kokkos(yarrays, kviews);
 }
 
 void write_sw_fluxes(std::string fileName, real2d const &flux_up, real2d const &flux_dn, real2d const &flux_dir, int ncol) {

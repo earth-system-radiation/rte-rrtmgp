@@ -134,7 +134,31 @@ public:
       this_concs(icol,ilay,igas) = w(ilay);
     });
   }
-  
+
+  // Set concentration as a single column copied to all other columns
+  // w is expected to be in device memory
+  void set_vmr(std::string gas, real1dk const &w) {
+    using yakl::fortran::parallel_for;
+    using yakl::fortran::SimpleBounds;
+
+    if (w.extent(0) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)"); }
+    int igas = this->find_gas(gas);
+    if (igas == GAS_NOT_IN_LIST) {
+      stoprun("GasConcs::set_vmr(): trying to set a gas whose name not provided at initialization");
+    }
+    // Check for bad values in w
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+    bool badVal = false;
+    Kokkos::parallel_reduce(w.extent(0), KOKKOS_LAMBDA(int i, bool& is_bad) {
+      if (w(i) < 0. || w(i) > 1.) { is_bad = true; }
+      }, Kokkos::BOr<bool>(badVal));
+      if (badVal) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
+    #endif
+    YAKL_SCOPE( this_concs , this->concs );
+    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+      this_concs(icol,ilay,igas) = w(ilay-1);
+    });
+  }
 
   // Set concentration as a 2-D field of columns and levels
   // w is expected to be in device memory

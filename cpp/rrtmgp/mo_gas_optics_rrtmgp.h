@@ -978,8 +978,8 @@ public:
     // Fill out the array of volume mixing ratios
     for (int igas = 1 ; igas <= ngas ; igas++) {
       // Get vmr if  gas is provided in ty_gas_concs
-      for (int igas2 = lbound(gas_desc.gas_name,1) ; igas2 <= ubound(gas_desc.gas_name,1) ; igas2++) {
-        if ( lower_case(this->gas_names(igas)) == lower_case(gas_desc.gas_name(igas2)) ) {
+      for (size_t igas2 = 0 ; igas2 < gas_desc.gas_name.size() ; igas2++) {
+        if ( lower_case(this->gas_names(igas)) == lower_case(gas_desc.gas_name[igas2]) ) {
            real2d vmr_slice = vmr.slice<2>(COLON,COLON,igas);
            gas_desc.get_vmr(this->gas_names(igas), vmr_slice);
         }

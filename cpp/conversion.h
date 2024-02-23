@@ -53,19 +53,21 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview)
   constexpr auto krank = KView::rank;
   const auto yrank = yarray.get_rank();
 
-  RRT_REQUIRE(krank == yrank, "Rank mismatch");
+  RRT_REQUIRE(krank == yrank, "Rank mismatch for: " << kview.label());
 
   auto hkview = Kokkos::create_mirror_view(kview);
   Kokkos::deep_copy(hkview, kview);
   auto hyarray = yarray.createHostCopy();
 
   for (auto r = 0; r < krank; ++r) {
-    RRT_REQUIRE(kview.extent(r) == size(yarray,r+1), "Dim mismatch for rank: " << r);
+    RRT_REQUIRE(kview.extent(r) == size(yarray,r+1), "Dim mismatch for: " << kview.label() << ", rank: " << r);
   }
 
   auto total_size = kview.size();
   for (auto i = 0; i < total_size; ++i) {
-    RRT_REQUIRE(hkview.data()[i] == yarray.data()[i], "Data mismatch");
+    const auto kdata = hkview.data()[i];
+    const auto ydata = yarray.data()[i];
+    RRT_REQUIRE(kdata == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
   }
 }
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 
 printf "Running allsky longwave tests\n\n"
 ./test_lw.sh

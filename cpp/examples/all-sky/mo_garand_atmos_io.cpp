@@ -163,7 +163,7 @@ void read_atmos_kokkos(std::string input_file, real2dk &p_lay, real2dk &t_lay, r
     io.read(tmp2d,"col_dry");
     parallel_for( nlay, KOKKOS_LAMBDA( int ilay) {
       for (int icol = 0; icol < ncol; ++icol) {
-        col_dry(icol,ilay) = tmp2d(1,ilay);
+        col_dry(icol,ilay) = tmp2d(0,ilay);
       }
     });
   }

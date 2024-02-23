@@ -220,7 +220,7 @@ public:
     if (ngas == 0) { return GAS_NOT_IN_LIST; }
     for (int igas=0; igas<ngas; igas++) {
       if ( lower_case(gas) == this->gas_name[igas] ) {
-        return igas;
+        return igas + 1; // switch to zero based once concs is kokkos
       }
     }
     return GAS_NOT_IN_LIST;

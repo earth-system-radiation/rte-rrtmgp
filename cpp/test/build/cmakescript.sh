@@ -10,8 +10,10 @@ this_dir=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 # Clean previous build
 $this_dir/cmakeclean.sh
 
-# Configure new build
+# Configure new build. This will pass along arguments to this script
+# to CMake so you can set things like CMAKE_BUILD_TYPE easily.
 cmake                                          \
+  $@                                           \
   -DYAKL_CXX_FLAGS="${YAKL_CXX_FLAGS}"         \
   -DYAKL_OPENMP_FLAGS="${YAKL_OPENMP_FLAGS}"   \
   -DYAKL_CUDA_FLAGS="${YAKL_CUDA_FLAGS}"       \

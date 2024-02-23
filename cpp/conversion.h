@@ -5,6 +5,8 @@
 #include <netcdf.h>
 #include <stdexcept>
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+
 /**
  * Helper functions for the conversion to Kokkos
  */
@@ -700,3 +702,5 @@ public:
 };
 
 }
+
+#endif

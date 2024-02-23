@@ -2,12 +2,12 @@
 #pragma once
 
 #include "YAKL.h"
-#include <Kokkos_Core.hpp>
 #include <iostream>
 #include <cmath>
 #include <vector>
 
-template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
+#ifdef RRTMGP_ENABLE_KOKKOS
+#include <Kokkos_Core.hpp>
 
 using DefaultDevice =
   Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space>;
@@ -16,6 +16,9 @@ using HostDevice =
 
 template <typename T, typename Device=DefaultDevice>
 using FView = Kokkos::View<T, Kokkos::LayoutLeft, Device>;
+#endif
+
+template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
 
 typedef double real;
 
@@ -91,7 +94,7 @@ typedef FArray<char,2,yakl::memHost> charHost2d;
 
 typedef FArray<std::string,1,yakl::memHost> string1d;
 
-
+#ifdef RRTMGP_ENABLE_KOKKOS
 typedef FView<real*>       real1dk;
 typedef FView<real**>      real2dk;
 typedef FView<real***>     real3dk;
@@ -155,6 +158,7 @@ typedef FView<bool****, HostDevice>    boolHost4dk;
 typedef FView<bool*****, HostDevice>   boolHost5dk;
 typedef FView<bool******, HostDevice>  boolHost6dk;
 typedef FView<bool*******, HostDevice> boolHost7dk;
+#endif
 
 typedef std::vector<std::string> string1dv;
 

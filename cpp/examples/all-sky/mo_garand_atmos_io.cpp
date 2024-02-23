@@ -89,6 +89,7 @@ void read_atmos_yakl(std::string input_file, real2d &p_lay, real2d &t_lay, real2
   io.close();
 }
 
+#ifdef RRTMGP_ENABLE_KOKKOS
 void read_atmos_kokkos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk &p_lev, real2dk &t_lev,
                        GasConcs &gas_concs, real2dk &col_dry, int ncol) {
   using Kokkos::parallel_for;
@@ -170,6 +171,7 @@ void read_atmos_kokkos(std::string input_file, real2dk &p_lay, real2dk &t_lay, r
 
   io.close();
 }
+#endif
 
 }
 
@@ -179,10 +181,12 @@ void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_
                 GasConcs &gas_concs, real2d &col_dry, int ncol) {
   real2dk p_layk, t_layk, p_levk, t_levk, col_dryk;
   read_atmos_yakl(input_file, p_lay, t_lay, p_lev, t_lev, gas_concs, col_dry, ncol);
+#ifdef RRTMGP_ENABLE_KOKKOS
   read_atmos_kokkos(input_file, p_layk, t_layk, p_levk, t_levk, gas_concs, col_dryk, ncol);
   std::vector<real2d> yarrays = {p_lay, t_lay, p_lev, t_lev, col_dry};
   std::vector<real2dk> kviews = {p_layk, t_layk, p_levk, t_levk, col_dryk};
   conv::compare_all_yakl_to_kokkos(yarrays, kviews);
+#endif
 }
 
 void write_sw_fluxes(std::string fileName, real2d const &flux_up, real2d const &flux_dn, real2d const &flux_dir, int ncol) {

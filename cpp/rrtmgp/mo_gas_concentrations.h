@@ -135,6 +135,7 @@ public:
     });
   }
 
+#ifdef RRTMGP_ENABLE_KOKKOS
   // Set concentration as a single column copied to all other columns
   // w is expected to be in device memory
   void set_vmr(std::string gas, real1dk const &w) {
@@ -159,6 +160,7 @@ public:
       this_concs(icol,ilay,igas) = w(ilay-1);
     });
   }
+#endif
 
   // Set concentration as a 2-D field of columns and levels
   // w is expected to be in device memory

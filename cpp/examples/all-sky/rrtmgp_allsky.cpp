@@ -19,7 +19,9 @@ bool constexpr print_norms  = true;
 
 int main(int argc , char **argv) {
 
+#ifdef RRTMGP_ENABLE_KOKKOS
   Kokkos::initialize(argc, argv);
+#endif
   yakl::init();
 
   {
@@ -314,7 +316,9 @@ int main(int argc , char **argv) {
 
   }
 
+#ifdef RRTMGP_ENABLE_KOKKOS
   Kokkos::finalize();
+#endif
   yakl::finalize();
 }
 

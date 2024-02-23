@@ -3,6 +3,7 @@
 
 #include "rrtmgp_const.h"
 #include "mo_rrtmgp_util_string.h"
+#include "conversion.h"
 
 #include <vector>
 #include <string>
@@ -34,6 +35,9 @@ public:
 
   string1dv gas_name;  // List of gas names defined upon init
   real3d    concs;     // List of gas concentrations (ngas,ncol,nlay)
+#ifdef RRTMGP_ENABLE_KOKKOS
+  real3dk   concs_k;
+#endif
   int       ncol;
   int       nlay;
   int       ngas;
@@ -54,6 +58,9 @@ public:
   void reset() {
     gas_name = string1dv();  // Dealloc
     concs    = real3d();    // Dealloc
+#ifdef RRTMGP_ENABLE_KOKKOS
+    concs_k  = real3dk();
+#endif
     ncol = 0;
     nlay = 0;
     ngas = 0;
@@ -79,6 +86,11 @@ public:
     // Allocate
     this->gas_name = string1dv(ngas);
     this->concs    = real3d  ("concs"   ,ncol,nlay,ngas);
+    this->concs    = 0.0;
+#ifdef RRTMGP_ENABLE_KOKKOS
+    this->concs_k  = real3dk ("concs"   ,ncol,nlay,ngas);
+    validate();
+#endif
 
     // Assign gas names
     for (int i=0; i<ngas; i++) {
@@ -103,6 +115,15 @@ public:
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w;
     });
+#ifdef RRTMGP_ENABLE_KOKKOS
+    auto this_concs_k = this->concs_k;
+    Kokkos::parallel_for(nlay, KOKKOS_LAMBDA(int ilay) {
+      for (int icol = 0; icol < ncol; ++icol) {
+        this_concs_k(icol, ilay, igas-1) = w;
+      }
+    });
+    validate();
+#endif
   }
 
 
@@ -133,6 +154,15 @@ public:
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w(ilay);
     });
+#ifdef RRTMGP_ENABLE_KOKKOS
+    auto this_concs_k = this->concs_k;
+    Kokkos::parallel_for(nlay, KOKKOS_LAMBDA(int ilay) {
+      for (int icol = 0; icol < ncol; ++icol) {
+        this_concs_k(icol, ilay, igas-1) = w(ilay+1);
+      }
+    });
+    validate();
+#endif
   }
 
 #ifdef RRTMGP_ENABLE_KOKKOS
@@ -156,9 +186,17 @@ public:
       if (badVal) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     YAKL_SCOPE( this_concs , this->concs );
+    validate();
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w(ilay-1);
     });
+    auto this_concs_k = this->concs_k;
+    Kokkos::parallel_for(nlay, KOKKOS_LAMBDA(int ilay) {
+      for (int icol = 0; icol < ncol; ++icol) {
+        this_concs_k(icol, ilay, igas-1) = w(ilay);
+      }
+    });
+    validate();
   }
 #endif
 
@@ -191,6 +229,15 @@ public:
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w(icol,ilay);
     });
+#ifdef RRTMGP_ENABLE_KOKKOS
+    auto this_concs_k = this->concs_k;
+    Kokkos::parallel_for(nlay, KOKKOS_LAMBDA(int ilay) {
+      for (int icol = 0; icol < ncol; ++icol) {
+        this_concs_k(icol, ilay, igas-1) = w(icol+1, ilay+1);
+      }
+    });
+    validate();
+#endif
   }
 
 
@@ -246,6 +293,11 @@ public:
     if (allocated(concs   )) { std::cout << "sum(concs): " << sum(concs) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+  void validate() const {
+    conv::compare_yakl_to_kokkos(concs, concs_k);
+  }
+#endif
 
 };
 

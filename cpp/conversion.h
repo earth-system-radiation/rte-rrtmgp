@@ -638,7 +638,7 @@ public:
     if (is_device_mem) {
       auto arrHost = Kokkos::create_mirror_view(arr);
       if (std::is_same<T,bool>::value) {
-        bool* tmp = new bool[arr.size()];
+        int* tmp = new int[arr.size()];
         var.getVar(tmp);
         for (size_t i=0; i < arr.size(); ++i) { arrHost.data()[i] = (tmp[i] == 1); }
         delete[] tmp;
@@ -648,7 +648,7 @@ public:
       Kokkos::deep_copy(arr, arrHost);
     } else {
       if (std::is_same<T,bool>::value) {
-        bool* tmp = new bool[arr.size()];
+        int* tmp = new int[arr.size()];
         var.getVar(tmp);
         for (size_t i=0; i < arr.size(); ++i) { arr.data()[i] = (tmp[i] == 1); }
         delete[] tmp;

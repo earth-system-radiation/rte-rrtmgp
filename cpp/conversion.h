@@ -68,7 +68,7 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview)
   auto total_size = kview.size();
   for (auto i = 0; i < total_size; ++i) {
     const auto kdata = hkview.data()[i];
-    const auto ydata = yarray.data()[i];
+    const auto ydata = hyarray.data()[i];
     RRT_REQUIRE(kdata == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
   }
 }

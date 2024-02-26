@@ -51,7 +51,6 @@ void read_atmos_yakl(std::string input_file, real2d &p_lay, real2d &t_lay, real2
     t_lev(icol,ilev) = tmp2d(1,ilev);
   });
 
-  int ngas = 8;
   std::vector<std::string> gas_names = {
     "h2o", "co2", "o3", "n2o", "co", "ch4", "o2", "n2"
   };
@@ -135,7 +134,6 @@ void read_atmos_kokkos(std::string input_file, real2dk &p_lay, real2dk &t_lay, r
     }
   });
 
-  int ngas = 8;
   std::vector<std::string> gas_names = {
     "h2o", "co2", "o3", "n2o", "co", "ch4", "o2", "n2"
   };

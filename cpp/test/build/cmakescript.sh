@@ -12,6 +12,8 @@ $this_dir/cmakeclean.sh
 
 # Configure new build. This will pass along arguments to this script
 # to CMake so you can set things like CMAKE_BUILD_TYPE easily.
+# To enable Kokkos:
+#  cmakescript.sh -DRRTMGP_ENABLE_KOKKOS=On
 cmake                                          \
   $@                                           \
   -DYAKL_CXX_FLAGS="${YAKL_CXX_FLAGS}"         \
@@ -23,6 +25,7 @@ cmake                                          \
   -DYAKL_ARCH="$YAKL_ARCH"                     \
   -DYAKL_HOME="$YAKLHOME"                      \
   -DKokkos_DIR="$KOKKOSHOME"                   \
+  ${KOKKOS_CONFIG}                             \
   -DCXX_LINK="$CXX_LINK"                       \
   -DF90_LINK="$F90_LINK"                       \
   -DCMAKE_Fortran_MODULE_DIRECTORY="`pwd`/fortran_module_files" \

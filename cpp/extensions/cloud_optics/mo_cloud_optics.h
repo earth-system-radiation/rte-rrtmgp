@@ -62,20 +62,7 @@ public:
   real1d pade_sizreg_ssaice; // (nbound)
   real1d pade_sizreg_asyice; // (nbound)
 
-
-
-  CloudOptics() {
-    int icergh = 0;
-    real radliq_lwr = 0;
-    real radliq_upr = 0;
-    real radice_lwr = 0;
-    real radice_upr = 0;
-    int liq_nsteps = 0;
-    int ice_nsteps = 0;
-    real liq_step_size = 0;
-    real ice_step_size = 0;
-  }
-
+  CloudOptics() = default;
 
   // Routines to load data needed for cloud optics calculations. Two routines: one to load
   //    lookup-tables and one for coefficients for Pade approximates

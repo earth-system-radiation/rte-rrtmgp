@@ -65,10 +65,27 @@ int main(int argc , char **argv) {
     real2d t_lev;
     GasConcs gas_concs;
     real2d col_dry;
+#ifdef RRTMGP_ENABLE_KOKKOS
+    real2dk p_lay_k;
+    real2dk t_lay_k;
+    real2dk p_lev_k;
+    real2dk t_lev_k;
+    GasConcsK gas_concs_k;
+    real2dk col_dry_k;
+#endif
 
     // Read data from the input file
     if (verbose) std::cout << "Reading input file\n\n";
     read_atmos(input_file, p_lay, t_lay, p_lev, t_lev, gas_concs, col_dry, ncol);
+#ifdef RRTMGP_ENABLE_KOKKOS
+    read_atmos(input_file, p_lay_k, t_lay_k, p_lev_k, t_lev_k, gas_concs_k, col_dry_k, ncol);
+    {
+      std::vector<real2d> yarrays = {p_lay, t_lay, p_lev, t_lev, col_dry};
+      std::vector<real2dk> kviews = {p_lay_k, t_lay_k, p_lev_k, t_lev_k, col_dry_k};
+      conv::compare_all_yakl_to_kokkos(yarrays, kviews);
+      gas_concs_k.validate_kokkos(gas_concs);
+    }
+#endif
 
     int nlay = size(p_lay,2);
 
@@ -76,6 +93,11 @@ int main(int argc , char **argv) {
     if (verbose) std::cout << "Reading k_dist file\n\n";
     GasOpticsRRTMGP k_dist;
     load_and_init(k_dist, k_dist_file, gas_concs);
+#ifdef RRTMGP_ENABLE_KOKKOS
+    GasOpticsRRTMGPK k_dist_k;
+    load_and_init(k_dist_k, k_dist_file, gas_concs_k);
+    k_dist_k.validate_kokkos(k_dist);
+#endif
 
     bool is_sw = k_dist.source_is_external();
 

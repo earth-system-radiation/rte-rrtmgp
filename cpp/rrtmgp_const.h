@@ -158,6 +158,8 @@ typedef FView<bool****, HostDevice>    boolHost4dk;
 typedef FView<bool*****, HostDevice>   boolHost5dk;
 typedef FView<bool******, HostDevice>  boolHost6dk;
 typedef FView<bool*******, HostDevice> boolHost7dk;
+
+typedef FView<char**, HostDevice> charHost2dk;
 #endif
 
 typedef std::vector<std::string> string1dv;

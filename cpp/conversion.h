@@ -62,7 +62,7 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview)
   auto hyarray = yarray.createHostCopy();
 
   for (auto r = 0; r < krank; ++r) {
-    RRT_REQUIRE(kview.extent(r) == size(yarray,r+1), "Dim mismatch for: " << kview.label() << ", rank: " << r);
+    RRT_REQUIRE(kview.extent(r) == size(yarray,r+1), "Dim mismatch for: " << kview.label() << ", rank: " << r << ", " << kview.extent(r) << " != " <<  size(yarray,r+1));
   }
 
   auto total_size = kview.size();
@@ -73,6 +73,17 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview)
   }
 }
 
+inline
+void compare_yakl_to_kokkos_str(const string1d& yarray, const string1dv& kstrs)
+{
+  using yakl::intrinsics::size;
+
+  RRT_REQUIRE(size(yarray, 1) == kstrs.size(), "Dim mistmatch for: " << yarray.label());
+  for (auto i = 0; i < kstrs.size(); ++i) {
+    RRT_REQUIRE(yarray(i+1) == kstrs[i], "Data mismatch for: " << yarray.label());
+  }
+}
+
 template <typename YArray, typename KView>
 void compare_all_yakl_to_kokkos(const std::vector<YArray>& yarrays, const std::vector<KView>& kviews)
 {
@@ -80,6 +91,94 @@ void compare_all_yakl_to_kokkos(const std::vector<YArray>& yarrays, const std::v
   for (size_t i = 0; i < yarrays.size(); ++i) {
     compare_yakl_to_kokkos(yarrays[i], kviews[i]);
   }
+}
+
+template <typename KView>
+struct ToYakl
+{
+  using scalar_t = typename KView::value_type;
+  // using yakl_mem_t = std::conditional_t<
+  //   std::is_same<typename KView::device_type, HostDevice>::value
+  //   yakl::memHost, yakl::memDevice>;
+  using type = FArray<scalar_t, KView::rank, yakl::memHost>;//yakl_mem_t>;
+};
+
+// Allocate and populate a yakl array from a kokkos view
+template <typename KView>
+auto to_yakl(const KView& view)
+{
+  using yarray_t    = typename ToYakl<KView>::type;
+  using exe_space_t = typename KView::execution_space;
+
+  std::vector<int> dims(KView::rank); // List of dimensions for this variable
+  for (auto i = 0; i < KView::rank; ++i) {
+    dims[i] = view.extent(i);
+  }
+  yarray_t rv(view.name(), dims);
+  Kokkos::parallel_for( Kokkos::RangePolicy(exe_space_t(), 0, view.size()),
+                        KOKKOS_LAMBDA(size_t i) {
+    rv.data()[i] = view.data()[i];
+  });
+  return rv;
+}
+
+template <typename T>
+struct LTFunc
+{
+  T m_val;
+  LTFunc(T val) : m_val(val) {}
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator()(const T& val) const
+  {
+    return val < m_val;
+  }
+};
+
+template <typename KView, typename Functor>
+bool any(const KView& view, const Functor& functor)
+{
+  using exe_space_t = typename KView::execution_space;
+
+  bool rv = false;
+  Kokkos::parallel_reduce(
+    Kokkos::RangePolicy(exe_space_t(), 0, view.size()),
+    KOKKOS_LAMBDA(size_t i, bool& val) {
+      val = functor(view.data()[i]);
+    }, Kokkos::BOr<bool>(rv));
+
+  return rv;
+}
+
+template <typename KView>
+auto maxval(const KView& view)
+{
+  using scalar_t    = typename KView::non_const_value_type;
+  using exe_space_t = typename KView::execution_space;
+
+  scalar_t rv;
+  Kokkos::parallel_reduce(
+    Kokkos::RangePolicy(exe_space_t(), 0, view.size()),
+    KOKKOS_LAMBDA(size_t i, scalar_t& lmax) {
+      const scalar_t val = view.data()[i];
+      if (val > lmax) lmax = val;
+    }, Kokkos::Max<scalar_t>(rv));
+  return rv;
+}
+
+template <typename KView>
+auto sum(const KView& view)
+{
+  using scalar_t    = typename KView::non_const_value_type;
+  using exe_space_t = typename KView::execution_space;
+
+  scalar_t rv;
+  Kokkos::parallel_reduce(
+    Kokkos::RangePolicy(exe_space_t(), 0, view.size()),
+    KOKKOS_LAMBDA(size_t i, scalar_t& lsum) {
+      lsum += view.data()[i];
+    }, Kokkos::Sum<scalar_t>(rv));
+  return rv;
 }
 
 //Error reporting routine for the PNetCDF I/O
@@ -444,7 +543,7 @@ public:
   void write(const View& arr, std::string varName , std::vector<std::string> dimNames) {
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
-    using T       = typename View::non_const_data_type;
+    using T       = typename View::non_const_value_type;
     constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
     constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
     constexpr auto rank = View::rank;
@@ -530,7 +629,7 @@ public:
               int ind , std::string ulDimName="unlim" ) {
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
-    using T       = typename View::non_const_data_type;
+    using T       = typename View::non_const_value_type;
     constexpr bool is_c_layout = std::is_same<myStyle, Kokkos::LayoutRight>::value;
     constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
     constexpr auto rank = View::rank;
@@ -603,11 +702,12 @@ public:
 
 
   /** @brief Read an entire Array */
-  template <typename View>
+  template <typename View,
+            typename std::enable_if<Kokkos::is_view<View>::value>::type* = nullptr>
   void read(View& arr , std::string varName) {
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
-    using T       = typename View::non_const_data_type;
+    using T       = typename View::non_const_value_type;
     constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
     constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
     constexpr auto rank = View::rank;
@@ -665,7 +765,7 @@ public:
   void read(T &arr , std::string varName) {
     auto var = file.getVar(varName);
     if ( var.isNull() ) { throw std::runtime_error("Variable does not exist"); }
-    var.getVar(arr.data());
+    var.getVar(&arr);
   }
 
 

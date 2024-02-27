@@ -3,10 +3,26 @@
 #    Also include gfortran and netCDF for development
 #
 name: rte_rrtmgp_dev
+channels:
+  - conda-forge
+  - nodefaults
 dependencies:
+  - python=3.11
+  - urllib3
+  - netcdf4
+  - xarray
+  - dask
+  - numpy
+  - scipy
+  - matplotlib
+  - seaborn
+  - colorcet
+  - gfortran
+  - netcdf-fortran
 variables:
   FC: gfortran
   # Debugging flags below
+  FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
   # Shell environment variables can't be used within this YML files, so
   # Users still need to set RRTMGP_ROOT,
   #  FCINCLUDE=-I${CONDA_PREFIX}/include

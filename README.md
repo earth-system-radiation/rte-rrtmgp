@@ -25,3 +25,17 @@ See also the `autoconf` branch for a Gnu autotools build system.
 ## Examples
 
 Two examples are provided in `examples/`, one for clear skies and one including clouds. Directory `tests/` contains regression testing (e.g. to ensure that answers are independent of orientation) and unit testing (to be sure all the code paths are tested). See the README file and codes in each directory for further information.
+
+## Citing the code 
+
+Code releases are archived at Zenodo. All releases are available at 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3403172.svg)](https://doi.org/10.5281/zenodo.3403172). 
+The current release is available at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7521518.svg)](https://doi.org/10.5281/zenodo.10211873)
+
+Please cite the code using these DOIs and the information in the `CITATION.cff` file in addition to the reference [paper](https://doi.org/10.1029/2019MS001621)
+
+## Acknowledgements
+
+The development of RTE+RRTMGP has been funded in the US by the Office of Naval Research, NASA, NOAA, and the Department of Energy. We 
+are grateful for contributions from a range of collaborators at institutions including the Swiss Supercomputing Center, 
+the German Climate Computing Center, and Nvidia. 

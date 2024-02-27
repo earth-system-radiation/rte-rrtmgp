@@ -1,13 +1,13 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
+#   Default values can be overridden with environmental variables 
 #
-RRTMGP_BUILD = $(RRTMGP_ROOT)/build
-#
-# RRTMGP library, module files
-#
-# LDFLAGS   += -L$(RRTMGP_BUILD)
-# LIBS      += -lrrtmgp -lrte
-FCINCLUDE += -I$(RRTMGP_BUILD)
+RRTMGP_DIR ?= $(RRTMGP_ROOT)/build
+KERNEL_DIR ?= $(RRTMGP_ROOT)/build 
+
+FCINCLUDE += -I$(RRTMGP_DIR)
+LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
+LIBS      += -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 #
 # netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 
 #FCINCLUDE += -I$(NFHOME)/include
@@ -17,6 +17,12 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 LDFLAGS   += -L$(RRTMGP_BUILD)
 LIBS      += -lrte -lrrtmgp
 LIBS      += -lnetcdff -lnetcdf
+#
+# Include libraries needed for CUDA kernels 
+#
+ifeq ($(RTE_KERNELS), extern)
+	LIBS += -c++libs -cuda
+endif
 
 VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
 VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/:$(RRTMGP_ROOT)/extensions/solar_variability

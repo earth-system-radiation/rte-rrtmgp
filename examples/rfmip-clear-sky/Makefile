@@ -1,13 +1,13 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
+#   Default values can be overridden with environmental variables 
 #
-RRTMGP_BUILD = $(RRTMGP_ROOT)/build
-#
-# RRTMGP library, module files
-#
-# LDFLAGS   += -L$(RRTMGP_BUILD)
-# LIBS      += -lrrtmgp -lrte
-FCINCLUDE += -I$(RRTMGP_BUILD)
+RRTMGP_DIR ?= $(RRTMGP_ROOT)/build
+KERNEL_DIR ?= $(RRTMGP_ROOT)/build 
+
+FCINCLUDE += -I$(RRTMGP_DIR)
+LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
+LIBS      += -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 
 #
 # netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 
@@ -16,6 +16,12 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
+#
+# Include libraries needed for CUDA kernels 
+#
+ifeq ($(RTE_KERNELS), extern)
+	LIBS += -c++libs -cuda
+endif
 
 VPATH = ../
 
@@ -30,7 +36,6 @@ VPATH = ../
 %.nc:
 	cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/$@ . 
 
-
 #
 # Ancillary codes
 #
@@ -38,13 +43,13 @@ ADDITIONS = mo_simple_netcdf.o mo_rfmip_io.o mo_load_coefficients.o
 
 all: rrtmgp_rfmip_lw rrtmgp_rfmip_sw
 
-rrtmgp_rfmip_lw:   rrtmgp_rfmip_lw.o   $(ADDITIONS) $(RRTMGP_BUILD)/librrtmgp.a $(RRTMGP_BUILD)/librte.a
+rrtmgp_rfmip_lw:   rrtmgp_rfmip_lw.o   $(ADDITIONS) 
+                   
+rrtmgp_rfmip_sw:   rrtmgp_rfmip_sw.o   $(ADDITIONS) 
 
-rrtmgp_rfmip_lw.o: rrtmgp_rfmip_lw.F90 $(ADDITIONS)
+rrtmgp_rfmip_lw.o: rrtmgp_rfmip_lw.F90 $(ADDITIONS) 
 
-rrtmgp_rfmip_sw:   rrtmgp_rfmip_sw.o   $(ADDITIONS) $(RRTMGP_BUILD)/librrtmgp.a $(RRTMGP_BUILD)/librte.a
-
-rrtmgp_rfmip_sw.o: rrtmgp_rfmip_sw.F90 $(ADDITIONS)
+rrtmgp_rfmip_sw.o: rrtmgp_rfmip_sw.F90 $(ADDITIONS) 
 
 mo_rfmip_io.o:          mo_rfmip_io.F90          mo_simple_netcdf.o
 

@@ -154,6 +154,7 @@ program rte_clear_sky_regression
   !
   call stop_on_err(gas_conc_array(1)%get_subset(1, ncol, gas_concs))
   call gas_conc_array(1)%reset()
+  print *, "Reset gas concs" ! Without this line there's an OpenACC error
   deallocate(gas_conc_array)
   ! ----------------------------------------------------------------------------
   ! load data into classes

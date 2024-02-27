@@ -39,6 +39,13 @@ jobs:
           compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
+        - config-name: cuda-kernels
+          # Fall back to OpenACC 
+          rte-kernels: extern 
+          compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c !cray-libsci_acc"
+          fcflags: "-g -O3 -acc -gopt -Mallocatable=03 -Mpreprocess -Minfo"
+          experimental: true
+
     env:
       # Core variables:
       FC: ftn
@@ -53,7 +60,8 @@ jobs:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v3
+    - name: Check out Fortran code
+      uses: actions/checkout@v3
     #
     # Check out data
     #
@@ -62,6 +70,15 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
+    #
+    # Check out CUDA kernels if needed 
+    #
+    - name: Check out CUDA kernels 
+      if: matrix.config-name == 'cuda-kernels'
+      uses: actions/checkout@v3
+      with:
+        repository: earth-system-radiation/rte-rrtmgp-cuda-kernels
+        path: cuda-kernels
     #
     # Finalize build environment
     #
@@ -90,14 +107,23 @@ jobs:
         # SLURM jobs, user home directories and HDF5 file locking are
         # incompatible on Daint:
         echo 'HDF5_USE_FILE_LOCKING=FALSE' >> "${GITHUB_ENV}"
-    #
     # Build libraries, examples and tests
     #
-    - name: Build libraries, examples and tests
+    - name: Build libraries
       run: |
+        if: matrix.config-name != 'cuda-kernels'
         $FC --version
         make -j8 libs
         make -j8 -C build separate-libs
+    #
+    # Build library of CUDA kernels; copy to build directory 
+    #
+    - name: Build CUDA kernels
+      if: matrix.config-name == 'cuda-kernels'
+      run: |
+        make -C cuda-kernels/build 
+        cp cuda-kernels/build/librtecudakernels.a build/librtekernels.a
+        cp cuda-kernels/build/librrtmgpcudakernels.a build/librrtmgpkernels.a
     #
     # Run examples and tests (expect success)
     #

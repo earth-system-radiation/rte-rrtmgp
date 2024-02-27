@@ -97,10 +97,8 @@ template <typename KView>
 struct ToYakl
 {
   using scalar_t = typename KView::value_type;
-  // using yakl_mem_t = std::conditional_t<
-  //   std::is_same<typename KView::device_type, HostDevice>::value
-  //   yakl::memHost, yakl::memDevice>;
-  using type = FArray<scalar_t, KView::rank, yakl::memHost>;//yakl_mem_t>;
+  static constexpr auto yakl_mem = std::is_same<typename KView::device_type, HostDevice>::value ? yakl::memHost : yakl::memDevice;
+  using type = FArray<scalar_t, KView::rank, yakl_mem>;
 };
 
 // Allocate and populate a yakl array from a kokkos view

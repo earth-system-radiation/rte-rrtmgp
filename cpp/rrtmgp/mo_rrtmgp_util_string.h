@@ -34,7 +34,7 @@ inline bool string_in_array(std::string str, string1dv const &arr) {
 
 inline int string_loc_in_array(std::string str, string1dv const &arr) {
   for (int i=0; i < arr.size(); i++) {
-    if ( lower_case(str) == lower_case(arr[i]) ) { return i+1; } // use 1-based idx for now
+    if ( lower_case(str) == lower_case(arr[i]) ) { return i; } // Note: 0-based
   }
   return -1;
 }

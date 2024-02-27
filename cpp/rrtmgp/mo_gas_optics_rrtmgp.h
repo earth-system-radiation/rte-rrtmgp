@@ -1346,68 +1346,65 @@ public:
       OpticalPropsK::finalize();
   }
 
-#if 0 // noy yet converted
   // Everything except GasConcs is on the host by default, and the available_gases.gas_name is on the host as well
   // Things will be copied to the GPU outside of this routine and stored into class variables
-  void reduce_minor_arrays(GasConcs   const &available_gases,
-                           string1d   const &gas_names,
-                           string1d   const &gas_minor,
-                           string1d   const &identifier_minor,
-                           realHost3d const &kminor_atm,
-                           string1d   const &minor_gases_atm,
-                           intHost2d  const &minor_limits_gpt_atm,
-                           boolHost1d const &minor_scales_with_density_atm,
-                           string1d   const &scaling_gas_atm,
-                           boolHost1d const &scale_by_complement_atm,
-                           intHost1d  const &kminor_start_atm,
-                           realHost3d       &kminor_atm_red,
-                           string1d         &minor_gases_atm_red,
-                           intHost2d        &minor_limits_gpt_atm_red,
-                           boolHost1d       &minor_scales_with_density_atm_red,
-                           string1d         &scaling_gas_atm_red,
-                           boolHost1d       &scale_by_complement_atm_red,
-                           intHost1d        &kminor_start_atm_red) {
-    using yakl::intrinsics::size;
-
-    int nm = size(minor_gases_atm,1);  // Size of the larger list of minor gases
+  void reduce_minor_arrays(GasConcsK   const &available_gases,
+                           string1dv   const &gas_names,
+                           string1dv   const &gas_minor,
+                           string1dv   const &identifier_minor,
+                           realHost3dk const &kminor_atm,
+                           string1dv   const &minor_gases_atm,
+                           intHost2dk  const &minor_limits_gpt_atm,
+                           boolHost1dk const &minor_scales_with_density_atm,
+                           string1dv   const &scaling_gas_atm,
+                           boolHost1dk const &scale_by_complement_atm,
+                           intHost1dk  const &kminor_start_atm,
+                           realHost3dk       &kminor_atm_red,
+                           string1dv         &minor_gases_atm_red,
+                           intHost2dk        &minor_limits_gpt_atm_red,
+                           boolHost1dk       &minor_scales_with_density_atm_red,
+                           string1dv         &scaling_gas_atm_red,
+                           boolHost1dk       &scale_by_complement_atm_red,
+                           intHost1dk        &kminor_start_atm_red) {
+    int nm = minor_gases_atm.size();  // Size of the larger list of minor gases
     int tot_g = 0;
     int red_nm = 0;                    // Reduced number of minor gasses (only the ones we need)
     boolHost1d gas_is_present("gas_is_present",nm);   // Determines whether a gas in the list is needed
     // Determine the gasses needed
-    for (int i=1; i <= nm; i++) {
-      int idx_mnr = string_loc_in_array(minor_gases_atm(i), identifier_minor);
-      gas_is_present(i) = string_in_array(gas_minor(idx_mnr),available_gases.gas_name);
+    for (int i=0; i < nm; i++) {
+      int idx_mnr = string_loc_in_array(minor_gases_atm[i], identifier_minor);
+      gas_is_present(i) = string_in_array(gas_minor[idx_mnr], available_gases.gas_name);
       if (gas_is_present(i)) {
-        tot_g = tot_g + (minor_limits_gpt_atm(2,i)-minor_limits_gpt_atm(1,i)+1);
+        tot_g = tot_g + (minor_limits_gpt_atm(1,i)-minor_limits_gpt_atm(0,i)+1);
         red_nm = red_nm + 1;
       }
     }
 
     // Allocate reduced arrays
-    minor_gases_atm_red               = string1d  ("minor_gases_atm_red              "  ,red_nm);
-    minor_scales_with_density_atm_red = boolHost1d("minor_scales_with_density_atm_red"  ,red_nm);
-    scaling_gas_atm_red               = string1d  ("scaling_gas_atm_red              "  ,red_nm);
-    scale_by_complement_atm_red       = boolHost1d("scale_by_complement_atm_red      "  ,red_nm);
-    kminor_start_atm_red              = intHost1d ("kminor_start_atm_red             "  ,red_nm);
-    minor_limits_gpt_atm_red          = intHost2d ("minor_limits_gpt_atm_red         ",2,red_nm);
-    kminor_atm_red                    = realHost3d("kminor_atm_red                   ",tot_g , size(kminor_atm,2) , size(kminor_atm,3));
+    minor_gases_atm_red               = string1dv  (red_nm);
+    minor_scales_with_density_atm_red = boolHost1dk("minor_scales_with_density_atm_red"  ,red_nm);
+    scaling_gas_atm_red               = string1dv  (red_nm);
+    scale_by_complement_atm_red       = boolHost1dk("scale_by_complement_atm_red      "  ,red_nm);
+    kminor_start_atm_red              = intHost1dk ("kminor_start_atm_red             "  ,red_nm);
+    minor_limits_gpt_atm_red          = intHost2dk ("minor_limits_gpt_atm_red         ",2,red_nm);
+    kminor_atm_red                    = realHost3dk("kminor_atm_red                   ",tot_g , kminor_atm.extent(1), kminor_atm.extent(2));
 
     if (red_nm == nm) {
       // If the gasses listed exactly matches the gasses needed, just copy it
-      minor_gases_atm              .deep_copy_to(minor_gases_atm_red              );
-      scaling_gas_atm              .deep_copy_to(scaling_gas_atm_red              );
-      kminor_atm                   .deep_copy_to(kminor_atm_red                   );
-      minor_limits_gpt_atm         .deep_copy_to(minor_limits_gpt_atm_red         );
-      minor_scales_with_density_atm.deep_copy_to(minor_scales_with_density_atm_red);
-      scale_by_complement_atm      .deep_copy_to(scale_by_complement_atm_red      );
-      kminor_start_atm             .deep_copy_to(kminor_start_atm_red             );
+      minor_gases_atm_red = minor_gases_atm;
+      scaling_gas_atm_red = scaling_gas_atm;
+      Kokkos::deep_copy(kminor_atm_red, kminor_atm);
+      Kokkos::deep_copy(minor_limits_gpt_atm_red, minor_limits_gpt_atm);
+      Kokkos::deep_copy(minor_scales_with_density_atm_red, minor_scales_with_density_atm);
+      Kokkos::deep_copy(scale_by_complement_atm_red, scale_by_complement_atm);
+      Kokkos::deep_copy(kminor_start_atm_red, kminor_start_atm);
     } else {
       // Otherwise, pack into reduced arrays
-      int slot = 1;
-      for (int i=1; i <= nm; i++) {
+      int slot = 0;
+      for (int i=0; i < nm; i++) {
         if (gas_is_present(i)) {
-          minor_gases_atm_red              (slot) = minor_gases_atm              (i);
-          scaling_gas_atm_red              (slot) = scaling_gas_atm              (i);
+          minor_gases_atm_red              [slot] = minor_gases_atm              [i];
+          scaling_gas_atm_red              [slot] = scaling_gas_atm              [i];
           minor_scales_with_density_atm_red(slot) = minor_scales_with_density_atm(i);
           scale_by_complement_atm_red      (slot) = scale_by_complement_atm      (i);
           kminor_start_atm_red             (slot) = kminor_start_atm             (i);
@@ -1415,19 +1412,19 @@ public:
         }
       }
 
-      slot = 0;
+      slot = -1;
       int n_elim = 0;
-      for (int i=1 ; i <= nm ; i++) {
-        int ng = minor_limits_gpt_atm(2,i)-minor_limits_gpt_atm(1,i)+1;
+      for (int i=0 ; i < nm ; i++) {
+        int ng = minor_limits_gpt_atm(1,i)-minor_limits_gpt_atm(0,i)+1;
         if (gas_is_present(i)) {
           slot = slot + 1;
+          minor_limits_gpt_atm_red   (0,slot) = minor_limits_gpt_atm(0,i);
           minor_limits_gpt_atm_red   (1,slot) = minor_limits_gpt_atm(1,i);
-          minor_limits_gpt_atm_red   (2,slot) = minor_limits_gpt_atm(2,i);
           kminor_start_atm_red         (slot) = kminor_start_atm(i)-n_elim;
-          for (int l=1 ; l <= size(kminor_atm,3) ; l++ ) {
-            for (int k=1 ; k <= size(kminor_atm,2) ; k++ ) {
-              for (int j=1 ; j <= ng ; j++) {
-                kminor_atm_red(kminor_start_atm_red(slot)+j-1,k,l) = kminor_atm(kminor_start_atm(i)+j-1,k,l);
+          for (int l=0 ; l < kminor_atm.extent(2); l++ ) {
+            for (int k=0 ; k < kminor_atm.extent(1) ; k++ ) {
+              for (int j=0 ; j < ng ; j++) {
+                kminor_atm_red(kminor_start_atm_red(slot)+j,k,l) = kminor_atm(kminor_start_atm(i)+j,k,l);
               }
             }
           }
@@ -1438,7 +1435,7 @@ public:
     }
   }
 
-
+#if 0 // noy yet converted
   // create index list for extracting col_gas needed for minor gas optical depth calculations
   void create_idx_minor(string1d const &gas_names, string1d const &gas_minor, string1d const &identifier_minor,
                         string1d const &minor_gases_atm, intHost1d &idx_minor_atm) {
@@ -1616,50 +1613,55 @@ public:
                        intHost1dk  const &kminor_start_upper,
                        realHost3dk const &rayl_lower,
                        realHost3dk const &rayl_upper) {
-#if 0
-    OpticalProps::init(band_lims_wavenum.createDeviceCopy(), band2gpt.createDeviceCopy());
+    auto band_lims_wavenum_h = Kokkos::create_mirror_view(band_lims_wavenum);
+    auto band2gpt_h = Kokkos::create_mirror_view(band2gpt);
+    Kokkos::deep_copy(band_lims_wavenum_h, band_lims_wavenum);
+    Kokkos::deep_copy(band2gpt_h, band2gpt);
+    OpticalPropsK::init(band_lims_wavenum_h, band2gpt_h);
+
     // Which gases known to the gas optics are present in the host model (available_gases)?
-    int ngas = size(gas_names,1);
-    boolHost1d gas_is_present("gas_is_present",ngas);
-    for (int i=1 ; i <= ngas ; i++) {
-      gas_is_present(i) = string_in_array(gas_names(i), available_gases.gas_name);
+    for (auto item : gas_names) {
+      if (string_in_array(item, available_gases.gas_name)) {
+        this->gas_names.push_back(item);
+      }
     }
     // Now the number of gases is the union of those known to the k-distribution and provided by the host model
-    ngas = count(gas_is_present);
 
     // Initialize the gas optics object, keeping only those gases known to the gas optics and also present in the host model
-    this->gas_names = pack(gas_names,gas_is_present);
+    const int ngas = this->gas_names.size();
+    const int vmr_e0 = vmr_ref.extent(0);
+    const int vmr_e2 = vmr_ref.extent(2);
 
-    realHost3d vmr_ref_red("vmr_ref_red",size(vmr_ref,1),{0,ngas}, size(vmr_ref,3));
+    realHost3dk vmr_ref_red("vmr_ref_red", vmr_e0, ngas+1, vmr_e2);
     // Gas 0 is used in single-key species method, set to 1.0 (col_dry)
-    for (int k=1 ; k <= size(vmr_ref,3) ; k++) {
-      for (int j=1 ; j <= size(vmr_ref,1) ; j++) {
-        vmr_ref_red(j,0,k) = vmr_ref(j,1,k);
+    for (int k=0 ; k < vmr_e2 ; k++) {
+      for (int j=0 ; j < vmr_e0 ; j++) {
+        vmr_ref_red(j,0,k) = vmr_ref(j,0,k);
       }
     }
     for (int i=1 ; i <= ngas ; i++) {
-      int idx = string_loc_in_array(this->gas_names(i), gas_names);
-      for (int k=1 ; k <= size(vmr_ref,3) ; k++) {
-        for (int j=1 ; j <= size(vmr_ref,1) ; j++) {
-          vmr_ref_red(j,i,k) = vmr_ref(j,idx+1,k);
+      int idx = string_loc_in_array(this->gas_names[i], gas_names);
+      for (int k=0 ; k < vmr_e2 ; k++) {
+        for (int j=0 ; j < vmr_e0 ; j++) {
+          vmr_ref_red(j,i,k) = vmr_ref(j,idx,k);
         }
       }
     }
     // Allocate class copy, and deep copy to the class data member
-    this->vmr_ref = real3d("vmr_ref",size(vmr_ref,1),{0,ngas}, size(vmr_ref,3));
-    vmr_ref_red.deep_copy_to(this->vmr_ref);
+    this->vmr_ref = Kokkos::create_mirror_view(vmr_ref_red);
+    Kokkos::deep_copy(this->vmr_ref, vmr_ref_red);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // REDUCE MINOR ARRAYS SO VARIABLES ONLY CONTAIN MINOR GASES THAT ARE AVAILABLE
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOWER MINOR GASSES
-    string1d minor_gases_lower_red;
-    string1d scaling_gas_lower_red;
-    realHost3d kminor_lower_red;
-    intHost2d  minor_limits_gpt_lower_red;
-    boolHost1d minor_scales_with_density_lower_red;
-    boolHost1d scale_by_complement_lower_red;
-    intHost1d  kminor_start_lower_red;
+    string1dv   minor_gases_lower_red;
+    string1dv   scaling_gas_lower_red;
+    realHost3dk kminor_lower_red;
+    intHost2dk  minor_limits_gpt_lower_red;
+    boolHost1dk minor_scales_with_density_lower_red;
+    boolHost1dk scale_by_complement_lower_red;
+    intHost1dk  kminor_start_lower_red;
 
     reduce_minor_arrays(available_gases, gas_names, gas_minor, identifier_minor, kminor_lower, minor_gases_lower,
                         minor_limits_gpt_lower, minor_scales_with_density_lower, scaling_gas_lower,
@@ -1667,6 +1669,7 @@ public:
                         minor_limits_gpt_lower_red, minor_scales_with_density_lower_red, scaling_gas_lower_red,
                         scale_by_complement_lower_red, kminor_start_lower_red);
 
+#if 0
     this->kminor_lower                    = kminor_lower_red                   .createDeviceCopy();
     this->minor_limits_gpt_lower          = minor_limits_gpt_lower_red         .createDeviceCopy();
     this->minor_scales_with_density_lower = minor_scales_with_density_lower_red.createDeviceCopy();

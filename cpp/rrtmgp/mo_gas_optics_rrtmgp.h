@@ -1435,56 +1435,42 @@ public:
     }
   }
 
-#if 0 // noy yet converted
   // create index list for extracting col_gas needed for minor gas optical depth calculations
-  void create_idx_minor(string1d const &gas_names, string1d const &gas_minor, string1d const &identifier_minor,
-                        string1d const &minor_gases_atm, intHost1d &idx_minor_atm) {
-    using yakl::intrinsics::size;
-
-    idx_minor_atm = intHost1d("idx_minor_atm",size(minor_gases_atm,1));
-    for (int imnr=1 ; imnr <= size(minor_gases_atm,1) ; imnr++) {
+  void create_idx_minor(string1dv const &gas_names, string1dv const &gas_minor, string1dv const &identifier_minor,
+                        string1dv const &minor_gases_atm, intHost1dk &idx_minor_atm) {
+    idx_minor_atm = intHost1dk("idx_minor_atm", minor_gases_atm.size());
+    for (size_t imnr=0 ; imnr < minor_gases_atm.size() ; imnr++) {
       // Find identifying string for minor species in list of possible identifiers (e.g. h2o_slf)
-      int idx_mnr     = string_loc_in_array(minor_gases_atm(imnr), identifier_minor);
+      int idx_mnr     = string_loc_in_array(minor_gases_atm[imnr], identifier_minor);
       // Find name of gas associated with minor species identifier (e.g. h2o)
-      idx_minor_atm(imnr) = string_loc_in_array(gas_minor(idx_mnr), gas_names);
+      idx_minor_atm(imnr) = string_loc_in_array(gas_minor[idx_mnr], gas_names);
     }
   }
-
-
 
   // create index for special treatment in density scaling of minor gases
-  void create_idx_minor_scaling(string1d const &gas_names, string1d const &scaling_gas_atm,
-                                intHost1d &idx_minor_scaling_atm) {
-    using yakl::intrinsics::size;
-
-    idx_minor_scaling_atm = intHost1d("idx_minor_scaling_atm",size(scaling_gas_atm,1));
-    for (int imnr=1 ; imnr <= size(scaling_gas_atm,1) ; imnr++) {
+  void create_idx_minor_scaling(string1dv const &gas_names, string1dv const &scaling_gas_atm,
+                                intHost1dk &idx_minor_scaling_atm) {
+    idx_minor_scaling_atm = intHost1dk("idx_minor_scaling_atm", scaling_gas_atm.size());
+    for (int imnr=0 ; imnr < scaling_gas_atm.size() ; imnr++) {
       // This will be -1 if there's no interacting gas
-      idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm(imnr), gas_names);
+      idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm[imnr], gas_names);
     }
   }
 
+  void create_key_species_reduce(string1dv const &gas_names, string1dv const &gas_names_red, intHost3dk const &key_species,
+                                 intHost3dk &key_species_red, boolHost1dk &key_species_present_init) {
+    int np = key_species.extent(0);
+    int na = key_species.extent(1);
+    int nt = key_species.extent(2);
+    key_species_red = intHost3dk("key_species_red",np,na,nt);
+    key_species_present_init = boolHost1dk("key_species_present_init", gas_names.size());
+    Kokkos::deep_copy(key_species_present_init, true);
 
-
-  void create_key_species_reduce(string1d const &gas_names, string1d const &gas_names_red, intHost3d const &key_species,
-                                 intHost3d &key_species_red, boolHost1d &key_species_present_init) {
-    using yakl::intrinsics::size;
-
-    int np = size(key_species,1);
-    int na = size(key_species,2);
-    int nt = size(key_species,3);
-    key_species_red = intHost3d("key_species_red",np,na,nt);
-    key_species_present_init = boolHost1d("key_species_present_init",size(gas_names,1));
-
-    for (int i=1 ; i <= size(gas_names,1) ; i++) {
-      key_species_present_init(i) = true;
-    }
-
-    for (int ip=1 ; ip <= np ; ip++) {
-      for (int ia=1 ; ia <= na ; ia++) {
-        for (int it=1 ; it <= nt ; it++) {
+    for (int ip=0 ; ip < np ; ip++) {
+      for (int ia=0 ; ia < na ; ia++) {
+        for (int it=0 ; it < nt ; it++) {
           if (key_species(ip,ia,it) != 0) {
-            key_species_red(ip,ia,it) = string_loc_in_array(gas_names(key_species(ip,ia,it)),gas_names_red);
+            key_species_red(ip,ia,it) = string_loc_in_array(gas_names[key_species(ip,ia,it)],gas_names_red);
             if (key_species_red(ip,ia,it) == -1) {
               key_species_present_init(key_species(ip,ia,it)) = false;
             }
@@ -1496,80 +1482,72 @@ public:
     }
   }
 
-
-
   // Create flavor list
   // An unordered array of extent (2,:) containing all possible pairs of key species used in either upper or lower atmos
-  void create_flavor(intHost3d const &key_species, intHost2d &flavor) {
-    using yakl::intrinsics::size;
-
+  void create_flavor(intHost3dk const &key_species, intHost2dk &flavor) {
     // prepare list of key_species
-    int i = 1;
-    intHost2d key_species_list("key_species_list",2,size(key_species,3)*2);
-    for (int ibnd=1 ; ibnd <= size(key_species,3) ; ibnd++) {
-      for (int iatm=1 ; iatm <= size(key_species,1) ; iatm++) {
+    int i = 0;
+    intHost2dk key_species_list("key_species_list", 2, key_species.extent(2)*2);
+    for (int ibnd=0 ; ibnd < key_species.extent(2) ; ibnd++) {
+      for (int iatm=0 ; iatm < key_species.extent(0) ; iatm++) {
+        key_species_list(0,i) = key_species(0,iatm,ibnd);
         key_species_list(1,i) = key_species(1,iatm,ibnd);
-        key_species_list(2,i) = key_species(2,iatm,ibnd);
         i = i + 1;
       }
     }
     // rewrite single key_species pairs
-    for (int i=1 ; i <= size(key_species_list,2) ; i++) {
-      if (key_species_list(1,i) == 0 && key_species_list(2,i) == 0) {
+    for (int i=0 ; i < key_species_list.extent(1) ; i++) {
+      if (key_species_list(0,i) == 0 && key_species_list(1,i) == 0) {
+        key_species_list(0,i) = 2;
         key_species_list(1,i) = 2;
-        key_species_list(2,i) = 2;
       }
     }
     // count unique key species pairs
     int iflavor = 0;
-    for (int i=1; i <= size(key_species_list,2) ; i++) {
+    for (int i=0; i < key_species_list.extent(1) ; i++) {
       // Loop through previous pairs. Only increment iflavor if we haven't seen this pair before
       bool unique = true;
-      for (int j=1; j <= i-1 ; j++) {
-        if ( key_species_list(1,j) == key_species_list(1,i) && key_species_list(2,j) == key_species_list(2,i) ) {
+      for (int j=0; j < i-1 ; j++) {
+        if ( key_species_list(0,j) == key_species_list(0,i) && key_species_list(1,j) == key_species_list(1,i) ) {
           unique = false;
         }
       }
       if (unique) { iflavor = iflavor + 1; }
     }
     // fill flavors
-    flavor = intHost2d("flavor",2,iflavor);
+    flavor = intHost2dk("flavor",2,iflavor);
     iflavor = 0;
-    for (int i=1 ; i <= size(key_species_list,2) ; i++) {
+    for (int i=0 ; i < key_species_list.extent(1) ; i++) {
       bool unique = true;
-      for (int j=1; j <= i-1 ; j++) {
-        if ( key_species_list(1,j) == key_species_list(1,i) && key_species_list(2,j) == key_species_list(2,i) ) {
+      for (int j=0; j < i-1 ; j++) {
+        if ( key_species_list(0,j) == key_species_list(0,i) && key_species_list(1,j) == key_species_list(1,i) ) {
           unique = false;
         }
       }
       if (unique) {
         iflavor = iflavor + 1;
+        flavor(0,iflavor) = key_species_list(0,i);
         flavor(1,iflavor) = key_species_list(1,i);
-        flavor(2,iflavor) = key_species_list(2,i);
       }
     }
   }
 
-
-
   // create gpoint_flavor list: a map pointing from each g-point to the corresponding entry in the "flavor list"
-  void create_gpoint_flavor(intHost3d const &key_species, intHost1d const &gpt2band, intHost2d const &flavor,
-                            intHost2d &gpoint_flavor) {
-    using yakl::intrinsics::size;
-
-    int ngpt = size(gpt2band,1);
-    gpoint_flavor = intHost2d("gpoint_flavor",2,ngpt);
-    for (int igpt=1 ; igpt <= ngpt ; igpt++) {
-      for (int iatm = 1 ; iatm <= 2 ; iatm++) {
+  void create_gpoint_flavor(intHost3dk const &key_species, intHost1dk const &gpt2band, intHost2dk const &flavor,
+                            intHost2dk &gpoint_flavor) {
+    int ngpt = gpt2band.extent(0);
+    gpoint_flavor = intHost2dk("gpoint_flavor",2,ngpt);
+    for (int igpt=0 ; igpt < ngpt ; igpt++) {
+      for (int iatm = 0 ; iatm < 2 ; iatm++) {
         int key_species_pair2flavor = -1;
-        for (int iflav=1 ; iflav <= size(flavor,2) ; iflav++) {
-          int key_species1 = key_species(1,iatm,gpt2band(igpt));
-          int key_species2 = key_species(2,iatm,gpt2band(igpt));
+        for (int iflav=0 ; iflav < flavor.extent(1) ; iflav++) {
+          int key_species1 = key_species(0,iatm,gpt2band(igpt));
+          int key_species2 = key_species(1,iatm,gpt2band(igpt));
           if (key_species1 == 0 && key_species2 == 0) {
             key_species1 = 2;
             key_species2 = 2;
           }
-          if ( flavor(1,iflav) == key_species1 && flavor(2,iflav) == key_species2 ) {
+          if ( flavor(0,iflav) == key_species1 && flavor(1,iflav) == key_species2 ) {
             key_species_pair2flavor = iflav;
           }
         }
@@ -1577,9 +1555,6 @@ public:
       }
     }
   }
-#endif
-
-
 
   // Initialize absorption coefficient arrays,
   //   including Rayleigh scattering tables if provided (allocated)
@@ -1669,27 +1644,32 @@ public:
                         minor_limits_gpt_lower_red, minor_scales_with_density_lower_red, scaling_gas_lower_red,
                         scale_by_complement_lower_red, kminor_start_lower_red);
 
-#if 0
-    this->kminor_lower                    = kminor_lower_red                   .createDeviceCopy();
-    this->minor_limits_gpt_lower          = minor_limits_gpt_lower_red         .createDeviceCopy();
-    this->minor_scales_with_density_lower = minor_scales_with_density_lower_red.createDeviceCopy();
-    this->scale_by_complement_lower       = scale_by_complement_lower_red      .createDeviceCopy();
-    this->kminor_start_lower              = kminor_start_lower_red             .createDeviceCopy();
+    this->kminor_lower                    = Kokkos::create_mirror_view(kminor_lower_red);
+    this->minor_limits_gpt_lower          = Kokkos::create_mirror_view(minor_limits_gpt_lower_red);
+    this->minor_scales_with_density_lower = Kokkos::create_mirror_view(minor_scales_with_density_lower_red);
+    this->scale_by_complement_lower       = Kokkos::create_mirror_view(scale_by_complement_lower_red);
+    this->kminor_start_lower              = Kokkos::create_mirror_view(kminor_start_lower_red);
+
+    Kokkos::deep_copy(this->kminor_lower, kminor_lower_red);
+    Kokkos::deep_copy(this->minor_limits_gpt_lower, minor_limits_gpt_lower_red);
+    Kokkos::deep_copy(this->minor_scales_with_density_lower, minor_scales_with_density_lower_red);
+    Kokkos::deep_copy(this->scale_by_complement_lower, scale_by_complement_lower_red);
+    Kokkos::deep_copy(this->kminor_start_lower, kminor_start_lower_red);
 
     // Find the largest number of g-points per band
-    this->max_gpt_diff_lower = minor_limits_gpt_lower_red(2,1) - minor_limits_gpt_lower_red(1,1);
-    for (int i=2; i<=size(minor_limits_gpt_lower_red,2); i++) {
-      this->max_gpt_diff_lower = std::max( this->max_gpt_diff_lower , minor_limits_gpt_lower_red(2,i) - minor_limits_gpt_lower_red(1,i) );
+    this->max_gpt_diff_lower = std::numeric_limits<int>::lowest();
+    for (int i=0; i<minor_limits_gpt_lower_red.extent(1); i++) {
+      this->max_gpt_diff_lower = std::max( this->max_gpt_diff_lower , minor_limits_gpt_lower_red(1,i) - minor_limits_gpt_lower_red(0,i) );
     }
 
     // UPPER MINOR GASSES
-    string1d minor_gases_upper_red;
-    string1d scaling_gas_upper_red;
-    realHost3d kminor_upper_red;
-    intHost2d  minor_limits_gpt_upper_red;
-    boolHost1d minor_scales_with_density_upper_red;
-    boolHost1d scale_by_complement_upper_red;
-    intHost1d  kminor_start_upper_red;
+    string1dv minor_gases_upper_red;
+    string1dv scaling_gas_upper_red;
+    realHost3dk kminor_upper_red;
+    intHost2dk  minor_limits_gpt_upper_red;
+    boolHost1dk minor_scales_with_density_upper_red;
+    boolHost1dk scale_by_complement_upper_red;
+    intHost1dk  kminor_start_upper_red;
 
     reduce_minor_arrays(available_gases, gas_names, gas_minor, identifier_minor, kminor_upper, minor_gases_upper,
                         minor_limits_gpt_upper, minor_scales_with_density_upper, scaling_gas_upper,
@@ -1697,118 +1677,121 @@ public:
                         minor_limits_gpt_upper_red, minor_scales_with_density_upper_red, scaling_gas_upper_red,
                         scale_by_complement_upper_red, kminor_start_upper_red);
 
-    this->kminor_upper                    = kminor_upper_red                   .createDeviceCopy();
-    this->minor_limits_gpt_upper          = minor_limits_gpt_upper_red         .createDeviceCopy();
-    this->minor_scales_with_density_upper = minor_scales_with_density_upper_red.createDeviceCopy();
-    this->scale_by_complement_upper       = scale_by_complement_upper_red      .createDeviceCopy();
-    this->kminor_start_upper              = kminor_start_upper_red             .createDeviceCopy();
+    this->kminor_upper                    = Kokkos::create_mirror_view(kminor_upper_red);
+    this->minor_limits_gpt_upper          = Kokkos::create_mirror_view(minor_limits_gpt_upper_red);
+    this->minor_scales_with_density_upper = Kokkos::create_mirror_view(minor_scales_with_density_upper_red);
+    this->scale_by_complement_upper       = Kokkos::create_mirror_view(scale_by_complement_upper_red);
+    this->kminor_start_upper              = Kokkos::create_mirror_view(kminor_start_upper_red);
+
+    Kokkos::deep_copy(this->kminor_upper, kminor_upper_red);
+    Kokkos::deep_copy(this->minor_limits_gpt_upper, minor_limits_gpt_upper_red);
+    Kokkos::deep_copy(this->minor_scales_with_density_upper, minor_scales_with_density_upper_red);
+    Kokkos::deep_copy(this->scale_by_complement_upper, scale_by_complement_upper_red);
+    Kokkos::deep_copy(this->kminor_start_upper, kminor_start_upper_red);
 
     // Find the largest number of g-points per band
-    this->max_gpt_diff_upper = minor_limits_gpt_upper_red(2,1) - minor_limits_gpt_upper_red(1,1);
-    for (int i=2; i<=size(minor_limits_gpt_upper_red,2); i++) {
-      this->max_gpt_diff_upper = std::max( this->max_gpt_diff_upper , minor_limits_gpt_upper_red(2,i) - minor_limits_gpt_upper_red(1,i) );
+    this->max_gpt_diff_upper = std::numeric_limits<int>::lowest();
+    for (int i=0; i<minor_limits_gpt_upper_red.extent(1); i++) {
+      this->max_gpt_diff_upper = std::max( this->max_gpt_diff_upper , minor_limits_gpt_upper_red(1,i) - minor_limits_gpt_upper_red(0,i) );
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // HANDLE ARRAYS NOT REDUCED BY THE PRESENCE, OR LACK THEREOF, OF A GAS
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    this->press_ref = real1d("press_ref",size(press_ref,1));
-    this->temp_ref  = real1d("temp_ref" ,size(temp_ref ,1));
-    this->kmajor    = real4d("kmajor"   ,size(kmajor,1),size(kmajor,2),size(kmajor,3),size(kmajor,4));
-    press_ref.deep_copy_to(this->press_ref);
-    temp_ref .deep_copy_to(this->temp_ref );
-    kmajor   .deep_copy_to(this->kmajor   );
+    this->press_ref = Kokkos::create_mirror_view(press_ref);
+    this->temp_ref  = Kokkos::create_mirror_view(temp_ref);
+    this->kmajor    = Kokkos::create_mirror_view(kmajor);
+    Kokkos::deep_copy(this->press_ref, press_ref);
+    Kokkos::deep_copy(this->temp_ref, temp_ref);
+    Kokkos::deep_copy(this->kmajor, kmajor);
 
     // Process rayl_lower and rayl_upper into a combined this->krayl
-    if (allocated(rayl_lower) != allocated(rayl_upper)) {
+    if (rayl_lower.is_allocated() != rayl_upper.is_allocated()) {
       stoprun("rayl_lower and rayl_upper must have the same allocation status");
     }
-    if (allocated(rayl_lower)) {
-      realHost4d krayltmp("krayltmp",size(rayl_lower,1),size(rayl_lower,2),size(rayl_lower,3),2);
-      for (int k=1 ; k <= size(rayl_lower,3) ; k++ ) {
-        for (int j=1 ; j <= size(rayl_lower,2) ; j++ ) {
-          for (int i=1 ; i <= size(rayl_lower,1) ; i++ ) {
+    if (rayl_lower.is_allocated()) {
+      realHost4dk krayltmp("krayltmp",rayl_lower.extent(0),rayl_lower.extent(1),rayl_lower.extent(2),2);
+      for (int k=1 ; k <= rayl_lower.extent(2) ; k++ ) {
+        for (int j=1 ; j <= rayl_lower.extent(1) ; j++ ) {
+          for (int i=1 ; i <= rayl_lower.extent(0) ; i++ ) {
             krayltmp(i,j,k,1) = rayl_lower(i,j,k);
             krayltmp(i,j,k,2) = rayl_upper(i,j,k);
           }
         }
       }
-      this->krayl = krayltmp.createDeviceCopy();
+      this->krayl = Kokkos::create_mirror_view(krayltmp);
+      Kokkos::deep_copy(this->krayl, krayltmp);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // POST PROCESSING
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // creates log reference pressure
-    this->press_ref_log = real1d("press_ref_log",size(this->press_ref,1));
-    YAKL_SCOPE( press_ref_loc     , this->press_ref     );
-    YAKL_SCOPE( press_ref_log_loc , this->press_ref_log );
+    this->press_ref_log = real1dk("press_ref_log", this->press_ref.extent(0));
     // Running a kernel because it's more convenient in this case
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>( size(this->press_ref,1) ) , YAKL_LAMBDA (int i) {
-      press_ref_log_loc(i) = log(press_ref_loc(i));
+    Kokkos::parallel_for( this->press_ref.extent(0) , KOKKOS_LAMBDA (int i) {
+      this->press_ref_log(i) = log(this->press_ref(i));
     });
 
     // log scale of reference pressure (this is a scalar, not an array)
     this->press_ref_trop_log = log(press_ref_trop);
 
     // Get index of gas (if present) for determining col_gas
-    intHost1d idx_minor_lower_tmp;
-    intHost1d idx_minor_upper_tmp;
+    intHost1dk idx_minor_lower_tmp;
+    intHost1dk idx_minor_upper_tmp;
     create_idx_minor(this->gas_names, gas_minor, identifier_minor, minor_gases_lower_red, idx_minor_lower_tmp);
     create_idx_minor(this->gas_names, gas_minor, identifier_minor, minor_gases_upper_red, idx_minor_upper_tmp);
-    this->idx_minor_lower = idx_minor_lower_tmp.createDeviceCopy();
-    this->idx_minor_upper = idx_minor_upper_tmp.createDeviceCopy();
+    this->idx_minor_lower = Kokkos::create_mirror_view(idx_minor_lower_tmp);
+    this->idx_minor_upper = Kokkos::create_mirror_view(idx_minor_upper_tmp);
+    Kokkos::deep_copy(this->idx_minor_lower, idx_minor_lower_tmp);
+    Kokkos::deep_copy(this->idx_minor_upper, idx_minor_upper_tmp);
     // Get index of gas (if present) that has special treatment in density scaling
-    intHost1d idx_minor_scaling_lower_tmp;
-    intHost1d idx_minor_scaling_upper_tmp;
+    intHost1dk idx_minor_scaling_lower_tmp;
+    intHost1dk idx_minor_scaling_upper_tmp;
     create_idx_minor_scaling(this->gas_names, scaling_gas_lower_red, idx_minor_scaling_lower_tmp);
     create_idx_minor_scaling(this->gas_names, scaling_gas_upper_red, idx_minor_scaling_upper_tmp);
-    this->idx_minor_scaling_lower = idx_minor_scaling_lower_tmp.createDeviceCopy();
-    this->idx_minor_scaling_upper = idx_minor_scaling_upper_tmp.createDeviceCopy();
+    this->idx_minor_scaling_lower = Kokkos::create_mirror_view(idx_minor_scaling_lower_tmp);
+    this->idx_minor_scaling_upper = Kokkos::create_mirror_view(idx_minor_scaling_upper_tmp);
+    Kokkos::deep_copy(this->idx_minor_scaling_lower, idx_minor_scaling_lower_tmp);
+    Kokkos::deep_copy(this->idx_minor_scaling_upper, idx_minor_scaling_upper_tmp);
 
     // create flavor list
     // Reduce (remap) key_species list; checks that all key gases are present in incoming
-    boolHost1d key_species_present_init;
-    intHost3d  key_species_red;
+    boolHost1dk key_species_present_init;
+    intHost3dk  key_species_red;
     create_key_species_reduce(gas_names, this->gas_names, key_species, key_species_red, key_species_present_init);
     // create flavor and gpoint_flavor lists
-    intHost2d flavor_tmp;
-    intHost2d gpoint_flavor_tmp;
+    intHost2dk flavor_tmp;
+    intHost2dk gpoint_flavor_tmp;
+    auto gpoint_bands_tmp = Kokkos::create_mirror_view(this->get_gpoint_bands());
+    Kokkos::deep_copy(gpoint_bands_tmp, this->get_gpoint_bands());
     create_flavor       (key_species_red, flavor_tmp);
-    create_gpoint_flavor(key_species_red, this->get_gpoint_bands().createHostCopy(), flavor_tmp, gpoint_flavor_tmp);
-    this->flavor        = int2d("flavor",size(       flavor_tmp,1),size(       flavor_tmp,2));
-    this->gpoint_flavor = int2d("flavor",size(gpoint_flavor_tmp,1),size(gpoint_flavor_tmp,2));
-    flavor_tmp       .deep_copy_to(this->flavor       );
-    gpoint_flavor_tmp.deep_copy_to(this->gpoint_flavor);
+    create_gpoint_flavor(key_species_red, gpoint_bands_tmp, flavor_tmp, gpoint_flavor_tmp);
+    this->flavor        = Kokkos::create_mirror_view(flavor_tmp);
+    this->gpoint_flavor = Kokkos::create_mirror_view(gpoint_flavor_tmp);
+    Kokkos::deep_copy(this->flavor, flavor_tmp);
+    Kokkos::deep_copy(this->gpoint_flavor, gpoint_flavor_tmp);
 
     // minimum, maximum reference temperature, pressure -- assumes low-to-high ordering
     //   for T, high-to-low ordering for p
-    this->temp_ref_min  = temp_ref (1);
-    this->temp_ref_max  = temp_ref (size(temp_ref ,1));
-    this->press_ref_min = press_ref(size(press_ref,1));
-    this->press_ref_max = press_ref(1);
+    this->temp_ref_min  = temp_ref (0);
+    this->temp_ref_max  = temp_ref (temp_ref.extent(0)-1);
+    this->press_ref_min = press_ref(press_ref.extent(0)-1);
+    this->press_ref_max = press_ref(0);
 
     // creates press_ref_log, temp_ref_delta
-    this->press_ref_log_delta = (log(this->press_ref_min)-log(this->press_ref_max))/(size(press_ref,1)-1);
-    this->temp_ref_delta      = (this->temp_ref_max-this->temp_ref_min)/(size(temp_ref,1)-1);
+    this->press_ref_log_delta = (log(this->press_ref_min)-log(this->press_ref_max))/(press_ref.extent(0)-1);
+    this->temp_ref_delta      = (this->temp_ref_max-this->temp_ref_min)/(temp_ref.extent(0)-1);
 
     // Which species are key in one or more bands?
     //   this->flavor is an index into this->gas_names
-    this->is_key = bool1d("is_key",this->get_ngas());
-    YAKL_SCOPE( is_key_loc , this->is_key );
-    YAKL_SCOPE( flavor_loc , this->flavor );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>( this->get_ngas() ) , YAKL_LAMBDA (int i) {
-      is_key_loc(i) = false;
-    });
+    this->is_key = bool1dk("is_key",this->get_ngas());
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(this->flavor,2) , size(this->flavor,1) ) , YAKL_LAMBDA (int j, int i) {
-      if (flavor_loc(i,j) != 0) { is_key_loc(flavor_loc(i,j)) = true; }
+    Kokkos::parallel_for( MDRangeP2<>( {0, 0}, {this->flavor.extent(1), this->flavor.extent(0)} ) , KOKKOS_LAMBDA (int j, int i) {
+      if (this->flavor(i,j) != 0) { this->is_key(this->flavor(i,j)) = true; }
     });
-#endif
   }
-
-
 
   // Initialize object based on data read from netCDF file however the user desires.
   //  Rayleigh scattering tables may or may not be present; this is indicated with allocation status

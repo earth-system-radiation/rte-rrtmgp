@@ -51,7 +51,7 @@ jobs:
     # Upload documentation
     #
     - name: Upload Documentation
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: documentation
         path: public/
@@ -60,7 +60,7 @@ jobs:
     # Check broken links
     #
     - name: Broken Link Check
-      if: ${{ github.ref == 'refs/heads/main'}}
+      if: ${{ github.ref == 'refs/heads/documentation'}}
       uses: technote-space/broken-link-checker-action@v2
       with:
         TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
@@ -70,8 +70,8 @@ jobs:
     # Deploy documentation
     #
     - name: Deploy API Documentation
-      uses: JamesIves/github-pages-deploy-action@v4.4.3
-      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
+      uses: JamesIves/github-pages-deploy-action@v4.5.0
+      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/documentation' }}
       with:
         branch: gh-pages
         folder: public/

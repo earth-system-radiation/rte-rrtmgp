@@ -354,8 +354,8 @@ contains
                                 logical(top_at_1, wl), n_quad_angs,         &
                                 secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                 optical_props%tau,                 &
-                                sources%lay_source, sources%lev_source_inc, &
-                                sources%lev_source_dec,            &
+                                sources%lay_source,                &
+                                sources%lev_source,                &
                                 sfc_emis_gpt, sources%sfc_source,  &
                                 inc_flux_diffuse,                  &
                                 gpt_flux_up, gpt_flux_dn,          &
@@ -372,8 +372,8 @@ contains
             ! two-stream calculation with scattering
             !
             call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                                   optical_props%tau, optical_props%ssa, optical_props%g,              &
-                                   sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                                   optical_props%tau, optical_props%ssa, optical_props%g, &
+                                   sources%lay_source, sources%lev_source,                &
                                    sfc_emis_gpt, sources%sfc_source,       &
                                    inc_flux_diffuse,                       &
                                    gpt_flux_up, gpt_flux_dn)
@@ -397,8 +397,8 @@ contains
                                   logical(top_at_1, wl), n_quad_angs,         &
                                   secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                   optical_props%tau,                 &
-                                  sources%lay_source, sources%lev_source_inc, &
-                                  sources%lev_source_dec,            &
+                                  sources%lay_source,                &
+                                  sources%lev_source,                &
                                   sfc_emis_gpt, sources%sfc_source,  &
                                   inc_flux_diffuse,                  &
                                   gpt_flux_up, gpt_flux_dn,          &
@@ -424,11 +424,7 @@ contains
             !
             ! FIXME: Do we need the create/copyout here?
             !
-#ifdef _CRAYFTN
-            !$acc parallel loop    collapse(2) copyout( fluxes%flux_net)  !! Avoids internal compiler error
-#else
             !$acc parallel loop    collapse(2) copyin(fluxes) copyout( fluxes%flux_net)
-#endif
             !$omp target teams distribute parallel do simd collapse(2) map(from:fluxes%flux_net)
             do ilev = 1, nlay+1
               do icol = 1, ncol

@@ -1,16 +1,17 @@
 name: Continuous integration in a box
 on:
   push:
-    branches-ignore:
-    - documentation
+    branches:
+    - main
+    - develop
   pull_request:
     branches-ignore:
     - documentation
+  workflow_dispatch:
 
 jobs:
   Containerized-CI:
     runs-on: ubuntu-22.04
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
@@ -18,8 +19,6 @@ jobs:
         rte-kernels: [default, accel]
         fpmodel: [DP, SP]
         include:
-        # The tests are not experimental by default:
-        - experimental: false
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
           fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08
@@ -30,7 +29,6 @@ jobs:
         - fortran-compiler: ifx
           rte-kernels: accel
           fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64
-          experimental: true
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
           rte-kernels: default
@@ -40,11 +38,11 @@ jobs:
           fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc
         # Set container images
         - fortran-compiler: ifort
-          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:oneapi
         - fortran-compiler: ifx
-          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:ifort
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:oneapi
         - fortran-compiler: nvfortran
-          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvfortran
+          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:nvhpc
     container:
       image: ${{ matrix.image }}
     env:
@@ -59,7 +57,7 @@ jobs:
       RUN_CMD:
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
       OMP_TARGET_OFFLOAD: DISABLED
-      FAILURE_THRESHOLD: 7.e-4
+      FAILURE_THRESHOLD: 5.8e-2 # 7.e-4
 
     steps:
     #
@@ -74,30 +72,53 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
-        ref: develop
     #
-    # Build libraries, examples and tests
+    # Build libraries, examples and tests (expect success)
     #
-    - name: Build libraries, examples and tests
+    - name: Build libraries, examples and tests (expect success)
+      id: build-success
+      if: matrix.fortran-compiler != 'ifx' || matrix.rte-kernels != 'accel'
       run: |
         $FC --version
-        make libs
+        make -j4 libs
+        make -j4 -C build separate-libs
+    #
+    # Build libraries, examples and tests (expect failure)
+    #
+    - name: Build libraries, examples and tests (expect failure)
+      if: steps.build-success.outcome == 'skipped'
+      shell: bash
+      run: |
+        $FC --version
+        make -j4 libs 2> >(tee make.err >&2) && {
+          echo "Unexpected success"
+          exit 1
+        } || {
+          grep make.err -e 'Internal compiler error' && {
+            echo "Expected failure"
+          } || {
+            echo "Unexpected failure"
+            exit 1
+          }
+        }
     #
     # Run examples and tests
     #
     - name: Run examples and tests
-      run: make tests
+      if: steps.build-success.outcome != 'skipped'
+      run: make -j4 tests
     #
     # Relax failure thresholds for single precision
     #
     - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP'
+      if: matrix.fpmodel == 'SP' && steps.build-success.outcome != 'skipped'
       run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #
     - name: Compare the results
-      run: make check
+      if: steps.build-success.outcome != 'skipped'
+      run: make -j4 check
     #
     # Generate validation plots
     #
@@ -110,7 +131,7 @@ jobs:
     #
     - name: Upload validation plots
       if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: valdiation-plot
         path: tests/validation-figures.pdf

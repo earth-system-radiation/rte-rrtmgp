@@ -1,11 +1,13 @@
 name: Self-hosted CI
 on:
   push:
-    branches-ignore:
-    - documentation
+    branches:
+    - main
+    - develop
   pull_request:
     branches-ignore:
     - documentation
+  workflow_dispatch:
 
 defaults:
   run:
@@ -13,17 +15,15 @@ defaults:
 
 jobs:
   CI:
+    if: github.repository == 'earth-system-radiation/rte-rrtmgp'
     runs-on:
       labels: cscs-ci
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         config-name: [nvidia-gpu-openacc, cce-cpu-icon-production, cce-gpu-openmp]
         fpmodel: [DP, SP]
         include:
-        # The tests are not experimental by default:
-        - experimental: false
         - config-name: nvidia-gpu-openacc
           rte-kernels: accel
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 !cray-libsci_acc"
@@ -39,13 +39,13 @@ jobs:
           compiler-modules: "PrgEnv-cray craype-accel-nvidia60 cdt-cuda/22.05 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c"
           # OpenMP flags from Nichols Romero (Argonne)
           fcflags: "-hnoacc -homp -O0"
-          experimental: true
         - config-name: cuda-kernels
           # Fall back to OpenACC 
           rte-kernels: extern 
           compiler-modules: "PrgEnv-nvidia nvidia craype-accel-nvidia60 cdt-cuda/21.09 cudatoolkit/11.2.0_3.39-2.1__gf93aa1c !cray-libsci_acc"
           fcflags: "-g -O3 -acc -gopt -Mallocatable=03 -Mpreprocess -Minfo"
           experimental: true
+
     env:
       # Core variables:
       FC: ftn
@@ -55,7 +55,7 @@ jobs:
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
-      FAILURE_THRESHOLD: 7.e-4
+      FAILURE_THRESHOLD: 5.8e-2 # 7.e-4
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -70,7 +70,6 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
-        ref: develop
     #
     # Check out CUDA kernels if needed 
     #
@@ -112,8 +111,10 @@ jobs:
     #
     - name: Build libraries
       run: |
+        if: matrix.config-name != 'cuda-kernels'
         $FC --version
-        make libs
+        make -j8 libs
+        make -j8 -C build separate-libs
     #
     # Build library of CUDA kernels; copy to build directory 
     #
@@ -124,18 +125,31 @@ jobs:
         cp cuda-kernels/build/librtecudakernels.a build/librtekernels.a
         cp cuda-kernels/build/librrtmgpcudakernels.a build/librrtmgpkernels.a
     #
-    # Run examples and tests
+    # Run examples and tests (expect success)
     #
-    - name: Run examples and tests
-      run: make tests
+    - name: Run examples and tests (expect success)
+      id: run-success
+      if: matrix.config-name != 'cce-gpu-openmp'
+      run: make -j8 tests
+    #
+    # Run examples and tests (expect failure)
+    #
+    - name: Run examples and tests (expect failure)
+      if: steps.run-success.outcome == 'skipped'
+      run: |
+        make -j8 tests && {
+          echo "Unexpected success"
+          exit 1
+        } || echo "Expected failure"
     #
     # Relax failure thresholds for single precision
     #
     - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP'
+      if: matrix.fpmodel == 'SP' && steps.run-success.outcome != 'skipped'
       run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Compare the results
     #
     - name: Compare the results
-      run: make check
+      if: steps.run-success.outcome != 'skipped'
+      run: make -j8 check

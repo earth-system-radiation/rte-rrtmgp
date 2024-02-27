@@ -10,13 +10,12 @@ LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
 LIBS      += -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 
 #
-# netcdf library, module files
-# Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
-#
-FCINCLUDE += -I$(NFHOME)/include
-LDFLAGS   += -L$(NFHOME)/lib
-LIBS      += -lnetcdff
+# netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 
+#FCINCLUDE += -I$(NFHOME)/include
 
+# netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
+#LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
+LIBS      += -lnetcdff -lnetcdf
 #
 # Include libraries needed for CUDA kernels 
 #
@@ -63,7 +62,7 @@ tests: multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc \
 	$(RUN_CMD) ./rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
 
 check:
-	python ${RRTMGP_ROOT}/examples/compare-to-reference.py \
+	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py \
 	       --ref_dir ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/rfmip-clear-sky \
 	       --var rld rlu rsd rsu --file r??_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
 

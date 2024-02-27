@@ -2,30 +2,29 @@
 # Top-level Makefile
 #
 .PHONY: libs tests check docs
-all:    libs tests check docs
 
 libs:
-	make -C build -j
+	$(MAKE) -C build
+	$(MAKE) -C tests
+	$(MAKE) -C examples/all-sky
+	$(MAKE) -C examples/rfmip-clear-sky
 
 tests:
-	make -C tests -j 1
-	make -C examples/all-sky -j
-	make -C examples/rfmip-clear-sky -j
-	make -C examples/rfmip-clear-sky tests
-	make -C examples/all-sky         tests
-	make -C tests                    tests
+	$(MAKE) -C examples/rfmip-clear-sky $@
+	$(MAKE) -C examples/all-sky         $@
+	$(MAKE) -C tests                    $@
 
 check:
-	make -C examples/rfmip-clear-sky check
-	make -C examples/all-sky         check
-	make -C tests                    check
+	$(MAKE) -C examples/rfmip-clear-sky $@
+	$(MAKE) -C examples/all-sky         $@
+	$(MAKE) -C tests                    $@
 
 docs:
 	@cd doc; ./build_documentation.sh
 
 clean:
-	make -C build clean
-	make -C examples/rfmip-clear-sky clean
-	make -C examples/all-sky         clean
-	make -C tests                    clean
+	$(MAKE) -C build                    $@
+	$(MAKE) -C examples/rfmip-clear-sky $@
+	$(MAKE) -C examples/all-sky         $@
+	$(MAKE) -C tests                    $@
 	rm -rf public

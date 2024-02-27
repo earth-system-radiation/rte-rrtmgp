@@ -14,6 +14,7 @@ RTE aspires to follow a set of coding conventions:
     and spectral quadrature point.
 - RTE and RRTMGP are agnostic to vertical ordering
 - Units are MKS
+- Procedures (with the exception of testing code) do not perform I/O 
 
 ## Fortran user-facing class interfaces
 

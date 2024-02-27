@@ -1,9 +1,9 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
-#   Default values can be overridden with environmental variables 
 #
 RRTMGP_DIR ?= $(RRTMGP_ROOT)/build
 KERNEL_DIR ?= $(RRTMGP_ROOT)/build 
+RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
 #
@@ -11,13 +11,12 @@ FCINCLUDE += -I$(RRTMGP_DIR)
 LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
 LIBS      +=  -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 
-#
-# netcdf library, module files
-# Environment variable NFHOME points to root of the Fortran interface
-#
-FCINCLUDE += -I$(NFHOME)/include
-LDFLAGS   += -L$(NFHOME)/lib
-LIBS      += -lnetcdff
+# netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 
+#FCINCLUDE += -I$(NFHOME)/include
+
+# netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
+#LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
+LIBS      += -lnetcdff -lnetcdf
 #
 # Include libraries needed for CUDA kernels 
 #
@@ -59,10 +58,10 @@ tests:
 	$(RUN_CMD) bash all_tests.sh  
 
 check:
-	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
+	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
 	       --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir  \
 	       --file rrtmgp-allsky-lw.nc rrtmgp-allsky-sw.nc
-	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
+	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
 	       --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir  \
 	       --file rrtmgp-allsky-lw-no-aerosols.nc rrtmgp-allsky-sw-no-aerosols.nc
 

@@ -18,14 +18,9 @@ RTE computes fluxes given spectrally-resolved optical descriptions and source fu
 
 ## Building the libraries, examples, and unit-testing codes.
 
-1. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Examples are provided in the `Compiler-flags.md` file.
-2. Set environment variables `RRTMGP_ROOT` to the top-level RTE+RRTMGP directory and `RTE_KERNELS` to `accel` if you want the OpenACC/OpenMP kernels rather than the default.
-3. `make libs` in the top-level directory will make the RTE and RRTMGP libraries.
-4. The examples and testing codes use netCDF. Set the variable `NFHOME` to the root of the Fortran netCDF installation. 
-5. Download the RRTMGP data either by cloning the [data repository](https://github.com/earth-system-radiation/rrtmgp-data) or from the [Zenodo archive](https://doi.org/10.5281/zenodo.7988260). Set the environment variable `RRTMGP_DATA` to the root of this directory. 
-6. `make tests` to will build and run the test. 
-7. Evaluating the results of the tests requires `Python` and the packages described in `environment.yml`. Comparisons can be made with `make check` in the top level directory. 
-8. `make` invoked without a target in the top level attempts all three steps.
+A description of building RTE+RRTMGP with an ad hoc homemade system is described in the [documentation](https://earth-system-radiation.github.io/rte-rrtmgp/how-tos/).
+
+See also the `autoconf` branch for a Gnu autotools build system. 
 
 ## Examples
 

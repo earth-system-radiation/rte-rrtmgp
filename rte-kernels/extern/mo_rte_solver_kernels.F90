@@ -41,7 +41,7 @@ module mo_rte_solver_kernels
     subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
                                 nmus, Ds, weights,          &
                                 tau,                        &
-                                lay_source, lev_source_inc, lev_source_dec, &
+                                lay_source, lev_source,     &
                                 sfc_emis, sfc_src,          &
                                 inc_flux,                   &
                                 flux_up, flux_dn,           &
@@ -64,10 +64,8 @@ module mo_rte_solver_kernels
                                                               !! Absorption optical thickness []
       real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source
                                                               !! Planck source at layer average temperature [W/m2]
-      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
-                                          !! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
-      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
-                                          !! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
+      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source
+                                                              !! Planck source at layer edge for radiation  [W/m2]
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
                                                               !! Surface emissivity      []
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src

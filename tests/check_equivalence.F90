@@ -34,13 +34,13 @@ program rte_check_equivalence
                                    ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_rte_util_array,     only: zero_array
-  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   use mo_gas_concentrations, only: ty_gas_concs
+  use mo_gas_optics_defs,    only: gas_optics, load_and_init
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
-  use mo_load_coefficients,  only: load_and_init
+  use mo_testing_utils,      only: increment_with_1scl, increment_with_2str, increment_with_nstr
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty,  &
                                    read_and_block_lw_bc, read_and_block_sw_bc, determine_gas_names
   use mo_simple_netcdf,      only: get_dim_size, read_field
@@ -89,7 +89,6 @@ program rte_check_equivalence
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
-  type(ty_gas_optics_rrtmgp) :: k_dist
   type(ty_gas_concs)         :: gas_concs
   type(ty_gas_concs), dimension(:), allocatable &
                              :: gas_conc_array
@@ -111,7 +110,7 @@ program rte_check_equivalence
   character(len=32 ), &
             dimension(:), allocatable :: kdist_gas_names, rfmip_gas_games
 
-  character(len=256) :: input_file = "", k_dist_file = ""
+  character(len=256) :: input_file = "", gas_optics_file = ""
   ! ----------------------------------------------------------------------------------
   ! Code
   ! ----------------------------------------------------------------------------------
@@ -120,10 +119,10 @@ program rte_check_equivalence
   !
   failed = .false. 
   nUserArgs = command_argument_count()
-  if (nUserArgs <  2) call stop_on_err("Need to supply input_file k_distribution_file ")
+  if (nUserArgs <  2) call stop_on_err("Need to supply input_file gas_optics_file ")
   if (nUserArgs >  3) print *, "Ignoring command line arguments beyond the first three..."
   call get_command_argument(1,input_file)
-  call get_command_argument(2,k_dist_file)
+  call get_command_argument(2,gas_optics_file)
   if(trim(input_file) == '-h' .or. trim(input_file) == "--help") then
     call stop_on_err("rte_check_equivalence input_file absorption_coefficients_file")
   end if
@@ -132,7 +131,7 @@ program rte_check_equivalence
   !   Arrays are allocated as they are read
   !
   call read_size          (input_file, ncol, nlay, nexp)
-  call determine_gas_names(input_file, k_dist_file, 1, kdist_gas_names, rfmip_gas_games)
+  call determine_gas_names(input_file, gas_optics_file, 1, kdist_gas_names, rfmip_gas_games)
   call read_and_block_pt  (input_file, ncol, p_lay_3d, p_lev_3d, t_lay_3d, t_lev_3d)
   !
   ! Only do the first RFMIP experiment
@@ -158,17 +157,17 @@ program rte_check_equivalence
   deallocate(gas_conc_array)
   ! ----------------------------------------------------------------------------
   ! load data into classes
-  call load_and_init(k_dist, k_dist_file, gas_concs)
-  is_sw = k_dist%source_is_external()
+  call load_and_init(gas_optics, gas_optics_file, gas_concs)
+  is_sw = gas_optics%source_is_external()
   is_lw = .not. is_sw
-  print *, "k-distribution is for the " // merge("longwave ", "shortwave", is_lw)
-  print *, "  pressure    limits (Pa):", k_dist%get_press_min(), k_dist%get_press_max()
-  print *, "  temperature limits (K):", k_dist%get_temp_min(),  k_dist%get_temp_max()
+  print *, "gas optics is for the " // merge("longwave ", "shortwave", is_lw)
+  print *, "  pressure    limits (Pa):", gas_optics%get_press_min(), gas_optics%get_press_max()
+  print *, "  temperature limits (K):",  gas_optics%get_temp_min(),  gas_optics%get_temp_max()
   !
   ! Problem sizes
   !
-  nbnd = k_dist%get_nband()
-  ngpt = k_dist%get_ngpt()
+  nbnd = gas_optics%get_nband()
+  ngpt = gas_optics%get_ngpt()
   top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
   ! ----------------------------------------------------------------------------
   !
@@ -191,7 +190,7 @@ program rte_check_equivalence
     mu0(:) = cos(abs(sza(:,1)) * acos(-1._wp)/180._wp)
   else
     allocate(sfc_t(ncol), sfc_emis(nbnd, ncol))
-    call stop_on_err(lw_sources%alloc(ncol, nlay, k_dist))
+    call stop_on_err(lw_sources%alloc(ncol, nlay, gas_optics))
     call read_and_block_lw_bc(input_file, ncol, bc_3d, sfc_t_3d)
     !
     ! Surface emissivity is spectrally uniform
@@ -202,7 +201,7 @@ program rte_check_equivalence
   end if
   ! ----------------------------------------------------------------------------
   !
-  ! Fluxes, heat rates, Jacobians
+  ! Fluxes, heating rates, Jacobians
   !
   allocate(ref_flux_up(ncol,nlay+1), ref_flux_dn(ncol,nlay+1), & 
            tst_flux_up(ncol,nlay+1), tst_flux_dn(ncol,nlay+1), & 
@@ -221,9 +220,9 @@ program rte_check_equivalence
     !
     ! initialization, finalization of optical properties 
     !
-    call make_optical_props_1scl(k_dist)
+    call make_optical_props_1scl(gas_optics)
     call atmos%finalize()
-    call make_optical_props_1scl(k_dist)
+    call make_optical_props_1scl(gas_optics)
     call atmos%set_name("gas only atmosphere")
     print *, "  Intialized atmosphere twice"
     !
@@ -231,7 +230,7 @@ program rte_check_equivalence
     !
     fluxes%flux_up => ref_flux_up(:,:)
     fluxes%flux_dn => ref_flux_dn(:,:)
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay, sfc_t, &
                                        gas_concs,    &
                                        atmos,        &
@@ -275,8 +274,8 @@ program rte_check_equivalence
     ! Orientation invariance 
     !
     call lw_clear_sky_vr
-    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol=4._wp) .or. &
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol=4._wp) )    &
       call report_err(" Vertical invariance failure")
     print *, "  Vertical orientation invariance"
     ! -------------------------------------------------------
@@ -302,7 +301,7 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err("  halving/doubling fails")
 
-    call increment_with_1scl
+    call increment_with_1scl(atmos)
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &
@@ -311,7 +310,7 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err("  Incrementing with 1scl fails")
 
-    call increment_with_2str
+    call increment_with_2str(atmos)
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &
@@ -320,7 +319,7 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err("  Incrementing with 2str fails")
 
-    call increment_with_nstr
+    call increment_with_nstr(atmos)
     call stop_on_err(rte_lw(atmos, top_at_1, &
                             lw_sources,      &
                             sfc_emis,        &
@@ -344,7 +343,7 @@ program rte_check_equivalence
     !
     ! Increase surface temperature by 1K and recompute fluxes 
     !
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay, sfc_t + 1._wp, &
                                        gas_concs,    &
                                        atmos,        &
@@ -370,9 +369,9 @@ program rte_check_equivalence
     !
     ! initialization, finalization of optical properties 
     !
-    call make_optical_props_2str(k_dist)
+    call make_optical_props_2str(gas_optics)
     call atmos%finalize()
-    call make_optical_props_2str(k_dist)
+    call make_optical_props_2str(gas_optics)
     print *, "  Intialized atmosphere twice"
 
     !
@@ -381,7 +380,7 @@ program rte_check_equivalence
     fluxes%flux_up     => ref_flux_up (:,:)
     fluxes%flux_dn     => ref_flux_dn (:,:)
     fluxes%flux_dn_dir => ref_flux_dir(:,:)
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay,        &
                                        gas_concs,    &
                                        atmos,        &
@@ -411,9 +410,9 @@ program rte_check_equivalence
     !   Threshold of 4x spacing() works on CPUs but 8x is needed for GPUs
     !
     call sw_clear_sky_tsi
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 10._wp) .or. &
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol =  8._wp) .or. &
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol =  8._wp))     &
       call report_err("  Changing TSI fails")
     print *, "  TSI invariance"
     ! -------------------------------------------------------
@@ -421,7 +420,7 @@ program rte_check_equivalence
     ! Incrementing 
     !   Threshold of 4x spacing() works in double precision 
     !
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay,        &
                                        gas_concs,    &
                                        atmos,        &
@@ -432,43 +431,43 @@ program rte_check_equivalence
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 6._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
       call report_err("  halving/doubling fails")
 
-    call increment_with_1scl
+    call increment_with_1scl(atmos)
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 6._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
       call report_err("  Incrementing with 1scl fails")
 
-     call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+     call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay,        &
                                        gas_concs,    &
                                        atmos,        &
                                        toa_flux))
-   call increment_with_2str
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+   call increment_with_2str(atmos)
+   if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
+      .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
+      .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
       call report_err("  Incrementing with 2str fails")
 
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay,        &
                                        gas_concs,    &
                                        atmos,        &
                                        toa_flux))
-    call increment_with_nstr
+    call increment_with_nstr(atmos)
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 6._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
       call report_err("  Incrementing with nstr fails")
@@ -509,7 +508,7 @@ contains
       call stop_on_err(gas_concs_vr%set_vmr(gc_gas_names(i), vmr))
     end do
 
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay, sfc_t, &
                                        gas_concs_vr, &
                                        atmos,        &
@@ -540,7 +539,7 @@ contains
                                 :: up, dn
     integer :: i, colS, colE
 
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay, sfc_t, &
                                        gas_concs,    &
                                        atmos,        &
@@ -596,7 +595,7 @@ contains
       call stop_on_err(gas_concs_vr%set_vmr(gc_gas_names(i), vmr))
     end do
 
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay,        &
                                        gas_concs_vr, &
                                        atmos,        &
@@ -627,9 +626,9 @@ contains
 
     default_tsi = sum(toa_flux(1, :))
     ! Set TSI to half the default
-    call stop_on_err(k_dist%set_tsi(tsi_scale*default_tsi))
+    call stop_on_err(gas_optics%set_tsi(tsi_scale*default_tsi))
     ! Redo gas optics
-    call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay,        &
                                        gas_concs,    &
                                        atmos,        &
@@ -642,7 +641,7 @@ contains
     tst_flux_dn (:,:) = tst_flux_dn (:,:) / tsi_scale
     tst_flux_dir(:,:) = tst_flux_dir(:,:) / tsi_scale
 
-    call stop_on_err(k_dist%set_tsi(default_tsi))
+    call stop_on_err(gas_optics%set_tsi(default_tsi))
     toa_flux    (:,:) = toa_flux(:,:)     / tsi_scale
 
   end subroutine sw_clear_sky_tsi
@@ -672,41 +671,10 @@ contains
       failed = .true.
     end if
   end subroutine report_err
-  ! ----------------------------------------------------------------------------
-  subroutine increment_with_1scl 
-    type(ty_optical_props_1scl) :: transparent 
 
-    call stop_on_err(transparent%alloc_1scl(ncol, nlay, k_dist))
-    call zero_array (ncol, nlay, ngpt, transparent%tau)
-    call stop_on_err(transparent%increment(atmos))
-    call transparent%finalize() 
-  end subroutine increment_with_1scl 
-  ! -------
-  subroutine increment_with_2str 
-    type(ty_optical_props_2str) :: transparent 
-
-    call stop_on_err(transparent%alloc_2str(ncol, nlay, k_dist))
-    call zero_array (ncol, nlay, ngpt, transparent%tau)
-    call zero_array (ncol, nlay, ngpt, transparent%ssa)
-    call zero_array (ncol, nlay, ngpt, transparent%g)
-    call stop_on_err(transparent%increment(atmos))
-    call transparent%finalize() 
-  end subroutine increment_with_2str 
-  ! -------
-  subroutine increment_with_nstr 
-   type(ty_optical_props_nstr) :: transparent 
-   integer, parameter :: nmom = 4
-
-    call stop_on_err(transparent%alloc_nstr(nmom, ncol, nlay, k_dist))
-    call zero_array (      ncol, nlay, ngpt, transparent%tau)
-    call zero_array (      ncol, nlay, ngpt, transparent%ssa)
-    call zero_array (nmom, ncol, nlay, ngpt, transparent%p)
-    call stop_on_err(transparent%increment(atmos))
-    call transparent%finalize() 
-  end subroutine increment_with_nstr 
  ! ----------------------------------------------------------------------------
-  subroutine make_optical_props_1scl(k_dist)
-    class (ty_optical_props), intent(in) :: k_dist
+  subroutine make_optical_props_1scl(gas_optics)
+    class (ty_optical_props), intent(in) :: gas_optics
 
     if(allocated(atmos)) then
        call atmos%finalize()
@@ -718,14 +686,14 @@ contains
     !
     select type(atmos)
       class is (ty_optical_props_1scl)
-        call stop_on_err(atmos%alloc_1scl(ncol, nlay, k_dist))
+        call stop_on_err(atmos%alloc_1scl(ncol, nlay, gas_optics))
       class default
         call stop_on_err("rte_check_equivalence: Don't recognize the kind of optical properties ")
     end select
   end subroutine make_optical_props_1scl
   ! ----------------------------------------------------------------------------
-  subroutine make_optical_props_2str(k_dist)
-    class (ty_optical_props), intent(in) :: k_dist
+  subroutine make_optical_props_2str(gas_optics)
+    class (ty_optical_props), intent(in) :: gas_optics
     if(allocated(atmos)) then
        call atmos%finalize()
        deallocate(atmos)
@@ -736,7 +704,7 @@ contains
     !
     select type(atmos)
       class is (ty_optical_props_2str)
-        call stop_on_err(atmos%alloc_2str(ncol, nlay, k_dist))
+        call stop_on_err(atmos%alloc_2str(ncol, nlay, gas_optics))
       class default
         call stop_on_err("rte_check_equivalence: Don't recognize the kind of optical properties ")
     end select

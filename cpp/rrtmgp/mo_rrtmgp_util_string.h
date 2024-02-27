@@ -25,16 +25,18 @@ inline int string_loc_in_array(std::string str, string1d const &arr) {
 }
 
 inline bool string_in_array(std::string str, string1dv const &arr) {
+  auto lstr = lower_case(str);
   for (const auto& item : arr) {
-    if ( lower_case(str) == lower_case(item) ) { return true; }
+    if ( lstr == lower_case(item) ) { return true; }
   }
   return false;
 }
 
 
 inline int string_loc_in_array(std::string str, string1dv const &arr) {
+  auto lstr = lower_case(str);
   for (int i=0; i < arr.size(); i++) {
-    if ( lower_case(str) == lower_case(arr[i]) ) { return i; } // Note: 0-based
+    if ( lstr == lower_case(arr[i]) ) { return i; } // Note: 0-based
   }
   return -1;
 }

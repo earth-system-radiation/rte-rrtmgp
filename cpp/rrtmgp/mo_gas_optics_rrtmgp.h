@@ -1369,7 +1369,7 @@ public:
     int nm = minor_gases_atm.size();  // Size of the larger list of minor gases
     int tot_g = 0;
     int red_nm = 0;                    // Reduced number of minor gasses (only the ones we need)
-    boolHost1d gas_is_present("gas_is_present",nm);   // Determines whether a gas in the list is needed
+    boolHost1dk gas_is_present("gas_is_present",nm);   // Determines whether a gas in the list is needed
     // Determine the gasses needed
     for (int i=0; i < nm; i++) {
       int idx_mnr = string_loc_in_array(minor_gases_atm[i], identifier_minor);
@@ -1614,11 +1614,11 @@ public:
         vmr_ref_red(j,0,k) = vmr_ref(j,0,k);
       }
     }
-    for (int i=1 ; i <= ngas ; i++) {
+    for (int i=0 ; i < ngas ; i++) {
       int idx = string_loc_in_array(this->gas_names[i], gas_names);
       for (int k=0 ; k < vmr_e2 ; k++) {
         for (int j=0 ; j < vmr_e0 ; j++) {
-          vmr_ref_red(j,i,k) = vmr_ref(j,idx,k);
+          vmr_ref_red(j,i+1,k) = vmr_ref(j,idx+1,k);
         }
       }
     }

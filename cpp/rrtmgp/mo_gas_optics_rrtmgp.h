@@ -1489,10 +1489,9 @@ public:
     int i = 0;
     intHost2dk key_species_list("key_species_list", 2, key_species.extent(2)*2);
     for (int ibnd=0 ; ibnd < key_species.extent(2) ; ibnd++) {
-      for (int iatm=0 ; iatm < key_species.extent(0) ; iatm++) {
+      for (int iatm=0 ; iatm < key_species.extent(0) ; iatm++, i++) {
         key_species_list(0,i) = key_species(0,iatm,ibnd);
         key_species_list(1,i) = key_species(1,iatm,ibnd);
-        i = i + 1;
       }
     }
     // rewrite single key_species pairs
@@ -1507,27 +1506,29 @@ public:
     for (int i=0; i < key_species_list.extent(1) ; i++) {
       // Loop through previous pairs. Only increment iflavor if we haven't seen this pair before
       bool unique = true;
-      for (int j=0; j < i-1 ; j++) {
+      for (int j=0; j <= i-1 ; j++) {
         if ( key_species_list(0,j) == key_species_list(0,i) && key_species_list(1,j) == key_species_list(1,i) ) {
           unique = false;
+          break;
         }
       }
-      if (unique) { iflavor = iflavor + 1; }
+      if (unique) { ++iflavor; }
     }
     // fill flavors
     flavor = intHost2dk("flavor",2,iflavor);
     iflavor = 0;
     for (int i=0 ; i < key_species_list.extent(1) ; i++) {
       bool unique = true;
-      for (int j=0; j < i-1 ; j++) {
+      for (int j=0; j <= i-1 ; j++) {
         if ( key_species_list(0,j) == key_species_list(0,i) && key_species_list(1,j) == key_species_list(1,i) ) {
           unique = false;
+          break;
         }
       }
       if (unique) {
-        iflavor = iflavor + 1;
         flavor(0,iflavor) = key_species_list(0,i);
         flavor(1,iflavor) = key_species_list(1,i);
+        ++iflavor;
       }
     }
   }
@@ -2348,6 +2349,8 @@ public:
 
   void validate_kokkos(const GasOpticsRRTMGP& orig) const
   {
+    OpticalPropsK::validate_kokkos(orig);
+
     conv::compare_yakl_to_kokkos(orig.press_ref, press_ref);
     conv::compare_yakl_to_kokkos(orig.press_ref_log, press_ref_log);
     conv::compare_yakl_to_kokkos(orig.temp_ref, temp_ref);
@@ -2368,7 +2371,7 @@ public:
     conv::compare_yakl_to_kokkos(orig.vmr_ref, vmr_ref);
 
     conv::compare_yakl_to_kokkos(orig.flavor, flavor);
-    conv::compare_yakl_to_kokkos(orig.gpoint_flavor, gpoint_flavor);
+    conv::compare_yakl_to_kokkos(orig.gpoint_flavor, gpoint_flavor, true /*idx data*/);
 
     conv::compare_yakl_to_kokkos(orig.kmajor, kmajor);
 

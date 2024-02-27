@@ -48,7 +48,7 @@ Layout get_layout(const Container& dims)
 }
 
 template <typename YArray, typename KView>
-void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview)
+void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index_data=false)
 {
   using yakl::intrinsics::size;
 
@@ -69,7 +69,7 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview)
   for (auto i = 0; i < total_size; ++i) {
     const auto kdata = hkview.data()[i];
     const auto ydata = yarray.data()[i];
-    RRT_REQUIRE(kdata == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
+    RRT_REQUIRE((kdata + (index_data ? 1 : 0)) == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
   }
 }
 

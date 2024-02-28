@@ -432,6 +432,7 @@ public:
     using yakl::fortran::SimpleBounds;
 
     OpticalProps::init(band_lims_wavenum.createDeviceCopy(), band2gpt.createDeviceCopy());
+
     // Which gases known to the gas optics are present in the host model (available_gases)?
     int ngas = size(gas_names,1);
     boolHost1d gas_is_present("gas_is_present",ngas);
@@ -2382,10 +2383,10 @@ public:
     conv::compare_yakl_to_kokkos(orig.minor_scales_with_density_upper, minor_scales_with_density_upper);
     conv::compare_yakl_to_kokkos(orig.scale_by_complement_lower, scale_by_complement_lower);
     conv::compare_yakl_to_kokkos(orig.scale_by_complement_upper, scale_by_complement_upper);
-    conv::compare_yakl_to_kokkos(orig.idx_minor_lower, idx_minor_lower);
-    conv::compare_yakl_to_kokkos(orig.idx_minor_upper, idx_minor_upper);
-    conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_lower, idx_minor_scaling_lower);
-    conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_upper, idx_minor_scaling_upper);
+    conv::compare_yakl_to_kokkos(orig.idx_minor_lower, idx_minor_lower, true);
+    conv::compare_yakl_to_kokkos(orig.idx_minor_upper, idx_minor_upper, true);
+    conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_lower, idx_minor_scaling_lower, true);
+    conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_upper, idx_minor_scaling_upper, true);
 
     conv::compare_yakl_to_kokkos(orig.kminor_start_lower, kminor_start_lower);
     conv::compare_yakl_to_kokkos(orig.kminor_start_upper, kminor_start_upper);

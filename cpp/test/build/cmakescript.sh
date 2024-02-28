@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 
 savedir=`pwd`
 cd ${YAKLHOME}
@@ -12,6 +12,8 @@ $this_dir/cmakeclean.sh
 
 # Configure new build. This will pass along arguments to this script
 # to CMake so you can set things like CMAKE_BUILD_TYPE easily.
+# Example:
+#  $path_to_build/cmakescript.sh -DRRTMGP_ENABLE_KOKKOS=On -DCMAKE_BUILD_TYPE=Debug
 cmake                                          \
   $@                                           \
   -DYAKL_CXX_FLAGS="${YAKL_CXX_FLAGS}"         \

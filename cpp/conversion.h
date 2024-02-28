@@ -69,7 +69,7 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index
   for (auto i = 0; i < total_size; ++i) {
     const auto kdata = hkview.data()[i];
     const auto ydata = yarray.data()[i];
-    RRT_REQUIRE((kdata + (index_data ? 1 : 0)) == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
+    RRT_REQUIRE((kdata + ( (index_data && (kdata != -1)) ? 1 : 0)) == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
   }
 }
 
@@ -113,7 +113,7 @@ auto to_yakl(const KView& view)
     dims[i] = view.extent(i);
   }
   yarray_t rv(view.name(), dims);
-  Kokkos::parallel_for( Kokkos::RangePolicy(exe_space_t(), 0, view.size()),
+  Kokkos::parallel_for( Kokkos::RangePolicy<exe_space_t>(0, view.size()),
                         KOKKOS_LAMBDA(size_t i) {
     rv.data()[i] = view.data()[i];
   });
@@ -140,7 +140,7 @@ bool any(const KView& view, const Functor& functor)
 
   bool rv = false;
   Kokkos::parallel_reduce(
-    Kokkos::RangePolicy(exe_space_t(), 0, view.size()),
+    Kokkos::RangePolicy<exe_space_t>(0, view.size()),
     KOKKOS_LAMBDA(size_t i, bool& val) {
       val = functor(view.data()[i]);
     }, Kokkos::BOr<bool>(rv));
@@ -156,7 +156,7 @@ auto maxval(const KView& view)
 
   scalar_t rv;
   Kokkos::parallel_reduce(
-    Kokkos::RangePolicy(exe_space_t(), 0, view.size()),
+    Kokkos::RangePolicy<exe_space_t>(0, view.size()),
     KOKKOS_LAMBDA(size_t i, scalar_t& lmax) {
       const scalar_t val = view.data()[i];
       if (val > lmax) lmax = val;
@@ -172,7 +172,7 @@ auto sum(const KView& view)
 
   scalar_t rv;
   Kokkos::parallel_reduce(
-    Kokkos::RangePolicy(exe_space_t(), 0, view.size()),
+    Kokkos::RangePolicy<exe_space_t>(0, view.size()),
     KOKKOS_LAMBDA(size_t i, scalar_t& lsum) {
       lsum += view.data()[i];
     }, Kokkos::Sum<scalar_t>(rv));

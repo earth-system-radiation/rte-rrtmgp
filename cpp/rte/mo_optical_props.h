@@ -294,7 +294,7 @@ public:
     Kokkos::parallel_for(1, KOKKOS_LAMBDA(int dummy) {
       for (int iband=0; iband < band_lims_gpt_lcl.extent(1); iband++) {
         for (int i=band_lims_gpt_lcl(0,iband); i <= band_lims_gpt_lcl(1,iband); i++) {
-          this->gpt2band(i) = iband;
+          this->gpt2band(i-1) = iband;
         }
       }
     });

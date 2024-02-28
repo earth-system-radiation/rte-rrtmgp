@@ -1418,14 +1418,14 @@ public:
       for (int i=0 ; i < nm ; i++) {
         int ng = minor_limits_gpt_atm(1,i)-minor_limits_gpt_atm(0,i)+1;
         if (gas_is_present(i)) {
-          slot = slot + 1;
+          ++slot;
           minor_limits_gpt_atm_red   (0,slot) = minor_limits_gpt_atm(0,i);
           minor_limits_gpt_atm_red   (1,slot) = minor_limits_gpt_atm(1,i);
           kminor_start_atm_red         (slot) = kminor_start_atm(i)-n_elim;
           for (int l=0 ; l < kminor_atm.extent(2); l++ ) {
             for (int k=0 ; k < kminor_atm.extent(1) ; k++ ) {
-              for (int j=0 ; j < ng ; j++) {
-                kminor_atm_red(kminor_start_atm_red(slot)+j,k,l) = kminor_atm(kminor_start_atm(i)+j,k,l);
+              for (int j=1 ; j <= ng ; j++) {
+                kminor_atm_red(kminor_start_atm_red(slot)+j-2,k,l) = kminor_atm(kminor_start_atm(i)+j-2,k,l);
               }
             }
           }
@@ -1790,8 +1790,8 @@ public:
     this->is_key = bool1dk("is_key",this->get_ngas());
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
-    Kokkos::parallel_for( MDRangeP2<>( {0, 0}, {this->flavor.extent(1), this->flavor.extent(0)} ) , KOKKOS_LAMBDA (int j, int i) {
-      if (this->flavor(i,j) != 0) { this->is_key(this->flavor(i,j)) = true; }
+    Kokkos::parallel_for( MDRangeP2<>( {0, 0}, {this->flavor.extent(0), this->flavor.extent(1)} ) , KOKKOS_LAMBDA (int i, int j) {
+      if (this->flavor(i,j) != 0) { this->is_key(this->flavor(i,j)-1) = true; }
     });
   }
 

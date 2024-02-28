@@ -97,7 +97,6 @@ jobs:
       run: |
         $FC --version
         make -j8 libs
-        make -j8 -C build separate-libs
     #
     # Run examples and tests (expect success)
     #

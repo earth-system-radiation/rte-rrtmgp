@@ -93,7 +93,6 @@ setup-python:
     #
     - ${FC} ${VERSION_FCFLAGS}
     - make -j8 libs
-    - make -j8 -C build separate-libs
     #
     # Check out data
     #

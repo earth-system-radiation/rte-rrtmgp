@@ -3,7 +3,7 @@
 
 #include "rrtmgp_const.h"
 #include "mo_rrtmgp_util_string.h"
-#include "conversion.h"
+#include "rrtmgp_conversion.h"
 
 #include <vector>
 #include <string>
@@ -291,10 +291,8 @@ public:
     }
     if (w < 0. || w > 1.) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     auto this_concs = this->concs;
-    Kokkos::parallel_for(nlay, KOKKOS_LAMBDA(int ilay) {
-      for (int icol = 0; icol < ncol; ++icol) {
-        this_concs(icol, ilay, igas-1) = w;
-      }
+    Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+      this_concs(icol, ilay, igas-1) = w;
     });
   }
 
@@ -316,10 +314,8 @@ public:
       if (badVal) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     auto this_concs = this->concs;
-    Kokkos::parallel_for(nlay, KOKKOS_LAMBDA(int ilay) {
-      for (int icol = 0; icol < ncol; ++icol) {
-        this_concs(icol, ilay, igas-1) = w(ilay);
-      }
+    Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+      this_concs(icol, ilay, igas-1) = w(ilay);
     });
   }
 
@@ -348,10 +344,8 @@ public:
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     auto this_concs = this->concs;
-    Kokkos::parallel_for(nlay, KOKKOS_LAMBDA(int ilay) {
-      for (int icol = 0; icol < ncol; ++icol) {
-        this_concs(icol, ilay, igas-1) = w(icol+1, ilay+1);
-      }
+    Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+      this_concs(icol, ilay, igas-1) = w(icol+1, ilay+1);
     });
   }
 

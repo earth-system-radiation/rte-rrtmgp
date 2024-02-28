@@ -2,7 +2,7 @@
 #pragma once
 
 #include "rrtmgp_const.h"
-#include "conversion.h"
+#include "rrtmgp_conversion.h"
 #include "mo_optical_props_kernels.h"
 
 // Base class for optical properties

@@ -1,6 +1,6 @@
 
 #include "mo_garand_atmos_io.h"
-#include "conversion.h"
+#include "rrtmgp_conversion.h"
 
 void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_lev, real2d &t_lev,
                 GasConcs &gas_concs, real2d &col_dry, int ncol) {
@@ -90,8 +90,6 @@ void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_
 #ifdef RRTMGP_ENABLE_KOKKOS
 void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk &p_lev, real2dk &t_lev,
                 GasConcsK &gas_concs, real2dk &col_dry, int ncol) {
-  using Kokkos::parallel_for;
-
   conv::SimpleNetCDF io;
   io.open(input_file , conv::NETCDF_MODE_READ);
 
@@ -106,31 +104,23 @@ void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk 
   real2dk tmp2d;
   // p_lay
   io.read(tmp2d,"p_lay");
-  parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
-    for (int ilay=0 ; ilay < nlay ; ++ilay) {
-      p_lay(icol,ilay) = tmp2d(0,ilay);
-    }
+  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+    p_lay(icol,ilay) = tmp2d(0,ilay);
   });
   // t_lay
   io.read(tmp2d,"t_lay");
-  parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
-    for (int ilay=0 ; ilay < nlay ; ++ilay) {
-      t_lay(icol,ilay) = tmp2d(0,ilay);
-    }
+  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+    t_lay(icol,ilay) = tmp2d(0,ilay);
   });
   // p_lev
   io.read(tmp2d,"p_lev");
-  parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
-    for (int ilev=0 ; ilev < nlev ; ++ilev) {
-      p_lev(icol,ilev) = tmp2d(0,ilev);
-    }
+  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
+    p_lev(icol,ilev) = tmp2d(0,ilev);
   });
   // t_lev
   io.read(tmp2d,"t_lev");
-  parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
-    for (int ilev=0 ; ilev < nlev ; ++ilev) {
-      t_lev(icol,ilev) = tmp2d(0,ilev);
-    }
+  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
+    t_lev(icol,ilev) = tmp2d(0,ilev);
   });
 
   int ngas = 8;
@@ -149,7 +139,7 @@ void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk 
     io.read(tmp2d,vmr_name);
     // Create 1-D variable with just the first column
     real1dk tmp1d("tmp1d",nlay);
-    parallel_for( nlay, KOKKOS_LAMBDA (int i) {
+    Kokkos::parallel_for( nlay, KOKKOS_LAMBDA (int i) {
       tmp1d(i) = tmp2d(0,i);
     });
     // Call set_vmr with only the first column from the data file copied among all of the model columns
@@ -160,10 +150,8 @@ void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk 
     col_dry = real2dk("col_dry",ncol,nlay);
     tmp2d = real2dk();     // Reset the tmp2d variable
     io.read(tmp2d,"col_dry");
-    parallel_for( nlay, KOKKOS_LAMBDA( int ilay) {
-      for (int icol = 0; icol < ncol; ++icol) {
-        col_dry(icol,ilay) = tmp2d(0,ilay);
-      }
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+      col_dry(icol,ilay) = tmp2d(0,ilay);
     });
   }
 

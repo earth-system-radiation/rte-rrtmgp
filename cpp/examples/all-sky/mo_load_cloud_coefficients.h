@@ -6,11 +6,12 @@
 #include "mo_cloud_optics.h"
 #include "YAKL_netcdf.h"
 
-
 void load_cld_lutcoeff(CloudOptics &cloud_spec, std::string cld_coeff_file);
-
 
 void load_cld_padecoeff(CloudOptics &cloud_spec, std::string cld_coeff_file);
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+void load_cld_lutcoeff(CloudOpticsK &cloud_spec, std::string cld_coeff_file);
 
-
+void load_cld_padecoeff(CloudOpticsK &cloud_spec, std::string cld_coeff_file);
+#endif

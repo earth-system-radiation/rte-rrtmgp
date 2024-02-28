@@ -1790,7 +1790,7 @@ public:
     this->is_key = bool1dk("is_key",this->get_ngas());
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
-    Kokkos::parallel_for( MDRangeP2<>( {0, 0}, {this->flavor.extent(0), this->flavor.extent(1)} ) , KOKKOS_LAMBDA (int i, int j) {
+    Kokkos::parallel_for( MDRangeP<2>( {0, 0}, {this->flavor.extent(0), this->flavor.extent(1)} ) , KOKKOS_LAMBDA (int i, int j) {
       if (this->flavor(i,j) != 0) { this->is_key(this->flavor(i,j)-1) = true; }
     });
   }

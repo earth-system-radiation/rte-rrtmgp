@@ -358,15 +358,12 @@ public:
   }
 #endif
 
-#if 0 // not yet converted
   // The first and last g-point of all bands at once;  dimension (2, nbands)
-  int2d get_band_lims_gpoint() const { return this->band2gpt; }
-
+  int2dk get_band_lims_gpoint() const { return this->band2gpt; }
 
   // Lower and upper wavenumber of all bands
   // (upper and lower wavenumber by band) = band_lims_wvn(2,band)
-  real2d get_band_lims_wavenumber() const { return this->band_lims_wvn; }
-#endif
+  real2dk get_band_lims_wavenumber() const { return this->band_lims_wvn; }
 
 #if 0 // Not converting these since they are unused
   // Lower and upper wavelength of all bands
@@ -393,35 +390,17 @@ public:
 #endif
 
   // Are the bands of two objects the same? (same number, same wavelength limits)
-#if 0 // not yet converted
   bool bands_are_equal(OpticalPropsK const &rhs) const {
-    using yakl::intrinsics::size;
-    using yakl::intrinsics::epsilon;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
-    // if ( this->get_nband() != rhs.get_nband() || this->get_nband() == 0) { return false; }
-    // yakl::ScalarLiveOut<bool> ret(true);
-    // // for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
-    // //   for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
-    // auto &this_band_lims_wvn = this->band_lims_wvn;
-    // auto &rhs_band_lims_wvn  = rhs.band_lims_wvn;
-    // parallel_for( YAKL_AUTO_LABEL() , Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-    //   if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
-    //     ret = false;
-    //   }
-    // });
-    // return ret.hostRead();
-
-
     // This is working around an issue that arises in E3SM's rrtmgpxx integration.
     // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
     bool ret = true;
-    auto this_band_lims_wvn = this->band_lims_wvn.createHostCopy();
-    auto rhs_band_lims_wvn  = rhs.band_lims_wvn  .createHostCopy();
-    for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
-      for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
-        if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
+    auto this_band_lims_wvn = Kokkos::create_mirror_view(this->band_lims_wvn);
+    auto rhs_band_lims_wvn  = Kokkos::create_mirror_view(rhs.band_lims_wvn);
+    Kokkos::deep_copy(this_band_lims_wvn, this->band_lims_wvn);
+    Kokkos::deep_copy(rhs_band_lims_wvn, rhs.band_lims_wvn);
+    for (int j=0 ; j < this->band_lims_wvn.extent(1); j++) {
+      for (int i=0 ; i < this->band_lims_wvn.extent(0); i++) {
+        if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*conv::epsilon(this_band_lims_wvn) ) {
           ret = false;
         }
       }
@@ -432,32 +411,20 @@ public:
   // Is the g-point structure of two objects the same?
   //   (same bands, same number of g-points, same mapping between bands and g-points)
   bool gpoints_are_equal(OpticalPropsK const &rhs) const {
-    using yakl::intrinsics::size;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
     if ( ! this->bands_are_equal(rhs) || this->get_ngpt() != rhs.get_ngpt() ) { return false; }
-    // yakl::ScalarLiveOut<bool> ret(true);
-    // // for (int i=1; i <= size(this->gpt2bnd,1); i++) {
-    // auto &this_gpt2band = this->gpt2band;
-    // auto &rhs_gpt2band  = rhs.gpt2band;
-    // parallel_for( YAKL_AUTO_LABEL() , Bounds<1>(size(this->gpt2band,1)) , YAKL_LAMBDA (int i) {
-    //   if ( this_gpt2band(i) != rhs_gpt2band(i) ) { ret = false; }
-    // });
-    // return ret.hostRead();
-
 
     // This is working around an issue that arises in E3SM's rrtmgpxx integration.
     // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
     bool ret = true;
-    auto this_gpt2band = this->gpt2band.createHostCopy();
-    auto rhs_gpt2band  = rhs.gpt2band  .createHostCopy();
-    for (int i=1; i <= size(this->gpt2band,1); i++) {
+    auto this_gpt2band = Kokkos::create_mirror_view(this->gpt2band);
+    auto rhs_gpt2band  = Kokkos::create_mirror_view(rhs.gpt2band);
+    Kokkos::deep_copy(this_gpt2band, this->gpt2band);
+    Kokkos::deep_copy(rhs_gpt2band, rhs.gpt2band);
+    for (int i=0; i < this->gpt2band.extent(0); i++) {
       if ( this_gpt2band(i) != rhs_gpt2band(i) ) { ret = false; }
     }
     return ret;
   }
-#endif
 
 
   // Expand an array of dimension arr_in(nband) to dimension arr_out(ngpt)
@@ -500,13 +467,22 @@ public:
   int get_ncol() const { if (yakl::intrinsics::allocated(tau)) { return yakl::intrinsics::size(this->tau,1); } else { return 0; } }
   int get_nlay() const { if (yakl::intrinsics::allocated(tau)) { return yakl::intrinsics::size(this->tau,2); } else { return 0; } }
 };
+#ifdef RRTMGP_ENABLE_KOKKOS
+class OpticalPropsArryK : public OpticalPropsK {
+public:
+  real3dk tau; // optical depth (ncol, nlay, ngpt)
 
+  int get_ncol() const { if (tau.is_allocated()) { return this->tau.extent(0); } else { return 0; } }
+  int get_nlay() const { if (tau.is_allocated()) { return this->tau.extent(1); } else { return 0; } }
+};
+#endif
 
 
 // We need to know about 2str's existence because it is referenced in 1scl
 class OpticalProps2str;
-
-
+#ifdef RRTMGP_ENABLE_KOKKOS
+class OpticalProps2strK;
+#endif
 
 // Not implementing get_subset because it isn't used
 class OpticalProps1scl : public OpticalPropsArry {
@@ -581,6 +557,67 @@ public:
 
 };
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+class OpticalProps1sclK : public OpticalPropsArryK {
+public:
+  void validate() const {
+    if (!this->tau.is_allocated()) { stoprun("validate: tau not allocated/initialized"); }
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+    if (conv::any(this->tau, conv::LTFunc<real>(0.))) { stoprun("validate: tau values out of range"); }
+    #endif
+  }
+
+  void delta_scale(real3dk const &dummy) const { }
+
+  void alloc_1scl(int ncol, int nlay) {
+    if (! this->is_initialized()) { stoprun("OpticalProps1scl::alloc_1scl: spectral discretization hasn't been provided"); }
+    if (ncol <= 0 || nlay <= 0) { stoprun("OpticalProps1scl::alloc_1scl: must provide > 0 extents for ncol, nlay"); }
+    this->tau = real3dk("tau",ncol,nlay,this->get_ngpt());
+    Kokkos::deep_copy(tau, 0);
+  }
+
+  // Initialization by specifying band limits and possibly g-point/band mapping
+  void alloc_1scl(int ncol, int nlay, real2dk const &band_lims_wvn, int2dk const &band_lims_gpt=int2dk(), std::string name="") {
+    this->init(band_lims_wvn, band_lims_gpt, name);
+    this->alloc_1scl(ncol, nlay);
+  }
+
+  void alloc_1scl(int ncol, int nlay, OpticalPropsK const &opIn, std::string name="") {
+    if (this->is_initialized()) { this->finalize(); }
+    this->init(opIn.get_band_lims_wavenumber(), opIn.get_band_lims_gpoint(), name);
+    this->alloc_1scl(ncol, nlay);
+  }
+
+  void increment(OpticalProps1sclK &that) {
+    if (! this->bands_are_equal(that)) { stoprun("OpticalProps::increment: optical properties objects have different band structures"); }
+    int ncol = that.get_ncol();
+    int nlay = that.get_nlay();
+    int ngpt = that.get_ngpt();
+    if (this->gpoints_are_equal(that)) {
+      increment_1scalar_by_1scalar(ncol, nlay, ngpt, that.tau, this->tau);
+    } else {
+      if (this->get_ngpt() != that.get_nband()) {
+        stoprun("OpticalProps::increment: optical properties objects have incompatible g-point structures");
+      }
+      inc_1scalar_by_1scalar_bybnd(ncol, nlay, ngpt, that.tau, this->tau, that.get_nband(), that.get_band_lims_gpoint());
+    }
+  }
+
+  // Implemented later because OpticalProps2str hasn't been created yet
+  inline void increment(OpticalProps2strK &that);
+
+#if 0
+  void print_norms() const {
+                                    std::cout << "name         : " << name               << "\n";
+    if (allocated(band2gpt     )) { std::cout << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
+    if (allocated(gpt2band     )) { std::cout << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
+    if (allocated(band_lims_wvn)) { std::cout << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
+    if (allocated(tau          )) { std::cout << "tau          : " << sum(tau          ) << "\n"; }
+  }
+#endif
+
+};
+#endif
 
 
 // Not implementing get_subset because it isn't used

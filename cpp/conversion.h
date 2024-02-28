@@ -13,6 +13,18 @@
 
 namespace conv {
 
+
+// Copied with minor mods from YAKL intrinsics
+template <class T,
+          typename std::enable_if<!Kokkos::is_view<T>::value>::type* = nullptr>
+KOKKOS_INLINE_FUNCTION
+T constexpr epsilon(T) { return std::numeric_limits<T>::epsilon(); }
+
+template <class View,
+          typename std::enable_if<Kokkos::is_view<View>::value>::type* = nullptr>
+KOKKOS_INLINE_FUNCTION
+typename View::non_const_value_type constexpr epsilon(const View& arr) { return std::numeric_limits<typename View::non_const_value_type>::epsilon(); }
+
 // Copied from EKAT
 #define IMPL_THROW_RRT(condition, msg, exception_type)    \
 do {                                                      \

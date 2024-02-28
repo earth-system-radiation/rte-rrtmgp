@@ -14,8 +14,6 @@ LIBS      += -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
-LDFLAGS   += -L$(RRTMGP_BUILD)
-LIBS      += -lrte -lrrtmgp
 LIBS      += -lnetcdff -lnetcdf
 #
 # Include libraries needed for CUDA kernels 

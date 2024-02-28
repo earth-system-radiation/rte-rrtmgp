@@ -378,11 +378,12 @@ int main(int argc , char **argv) {
       Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && mod(icol+1, 3) != 0;
         // Ice and liquid will overlap in a few layers
-        lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay(icol,ilay) > 263.);
-        iwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay(icol,ilay) < 273.);
+        lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);
+        iwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) < 273.);
         rel_k(icol,ilay) = merge(rel_val, 0., lwp_k(icol,ilay) > 0.);
         rei_k(icol,ilay) = merge(rei_val, 0., iwp_k(icol,ilay) > 0.);
       });
+      conv::compare_yakl_to_kokkos(cloud_mask, cloud_mask_k);
       conv::compare_yakl_to_kokkos(lwp, lwp_k);
       conv::compare_yakl_to_kokkos(iwp, iwp_k);
       conv::compare_yakl_to_kokkos(rel, rel_k);
@@ -396,6 +397,11 @@ int main(int argc , char **argv) {
         yakl::timer_start("longwave");
 
         cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
+#ifdef RRTMGP_ENABLE_KOKKOS
+        cloud_optics_k.cloud_optics(ncol, nlay, lwp_k, iwp_k, rel_k, rei_k, clouds_k);
+        cloud_optics_k.validate_kokkos(cloud_optics);
+        clouds_k.validate_kokkos(clouds);
+#endif
 
         // Solvers
         FluxesByband fluxes;
@@ -405,6 +411,15 @@ int main(int argc , char **argv) {
         fluxes.bnd_flux_up = bnd_flux_up;
         fluxes.bnd_flux_dn = bnd_flux_dn;
         fluxes.bnd_flux_net= bnd_flux_net;
+#ifdef RRTMGP_ENABLE_KOKKOS
+        FluxesBybandK fluxes_k;
+        fluxes_k.flux_up = flux_up_k;
+        fluxes_k.flux_dn = flux_dn_k;
+        fluxes_k.flux_net= flux_net_k;
+        fluxes_k.bnd_flux_up = bnd_flux_up_k;
+        fluxes_k.bnd_flux_dn = bnd_flux_dn_k;
+        fluxes_k.bnd_flux_net= bnd_flux_net_k;
+#endif
 
         // Calling with an empty col_dry parameter
         k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay, t_sfc, gas_concs, atmos, lw_sources, real2d(), t_lev);

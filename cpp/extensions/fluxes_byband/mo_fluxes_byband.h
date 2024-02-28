@@ -40,5 +40,49 @@ class FluxesByband : public FluxesBroadband {
             }
         }
     }
-    
+
 };
+
+#ifdef RRTMGP_ENABLE_KOKKOS
+class FluxesBybandK : public FluxesBroadbandK {
+public:
+  real3dk bnd_flux_up;
+  real3dk bnd_flux_dn;
+  real3dk bnd_flux_dn_dir;
+  real3dk bnd_flux_net;
+
+  void reduce(real3dk const &gpt_flux_up, const real3dk &gpt_flux_dn, OpticalPropsK const &spectral_disc,
+              bool top_at_1, real3dk const &gpt_flux_dn_dir=real3dk()) {
+    int ncol = gpt_flux_up.extent(0);
+    int nlev = gpt_flux_up.extent(1);
+    int ngpt = gpt_flux_up.extent(2);
+    int nbnd = this->bnd_flux_up.extent(2);
+
+    // Base clase reduce
+    FluxesBroadbandK::reduce(gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir);
+    // Reduce byband fluxes
+    auto band2gpt = spectral_disc.band2gpt;
+    if (this->bnd_flux_up.is_allocated()    ) { sum_byband(ncol, nlev, ngpt, nbnd, band2gpt, gpt_flux_up,     this->bnd_flux_up    ); }
+    if (this->bnd_flux_dn.is_allocated()    ) { sum_byband(ncol, nlev, ngpt, nbnd, band2gpt, gpt_flux_dn,     this->bnd_flux_dn    ); }
+    if (this->bnd_flux_dn_dir.is_allocated()) { sum_byband(ncol, nlev, ngpt, nbnd, band2gpt, gpt_flux_dn_dir, this->bnd_flux_dn_dir); }
+    // Compute net fluxes
+    if (this->bnd_flux_net.is_allocated()) {
+      if (this->bnd_flux_dn.is_allocated() && this->bnd_flux_up.is_allocated()) {
+        net_byband(ncol, nlev, nbnd, this->bnd_flux_dn, this->bnd_flux_up, this->bnd_flux_net);
+      } else {
+        stoprun("reduce: bnd_flux_net requested but bnd_flux_dn or bnd_flux_up not allocated.");
+      }
+    }
+  }
+
+  void validate_kokkos(const FluxesByband& orig)
+  {
+    FluxesBroadbandK::validate_kokkos(orig);
+
+    conv::compare_yakl_to_kokkos(orig.bnd_flux_up, bnd_flux_up);
+    conv::compare_yakl_to_kokkos(orig.bnd_flux_dn, bnd_flux_dn);
+    conv::compare_yakl_to_kokkos(orig.bnd_flux_dn_dir, bnd_flux_dn_dir);
+    conv::compare_yakl_to_kokkos(orig.bnd_flux_net, bnd_flux_net);
+  }
+};
+#endif

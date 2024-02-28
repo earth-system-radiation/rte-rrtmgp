@@ -760,7 +760,6 @@ public:
   }
 
 
-#if 0
   // Derive cloud optical properties from provided cloud physical properties
   // Compute single-scattering properties
   template <class T>  // T is a template for a child class of OpticalPropsArry
@@ -768,7 +767,7 @@ public:
 
     int nbnd = this->get_nband();
     // Error checking
-    if (! (allocated(this->lut_extliq) || allocated(this->pade_extliq))) { stoprun("cloud optics: no data has been initialized"); }
+    if (! (this->lut_extliq.is_allocated() || this->pade_extliq.is_allocated())) { stoprun("cloud optics: no data has been initialized"); }
     // Array sizes
     bool2dk liqmsk("liqmsk",ncol, nlay);
     bool2dk icemsk("icemsk",ncol, nlay);
@@ -782,7 +781,7 @@ public:
     // Cloud masks; don't need value re values if there's no cloud
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
       liqmsk(icol,ilay) = clwp(icol,ilay) > 0.;
       icemsk(icol,ilay) = ciwp(icol,ilay) > 0.;
     });
@@ -813,29 +812,29 @@ public:
     real3dk itau    ("itau    ",clwp.extent(0), clwp.extent(1), this->get_nband());
     real3dk itaussa ("itaussa ",clwp.extent(0), clwp.extent(1), this->get_nband());
     real3dk itaussag("itaussag",clwp.extent(0), clwp.extent(1), this->get_nband());
-    if (allocated(this->lut_extliq)) {
+    if (this->lut_extliq.is_allocated()) {
       // Liquid
       compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq, this->liq_nsteps,this->liq_step_size,this->radliq_lwr,
                              this->lut_extliq, this->lut_ssaliq, this->lut_asyliq, ltau, ltaussa, ltaussag);
       // Ice
       compute_all_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, this->ice_nsteps,this->ice_step_size,this->radice_lwr,
-                             this->lut_extice.slice<2>(COLON,COLON,this->icergh),
-                             this->lut_ssaice.slice<2>(COLON,COLON,this->icergh),
-                             this->lut_asyice.slice<2>(COLON,COLON,this->icergh),
+                             Kokkos::subview(this->lut_extice, Kokkos::ALL, Kokkos::ALL, this->icergh),
+                             Kokkos::subview(this->lut_ssaice, Kokkos::ALL, Kokkos::ALL, this->icergh),
+                             Kokkos::subview(this->lut_asyice, Kokkos::ALL, Kokkos::ALL, this->icergh),
                              itau, itaussa, itaussag);
     } else {
       // Cloud optical properties from Pade coefficient method
       //   Hard coded assumptions: order of approximants, three size regimes
-      int nsizereg = size(this->pade_extliq,2);
+      int nsizereg = this->pade_extliq.extent(1);
       compute_all_from_pade(ncol, nlay, nbnd, nsizereg, liqmsk, clwp, reliq,
                             2, 3, this->pade_sizreg_extliq, this->pade_extliq,
                             2, 2, this->pade_sizreg_ssaliq, this->pade_ssaliq,
                             2, 2, this->pade_sizreg_asyliq, this->pade_asyliq,
                             ltau, ltaussa, ltaussag);
       compute_all_from_pade(ncol, nlay, nbnd, nsizereg, icemsk, ciwp, reice,
-                           2, 3, this->pade_sizreg_extice, this->pade_extice.slice<3>(COLON,COLON,COLON,this->icergh),
-                           2, 2, this->pade_sizreg_ssaice, this->pade_ssaice.slice<3>(COLON,COLON,COLON,this->icergh),
-                           2, 2, this->pade_sizreg_asyice, this->pade_asyice.slice<3>(COLON,COLON,COLON,this->icergh),
+                            2, 3, this->pade_sizreg_extice, Kokkos::subview(this->pade_extice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh),
+                            2, 2, this->pade_sizreg_ssaice, Kokkos::subview(this->pade_ssaice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh),
+                            2, 2, this->pade_sizreg_asyice, Kokkos::subview(this->pade_asyice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh),
                            itau, itaussa, itaussag);
     }
 
@@ -845,12 +844,12 @@ public:
   }
 
   void combine( int nbnd, int nlay, int ncol, real3dk const &ltau, real3dk const &itau, real3dk const &ltaussa, real3dk const &itaussa,
-                real3dk const &ltaussag, real3dk const &itaussag, OpticalProps1scl &optical_props ) {
+                real3dk const &ltaussag, real3dk const &itaussag, OpticalProps1sclK &optical_props ) {
     auto &optical_props_tau = optical_props.tau;
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       // Absorption optical depth  = (1-ssa) * tau = tau - taussa
       optical_props_tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) +
                                           (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd));
@@ -858,30 +857,26 @@ public:
   }
 
   void combine( int nbnd, int nlay, int ncol, real3dk const &ltau, real3dk const &itau, real3dk const &ltaussa, real3dk const &itaussa,
-                real3dk const &ltaussag, real3dk const &itaussag, OpticalProps2str &optical_props ) {
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-    using yakl::intrinsics::epsilon;
-
+                real3dk const &ltaussag, real3dk const &itaussag, OpticalProps2strK &optical_props ) {
+    RRT_REQUIRE(false, "not implemented");
+#if 0
     auto &optical_props_g   = optical_props.g  ;
     auto &optical_props_ssa = optical_props.ssa;
     auto &optical_props_tau = optical_props.tau;
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       real tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd);
       real taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd);
-      optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / std::max(epsilon(tau), taussa);
-      optical_props_ssa(icol,ilay,ibnd) = taussa / std::max(epsilon(tau), tau);
+      optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / std::max(conv::epsilon(tau), taussa);
+      optical_props_ssa(icol,ilay,ibnd) = taussa / std::max(conv::epsilon(tau), tau);
       optical_props_tau(icol,ilay,ibnd) = tau;
     });
-  }
 #endif
+  }
 
   void set_ice_roughness(int icergh) {
-    using yakl::intrinsics::allocated;
-
     if (! this->pade_extice.is_allocated() && ! this->lut_extice.is_allocated() ) {
       stoprun("cloud_optics%set_ice_roughness(): can't set before initialization");
     }
@@ -903,7 +898,6 @@ public:
   real get_min_radius_ice() { return this->radice_lwr; }
   real get_max_radius_ice() { return this->radice_upr; }
 
-#if 0
   // Linearly interpolate values from a lookup table with "nsteps" evenly-spaced
   //   elements starting at "offset." The table's second dimension is band.
   // Returns 0 where the mask is false.
@@ -914,13 +908,13 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
         int index = std::min( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.);
         real fint = (re(icol,ilay) - offset)/step_size - (index-1);
-        real t   = lwp(icol,ilay)    * (tau_table(index,  ibnd) + fint * (tau_table(index+1,ibnd) - tau_table(index,ibnd)));
-        real ts  = t                 * (ssa_table(index,  ibnd) + fint * (ssa_table(index+1,ibnd) - ssa_table(index,ibnd)));
-        taussag(icol,ilay,ibnd) = ts * (asy_table(index,  ibnd) + fint * (asy_table(index+1,ibnd) - asy_table(index,ibnd)));
+        real t   = lwp(icol,ilay)    * (tau_table(index,  ibnd) + fint * (tau_table(index,ibnd) - tau_table(index-1,ibnd)));
+        real ts  = t                 * (ssa_table(index,  ibnd) + fint * (ssa_table(index,ibnd) - ssa_table(index-1,ibnd)));
+        taussag(icol,ilay,ibnd) = ts * (asy_table(index,  ibnd) + fint * (asy_table(index,ibnd) - asy_table(index-1,ibnd)));
         taussa (icol,ilay,ibnd) = ts;
         tau    (icol,ilay,ibnd) = t;
       } else {
@@ -937,13 +931,10 @@ public:
                              int m_ssa, int n_ssa, real1dk const &re_bounds_ssa, real3dk const &coeffs_ssa,
                              int m_asy, int n_asy, real1dk const &re_bounds_asy, real3dk const &coeffs_asy,
                              real3dk &tau, real3dk &taussa, real3dk &taussag) {
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(nbnd,nlay,ncol) , YAKL_LAMBDA (int ibnd, int ilay, int icol) {
+    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
         int irad;
         // Finds index into size regime table
@@ -972,15 +963,15 @@ public:
   // Evaluate Pade approximant of order [m/n]
   KOKKOS_INLINE_FUNCTION
   real pade_eval(int iband, int nbnd, int nrads, int m, int n, int irad, real re, real3dk const &pade_coeffs) {
-    real denom = pade_coeffs(iband,irad,n+m);
+    real denom = pade_coeffs(iband,irad,n+m-1);
     for (int i = n-1+m ; i >= 1+m ; i--) {
-      denom = pade_coeffs(iband,irad,i)+re*denom;
+      denom = pade_coeffs(iband,irad,i-1)+re*denom;
     }
     denom = 1+re*denom;
 
-    real numer = pade_coeffs(iband,irad,m);
+    real numer = pade_coeffs(iband,irad,m-1);
     for (int i=m-1 ; i >= 1 ; i--) {
-      numer = pade_coeffs(iband,irad,i)+re*numer;
+      numer = pade_coeffs(iband,irad,i-1)+re*numer;
     }
     numer = pade_coeffs(iband,irad,0)+re*numer;
 
@@ -988,39 +979,38 @@ public:
   }
 
   void print_norms() const {
-                                         std::cout << "name                   : " << name                    << "\n";
-                                         std::cout << "icergh                 : " << icergh                  << "\n";
-                                         std::cout << "radliq_lwr             : " << radliq_lwr              << "\n";
-                                         std::cout << "radliq_upr             : " << radliq_upr              << "\n";
-                                         std::cout << "radice_lwr             : " << radice_lwr              << "\n";
-                                         std::cout << "radice_upr             : " << radice_upr              << "\n";
-                                         std::cout << "liq_nsteps             : " << liq_nsteps              << "\n";
-                                         std::cout << "ice_nsteps             : " << ice_nsteps              << "\n";
-                                         std::cout << "liq_step_size          : " << liq_step_size           << "\n";
-                                         std::cout << "ice_step_size          : " << ice_step_size           << "\n";
-    if (allocated(lut_extliq        )) { std::cout << "sum(lut_extliq        ): " << sum(lut_extliq        ) << "\n"; }
-    if (allocated(lut_ssaliq        )) { std::cout << "sum(lut_ssaliq        ): " << sum(lut_ssaliq        ) << "\n"; }
-    if (allocated(lut_asyliq        )) { std::cout << "sum(lut_asyliq        ): " << sum(lut_asyliq        ) << "\n"; }
-    if (allocated(lut_extice        )) { std::cout << "sum(lut_extice        ): " << sum(lut_extice        ) << "\n"; }
-    if (allocated(lut_ssaice        )) { std::cout << "sum(lut_ssaice        ): " << sum(lut_ssaice        ) << "\n"; }
-    if (allocated(lut_asyice        )) { std::cout << "sum(lut_asyice        ): " << sum(lut_asyice        ) << "\n"; }
-    if (allocated(pade_extliq       )) { std::cout << "sum(pade_extliq       ): " << sum(pade_extliq       ) << "\n"; }
-    if (allocated(pade_ssaliq       )) { std::cout << "sum(pade_ssaliq       ): " << sum(pade_ssaliq       ) << "\n"; }
-    if (allocated(pade_asyliq       )) { std::cout << "sum(pade_asyliq       ): " << sum(pade_asyliq       ) << "\n"; }
-    if (allocated(pade_extice       )) { std::cout << "sum(pade_extice       ): " << sum(pade_extice       ) << "\n"; }
-    if (allocated(pade_ssaice       )) { std::cout << "sum(pade_ssaice       ): " << sum(pade_ssaice       ) << "\n"; }
-    if (allocated(pade_asyice       )) { std::cout << "sum(pade_asyice       ): " << sum(pade_asyice       ) << "\n"; }
-    if (allocated(pade_sizreg_extliq)) { std::cout << "sum(pade_sizreg_extliq): " << sum(pade_sizreg_extliq) << "\n"; }
-    if (allocated(pade_sizreg_ssaliq)) { std::cout << "sum(pade_sizreg_ssaliq): " << sum(pade_sizreg_ssaliq) << "\n"; }
-    if (allocated(pade_sizreg_asyliq)) { std::cout << "sum(pade_sizreg_asyliq): " << sum(pade_sizreg_asyliq) << "\n"; }
-    if (allocated(pade_sizreg_extice)) { std::cout << "sum(pade_sizreg_extice): " << sum(pade_sizreg_extice) << "\n"; }
-    if (allocated(pade_sizreg_ssaice)) { std::cout << "sum(pade_sizreg_ssaice): " << sum(pade_sizreg_ssaice) << "\n"; }
-    if (allocated(pade_sizreg_asyice)) { std::cout << "sum(pade_sizreg_asyice): " << sum(pade_sizreg_asyice) << "\n"; }
-    if (allocated(band2gpt          )) { std::cout << "band2gpt               : " << sum(band2gpt          ) << "\n"; }
-    if (allocated(gpt2band          )) { std::cout << "gpt2band               : " << sum(gpt2band          ) << "\n"; }
-    if (allocated(band_lims_wvn     )) { std::cout << "band_lims_wvn          : " << sum(band_lims_wvn     ) << "\n"; }
+                                             std::cout << "name                   : " << name                          << "\n";
+                                             std::cout << "icergh                 : " << icergh                        << "\n";
+                                             std::cout << "radliq_lwr             : " << radliq_lwr                    << "\n";
+                                             std::cout << "radliq_upr             : " << radliq_upr                    << "\n";
+                                             std::cout << "radice_lwr             : " << radice_lwr                    << "\n";
+                                             std::cout << "radice_upr             : " << radice_upr                    << "\n";
+                                             std::cout << "liq_nsteps             : " << liq_nsteps                    << "\n";
+                                             std::cout << "ice_nsteps             : " << ice_nsteps                    << "\n";
+                                             std::cout << "liq_step_size          : " << liq_step_size                 << "\n";
+                                             std::cout << "ice_step_size          : " << ice_step_size                 << "\n";
+    if (lut_extliq.is_allocated()        ) { std::cout << "sum(lut_extliq        ): " << conv::sum(lut_extliq        ) << "\n"; }
+    if (lut_ssaliq.is_allocated()        ) { std::cout << "sum(lut_ssaliq        ): " << conv::sum(lut_ssaliq        ) << "\n"; }
+    if (lut_asyliq.is_allocated()        ) { std::cout << "sum(lut_asyliq        ): " << conv::sum(lut_asyliq        ) << "\n"; }
+    if (lut_extice.is_allocated()        ) { std::cout << "sum(lut_extice        ): " << conv::sum(lut_extice        ) << "\n"; }
+    if (lut_ssaice.is_allocated()        ) { std::cout << "sum(lut_ssaice        ): " << conv::sum(lut_ssaice        ) << "\n"; }
+    if (lut_asyice.is_allocated()        ) { std::cout << "sum(lut_asyice        ): " << conv::sum(lut_asyice        ) << "\n"; }
+    if (pade_extliq.is_allocated()       ) { std::cout << "sum(pade_extliq       ): " << conv::sum(pade_extliq       ) << "\n"; }
+    if (pade_ssaliq.is_allocated()       ) { std::cout << "sum(pade_ssaliq       ): " << conv::sum(pade_ssaliq       ) << "\n"; }
+    if (pade_asyliq.is_allocated()       ) { std::cout << "sum(pade_asyliq       ): " << conv::sum(pade_asyliq       ) << "\n"; }
+    if (pade_extice.is_allocated()       ) { std::cout << "sum(pade_extice       ): " << conv::sum(pade_extice       ) << "\n"; }
+    if (pade_ssaice.is_allocated()       ) { std::cout << "sum(pade_ssaice       ): " << conv::sum(pade_ssaice       ) << "\n"; }
+    if (pade_asyice.is_allocated()       ) { std::cout << "sum(pade_asyice       ): " << conv::sum(pade_asyice       ) << "\n"; }
+    if (pade_sizreg_extliq.is_allocated()) { std::cout << "sum(pade_sizreg_extliq): " << conv::sum(pade_sizreg_extliq) << "\n"; }
+    if (pade_sizreg_ssaliq.is_allocated()) { std::cout << "sum(pade_sizreg_ssaliq): " << conv::sum(pade_sizreg_ssaliq) << "\n"; }
+    if (pade_sizreg_asyliq.is_allocated()) { std::cout << "sum(pade_sizreg_asyliq): " << conv::sum(pade_sizreg_asyliq) << "\n"; }
+    if (pade_sizreg_extice.is_allocated()) { std::cout << "sum(pade_sizreg_extice): " << conv::sum(pade_sizreg_extice) << "\n"; }
+    if (pade_sizreg_ssaice.is_allocated()) { std::cout << "sum(pade_sizreg_ssaice): " << conv::sum(pade_sizreg_ssaice) << "\n"; }
+    if (pade_sizreg_asyice.is_allocated()) { std::cout << "sum(pade_sizreg_asyice): " << conv::sum(pade_sizreg_asyice) << "\n"; }
+    if (band2gpt.is_allocated()          ) { std::cout << "band2gpt               : " << conv::sum(band2gpt          ) << "\n"; }
+    if (gpt2band.is_allocated()          ) { std::cout << "gpt2band               : " << conv::sum(gpt2band          ) << "\n"; }
+    if (band_lims_wvn.is_allocated()     ) { std::cout << "band_lims_wvn          : " << conv::sum(band_lims_wvn     ) << "\n"; }
   }
-#endif
 
   void validate_kokkos(const CloudOptics& orig) const
   {

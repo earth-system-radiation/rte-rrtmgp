@@ -77,4 +77,60 @@ public:
 
 };
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+class FluxesBroadbandK {
+public:
+  real2dk flux_up;
+  real2dk flux_dn;
+  real2dk flux_net;
+  real2dk flux_dn_dir;
 
+
+  void reduce(real3dk const &gpt_flux_up, const real3dk &gpt_flux_dn, OpticalPropsK const &spectral_disc,
+              bool top_at_1, real3dk const &gpt_flux_dn_dir=real3dk()) {
+    int ncol = gpt_flux_up.extent(0);
+    int nlev = gpt_flux_up.extent(1);
+    int ngpt = gpt_flux_up.extent(2);
+
+    // Self-consistency -- shouldn't be asking for direct beam flux if it isn't supplied
+    if (this->flux_dn_dir.is_allocated() && ! gpt_flux_dn_dir.is_allocated()) {
+      stoprun("reduce: requesting direct downward flux but this hasn't been supplied");
+    }
+
+    // Broadband fluxes - call the kernels
+    if (this->flux_up.is_allocated()    ) { sum_broadband(ncol, nlev, ngpt, gpt_flux_up,     this->flux_up    ); }
+    if (this->flux_dn.is_allocated()    ) { sum_broadband(ncol, nlev, ngpt, gpt_flux_dn,     this->flux_dn    ); }
+    if (this->flux_dn_dir.is_allocated()) { sum_broadband(ncol, nlev, ngpt, gpt_flux_dn_dir, this->flux_dn_dir); }
+    if (this->flux_net.is_allocated()   ) {
+      // Reuse down and up results if possible
+      if (this->flux_dn.is_allocated() && this->flux_up.is_allocated()) {
+        net_broadband(ncol, nlev,      this->flux_dn, this->flux_up, this->flux_net);
+      } else {
+        net_broadband(ncol, nlev, ngpt,  gpt_flux_dn,   gpt_flux_up, this->flux_net);
+      }
+    }
+  }
+
+
+  bool are_desired() const {
+    return this->flux_up.is_allocated() || this->flux_dn.is_allocated() || this->flux_dn_dir.is_allocated() || this->flux_net.is_allocated();
+  }
+
+
+  void print_norms() const {
+    if (flux_up.is_allocated()    ) { std::cout << std::setprecision(16) << "flux_up    : " << conv::sum(flux_up    ) << "\n"; }
+    if (flux_dn.is_allocated()    ) { std::cout << std::setprecision(16) << "flux_dn    : " << conv::sum(flux_dn    ) << "\n"; }
+    if (flux_net.is_allocated()   ) { std::cout << std::setprecision(16) << "flux_net   : " << conv::sum(flux_net   ) << "\n"; }
+    if (flux_dn_dir.is_allocated()) { std::cout << std::setprecision(16) << "flux_dn_dir: " << conv::sum(flux_dn_dir) << "\n"; }
+  }
+
+  void validate_kokkos(const FluxesBroadband& orig)
+  {
+    conv::compare_yakl_to_kokkos(orig.flux_up, flux_up);
+    conv::compare_yakl_to_kokkos(orig.flux_dn, flux_dn);
+    conv::compare_yakl_to_kokkos(orig.flux_net, flux_net);
+    conv::compare_yakl_to_kokkos(orig.flux_dn_dir, flux_dn_dir);
+  }
+
+};
+#endif

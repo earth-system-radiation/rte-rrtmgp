@@ -10,7 +10,8 @@ RRTMGP_KERNEL_DIR = ../rrtmgp-kernels
 #
 # 
 # Make all the libraries though we'll only use the interface + kernels
-all:           librte.a                  librrtmgp.a
+all:           librte.a                  librrtmgp.a \
+               librtekernels.a librtef.a librrtmgpkernels.a librrtmgpf.a
 separate-libs: librtekernels.a librtef.a librrtmgpkernels.a librrtmgpf.a
 
 COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c

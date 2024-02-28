@@ -81,7 +81,6 @@ jobs:
       run: |
         $FC --version
         make -j4 libs
-        make -j4 -C build separate-libs
     #
     # Build libraries, examples and tests (expect failure)
     #

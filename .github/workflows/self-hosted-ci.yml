@@ -114,7 +114,6 @@ jobs:
         if: matrix.config-name != 'cuda-kernels'
         $FC --version
         make -j8 libs
-        make -j8 -C build separate-libs
     #
     # Build library of CUDA kernels; copy to build directory 
     #

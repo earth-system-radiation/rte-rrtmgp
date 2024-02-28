@@ -300,7 +300,6 @@ public:
     });
   }
 
-#if 0 // Not converting these since they are unused
   void init(OpticalPropsK const &in) {
     if ( ! in.is_initialized() ) {
       stoprun("optical_props::init(): can't initialize based on un-initialized input");
@@ -308,7 +307,6 @@ public:
       this->init( in.get_band_lims_wavenumber() , in.get_band_lims_gpoint() );
     }
   }
-#endif
 
   bool is_initialized() const { return this->band2gpt.is_allocated(); }
 
@@ -474,6 +472,12 @@ public:
 
   int get_ncol() const { if (tau.is_allocated()) { return this->tau.extent(0); } else { return 0; } }
   int get_nlay() const { if (tau.is_allocated()) { return this->tau.extent(1); } else { return 0; } }
+
+  void validate_kokkos(const OpticalPropsArry& orig) const
+  {
+    OpticalPropsK::validate_kokkos(orig);
+    conv::compare_yakl_to_kokkos(orig.tau, tau);
+  }
 };
 #endif
 
@@ -606,16 +610,13 @@ public:
   // Implemented later because OpticalProps2str hasn't been created yet
   inline void increment(OpticalProps2strK &that);
 
-#if 0
   void print_norms() const {
-                                    std::cout << "name         : " << name               << "\n";
-    if (allocated(band2gpt     )) { std::cout << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
-    if (allocated(gpt2band     )) { std::cout << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
-    if (allocated(band_lims_wvn)) { std::cout << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
-    if (allocated(tau          )) { std::cout << "tau          : " << sum(tau          ) << "\n"; }
+                                        std::cout << "name         : " << name               << "\n";
+    if (band2gpt.is_allocated()     ) { std::cout << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
+    if (gpt2band.is_allocated()     ) { std::cout << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
+    if (band_lims_wvn.is_allocated()) { std::cout << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
+    if (tau.is_allocated()          ) { std::cout << "tau          : " << conv::sum(tau          ) << "\n"; }
   }
-#endif
-
 };
 #endif
 

@@ -111,11 +111,10 @@ jobs:
     #
     - name: Build libraries
       run: |
-        if: matrix.config-name != 'cuda-kernels'
         $FC --version
         make -j8 libs
     #
-    # Build library of CUDA kernels; copy to build directory 
+    # Build library of CUDA kernels; copy to build directory and overwrite defaults
     #
     - name: Build CUDA kernels
       if: matrix.config-name == 'cuda-kernels'

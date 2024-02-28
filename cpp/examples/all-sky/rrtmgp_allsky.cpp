@@ -65,10 +65,27 @@ int main(int argc , char **argv) {
     real2d t_lev;
     GasConcs gas_concs;
     real2d col_dry;
+#ifdef RRTMGP_ENABLE_KOKKOS
+    real2dk p_lay_k;
+    real2dk t_lay_k;
+    real2dk p_lev_k;
+    real2dk t_lev_k;
+    GasConcsK gas_concs_k;
+    real2dk col_dry_k;
+#endif
 
     // Read data from the input file
     if (verbose) std::cout << "Reading input file\n\n";
     read_atmos(input_file, p_lay, t_lay, p_lev, t_lev, gas_concs, col_dry, ncol);
+#ifdef RRTMGP_ENABLE_KOKKOS
+    read_atmos(input_file, p_lay_k, t_lay_k, p_lev_k, t_lev_k, gas_concs_k, col_dry_k, ncol);
+    {
+      std::vector<real2d> yarrays = {p_lay, t_lay, p_lev, t_lev, col_dry};
+      std::vector<real2dk> kviews = {p_lay_k, t_lay_k, p_lev_k, t_lev_k, col_dry_k};
+      conv::compare_all_yakl_to_kokkos(yarrays, kviews);
+      gas_concs_k.validate_kokkos(gas_concs);
+    }
+#endif
 
     int nlay = size(p_lay,2);
 
@@ -76,6 +93,11 @@ int main(int argc , char **argv) {
     if (verbose) std::cout << "Reading k_dist file\n\n";
     GasOpticsRRTMGP k_dist;
     load_and_init(k_dist, k_dist_file, gas_concs);
+#ifdef RRTMGP_ENABLE_KOKKOS
+    GasOpticsRRTMGPK k_dist_k;
+    load_and_init(k_dist_k, k_dist_file, gas_concs_k);
+    k_dist_k.validate_kokkos(k_dist);
+#endif
 
     bool is_sw = k_dist.source_is_external();
 
@@ -87,11 +109,25 @@ int main(int argc , char **argv) {
       load_cld_padecoeff(cloud_optics, cloud_optics_file);
     }
     cloud_optics.set_ice_roughness(2);
+#ifdef RRTMGP_ENABLE_KOKKOS
+    CloudOpticsK cloud_optics_k;
+    if (use_luts) {
+      load_cld_lutcoeff (cloud_optics_k, cloud_optics_file);
+    } else {
+      load_cld_padecoeff(cloud_optics_k, cloud_optics_file);
+    }
+    cloud_optics_k.set_ice_roughness(2);
+    cloud_optics_k.validate_kokkos(cloud_optics);
+#endif
 
     // Problem sizes
     int nbnd = k_dist.get_nband();
     int ngpt = k_dist.get_ngpt();
     auto p_lay_host = p_lay.createHostCopy();
+#ifdef RRTMGP_ENABLE_KOKKOS
+    auto p_lay_host_k = Kokkos::create_mirror_view(p_lay_k);
+    Kokkos::deep_copy(p_lay_host_k, p_lay_k);
+#endif
     bool top_at_1 = p_lay_host(1, 1) < p_lay_host(1, nlay);
 
 
@@ -220,6 +256,27 @@ int main(int argc , char **argv) {
 
       OpticalProps1scl atmos;
       OpticalProps1scl clouds;
+#ifdef RRTMGP_ENABLE_KOKKOS
+      realHost2dk gauss_Ds_host_k ("gauss_Ds" ,max_gauss_pts,max_gauss_pts);
+      gauss_Ds_host_k(0,0) = 1.66      ; gauss_Ds_host_k(1,0) =         0.; gauss_Ds_host_k(2,0) =         0.; gauss_Ds_host_k(3,0) =         0.;
+      gauss_Ds_host_k(0,1) = 1.18350343; gauss_Ds_host_k(1,1) = 2.81649655; gauss_Ds_host_k(2,1) =         0.; gauss_Ds_host_k(3,1) =         0.;
+      gauss_Ds_host_k(0,2) = 1.09719858; gauss_Ds_host_k(1,2) = 1.69338507; gauss_Ds_host_k(2,2) = 4.70941630; gauss_Ds_host_k(3,2) =         0.;
+      gauss_Ds_host_k(0,3) = 1.06056257; gauss_Ds_host_k(1,3) = 1.38282560; gauss_Ds_host_k(2,3) = 2.40148179; gauss_Ds_host_k(3,3) = 7.15513024;
+
+      realHost2dk gauss_wts_host_k("gauss_wts",max_gauss_pts,max_gauss_pts);
+      gauss_wts_host_k(0,0) = 0.5         ; gauss_wts_host_k(1,0) = 0.          ; gauss_wts_host_k(2,0) = 0.          ; gauss_wts_host_k(3,0) = 0.          ;
+      gauss_wts_host_k(0,1) = 0.3180413817; gauss_wts_host_k(1,1) = 0.1819586183; gauss_wts_host_k(2,1) = 0.          ; gauss_wts_host_k(3,1) = 0.          ;
+      gauss_wts_host_k(0,2) = 0.2009319137; gauss_wts_host_k(1,2) = 0.2292411064; gauss_wts_host_k(2,2) = 0.0698269799; gauss_wts_host_k(3,2) = 0.          ;
+      gauss_wts_host_k(0,3) = 0.1355069134; gauss_wts_host_k(1,3) = 0.2034645680; gauss_wts_host_k(2,3) = 0.1298475476; gauss_wts_host_k(3,3) = 0.0311809710;
+
+      real2dk gauss_Ds_k ("gauss_Ds" ,max_gauss_pts,max_gauss_pts);
+      real2dk gauss_wts_k("gauss_wts",max_gauss_pts,max_gauss_pts);
+      Kokkos::deep_copy(gauss_Ds_k, gauss_Ds_host_k);
+      Kokkos::deep_copy(gauss_wts_k, gauss_wts_host_k);
+
+      OpticalProps1sclK atmos_k;
+      OpticalProps1sclK clouds_k;
+#endif
 
       // Clouds optical props are defined by band
       clouds.init(k_dist.get_band_lims_wavenumber());
@@ -321,5 +378,3 @@ int main(int argc , char **argv) {
 #endif
   yakl::finalize();
 }
-
-

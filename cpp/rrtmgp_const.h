@@ -16,6 +16,13 @@ using HostDevice =
 
 template <typename T, typename Device=DefaultDevice>
 using FView = Kokkos::View<T, Kokkos::LayoutLeft, Device>;
+
+template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
+using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
+
+
+// template <typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
+// using MDRangeP3 = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left, Kokkos::Iterate::Left> >;
 #endif
 
 template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
@@ -158,6 +165,8 @@ typedef FView<bool****, HostDevice>    boolHost4dk;
 typedef FView<bool*****, HostDevice>   boolHost5dk;
 typedef FView<bool******, HostDevice>  boolHost6dk;
 typedef FView<bool*******, HostDevice> boolHost7dk;
+
+typedef FView<char**, HostDevice> charHost2dk;
 #endif
 
 typedef std::vector<std::string> string1dv;

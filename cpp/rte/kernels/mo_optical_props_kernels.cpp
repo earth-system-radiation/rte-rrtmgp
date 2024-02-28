@@ -21,9 +21,9 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
       // t=tau1 + tau2
       real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
       // w=(tau1*ssa1 + tau2*ssa2) / t
-      real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+      real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                        tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
-      g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
+      g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) +
                             tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / std::max(eps,tauscat12);
       ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
       tau1(icol,ilay,igpt) = tau12;
@@ -222,10 +222,10 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3d const &ta
     // t=tau1 + tau2
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t
-    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
-    g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) + 
-                          tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt)) 
+    g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) +
+                          tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt))
                            / std::max(eps,tauscat12);
     ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
     tau1(icol,ilay,igpt) = tau12;
@@ -249,10 +249,10 @@ void increment_2stream_by_nstream(int ncol, int nlay, int ngpt, int nmom2, real3
     // t=tau1 + tau2
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t
-    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
     if (tauscat12 > eps) {
-      g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(   icol,ilay,igpt)+ 
+      g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(   icol,ilay,igpt)+
                             tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * p2(1, icol,ilay,igpt)) / tauscat12;
       ssa1(icol,ilay,igpt) = tauscat12 / tau12;
       tau1(icol,ilay,igpt) = tau12;
@@ -300,7 +300,7 @@ void increment_nstream_by_2stream(int ncol, int nlay, int ngpt, int nmom1, real3
   //     do icol = 1, ncol
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
-    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
     // Here assume Henyey-Greenstein
     if (tauscat12 > eps) {
@@ -309,7 +309,7 @@ void increment_nstream_by_2stream(int ncol, int nlay, int ngpt, int nmom1, real3
         temp_moms(imom) = temp_moms(imom-1) * g2(icol,ilay,igpt);
       }
       for (int imom=1; imom<=nmom1; imom++) {
-        p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
+        p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) +
                                     tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * temp_moms(imom)  ) / tauscat12;
       }
       ssa1(icol,ilay,igpt) = tauscat12 / tau12;
@@ -335,13 +335,13 @@ void increment_nstream_by_nstream(int ncol, int nlay, int ngpt, int nmom1, int n
   //     do icol = 1, ncol
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
-    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
     if (tauscat12 > eps) {
       // If op2 has more moments than op1 these are ignored;
       //   if it has fewer moments the higher orders are assumed to be 0
       for (int imom=1; imom<=mom_lim; imom++) {
-        p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
+        p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) +
                                     tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * p2(imom, icol,ilay,igpt)) / std::max(eps,tauscat12);
       }
       ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
@@ -438,9 +438,9 @@ void inc_2stream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom2, real3
         // t=tau1 + tau2
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
         // w=(tau1*ssa1 + tau2*ssa2) / t
-        real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+        real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                          tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
-        g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(   icol,ilay,igpt)+ 
+        g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(   icol,ilay,igpt)+
                               tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(1, icol,ilay,ibnd)) / std::max(eps,tauscat12);
         ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
         tau1(icol,ilay,igpt) = tau12;
@@ -503,7 +503,7 @@ void inc_nstream_by_2stream_bybnd(int ncol, int nlay, int ngpt, int nmom1, real3
           temp_moms(imom) = temp_moms(imom-1) * g2(icol,ilay,ibnd);
         }
         for (int imom=1; imom<=nmom1; imom++) {
-          p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
+          p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) +
                                       tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * temp_moms(imom)  ) / std::max(eps,tauscat12);
         }
         ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
@@ -532,12 +532,12 @@ void inc_nstream_by_nstream_bybnd(int ncol, int nlay, int ngpt, int nmom1, int n
     for (int ibnd=0; ibnd<=nbnd; ibnd++) {
       if (igpt >= gpt_lims(1, ibnd) && igpt <= gpt_lims(2, ibnd) ) {
         real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
-        real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) + 
+        real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                          tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
         // If op2 has more moments than op1 these are ignored;
         //   if it has fewer moments the higher orders are assumed to be 0
         for (int imom=1; imom<=mom_lim; imom++) {
-          p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) + 
+          p1(imom, icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * p1(imom, icol,ilay,igpt) +
                                       tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * p2(imom, icol,ilay,ibnd)) / std::max(eps,tauscat12);
         }
         ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
@@ -596,6 +596,26 @@ void extract_subset_absorption_tau(int ncol, int nlay, int ngpt, real3d const &t
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
-
-
-
+#ifdef RRTMGP_ENABLE_KOKKOS
+// Addition of optical properties: the first set are incremented by the second set.
+//
+//   There are three possible representations of optical properties (scalar = optical depth only;
+//   two-stream = tau, single-scattering albedo, and asymmetry factor g, and
+//   n-stream = tau, ssa, and phase function moments p.) Thus we need nine routines, three for
+//   each choice of representation on the left hand side times three representations of the
+//   optical properties to be added.
+//
+//   There are two sets of these nine routines. In the first the two sets of optical
+//   properties are defined at the same spectral resolution. There is also a set of routines
+//   to add properties defined at lower spectral resolution to a set defined at higher spectral
+//   resolution (adding properties defined by band to those defined by g-point)
+void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, real3dk const &tau1, real3dk const &tau2) {
+  // do igpt = 1, ngpt
+  //   do ilay = 1, nlay
+  //     do icol = 1, ncol
+  Kokkos::parallel_for( MDRangeP<3>({0, 0, 0}, {ngpt,nlay,ncol}), KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+    tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
+  });
+  //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
+}
+#endif

@@ -319,16 +319,11 @@ public:
     });
   }
 
-#if 0
   // Set concentration as a 2-D field of columns and levels
   // w is expected to be in device memory
-  void set_vmr(std::string gas, real2d const &w) {
-    using yakl::intrinsics::size;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
-    if (size(w,1) != this->ncol) { stoprun("GasConcs::set_vmr: different dimension (ncol)" ); }
-    if (size(w,2) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)" ); }
+  void set_vmr(std::string gas, real2dk const &w) {
+    if (w.extent(0) != this->ncol) { stoprun("GasConcs::set_vmr: different dimension (ncol)" ); }
+    if (w.extent(1) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)" ); }
     int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
       stoprun("GasConcs::set_vmr(): trying to set a gas whose name not provided at initialization" );
@@ -345,29 +340,23 @@ public:
     #endif
     auto this_concs = this->concs;
     Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
-      this_concs(icol, ilay, igas-1) = w(icol+1, ilay+1);
+      this_concs(icol, ilay, igas-1) = w(icol, ilay);
     });
   }
 
   // Get concentration as a 2-D field of columns and levels
   // array is expected to be in devide memory
-  void get_vmr(std::string gas, real2d const &array) const {
-    using yakl::intrinsics::size;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
-    if (this->ncol != size(array,1)) { stoprun("ty_gas_concs->get_vmr; gas array is wrong size (ncol)" ); }
-    if (this->nlay != size(array,2)) { stoprun("ty_gas_concs->get_vmr; gas array is wrong size (nlay)" ); }
+  void get_vmr(std::string gas, real2dk const &array) const {
+    if (this->ncol != array.extent(0)) { stoprun("ty_gas_concs->get_vmr; gas array is wrong size (ncol)" ); }
+    if (this->nlay != array.extent(1)) { stoprun("ty_gas_concs->get_vmr; gas array is wrong size (nlay)" ); }
     int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) { stoprun("GasConcs::get_vmr; gas not found" ); }
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
-    YAKL_SCOPE( this_concs , this->concs );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(array,2),size(array,1)) , YAKL_LAMBDA (int ilay, int icol) {
-      array(icol,ilay) = this_concs(icol,ilay,igas);
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      array(icol,ilay) = this->concs(icol,ilay,igas);
     });
   }
-#endif
 
   int get_num_gases() const { return gas_name.size(); }
 

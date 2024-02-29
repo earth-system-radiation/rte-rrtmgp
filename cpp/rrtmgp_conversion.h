@@ -181,13 +181,14 @@ auto sum(const KView& view)
 {
   using scalar_t    = typename KView::non_const_value_type;
   using exe_space_t = typename KView::execution_space;
+  using sum_t       = std::conditional_t<std::is_same<scalar_t, bool>::value, int, scalar_t>;
 
-  scalar_t rv;
+  sum_t rv;
   Kokkos::parallel_reduce(
     Kokkos::RangePolicy<exe_space_t>(0, view.size()),
-    KOKKOS_LAMBDA(size_t i, scalar_t& lsum) {
+    KOKKOS_LAMBDA(size_t i, sum_t& lsum) {
       lsum += view.data()[i];
-    }, Kokkos::Sum<scalar_t>(rv));
+    }, Kokkos::Sum<sum_t>(rv));
   return rv;
 }
 

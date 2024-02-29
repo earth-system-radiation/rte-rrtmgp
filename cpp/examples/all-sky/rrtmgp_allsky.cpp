@@ -419,11 +419,18 @@ int main(int argc , char **argv) {
         fluxes_k.bnd_flux_up = bnd_flux_up_k;
         fluxes_k.bnd_flux_dn = bnd_flux_dn_k;
         fluxes_k.bnd_flux_net= bnd_flux_net_k;
+        fluxes_k.validate_kokkos(fluxes);
 #endif
 
         // Calling with an empty col_dry parameter
         k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay, t_sfc, gas_concs, atmos, lw_sources, real2d(), t_lev);
+#ifdef RRTMGP_ENABLE_KOKKOS
+        k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, t_sfc_k, gas_concs_k, atmos_k, lw_sources_k, real2dk(), t_lev_k);
+        k_dist_k.validate_kokkos(k_dist);
+#endif
+
         clouds.increment(atmos);
+
         rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, atmos, top_at_1, lw_sources, emis_sfc, fluxes);
 
         yakl::timer_stop("longwave");

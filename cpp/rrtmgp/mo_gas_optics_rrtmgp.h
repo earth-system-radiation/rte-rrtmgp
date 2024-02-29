@@ -1929,35 +1929,38 @@ public:
   int get_nPlanckTemp() const { return this->totplnk.extent(0); }
 
 
-#if 0 // not yet converted
   // Function to define names of key and minor gases to be used by gas_optics().
   // The final list gases includes those that are defined in gas_optics_specification
   // and are provided in ty_gas_concs.
-  string1d get_minor_list(GasConcs const &gas_desc, int ngas, string1d const &name_spec) const {
-    using yakl::intrinsics::pack;
-    using yakl::intrinsics::size;
+  string1dv get_minor_list(GasConcsK const &gas_desc, int ngas, string1dv const &name_spec) const {
     // List of minor gases to be used in gas_optics()
-    boolHost1d gas_is_present("gas_is_present",size(name_spec,1));
-    for (int igas=1 ; igas <= this->get_ngas() ; igas++) {
-      gas_is_present(igas) = string_in_array(name_spec(igas), gas_desc.gas_name);
+    string1dv rv;
+    for (int igas=0 ; igas < this->get_ngas() ; igas++) {
+      if (string_in_array(name_spec[igas], gas_desc.gas_name)) {
+        rv.push_back(this->gas_names[igas]);
+      }
     }
-    return pack(this->gas_names, gas_is_present);
+    return rv;
   }
 
   // return true if initialized for internal sources, false otherwise
-  bool source_is_internal() const { return yakl::intrinsics::allocated(this->totplnk) && yakl::intrinsics::allocated(this->planck_frac); }
+  bool source_is_internal() const { return this->totplnk.is_allocated() && this->planck_frac.is_allocated(); }
 
   // return true if initialized for external sources, false otherwise
-  bool source_is_external() const { return yakl::intrinsics::allocated(this->solar_src); }
+  bool source_is_external() const { return this->solar_src.is_allocated(); }
 
   // Ensure that every key gas required by the k-distribution is present in the gas concentration object
-  void check_key_species_present(GasConcs const &gas_desc) const {
-    using yakl::intrinsics::pack;
-    using yakl::intrinsics::size;
-
-    string1d key_gas_names = pack(this->gas_names, this->is_key.createHostCopy());
-    for (int igas=1 ; igas <= size(key_gas_names,1) ; igas++) {
-      if (! string_in_array(key_gas_names(igas), gas_desc.gas_name)) {
+  void check_key_species_present(GasConcsK const &gas_desc) const {
+    string1dv key_gas_names;
+    auto is_key_h = Kokkos::create_mirror_view(this->is_key);
+    Kokkos::deep_copy(is_key_h, this->is_key);
+    for (auto i = 0; i < this->is_key.extent(0); ++i) {
+      if (this->is_key(i)) {
+        key_gas_names.push_back(this->gas_names[i]);
+      }
+    }
+    for (auto igas=0 ; igas < key_gas_names.size() ; igas++) {
+      if (! string_in_array(key_gas_names[igas], gas_desc.gas_name)) {
         stoprun("gas required by k-distribution is not present in the GasConcs object");
       }
     }
@@ -1966,37 +1969,31 @@ public:
   // Compute gas optical depth and Planck source functions, given temperature, pressure, and composition
   template <class T>
   void gas_optics(const int ncol, const int nlay,
-                  bool top_at_1, real2d const &play, real2d const &plev, real2d const &tlay, real1d const &tsfc,
+                  bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, real1dk const &tsfc,
                   GasConcs const &gas_desc, T &optical_props, SourceFuncLW &sources,
-                  real2d const &col_dry=real2d(), real2d const &tlev=real2d()) {
-    using yakl::intrinsics::size;
-    using yakl::intrinsics::allocated;
-    using yakl::intrinsics::any;
-    using yakl::componentwise::operator>;
-    using yakl::componentwise::operator<;
-
+                  real2dk const &col_dry=real2dk(), real2dk const &tlev=real2dk()) {
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     // Interpolation coefficients for use in source function
-    int2d  jtemp ("jtemp"                         ,ncol,nlay);
-    int2d  jpress("jpress"                        ,ncol,nlay);
-    bool2d tropo ("tropo"                         ,ncol,nlay);
-    real6d fmajor("fmajor",2,2,2,this->get_nflav(),ncol,nlay);
-    int4d  jeta  ("jeta"  ,2    ,this->get_nflav(),ncol,nlay);
+    int2dk  jtemp ("jtemp"                         ,ncol,nlay);
+    int2dk  jpress("jpress"                        ,ncol,nlay);
+    bool2dk tropo ("tropo"                         ,ncol,nlay);
+    real6dk fmajor("fmajor",2,2,2,this->get_nflav(),ncol,nlay);
+    int4dk  jeta  ("jeta"  ,2    ,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, optical_props, jtemp, jpress,
                      jeta, tropo, fmajor, col_dry);
 
     // External source -- check arrays sizes and values
     // input data sizes and values
-    if (size(tsfc,1) != ncol) { stoprun("gas_optics(): array tsfc has wrong size"); }
+    if (tsfc.extent(0) != ncol) { stoprun("gas_optics(): array tsfc has wrong size"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
       if (any(tsfc < this->temp_ref_min) || any(tsfc > this->temp_ref_max)) {
         stoprun("gas_optics(): array tsfc has values outside range");
       }
     #endif
 
-    if (allocated(tlev)) {
+    if (tlev.is_allocated()) {
       #ifdef RRTMGP_EXPENSIVE_CHECKS
         if (any(tlev < this->temp_ref_min) || any(tlev > this->temp_ref_max)) {
           stoprun("gas_optics(): array tlev has values outside range");
@@ -2016,63 +2013,47 @@ public:
   // Compute gas optical depth given temperature, pressure, and composition
   template <class T>
   void gas_optics(const int ncol, const int nlay,
-                  bool top_at_1, real2d const &play, real2d const &plev, real2d const &tlay, GasConcs const &gas_desc,
-                  T &optical_props, real2d &toa_src, real2d const &col_dry=real2d()) {
-    using yakl::intrinsics::size;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
+                  bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, GasConcs const &gas_desc,
+                  T &optical_props, real2dk &toa_src, real2dk const &col_dry=real2dk()) {
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     int ngas  = this->get_ngas();
     int nflav = get_nflav();
 
     // Interpolation coefficients for use in source function
-    int2d  jtemp ("jtemp"                         ,ncol,nlay);
-    int2d  jpress("jpress"                        ,ncol,nlay);
-    bool2d tropo ("tropo"                         ,ncol,nlay);
-    real6d fmajor("fmajor",2,2,2,this->get_nflav(),ncol,nlay);
-    int4d  jeta  ("jeta  ",2    ,this->get_nflav(),ncol,nlay);
+    int2dk  jtemp ("jtemp"                         ,ncol,nlay);
+    int2dk  jpress("jpress"                        ,ncol,nlay);
+    bool2dk tropo ("tropo"                         ,ncol,nlay);
+    real6dk fmajor("fmajor",2,2,2,this->get_nflav(),ncol,nlay);
+    int4dk  jeta  ("jeta  ",2    ,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, optical_props, jtemp, jpress, jeta,
                      tropo, fmajor, col_dry);
 
     // External source function is constant
-    if (size(toa_src,1) != ncol || size(toa_src,2) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
+    if (toa_src.extent(0) != ncol || toa_src.extent(1) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
-    YAKL_SCOPE( solar_src_loc , this->solar_src );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
-      toa_src(icol,igpt) = solar_src_loc(igpt);
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , YAKL_LAMBDA (int igpt, int icol) {
+      toa_src(icol,igpt) = this->solar_src(igpt);
     });
   }
 
   // Returns optical properties and interpolation coefficients
   template <class T>
-  void compute_gas_taus(bool top_at_1, int ncol, int nlay, int ngpt, int nband, real2d const &play, real2d const &plev, real2d const &tlay,
-                        GasConcs const &gas_desc, T &optical_props, int2d const &jtemp, int2d const &jpress, int4d const &jeta,
-                        bool2d const &tropo, real6d const &fmajor, real2d const &col_dry=real2d() ) {
-    using yakl::intrinsics::lbound;
-    using yakl::intrinsics::ubound;
-    using yakl::intrinsics::size;
-    using yakl::intrinsics::allocated;
-    using yakl::intrinsics::any;
-    using yakl::componentwise::operator>;
-    using yakl::componentwise::operator<;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-    using yakl::COLON;
-
+  void compute_gas_taus(bool top_at_1, int ncol, int nlay, int ngpt, int nband, real2dk const &play, real2dk const &plev, real2dk const &tlay,
+                        GasConcsK const &gas_desc, T &optical_props, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta,
+                        bool2dk const &tropo, real6dk const &fmajor, real2dk const &col_dry=real2dk() ) {
     // Number of molecules per cm^2
-    real3d tau         ("tau"         ,ngpt,nlay,ncol);
-    real3d tau_rayleigh("tau_rayleigh",ngpt,nlay,ncol);
+    real3dk tau         ("tau"         ,ngpt,nlay,ncol);
+    real3dk tau_rayleigh("tau_rayleigh",ngpt,nlay,ncol);
     // Interpolation variables used in major gas but not elsewhere, so don't need exporting
-    real3d vmr         ("vmr"         ,ncol,nlay,this->get_ngas());
-    real3d col_gas     ("col_gas"     ,ncol,nlay,{0,this->get_ngas()});
-    real4d col_mix     ("col_mix"     ,2,this->get_nflav(),ncol,nlay); // combination of major species's column amounts
+    real3dk vmr         ("vmr"         ,ncol,nlay,this->get_ngas());
+    real3dk col_gas     ("col_gas"     ,ncol,nlay,this->get_ngas()+1); // 0 indexed!
+    real4dk col_mix     ("col_mix"     ,2,this->get_nflav(),ncol,nlay); // combination of major species's column amounts
                                                                        // index(1) : reference temperature level
                                                                        // index(2) : flavor
                                                                        // index(3) : layer
-    real5d fminor      ("fminor"      ,2,2,this->get_nflav(),ncol,nlay); // interpolation fractions for minor species
+    real5dk fminor      ("fminor"      ,2,2,this->get_nflav(),ncol,nlay); // interpolation fractions for minor species
                                                                          // index(1) : reference eta level (temperature dependent)
                                                                          // index(2) : reference temperature level
                                                                          // index(3) : flavor
@@ -2093,14 +2074,14 @@ public:
         stoprun("gas_optics(): array tlay has values outside range");
       }
     #endif
-    if (allocated(col_dry)) {
-      if (size(col_dry,1) != ncol || size(col_dry,2) != nlay) { stoprun("gas_optics(): array col_dry has wrong size"); }
+    if (col_dry.is_allocated()) {
+      if (col_dry.extent(0) != ncol || col_dry.extent(1) != nlay) { stoprun("gas_optics(): array col_dry has wrong size"); }
       #ifdef RRTMGP_EXPENSIVE_CHECKS
         if (any(col_dry < 0.)) { stoprun("gas_optics(): array col_dry has values outside range"); }
       #endif
     }
 
-    bool use_rayl = allocated(this->krayl);
+    bool use_rayl = this->krayl.is_allocated();
 
     int ngas  = this->get_ngas();
     int nflav = this->get_nflav();
@@ -2108,44 +2089,44 @@ public:
     int npres = this->get_npres();
     int ntemp = this->get_ntemp();
     // number of minor contributors, total num absorption coeffs
-    int nminorlower  = size(this->minor_scales_with_density_lower, 1);
-    int nminorklower = size(this->kminor_lower, 1);
-    int nminorupper  = size(this->minor_scales_with_density_upper, 1);
-    int nminorkupper = size(this->kminor_upper, 1);
+    int nminorlower  = this->minor_scales_with_density_lower.extent(0);
+    int nminorklower = this->kminor_lower.extent(0);
+    int nminorupper  = this->minor_scales_with_density_upper.extent(0);
+    int nminorkupper = this->kminor_upper.extent(0);
     // Fill out the array of volume mixing ratios
-    for (int igas = 1 ; igas <= ngas ; igas++) {
+    for (int igas = 0 ; igas < ngas ; igas++) {
       // Get vmr if  gas is provided in ty_gas_concs
       for (size_t igas2 = 0 ; igas2 < gas_desc.gas_name.size() ; igas2++) {
-        if ( lower_case(this->gas_names(igas)) == lower_case(gas_desc.gas_name[igas2]) ) {
-           real2d vmr_slice = vmr.slice<2>(COLON,COLON,igas);
-           gas_desc.get_vmr(this->gas_names(igas), vmr_slice);
+        if ( lower_case(this->gas_names[igas]) == lower_case(gas_desc.gas_name[igas2]) ) {
+          real2dk vmr_slice = Kokkos::subview(vmr, Kokkos::ALL, Kokkos::ALL, igas);
+          gas_desc.get_vmr(this->gas_names[igas], vmr_slice);
         }
       }
     }
 
     // Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     int idx_h2o = string_loc_in_array("h2o", this->gas_names);
-    real2d col_dry_wk;
-    if (allocated(col_dry)) {
+    real2dk col_dry_wk;
+    if (col_dry.is_allocated()) {
       col_dry_wk = col_dry;
     } else {
-      real2d col_dry_arr = this->get_col_dry(vmr.slice<2>(COLON,COLON,idx_h2o),plev); // dry air column amounts computation
+      real2dk col_dry_arr = this->get_col_dry(Kokkos::subview(vmr, Kokkos::ALL, Kokkos::ALL, idx_h2o),plev); // dry air column amounts computation
       col_dry_wk = col_dry_arr;
     }
     // compute column gas amounts [molec/cm^2]
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
       col_gas(icol,ilay,0) = col_dry_wk(icol,ilay);
     });
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngas,nlay,ncol) , YAKL_LAMBDA (int igas, int ilay, int icol) {
-      col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
+    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngas,nlay,ncol}) , KOKKOS_LAMBDA (int igas, int ilay, int icol) {
+      col_gas(icol,ilay,igas+1) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
     });
     // ---- calculate gas optical depths ----
-    tau = 0;
+    Kokkos::deep_copy(tau, 0);
 
     interpolation(ncol, nlay, ngas, nflav, neta, npres, ntemp, this->flavor, this->press_ref_log, this->temp_ref,
                   this->press_ref_log_delta, this->temp_ref_min, this->temp_ref_delta, this->press_ref_trop_log,
@@ -2161,51 +2142,48 @@ public:
                            this->kminor_start_upper, tropo, col_mix, fmajor, fminor, play, tlay, col_gas,
                            jeta, jtemp, jpress, tau, top_at_1);
 
-    if (allocated(this->krayl)) {
+    if (this->krayl.is_allocated()) {
       compute_tau_rayleigh( ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, this->gpoint_flavor,
                             this->get_band_lims_gpoint(), this->krayl, idx_h2o, col_dry_wk, col_gas,
                             fminor, jeta, tropo, jtemp, tau_rayleigh);
     }
-    combine_and_reorder(tau, tau_rayleigh, allocated(this->krayl), optical_props);
+    combine_and_reorder(tau, tau_rayleigh, this->krayl.is_allocated(), optical_props);
   }
 
   // Compute Planck source functions at layer centers and levels
-  void source(bool top_at_1, int ncol, int nlay, int nbnd, int ngpt, real2d const &play, real2d const &plev, real2d const &tlay,
-              real1d const &tsfc, int2d const &jtemp, int2d const &jpress, int4d const &jeta, bool2d const &tropo,
-              real6d const &fmajor, SourceFuncLW &sources, real2d const &tlev=real2d()) {
-    using yakl::intrinsics::merge;
-    using yakl::intrinsics::allocated;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
-    real3d lay_source_t    ("lay_source_t    ",ngpt,nlay,ncol);
-    real3d lev_source_inc_t("lev_source_inc_t",ngpt,nlay,ncol);
-    real3d lev_source_dec_t("lev_source_dec_t",ngpt,nlay,ncol);
-    real2d sfc_source_t    ("sfc_source_t    ",ngpt     ,ncol);
+  void source(bool top_at_1, int ncol, int nlay, int nbnd, int ngpt, real2dk const &play, real2dk const &plev, real2dk const &tlay,
+              real1dk const &tsfc, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta, bool2dk const &tropo,
+              real6dk const &fmajor, SourceFuncLW &sources, real2dk const &tlev=real2dk()) {
+    real3dk lay_source_t    ("lay_source_t    ",ngpt,nlay,ncol);
+    real3dk lev_source_inc_t("lev_source_inc_t",ngpt,nlay,ncol);
+    real3dk lev_source_dec_t("lev_source_dec_t",ngpt,nlay,ncol);
+    real2dk sfc_source_t    ("sfc_source_t    ",ngpt     ,ncol);
     // Variables for temperature at layer edges [K] (ncol, nlay+1)
-    real2d tlev_arr("tlev_arr",ncol,nlay+1);
+    real2dk tlev_arr("tlev_arr",ncol,nlay+1);
 
     // Source function needs temperature at interfaces/levels and at layer centers
-    real2d tlev_wk;
-    if (allocated(tlev)) {
+    real2dk tlev_wk;
+    if (tlev.is_allocated()) {
       //   Users might have provided these
       tlev_wk = tlev;
     } else {
-      tlev_wk = real2d("tlev_wk",ncol,nlay+1);
+      tlev_wk = real2dk("tlev_wk",ncol,nlay+1);
       // Interpolate temperature to levels if not provided
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
       //   do icol = 1, ncol
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay+1,ncol) , YAKL_LAMBDA (int ilay, int icol) {
-        if (ilay == 1) {
-          tlev_wk(icol,1) = tlay(icol,1) + (plev(icol,1)-play(icol,1))*(tlay(icol,2)-tlay(icol,1)) / (play(icol,2)-play(icol,1));
+      Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay+1,ncol}) , YAKL_LAMBDA (int ilay, int icol) {
+        if (ilay == 0) {
+          tlev_wk(icol,0) = tlay(icol,0) + (plev(icol,0)-play(icol,0))*(tlay(icol,1)-tlay(icol,0)) / (play(icol,1)-play(icol,0));
         }
-        tlev_wk(icol,ilay) = ( play(icol,ilay-1)*tlay(icol,ilay-1)*(plev(icol,ilay  )-play(icol,ilay))  +
-                               play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay)) ) /
-                             (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)));
-        if (ilay == nlay+1) {
-          tlev_wk(icol,nlay+1) = tlay(icol,nlay) + (plev(icol,nlay+1)-play(icol,nlay))*(tlay(icol,nlay)-tlay(icol,nlay-1)) /
-                                                   (play(icol,nlay)-play(icol,nlay-1));
+        else if (ilay == nlay) {
+          tlev_wk(icol,ilay) = tlay(icol,ilay-1) + (plev(icol,ilay)-play(icol,ilay-1))*(tlay(icol,ilay-1)-tlay(icol,ilay)) /
+            (play(icol,nlay)-play(icol,ilay));
+        }
+        else {
+          tlev_wk(icol,ilay) = ( play(icol,ilay-1)*tlay(icol,ilay-1)*(plev(icol,ilay  )-play(icol,ilay))  +
+                                 play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay)) ) /
+            (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)));
         }
       });
     }
@@ -2221,7 +2199,7 @@ public:
     auto &sources_sfc_source = sources.sfc_source;
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       sources_sfc_source(icol,igpt) = sfc_source_t(igpt,icol);
     });
     reorder123x321(ngpt, nlay, ncol, lay_source_t    , sources.lay_source    );
@@ -2231,37 +2209,32 @@ public:
 
   // Utility function, provided for user convenience
   // computes column amounts of dry air using hydrostatic equation
-  real2d get_col_dry(real2d const &vmr_h2o, real2d const &plev, real1d const &latitude=real1d()) {
-    using yakl::intrinsics::size;
-    using yakl::intrinsics::allocated;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
+  real2dk get_col_dry(real2dk const &vmr_h2o, real2dk const &plev, real1dk const &latitude=real1dk()) {
     // first and second term of Helmert formula
     real constexpr helmert1 = 9.80665;
     real constexpr helmert2 = 0.02586;
-    int ncol = size(plev,1);
-    int nlev = size(plev,2);
-    real1d g0("g0",size(plev,1));
-    if (allocated(latitude)) {
+    int ncol = plev.extent(0);
+    int nlev = plev.extent(1);
+    real1dk g0("g0",plev.extent(0));
+    if (latitude.is_allocated()) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
+      Kokkos::parallel_for( ncol , YAKL_LAMBDA (int icol) {
         g0(icol) = helmert1 - helmert2 * cos(2.0 * M_PI * latitude(icol) / 180.0); // acceleration due to gravity [m/s^2]
       });
     } else {
       // do icol = 1, ncol
-      YAKL_SCOPE( grav , ::grav );
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
+      const auto grav = ::grav;
+      Kokkos::parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
         g0(icol) = grav;
       });
     }
 
-    real2d col_dry("col_dry",size(plev,1),size(plev,2)-1);
+    real2dk col_dry("col_dry",plev.extent(0),plev.extent(1)-1);
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
-    YAKL_SCOPE( m_dry , ::m_dry );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
+    const auto m_dry = m_dry;
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
       real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1. / (1.+vmr_h2o(icol,ilev));
@@ -2273,23 +2246,19 @@ public:
 
  // Utility function to combine optical depths from gas absorption and Rayleigh scattering
  //   (and reorder them for convenience, while we're at it)
- void combine_and_reorder(real3d const &tau, real3d const &tau_rayleigh, bool has_rayleigh, OpticalProps1scl &optical_props) {
-    using yakl::intrinsics::size;
-
-    int ncol = size(tau,3);
-    int nlay = size(tau,2);
-    int ngpt = size(tau,1);
+ void combine_and_reorder(real3dk const &tau, real3dk const &tau_rayleigh, bool has_rayleigh, OpticalProps1scl &optical_props) {
+    int ncol = tau.extent(2);
+    int nlay = tau.extent(1);
+    int ngpt = tau.extent(0);
     reorder123x321(ngpt, nlay, ncol, tau, optical_props.tau);
   }
 
  // Utility function to combine optical depths from gas absorption and Rayleigh scattering
  //   (and reorder them for convenience, while we're at it)
- void combine_and_reorder(real3d const &tau, real3d const &tau_rayleigh, bool has_rayleigh, OpticalProps2str &optical_props) {
-    using yakl::intrinsics::size;
-
-    int ncol = size(tau,3);
-    int nlay = size(tau,2);
-    int ngpt = size(tau,1);
+ void combine_and_reorder(real3dk const &tau, real3dk const &tau_rayleigh, bool has_rayleigh, OpticalProps2str &optical_props) {
+    int ncol = tau.extent(2);
+    int nlay = tau.extent(1);
+    int ngpt = tau.extent(0);
     if (has_rayleigh) {
       // combine optical depth and rayleigh scattering
       combine_and_reorder_2str(ncol, nlay, ngpt, tau, tau_rayleigh, optical_props.tau, optical_props.ssa, optical_props.g);
@@ -2302,10 +2271,6 @@ public:
   }
 
   void print_norms() const {
-    using yakl::intrinsics::count;
-    using yakl::intrinsics::sum;
-    using yakl::intrinsics::allocated;
-
                                                       std::cout << "name                                  : " << std::setw(20) << name                                   << "\n";
                                                       std::cout << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n";
                                                       std::cout << "press_ref_min                         : " << std::setw(20) << press_ref_min                          << "\n";
@@ -2315,38 +2280,37 @@ public:
                                                       std::cout << "press_ref_log_delta                   : " << std::setw(20) << press_ref_log_delta                    << "\n";
                                                       std::cout << "temp_ref_delta                        : " << std::setw(20) << temp_ref_delta                         << "\n";
                                                       std::cout << "press_ref_trop_log                    : " << std::setw(20) << press_ref_trop_log                     << "\n";
-    if (allocated(gas_names                      )) { std::cout << "gas_names                             : " << std::setw(20) << gas_names                              << "\n"; }
-    if (allocated(band2gpt                       )) { std::cout << "sum(band2gpt     )                    : " << std::setw(20) << sum(band2gpt     )                     << "\n"; }
-    if (allocated(gpt2band                       )) { std::cout << "sum(gpt2band     )                    : " << std::setw(20) << sum(gpt2band     )                     << "\n"; }
-    if (allocated(band_lims_wvn                  )) { std::cout << "sum(band_lims_wvn)                    : " << std::setw(20) << sum(band_lims_wvn)                     << "\n"; }
-    if (allocated(press_ref                      )) { std::cout << "sum(press_ref    )                    : " << std::setw(20) << sum(press_ref    )                     << "\n"; }
-    if (allocated(press_ref_log                  )) { std::cout << "sum(press_ref_log)                    : " << std::setw(20) << sum(press_ref_log)                     << "\n"; }
-    if (allocated(temp_ref                       )) { std::cout << "sum(temp_ref     )                    : " << std::setw(20) << sum(temp_ref     )                     << "\n"; }
-    if (allocated(vmr_ref                        )) { std::cout << "sum(vmr_ref                )          : " << std::setw(20) << sum(vmr_ref                )           << "\n"; }
-    if (allocated(flavor                         )) { std::cout << "sum(flavor                 )          : " << std::setw(20) << sum(flavor                 )           << "\n"; }
-    if (allocated(gpoint_flavor                  )) { std::cout << "sum(gpoint_flavor          )          : " << std::setw(20) << sum(gpoint_flavor          )           << "\n"; }
-    if (allocated(kmajor                         )) { std::cout << "sum(kmajor                 )          : " << std::setw(20) << sum(kmajor                 )           << "\n"; }
-    if (allocated(minor_limits_gpt_lower         )) { std::cout << "sum(minor_limits_gpt_lower )          : " << std::setw(20) << sum(minor_limits_gpt_lower )           << "\n"; }
-    if (allocated(minor_limits_gpt_upper         )) { std::cout << "sum(minor_limits_gpt_upper )          : " << std::setw(20) << sum(minor_limits_gpt_upper )           << "\n"; }
-    if (allocated(idx_minor_lower                )) { std::cout << "sum(idx_minor_lower        )          : " << std::setw(20) << sum(idx_minor_lower        )           << "\n"; }
-    if (allocated(idx_minor_upper                )) { std::cout << "sum(idx_minor_upper        )          : " << std::setw(20) << sum(idx_minor_upper        )           << "\n"; }
-    if (allocated(idx_minor_scaling_lower        )) { std::cout << "sum(idx_minor_scaling_lower)          : " << std::setw(20) << sum(idx_minor_scaling_lower)           << "\n"; }
-    if (allocated(idx_minor_scaling_upper        )) { std::cout << "sum(idx_minor_scaling_upper)          : " << std::setw(20) << sum(idx_minor_scaling_upper)           << "\n"; }
-    if (allocated(kminor_start_lower             )) { std::cout << "sum(kminor_start_lower     )          : " << std::setw(20) << sum(kminor_start_lower     )           << "\n"; }
-    if (allocated(kminor_start_upper             )) { std::cout << "sum(kminor_start_upper     )          : " << std::setw(20) << sum(kminor_start_upper     )           << "\n"; }
-    if (allocated(kminor_lower                   )) { std::cout << "sum(kminor_lower           )          : " << std::setw(20) << sum(kminor_lower           )           << "\n"; }
-    if (allocated(kminor_upper                   )) { std::cout << "sum(kminor_upper           )          : " << std::setw(20) << sum(kminor_upper           )           << "\n"; }
-    if (allocated(krayl                          )) { std::cout << "sum(krayl                  )          : " << std::setw(20) << sum(krayl                  )           << "\n"; }
-    if (allocated(planck_frac                    )) { std::cout << "sum(planck_frac            )          : " << std::setw(20) << sum(planck_frac            )           << "\n"; }
-    if (allocated(totplnk                        )) { std::cout << "sum(totplnk                )          : " << std::setw(20) << sum(totplnk                )           << "\n"; }
-    if (allocated(solar_src                      )) { std::cout << "sum(solar_src              )          : " << std::setw(20) << sum(solar_src              )           << "\n"; }
-    if (allocated(minor_scales_with_density_lower)) { std::cout << "count(minor_scales_with_density_lower): " << std::setw(20) << count(minor_scales_with_density_lower) << "\n"; }
-    if (allocated(minor_scales_with_density_upper)) { std::cout << "count(minor_scales_with_density_upper): " << std::setw(20) << count(minor_scales_with_density_upper) << "\n"; }
-    if (allocated(scale_by_complement_lower      )) { std::cout << "count(scale_by_complement_lower      ): " << std::setw(20) << count(scale_by_complement_lower      ) << "\n"; }
-    if (allocated(scale_by_complement_upper      )) { std::cout << "count(scale_by_complement_upper      ): " << std::setw(20) << count(scale_by_complement_upper      ) << "\n"; }
-    if (allocated(is_key                         )) { std::cout << "count(is_key                         ): " << std::setw(20) << count(is_key                         ) << "\n"; }
+    //if (gas_names.is_allocated()                      ) { std::cout << "gas_names                             : " << std::setw(20) << gas_names                              << "\n"; }
+    if (band2gpt.is_allocated()                       ) { std::cout << "sum(band2gpt     )                    : " << std::setw(20) << conv::sum(band2gpt     )                     << "\n"; }
+    if (gpt2band.is_allocated()                       ) { std::cout << "sum(gpt2band     )                    : " << std::setw(20) << conv::sum(gpt2band     )                     << "\n"; }
+    if (band_lims_wvn.is_allocated()                  ) { std::cout << "sum(band_lims_wvn)                    : " << std::setw(20) << conv::sum(band_lims_wvn)                     << "\n"; }
+    if (press_ref.is_allocated()                      ) { std::cout << "sum(press_ref    )                    : " << std::setw(20) << conv::sum(press_ref    )                     << "\n"; }
+    if (press_ref_log.is_allocated()                  ) { std::cout << "sum(press_ref_log)                    : " << std::setw(20) << conv::sum(press_ref_log)                     << "\n"; }
+    if (temp_ref.is_allocated()                       ) { std::cout << "sum(temp_ref     )                    : " << std::setw(20) << conv::sum(temp_ref     )                     << "\n"; }
+    if (vmr_ref.is_allocated()                        ) { std::cout << "sum(vmr_ref                )          : " << std::setw(20) << conv::sum(vmr_ref                )           << "\n"; }
+    if (flavor.is_allocated()                         ) { std::cout << "sum(flavor                 )          : " << std::setw(20) << conv::sum(flavor                 )           << "\n"; }
+    if (gpoint_flavor.is_allocated()                  ) { std::cout << "sum(gpoint_flavor          )          : " << std::setw(20) << conv::sum(gpoint_flavor          )           << "\n"; }
+    if (kmajor.is_allocated()                         ) { std::cout << "sum(kmajor                 )          : " << std::setw(20) << conv::sum(kmajor                 )           << "\n"; }
+    if (minor_limits_gpt_lower.is_allocated()         ) { std::cout << "sum(minor_limits_gpt_lower )          : " << std::setw(20) << conv::sum(minor_limits_gpt_lower )           << "\n"; }
+    if (minor_limits_gpt_upper.is_allocated()         ) { std::cout << "sum(minor_limits_gpt_upper )          : " << std::setw(20) << conv::sum(minor_limits_gpt_upper )           << "\n"; }
+    if (idx_minor_lower.is_allocated()                ) { std::cout << "sum(idx_minor_lower        )          : " << std::setw(20) << conv::sum(idx_minor_lower        )           << "\n"; }
+    if (idx_minor_upper.is_allocated()                ) { std::cout << "sum(idx_minor_upper        )          : " << std::setw(20) << conv::sum(idx_minor_upper        )           << "\n"; }
+    if (idx_minor_scaling_lower.is_allocated()        ) { std::cout << "sum(idx_minor_scaling_lower)          : " << std::setw(20) << conv::sum(idx_minor_scaling_lower)           << "\n"; }
+    if (idx_minor_scaling_upper.is_allocated()        ) { std::cout << "sum(idx_minor_scaling_upper)          : " << std::setw(20) << conv::sum(idx_minor_scaling_upper)           << "\n"; }
+    if (kminor_start_lower.is_allocated()             ) { std::cout << "sum(kminor_start_lower     )          : " << std::setw(20) << conv::sum(kminor_start_lower     )           << "\n"; }
+    if (kminor_start_upper.is_allocated()             ) { std::cout << "sum(kminor_start_upper     )          : " << std::setw(20) << conv::sum(kminor_start_upper     )           << "\n"; }
+    if (kminor_lower.is_allocated()                   ) { std::cout << "sum(kminor_lower           )          : " << std::setw(20) << conv::sum(kminor_lower           )           << "\n"; }
+    if (kminor_upper.is_allocated()                   ) { std::cout << "sum(kminor_upper           )          : " << std::setw(20) << conv::sum(kminor_upper           )           << "\n"; }
+    if (krayl.is_allocated()                          ) { std::cout << "sum(krayl                  )          : " << std::setw(20) << conv::sum(krayl                  )           << "\n"; }
+    if (planck_frac.is_allocated()                    ) { std::cout << "sum(planck_frac            )          : " << std::setw(20) << conv::sum(planck_frac            )           << "\n"; }
+    if (totplnk.is_allocated()                        ) { std::cout << "sum(totplnk                )          : " << std::setw(20) << conv::sum(totplnk                )           << "\n"; }
+    if (solar_src.is_allocated()                      ) { std::cout << "sum(solar_src              )          : " << std::setw(20) << conv::sum(solar_src              )           << "\n"; }
+    if (minor_scales_with_density_lower.is_allocated()) { std::cout << "count(minor_scales_with_density_lower): " << std::setw(20) << conv::sum(minor_scales_with_density_lower) << "\n"; }
+    if (minor_scales_with_density_upper.is_allocated()) { std::cout << "count(minor_scales_with_density_upper): " << std::setw(20) << conv::sum(minor_scales_with_density_upper) << "\n"; }
+    if (scale_by_complement_lower.is_allocated()      ) { std::cout << "count(scale_by_complement_lower      ): " << std::setw(20) << conv::sum(scale_by_complement_lower      ) << "\n"; }
+    if (scale_by_complement_upper.is_allocated()      ) { std::cout << "count(scale_by_complement_upper      ): " << std::setw(20) << conv::sum(scale_by_complement_upper      ) << "\n"; }
+    if (is_key.is_allocated()                         ) { std::cout << "count(is_key                         ): " << std::setw(20) << conv::sum(is_key                         ) << "\n"; }
   }
-#endif
 
   void validate_kokkos(const GasOpticsRRTMGP& orig) const
   {

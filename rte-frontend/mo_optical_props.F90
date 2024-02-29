@@ -295,7 +295,11 @@ contains
     ! Make a map between g-points and bands
     !   Efficient only when g-point indexes start at 1 and are contiguous.
     !
-    if(allocated(this%gpt2band)) deallocate(this%gpt2band)
+    if(allocated(this%gpt2band)) then 
+      !$acc        exit data     delete( this%gpt2band)
+      !$omp target exit data map(release:this%gpt2band)
+      deallocate(this%gpt2band)
+    end if 
     allocate(this%gpt2band(maxval(band_lims_gpt_lcl)))
     do iband=1,size(band_lims_gpt_lcl,dim=2)
       this%gpt2band(band_lims_gpt_lcl(1,iband):band_lims_gpt_lcl(2,iband)) = iband

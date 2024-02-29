@@ -107,7 +107,7 @@ module mo_rte_solver_kernels
   interface
     subroutine lw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
                                   tau, ssa, g,                &
-                                  lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                                  lay_source, lev_source, sfc_emis, sfc_src, &
                                   inc_flux,                   &
                                   flux_up, flux_dn) bind(C, name="rte_lw_solver_2stream")
       use mo_rte_kind,      only: wp, wl
@@ -119,10 +119,8 @@ module mo_rte_solver_kernels
                                                               !! Optical thickness, single-scattering albedo, asymmetry parameter []
       real(wp), dimension(ncol,nlay,  ngpt),   intent(in   ) :: lay_source
                                                               !! Planck source at layer average temperature [W/m2]
-      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
-                                            !! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
-      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
-                                            !! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
+      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source
+                                                              !! Planck source at layer edge for radiation  [W/m2]
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
                                                               !! Surface emissivity      []
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src

@@ -818,9 +818,9 @@ public:
                              this->lut_extliq, this->lut_ssaliq, this->lut_asyliq, ltau, ltaussa, ltaussag);
       // Ice
       compute_all_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, this->ice_nsteps,this->ice_step_size,this->radice_lwr,
-                             Kokkos::subview(this->lut_extice, Kokkos::ALL, Kokkos::ALL, this->icergh),
-                             Kokkos::subview(this->lut_ssaice, Kokkos::ALL, Kokkos::ALL, this->icergh),
-                             Kokkos::subview(this->lut_asyice, Kokkos::ALL, Kokkos::ALL, this->icergh),
+                             Kokkos::subview(this->lut_extice, Kokkos::ALL, Kokkos::ALL, this->icergh-1),
+                             Kokkos::subview(this->lut_ssaice, Kokkos::ALL, Kokkos::ALL, this->icergh-1),
+                             Kokkos::subview(this->lut_asyice, Kokkos::ALL, Kokkos::ALL, this->icergh-1),
                              itau, itaussa, itaussag);
     } else {
       // Cloud optical properties from Pade coefficient method
@@ -832,9 +832,9 @@ public:
                             2, 2, this->pade_sizreg_asyliq, this->pade_asyliq,
                             ltau, ltaussa, ltaussag);
       compute_all_from_pade(ncol, nlay, nbnd, nsizereg, icemsk, ciwp, reice,
-                            2, 3, this->pade_sizreg_extice, Kokkos::subview(this->pade_extice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh),
-                            2, 2, this->pade_sizreg_ssaice, Kokkos::subview(this->pade_ssaice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh),
-                            2, 2, this->pade_sizreg_asyice, Kokkos::subview(this->pade_asyice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh),
+                            2, 3, this->pade_sizreg_extice, Kokkos::subview(this->pade_extice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh-1),
+                            2, 2, this->pade_sizreg_ssaice, Kokkos::subview(this->pade_ssaice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh-1),
+                            2, 2, this->pade_sizreg_asyice, Kokkos::subview(this->pade_asyice, Kokkos::ALL,Kokkos::ALL,Kokkos::ALL,this->icergh-1),
                            itau, itaussa, itaussag);
     }
 
@@ -910,11 +910,11 @@ public:
     //     do icol = 1, ncol
     Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
-        int index = std::min( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.);
-        real fint = (re(icol,ilay) - offset)/step_size - (index-1);
-        real t   = lwp(icol,ilay)    * (tau_table(index,  ibnd) + fint * (tau_table(index,ibnd) - tau_table(index-1,ibnd)));
-        real ts  = t                 * (ssa_table(index,  ibnd) + fint * (ssa_table(index,ibnd) - ssa_table(index-1,ibnd)));
-        taussag(icol,ilay,ibnd) = ts * (asy_table(index,  ibnd) + fint * (asy_table(index,ibnd) - asy_table(index-1,ibnd)));
+        int index = std::min( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.) - 1;
+        real fint = (re(icol,ilay) - offset)/step_size - index;
+        real t   = lwp(icol,ilay)    * (tau_table(index,  ibnd) + fint * (tau_table(index+1,ibnd) - tau_table(index,ibnd)));
+        real ts  = t                 * (ssa_table(index,  ibnd) + fint * (ssa_table(index+1,ibnd) - ssa_table(index,ibnd)));
+        taussag(icol,ilay,ibnd) = ts * (asy_table(index,  ibnd) + fint * (asy_table(index+1,ibnd) - asy_table(index,ibnd)));
         taussa (icol,ilay,ibnd) = ts;
         tau    (icol,ilay,ibnd) = t;
       } else {

@@ -275,8 +275,16 @@ contains
     !
     ! Assignment
     !
-    if(allocated(this%band2gpt     )) deallocate(this%band2gpt)
-    if(allocated(this%band_lims_wvn)) deallocate(this%band_lims_wvn)
+    if(allocated(this%band2gpt     )) then 
+      !$acc        exit data     delete( this%band2gpt)
+      !$omp target exit data map(release:this%band2gpt)
+      deallocate(this%band2gpt)
+    end if 
+    if(allocated(this%band_lims_wvn)) then
+      !$acc        exit data     delete( this%band_lims_wvn)
+      !$omp target exit data map(release:this%band_lims_wvn)
+      deallocate(this%band_lims_wvn)
+    end if 
     allocate(this%band2gpt     (2,size(band_lims_wvn,2)), &
              this%band_lims_wvn(2,size(band_lims_wvn,2)))
     this%band2gpt      = band_lims_gpt_lcl

@@ -3,7 +3,6 @@
 #
 RRTMGP_DIR ?= $(RRTMGP_ROOT)/build
 KERNEL_DIR ?= $(RRTMGP_ROOT)/build 
-RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
 #

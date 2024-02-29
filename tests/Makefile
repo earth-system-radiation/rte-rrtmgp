@@ -46,7 +46,7 @@ CLOUDS    += mo_cloud_sampling.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coeffici
 ADDITIONS += mo_solar_variability.o
 
 # Many codes will need to be updated if the library changes
-# LIB_DEPS = $(RRTMGP_BUILD)/librte.a $(RRTMGP_BUILD)/librrtmgp.a
+# LIB_DEPS = $(RRTMGP_DIR)/build/librte.a $(RRTMGP_DIR)/build/librrtmgp.a
 #
 # Targets
 #

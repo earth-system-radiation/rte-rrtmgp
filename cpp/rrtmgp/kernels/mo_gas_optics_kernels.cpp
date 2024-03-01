@@ -650,28 +650,54 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   });
 }
 
+void combine_and_reorder_2str(int ncol, int nlay, int ngpt, real3dk const &tau_abs, real3dk const &tau_rayleigh,
+                              real3dk const &tau, real3dk const &ssa, real3dk const &g) {
+  real tiny = std::numeric_limits<real>::min();
+
+  int constexpr TILE_SIZE=8;
+  int colTiles = ncol / TILE_SIZE + 1;
+  int gptTiles = ngpt / TILE_SIZE + 1;
+
+  // for (int ilay=1; ilay<=nlay; ilay++) {
+  //   for (int tcol=1; tcol<=colTiles; tcol++) {
+  //     for (int tgpt=1; tgpt<=gptTiles; tgpt++) {
+  //       for (int itcol=1; itcol<=TILE_SIZE; itcol++) {
+  //         for (int itgpt=1; itgpt<=TILE_SIZE; itgpt++) {
+  Kokkos::parallel_for( MDRangeP<5>({0,0,0,0,0}, {nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
+    int icol = (tcol-1)*TILE_SIZE + itcol;
+    int igpt = (tgpt-1)*TILE_SIZE + itgpt;
+
+    if ( icol <= ncol && igpt <= ngpt ) {
+      real t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
+      tau(icol,ilay,igpt) = t;
+      g  (icol,ilay,igpt) = 0.;
+      if(t > 2. * tiny) {
+        ssa(icol,ilay,igpt) = tau_rayleigh(igpt,ilay,icol) / t;
+      } else {
+        ssa(icol,ilay,igpt) = 0.;
+      }
+    }
+  });
+}
+
 void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, int neta, int npres, int ntemp, int nPlanckTemp,
                            real2dk const &tlay, real2dk const &tlev, real1dk const &tsfc, int sfc_lay, real6dk const &fmajor,
                            int4dk const &jeta, bool2dk const &tropo, int2dk const &jtemp, int2dk const &jpress,
                            int1dk const &gpoint_bands, int2dk const &band_lims_gpt, real4dk const &pfracin, real temp_ref_min,
                            real totplnk_delta, real2dk const &totplnk, int2dk const &gpoint_flavor, real2dk const &sfc_src,
                            real3dk const &lay_src, real3dk const &lev_src_inc, real3dk const &lev_src_dec) {
-  using yakl::COLON;
   using yakl::intrinsics::merge;
-  using yakl::fortran::parallel_for;
-  using yakl::fortran::SimpleBounds;
-  using yakl::fortran::Bounds;
 
   real3dk pfrac          ("pfrac"          ,ngpt,nlay,ncol);
   real3dk planck_function("planck_function",nbnd,nlay+1,ncol);
   real1dk one            ("one"            ,2);
-  one = 1;
+  Kokkos::deep_copy(one, 1);
 
   // Calculation of fraction of band's Planck irradiance associated with each g-point
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(nlay,ncol,ngpt) , YAKL_LAMBDA (int ilay, int icol, int igpt) {
+  Kokkos::parallel_for( MDRangeP<3>({0,0,0},{nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
     // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
     int itropo = merge(1,2,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
     int iflav = gpoint_flavor(itropo, igpt); //eta interpolation depends on band's flavor
@@ -695,23 +721,23 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
   //
   // for (int icol=1; icol<=ncol; icol++) {
-  parallel_for( YAKL_AUTO_LABEL() , ncol , YAKL_LAMBDA (int icol) {
-    interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk, planck_function.slice<1>(COLON,1,icol),nPlanckTemp,nbnd);
+  Kokkos::parallel_for( ncol , KOKKOS_LAMBDA (int icol) {
+      interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL, 0 ,icol),nPlanckTemp,nbnd);
   });
   //
   // Map to g-points
   //
   // for (int igpt=1; igpt<=ngpt; igpt++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
     sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol);
   });
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ncol,nlay) , YAKL_LAMBDA (int icol, int ilay) {
+  Kokkos::parallel_for( MDRangeP<2>({0,0}, {ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
     // Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
-    interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function.slice<1>(COLON,ilay,icol),nPlanckTemp,nbnd);
+      interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL,ilay,icol),nPlanckTemp,nbnd);
   });
   //
   // Map to g-points
@@ -722,20 +748,20 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
+  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     lay_src(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,icol);
   });
 
   // compute level source irradiances for each g-point, one each for upward and downward paths
   // for (int icol=1; icol<=ncol; icol++) {
-  parallel_for( YAKL_AUTO_LABEL() , ncol , YAKL_LAMBDA (int icol) {
-    interpolate1D(tlev(icol,1), temp_ref_min, totplnk_delta, totplnk, planck_function.slice<1>(COLON,1,icol),nPlanckTemp,nbnd);
+  Kokkos::parallel_for( ncol , KOKKOS_LAMBDA (int icol) {
+      interpolate1D(tlev(icol,1), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL,0 ,icol),nPlanckTemp,nbnd);
   });
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=2; ilay<=nlay+1; ilay++) {
-  parallel_for( YAKL_AUTO_LABEL() , Bounds<2>(ncol,{2,nlay+1}) , YAKL_LAMBDA (int icol, int ilay) {
-    interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, planck_function.slice<1>(COLON,ilay,icol),nPlanckTemp,nbnd);
+  Kokkos::parallel_for( MDRangeP<2>({0, 1}, {ncol,nlay+1}) , KOKKOS_LAMBDA (int icol, int ilay) {
+      interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function,Kokkos::ALL,ilay,icol),nPlanckTemp,nbnd);
   });
 
   //
@@ -746,7 +772,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol+=2) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ncol,nlay,ngpt) , YAKL_LAMBDA (int icol, int ilay, int igpt) {
+  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  );
     lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  );
     if (icol < ncol) {
@@ -764,13 +790,11 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
                           real2dk const &col_dry, real3dk const &col_gas, real5dk const &fminor, int4dk const &jeta,
                           bool2dk const &tropo, int2dk const &jtemp, real3dk const &tau_rayleigh) {
   using yakl::intrinsics::merge;
-  using yakl::fortran::parallel_for;
-  using yakl::fortran::SimpleBounds;
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(nlay,ncol,ngpt) , YAKL_LAMBDA (int ilay, int icol, int igpt) {
+  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
     int itropo = merge(1,2,tropo(icol,ilay)); // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
     int iflav = gpoint_flavor(itropo, igpt);
     // Inlining interpolate2D
@@ -795,7 +819,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , YAKL_LAMBDA (int ilay, int icol) {
+  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,1) <= 0 || ilay < layer_limits(icol,1) || ilay > layer_limits(icol,2) ) {
     } else {
@@ -901,7 +925,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
   if (top_at_1) {
 
     // for (int icol=1; icol<=ncol; icol++){
-    Kokkos::parallel_for( ncol , YAKL_LAMBDA (int icol) {
+    Kokkos::parallel_for( ncol , KOKKOS_LAMBDA (int icol) {
       itropo_lower(icol,1) = nlay;
       // itropo_lower(icol,1) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
       {
@@ -938,7 +962,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
   } else {  // top_at_1
 
     // for (int icol=1; icol<=ncol; icol++){
-    Kokkos::parallel_for( ncol , YAKL_LAMBDA ( int icol ) {
+    Kokkos::parallel_for( ncol , KOKKOS_LAMBDA ( int icol ) {
       itropo_lower(icol,0) = 1;
       // itropo_lower(icol,2) = minloc(play(icol,:), dim=1, mask=tropo(icol,:))
       {

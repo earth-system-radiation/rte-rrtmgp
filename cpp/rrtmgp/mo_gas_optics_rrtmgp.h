@@ -1970,7 +1970,7 @@ public:
   template <class T>
   void gas_optics(const int ncol, const int nlay,
                   bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, real1dk const &tsfc,
-                  GasConcs const &gas_desc, T &optical_props, SourceFuncLW &sources,
+                  GasConcsK const &gas_desc, T &optical_props, SourceFuncLWK &sources,
                   real2dk const &col_dry=real2dk(), real2dk const &tlev=real2dk()) {
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
@@ -2153,7 +2153,7 @@ public:
   // Compute Planck source functions at layer centers and levels
   void source(bool top_at_1, int ncol, int nlay, int nbnd, int ngpt, real2dk const &play, real2dk const &plev, real2dk const &tlay,
               real1dk const &tsfc, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta, bool2dk const &tropo,
-              real6dk const &fmajor, SourceFuncLW &sources, real2dk const &tlev=real2dk()) {
+              real6dk const &fmajor, SourceFuncLWK &sources, real2dk const &tlev=real2dk()) {
     real3dk lay_source_t    ("lay_source_t    ",ngpt,nlay,ncol);
     real3dk lev_source_inc_t("lev_source_inc_t",ngpt,nlay,ncol);
     real3dk lev_source_dec_t("lev_source_dec_t",ngpt,nlay,ncol);
@@ -2189,7 +2189,7 @@ public:
     }
     // Compute internal (Planck) source functions at layers and levels,
     //  which depend on mapping from spectral space that creates k-distribution.
-    int nlayTmp = merge( nlay , 1 , top_at_1 );
+    int nlayTmp = yakl::intrinsics::merge( nlay , 1 , top_at_1 );
     compute_Planck_source(ncol, nlay, nbnd, ngpt, this->get_nflav(), this->get_neta(), this->get_npres(), this->get_ntemp(),
                           this->get_nPlanckTemp(), tlay, tlev_wk, tsfc, nlayTmp, fmajor, jeta, tropo, jtemp, jpress,
                           this->get_gpoint_bands(), this->get_band_lims_gpoint(), this->planck_frac, this->temp_ref_min,
@@ -2233,7 +2233,7 @@ public:
     real2dk col_dry("col_dry",plev.extent(0),plev.extent(1)-1);
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
-    const auto m_dry = m_dry;
+    const auto m_dry = ::m_dry;
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
       real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
@@ -2246,7 +2246,7 @@ public:
 
  // Utility function to combine optical depths from gas absorption and Rayleigh scattering
  //   (and reorder them for convenience, while we're at it)
- void combine_and_reorder(real3dk const &tau, real3dk const &tau_rayleigh, bool has_rayleigh, OpticalProps1scl &optical_props) {
+ void combine_and_reorder(real3dk const &tau, real3dk const &tau_rayleigh, bool has_rayleigh, OpticalProps1sclK &optical_props) {
     int ncol = tau.extent(2);
     int nlay = tau.extent(1);
     int ngpt = tau.extent(0);
@@ -2255,7 +2255,7 @@ public:
 
  // Utility function to combine optical depths from gas absorption and Rayleigh scattering
  //   (and reorder them for convenience, while we're at it)
- void combine_and_reorder(real3dk const &tau, real3dk const &tau_rayleigh, bool has_rayleigh, OpticalProps2str &optical_props) {
+ void combine_and_reorder(real3dk const &tau, real3dk const &tau_rayleigh, bool has_rayleigh, OpticalProps2strK &optical_props) {
     int ncol = tau.extent(2);
     int nlay = tau.extent(1);
     int ngpt = tau.extent(0);
@@ -2265,8 +2265,8 @@ public:
     } else {
       // index reorder (ngpt, nlay, ncol) -> (ncol,nlay,gpt)
       reorder123x321(ngpt, nlay, ncol, tau, optical_props.tau);
-      optical_props.ssa = 0;
-      optical_props.g   = 0;
+      Kokkos::deep_copy(optical_props.ssa, 0);
+      Kokkos::deep_copy(optical_props.g,   0);
     }
   }
 

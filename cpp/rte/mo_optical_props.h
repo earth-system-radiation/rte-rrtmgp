@@ -641,7 +641,7 @@ public:
     int d1 = size(this->tau,1);
     int d2 = size(this->tau,2);
     int d3 = size(this->tau,3);
-    if ( d1 != size(this->ssa,1) || d2 != size(this->ssa,2) || d3 != size(this->ssa,3) || 
+    if ( d1 != size(this->ssa,1) || d2 != size(this->ssa,2) || d3 != size(this->ssa,3) ||
          d1 != size(this->g  ,1) || d2 != size(this->g  ,2) || d3 != size(this->g  ,3) ) {
       stoprun("validate: arrays not sized consistently");
     }
@@ -745,7 +745,7 @@ public:
     if (allocated(band_lims_wvn)) { std::cout << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
     if (allocated(tau          )) { std::cout << "tau          : " << sum(tau          ) << "\n"; }
     if (allocated(ssa          )) { std::cout << "ssa          : " << sum(ssa          ) << "\n"; }
-    if (allocated(g            )) { std::cout << "g            : " << sum(g            ) << "\n"; }  
+    if (allocated(g            )) { std::cout << "g            : " << sum(g            ) << "\n"; }
   }
 
 };
@@ -765,3 +765,135 @@ inline void OpticalProps1scl::increment(OpticalProps2str &that) {
     inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, that.tau, that.ssa, this->tau, that.get_nband(), that.get_band_lims_gpoint());
   }
 }
+
+#ifdef RRTMGP_ENABLE_KOKKOS
+class OpticalProps2strK : public OpticalPropsArryK {
+public:
+  real3dk ssa; // single-scattering albedo (ncol, nlay, ngpt)
+  real3dk g;   // asymmetry parameter (ncol, nlay, ngpt)
+
+
+  void validate() const {
+    if ( ! this->tau.is_allocated() || ! this->ssa.is_allocated() || ! this->g.is_allocated() ) {
+      stoprun("validate: arrays not allocated/initialized");
+    }
+    int d1 = this->tau.extent(0);
+    int d2 = this->tau.extent(1);
+    int d3 = this->tau.extent(2);
+    if ( d1 != this->ssa.extent(0) || d2 != this->ssa.extent(1) || d3 != this->ssa.extent(2) ||
+         d1 != this->g.extent(0) || d2 != this->g.extent(1) || d3 != this->g.extent(2) ) {
+      stoprun("validate: arrays not sized consistently");
+    }
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+      if (any(this->tau <  0)                      ) { stoprun("validate: tau values out of range"); }
+      if (any(this->ssa <  0) || any(this->ssa > 1)) { stoprun("validate: ssa values out of range"); }
+      if (any(this->g   < -1) || any(this->g   > 1)) { stoprun("validate: g   values out of range"); }
+    #endif
+  }
+
+
+  void delta_scale(real3dk const &forward=real3dk()) {
+
+    // Forward scattering fraction; g**2 if not provided
+    int ncol = this->get_ncol();
+    int nlay = this->get_nlay();
+    int ngpt = this->get_ngpt();
+    if (forward.is_allocated()) {
+      if (forward.extent(0) != ncol || forward.extent(1) != nlay || forward.extent(2) != ngpt) {
+        stoprun("delta_scale: dimension of 'forward' don't match optical properties arrays");
+      }
+      #ifdef RRTMGP_EXPENSIVE_CHECKS
+        if (any(forward < 0) || any(forward > 1)) { stoprun("delta_scale: values of 'forward' out of bounds [0,1]"); }
+      #endif
+      delta_scale_2str_kernel(ncol, nlay, ngpt, this->tau, this->ssa, this->g, forward);
+    } else {
+      delta_scale_2str_kernel(ncol, nlay, ngpt, this->tau, this->ssa, this->g);
+    }
+  }
+
+
+  void alloc_2str(int ncol, int nlay) {
+    if (! this->is_initialized()) { stoprun("optical_props::alloc: spectral discretization hasn't been provided"); }
+    if (ncol <= 0 || nlay <= 0) { stoprun("optical_props::alloc: must provide positive extents for ncol, nlay"); }
+    this->tau = real3dk("tau",ncol,nlay,this->get_ngpt());
+    this->ssa = real3dk("ssa",ncol,nlay,this->get_ngpt());
+    this->g   = real3dk("g  ",ncol,nlay,this->get_ngpt());
+    Kokkos::deep_copy(tau, 0);
+    Kokkos::deep_copy(ssa, 0);
+    Kokkos::deep_copy(g,   0);
+  }
+
+
+  void alloc_2str(int ncol, int nlay, real2dk const &band_lims_wvn, int2dk const &band_lims_gpt=int2dk(), std::string name="") {
+    this->init(band_lims_wvn, band_lims_gpt, name);
+    this->alloc_2str(ncol, nlay);
+  }
+
+
+  void alloc_2str(int ncol, int nlay, OpticalPropsK const &opIn, std::string name="") {
+    if (this->is_initialized()) { this->finalize(); }
+    this->init(opIn.get_band_lims_wavenumber(), opIn.get_band_lims_gpoint(), name);
+    this->alloc_2str(ncol, nlay);
+  }
+
+
+  void increment(OpticalProps1sclK &that) {
+    if (! this->bands_are_equal(that)) { stoprun("OpticalProps::increment: optical properties objects have different band structures"); }
+    int ncol = that.get_ncol();
+    int nlay = that.get_nlay();
+    int ngpt = that.get_ngpt();
+    if (this->gpoints_are_equal(that)) {
+      increment_1scalar_by_2stream(ncol, nlay, ngpt, that.tau, this->tau, this->ssa);
+    } else {
+      if (this->get_ngpt() != that.get_nband()) {
+        stoprun("OpticalProps::increment: optical properties objects have incompatible g-point structures");
+      }
+      inc_1scalar_by_2stream_bybnd(ncol, nlay, ngpt, that.tau, this->tau, this->ssa, that.get_nband(), that.get_band_lims_gpoint());
+    }
+  }
+
+
+  void increment(OpticalProps2strK &that) {
+    if (! this->bands_are_equal(that)) { stoprun("OpticalProps::increment: optical properties objects have different band structures"); }
+    int ncol = that.get_ncol();
+    int nlay = that.get_nlay();
+    int ngpt = that.get_ngpt();
+    if (this->gpoints_are_equal(that)) {
+      increment_2stream_by_2stream(ncol, nlay, ngpt, that.tau, that.ssa, that.g, this->tau, this->ssa, this->g);
+    } else {
+      if (this->get_ngpt() != that.get_nband()) {
+        stoprun("OpticalProps::increment: optical properties objects have incompatible g-point structures");
+      }
+      inc_2stream_by_2stream_bybnd(ncol, nlay, ngpt, that.tau, that.ssa, that.g, this->tau, this->ssa, this->g, that.get_nband(), that.get_band_lims_gpoint());
+    }
+  }
+
+
+  void print_norms() const {
+                                        std::cout << "name         : " << name                     << "\n";
+    if (band2gpt.is_allocated()     ) { std::cout << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
+    if (gpt2band.is_allocated()     ) { std::cout << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
+    if (band_lims_wvn.is_allocated()) { std::cout << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
+    if (tau.is_allocated()          ) { std::cout << "tau          : " << conv::sum(tau          ) << "\n"; }
+    if (ssa.is_allocated()          ) { std::cout << "ssa          : " << conv::sum(ssa          ) << "\n"; }
+    if (g.is_allocated()            ) { std::cout << "g            : " << conv::sum(g            ) << "\n"; }
+  }
+
+};
+
+
+inline void OpticalProps1sclK::increment(OpticalProps2strK &that) {
+  if (! this->bands_are_equal(that)) { stoprun("OpticalProps::increment: optical properties objects have different band structures"); }
+  int ncol = that.get_ncol();
+  int nlay = that.get_nlay();
+  int ngpt = that.get_ngpt();
+  if (this->gpoints_are_equal(that)) {
+    increment_2stream_by_1scalar(ncol, nlay, ngpt, that.tau, that.ssa, this->tau);
+  } else {
+    if (this->get_ngpt() != that.get_nband()) {
+      stoprun("OpticalProps::increment: optical properties objects have incompatible g-point structures");
+    }
+    inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, that.tau, that.ssa, this->tau, that.get_nband(), that.get_band_lims_gpoint());
+  }
+}
+#endif

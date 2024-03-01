@@ -146,6 +146,10 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
                    real2dk const &tlay, real3dk const &col_gas, int2dk const &jtemp, real6dk const &fmajor, real5dk const &fminor,
                    real4dk const &col_mix, bool2dk const &tropo, int4dk const &jeta, int2dk const &jpress);
 
+// Combine absoprtion and Rayleigh optical depths for total tau, ssa, g
+void combine_and_reorder_2str(int ncol, int nlay, int ngpt, real3dk const &tau_abs, real3dk const &tau_rayleigh,
+                              real3dk const &tau, real3dk const &ssa, real3dk const &g);
+
 void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, int neta, int npres, int ntemp, int nPlanckTemp,
                            real2dk const &tlay, real2dk const &tlev, real1dk const &tsfc, int sfc_lay, real6dk const &fmajor,
                            int4dk const &jeta, bool2dk const &tropo, int2dk const &jtemp, int2dk const &jpress,
@@ -181,5 +185,33 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
                             int1dk const &kminor_start_upper, bool2dk const &tropo, real4dk const &col_mix, real6dk const &fmajor,
                             real5dk const &fminor, real2dk const &play, real2dk const &tlay, real3dk const &col_gas, int4dk const &jeta,
                             int2dk const &jtemp, int2dk const &jpress, real3dk const &tau, bool top_at_1);
+
+//   This function returns a single value from a subset (in gpoint) of the k table
+KOKKOS_INLINE_FUNCTION
+real interpolate2D(real2dk const &fminor, real3dk const &k, int igpt, int1d const &jeta, int jtemp,
+                   int ngpt, int neta, int ntemp) {
+  return fminor(1,1) * k(igpt, jeta(1)  , jtemp  ) +
+         fminor(2,1) * k(igpt, jeta(1)+1, jtemp  ) +
+         fminor(1,2) * k(igpt, jeta(2)  , jtemp+1) +
+         fminor(2,2) * k(igpt, jeta(2)+1, jtemp+1);
+}
+
+
+
+// ----------------------------------------------------------
+//
+// One dimensional interpolation -- return all values along second table dimension
+//
+KOKKOS_INLINE_FUNCTION
+void interpolate1D(real val, real offset, real delta, real2dk const &table,
+                   real1dk const &res, int tab_d1, int tab_d2) {
+  real val0 = (val - offset) / delta;
+  real frac = val0 - int(val0); // get fractional part
+  int index = std::min(tab_d1-1, std::max(1, (int)(val0)+1)); // limit the index range
+  for (int i=1; i<=tab_d2; i++) {
+    res(i) = table(index,i) + frac * (table(index+1,i) - table(index,i));
+  }
+}
+
 
 #endif

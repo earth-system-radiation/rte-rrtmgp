@@ -8,6 +8,7 @@
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 #include <Kokkos_Core.hpp>
+#include <Kokkos_OffsetView.hpp>
 
 using DefaultDevice =
   Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space>;
@@ -16,6 +17,9 @@ using HostDevice =
 
 template <typename T, typename Device=DefaultDevice>
 using FView = Kokkos::View<T, Kokkos::LayoutLeft, Device>;
+
+template <typename T, typename Device=DefaultDevice>
+using FOView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutLeft, Device>;
 
 template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
 using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank> >;//, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
@@ -167,6 +171,10 @@ typedef FView<bool******, HostDevice>  boolHost6dk;
 typedef FView<bool*******, HostDevice> boolHost7dk;
 
 typedef FView<char**, HostDevice> charHost2dk;
+
+// this is useful in a couple situations
+typedef FOView<real***>             realOff3dk;
+typedef FOView<real***, HostDevice> realOffHost3dk;
 #endif
 
 typedef std::vector<std::string> string1dv;

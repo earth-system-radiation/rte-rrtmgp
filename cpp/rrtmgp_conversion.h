@@ -13,60 +13,102 @@
 
 namespace conv {
 
+template <typename T>
+struct is_view
+{
+  static constexpr bool value = Kokkos::is_view<T>::value || Kokkos::Experimental::is_offset_view<T>::value;
+};
+
+template <class T>
+inline constexpr bool is_view_v = is_view<T>::value;
 
 // Copied with minor mods from YAKL intrinsics
 template <class T,
-          typename std::enable_if<!Kokkos::is_view<T>::value>::type* = nullptr>
+          typename std::enable_if<!is_view_v<T>>::type* = nullptr>
 KOKKOS_INLINE_FUNCTION
 T constexpr epsilon(T) { return std::numeric_limits<T>::epsilon(); }
 
 template <class View,
-          typename std::enable_if<Kokkos::is_view<View>::value>::type* = nullptr>
+          typename std::enable_if<is_view_v<View>>::type* = nullptr>
 KOKKOS_INLINE_FUNCTION
 typename View::non_const_value_type constexpr epsilon(const View& arr) { return std::numeric_limits<typename View::non_const_value_type>::epsilon(); }
 
 // These are for debugging
 template <typename KView,
-          typename std::enable_if<Kokkos::is_view<KView>::value>::type* = nullptr>
+          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
 void p1d(const KView& view, const std::string& name, int idx)
 { std::cout << "JGFK " << name << "(" << idx << ") = " << view(idx) << std::endl; }
 
 template <typename YArray,
-          typename std::enable_if<!Kokkos::is_view<YArray>::value>::type* = nullptr>
+          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p1d(const YArray& array, const std::string& name, int idx)
-{ std::cout << "JGFY " << name << "(" << idx-1 << ") = " << array(idx) << std::endl; }
+{
+  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  std::cout << "JGFY " << name << "(" << idx-1 << ") = " << array(idx) - adjust_val << std::endl; }
 
 template <typename KView,
-          typename std::enable_if<Kokkos::is_view<KView>::value>::type* = nullptr>
+          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
 void p2d(const KView& view, const std::string& name, int idx1, int idx2)
 { std::cout << "JGFK " << name << "(" << idx1 << ", " << idx2 << ") = " << view(idx1, idx2) << std::endl; }
 
 template <typename YArray,
-          typename std::enable_if<!Kokkos::is_view<YArray>::value>::type* = nullptr>
+          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p2d(const YArray& array, const std::string& name, int idx1, int idx2)
-{ std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ") = " << array(idx1, idx2) << std::endl; }
+{
+  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ") = " << array(idx1, idx2) - adjust_val << std::endl; }
 
 template <typename KView,
-          typename std::enable_if<Kokkos::is_view<KView>::value>::type* = nullptr>
+          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
 void p3d(const KView& view, const std::string& name, int idx1, int idx2, int idx3)
 { std::cout << "JGFK " << name << "(" << idx1 << ", " << idx2 << ", " << idx3 << ") = " << view(idx1, idx2, idx3) << std::endl; }
 
 template <typename YArray,
-          typename std::enable_if<!Kokkos::is_view<YArray>::value>::type* = nullptr>
+          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p3d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3)
-{ std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ") = " << array(idx1, idx2, idx3) << std::endl; }
+{
+  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ") = " << array(idx1, idx2, idx3) - adjust_val << std::endl;
+}
 
 template <typename KView,
-          typename std::enable_if<Kokkos::is_view<KView>::value>::type* = nullptr>
+          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
 void p4d(const KView& view, const std::string& name, int idx1, int idx2, int idx3, int idx4)
 { std::cout << "JGFK " << name << "(" << idx1 << ", " << idx2 << ", " << idx3 << ", " << idx4 << ") = " << view(idx1, idx2, idx3, idx4) << std::endl; }
 
 template <typename YArray,
-          typename std::enable_if<!Kokkos::is_view<YArray>::value>::type* = nullptr>
+          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p4d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4)
-{ std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ") = " << array(idx1, idx2, idx3, idx4) << std::endl; }
+{
+  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ") = " << array(idx1, idx2, idx3, idx4) - adjust_val << std::endl;
+}
 
+template <typename KView,
+          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
+void p5d(const KView& view, const std::string& name, int idx1, int idx2, int idx3, int idx4, int idx5)
+{ std::cout << "JGFK " << name << "(" << idx1 << ", " << idx2 << ", " << idx3 << ", " << idx4 << ", " << idx5 << ") = " << view(idx1, idx2, idx3, idx4, idx5) << std::endl; }
 
+template <typename YArray,
+          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
+void p5d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4, int idx5)
+{
+  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ", " << idx5-1 << ") = " << array(idx1, idx2, idx3, idx4, idx5) - adjust_val << std::endl;
+}
+
+template <typename KView,
+          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
+void p6d(const KView& view, const std::string& name, int idx1, int idx2, int idx3, int idx4, int idx5, int idx6)
+{ std::cout << "JGFK " << name << "(" << idx1 << ", " << idx2 << ", " << idx3 << ", " << idx4 << ", " << idx5 << ", " << idx6 << ") = " << view(idx1, idx2, idx3, idx4, idx5, idx6) << std::endl; }
+
+template <typename YArray,
+          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
+void p6d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4, int idx5, int idx6)
+{
+  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ", " << idx5-1 << ", " << idx6-1 << ") = " << array(idx1, idx2, idx3, idx4, idx5, idx6) - adjust_val << std::endl;
+}
 
 // Copied from EKAT
 #define IMPL_THROW_RRT(condition, msg, exception_type)    \
@@ -244,6 +286,15 @@ auto sum(const KView& view)
       lsum += view.data()[i];
     }, Kokkos::Sum<sum_t>(rv));
   return rv;
+}
+
+template <typename KView>
+void print(const KView& view)
+{
+  for (size_t i = 0; i < view.size(); ++i) {
+    std::cout << view.data()[i] << " ";
+  }
+  std::cout << std::endl;
 }
 
 //Error reporting routine for the PNetCDF I/O
@@ -768,7 +819,7 @@ public:
 
   /** @brief Read an entire Array */
   template <typename View,
-            typename std::enable_if<Kokkos::is_view<View>::value>::type* = nullptr>
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
   void read(View& arr , std::string varName) {
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
@@ -835,7 +886,7 @@ public:
 
   /** @brief Read a single scalar value */
   template <class T,
-            typename std::enable_if<!Kokkos::is_view<T>::value>::type* = nullptr>
+            typename std::enable_if<!is_view_v<T>>::type* = nullptr>
   void read(T &arr , std::string varName) {
     auto var = file.getVar(varName);
     if ( var.isNull() ) { throw std::runtime_error("Variable does not exist"); }
@@ -845,7 +896,7 @@ public:
 
   /** @brief Write a single scalar value */
   template <class T,
-            typename std::enable_if<!Kokkos::is_view<T>::value>::type* = nullptr>
+            typename std::enable_if<!is_view_v<T>>::type* = nullptr>
   void write(T arr , std::string varName) {
     auto var = file.getVar(varName);
     if ( var.isNull() ) {

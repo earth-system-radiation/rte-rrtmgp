@@ -12,7 +12,6 @@ make -j8 || exit 1
 # Remove previous temp files
 /bin/rm JGF*
 
-# Remove sort if you want to check execution order.
 # Run lw and grab kokkos data, use sed to make sure it matches yakl sentinel
 ../test_lw.sh | grep JGFK | sort | sed 's/JGFK/JGFY/g' > JGFK
 

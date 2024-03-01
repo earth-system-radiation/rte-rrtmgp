@@ -870,7 +870,7 @@ public:
     }
 
     // Interpolate source function
-    return;
+    return; // JGF SOURCE
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
   }
 
@@ -1016,7 +1016,6 @@ public:
                   this->press_ref_log_delta, this->temp_ref_min, this->temp_ref_delta, this->press_ref_trop_log,
                   this->vmr_ref, play, tlay, col_gas, jtemp, fmajor, fminor, col_mix, tropo, jeta, jpress);
 
-    return;
     compute_tau_absorption(this->max_gpt_diff_lower, this->max_gpt_diff_upper, ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, nminorlower, nminorklower,
                            nminorupper, nminorkupper, idx_h2o, this->gpoint_flavor, this->get_band_lims_gpoint(),
                            this->kmajor, this->kminor_lower, this->kminor_upper, this->minor_limits_gpt_lower,
@@ -1026,6 +1025,8 @@ public:
                            this->idx_minor_scaling_lower, this->idx_minor_scaling_upper, this->kminor_start_lower,
                            this->kminor_start_upper, tropo, col_mix, fmajor, fminor, play, tlay, col_gas,
                            jeta, jtemp, jpress, tau, top_at_1);
+
+    return; // JGF REMOVE
 
     if (allocated(this->krayl)) {
       compute_tau_rayleigh( ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, this->gpoint_flavor,
@@ -1259,7 +1260,7 @@ public:
   //   Each unique set of major species is called a flavor.
   // Names  and reference volume mixing ratios of major gases
   string1dv gas_names; // gas names
-  real3dk vmr_ref;     // vmr_ref(lower or upper atmosphere, gas, temp)
+  realOff3dk vmr_ref;  // vmr_ref(lower or upper atmosphere, gas, temp)
 
   // Which two gases are in each flavor? By index
   int2dk flavor;        // major species pair; (2,nflav)
@@ -1611,18 +1612,18 @@ public:
     const int vmr_e0 = vmr_ref.extent(0);
     const int vmr_e2 = vmr_ref.extent(2);
 
-    realHost3dk vmr_ref_red("vmr_ref_red", vmr_e0, ngas+1, vmr_e2);
+    realOffHost3dk vmr_ref_red("vmr_ref_red", std::make_pair(0, vmr_e0-1), std::make_pair(-1, ngas-1), std::make_pair(0, vmr_e2-1));
     // Gas 0 is used in single-key species method, set to 1.0 (col_dry)
     for (int k=0 ; k < vmr_e2 ; k++) {
       for (int j=0 ; j < vmr_e0 ; j++) {
-        vmr_ref_red(j,0,k) = vmr_ref(j,0,k);
+        vmr_ref_red(j,-1,k) = vmr_ref(j,0,k);
       }
     }
     for (int i=0 ; i < ngas ; i++) {
       int idx = string_loc_in_array(this->gas_names[i], gas_names);
       for (int k=0 ; k < vmr_e2 ; k++) {
         for (int j=0 ; j < vmr_e0 ; j++) {
-          vmr_ref_red(j,i+1,k) = vmr_ref(j,idx+1,k);
+          vmr_ref_red(j,i,k) = vmr_ref(j,idx+1,k);
         }
       }
     }
@@ -2009,7 +2010,7 @@ public:
     }
 
     // Interpolate source function
-    return;
+    return; // JGF REMOVE
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
   }
 
@@ -2051,7 +2052,7 @@ public:
     real3dk tau_rayleigh("tau_rayleigh",ngpt,nlay,ncol);
     // Interpolation variables used in major gas but not elsewhere, so don't need exporting
     real3dk vmr         ("vmr"         ,ncol,nlay,this->get_ngas());
-    real3dk col_gas     ("col_gas"     ,ncol,nlay,this->get_ngas()+1); // 0 indexed!
+    realOff3dk col_gas  ("col_gas"     ,std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, this->get_ngas()-1));
     real4dk col_mix     ("col_mix"     ,2,this->get_nflav(),ncol,nlay); // combination of major species's column amounts
                                                                        // index(1) : reference temperature level
                                                                        // index(2) : flavor
@@ -2120,13 +2121,13 @@ public:
     // do ilay = 1, nlay
     //   do icol = 1, ncol
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
-      col_gas(icol,ilay,0) = col_dry_wk(icol,ilay);
+      col_gas(icol,ilay,-1) = col_dry_wk(icol,ilay);
     });
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
     Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngas,nlay,ncol}) , KOKKOS_LAMBDA (int igas, int ilay, int icol) {
-      col_gas(icol,ilay,igas+1) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
+      col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
     });
     // ---- calculate gas optical depths ----
     Kokkos::deep_copy(tau, 0);
@@ -2135,7 +2136,6 @@ public:
                   this->press_ref_log_delta, this->temp_ref_min, this->temp_ref_delta, this->press_ref_trop_log,
                   this->vmr_ref, play, tlay, col_gas, jtemp, fmajor, fminor, col_mix, tropo, jeta, jpress);
 
-    return;
     compute_tau_absorption(this->max_gpt_diff_lower, this->max_gpt_diff_upper, ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, nminorlower, nminorklower,
                            nminorupper, nminorkupper, idx_h2o, this->gpoint_flavor, this->get_band_lims_gpoint(),
                            this->kmajor, this->kminor_lower, this->kminor_upper, this->minor_limits_gpt_lower,
@@ -2145,6 +2145,8 @@ public:
                            this->idx_minor_scaling_lower, this->idx_minor_scaling_upper, this->kminor_start_lower,
                            this->kminor_start_upper, tropo, col_mix, fmajor, fminor, play, tlay, col_gas,
                            jeta, jtemp, jpress, tau, top_at_1);
+
+    return; // JGF REMOVE
 
     if (this->krayl.is_allocated()) {
       compute_tau_rayleigh( ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, this->gpoint_flavor,

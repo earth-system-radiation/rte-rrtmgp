@@ -142,8 +142,8 @@ void combine_and_reorder_nstr(int ncol, int nlay, int ngpt, int nmom, real3d con
 // and Planck fractions
 void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres, int ntemp, int2dk const &flavor,
                    real1dk const &press_ref_log, real1dk const &temp_ref, real press_ref_log_delta, real temp_ref_min,
-                   real temp_ref_delta, real press_ref_trop_log, real3dk const &vmr_ref, real2dk const &play,
-                   real2dk const &tlay, real3dk const &col_gas, int2dk const &jtemp, real6dk const &fmajor, real5dk const &fminor,
+                   real temp_ref_delta, real press_ref_trop_log, realOff3dk const &vmr_ref, real2dk const &play,
+                   real2dk const &tlay, realOff3dk const &col_gas, int2dk const &jtemp, real6dk const &fmajor, real5dk const &fminor,
                    real4dk const &col_mix, bool2dk const &tropo, int4dk const &jeta, int2dk const &jpress);
 
 // Combine absoprtion and Rayleigh optical depths for total tau, ssa, g
@@ -160,14 +160,14 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 // compute Rayleigh scattering optical depths
 void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int nflav, int neta, int npres, int ntemp,
                           int2dk const &gpoint_flavor, int2dk const &band_lims_gpt, real4dk const &krayl, int idx_h2o,
-                          real2dk const &col_dry, real3dk const &col_gas, real5dk const &fminor, int4dk const &jeta,
+                          real2dk const &col_dry, realOff3dk const &col_gas, real5dk const &fminor, int4dk const &jeta,
                           bool2dk const &tropo, int2dk const &jtemp, real3dk const &tau_rayleigh);
 
 void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, int ngas, int nflav, int ntemp, int neta,
                               int nminor, int nminork, int idx_h2o, int idx_tropo, int2dk const &gpt_flv,
                               real3dk const &kminor, int2dk const &minor_limits_gpt, bool1dk const &minor_scales_with_density,
                               bool1dk const &scale_by_complement, int1dk const &idx_minor, int1dk const &idx_minor_scaling,
-                              int1dk const &kminor_start, real2dk const &play, real2dk const &tlay, real3dk const &col_gas,
+                              int1dk const &kminor_start, real2dk const &play, real2dk const &tlay, realOff3dk const &col_gas,
                               real5dk const &fminor, int4dk const &jeta, int2dk const &layer_limits, int2dk const &jtemp, real3dk const &tau);
 
 void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav, int neta, int npres,
@@ -183,7 +183,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
                             bool1dk const &scale_by_complement_upper, int1dk const &idx_minor_lower, int1dk const &idx_minor_upper,
                             int1dk const &idx_minor_scaling_lower, int1dk const &idx_minor_scaling_upper, int1dk const &kminor_start_lower,
                             int1dk const &kminor_start_upper, bool2dk const &tropo, real4dk const &col_mix, real6dk const &fmajor,
-                            real5dk const &fminor, real2dk const &play, real2dk const &tlay, real3dk const &col_gas, int4dk const &jeta,
+                            real5dk const &fminor, real2dk const &play, real2dk const &tlay, realOff3dk const &col_gas, int4dk const &jeta,
                             int2dk const &jtemp, int2dk const &jpress, real3dk const &tau, bool top_at_1);
 
 //   This function returns a single value from a subset (in gpoint) of the k table

@@ -870,7 +870,7 @@ public:
     }
 
     // Interpolate source function
-    return; // JGF SOURCE
+    return; // JGF REMOVE
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
   }
 
@@ -1025,8 +1025,6 @@ public:
                            this->idx_minor_scaling_lower, this->idx_minor_scaling_upper, this->kminor_start_lower,
                            this->kminor_start_upper, tropo, col_mix, fmajor, fminor, play, tlay, col_gas,
                            jeta, jtemp, jpress, tau, top_at_1);
-
-    return; // JGF REMOVE
 
     if (allocated(this->krayl)) {
       compute_tau_rayleigh( ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, this->gpoint_flavor,
@@ -2145,8 +2143,6 @@ public:
                            this->idx_minor_scaling_lower, this->idx_minor_scaling_upper, this->kminor_start_lower,
                            this->kminor_start_upper, tropo, col_mix, fmajor, fminor, play, tlay, col_gas,
                            jeta, jtemp, jpress, tau, top_at_1);
-
-    return; // JGF REMOVE
 
     if (this->krayl.is_allocated()) {
       compute_tau_rayleigh( ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, this->gpoint_flavor,

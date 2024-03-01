@@ -51,9 +51,9 @@ inline void reorder_123x321_kernel(int d1, int d2, int d3, real3dk const &array_
   //       for (int it3=1; it3<=TILE_SIZE; it3++) {
   //         for (int it1=1; it1<=TILE_SIZE; it1++) {
   Kokkos::parallel_for( MDRangeP<5>({0,0,0,0,0}, {d2,ntiles1,ntiles3,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int i2, int t1, int t3, int it1, int it3) {
-    int i3 = (t3-1)*TILE_SIZE + it3;
-    int i1 = (t1-1)*TILE_SIZE + it1;
-    if (i3 <= d3 && i1 <= d1) {
+    int i3 = t3*TILE_SIZE + it3;
+    int i1 = t1*TILE_SIZE + it1;
+    if (i3 < d3 && i1 < d1) {
       array_out(i3,i2,i1) = array_in(i1,i2,i3);
     }
   });

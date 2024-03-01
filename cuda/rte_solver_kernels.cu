@@ -198,7 +198,7 @@ void sw_adding_kernel(
 
     if ( (icol < ncol) && (igpt < ngpt) )
     {
-        if (top_at_1)
+        if constexpr (top_at_1)
         {
             const int sfc_idx_3d = icol + nlay*ncol + igpt*(nlay+1)*ncol;
             const int sfc_idx_2d = icol + igpt*ncol;

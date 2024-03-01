@@ -418,9 +418,12 @@ void gas_optical_depths_minor_kernel(
 
                     scalings[threadIdx.z][threadIdx.y] = scaling;
                 }
+
                 __syncthreads();
 
                 scaling = scalings[threadIdx.z][threadIdx.y];
+
+                __syncthreads();
 
                 const int gpt_start = minor_limits_gpt[2*imnr]-1;
                 const int gpt_end = minor_limits_gpt[2*imnr+1];

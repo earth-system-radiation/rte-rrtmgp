@@ -190,10 +190,10 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
 KOKKOS_INLINE_FUNCTION
 real interpolate2D(real2dk const &fminor, real3dk const &k, int igpt, int1d const &jeta, int jtemp,
                    int ngpt, int neta, int ntemp) {
-  return fminor(1,1) * k(igpt, jeta(1)  , jtemp  ) +
-         fminor(2,1) * k(igpt, jeta(1)+1, jtemp  ) +
-         fminor(1,2) * k(igpt, jeta(2)  , jtemp+1) +
-         fminor(2,2) * k(igpt, jeta(2)+1, jtemp+1);
+  return fminor(0,0) * k(igpt, jeta(0)  , jtemp  ) +
+         fminor(1,0) * k(igpt, jeta(0)+1, jtemp  ) +
+         fminor(0,1) * k(igpt, jeta(1)  , jtemp+1) +
+         fminor(1,1) * k(igpt, jeta(1)+1, jtemp+1);
 }
 
 
@@ -207,8 +207,8 @@ void interpolate1D(real val, real offset, real delta, real2dk const &table,
                    real1dk const &res, int tab_d1, int tab_d2) {
   real val0 = (val - offset) / delta;
   real frac = val0 - int(val0); // get fractional part
-  int index = std::min(tab_d1-1, std::max(1, (int)(val0)+1)); // limit the index range
-  for (int i=1; i<=tab_d2; i++) {
+  int index = std::min(tab_d1-1, std::max(1, (int)(val0)+1)) - 1; // limit the index range
+  for (int i=0; i<tab_d2; i++) {
     res(i) = table(index,i) + frac * (table(index+1,i) - table(index,i));
   }
 }

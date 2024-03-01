@@ -436,7 +436,6 @@ int main(int argc , char **argv) {
         gas_concs_k.validate_kokkos(gas_concs);
         atmos_k.validate_kokkos(atmos);
         lw_sources_k.validate_kokkos(lw_sources);
-        return 0; // JGF REMOVE
 #endif
 
         clouds.increment(atmos);

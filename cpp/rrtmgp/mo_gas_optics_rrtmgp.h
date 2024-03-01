@@ -870,7 +870,6 @@ public:
     }
 
     // Interpolate source function
-    return; // JGF REMOVE
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
   }
 
@@ -1067,12 +1066,14 @@ public:
         if (ilay == 1) {
           tlev_wk(icol,1) = tlay(icol,1) + (plev(icol,1)-play(icol,1))*(tlay(icol,2)-tlay(icol,1)) / (play(icol,2)-play(icol,1));
         }
-        tlev_wk(icol,ilay) = ( play(icol,ilay-1)*tlay(icol,ilay-1)*(plev(icol,ilay  )-play(icol,ilay))  +
-                               play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay)) ) /
-                             (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)));
-        if (ilay == nlay+1) {
+        else if (ilay == nlay+1) {
           tlev_wk(icol,nlay+1) = tlay(icol,nlay) + (plev(icol,nlay+1)-play(icol,nlay))*(tlay(icol,nlay)-tlay(icol,nlay-1)) /
                                                    (play(icol,nlay)-play(icol,nlay-1));
+        }
+        else {
+          tlev_wk(icol,ilay) = ( play(icol,ilay-1)*tlay(icol,ilay-1)*(plev(icol,ilay  )-play(icol,ilay))  +
+                                 play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay)) ) /
+                             (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)));
         }
       });
     }
@@ -2008,7 +2009,6 @@ public:
     }
 
     // Interpolate source function
-    return; // JGF REMOVE
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
   }
 
@@ -2191,7 +2191,7 @@ public:
     }
     // Compute internal (Planck) source functions at layers and levels,
     //  which depend on mapping from spectral space that creates k-distribution.
-    int nlayTmp = yakl::intrinsics::merge( nlay , 1 , top_at_1 );
+    int nlayTmp = yakl::intrinsics::merge( nlay-1 , 0 , top_at_1 );
     compute_Planck_source(ncol, nlay, nbnd, ngpt, this->get_nflav(), this->get_neta(), this->get_npres(), this->get_ntemp(),
                           this->get_nPlanckTemp(), tlay, tlev_wk, tsfc, nlayTmp, fmajor, jeta, tropo, jtemp, jpress,
                           this->get_gpoint_bands(), this->get_band_lims_gpoint(), this->planck_frac, this->temp_ref_min,

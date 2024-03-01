@@ -544,7 +544,6 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
                            minor_scales_with_density_lower, scale_by_complement_lower, idx_minor_lower,
                            idx_minor_scaling_lower, kminor_start_lower, play,  tlay, col_gas, fminor,
                            jeta, itropo_lower, jtemp, tau);
-  return; // JGF REMOVE
   // ---------------------
   // Minor Species - upper
   // ---------------------
@@ -693,22 +692,23 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
   Kokkos::parallel_for( MDRangeP<3>({0,0,0},{nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
-    // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-    int itropo = merge(1,2,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
+    // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
+    int itropo = merge(0,1,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
     int iflav = gpoint_flavor(itropo, igpt); //eta interpolation depends on band's flavor
     // interpolation in temperature, pressure, and eta
     int jpress_loc = jpress(icol,ilay)+itropo;
     int jtemp_loc  = jtemp(icol,ilay);
 
     // inlining interpolate3D
-    pfrac(igpt,ilay,icol) = ( fmajor(1,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc-1, jtemp_loc  ) +
-                              fmajor(2,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc  ) +
-                              fmajor(1,2,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc  , jtemp_loc  ) +
-                              fmajor(2,2,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc  ) ) +
-                            ( fmajor(1,1,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)  , jpress_loc-1, jtemp_loc+1) +
-                              fmajor(2,1,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc+1) +
-                              fmajor(1,2,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)  , jpress_loc  , jtemp_loc+1) +
-                              fmajor(2,2,2,iflav,icol,ilay) * pfracin(igpt, jeta(2,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc+1) );
+    pfrac(igpt,ilay,icol) = (
+       fmajor(0,0,0,iflav,icol,ilay) * pfracin(igpt, jeta(0,iflav,icol,ilay)  , jpress_loc-1, jtemp_loc  ) +
+       fmajor(1,0,0,iflav,icol,ilay) * pfracin(igpt, jeta(0,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc  ) +
+       fmajor(0,1,0,iflav,icol,ilay) * pfracin(igpt, jeta(0,iflav,icol,ilay)  , jpress_loc  , jtemp_loc  ) +
+       fmajor(1,1,0,iflav,icol,ilay) * pfracin(igpt, jeta(0,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc  ) ) +
+     ( fmajor(0,0,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc-1, jtemp_loc+1) +
+       fmajor(1,0,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc+1) +
+       fmajor(0,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc  , jtemp_loc+1) +
+       fmajor(1,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc+1) );
   });
 
   //
@@ -725,7 +725,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int igpt=1; igpt<=ngpt; igpt++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
-    sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 1, icol);
+    sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 0, icol);
   });
 
   // for (int icol=1; icol<=ncol; icol++) {
@@ -750,7 +750,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // compute level source irradiances for each g-point, one each for upward and downward paths
   // for (int icol=1; icol<=ncol; icol++) {
   Kokkos::parallel_for( ncol , KOKKOS_LAMBDA (int icol) {
-      interpolate1D(tlev(icol,1), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL,0 ,icol),nPlanckTemp,nbnd);
+      interpolate1D(tlev(icol,0), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL,0 ,icol),nPlanckTemp,nbnd);
   });
 
   // for (int icol=1; icol<=ncol; icol++) {
@@ -770,7 +770,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  );
     lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  );
-    if (icol < ncol) {
+    if (icol < ncol-1) {
       lev_src_dec(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay,  icol+1);
       lev_src_inc(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay+1,icol+1);
     }
@@ -1007,7 +1007,6 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
                            minor_scales_with_density_lower, scale_by_complement_lower, idx_minor_lower,
                            idx_minor_scaling_lower, kminor_start_lower, play,  tlay, col_gas, fminor,
                            jeta, itropo_lower, jtemp, tau);
-  return; // JGF REMOVE
   // ---------------------
   // Minor Species - upper
   // ---------------------

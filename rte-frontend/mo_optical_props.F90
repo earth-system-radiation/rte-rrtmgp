@@ -275,16 +275,7 @@ contains
     !
     ! Assignment
     !
-    if(allocated(this%band2gpt     )) then 
-      !$acc        exit data     delete( this%band2gpt)
-      !$omp target exit data map(release:this%band2gpt)
-      deallocate(this%band2gpt)
-    end if 
-    if(allocated(this%band_lims_wvn)) then
-      !$acc        exit data     delete( this%band_lims_wvn)
-      !$omp target exit data map(release:this%band_lims_wvn)
-      deallocate(this%band_lims_wvn)
-    end if 
+    call this%finalize_base()
     allocate(this%band2gpt     (2,size(band_lims_wvn,2)), &
              this%band_lims_wvn(2,size(band_lims_wvn,2)))
     this%band2gpt      = band_lims_gpt_lcl
@@ -295,11 +286,6 @@ contains
     ! Make a map between g-points and bands
     !   Efficient only when g-point indexes start at 1 and are contiguous.
     !
-    if(allocated(this%gpt2band)) then 
-      !$acc        exit data     delete( this%gpt2band)
-      !$omp target exit data map(release:this%gpt2band)
-      deallocate(this%gpt2band)
-    end if 
     allocate(this%gpt2band(maxval(band_lims_gpt_lcl)))
     do iband=1,size(band_lims_gpt_lcl,dim=2)
       this%gpt2band(band_lims_gpt_lcl(1,iband):band_lims_gpt_lcl(2,iband)) = iband
@@ -341,8 +327,8 @@ contains
   subroutine finalize_base(this)
     class(ty_optical_props),    intent(inout) :: this
 
-    !!$acc        exit data     delete( this%band2gpt, this%gpt2band, this%band_lims_wvn)
-    !!$omp target exit data map(release:this%band2gpt, this%gpt2band, this%band_lims_wvn)
+    !$acc        exit data     delete( this%band2gpt, this%gpt2band, this%band_lims_wvn)
+    !$omp target exit data map(release:this%band2gpt, this%gpt2band, this%band_lims_wvn)
     if(allocated(this%band2gpt)) deallocate(this%band2gpt)
     if(allocated(this%gpt2band)) deallocate(this%gpt2band)
     if(allocated(this%band_lims_wvn)) &

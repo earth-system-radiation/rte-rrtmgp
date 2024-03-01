@@ -373,7 +373,7 @@ public:
     gpoint_flavor = intHost2d("gpoint_flavor",2,ngpt);
     for (int igpt=1 ; igpt <= ngpt ; igpt++) {
       for (int iatm = 1 ; iatm <= 2 ; iatm++) {
-        int key_species_pair2flavor = -1;
+        int key_species_pair2flavor = 0;
         for (int iflav=1 ; iflav <= size(flavor,2) ; iflav++) {
           int key_species1 = key_species(1,iatm,gpt2band(igpt));
           int key_species2 = key_species(2,iatm,gpt2band(igpt));
@@ -870,6 +870,7 @@ public:
     }
 
     // Interpolate source function
+    return;
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
   }
 
@@ -1015,6 +1016,7 @@ public:
                   this->press_ref_log_delta, this->temp_ref_min, this->temp_ref_delta, this->press_ref_trop_log,
                   this->vmr_ref, play, tlay, col_gas, jtemp, fmajor, fminor, col_mix, tropo, jeta, jpress);
 
+    return;
     compute_tau_absorption(this->max_gpt_diff_lower, this->max_gpt_diff_upper, ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, nminorlower, nminorklower,
                            nminorupper, nminorkupper, idx_h2o, this->gpoint_flavor, this->get_band_lims_gpoint(),
                            this->kmajor, this->kminor_lower, this->kminor_upper, this->minor_limits_gpt_lower,
@@ -1452,7 +1454,7 @@ public:
   void create_idx_minor_scaling(string1dv const &gas_names, string1dv const &scaling_gas_atm,
                                 intHost1dk &idx_minor_scaling_atm) {
     idx_minor_scaling_atm = intHost1dk("idx_minor_scaling_atm", scaling_gas_atm.size());
-    for (int imnr=0 ; imnr < scaling_gas_atm.size() ; imnr++) {
+    for (auto imnr=0 ; imnr < scaling_gas_atm.size() ; imnr++) {
       // This will be -1 if there's no interacting gas
       idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm[imnr], gas_names);
     }
@@ -1471,12 +1473,15 @@ public:
       for (int ia=0 ; ia < na ; ia++) {
         for (int it=0 ; it < nt ; it++) {
           if (key_species(ip,ia,it) != 0) {
-            key_species_red(ip,ia,it) = string_loc_in_array(gas_names[key_species(ip,ia,it)],gas_names_red);
+            key_species_red(ip,ia,it) = string_loc_in_array(gas_names[key_species(ip,ia,it)-1],gas_names_red);
             if (key_species_red(ip,ia,it) == -1) {
               key_species_present_init(key_species(ip,ia,it)) = false;
             }
+            // else {
+            //   key_species_red(ip,ia,it) += 1;
+            // }
           } else {
-            key_species_red(ip,ia,it) = key_species(ip,ia,it);
+            key_species_red(ip,ia,it) = -1; //0;
           }
         }
       }
@@ -1497,9 +1502,9 @@ public:
     }
     // rewrite single key_species pairs
     for (int i=0 ; i < key_species_list.extent(1) ; i++) {
-      if (key_species_list(0,i) == 0 && key_species_list(1,i) == 0) {
-        key_species_list(0,i) = 2;
-        key_species_list(1,i) = 2;
+      if (key_species_list(0,i) == -1 && key_species_list(1,i) == -1) {
+        key_species_list(0,i) = 1;
+        key_species_list(1,i) = 1;
       }
     }
     // count unique key species pairs
@@ -1545,9 +1550,9 @@ public:
         for (int iflav=0 ; iflav < flavor.extent(1) ; iflav++) {
           int key_species1 = key_species(0,iatm,gpt2band(igpt));
           int key_species2 = key_species(1,iatm,gpt2band(igpt));
-          if (key_species1 == 0 && key_species2 == 0) {
-            key_species1 = 2;
-            key_species2 = 2;
+          if (key_species1 == -1 && key_species2 == -1) {
+            key_species1 = 1;
+            key_species2 = 1;
           }
           if ( flavor(0,iflav) == key_species1 && flavor(1,iflav) == key_species2 ) {
             key_species_pair2flavor = iflav;
@@ -2007,13 +2012,14 @@ public:
     }
 
     // Interpolate source function
+    return;
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
   }
 
   // Compute gas optical depth given temperature, pressure, and composition
   template <class T>
   void gas_optics(const int ncol, const int nlay,
-                  bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, GasConcs const &gas_desc,
+                  bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, GasConcsK const &gas_desc,
                   T &optical_props, real2dk &toa_src, real2dk const &col_dry=real2dk()) {
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
@@ -2132,6 +2138,7 @@ public:
                   this->press_ref_log_delta, this->temp_ref_min, this->temp_ref_delta, this->press_ref_trop_log,
                   this->vmr_ref, play, tlay, col_gas, jtemp, fmajor, fminor, col_mix, tropo, jeta, jpress);
 
+    return;
     compute_tau_absorption(this->max_gpt_diff_lower, this->max_gpt_diff_upper, ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, nminorlower, nminorklower,
                            nminorupper, nminorkupper, idx_h2o, this->gpoint_flavor, this->get_band_lims_gpoint(),
                            this->kmajor, this->kminor_lower, this->kminor_upper, this->minor_limits_gpt_lower,
@@ -2335,7 +2342,7 @@ public:
     conv::compare_yakl_to_kokkos_str(orig.gas_names, gas_names);
     conv::compare_yakl_to_kokkos(orig.vmr_ref, vmr_ref);
 
-    conv::compare_yakl_to_kokkos(orig.flavor, flavor);
+    conv::compare_yakl_to_kokkos(orig.flavor, flavor, true);
     conv::compare_yakl_to_kokkos(orig.gpoint_flavor, gpoint_flavor, true /*idx data*/);
 
     conv::compare_yakl_to_kokkos(orig.kmajor, kmajor);

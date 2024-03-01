@@ -427,6 +427,10 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_KOKKOS
         k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, t_sfc_k, gas_concs_k, atmos_k, lw_sources_k, real2dk(), t_lev_k);
         k_dist_k.validate_kokkos(k_dist);
+        gas_concs_k.validate_kokkos(gas_concs);
+        atmos_k.validate_kokkos(atmos);
+        lw_sources_k.validate_kokkos(lw_sources);
+        return 0;
 #endif
 
         clouds.increment(atmos);

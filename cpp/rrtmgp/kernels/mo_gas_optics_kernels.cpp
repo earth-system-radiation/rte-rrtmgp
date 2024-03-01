@@ -1,5 +1,6 @@
 
 #include "mo_gas_optics_kernels.h"
+#include "rrtmgp_conversion.h"
 #include <limits>
 
 
@@ -50,9 +51,11 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     // compute interpolation fractions needed for lower, then upper reference temperature level
     // compute binary species parameter (eta) for flavor and temperature and
     //  associated interpolation index and factors
+    //conv::p3d(vmr_ref, "vmr_ref", itropo, igases(1), (jtemp(icol,ilay)+itemp-1));
     real ratio_eta_half = vmr_ref(itropo,igases(1),(jtemp(icol,ilay)+itemp-1)) /
                           vmr_ref(itropo,igases(2),(jtemp(icol,ilay)+itemp-1));
     col_mix(itemp,iflav,icol,ilay) = col_gas(icol,ilay,igases(1)) + ratio_eta_half * col_gas(icol,ilay,igases(2));
+    //conv::p4d(col_mix, "col_mix", itemp, iflav, icol, ilay);
     real eta = merge(col_gas(icol,ilay,igases(1)) / col_mix(itemp,iflav,icol,ilay), 0.5,
                      col_mix(itemp,iflav,icol,ilay) > 2. * tiny);
     real loceta = eta * (neta-1.0);
@@ -590,10 +593,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
                    real temp_ref_delta, real press_ref_trop_log, real3dk const &vmr_ref, real2dk const &play,
                    real2dk const &tlay, real3dk const &col_gas, int2dk const &jtemp, real6dk const &fmajor, real5dk const &fminor,
                    real4dk const &col_mix, bool2dk const &tropo, int4dk const &jeta, int2dk const &jpress) {
-  using yakl::SB;
   using yakl::intrinsics::merge;
-  using yakl::fortran::parallel_for;
-  using yakl::fortran::SimpleBounds;
 
   real2dk ftemp ("ftemp" ,ncol,nlay);
   real2dk fpress("fpress",ncol,nlay);
@@ -605,7 +605,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
     // index and factor for temperature interpolation
     jtemp(icol,ilay) = (int) ((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta);
-    jtemp(icol,ilay) = std::min(ntemp - 1, std::max(1, jtemp(icol,ilay))); // limit the index range
+    jtemp(icol,ilay) = std::min(ntemp - 1, std::max(1, jtemp(icol,ilay))) - 1; // limit the index range
     ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta;
 
     // index and factor for pressure interpolation
@@ -623,16 +623,18 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   //       for (int itemp=1; itemp<=2; itemp++) {
   Kokkos::parallel_for( MDRangeP<4>({0,0,0,0}, {nlay,ncol,nflav,2}) , KOKKOS_LAMBDA (int ilay, int icol, int iflav , int itemp) {
     // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-    int itropo = merge(1,2,tropo(icol,ilay));
+    int itropo = merge(0,1,tropo(icol,ilay));
     const auto igases1 = flavor(0,iflav);
     const auto igases2 = flavor(1,iflav);
 
     // compute interpolation fractions needed for lower, then upper reference temperature level
     // compute binary species parameter (eta) for flavor and temperature and
     //  associated interpolation index and factors
-    real ratio_eta_half = vmr_ref(itropo,igases1,(jtemp(icol,ilay)+itemp-1)) /
-                          vmr_ref(itropo,igases2,(jtemp(icol,ilay)+itemp-1));
+    //conv::p3d(vmr_ref, "vmr_ref", itropo, igases1, (jtemp(icol,ilay)+itemp));
+    real ratio_eta_half = vmr_ref(itropo,igases1,(jtemp(icol,ilay)+itemp)) /
+                          vmr_ref(itropo,igases2,(jtemp(icol,ilay)+itemp));
     col_mix(itemp,iflav,icol,ilay) = col_gas(icol,ilay,igases1) + ratio_eta_half * col_gas(icol,ilay,igases2);
+    //conv::p4d(col_mix, "col_mix", itemp, iflav, icol, ilay);
     real eta = merge(col_gas(icol,ilay,igases1) / col_mix(itemp,iflav,icol,ilay), 0.5,
                      col_mix(itemp,iflav,icol,ilay) > 2. * tiny);
     real loceta = eta * (neta-1.0);
@@ -640,13 +642,13 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     real feta = fmod(loceta, 1.0);
     // compute interpolation fractions needed for minor species
     real ftemp_term = ((2.0 - itemp) + (2.0 * itemp - 3.0 ) * ftemp(icol,ilay));
-    fminor(1,itemp,iflav,icol,ilay) = (1. - feta) * ftemp_term;
-    fminor(2,itemp,iflav,icol,ilay) =          feta  * ftemp_term;
+    fminor(0,itemp,iflav,icol,ilay) = (1. - feta) * ftemp_term;
+    fminor(1,itemp,iflav,icol,ilay) =          feta  * ftemp_term;
     // compute interpolation fractions needed for major species
-    fmajor(1,1,itemp,iflav,icol,ilay) = (1. - fpress(icol,ilay)) * fminor(1,itemp,iflav,icol,ilay);
-    fmajor(2,1,itemp,iflav,icol,ilay) = (1. - fpress(icol,ilay)) * fminor(2,itemp,iflav,icol,ilay);
-    fmajor(1,2,itemp,iflav,icol,ilay) =          fpress(icol,ilay)  * fminor(1,itemp,iflav,icol,ilay);
-    fmajor(2,2,itemp,iflav,icol,ilay) =          fpress(icol,ilay)  * fminor(2,itemp,iflav,icol,ilay);
+    fmajor(0,0,itemp,iflav,icol,ilay) = (1. - fpress(icol,ilay)) * fminor(1,itemp,iflav,icol,ilay);
+    fmajor(1,0,itemp,iflav,icol,ilay) = (1. - fpress(icol,ilay)) * fminor(2,itemp,iflav,icol,ilay);
+    fmajor(0,1,itemp,iflav,icol,ilay) =          fpress(icol,ilay)  * fminor(1,itemp,iflav,icol,ilay);
+    fmajor(1,1,itemp,iflav,icol,ilay) =          fpress(icol,ilay)  * fminor(2,itemp,iflav,icol,ilay);
   });
 }
 

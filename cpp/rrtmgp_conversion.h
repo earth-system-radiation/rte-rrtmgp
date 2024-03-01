@@ -25,6 +25,49 @@ template <class View,
 KOKKOS_INLINE_FUNCTION
 typename View::non_const_value_type constexpr epsilon(const View& arr) { return std::numeric_limits<typename View::non_const_value_type>::epsilon(); }
 
+// These are for debugging
+template <typename KView,
+          typename std::enable_if<Kokkos::is_view<KView>::value>::type* = nullptr>
+void p1d(const KView& view, const std::string& name, int idx)
+{ std::cout << "JGFK " << name << "(" << idx << ") = " << view(idx) << std::endl; }
+
+template <typename YArray,
+          typename std::enable_if<!Kokkos::is_view<YArray>::value>::type* = nullptr>
+void p1d(const YArray& array, const std::string& name, int idx)
+{ std::cout << "JGFY " << name << "(" << idx-1 << ") = " << array(idx) << std::endl; }
+
+template <typename KView,
+          typename std::enable_if<Kokkos::is_view<KView>::value>::type* = nullptr>
+void p2d(const KView& view, const std::string& name, int idx1, int idx2)
+{ std::cout << "JGFK " << name << "(" << idx1 << ", " << idx2 << ") = " << view(idx1, idx2) << std::endl; }
+
+template <typename YArray,
+          typename std::enable_if<!Kokkos::is_view<YArray>::value>::type* = nullptr>
+void p2d(const YArray& array, const std::string& name, int idx1, int idx2)
+{ std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ") = " << array(idx1, idx2) << std::endl; }
+
+template <typename KView,
+          typename std::enable_if<Kokkos::is_view<KView>::value>::type* = nullptr>
+void p3d(const KView& view, const std::string& name, int idx1, int idx2, int idx3)
+{ std::cout << "JGFK " << name << "(" << idx1 << ", " << idx2 << ", " << idx3 << ") = " << view(idx1, idx2, idx3) << std::endl; }
+
+template <typename YArray,
+          typename std::enable_if<!Kokkos::is_view<YArray>::value>::type* = nullptr>
+void p3d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3)
+{ std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ") = " << array(idx1, idx2, idx3) << std::endl; }
+
+template <typename KView,
+          typename std::enable_if<Kokkos::is_view<KView>::value>::type* = nullptr>
+void p4d(const KView& view, const std::string& name, int idx1, int idx2, int idx3, int idx4)
+{ std::cout << "JGFK " << name << "(" << idx1 << ", " << idx2 << ", " << idx3 << ", " << idx4 << ") = " << view(idx1, idx2, idx3, idx4) << std::endl; }
+
+template <typename YArray,
+          typename std::enable_if<!Kokkos::is_view<YArray>::value>::type* = nullptr>
+void p4d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4)
+{ std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ") = " << array(idx1, idx2, idx3, idx4) << std::endl; }
+
+
+
 // Copied from EKAT
 #define IMPL_THROW_RRT(condition, msg, exception_type)    \
 do {                                                      \
@@ -81,7 +124,18 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index
   for (auto i = 0; i < total_size; ++i) {
     const auto kdata = hkview.data()[i];
     const auto ydata = yarray.data()[i];
-    RRT_REQUIRE((kdata + ( (index_data && (kdata != -1)) ? 1 : 0)) == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
+    if (index_data) {
+      if (kdata < 0 && ydata <= 0) {
+        // pass
+      }
+      else {
+        RRT_REQUIRE((kdata + (index_data ? 1 : 0)) == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
+      }
+    }
+    else {
+      RRT_REQUIRE(kdata == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
+    }
+
   }
 }
 
@@ -753,8 +807,13 @@ public:
         var.getVar(tmp);
         for (size_t i=0; i < arr.size(); ++i) { arrHost.data()[i] = (tmp[i] == 1); }
         delete[] tmp;
-      } else {
+      }
+      else {
         var.getVar(arrHost.data());
+        // integer data is nearly always idx data, so adjust it to 0-based
+        if (std::is_same<T,int>::value) {
+          for (size_t i=0; i < arr.size(); ++i) { arrHost.data()[i] -= 1; }
+        }
       }
       Kokkos::deep_copy(arr, arrHost);
     } else {
@@ -765,6 +824,10 @@ public:
         delete[] tmp;
       } else {
         var.getVar(arr.data());
+        // integer data is nearly always idx data, so adjust it to 0-based
+        if (std::is_same<T,int>::value) {
+          for (size_t i=0; i < arr.size(); ++i) { arr.data()[i] -= 1; }
+        }
       }
     }
   }

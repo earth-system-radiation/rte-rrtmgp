@@ -18,7 +18,7 @@ template <typename T, typename Device=DefaultDevice>
 using FView = Kokkos::View<T, Kokkos::LayoutLeft, Device>;
 
 template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
-using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
+using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank> >;//, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
 
 
 // template <typename ExecutionSpace=Kokkos::DefaultExecutionSpace>

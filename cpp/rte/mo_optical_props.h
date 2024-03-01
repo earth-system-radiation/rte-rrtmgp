@@ -277,15 +277,15 @@ public:
       // Assume that values are defined by band, one g-point per band
       // for (int iband = 1; iband <= size(band_lims_wvn, 2); iband++) {
       Kokkos::parallel_for( band_lims_wvn.extent(1), KOKKOS_LAMBDA (size_t iband) {
-        band_lims_gpt_lcl(1,iband) = iband+1;
-        band_lims_gpt_lcl(0,iband) = iband+1;
+        band_lims_gpt_lcl(1,iband) = iband;
+        band_lims_gpt_lcl(0,iband) = iband;
       });
     }
     // Assignment
     this->band2gpt       = band_lims_gpt_lcl;
     this->band_lims_wvn  = band_lims_wvn;
     this->name           = name;
-    this->ngpt           = conv::maxval(this->band2gpt);
+    this->ngpt           = conv::maxval(this->band2gpt) + 1;
 
     // Make a map between g-points and bands
     //   Efficient only when g-point indexes start at 1 and are contiguous.
@@ -294,7 +294,7 @@ public:
     Kokkos::parallel_for(1, KOKKOS_LAMBDA(int dummy) {
       for (int iband=0; iband < band_lims_gpt_lcl.extent(1); iband++) {
         for (int i=band_lims_gpt_lcl(0,iband); i <= band_lims_gpt_lcl(1,iband); i++) {
-          this->gpt2band(i-1) = iband;
+          this->gpt2band(i) = iband;
         }
       }
     });
@@ -451,7 +451,7 @@ public:
   {
     RRT_REQUIRE(orig.ngpt == ngpt, "Bad ngpt");
     RRT_REQUIRE(orig.name == name, "Bad name");
-    conv::compare_yakl_to_kokkos(orig.band2gpt, band2gpt); // idx data?
+    conv::compare_yakl_to_kokkos(orig.band2gpt, band2gpt, true); // idx data?
     conv::compare_yakl_to_kokkos(orig.gpt2band, gpt2band, true /*idx data*/);
     conv::compare_yakl_to_kokkos(orig.band_lims_wvn, band_lims_wvn);
   }

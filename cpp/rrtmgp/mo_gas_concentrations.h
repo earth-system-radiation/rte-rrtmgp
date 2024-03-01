@@ -292,7 +292,7 @@ public:
     if (w < 0. || w > 1.) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     auto this_concs = this->concs;
     Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
-      this_concs(icol, ilay, igas-1) = w;
+      this_concs(icol, ilay, igas) = w;
     });
   }
 
@@ -315,7 +315,7 @@ public:
     #endif
     auto this_concs = this->concs;
     Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
-      this_concs(icol, ilay, igas-1) = w(ilay);
+      this_concs(icol, ilay, igas) = w(ilay);
     });
   }
 
@@ -340,7 +340,7 @@ public:
     #endif
     auto this_concs = this->concs;
     Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
-      this_concs(icol, ilay, igas-1) = w(icol, ilay);
+      this_concs(icol, ilay, igas) = w(icol, ilay);
     });
   }
 
@@ -367,7 +367,7 @@ public:
     if (ngas == 0) { return GAS_NOT_IN_LIST; }
     for (int igas=0; igas<ngas; igas++) {
       if ( lower_case(gas) == this->gas_name[igas] ) {
-        return igas + 1; // switch to zero based once concs is kokkos
+        return igas;
       }
     }
     return GAS_NOT_IN_LIST;

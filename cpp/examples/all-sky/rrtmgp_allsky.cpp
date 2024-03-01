@@ -412,6 +412,12 @@ int main(int argc , char **argv) {
         fluxes.bnd_flux_dn = bnd_flux_dn;
         fluxes.bnd_flux_net= bnd_flux_net;
 #ifdef RRTMGP_ENABLE_KOKKOS
+        fluxes.flux_up = 0.;
+        fluxes.flux_dn = 0.;
+        fluxes.flux_net= 0.;
+        fluxes.bnd_flux_up = 0.;
+        fluxes.bnd_flux_dn = 0.;
+        fluxes.bnd_flux_net= 0.;
         FluxesBybandK fluxes_k;
         fluxes_k.flux_up = flux_up_k;
         fluxes_k.flux_dn = flux_dn_k;

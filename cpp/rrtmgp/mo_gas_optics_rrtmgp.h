@@ -301,7 +301,7 @@ public:
               key_species_present_init(key_species(ip,ia,it)) = false;
             }
           } else {
-            key_species_red(ip,ia,it) = key_species(ip,ia,it);
+            key_species_red(ip,ia,it) = 0;
           }
         }
       }
@@ -1426,8 +1426,8 @@ public:
           kminor_start_atm_red         (slot) = kminor_start_atm(i)-n_elim;
           for (int l=0 ; l < kminor_atm.extent(2); l++ ) {
             for (int k=0 ; k < kminor_atm.extent(1) ; k++ ) {
-              for (int j=1 ; j <= ng ; j++) {
-                kminor_atm_red(kminor_start_atm_red(slot)+j-2,k,l) = kminor_atm(kminor_start_atm(i)+j-2,k,l);
+              for (int j=0 ; j < ng ; j++) {
+                kminor_atm_red(kminor_start_atm_red(slot)+j,k,l) = kminor_atm(kminor_start_atm(i)+j,k,l);
               }
             }
           }
@@ -1472,16 +1472,13 @@ public:
     for (int ip=0 ; ip < np ; ip++) {
       for (int ia=0 ; ia < na ; ia++) {
         for (int it=0 ; it < nt ; it++) {
-          if (key_species(ip,ia,it) != 0) {
-            key_species_red(ip,ia,it) = string_loc_in_array(gas_names[key_species(ip,ia,it)-1],gas_names_red);
+          if (key_species(ip,ia,it) != -1) {
+            key_species_red(ip,ia,it) = string_loc_in_array(gas_names[key_species(ip,ia,it)],gas_names_red);
             if (key_species_red(ip,ia,it) == -1) {
               key_species_present_init(key_species(ip,ia,it)) = false;
             }
-            // else {
-            //   key_species_red(ip,ia,it) += 1;
-            // }
           } else {
-            key_species_red(ip,ia,it) = -1; //0;
+            key_species_red(ip,ia,it) = -1;
           }
         }
       }
@@ -1796,7 +1793,7 @@ public:
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
     Kokkos::parallel_for( MDRangeP<2>( {0, 0}, {this->flavor.extent(0), this->flavor.extent(1)} ) , KOKKOS_LAMBDA (int i, int j) {
-      if (this->flavor(i,j) != 0) { this->is_key(this->flavor(i,j)-1) = true; }
+      if (this->flavor(i,j) != -1) { this->is_key(this->flavor(i,j)) = true; }
     });
   }
 
@@ -2347,8 +2344,8 @@ public:
 
     conv::compare_yakl_to_kokkos(orig.kmajor, kmajor);
 
-    conv::compare_yakl_to_kokkos(orig.minor_limits_gpt_lower, minor_limits_gpt_lower);
-    conv::compare_yakl_to_kokkos(orig.minor_limits_gpt_upper, minor_limits_gpt_upper);
+    conv::compare_yakl_to_kokkos(orig.minor_limits_gpt_lower, minor_limits_gpt_lower, true);
+    conv::compare_yakl_to_kokkos(orig.minor_limits_gpt_upper, minor_limits_gpt_upper, true);
 
     conv::compare_yakl_to_kokkos(orig.minor_scales_with_density_lower, minor_scales_with_density_lower);
     conv::compare_yakl_to_kokkos(orig.minor_scales_with_density_upper, minor_scales_with_density_upper);
@@ -2359,8 +2356,8 @@ public:
     conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_lower, idx_minor_scaling_lower, true);
     conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_upper, idx_minor_scaling_upper, true);
 
-    conv::compare_yakl_to_kokkos(orig.kminor_start_lower, kminor_start_lower);
-    conv::compare_yakl_to_kokkos(orig.kminor_start_upper, kminor_start_upper);
+    conv::compare_yakl_to_kokkos(orig.kminor_start_lower, kminor_start_lower, true);
+    conv::compare_yakl_to_kokkos(orig.kminor_start_upper, kminor_start_upper, true);
 
     conv::compare_yakl_to_kokkos(orig.kminor_lower, kminor_lower);
     conv::compare_yakl_to_kokkos(orig.kminor_upper, kminor_upper);

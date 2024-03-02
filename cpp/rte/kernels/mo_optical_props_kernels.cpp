@@ -618,4 +618,21 @@ void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, real3dk const &t
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
+
+// Incrementing when the second set of optical properties is defined at lower spectral resolution
+//   (e.g. by band instead of by gpoint)
+void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3dk const &tau1, real3dk const &tau2,
+                                  int nbnd, int2dk const &gpt_lims) {
+  // do igpt = 1 , ngpt
+  //   do ilay = 1 , nlay
+  //     do icol = 1 , ncol
+  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+    for (int ibnd=0; ibnd<nbnd; ibnd++) {
+      if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
+        tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);
+      }
+    }
+  });
+}
+
 #endif

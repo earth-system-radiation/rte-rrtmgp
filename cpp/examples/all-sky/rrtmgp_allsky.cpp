@@ -439,8 +439,17 @@ int main(int argc , char **argv) {
 #endif
 
         clouds.increment(atmos);
+#ifdef RRTMGP_ENABLE_KOKKOS
+        clouds_k.increment(atmos_k);
+        clouds_k.validate_kokkos(clouds);
+        atmos_k.validate_kokkos(atmos);
+#endif
 
         rte_lw(max_gauss_pts, gauss_Ds, gauss_wts, atmos, top_at_1, lw_sources, emis_sfc, fluxes);
+#ifdef RRTMGP_ENABLE_KOKKOS
+        rte_lw(max_gauss_pts, gauss_Ds_k, gauss_wts_k, atmos_k, top_at_1, lw_sources_k, emis_sfc_k, fluxes_k);
+        fluxes_k.validate_kokkos(fluxes);
+#endif
 
         yakl::timer_stop("longwave");
 

@@ -275,6 +275,8 @@ int main(int argc , char **argv) {
       real2dk gauss_wts_k("gauss_wts",max_gauss_pts,max_gauss_pts);
       Kokkos::deep_copy(gauss_Ds_k, gauss_Ds_host_k);
       Kokkos::deep_copy(gauss_wts_k, gauss_wts_host_k);
+      conv::compare_yakl_to_kokkos(gauss_Ds, gauss_Ds_k);
+      conv::compare_yakl_to_kokkos(gauss_wts, gauss_wts_k);
 
       OpticalProps1sclK atmos_k;
       OpticalProps1sclK clouds_k;

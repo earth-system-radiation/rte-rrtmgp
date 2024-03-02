@@ -2,7 +2,7 @@
 #pragma once
 
 #include "rrtmgp_const.h"
-
+#include "rrtmgp_conversion.h"
 
 
 //   Lower-level longwave kernels
@@ -464,7 +464,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
       }
 
       // Surface reflection and emission
-      radn_up(icol,     0,igpt) = radn_dn(icol,     0,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt);
+      radn_up(icol,0,igpt) = radn_dn(icol,0,igpt)*sfc_albedo(icol,igpt) + source_sfc(icol,igpt);
 
       // Upward propagation
       for (int ilev=1; ilev<nlay+1; ilev++) {

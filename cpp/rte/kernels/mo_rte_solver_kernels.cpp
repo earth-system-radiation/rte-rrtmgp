@@ -788,7 +788,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
   });
 
   lw_solver_noscat(ncol, nlay, ngpt,
-                   top_at_1, Ds_ncol, weights, 1, tau,
+                   top_at_1, Ds_ncol, weights, 0, tau,
                    lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src,
                    flux_up, flux_dn);
   //
@@ -819,8 +819,8 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
     //   do ilev = 1, nlay+1
     //     do icol = 1, ncol
     Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilev, int icol) {
-      flux_up(icol,ilev,ngpt) = flux_up(icol,ilev,ngpt) + radn_up(icol,ilev,ngpt);
-      flux_dn(icol,ilev,ngpt) = flux_dn(icol,ilev,ngpt) + radn_dn(icol,ilev,ngpt);
+      flux_up(icol,ilev,ngpt) += radn_up(icol,ilev,ngpt);
+      flux_dn(icol,ilev,ngpt) += radn_dn(icol,ilev,ngpt);
     });
 
   } // imu

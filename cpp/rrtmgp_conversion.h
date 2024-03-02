@@ -288,14 +288,24 @@ auto sum(const KView& view)
   return rv;
 }
 
-template <typename KView>
-void print(const KView& view)
+template <typename KView,
+          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
+void print(const std::string& name, const KView& view)
 {
   for (size_t i = 0; i < view.size(); ++i) {
-    std::cout << view.data()[i] << " ";
+    std::cout << "JGFK " << name << "(" << i << ") = " << view.data()[i] << std::endl;
   }
-  std::cout << std::endl;
 }
+
+template <typename YArray,
+          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
+void print(const std::string& name, const YArray& array)
+{
+  for (size_t i = 0; i < array.totElems(); ++i) {
+    std::cout << "JGFY " << name << "(" << i << ") = " << array.data()[i] << std::endl;
+  }
+}
+
 
 //Error reporting routine for the PNetCDF I/O
 /** @private */

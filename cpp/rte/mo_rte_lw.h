@@ -221,8 +221,8 @@ void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts
   real1dk tmp_wts("tmp_wts",n_quad_angs);
   // for (int i=1 ; i <= n_quad_angs ; i++) {
   Kokkos::parallel_for( n_quad_angs , KOKKOS_LAMBDA (int i) {
-    tmp_Ds (i) = gauss_Ds (i,n_quad_angs);
-    tmp_wts(i) = gauss_wts(i,n_quad_angs);
+    tmp_Ds (i) = gauss_Ds (i,n_quad_angs - 1);
+    tmp_wts(i) = gauss_wts(i,n_quad_angs - 1);
   });
   lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, n_quad_angs, tmp_Ds, tmp_wts, optical_props.tau,
                              sources.lay_source, sources.lev_source_inc, sources.lev_source_dec,

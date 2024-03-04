@@ -724,6 +724,7 @@ public:
     // Solar source table init
     this->solar_src = real1d("solar_src",size(solar_src,1));
     solar_src.deep_copy_to(this->solar_src);
+    this->totplnk_delta = 0.;
   }
 
 
@@ -1896,6 +1897,7 @@ public:
     // Solar source table init
     this->solar_src = Kokkos::create_mirror_view(DefaultDevice(), solar_src);
     Kokkos::deep_copy(this->solar_src, solar_src);
+    this->totplnk_delta = 0.;
   }
 
   // Two functions to define array sizes needed by gas_optics()

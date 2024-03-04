@@ -1715,11 +1715,11 @@ public:
     }
     if (rayl_lower.is_allocated()) {
       realHost4dk krayltmp("krayltmp",rayl_lower.extent(0),rayl_lower.extent(1),rayl_lower.extent(2),2);
-      for (int k=1 ; k <= rayl_lower.extent(2) ; k++ ) {
-        for (int j=1 ; j <= rayl_lower.extent(1) ; j++ ) {
-          for (int i=1 ; i <= rayl_lower.extent(0) ; i++ ) {
-            krayltmp(i,j,k,1) = rayl_lower(i,j,k);
-            krayltmp(i,j,k,2) = rayl_upper(i,j,k);
+      for (int k=0 ; k < rayl_lower.extent(2) ; k++ ) {
+        for (int j=0 ; j < rayl_lower.extent(1) ; j++ ) {
+          for (int i=0 ; i < rayl_lower.extent(0) ; i++ ) {
+            krayltmp(i,j,k,0) = rayl_lower(i,j,k);
+            krayltmp(i,j,k,1) = rayl_upper(i,j,k);
           }
         }
       }

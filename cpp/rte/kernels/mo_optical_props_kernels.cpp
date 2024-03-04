@@ -597,6 +597,31 @@ void extract_subset_absorption_tau(int ncol, int nlay, int ngpt, real3d const &t
 }
 
 #ifdef RRTMGP_ENABLE_KOKKOS
+// increment 2stream by 2stream
+void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
+                                  real3dk const &tau1, real3dk const &ssa1, real3dk const &g1,
+                                  real3dk const &tau2, real3dk const &ssa2, real3dk const &g2,
+                                  int nbnd, int2dk const &gpt_lims) {
+  constexpr real eps = 3*std::numeric_limits<real>::min();
+
+  // do igpt = 1 , ngpt
+  //   do ilay = 1, nlay
+  //     do icol = 1, ncol
+  Kokkos::parallel_for( MDRangeP<4>({0,0,0,0}, {nbnd,ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
+    if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
+      // t=tau1 + tau2
+      real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
+      // w=(tau1*ssa1 + tau2*ssa2) / t
+      real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
+                       tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
+      g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) +
+                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / std::max(eps,tauscat12);
+      ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
+      tau1(icol,ilay,igpt) = tau12;
+    }
+  });
+}
+
 // Addition of optical properties: the first set are incremented by the second set.
 //
 //   There are three possible representations of optical properties (scalar = optical depth only;
@@ -633,6 +658,70 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3dk const &t
       }
     }
   });
+}
+
+// Delta-scale
+//   f = g*g
+void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3dk const &tau, real3dk const &ssa, real3dk const &g) {
+  constexpr real eps = 3*std::numeric_limits<real>::min();
+
+  // do igpt = 1, ngpt
+  //   do ilay = 1, nlay
+  //     do icol = 1, ncol
+  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+    if (tau(icol,ilay,igpt) > eps) {
+      real f  = g  (icol,ilay,igpt) * g  (icol,ilay,igpt);
+      real wf = ssa(icol,ilay,igpt) * f;
+      tau(icol,ilay,igpt) = (1. - wf) * tau(icol,ilay,igpt);
+      ssa(icol,ilay,igpt) = (ssa(icol,ilay,igpt) - wf) / (1.0 - wf);
+      g  (icol,ilay,igpt) = (g  (icol,ilay,igpt) -  f) / (1.0 -  f);
+    }
+  });
+}
+
+
+// Delta-scaling, provided only for two-stream properties at present
+// -------------------------------------------------------------------------------------------------
+// Delta-scale
+//   user-provided value of f (forward scattering)
+void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3dk const &tau, real3dk const &ssa, real3dk const &g, real3dk const &f) {
+  constexpr real eps = 3*std::numeric_limits<real>::min();
+
+  // do igpt = 1, ngpt
+  //   do ilay = 1, nlay
+  //     do icol = 1, ncol
+  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+    if (tau(icol,ilay,igpt) > eps) {
+      real wf = ssa(icol,ilay,igpt) * f(icol,ilay,igpt);
+      tau(icol,ilay,igpt) = (1. - wf) * tau(icol,ilay,igpt);
+      ssa(icol,ilay,igpt) = (ssa(icol,ilay,igpt) - wf) /  (1.0 - wf);
+      g  (icol,ilay,igpt) = (g  (icol,ilay,igpt) - f(icol,ilay,igpt)) / (1. - f(icol,ilay,igpt));
+    }
+  });
+  std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
+}
+
+// increment 2stream by 2stream
+void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3dk const &tau1, real3dk const &ssa1, real3dk const &g1,
+                                  real3dk const &tau2, real3dk const &ssa2, real3dk const &g2) {
+  constexpr real eps = 3*std::numeric_limits<real>::min();
+
+  // do igpt = 1, ngpt
+  //   do ilay = 1, nlay
+  //     do icol = 1, ncol
+  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+    // t=tau1 + tau2
+    real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
+    // w=(tau1*ssa1 + tau2*ssa2) / t
+    real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
+                     tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
+    g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) +
+                          tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt))
+                           / std::max(eps,tauscat12);
+    ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
+    tau1(icol,ilay,igpt) = tau12;
+  });
+  //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
 #endif

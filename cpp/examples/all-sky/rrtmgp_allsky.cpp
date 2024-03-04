@@ -139,13 +139,25 @@ int main(int argc , char **argv) {
       if (verbose) std::cout << "This is a shortwave simulation\n\n";
       OpticalProps2str atmos;
       OpticalProps2str clouds;
+#ifdef RRTMGP_ENABLE_KOKKOS
+      OpticalProps2strK atmos_k;
+      OpticalProps2strK clouds_k;
+#endif
 
       // Clouds optical props are defined by band
       clouds.init(k_dist.get_band_lims_wavenumber());
+#ifdef RRTMGP_ENABLE_KOKKOS
+      clouds_k.init(k_dist_k.get_band_lims_wavenumber());
+      clouds_k.validate_kokkos(clouds);
+#endif
 
       // Allocate arrays for the optical properties themselves.
       atmos .alloc_2str(ncol, nlay, k_dist);
       clouds.alloc_2str(ncol, nlay);
+#ifdef RRTMGP_ENABLE_KOKKOS
+      atmos_k .alloc_2str(ncol, nlay, k_dist_k);
+      clouds_k.alloc_2str(ncol, nlay);
+#endif
 
       //  Boundary conditions depending on whether the k-distribution being supplied
       real2d toa_flux   ("toa_flux"   ,ncol,ngpt);
@@ -156,6 +168,16 @@ int main(int argc , char **argv) {
       sfc_alb_dir = 0.06;
       sfc_alb_dif = 0.06;
       mu0         = 0.86;
+#ifdef RRTMGP_ENABLE_KOKKOS
+      real2dk toa_flux_k   ("toa_flux"   ,ncol,ngpt);
+      real2dk sfc_alb_dir_k("sfc_alb_dir",nbnd,ncol);
+      real2dk sfc_alb_dif_k("sfc_alb_dif",nbnd,ncol);
+      real1dk mu0_k        ("mu0"        ,ncol);
+      // Ocean-ish values for no particular reason
+      Kokkos::deep_copy(sfc_alb_dir_k, 0.06);
+      Kokkos::deep_copy(sfc_alb_dif_k, 0.06);
+      Kokkos::deep_copy(mu0_k        , 0.86);
+#endif
 
       // Fluxes
       real2d flux_up ("flux_up" ,ncol,nlay+1);
@@ -166,6 +188,16 @@ int main(int argc , char **argv) {
       real3d bnd_flux_dn ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
       real3d bnd_flux_dir("bnd_flux_dir",ncol,nlay+1,nbnd);
       real3d bnd_flux_net("bnd_flux_net",ncol,nlay+1,nbnd);
+#ifdef RRTMGP_ENABLE_KOKKOS
+      real2dk flux_up_k ("flux_up" ,ncol,nlay+1);
+      real2dk flux_dn_k ("flux_dn" ,ncol,nlay+1);
+      real2dk flux_dir_k("flux_dir",ncol,nlay+1);
+      real2dk flux_net_k("flux_net",ncol,nlay+1);
+      real3dk bnd_flux_up_k ("bnd_flux_up" ,ncol,nlay+1,nbnd);
+      real3dk bnd_flux_dn_k ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
+      real3dk bnd_flux_dir_k("bnd_flux_dir",ncol,nlay+1,nbnd);
+      real3dk bnd_flux_net_k("bnd_flux_net",ncol,nlay+1,nbnd);
+#endif
 
       // Clouds
       real2d lwp("lwp",ncol,nlay);
@@ -173,6 +205,13 @@ int main(int argc , char **argv) {
       real2d rel("rel",ncol,nlay);
       real2d rei("rei",ncol,nlay);
       bool2d cloud_mask("cloud_mask",ncol,nlay);
+#ifdef RRTMGP_ENABLE_KOKKOS
+      real2dk lwp_k("lwp",ncol,nlay);
+      real2dk iwp_k("iwp",ncol,nlay);
+      real2dk rel_k("rel",ncol,nlay);
+      real2dk rei_k("rei",ncol,nlay);
+      bool2dk cloud_mask_k("cloud_mask",ncol,nlay);
+#endif
 
       // Restrict clouds to troposphere (> 100 hPa = 100*100 Pa) and not very close to the ground (< 900 hPa), and
       // put them in 2/3 of the columns since that's roughly the total cloudiness of earth
@@ -188,12 +227,27 @@ int main(int argc , char **argv) {
         rel(icol,ilay) = merge(rel_val, 0., lwp(icol,ilay) > 0.);
         rei(icol,ilay) = merge(rei_val, 0., iwp(icol,ilay) > 0.);
       });
+#ifdef RRTMGP_ENABLE_KOKKOS
+      Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+        cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && mod(icol, 3) != 0;
+        // Ice and liquid will overlap in a few layers
+        lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);
+        iwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) < 273.);
+        rel_k(icol,ilay) = merge(rel_val, 0., lwp_k(icol,ilay) > 0.);
+        rei_k(icol,ilay) = merge(rei_val, 0., iwp_k(icol,ilay) > 0.);
+      });
+#endif
 
       if (verbose) std::cout << "Running the main loop\n\n";
       for (int iloop = 1 ; iloop <= nloops ; iloop++) {
         yakl::timer_start("shortwave");
 
         cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
+#ifdef RRTMGP_ENABLE_KOKKOS
+        cloud_optics_k.cloud_optics(ncol, nlay, lwp_k, iwp_k, rel_k, rei_k, clouds_k);
+        cloud_optics_k.validate_kokkos(cloud_optics);
+        clouds_k.validate_kokkos(clouds);
+#endif
 
         // Solvers
         FluxesByband fluxes;
@@ -205,11 +259,45 @@ int main(int argc , char **argv) {
         fluxes.bnd_flux_dn     = bnd_flux_dn ;
         fluxes.bnd_flux_dn_dir = bnd_flux_dir;
         fluxes.bnd_flux_net = bnd_flux_net;
+#ifdef RRTMGP_ENABLE_KOKKOS
+        FluxesBybandK fluxes_k;
+        fluxes_k.flux_up     = flux_up_k ;
+        fluxes_k.flux_dn     = flux_dn_k ;
+        fluxes_k.flux_dn_dir = flux_dir_k;
+        fluxes_k.flux_net    = flux_net_k;
+        fluxes_k.bnd_flux_up     = bnd_flux_up_k ;
+        fluxes_k.bnd_flux_dn     = bnd_flux_dn_k ;
+        fluxes_k.bnd_flux_dn_dir = bnd_flux_dir_k;
+        fluxes_k.bnd_flux_net = bnd_flux_net_k;
+#endif
 
         k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay, gas_concs, atmos, toa_flux);
+#ifdef RRTMGP_ENABLE_KOKKOS
+        k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, gas_concs_k, atmos_k, toa_flux_k);
+        k_dist_k.validate_kokkos(k_dist);
+        gas_concs_k.validate_kokkos(gas_concs);
+        atmos_k.validate_kokkos(atmos);
+        conv::compare_yakl_to_kokkos(toa_flux, toa_flux_k);
+#endif
+
         clouds.delta_scale();
+#ifdef RRTMGP_ENABLE_KOKKOS
+        clouds_k.delta_scale();
+        clouds_k.validate_kokkos(clouds);
+#endif
+
         clouds.increment(atmos);
+#ifdef RRTMGP_ENABLE_KOKKOS
+        clouds_k.increment(atmos_k);
+        clouds_k.validate_kokkos(clouds);
+        atmos_k.validate_kokkos(atmos);
+#endif
+
         rte_sw(atmos, top_at_1, mu0, toa_flux, sfc_alb_dir, sfc_alb_dif, fluxes);
+#ifdef RRTMGP_ENABLE_KOKKOS
+        rte_sw(atmos_k, top_at_1, mu0_k, toa_flux_k, sfc_alb_dir_k, sfc_alb_dif_k, fluxes_k);
+        fluxes_k.validate_kokkos(fluxes);
+#endif
 
         yakl::timer_stop("shortwave");
 
@@ -414,12 +502,6 @@ int main(int argc , char **argv) {
         fluxes.bnd_flux_dn = bnd_flux_dn;
         fluxes.bnd_flux_net= bnd_flux_net;
 #ifdef RRTMGP_ENABLE_KOKKOS
-        fluxes.flux_up = 0.;
-        fluxes.flux_dn = 0.;
-        fluxes.flux_net= 0.;
-        fluxes.bnd_flux_up = 0.;
-        fluxes.bnd_flux_dn = 0.;
-        fluxes.bnd_flux_net= 0.;
         FluxesBybandK fluxes_k;
         fluxes_k.flux_up = flux_up_k;
         fluxes_k.flux_dn = flux_dn_k;
@@ -427,7 +509,6 @@ int main(int argc , char **argv) {
         fluxes_k.bnd_flux_up = bnd_flux_up_k;
         fluxes_k.bnd_flux_dn = bnd_flux_dn_k;
         fluxes_k.bnd_flux_net= bnd_flux_net_k;
-        fluxes_k.validate_kokkos(fluxes);
 #endif
 
         // Calling with an empty col_dry parameter

@@ -858,8 +858,6 @@ public:
 
   void combine( int nbnd, int nlay, int ncol, real3dk const &ltau, real3dk const &itau, real3dk const &ltaussa, real3dk const &itaussa,
                 real3dk const &ltaussag, real3dk const &itaussag, OpticalProps2strK &optical_props ) {
-    RRT_REQUIRE(false, "not implemented");
-#if 0
     auto &optical_props_g   = optical_props.g  ;
     auto &optical_props_ssa = optical_props.ssa;
     auto &optical_props_tau = optical_props.tau;
@@ -873,7 +871,6 @@ public:
       optical_props_ssa(icol,ilay,ibnd) = taussa / std::max(conv::epsilon(tau), tau);
       optical_props_tau(icol,ilay,ibnd) = tau;
     });
-#endif
   }
 
   void set_ice_roughness(int icergh) {

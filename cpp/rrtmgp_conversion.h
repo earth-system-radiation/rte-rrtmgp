@@ -144,6 +144,21 @@ Layout get_layout(const Container& dims)
   return result;
 }
 
+template <typename T>
+inline
+bool approx_eq(const T lhs, const T rhs)
+{
+  return lhs == rhs;
+}
+
+template <>
+inline
+bool approx_eq<real>(const real lhs, const real rhs)
+{
+  constexpr real tol = 1e-12;
+  return std::abs(lhs - rhs) < tol;
+}
+
 template <typename YArray, typename KView>
 void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index_data=false)
 {
@@ -165,7 +180,7 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index
   auto total_size = kview.size();
   for (auto i = 0; i < total_size; ++i) {
     const auto kdata = hkview.data()[i];
-    const auto ydata = yarray.data()[i];
+    const auto ydata = hyarray.data()[i];
     if (index_data) {
       if (kdata < 0 && ydata <= 0) {
         // pass
@@ -175,7 +190,7 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index
       }
     }
     else {
-      RRT_REQUIRE(kdata == ydata, "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
+      RRT_REQUIRE(approx_eq(kdata, ydata), "Data mismatch for: " << kview.label() << ", i: " << i << ", " << kdata << " != " << ydata);
     }
 
   }
@@ -211,7 +226,7 @@ struct ToYakl
 
 // Allocate and populate a yakl array from a kokkos view
 template <typename KView>
-auto to_yakl(const KView& view)
+typename ToYakl<KView>::type to_yakl(const KView& view)
 {
   using yarray_t    = typename ToYakl<KView>::type;
   using exe_space_t = typename KView::execution_space;
@@ -257,7 +272,7 @@ bool any(const KView& view, const Functor& functor)
 }
 
 template <typename KView>
-auto maxval(const KView& view)
+typename KView::non_const_value_type maxval(const KView& view)
 {
   using scalar_t    = typename KView::non_const_value_type;
   using exe_space_t = typename KView::execution_space;
@@ -273,7 +288,7 @@ auto maxval(const KView& view)
 }
 
 template <typename KView>
-auto sum(const KView& view)
+typename KView::non_const_value_type sum(const KView& view)
 {
   using scalar_t    = typename KView::non_const_value_type;
   using exe_space_t = typename KView::execution_space;

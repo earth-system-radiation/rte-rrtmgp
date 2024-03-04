@@ -14,10 +14,10 @@ make -j8 || exit 1
 
 # Run lw and grab kokkos data, use sed to make sure it matches yakl sentinel
 # Not sure if we want to sort since that hides iteration order changes.
-../test_lw.sh | grep JGFK | sort | sed 's/JGFK/JGFY/g' > JGFK
+../test_sw.sh | grep JGFK | sort | sed 's/JGFK/JGFY/g' > JGFK
 
 # Run lw and grab yakl data
-../test_lw.sh | grep JGFY | sort > JGFY
+../test_sw.sh | grep JGFY | sort > JGFY
 
 # Check and report diffs
 diff JGFK JGFY

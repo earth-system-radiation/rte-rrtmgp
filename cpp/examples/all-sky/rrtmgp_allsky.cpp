@@ -229,13 +229,19 @@ int main(int argc , char **argv) {
       });
 #ifdef RRTMGP_ENABLE_KOKKOS
       Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
-        cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && mod(icol, 3) != 0;
+        cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && mod(icol+1, 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);
         iwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) < 273.);
         rel_k(icol,ilay) = merge(rel_val, 0., lwp_k(icol,ilay) > 0.);
         rei_k(icol,ilay) = merge(rei_val, 0., iwp_k(icol,ilay) > 0.);
       });
+      {
+        conv::compare_yakl_to_kokkos(cloud_mask, cloud_mask_k);
+        std::vector<real2d> yarrays = {lwp, iwp, rel, rei};
+        std::vector<real2dk> kviews = {lwp_k, iwp_k, rel_k, rei_k};
+        conv::compare_all_yakl_to_kokkos(yarrays, kviews);
+      }
 #endif
 
       if (verbose) std::cout << "Running the main loop\n\n";

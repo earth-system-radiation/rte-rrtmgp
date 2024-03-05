@@ -1,15 +1,21 @@
-#!/bin/bash
+#!/bin/bash -ex
 
 savedir=`pwd`
 cd ${YAKLHOME}
 git rev-parse HEAD >& $savedir/../../yakl-git-hash.txt
 cd $savedir
 
-# Clean previous build
-./cmakeclean.sh
+this_dir=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 
-# Configure new build
+# Clean previous build
+$this_dir/cmakeclean.sh
+
+# Configure new build. This will pass along arguments to this script
+# to CMake so you can set things like CMAKE_BUILD_TYPE easily.
+# Example: Enable Kokkos and debug build type:
+#  $path_to_build/cmakescript.sh -DRRTMGP_ENABLE_KOKKOS=On -DCMAKE_BUILD_TYPE=Debug
 cmake                                          \
+  $@                                           \
   -DYAKL_CXX_FLAGS="${YAKL_CXX_FLAGS}"         \
   -DYAKL_OPENMP_FLAGS="${YAKL_OPENMP_FLAGS}"   \
   -DYAKL_CUDA_FLAGS="${YAKL_CUDA_FLAGS}"       \
@@ -18,9 +24,10 @@ cmake                                          \
   -DYAKL_F90_FLAGS="${YAKL_F90_FLAGS}"         \
   -DYAKL_ARCH="$YAKL_ARCH"                     \
   -DYAKL_HOME="$YAKLHOME"                      \
+  -DKokkos_DIR="$KOKKOSHOME"                   \
+  ${KOKKOS_CONFIG}                             \
   -DCXX_LINK="$CXX_LINK"                       \
   -DF90_LINK="$F90_LINK"                       \
   -DCMAKE_Fortran_MODULE_DIRECTORY="`pwd`/fortran_module_files" \
   -DCMAKE_CUDA_ARCHITECTURES=OFF               \
-  ..
-
+  $this_dir/..

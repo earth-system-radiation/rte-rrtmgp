@@ -14,4 +14,13 @@ void write_sw_fluxes(std::string fileName, real2d const &flux_up, real2d const &
 
 void write_lw_fluxes(std::string fileName, real2d const &flux_up, real2d const &flux_dn, int ncol);
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk &p_lev, real2dk &t_lev,
+                GasConcsK &gas_concs, real2dk &col_dry, int ncol);
 
+
+void write_sw_fluxes(std::string fileName, real2dk const &flux_up, real2dk const &flux_dn, real2dk const &flux_dir, int ncol);
+
+
+void write_lw_fluxes(std::string fileName, real2dk const &flux_up, real2dk const &flux_dn, int ncol);
+#endif

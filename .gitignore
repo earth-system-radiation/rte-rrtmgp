@@ -14,4 +14,7 @@
 Makefile.libs
 Makefile.conf
 
+# Backup files
+*~
+
 src/

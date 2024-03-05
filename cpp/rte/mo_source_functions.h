@@ -86,6 +86,76 @@ public:
 
 };
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+class SourceFuncLWK : public OpticalPropsK {
+public:
+  real3dk lay_source;
+  real3dk lev_source_inc;
+  real3dk lev_source_dec;
+  real2dk sfc_source;
+
+
+  bool is_allocated() const  { return this->is_initialized() && this->sfc_source.is_allocated(); }
+
+
+  void alloc(int ncol, int nlay) {
+    if (! this->is_initialized()) { stoprun("source_func_lw%alloc: not initialized so can't allocate"); }
+    if (ncol <= 0 || nlay <= 0) { stoprun("source_func_lw%alloc: must provide positive extents for ncol, nlay"); }
+    int ngpt = this->get_ngpt();
+    this->sfc_source     = real2dk("sfc_source"    ,ncol,ngpt);
+    this->lay_source     = real3dk("lay_source"    ,ncol,nlay,ngpt);
+    this->lev_source_inc = real3dk("lev_source_inc",ncol,nlay,ngpt);
+    this->lev_source_dec = real3dk("lev_source_dec",ncol,nlay,ngpt);
+  }
+
+
+  void alloc(int ncol, int nlay, OpticalPropsK const &op) {
+    if (! op.is_initialized()) { stoprun("source_func_lw::alloc: op not initialized"); }
+    this->finalize();
+    this->init(op);
+    this->alloc(ncol,nlay);
+  }
+
+
+  void finalize() {
+    this->lay_source     = real3dk();
+    this->lev_source_inc = real3dk();
+    this->lev_source_dec = real3dk();
+    this->sfc_source     = real2dk();
+    OpticalPropsK::finalize();
+  }
+
+
+  int get_ncol() const {
+    if (this->is_allocated()) { return this->lay_source.extent(0); } else { return 0; }
+  }
+
+
+  int get_nlay() const {
+    if (this->is_allocated()) { return this->lay_source.extent(1); } else { return 0; }
+  }
+
+  void print_norms() const {
+                                         std::cout << "name          : " << name                << "\n";
+    if (lay_source.is_allocated()    ) { std::cout << "lay_source    : " << conv::sum(lay_source    ) << "\n"; }
+    if (lev_source_inc.is_allocated()) { std::cout << "lev_source_inc: " << conv::sum(lev_source_inc) << "\n"; }
+    if (lev_source_dec.is_allocated()) { std::cout << "lev_source_dec: " << conv::sum(lev_source_dec) << "\n"; }
+    if (sfc_source.is_allocated()    ) { std::cout << "sfc_source    : " << conv::sum(sfc_source    ) << "\n"; }
+    if (band2gpt.is_allocated()      ) { std::cout << "band2gpt      : " << conv::sum(band2gpt      ) << "\n"; }
+    if (gpt2band.is_allocated()      ) { std::cout << "gpt2band      : " << conv::sum(gpt2band      ) << "\n"; }
+    if (band_lims_wvn.is_allocated() ) { std::cout << "band_lims_wvn : " << conv::sum(band_lims_wvn ) << "\n"; }
+  }
+
+  void validate_kokkos(const SourceFuncLW& orig)
+  {
+    OpticalPropsK::validate_kokkos(orig);
+    conv::compare_yakl_to_kokkos(orig.lay_source, lay_source);
+    conv::compare_yakl_to_kokkos(orig.lev_source_inc, lev_source_inc);
+    conv::compare_yakl_to_kokkos(orig.lev_source_dec, lev_source_dec);
+    conv::compare_yakl_to_kokkos(orig.sfc_source, sfc_source);
+  }
+};
+#endif
 
 
 // Type for shortave sources: top-of-domain spectrally-resolved flux
@@ -136,3 +206,55 @@ public:
 
 };
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+// Type for shortave sources: top-of-domain spectrally-resolved flux
+// Not implementing get_subset because it isn't used
+class SourceFuncSWK : public OpticalPropsK {
+public:
+  real2dk toa_source;
+
+
+  bool is_allocated() const { return this->is_initialized() && this->toa_source.is_allocated(); }
+
+
+  void alloc(int ncol) {
+    if (! this->is_initialized()) { stoprun("source_func_sw%alloc: not initialized so can't allocate"); }
+    if (ncol <= 0) { stoprun("source_func_sw%alloc: must provide positive extents for ncol"); }
+    this->toa_source = real2dk("toa_source",ncol,this->get_ngpt());
+  }
+
+
+  void alloc(int ncol, OpticalPropsK const &op) {
+    if (! op.is_initialized()) { stoprun("source_func_sw::alloc: op not initialized"); }
+    this->init(op);
+    this->alloc(ncol);
+  }
+
+
+  void finalize() {
+    this->toa_source = real2dk();
+    OpticalPropsK::finalize();
+  }
+
+
+  int get_ncol() const {
+    if (this->is_allocated()) { return this->toa_source.extent(0); } else { return 0; }
+  }
+
+
+  void print_norms() const {
+                                         std::cout << "name          : " << name                << "\n";
+    if (toa_source.is_allocated()    ) { std::cout << "toa_source    : " << conv::sum(toa_source    ) << "\n"; }
+    if (band2gpt.is_allocated()      ) { std::cout << "band2gpt      : " << conv::sum(band2gpt      ) << "\n"; }
+    if (gpt2band.is_allocated()      ) { std::cout << "gpt2band      : " << conv::sum(gpt2band      ) << "\n"; }
+    if (band_lims_wvn.is_allocated() ) { std::cout << "band_lims_wvn : " << conv::sum(band_lims_wvn ) << "\n"; }
+  }
+
+  void validate_kokkos(const SourceFuncSW& orig)
+  {
+    OpticalPropsK::validate_kokkos(orig);
+    conv::compare_yakl_to_kokkos(orig.toa_source, toa_source);
+  }
+
+};
+#endif

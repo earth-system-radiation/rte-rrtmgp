@@ -7,6 +7,10 @@ if ("${YAKL_ARCH}" STREQUAL "CUDA")
   enable_language(CUDA)
 endif()
 
+if (RRTMGP_ENABLE_YAKL)
+  add_definitions("-DRRTMGP_ENABLE_YAKL")
+endif()
+
 if (RRTMGP_ENABLE_KOKKOS)
   add_definitions("-DRRTMGP_ENABLE_KOKKOS")
 endif()
@@ -16,7 +20,9 @@ endif()
 # but that does not seem to be working for GPU builds on summit right now for
 # some reason (leads to segfaults). So instead, the allsky build will just pull
 # in all the RRTMGP source and build and link all at once.
-add_subdirectory(${YAKL_HOME} ./yakl)
+if (RRTMGP_ENABLE_YAKL)
+  add_subdirectory(${YAKL_HOME} ./yakl)
+endif()
 if (RRTMGP_ENABLE_KOKKOS)
   add_subdirectory(${Kokkos_DIR} ./kokkos)
 endif()

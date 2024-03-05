@@ -13,16 +13,20 @@
 
 namespace conv {
 
+// A meta function that will return true if T is either a Kokkos::View or a
+// Kokkos::OffsetView (we use these in a couple places).
 template <typename T>
 struct is_view
 {
   static constexpr bool value = Kokkos::is_view<T>::value || Kokkos::Experimental::is_offset_view<T>::value;
 };
 
+// Convenient way of using is_view meta function
 template <class T>
 inline constexpr bool is_view_v = is_view<T>::value;
 
-// Copied with minor mods from YAKL intrinsics
+// Copied with minor mods from YAKL intrinsics. Gets epsilon for a primitive
+// or View.
 template <class T,
           typename std::enable_if<!is_view_v<T>>::type* = nullptr>
 KOKKOS_INLINE_FUNCTION
@@ -31,9 +35,15 @@ T constexpr epsilon(T) { return std::numeric_limits<T>::epsilon(); }
 template <class View,
           typename std::enable_if<is_view_v<View>>::type* = nullptr>
 KOKKOS_INLINE_FUNCTION
-typename View::non_const_value_type constexpr epsilon(const View& arr) { return std::numeric_limits<typename View::non_const_value_type>::epsilon(); }
+typename View::non_const_value_type constexpr epsilon(const View& arr)
+{ return std::numeric_limits<typename View::non_const_value_type>::epsilon(); }
 
-// These are for debugging
+//
+// These are for debugging. They print values of kviews/yarrays preceeded by a
+// sentinel string that can be grepped for. This is how the compare_yk.sh script
+// can be used to debug differences between YAKL and Kokkos. You put the pNd calls
+// in the equivalent place for both the YAKL and Kokkos version of the code.
+//
 template <typename KView,
           typename std::enable_if<is_view_v<KView>>::type* = nullptr>
 void p1d(const KView& view, const std::string& name, int idx)
@@ -121,9 +131,11 @@ do {                                                      \
   }                                                       \
 } while(0)
 
+// Just a convenient require macro for checking things. Note this is
+// not an assert macro, so it's always on.
 #define RRT_REQUIRE(condition, msg) IMPL_THROW_RRT(condition, msg, std::runtime_error)
 
-// Copied from EKAT
+// Copied from EKAT. Get Kokkos view template type
 template<typename T, int N>
 struct DataND {
   using type = typename DataND<T,N-1>::type*;
@@ -133,6 +145,7 @@ struct DataND<T,0> {
   using type = T;
 };
 
+// Copied from EKAT: Create a kokkos layout from a container of dims
 template <typename Layout, typename Container>
 Layout get_layout(const Container& dims)
 {
@@ -144,6 +157,7 @@ Layout get_layout(const Container& dims)
   return result;
 }
 
+// approx eq. Compares values with a tolerance if reals.
 template <typename T>
 inline
 bool approx_eq(const T lhs, const T rhs)
@@ -159,6 +173,8 @@ bool approx_eq<real>(const real lhs, const real rhs)
   return std::abs(lhs - rhs) < tol;
 }
 
+// Compare a yakl array to a kokkos view, checking they are functionally
+// identical (same rank, dims, and values).
 template <typename YArray, typename KView>
 void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index_data=false)
 {
@@ -243,6 +259,7 @@ typename ToYakl<KView>::type to_yakl(const KView& view)
   return rv;
 }
 
+// A < functor
 template <typename T>
 struct LTFunc
 {
@@ -256,6 +273,7 @@ struct LTFunc
   }
 };
 
+// Return true if any item in view returns true when passed to functor
 template <typename KView, typename Functor>
 bool any(const KView& view, const Functor& functor)
 {
@@ -271,6 +289,7 @@ bool any(const KView& view, const Functor& functor)
   return rv;
 }
 
+// Get max val of View
 template <typename KView>
 typename KView::non_const_value_type maxval(const KView& view)
 {
@@ -287,6 +306,7 @@ typename KView::non_const_value_type maxval(const KView& view)
   return rv;
 }
 
+// Get sum of view
 template <typename KView>
 typename KView::non_const_value_type sum(const KView& view)
 {
@@ -303,6 +323,7 @@ typename KView::non_const_value_type sum(const KView& view)
   return rv;
 }
 
+// Print an entire view + sentinel
 template <typename KView,
           typename std::enable_if<is_view_v<KView>>::type* = nullptr>
 void print(const std::string& name, const KView& view)
@@ -312,6 +333,7 @@ void print(const std::string& name, const KView& view)
   }
 }
 
+// Print an entire yakl array + sentinel
 template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void print(const std::string& name, const YArray& array)

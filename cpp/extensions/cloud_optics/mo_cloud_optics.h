@@ -504,41 +504,42 @@ public:
 
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
+    std::string prefix = print_prefix ? "JGFY" : "";
 
-                                         std::cout << "name                   : " << name                    << "\n";
-                                         std::cout << "icergh                 : " << icergh                  << "\n";
-                                         std::cout << "radliq_lwr             : " << radliq_lwr              << "\n";
-                                         std::cout << "radliq_upr             : " << radliq_upr              << "\n";
-                                         std::cout << "radice_lwr             : " << radice_lwr              << "\n";
-                                         std::cout << "radice_upr             : " << radice_upr              << "\n";
-                                         std::cout << "liq_nsteps             : " << liq_nsteps              << "\n";
-                                         std::cout << "ice_nsteps             : " << ice_nsteps              << "\n";
-                                         std::cout << "liq_step_size          : " << liq_step_size           << "\n";
-                                         std::cout << "ice_step_size          : " << ice_step_size           << "\n";
-    if (allocated(lut_extliq        )) { std::cout << "sum(lut_extliq        ): " << sum(lut_extliq        ) << "\n"; }
-    if (allocated(lut_ssaliq        )) { std::cout << "sum(lut_ssaliq        ): " << sum(lut_ssaliq        ) << "\n"; }
-    if (allocated(lut_asyliq        )) { std::cout << "sum(lut_asyliq        ): " << sum(lut_asyliq        ) << "\n"; }
-    if (allocated(lut_extice        )) { std::cout << "sum(lut_extice        ): " << sum(lut_extice        ) << "\n"; }
-    if (allocated(lut_ssaice        )) { std::cout << "sum(lut_ssaice        ): " << sum(lut_ssaice        ) << "\n"; }
-    if (allocated(lut_asyice        )) { std::cout << "sum(lut_asyice        ): " << sum(lut_asyice        ) << "\n"; }
-    if (allocated(pade_extliq       )) { std::cout << "sum(pade_extliq       ): " << sum(pade_extliq       ) << "\n"; }
-    if (allocated(pade_ssaliq       )) { std::cout << "sum(pade_ssaliq       ): " << sum(pade_ssaliq       ) << "\n"; }
-    if (allocated(pade_asyliq       )) { std::cout << "sum(pade_asyliq       ): " << sum(pade_asyliq       ) << "\n"; }
-    if (allocated(pade_extice       )) { std::cout << "sum(pade_extice       ): " << sum(pade_extice       ) << "\n"; }
-    if (allocated(pade_ssaice       )) { std::cout << "sum(pade_ssaice       ): " << sum(pade_ssaice       ) << "\n"; }
-    if (allocated(pade_asyice       )) { std::cout << "sum(pade_asyice       ): " << sum(pade_asyice       ) << "\n"; }
-    if (allocated(pade_sizreg_extliq)) { std::cout << "sum(pade_sizreg_extliq): " << sum(pade_sizreg_extliq) << "\n"; }
-    if (allocated(pade_sizreg_ssaliq)) { std::cout << "sum(pade_sizreg_ssaliq): " << sum(pade_sizreg_ssaliq) << "\n"; }
-    if (allocated(pade_sizreg_asyliq)) { std::cout << "sum(pade_sizreg_asyliq): " << sum(pade_sizreg_asyliq) << "\n"; }
-    if (allocated(pade_sizreg_extice)) { std::cout << "sum(pade_sizreg_extice): " << sum(pade_sizreg_extice) << "\n"; }
-    if (allocated(pade_sizreg_ssaice)) { std::cout << "sum(pade_sizreg_ssaice): " << sum(pade_sizreg_ssaice) << "\n"; }
-    if (allocated(pade_sizreg_asyice)) { std::cout << "sum(pade_sizreg_asyice): " << sum(pade_sizreg_asyice) << "\n"; }
-    if (allocated(band2gpt          )) { std::cout << "band2gpt               : " << sum(band2gpt          ) << "\n"; }
-    if (allocated(gpt2band          )) { std::cout << "gpt2band               : " << sum(gpt2band          ) << "\n"; }
-    if (allocated(band_lims_wvn     )) { std::cout << "band_lims_wvn          : " << sum(band_lims_wvn     ) << "\n"; }
+                                         std::cout << prefix << "name                   : " << name                    << "\n";
+                                         std::cout << prefix << "icergh                 : " << icergh                  << "\n";
+                                         std::cout << prefix << "radliq_lwr             : " << radliq_lwr              << "\n";
+                                         std::cout << prefix << "radliq_upr             : " << radliq_upr              << "\n";
+                                         std::cout << prefix << "radice_lwr             : " << radice_lwr              << "\n";
+                                         std::cout << prefix << "radice_upr             : " << radice_upr              << "\n";
+                                         std::cout << prefix << "liq_nsteps             : " << liq_nsteps              << "\n";
+                                         std::cout << prefix << "ice_nsteps             : " << ice_nsteps              << "\n";
+                                         std::cout << prefix << "liq_step_size          : " << liq_step_size           << "\n";
+                                         std::cout << prefix << "ice_step_size          : " << ice_step_size           << "\n";
+    if (allocated(lut_extliq        )) { std::cout << prefix << "sum(lut_extliq        ): " << sum(lut_extliq        ) << "\n"; }
+    if (allocated(lut_ssaliq        )) { std::cout << prefix << "sum(lut_ssaliq        ): " << sum(lut_ssaliq        ) << "\n"; }
+    if (allocated(lut_asyliq        )) { std::cout << prefix << "sum(lut_asyliq        ): " << sum(lut_asyliq        ) << "\n"; }
+    if (allocated(lut_extice        )) { std::cout << prefix << "sum(lut_extice        ): " << sum(lut_extice        ) << "\n"; }
+    if (allocated(lut_ssaice        )) { std::cout << prefix << "sum(lut_ssaice        ): " << sum(lut_ssaice        ) << "\n"; }
+    if (allocated(lut_asyice        )) { std::cout << prefix << "sum(lut_asyice        ): " << sum(lut_asyice        ) << "\n"; }
+    if (allocated(pade_extliq       )) { std::cout << prefix << "sum(pade_extliq       ): " << sum(pade_extliq       ) << "\n"; }
+    if (allocated(pade_ssaliq       )) { std::cout << prefix << "sum(pade_ssaliq       ): " << sum(pade_ssaliq       ) << "\n"; }
+    if (allocated(pade_asyliq       )) { std::cout << prefix << "sum(pade_asyliq       ): " << sum(pade_asyliq       ) << "\n"; }
+    if (allocated(pade_extice       )) { std::cout << prefix << "sum(pade_extice       ): " << sum(pade_extice       ) << "\n"; }
+    if (allocated(pade_ssaice       )) { std::cout << prefix << "sum(pade_ssaice       ): " << sum(pade_ssaice       ) << "\n"; }
+    if (allocated(pade_asyice       )) { std::cout << prefix << "sum(pade_asyice       ): " << sum(pade_asyice       ) << "\n"; }
+    if (allocated(pade_sizreg_extliq)) { std::cout << prefix << "sum(pade_sizreg_extliq): " << sum(pade_sizreg_extliq) << "\n"; }
+    if (allocated(pade_sizreg_ssaliq)) { std::cout << prefix << "sum(pade_sizreg_ssaliq): " << sum(pade_sizreg_ssaliq) << "\n"; }
+    if (allocated(pade_sizreg_asyliq)) { std::cout << prefix << "sum(pade_sizreg_asyliq): " << sum(pade_sizreg_asyliq) << "\n"; }
+    if (allocated(pade_sizreg_extice)) { std::cout << prefix << "sum(pade_sizreg_extice): " << sum(pade_sizreg_extice) << "\n"; }
+    if (allocated(pade_sizreg_ssaice)) { std::cout << prefix << "sum(pade_sizreg_ssaice): " << sum(pade_sizreg_ssaice) << "\n"; }
+    if (allocated(pade_sizreg_asyice)) { std::cout << prefix << "sum(pade_sizreg_asyice): " << sum(pade_sizreg_asyice) << "\n"; }
+    if (allocated(band2gpt          )) { std::cout << prefix << "band2gpt               : " << sum(band2gpt          ) << "\n"; }
+    if (allocated(gpt2band          )) { std::cout << prefix << "gpt2band               : " << sum(gpt2band          ) << "\n"; }
+    if (allocated(band_lims_wvn     )) { std::cout << prefix << "band_lims_wvn          : " << sum(band_lims_wvn     ) << "\n"; }
   }
 
 };
@@ -643,7 +644,6 @@ public:
             real4dk const &pade_extice, real4dk const &pade_ssaice, real4dk const &pade_asyice,
             real1dk const &pade_sizreg_extliq, real1dk const &pade_sizreg_ssaliq, real1dk const &pade_sizreg_asyliq,
             real1dk const &pade_sizreg_extice, real1dk const &pade_sizreg_ssaice, real1dk const &pade_sizreg_asyice) {
-
     // Pade coefficient dimensions
     int nbnd         = pade_extliq.extent(0);
     int nsizereg     = pade_extliq.extent(1);
@@ -964,38 +964,39 @@ public:
     return numer/denom;
   }
 
-  void print_norms() const {
-                                             std::cout << "name                   : " << name                          << "\n";
-                                             std::cout << "icergh                 : " << icergh                        << "\n";
-                                             std::cout << "radliq_lwr             : " << radliq_lwr                    << "\n";
-                                             std::cout << "radliq_upr             : " << radliq_upr                    << "\n";
-                                             std::cout << "radice_lwr             : " << radice_lwr                    << "\n";
-                                             std::cout << "radice_upr             : " << radice_upr                    << "\n";
-                                             std::cout << "liq_nsteps             : " << liq_nsteps                    << "\n";
-                                             std::cout << "ice_nsteps             : " << ice_nsteps                    << "\n";
-                                             std::cout << "liq_step_size          : " << liq_step_size                 << "\n";
-                                             std::cout << "ice_step_size          : " << ice_step_size                 << "\n";
-    if (lut_extliq.is_allocated()        ) { std::cout << "sum(lut_extliq        ): " << conv::sum(lut_extliq        ) << "\n"; }
-    if (lut_ssaliq.is_allocated()        ) { std::cout << "sum(lut_ssaliq        ): " << conv::sum(lut_ssaliq        ) << "\n"; }
-    if (lut_asyliq.is_allocated()        ) { std::cout << "sum(lut_asyliq        ): " << conv::sum(lut_asyliq        ) << "\n"; }
-    if (lut_extice.is_allocated()        ) { std::cout << "sum(lut_extice        ): " << conv::sum(lut_extice        ) << "\n"; }
-    if (lut_ssaice.is_allocated()        ) { std::cout << "sum(lut_ssaice        ): " << conv::sum(lut_ssaice        ) << "\n"; }
-    if (lut_asyice.is_allocated()        ) { std::cout << "sum(lut_asyice        ): " << conv::sum(lut_asyice        ) << "\n"; }
-    if (pade_extliq.is_allocated()       ) { std::cout << "sum(pade_extliq       ): " << conv::sum(pade_extliq       ) << "\n"; }
-    if (pade_ssaliq.is_allocated()       ) { std::cout << "sum(pade_ssaliq       ): " << conv::sum(pade_ssaliq       ) << "\n"; }
-    if (pade_asyliq.is_allocated()       ) { std::cout << "sum(pade_asyliq       ): " << conv::sum(pade_asyliq       ) << "\n"; }
-    if (pade_extice.is_allocated()       ) { std::cout << "sum(pade_extice       ): " << conv::sum(pade_extice       ) << "\n"; }
-    if (pade_ssaice.is_allocated()       ) { std::cout << "sum(pade_ssaice       ): " << conv::sum(pade_ssaice       ) << "\n"; }
-    if (pade_asyice.is_allocated()       ) { std::cout << "sum(pade_asyice       ): " << conv::sum(pade_asyice       ) << "\n"; }
-    if (pade_sizreg_extliq.is_allocated()) { std::cout << "sum(pade_sizreg_extliq): " << conv::sum(pade_sizreg_extliq) << "\n"; }
-    if (pade_sizreg_ssaliq.is_allocated()) { std::cout << "sum(pade_sizreg_ssaliq): " << conv::sum(pade_sizreg_ssaliq) << "\n"; }
-    if (pade_sizreg_asyliq.is_allocated()) { std::cout << "sum(pade_sizreg_asyliq): " << conv::sum(pade_sizreg_asyliq) << "\n"; }
-    if (pade_sizreg_extice.is_allocated()) { std::cout << "sum(pade_sizreg_extice): " << conv::sum(pade_sizreg_extice) << "\n"; }
-    if (pade_sizreg_ssaice.is_allocated()) { std::cout << "sum(pade_sizreg_ssaice): " << conv::sum(pade_sizreg_ssaice) << "\n"; }
-    if (pade_sizreg_asyice.is_allocated()) { std::cout << "sum(pade_sizreg_asyice): " << conv::sum(pade_sizreg_asyice) << "\n"; }
-    if (band2gpt.is_allocated()          ) { std::cout << "band2gpt               : " << conv::sum(band2gpt          ) << "\n"; }
-    if (gpt2band.is_allocated()          ) { std::cout << "gpt2band               : " << conv::sum(gpt2band          ) << "\n"; }
-    if (band_lims_wvn.is_allocated()     ) { std::cout << "band_lims_wvn          : " << conv::sum(band_lims_wvn     ) << "\n"; }
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+                                             std::cout << prefix << "name                   : " << name                          << "\n";
+                                             std::cout << prefix << "icergh                 : " << icergh                        << "\n";
+                                             std::cout << prefix << "radliq_lwr             : " << radliq_lwr                    << "\n";
+                                             std::cout << prefix << "radliq_upr             : " << radliq_upr                    << "\n";
+                                             std::cout << prefix << "radice_lwr             : " << radice_lwr                    << "\n";
+                                             std::cout << prefix << "radice_upr             : " << radice_upr                    << "\n";
+                                             std::cout << prefix << "liq_nsteps             : " << liq_nsteps                    << "\n";
+                                             std::cout << prefix << "ice_nsteps             : " << ice_nsteps                    << "\n";
+                                             std::cout << prefix << "liq_step_size          : " << liq_step_size                 << "\n";
+                                             std::cout << prefix << "ice_step_size          : " << ice_step_size                 << "\n";
+    if (lut_extliq.is_allocated()        ) { std::cout << prefix << "sum(lut_extliq        ): " << conv::sum(lut_extliq        ) << "\n"; }
+    if (lut_ssaliq.is_allocated()        ) { std::cout << prefix << "sum(lut_ssaliq        ): " << conv::sum(lut_ssaliq        ) << "\n"; }
+    if (lut_asyliq.is_allocated()        ) { std::cout << prefix << "sum(lut_asyliq        ): " << conv::sum(lut_asyliq        ) << "\n"; }
+    if (lut_extice.is_allocated()        ) { std::cout << prefix << "sum(lut_extice        ): " << conv::sum(lut_extice        ) << "\n"; }
+    if (lut_ssaice.is_allocated()        ) { std::cout << prefix << "sum(lut_ssaice        ): " << conv::sum(lut_ssaice        ) << "\n"; }
+    if (lut_asyice.is_allocated()        ) { std::cout << prefix << "sum(lut_asyice        ): " << conv::sum(lut_asyice        ) << "\n"; }
+    if (pade_extliq.is_allocated()       ) { std::cout << prefix << "sum(pade_extliq       ): " << conv::sum(pade_extliq       ) << "\n"; }
+    if (pade_ssaliq.is_allocated()       ) { std::cout << prefix << "sum(pade_ssaliq       ): " << conv::sum(pade_ssaliq       ) << "\n"; }
+    if (pade_asyliq.is_allocated()       ) { std::cout << prefix << "sum(pade_asyliq       ): " << conv::sum(pade_asyliq       ) << "\n"; }
+    if (pade_extice.is_allocated()       ) { std::cout << prefix << "sum(pade_extice       ): " << conv::sum(pade_extice       ) << "\n"; }
+    if (pade_ssaice.is_allocated()       ) { std::cout << prefix << "sum(pade_ssaice       ): " << conv::sum(pade_ssaice       ) << "\n"; }
+    if (pade_asyice.is_allocated()       ) { std::cout << prefix << "sum(pade_asyice       ): " << conv::sum(pade_asyice       ) << "\n"; }
+    if (pade_sizreg_extliq.is_allocated()) { std::cout << prefix << "sum(pade_sizreg_extliq): " << conv::sum(pade_sizreg_extliq) << "\n"; }
+    if (pade_sizreg_ssaliq.is_allocated()) { std::cout << prefix << "sum(pade_sizreg_ssaliq): " << conv::sum(pade_sizreg_ssaliq) << "\n"; }
+    if (pade_sizreg_asyliq.is_allocated()) { std::cout << prefix << "sum(pade_sizreg_asyliq): " << conv::sum(pade_sizreg_asyliq) << "\n"; }
+    if (pade_sizreg_extice.is_allocated()) { std::cout << prefix << "sum(pade_sizreg_extice): " << conv::sum(pade_sizreg_extice) << "\n"; }
+    if (pade_sizreg_ssaice.is_allocated()) { std::cout << prefix << "sum(pade_sizreg_ssaice): " << conv::sum(pade_sizreg_ssaice) << "\n"; }
+    if (pade_sizreg_asyice.is_allocated()) { std::cout << prefix << "sum(pade_sizreg_asyice): " << conv::sum(pade_sizreg_asyice) << "\n"; }
+    if (band2gpt.is_allocated()          ) { std::cout << prefix << "band2gpt               : " << conv::sum(band2gpt          ) << "\n"; }
+    if (gpt2band.is_allocated()          ) { std::cout << prefix << "gpt2band               : " << conv::sum(gpt2band          ) << "\n"; }
+    if (band_lims_wvn.is_allocated()     ) { std::cout << prefix << "band_lims_wvn          : " << conv::sum(band_lims_wvn     ) << "\n"; }
   }
 
 #ifdef RRTMGP_ENABLE_YAKL

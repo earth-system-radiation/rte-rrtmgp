@@ -2,6 +2,8 @@
 
 this_dir=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 
+#export RUNCMD=valgrind
+
 # Test both
 $this_dir/cmakescript.sh -DRRTMGP_ENABLE_YAKL=On -DRRTMGP_ENABLE_KOKKOS=On -DCMAKE_BUILD_TYPE=Debug
 make

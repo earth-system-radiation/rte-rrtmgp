@@ -204,21 +204,24 @@ public:
   }
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
+
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
 
-    std::cout << "ncol      : " << ncol       << "\n";
-    std::cout << "nlay      : " << nlay       << "\n";
-    std::cout << "ngas      : " << ngas       << "\n";
+    std::string prefix = print_prefix ? "JGFY" : "";
+
+    std::cout << prefix << "ncol      : " << ncol       << "\n";
+    std::cout << prefix << "nlay      : " << nlay       << "\n";
+    std::cout << prefix << "ngas      : " << ngas       << "\n";
     if (allocated(gas_name)) {
-      std::cout << "gas_name  : ";
+      std::cout << prefix << "gas_name  : ";
       for (auto& item : gas_name) {
         std::cout << item << " ";
       }
       std::cout << "\n";
     }
-    if (allocated(concs   )) { std::cout << "sum(concs): " << sum(concs) << "\n"; }
+    if (allocated(concs   )) { std::cout << prefix << "sum(concs): " << sum(concs) << "\n"; }
   }
 
 };
@@ -375,18 +378,19 @@ public:
   }
 
 
-  void print_norms() const {
-    std::cout << "ncol      : " << ncol       << "\n";
-    std::cout << "nlay      : " << nlay       << "\n";
-    std::cout << "ngas      : " << ngas       << "\n";
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+    std::cout << prefix << "ncol      : " << ncol       << "\n";
+    std::cout << prefix << "nlay      : " << nlay       << "\n";
+    std::cout << prefix << "ngas      : " << ngas       << "\n";
     if (gas_name.size() > 0) {
-      std::cout << "gas_name  : ";
+      std::cout << prefix << "gas_name  : ";
       for (auto& item : gas_name) {
         std::cout << item << " ";
       }
       std::cout << "\n";
     }
-    if (concs.is_allocated()) { std::cout << "sum(concs): " << conv::sum(concs) << "\n"; }
+    if (concs.is_allocated()) { std::cout << prefix << "sum(concs): " << conv::sum(concs) << "\n"; }
   }
 
 #ifdef RRTMGP_ENABLE_YAKL

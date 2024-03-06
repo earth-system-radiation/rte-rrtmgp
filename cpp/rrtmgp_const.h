@@ -185,3 +185,13 @@ inline void stoprun( std::string str ) {
   std::cout << str << "\n" << std::endl;
   throw str;
 }
+
+inline
+std::ostream& operator<<(std::ostream& out, const string1dv& names)
+{
+  for (const auto& name : names) {
+    out << name << " ";
+  }
+  out << std::endl;
+  return out;
+}

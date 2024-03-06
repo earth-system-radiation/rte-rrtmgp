@@ -1,7 +1,10 @@
 
 #pragma once
 
+#ifdef RRTMGP_ENABLE_YAKL
 #include "YAKL.h"
+#endif
+
 #include <iostream>
 #include <cmath>
 #include <vector>
@@ -23,12 +26,9 @@ using FOView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutLeft, Device>;
 
 template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
 using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank> >;//, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
-
-
-// template <typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
-// using MDRangeP3 = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left, Kokkos::Iterate::Left> >;
 #endif
 
+#ifdef RRTMGP_ENABLE_YAKL
 template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
 
 typedef double real;
@@ -104,6 +104,7 @@ typedef FArray<bool,7,yakl::memHost> boolHost7d;
 typedef FArray<char,2,yakl::memHost> charHost2d;
 
 typedef FArray<std::string,1,yakl::memHost> string1d;
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 typedef FView<real*>       real1dk;

@@ -5,6 +5,14 @@
 #include <netcdf.h>
 #include <stdexcept>
 
+// Validate if both enabled?
+#ifdef RRTMGP_ENABLE_KOKKOS
+#define COMPUTE_SWITCH(yimpl, kimpl) kimpl
+#else
+#define COMPUTE_SWITCH(yimpl, kimpl) yimpl
+#endif
+
+
 #ifdef RRTMGP_ENABLE_KOKKOS
 
 /**
@@ -135,6 +143,26 @@ do {                                                      \
 // not an assert macro, so it's always on.
 #define RRT_REQUIRE(condition, msg) IMPL_THROW_RRT(condition, msg, std::runtime_error)
 
+// Macros for validating kokkos using yakl. These all do nothing if
+// YAKL is not enabled.
+#ifdef RRTMGP_ENABLE_YAKL
+#define VALIDATE_KOKKOS(yobj, kobj) kobj.validate_kokkos(yobj)
+#else
+#define VALIDATE_KOKKOS(yobj, kobj) (void)0
+#endif
+
+#ifdef RRTMGP_ENABLE_YAKL
+#define COMPARE_ALL_WRAP(yobjs, kobjs) conv::compare_all_yakl_to_kokkos(yobjs, kobjs)
+#else
+#define COMPARE_ALL_WRAP(yobjs, kobjs) (void)0
+#endif
+
+#ifdef RRTMGP_ENABLE_YAKL
+#define COMPARE_WRAP(yobj, kobj) conv::compare_yakl_to_kokkos(yobj, kobj)
+#else
+#define COMPARE_WRAP(yobj, kobj) (void)0
+#endif
+
 // Copied from EKAT. Get Kokkos view template type
 template<typename T, int N>
 struct DataND {
@@ -173,6 +201,7 @@ bool approx_eq<real>(const real lhs, const real rhs)
   return std::abs(lhs - rhs) < tol;
 }
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Compare a yakl array to a kokkos view, checking they are functionally
 // identical (same rank, dims, and values).
 template <typename YArray, typename KView>
@@ -258,6 +287,7 @@ typename ToYakl<KView>::type to_yakl(const KView& view)
   });
   return rv;
 }
+#endif
 
 // A < functor
 template <typename T>
@@ -333,6 +363,7 @@ void print(const std::string& name, const KView& view)
   }
 }
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Print an entire yakl array + sentinel
 template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
@@ -342,6 +373,7 @@ void print(const std::string& name, const YArray& array)
     std::cout << "JGFY " << name << "(" << i << ") = " << array.data()[i] << std::endl;
   }
 }
+#endif
 
 
 //Error reporting routine for the PNetCDF I/O

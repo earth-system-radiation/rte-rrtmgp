@@ -8,6 +8,7 @@
 // Base class for optical properties
 //   Describes the spectral discretization including the wavenumber limits
 //   of each band (spectral region) and the mapping between g-points and bands
+#ifdef RRTMGP_ENABLE_YAKL
 class OpticalProps {
 public:
   int2d  band2gpt;       // (begin g-point, end g-point) = band2gpt(2,band)
@@ -249,6 +250,7 @@ public:
   std::string get_name() const { return this->name; }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalPropsK {
@@ -458,6 +460,7 @@ public:
 };
 #endif
 
+#ifdef RRTMGP_ENABLE_YAKL
 class OpticalPropsArry : public OpticalProps {
 public:
   real3d tau; // optical depth (ncol, nlay, ngpt)
@@ -465,6 +468,7 @@ public:
   int get_ncol() const { if (yakl::intrinsics::allocated(tau)) { return yakl::intrinsics::size(this->tau,1); } else { return 0; } }
   int get_nlay() const { if (yakl::intrinsics::allocated(tau)) { return yakl::intrinsics::size(this->tau,2); } else { return 0; } }
 };
+#endif
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalPropsArryK : public OpticalPropsK {
 public:
@@ -483,11 +487,14 @@ public:
 
 
 // We need to know about 2str's existence because it is referenced in 1scl
+#ifdef RRTMGP_ENABLE_YAKL
 class OpticalProps2str;
+#endif
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalProps2strK;
 #endif
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Not implementing get_subset because it isn't used
 class OpticalProps1scl : public OpticalPropsArry {
 public:
@@ -560,6 +567,7 @@ public:
   }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalProps1sclK : public OpticalPropsArryK {
@@ -621,6 +629,7 @@ public:
 #endif
 
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Not implementing get_subset because it isn't used
 class OpticalProps2str : public OpticalPropsArry {
 public:
@@ -765,6 +774,7 @@ inline void OpticalProps1scl::increment(OpticalProps2str &that) {
     inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, that.tau, that.ssa, this->tau, that.get_nband(), that.get_band_lims_gpoint());
   }
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalProps2strK : public OpticalPropsArryK {

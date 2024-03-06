@@ -22,6 +22,7 @@
 //
 // -------------------------------------------------------------------------------------------------
 
+#ifdef RRTMGP_ENABLE_YAKL
 class FluxesBroadband {
 public:
   real2d flux_up;
@@ -76,6 +77,7 @@ public:
   }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class FluxesBroadbandK {

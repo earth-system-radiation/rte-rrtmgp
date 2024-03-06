@@ -6,7 +6,7 @@
 //#include "mo_fluxes_broadband_kernels.h"
 #include <iomanip>
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 class FluxesByband : public FluxesBroadband {
     public:
         real3d bnd_flux_up;
@@ -42,6 +42,7 @@ class FluxesByband : public FluxesBroadband {
     }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class FluxesBybandK : public FluxesBroadbandK {

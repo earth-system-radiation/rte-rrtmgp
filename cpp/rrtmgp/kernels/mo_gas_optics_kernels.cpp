@@ -4,6 +4,7 @@
 #include <limits>
 
 
+#ifdef RRTMGP_ENABLE_YAKL
 void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres, int ntemp, int2d const &flavor,
                    real1d const &press_ref_log, real1d const &temp_ref, real press_ref_log_delta, real temp_ref_min,
                    real temp_ref_delta, real press_ref_trop_log, real3d const &vmr_ref, real2d const &play,
@@ -584,6 +585,7 @@ void combine_and_reorder_nstr(int ncol, int nlay, int ngpt, int nmom, real3d con
     }
   });
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres, int ntemp, int2dk const &flavor,

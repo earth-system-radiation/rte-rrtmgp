@@ -4,7 +4,7 @@
 #include "rrtmgp_const.h"
 #include "rrtmgp_conversion.h"
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 //   Lower-level longwave kernels
 // ---------------------------------------------------------------
 // Compute LW source function for upward and downward emission at levels using linear-in-tau assumption
@@ -360,6 +360,7 @@ void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const 
 void lw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &tau, real3d const &ssa, real3d const &g,
                        real3d const &lay_source, real3d const &lev_source_inc, real3d const &lev_source_dec,
                        real2d const &sfc_emis, real2d const &sfc_src, real3d const &flux_up, real3d const &flux_dn);
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 //   Lower-level longwave kernels

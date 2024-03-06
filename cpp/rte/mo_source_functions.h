@@ -21,6 +21,7 @@
 // Type for longwave sources: computed at layer center, at layer edges using
 //   spectral mapping in each direction separately, and at the surface
 // Not implementing get_subset because it isn't used
+#ifdef RRTMGP_ENABLE_YAKL
 class SourceFuncLW : public OpticalProps {
 public:
   real3d lay_source;
@@ -85,6 +86,56 @@ public:
   }
 
 };
+
+// Type for shortave sources: top-of-domain spectrally-resolved flux
+// Not implementing get_subset because it isn't used
+class SourceFuncSW : public OpticalProps {
+public:
+  real2d toa_source;
+
+
+  bool is_allocated() const { return this->is_initialized() && yakl::intrinsics::allocated(this->toa_source); }
+
+
+  void alloc(int ncol) {
+    if (! this->is_initialized()) { stoprun("source_func_sw%alloc: not initialized so can't allocate"); }
+    if (ncol <= 0) { stoprun("source_func_sw%alloc: must provide positive extents for ncol"); }
+    this->toa_source = real2d("toa_source",ncol,this->get_ngpt());
+  }
+
+
+  void alloc(int ncol, OpticalProps const &op) {
+    if (! op.is_initialized()) { stoprun("source_func_sw::alloc: op not initialized"); }
+    this->init(op);
+    this->alloc(ncol);
+  }
+
+
+  void finalize() {
+    this->toa_source = real2d();
+    OpticalProps::finalize();
+  }
+
+
+  int get_ncol() const {
+    if (this->is_allocated()) { return yakl::intrinsics::size(this->toa_source,1); } else { return 0; }
+  }
+
+
+  void print_norms() const {
+    using yakl::intrinsics::sum;
+    using yakl::intrinsics::allocated;
+
+                                     std::cout << "name          : " << name                << "\n";
+    if (allocated(toa_source    )) { std::cout << "toa_source    : " << sum(toa_source    ) << "\n"; }
+    if (allocated(band2gpt      )) { std::cout << "band2gpt      : " << sum(band2gpt      ) << "\n"; }
+    if (allocated(gpt2band      )) { std::cout << "gpt2band      : " << sum(gpt2band      ) << "\n"; }
+    if (allocated(band_lims_wvn )) { std::cout << "band_lims_wvn : " << sum(band_lims_wvn ) << "\n"; }
+  }
+
+};
+
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class SourceFuncLWK : public OpticalPropsK {
@@ -155,58 +206,7 @@ public:
     conv::compare_yakl_to_kokkos(orig.sfc_source, sfc_source);
   }
 };
-#endif
 
-
-// Type for shortave sources: top-of-domain spectrally-resolved flux
-// Not implementing get_subset because it isn't used
-class SourceFuncSW : public OpticalProps {
-public:
-  real2d toa_source;
-
-
-  bool is_allocated() const { return this->is_initialized() && yakl::intrinsics::allocated(this->toa_source); }
-
-
-  void alloc(int ncol) {
-    if (! this->is_initialized()) { stoprun("source_func_sw%alloc: not initialized so can't allocate"); }
-    if (ncol <= 0) { stoprun("source_func_sw%alloc: must provide positive extents for ncol"); }
-    this->toa_source = real2d("toa_source",ncol,this->get_ngpt());
-  }
-
-
-  void alloc(int ncol, OpticalProps const &op) {
-    if (! op.is_initialized()) { stoprun("source_func_sw::alloc: op not initialized"); }
-    this->init(op);
-    this->alloc(ncol);
-  }
-
-
-  void finalize() {
-    this->toa_source = real2d();
-    OpticalProps::finalize();
-  }
-
-
-  int get_ncol() const {
-    if (this->is_allocated()) { return yakl::intrinsics::size(this->toa_source,1); } else { return 0; }
-  }
-
-
-  void print_norms() const {
-    using yakl::intrinsics::sum;
-    using yakl::intrinsics::allocated;
-
-                                     std::cout << "name          : " << name                << "\n";
-    if (allocated(toa_source    )) { std::cout << "toa_source    : " << sum(toa_source    ) << "\n"; }
-    if (allocated(band2gpt      )) { std::cout << "band2gpt      : " << sum(band2gpt      ) << "\n"; }
-    if (allocated(gpt2band      )) { std::cout << "gpt2band      : " << sum(gpt2band      ) << "\n"; }
-    if (allocated(band_lims_wvn )) { std::cout << "band_lims_wvn : " << sum(band_lims_wvn ) << "\n"; }
-  }
-
-};
-
-#ifdef RRTMGP_ENABLE_KOKKOS
 // Type for shortave sources: top-of-domain spectrally-resolved flux
 // Not implementing get_subset because it isn't used
 class SourceFuncSWK : public OpticalPropsK {

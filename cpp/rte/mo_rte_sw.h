@@ -37,6 +37,7 @@
 //
 // -------------------------------------------------------------------------------------------------
 
+#ifdef RRTMGP_ENABLE_YAKL
 template <class FluxesType>
 void rte_sw(OpticalProps2str const &atmos, bool top_at_1, real1d const &mu0, real2d const &inc_flux,
             real2d const &sfc_alb_dir, real2d const &sfc_alb_dif, FluxesType &fluxes, real2d const &inc_flux_dif=real2d());
@@ -119,6 +120,7 @@ void rte_sw(OpticalProps2str const &atmos, bool top_at_1, real1d const &mu0, rea
   // ...and reduce spectral fluxes to desired output quantities
   fluxes.reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir);
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 template <class FluxesType>

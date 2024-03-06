@@ -21,7 +21,7 @@
 
 
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 // Compute interpolation coefficients
 // for calculations of major optical depths, minor optical depths, Rayleigh,
 // and Planck fractions
@@ -135,6 +135,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
 // Combine absoprtion and Rayleigh optical depths for total tau, ssa, p
 //   using Rayleigh scattering phase function
 void combine_and_reorder_nstr(int ncol, int nlay, int ngpt, int nmom, real3d const &tau_abs, real3d const &tau_rayleigh, real3d const &tau, real3d const &ssa, real4d const &p);
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // Compute interpolation coefficients

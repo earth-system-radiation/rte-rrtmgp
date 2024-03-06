@@ -15,6 +15,8 @@ if (RRTMGP_ENABLE_KOKKOS)
   add_definitions("-DRRTMGP_ENABLE_KOKKOS")
 endif()
 
+set (CMAKE_CXX_STANDARD 17)
+
 # Build RRTMGP, YAKL, and the standalone allsky code (which depends on both)
 # NOTE: ideally, we would build RRTMGP as a library and link allsky against it,
 # but that does not seem to be working for GPU builds on summit right now for

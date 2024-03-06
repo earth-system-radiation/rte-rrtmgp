@@ -13,7 +13,7 @@
 // Use and duplication is permitted under the terms of the
 //    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 // -------------------------------------------------------------------------------------------------
-
+#ifdef RRTMGP_ENABLE_YAKL
 void load_and_init(GasOpticsRRTMGP &kdist, std::string filename, GasConcs const &available_gases) {
   yakl::SimpleNetCDF io;
   io.open(filename , yakl::NETCDF_MODE_READ);
@@ -115,6 +115,7 @@ void load_and_init(GasOpticsRRTMGP &kdist, std::string filename, GasConcs const 
   }
   io.close();
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 void load_and_init(GasOpticsRRTMGPK &kdist, std::string filename, GasConcsK const &available_gases) {

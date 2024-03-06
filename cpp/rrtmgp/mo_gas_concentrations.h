@@ -28,7 +28,7 @@
 //
 // -------------------------------------------------------------------------------------------------
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 class GasConcs {
 public:
   static int constexpr GAS_NOT_IN_LIST = -1;
@@ -222,6 +222,7 @@ public:
   }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class GasConcsK {

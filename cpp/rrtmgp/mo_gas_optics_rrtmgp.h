@@ -32,6 +32,7 @@
 //
 // -------------------------------------------------------------------------------------------------
 
+#ifdef RRTMGP_ENABLE_YAKL
 class GasOpticsRRTMGP : public OpticalProps {
 public:
   // RRTMGP computes absorption in each band arising from
@@ -1226,6 +1227,7 @@ public:
 
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class GasOpticsRRTMGPK : public OpticalPropsK {

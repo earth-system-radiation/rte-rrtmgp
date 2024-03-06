@@ -2,7 +2,7 @@
 #include "mo_optical_props_kernels.h"
 
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 // increment 2stream by 2stream
 void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
                                   real3d const &tau1, real3d const &ssa1, real3d const &g1,
@@ -595,6 +595,7 @@ void extract_subset_absorption_tau(int ncol, int nlay, int ngpt, real3d const &t
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // increment 2stream by 2stream

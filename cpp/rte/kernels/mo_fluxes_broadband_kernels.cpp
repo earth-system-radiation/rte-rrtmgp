@@ -1,5 +1,6 @@
 #include "mo_fluxes_broadband_kernels.h"
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Spectral reduction over all points
 void sum_broadband(int ncol, int nlev, int ngpt, real3d const &spectral_flux, real2d const &broadband_flux) {
   using yakl::fortran::parallel_for;
@@ -81,7 +82,7 @@ void net_broadband(int ncol, int nlev, real2d const &flux_dn, real2d const &flux
      broadband_flux_net(icol,ilev) = flux_dn(icol,ilev) - flux_up(icol,ilev);
   });
 }
-
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // Spectral reduction over all points

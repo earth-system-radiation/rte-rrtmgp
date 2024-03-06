@@ -23,7 +23,7 @@
 #include "rrtmgp_const.h"
 #include "mo_optical_props.h"
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 class CloudOptics : public OpticalProps {
 public:
   // Ice surface roughness category - needed for Yang (2013) ice optics parameterization
@@ -542,6 +542,7 @@ public:
   }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class CloudOpticsK : public OpticalPropsK {

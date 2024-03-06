@@ -2,6 +2,7 @@
 #include "mo_garand_atmos_io.h"
 #include "rrtmgp_conversion.h"
 
+#ifdef RRTMGP_ENABLE_YAKL
 void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_lev, real2d &t_lev,
                 GasConcs &gas_concs, real2d &col_dry, int ncol) {
   using yakl::fortran::parallel_for;
@@ -86,6 +87,24 @@ void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_
   io.close();
 }
 
+void write_sw_fluxes(std::string fileName, real2d const &flux_up, real2d const &flux_dn, real2d const &flux_dir, int ncol) {
+  yakl::SimpleNetCDF io;
+  io.open(fileName , yakl::NETCDF_MODE_WRITE);
+  io.write(flux_up  , "sw_flux_up_result"  , {"col_new","lev"});
+  io.write(flux_dn  , "sw_flux_dn_result"  , {"col_new","lev"});
+  io.write(flux_dir , "sw_flux_dir_result" , {"col_new","lev"});
+  io.close();
+}
+
+void write_lw_fluxes(std::string fileName, real2d const &flux_up, real2d const &flux_dn, int ncol) {
+  yakl::SimpleNetCDF io;
+  io.open(fileName , yakl::NETCDF_MODE_WRITE);
+  io.write(flux_up , "lw_flux_up_result" , {"col_new","lev"});
+  io.write(flux_dn , "lw_flux_dn_result" , {"col_new","lev"});
+  io.close();
+}
+#endif
+
 #ifdef RRTMGP_ENABLE_KOKKOS
 void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk &p_lev, real2dk &t_lev,
                 GasConcsK &gas_concs, real2dk &col_dry, int ncol) {
@@ -155,26 +174,7 @@ void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk 
 
   io.close();
 }
-#endif
 
-void write_sw_fluxes(std::string fileName, real2d const &flux_up, real2d const &flux_dn, real2d const &flux_dir, int ncol) {
-  yakl::SimpleNetCDF io;
-  io.open(fileName , yakl::NETCDF_MODE_WRITE);
-  io.write(flux_up  , "sw_flux_up_result"  , {"col_new","lev"});
-  io.write(flux_dn  , "sw_flux_dn_result"  , {"col_new","lev"});
-  io.write(flux_dir , "sw_flux_dir_result" , {"col_new","lev"});
-  io.close();
-}
-
-void write_lw_fluxes(std::string fileName, real2d const &flux_up, real2d const &flux_dn, int ncol) {
-  yakl::SimpleNetCDF io;
-  io.open(fileName , yakl::NETCDF_MODE_WRITE);
-  io.write(flux_up , "lw_flux_up_result" , {"col_new","lev"});
-  io.write(flux_dn , "lw_flux_dn_result" , {"col_new","lev"});
-  io.close();
-}
-
-#ifdef RRTMGP_ENABLE_KOKKOS
 void write_sw_fluxes(std::string fileName, real2dk const &flux_up, real2dk const &flux_dn, real2dk const &flux_dir, int ncol) {
   conv::SimpleNetCDF io;
   io.open(fileName , conv::NETCDF_MODE_WRITE);

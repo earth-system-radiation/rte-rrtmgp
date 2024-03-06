@@ -2,7 +2,7 @@
 #include "mo_rte_solver_kernels.h"
 
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &flux_dn) {
   using yakl::fortran::parallel_for;
   using yakl::fortran::SimpleBounds;
@@ -636,6 +636,7 @@ void lw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const
 
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real3dk const &flux_dn) {

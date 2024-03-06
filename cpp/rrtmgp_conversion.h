@@ -7,7 +7,13 @@
 
 // Validate if both enabled?
 #ifdef RRTMGP_ENABLE_KOKKOS
+#ifdef RRTMGP_ENABLE_YAKL
+// Both are on, validate
+#define COMPUTE_SWITCH(yimpl, kimpl) \
+  kimpl; RRT_REQUIRE(yimpl == kimpl, "Bad COMPUTE_SWITCH")
+#else
 #define COMPUTE_SWITCH(yimpl, kimpl) kimpl
+#endif
 #else
 #define COMPUTE_SWITCH(yimpl, kimpl) yimpl
 #endif

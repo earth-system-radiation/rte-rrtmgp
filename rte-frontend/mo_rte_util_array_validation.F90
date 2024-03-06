@@ -450,7 +450,7 @@ contains
     enddo
     !$omp end target teams
 #else
-    !$acc parallel loop gang vector collapse(2) reduction(min:minValue) reduction(max:maxValue)
+    !$acc parallel loop gang vector collapse(2) reduction(min:minValue) reduction(max:maxValue) copyin(array,mask)
     do j = 1, dim2 
       do i = 1, dim1
           if(mask(i,j)) then 

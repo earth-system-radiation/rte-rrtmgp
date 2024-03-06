@@ -87,8 +87,8 @@ int main(int argc , char **argv) {
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
     read_atmos(input_file, p_lay_k, t_lay_k, p_lev_k, t_lev_k, gas_concs_k, col_dry_k, ncol);
-    COMPARE_ALL_WRAP({p_lay, t_lay, p_lev, t_lev, col_dry},
-                                     {p_lay_k, t_lay_k, p_lev_k, t_lev_k, col_dry_k});
+    COMPARE_ALL_WRAP(std::vector<real2d>({p_lay, t_lay, p_lev, t_lev, col_dry}),
+                     std::vector<real2dk>({p_lay_k, t_lay_k, p_lev_k, t_lev_k, col_dry_k}));
     VALIDATE_KOKKOS(gas_concs, gas_concs_k);
 #endif
 
@@ -263,12 +263,14 @@ int main(int argc , char **argv) {
         rei_k(icol,ilay) = merge(rei_val, 0., iwp_k(icol,ilay) > 0.);
       });
       COMPARE_WRAP(cloud_mask, cloud_mask_k);
-      COMPARE_ALL_WRAP({lwp, iwp, rel, rei}, {lwp_k, iwp_k, rel_k, rei_k});
+      COMPARE_ALL_WRAP(std::vector<real2d>({lwp, iwp, rel, rei}),
+                       std::vector<real2dk>({lwp_k, iwp_k, rel_k, rei_k}));
 #endif
 
       if (verbose) std::cout << "Running the main loop\n\n";
+      auto start_t = std::chrono::high_resolution_clock::now();
+
       for (int iloop = 1 ; iloop <= nloops ; iloop++) {
-        conv::timer_start("shortwave");
 
 #ifdef RRTMGP_ENABLE_YAKL
         cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
@@ -339,8 +341,6 @@ int main(int argc , char **argv) {
         VALIDATE_KOKKOS(fluxes, fluxes_k);
 #endif
 
-        conv::timer_stop("shortwave");
-
 #ifdef RRTMGP_ENABLE_YAKL
         if (print_norms) fluxes.print_norms();
 #endif
@@ -348,6 +348,9 @@ int main(int argc , char **argv) {
         if (print_norms) fluxes_k.print_norms();
 #endif
       }
+      auto stop_t = std::chrono::high_resolution_clock::now();
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
+      std::cout << "Shortwave did " << nloops << " loops in " <<  duration.count() / 1000000.0 << " s" << std::endl;
 
       if (verbose) std::cout << "Writing fluxes\n\n";
 #ifdef RRTMGP_ENABLE_YAKL
@@ -557,9 +560,9 @@ int main(int argc , char **argv) {
       // Multiple iterations for big problem sizes, and to help identify data movement
       //   For CPUs we can introduce OpenMP threading over loop iterations
       if (verbose) std::cout << "Running the main loop\n\n";
-      for (int iloop = 1 ; iloop <= nloops ; iloop++) {
-        conv::timer_start("longwave");
+      auto start_t = std::chrono::high_resolution_clock::now();
 
+      for (int iloop = 1 ; iloop <= nloops ; iloop++) {
 #ifdef RRTMGP_ENABLE_YAKL
         cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
 #endif
@@ -618,8 +621,6 @@ int main(int argc , char **argv) {
         VALIDATE_KOKKOS(fluxes, fluxes_k);
 #endif
 
-        conv::timer_stop("longwave");
-
 #ifdef RRTMGP_ENABLE_YAKL
         if (print_norms) fluxes.print_norms();
 #endif
@@ -627,6 +628,10 @@ int main(int argc , char **argv) {
         if (print_norms) fluxes_k.print_norms();
 #endif
       }
+
+      auto stop_t = std::chrono::high_resolution_clock::now();
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
+      std::cout << "Longwave did " << nloops << " loops in " <<  duration.count() / 1000000.0 << " s" << std::endl;
 
       if (verbose) std::cout << "Writing fluxes\n\n";
 #ifdef RRTMGP_ENABLE_YAKL

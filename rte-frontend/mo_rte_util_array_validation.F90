@@ -55,11 +55,25 @@ contains
 
     real(wp) :: minValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue)
-    minValue = minval(array)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, i
+    dim1 = size(array,1)
+    minValue = check_value + epsilon(check_value) ! initialize to some value
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue)
+    !$omp distribute parallel do simd reduction(min:minValue)
+    do i = 1, dim1
+        minValue = min(minValue,array(i))
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector reduction(min:minValue) copyin(array)
+    do i = 1, dim1
+        minValue = min(minValue,array(i))
+    enddo 
+    !$acc end parallel
+#endif
 
     any_vals_less_than_1D = (minValue < check_value)
 
@@ -71,11 +85,30 @@ contains
 
     real(wp) :: minValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue)
-    minValue = minval(array)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, dim2, i, j
+    minValue = check_value + epsilon(check_value) ! initialize to some value
+    dim1 = size(array,1)
+    dim2 = size(array,2) 
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue)
+    !$omp distribute parallel do simd reduction(min:minValue)
+    do j = 1, dim2
+      do i = 1, dim1
+          minValue = min(minValue,array(i,j))
+      enddo
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector collapse(2) reduction(min:minValue) copyin(array)
+    do j = 1, dim2 
+      do i = 1, dim1
+          minValue = min(minValue,array(i,j))
+      enddo 
+    enddo
+    !$acc end parallel
+#endif
 
     any_vals_less_than_2D = (minValue < check_value)
 
@@ -87,27 +120,34 @@ contains
 
     real(wp) :: minValue
 
-#ifdef _OPENMP
     integer :: dim1, dim2, dim3, i, j, k
     dim1 = size(array,1)
     dim2 = size(array,2)
     dim3 = size(array,3)
     minValue = check_value + epsilon(check_value) ! initialize to some value
+
+#ifdef _OPENMP
     !$omp target teams map(to:array) &
     !$omp defaultmap(tofrom:scalar) reduction(min:minValue)
     !$omp distribute parallel do simd reduction(min:minValue)
-    do i = 1, dim1
+    do k = 1, dim3
        do j = 1, dim2
-          do k = 1, dim3
+          do i = 1, dim1
              minValue = min(minValue,array(i,j,k))
           enddo
        enddo
     enddo
     !$omp end target teams
 #else
-    !$acc kernels copyin(array)
-    minValue = minval(array)
-    !$acc end kernels
+    !$acc parallel loop gang vector collapse(3) reduction(min:minValue) copyin(array)
+    do k = 1, dim3
+       do j = 1, dim2 
+          do i = 1, dim1
+             minValue = min(minValue,array(i,j,k))
+          enddo 
+       enddo
+    enddo  
+    !$acc end parallel
 #endif
 
     any_vals_less_than_3D = (minValue < check_value)
@@ -123,11 +163,26 @@ contains
 
     real(wp) :: minValue
 
-    !$acc kernels copyin(array, mask)
-    !$omp target map(to: array, mask) map(from:minValue)
-    minValue = minval(array, mask=mask)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, i
+
+    minValue = check_value + epsilon(check_value) ! initialize to some value
+    dim1 = size(array,1)
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue)
+    !$omp distribute parallel do simd reduction(min:minValue)
+    do i = 1, dim1
+       if (mask(i)) minValue = min(minValue,array(i))
+    enddo 
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector reduction(min:minValue) copyin(array,mask)
+    do i = 1, dim1
+       if (mask(i)) minValue = min(minValue,array(i))
+    enddo 
+    !$acc end parallel
+#endif
 
     any_vals_less_than_1D_masked = (minValue < check_value)
 
@@ -140,11 +195,30 @@ contains
 
     real(wp) :: minValue
 
-    !$acc kernels copyin(array, mask)
-    !$omp target map(to: array, mask) map(from:minValue)
-    minValue = minval(array, mask=mask)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, dim2, i, j
+    minValue = check_value + epsilon(check_value) ! initialize to some value
+    dim1 = size(array,1)
+    dim2 = size(array,2) 
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue)
+    !$omp distribute parallel do simd reduction(min:minValue)
+    do j = 1, dim2 
+      do i = 1, dim1
+         if(mask(i,j)) minValue = min(minValue,array(i,j))
+      enddo 
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector collapse(2) reduction(min:minValue) copyin(array,mask)
+    do j = 1, dim2 
+      do i = 1, dim1
+         if(mask(i,j)) minValue = min(minValue,array(i,j))
+      enddo 
+    enddo
+    !$acc end parallel
+#endif
 
     any_vals_less_than_2D_masked = (minValue < check_value)
 
@@ -157,11 +231,35 @@ contains
 
     real(wp) :: minValue
 
-    !$acc kernels copyin(array, mask)
-    !$omp target map(to: array, mask) map(from:minValue)
-    minValue = minval(array, mask=mask)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, dim2, dim3, i, j, k
+    minValue = check_value + epsilon(check_value) ! initialize to some value
+    dim1 = size(array,1)
+    dim2 = size(array,2)
+    dim3 = size(array,3) 
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue)
+    !$omp distribute parallel do simd reduction(min:minValue)
+    do k = 1, dim3
+       do j = 1, dim2
+          do i = 1, dim1
+             if(mask(i,j,k)) minValue = min(minValue,array(i,j,k))
+          enddo
+       enddo
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector collapse(3) reduction(min:minValue) copyin(array,mask)
+    do k = 1, dim3
+       do j = 1, dim2 
+          do i = 1, dim1
+             if(mask(i,j,k)) minValue = min(minValue,array(i,j,k))
+          enddo 
+       enddo
+    enddo  
+    !$acc end parallel
+#endif
 
     any_vals_less_than_3D_masked = (minValue < check_value)
 
@@ -175,12 +273,29 @@ contains
 
     real(wp) :: minValue, maxValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue, maxValue)
-    minValue = minval(array)
-    maxValue = maxval(array)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, i
+    dim1 = size(array,1)
+    minValue = checkMin + epsilon(checkMin) ! initialize to some value
+    maxValue = checkMax - epsilon(checkMax) ! initialize to some value
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue) reduction(max:maxValue)
+    !$omp distribute parallel do simd reduction(min:minValue) reduction(max:maxValue)
+    do i= 1, dim1
+       minValue = min(minValue,array(i))
+       maxValue = max(maxValue,array(i))
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector reduction(min:minValue) reduction(max:maxValue) copyin(array)
+    do i = 1, dim1
+        minValue = min(minValue,array(i))
+        maxValue = max(maxValue,array(i))
+    enddo 
+    !$acc end parallel
+#endif
+
     any_vals_outside_1D = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_1D
@@ -191,12 +306,34 @@ contains
 
     real(wp) :: minValue, maxValue
 
-    !$acc kernels copyin(array)
-    !$omp target map(to:array) map(from:minValue, maxValue)
-    minValue = minval(array)
-    maxValue = maxval(array)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, dim2, i, j
+    dim1 = size(array,1)
+    dim2 = size(array,2)
+    minValue = checkMin + epsilon(checkMin) ! initialize to some value
+    maxValue = checkMax - epsilon(checkMax) ! initialize to some value
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue) reduction(max:maxValue)
+    !$omp distribute parallel do simd reduction(min:minValue) reduction(max:maxValue)
+    do j = 1, dim2
+       do i= 1, dim1
+          minValue = min(minValue,array(i,j))
+          maxValue = max(maxValue,array(i,j))
+       enddo
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector collapse(2) reduction(min:minValue) reduction(max:maxValue) copyin(array)
+    do j = 1, dim2 
+       do i = 1, dim1
+          minValue = min(minValue,array(i,j))
+          maxValue = max(maxValue,array(i,j))
+       enddo 
+    enddo
+    !$acc end parallel
+#endif
+
     any_vals_outside_2D = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_2D
@@ -205,24 +342,24 @@ contains
     real(wp), dimension(:,:,:), intent(in) :: array
     real(wp),                   intent(in) :: checkMin, checkMax
 
-      ! Compact version using intrinsics below
-      ! but an explicit loop is the only current solution on GPUs
+    ! Compact version using intrinsics below
+    ! but an explicit loop is the only current solution on GPUs
     real(wp) :: minValue, maxValue
 
-
-#ifdef _OPENMP
     integer :: dim1, dim2, dim3, i, j, k
     dim1 = size(array,1)
     dim2 = size(array,2)
     dim3 = size(array,3)
     minValue = checkMin + epsilon(checkMin) ! initialize to some value
     maxValue = checkMax - epsilon(checkMax) ! initialize to some value
+
+#ifdef _OPENMP
     !$omp target teams map(to:array) &
     !$omp defaultmap(tofrom:scalar) reduction(min:minValue) reduction(max:maxValue)
     !$omp distribute parallel do simd reduction(min:minValue) reduction(max:maxValue)
-    do i= 1, dim1
+    do k = 1, dim3
        do j = 1, dim2
-          do k = 1, dim3
+          do i= 1, dim1
              minValue = min(minValue,array(i,j,k))
              maxValue = max(maxValue,array(i,j,k))
           enddo
@@ -230,10 +367,16 @@ contains
     enddo
     !$omp end target teams
 #else
-    !$acc kernels copyin(array)
-    minValue = minval(array)
-    maxValue = maxval(array)
-    !$acc end kernels
+    !$acc parallel loop gang vector collapse(3) reduction(min:minValue) reduction(max:maxValue) copyin(array)
+    do k = 1, dim3
+       do j = 1, dim2 
+          do i = 1, dim1
+             minValue = min(minValue,array(i,j,k))
+             maxValue = max(maxValue,array(i,j,k))
+          enddo 
+       enddo
+    enddo  
+    !$acc end parallel
 #endif
 
     any_vals_outside_3D = minValue < checkMin .or. maxValue > checkMax
@@ -249,12 +392,33 @@ contains
 
     real(wp) :: minValue, maxValue
 
-    !$acc kernels copyin(array, mask)
-    !$omp target map(to: array, mask) map(from:minValue, maxValue)
-    minValue = minval(array, mask=mask)
-    maxValue = maxval(array, mask=mask)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, i
+    dim1 = size(array,1)
+    minValue = checkMin + epsilon(checkMin) ! initialize to some value
+    maxValue = checkMax - epsilon(checkMax) ! initialize to some value
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue) reduction(max:maxValue)
+    !$omp distribute parallel do simd reduction(min:minValue) reduction(max:maxValue)
+    do i= 1, dim1
+       if (mask(i)) then 
+          minValue = min(minValue,array(i))
+          maxValue = max(maxValue,array(i))
+       end if
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector reduction(min:minValue) reduction(max:maxValue) copyin(array,mask)
+    do i = 1, dim1
+       if (mask(i)) then 
+          minValue = min(minValue,array(i))
+          maxValue = max(maxValue,array(i))
+       end if
+    enddo 
+    !$acc end parallel
+#endif
+
     any_vals_outside_1D_masked = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_1D_masked
@@ -266,12 +430,38 @@ contains
 
     real(wp) :: minValue, maxValue
 
-    !$acc kernels copyin(array, mask)
-    !$omp target map(to: array, mask) map(from:minValue, maxValue)
-    minValue = minval(array, mask=mask)
-    maxValue = maxval(array, mask=mask)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, dim2, i, j
+    dim1 = size(array,1)
+    dim2 = size(array,2)
+    minValue = checkMin + epsilon(checkMin) ! initialize to some value
+    maxValue = checkMax - epsilon(checkMax) ! initialize to some value
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue) reduction(max:maxValue)
+    !$omp distribute parallel do simd reduction(min:minValue) reduction(max:maxValue)
+    do j = 1, dim2
+       do i= 1, dim1
+          if(mask(i,j)) then 
+             minValue = min(minValue,array(i,j))
+             maxValue = max(maxValue,array(i,j))
+          end if
+       enddo
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector collapse(2) reduction(min:minValue) reduction(max:maxValue)
+    do j = 1, dim2 
+      do i = 1, dim1
+          if(mask(i,j)) then 
+             minValue = min(minValue,array(i,j))
+             maxValue = max(maxValue,array(i,j))
+          end if
+      enddo 
+    enddo
+    !$acc end parallel
+#endif
+
     any_vals_outside_2D_masked = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_2D_masked
@@ -283,12 +473,43 @@ contains
 
     real(wp) :: minValue, maxValue
 
-    !$acc kernels copyin(array, mask)
-    !$omp target map(to: array, mask) map(from:minValue, maxValue)
-    minValue = minval(array, mask=mask)
-    maxValue = maxval(array, mask=mask)
-    !$acc end kernels
-    !$omp end target
+    integer :: dim1, dim2, dim3, i, j, k
+    dim1 = size(array,1)
+    dim2 = size(array,2)
+    dim3 = size(array,3)
+    minValue = checkMin + epsilon(checkMin) ! initialize to some value
+    maxValue = checkMax - epsilon(checkMax) ! initialize to some value
+
+#ifdef _OPENMP
+    !$omp target teams map(to:array) &
+    !$omp defaultmap(tofrom:scalar) reduction(min:minValue) reduction(max:maxValue)
+    !$omp distribute parallel do simd reduction(min:minValue) reduction(max:maxValue)
+    do k = 1, dim3
+       do j = 1, dim2
+          do i= 1, dim1
+             if (mask(i,j,k)) then
+                minValue = min(minValue,array(i,j,k))
+                maxValue = max(maxValue,array(i,j,k))
+             end if
+          enddo
+       enddo
+    enddo
+    !$omp end target teams
+#else
+    !$acc parallel loop gang vector collapse(3) reduction(min:minValue) reduction(max:maxValue) copyin(array,mask)
+    do k = 1, dim3
+       do j = 1, dim2 
+          do i = 1, dim1
+             if (mask(i,j,k)) then
+                minValue = min(minValue,array(i,j,k))
+                maxValue = max(maxValue,array(i,j,k))
+             end if
+          enddo 
+       enddo
+    enddo  
+    !$acc end parallel
+#endif
+
     any_vals_outside_3D_masked = minValue < checkMin .or. maxValue > checkMax
 
   end function any_vals_outside_3D_masked

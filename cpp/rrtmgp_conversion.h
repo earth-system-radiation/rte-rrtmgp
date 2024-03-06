@@ -21,6 +21,11 @@
 
 namespace conv {
 
+// Copied from YAKL
+template <class T1, class T2,
+          typename std::enable_if<std::is_arithmetic<T1>::value && std::is_arithmetic<T2>::value,bool>::type=false>
+KOKKOS_INLINE_FUNCTION decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) { return cond ? t : f; }
+
 // A meta function that will return true if T is either a Kokkos::View or a
 // Kokkos::OffsetView (we use these in a couple places).
 template <typename T>

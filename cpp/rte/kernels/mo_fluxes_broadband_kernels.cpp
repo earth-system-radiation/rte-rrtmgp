@@ -100,10 +100,6 @@ void sum_broadband(int ncol, int nlev, int ngpt, real3dk const &spectral_flux, r
 
 // Net flux: Spectral reduction over all points
 void net_broadband(int ncol, int nlev, int ngpt, real3dk const &spectral_flux_dn, real3dk const &spectral_flux_up, real2dk const &broadband_flux_net) {
-  using yakl::fortran::parallel_for;
-  using yakl::fortran::SimpleBounds;
-  using yakl::fortran::Bounds;
-
   // do ilev = 1, nlev
   //   do icol = 1, ncol
   Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {

@@ -389,9 +389,11 @@ public:
     if (concs.is_allocated()) { std::cout << "sum(concs): " << conv::sum(concs) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const GasConcs& orig) const {
     conv::compare_yakl_to_kokkos(orig.concs, concs);
   }
+#endif
 
 };
 #endif

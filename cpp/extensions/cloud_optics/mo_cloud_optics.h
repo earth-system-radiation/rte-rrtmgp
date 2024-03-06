@@ -998,6 +998,7 @@ public:
     if (band_lims_wvn.is_allocated()     ) { std::cout << "band_lims_wvn          : " << conv::sum(band_lims_wvn     ) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const CloudOptics& orig) const
   {
     OpticalPropsK::validate_kokkos(orig);
@@ -1031,5 +1032,6 @@ public:
     conv::compare_yakl_to_kokkos(orig.pade_sizreg_ssaice, this->pade_sizreg_ssaice);
     conv::compare_yakl_to_kokkos(orig.pade_sizreg_asyice, this->pade_sizreg_asyice);
   }
+#endif
 };
 #endif

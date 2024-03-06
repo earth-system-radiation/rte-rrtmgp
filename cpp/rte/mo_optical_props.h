@@ -449,6 +449,7 @@ public:
 
   std::string get_name() const { return this->name; }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const OpticalProps& orig) const
   {
     RRT_REQUIRE(orig.ngpt == ngpt, "Bad ngpt");
@@ -457,6 +458,7 @@ public:
     conv::compare_yakl_to_kokkos(orig.gpt2band, gpt2band, true /*idx data*/);
     conv::compare_yakl_to_kokkos(orig.band_lims_wvn, band_lims_wvn);
   }
+#endif
 };
 #endif
 
@@ -477,11 +479,13 @@ public:
   int get_ncol() const { if (tau.is_allocated()) { return this->tau.extent(0); } else { return 0; } }
   int get_nlay() const { if (tau.is_allocated()) { return this->tau.extent(1); } else { return 0; } }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const OpticalPropsArry& orig) const
   {
     OpticalPropsK::validate_kokkos(orig);
     conv::compare_yakl_to_kokkos(orig.tau, tau);
   }
+#endif
 };
 #endif
 

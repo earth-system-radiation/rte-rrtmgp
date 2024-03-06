@@ -76,6 +76,7 @@ public:
     }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const FluxesByband& orig)
   {
     FluxesBroadbandK::validate_kokkos(orig);
@@ -85,5 +86,6 @@ public:
     conv::compare_yakl_to_kokkos(orig.bnd_flux_dn_dir, bnd_flux_dn_dir);
     conv::compare_yakl_to_kokkos(orig.bnd_flux_net, bnd_flux_net);
   }
+#endif
 };
 #endif

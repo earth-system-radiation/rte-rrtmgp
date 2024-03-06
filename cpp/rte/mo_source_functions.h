@@ -197,6 +197,7 @@ public:
     if (band_lims_wvn.is_allocated() ) { std::cout << "band_lims_wvn : " << conv::sum(band_lims_wvn ) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const SourceFuncLW& orig)
   {
     OpticalPropsK::validate_kokkos(orig);
@@ -205,6 +206,7 @@ public:
     conv::compare_yakl_to_kokkos(orig.lev_source_dec, lev_source_dec);
     conv::compare_yakl_to_kokkos(orig.sfc_source, sfc_source);
   }
+#endif
 };
 
 // Type for shortave sources: top-of-domain spectrally-resolved flux
@@ -250,11 +252,13 @@ public:
     if (band_lims_wvn.is_allocated() ) { std::cout << "band_lims_wvn : " << conv::sum(band_lims_wvn ) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const SourceFuncSW& orig)
   {
     OpticalPropsK::validate_kokkos(orig);
     conv::compare_yakl_to_kokkos(orig.toa_source, toa_source);
   }
+#endif
 
 };
 #endif

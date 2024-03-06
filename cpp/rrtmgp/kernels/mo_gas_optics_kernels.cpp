@@ -593,7 +593,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
                    real temp_ref_delta, real press_ref_trop_log, realOff3dk const &vmr_ref, real2dk const &play,
                    real2dk const &tlay, realOff3dk const &col_gas, int2dk const &jtemp, real6dk const &fmajor, real5dk const &fminor,
                    real4dk const &col_mix, bool2dk const &tropo, int4dk const &jeta, int2dk const &jpress) {
-  using yakl::intrinsics::merge;
+  using conv::merge;
 
   real2dk ftemp ("ftemp" ,ncol,nlay);
   real2dk fpress("fpress",ncol,nlay);
@@ -682,7 +682,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
                            int1dk const &gpoint_bands, int2dk const &band_lims_gpt, real4dk const &pfracin, real temp_ref_min,
                            real totplnk_delta, real2dk const &totplnk, int2dk const &gpoint_flavor, real2dk const &sfc_src,
                            real3dk const &lay_src, real3dk const &lev_src_inc, real3dk const &lev_src_dec) {
-  using yakl::intrinsics::merge;
+  using conv::merge;
 
   real3dk pfrac          ("pfrac"          ,ngpt,nlay,ncol);
   real3dk planck_function("planck_function",nbnd,nlay+1,ncol);
@@ -786,7 +786,7 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
                           int2dk const &gpoint_flavor, int2dk const &band_lims_gpt, real4dk const &krayl, int idx_h2o,
                           real2dk const &col_dry, realOff3dk const &col_gas, real5dk const &fminor, int4dk const &jeta,
                           bool2dk const &tropo, int2dk const &jtemp, real3dk const &tau_rayleigh) {
-  using yakl::intrinsics::merge;
+  using conv::merge;
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
@@ -873,7 +873,7 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
                               int ntemp, int2dk const &gpoint_flavor, int2dk const &band_lims_gpt, real4dk const &kmajor,
                               real4dk const &col_mix, real6dk const &fmajor, int4dk const &jeta, bool2dk const &tropo,
                               int2dk const &jtemp, int2dk const &jpress, real3dk const &tau) {
-  using yakl::intrinsics::merge;
+  using conv::merge;
 
   // optical depth calculation for major species
   // for (int ilay=1; ilay<=nlay; ilay++) {

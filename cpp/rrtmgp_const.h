@@ -28,10 +28,10 @@ template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
 using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank> >;//, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
 #endif
 
+typedef double real;
+
 #ifdef RRTMGP_ENABLE_YAKL
 template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
-
-typedef double real;
 
 YAKL_INLINE real constexpr operator"" _wp( long double x ) {
   return static_cast<real>(x);

@@ -126,6 +126,7 @@ public:
     if (flux_dn_dir.is_allocated()) { std::cout << std::setprecision(16) << "flux_dn_dir: " << conv::sum(flux_dn_dir) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const FluxesBroadband& orig)
   {
     conv::compare_yakl_to_kokkos(orig.flux_up, flux_up);
@@ -133,6 +134,7 @@ public:
     conv::compare_yakl_to_kokkos(orig.flux_net, flux_net);
     conv::compare_yakl_to_kokkos(orig.flux_dn_dir, flux_dn_dir);
   }
+#endif
 
 };
 #endif

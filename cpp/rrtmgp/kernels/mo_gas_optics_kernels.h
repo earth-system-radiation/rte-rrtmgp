@@ -189,7 +189,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
 
 //   This function returns a single value from a subset (in gpoint) of the k table
 KOKKOS_INLINE_FUNCTION
-real interpolate2D(real2dk const &fminor, real3dk const &k, int igpt, int1d const &jeta, int jtemp,
+real interpolate2D(real2dk const &fminor, real3dk const &k, int igpt, int1dk const &jeta, int jtemp,
                    int ngpt, int neta, int ntemp) {
   return fminor(0,0) * k(igpt, jeta(0)  , jtemp  ) +
          fminor(1,0) * k(igpt, jeta(0)+1, jtemp  ) +

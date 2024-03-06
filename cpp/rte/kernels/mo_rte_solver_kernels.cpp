@@ -794,7 +794,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
                    flux_up, flux_dn);
   //
   // For more than one angle use local arrays
-  int top_level = yakl::intrinsics::merge(0, nlay, top_at_1);
+  int top_level = conv::merge(0, nlay, top_at_1);
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
@@ -913,7 +913,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const &albedo_s
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , YAKL_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       int ilev = 0;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);

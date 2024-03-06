@@ -1,6 +1,5 @@
 
 #include "mo_load_coefficients.h"
-#include "YAKL_netcdf.h"
 
 // This code is part of RRTM for GCM Applications - Parallel (RRTMGP)
 //
@@ -14,6 +13,8 @@
 //    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 // -------------------------------------------------------------------------------------------------
 #ifdef RRTMGP_ENABLE_YAKL
+#include "YAKL_netcdf.h"
+
 void load_and_init(GasOpticsRRTMGP &kdist, std::string filename, GasConcs const &available_gases) {
   yakl::SimpleNetCDF io;
   io.open(filename , yakl::NETCDF_MODE_READ);

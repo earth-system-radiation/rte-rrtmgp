@@ -9,6 +9,8 @@
 #include "mo_rrtmgp_util_reorder.h"
 #include "mo_gas_concentrations.h"
 
+#include <iomanip>
+
 // This code is part of RRTM for GCM Applications - Parallel (RRTMGP)
 //
 // Contacts: Robert Pincus and Eli Mlawer
@@ -2039,7 +2041,7 @@ public:
     // External source function is constant
     if (toa_src.extent(0) != ncol || toa_src.extent(1) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , YAKL_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       toa_src(icol,igpt) = this->solar_src(igpt);
     });
   }
@@ -2178,7 +2180,7 @@ public:
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
       //   do icol = 1, ncol
-      Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay+1,ncol}) , YAKL_LAMBDA (int ilay, int icol) {
+      Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay+1,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         if (ilay == 0) {
           tlev_wk(icol,0) = tlay(icol,0) + (plev(icol,0)-play(icol,0))*(tlay(icol,1)-tlay(icol,0)) / (play(icol,1)-play(icol,0));
         }
@@ -2195,7 +2197,7 @@ public:
     }
     // Compute internal (Planck) source functions at layers and levels,
     //  which depend on mapping from spectral space that creates k-distribution.
-    int nlayTmp = yakl::intrinsics::merge( nlay-1 , 0 , top_at_1 );
+    int nlayTmp = conv::merge( nlay-1 , 0 , top_at_1 );
     compute_Planck_source(ncol, nlay, nbnd, ngpt, this->get_nflav(), this->get_neta(), this->get_npres(), this->get_ntemp(),
                           this->get_nPlanckTemp(), tlay, tlev_wk, tsfc, nlayTmp, fmajor, jeta, tropo, jtemp, jpress,
                           this->get_gpoint_bands(), this->get_band_lims_gpoint(), this->planck_frac, this->temp_ref_min,
@@ -2225,7 +2227,7 @@ public:
     if (latitude.is_allocated()) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
-      Kokkos::parallel_for( ncol , YAKL_LAMBDA (int icol) {
+      Kokkos::parallel_for( ncol , KOKKOS_LAMBDA (int icol) {
         g0(icol) = helmert1 - helmert2 * cos(2.0 * M_PI * latitude(icol) / 180.0); // acceleration due to gravity [m/s^2]
       });
     } else {
@@ -2318,6 +2320,7 @@ public:
     if (is_key.is_allocated()                         ) { std::cout << "count(is_key                         ): " << std::setw(20) << conv::sum(is_key                         ) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const GasOpticsRRTMGP& orig) const
   {
     OpticalPropsK::validate_kokkos(orig);
@@ -2373,6 +2376,7 @@ public:
 
     conv::compare_yakl_to_kokkos(orig.is_key, is_key);
   }
+#endif
 
 };
 #endif

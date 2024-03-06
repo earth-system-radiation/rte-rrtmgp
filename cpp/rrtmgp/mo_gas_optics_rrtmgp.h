@@ -276,6 +276,7 @@ public:
     for (int imnr=1 ; imnr <= size(scaling_gas_atm,1) ; imnr++) {
       // This will be -1 if there's no interacting gas
       idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm(imnr), gas_names);
+      conv::p1d(idx_minor_scaling_atm, "idx_minor_scaling", imnr);
     }
   }
 
@@ -1186,6 +1187,7 @@ public:
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
 
+    conv::printy("is_key", is_key);
     std::string prefix = print_prefix ? "JGFY" : "";
 
                                                       std::cout << prefix << "name                                  : " << std::setw(20) << name                                   << "\n";
@@ -1463,6 +1465,7 @@ public:
     for (auto imnr=0 ; imnr < scaling_gas_atm.size() ; imnr++) {
       // This will be -1 if there's no interacting gas
       idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm[imnr], gas_names);
+      conv::p1d(idx_minor_scaling_atm, "idx_minor_scaling", imnr);
     }
   }
 
@@ -2280,6 +2283,7 @@ public:
   }
 
   void print_norms(const bool print_prefix=false) const {
+    conv::printk("is_key", is_key);
     std::string prefix = print_prefix ? "JGFK" : "";
                                                       std::cout << prefix << "name                                  : " << std::setw(20) << name                                   << "\n";
                                                       std::cout << prefix << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n";

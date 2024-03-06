@@ -30,6 +30,24 @@
 
 namespace conv {
 
+// Print an entire view + sentinel
+template <typename KView>
+void printk(const std::string& name, const KView& view)
+{
+  for (size_t i = 0; i < view.size(); ++i) {
+    std::cout << "JGFK " << name << "(" << i << ") = " << view.data()[i] << std::endl;
+  }
+}
+
+// Print an entire yakl array + sentinel
+template <typename YArray>
+void printy(const std::string& name, const YArray& array)
+{
+  for (size_t i = 0; i < array.totElems(); ++i) {
+    std::cout << "JGFY " << name << "(" << i << ") = " << array.data()[i] << std::endl;
+  }
+}
+
 // Copied from YAKL
 template <class T1, class T2,
           typename std::enable_if<std::is_arithmetic<T1>::value && std::is_arithmetic<T2>::value,bool>::type=false>
@@ -359,43 +377,24 @@ typename KView::non_const_value_type maxval(const KView& view)
 
 // Get sum of view
 template <typename KView>
-typename KView::non_const_value_type sum(const KView& view)
+std::conditional_t<std::is_same<typename KView::non_const_value_type, bool>::value, int, typename KView::non_const_value_type>
+sum(const KView& view)
 {
   using scalar_t    = typename KView::non_const_value_type;
   using exe_space_t = typename KView::execution_space;
   using sum_t       = std::conditional_t<std::is_same<scalar_t, bool>::value, int, scalar_t>;
 
+  // JGF REMOVE
+  auto adjust = std::is_same<scalar_t, int>::value ? 1 : 0;
+
   sum_t rv;
   Kokkos::parallel_reduce(
     Kokkos::RangePolicy<exe_space_t>(0, view.size()),
     KOKKOS_LAMBDA(size_t i, sum_t& lsum) {
-      lsum += view.data()[i];
+      lsum += (view.data()[i] + adjust);
     }, Kokkos::Sum<sum_t>(rv));
   return rv;
 }
-
-// Print an entire view + sentinel
-template <typename KView,
-          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
-void print(const std::string& name, const KView& view)
-{
-  for (size_t i = 0; i < view.size(); ++i) {
-    std::cout << "JGFK " << name << "(" << i << ") = " << view.data()[i] << std::endl;
-  }
-}
-
-#ifdef RRTMGP_ENABLE_YAKL
-// Print an entire yakl array + sentinel
-template <typename YArray,
-          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
-void print(const std::string& name, const YArray& array)
-{
-  for (size_t i = 0; i < array.totElems(); ++i) {
-    std::cout << "JGFY " << name << "(" << i << ") = " << array.data()[i] << std::endl;
-  }
-}
-#endif
-
 
 //Error reporting routine for the PNetCDF I/O
 /** @private */

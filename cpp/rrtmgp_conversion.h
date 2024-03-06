@@ -19,8 +19,6 @@
 #endif
 
 
-#ifdef RRTMGP_ENABLE_KOKKOS
-
 /**
  * Helper functions for the conversion to Kokkos
  */
@@ -37,10 +35,15 @@ KOKKOS_INLINE_FUNCTION decltype(T1()+T2()) merge(T1 const t, T2 const f, bool co
 template <typename T>
 struct is_view
 {
+#ifdef RRTMGP_ENABLE_KOKKOS
   static constexpr bool value = Kokkos::is_view<T>::value || Kokkos::Experimental::is_offset_view<T>::value;
+#else
+  static constexpr bool value = false;
+#endif
 };
 
 // Convenient way of using is_view meta function
+
 template <class T>
 inline constexpr bool is_view_v = is_view<T>::value;
 
@@ -153,6 +156,8 @@ do {                                                      \
 // Just a convenient require macro for checking things. Note this is
 // not an assert macro, so it's always on.
 #define RRT_REQUIRE(condition, msg) IMPL_THROW_RRT(condition, msg, std::runtime_error)
+
+#ifdef RRTMGP_ENABLE_KOKKOS
 
 // Macros for validating kokkos using yakl. These all do nothing if
 // YAKL is not enabled.
@@ -1016,6 +1021,6 @@ public:
   }
 };
 
-}
-
 #endif
+
+}

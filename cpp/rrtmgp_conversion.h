@@ -18,6 +18,11 @@
 #define COMPUTE_SWITCH(yimpl, kimpl) yimpl
 #endif
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+#define GENERIC_INLINE KOKKOS_INLINE_FUNCTION
+#else
+#define GENERIC_INLINE YAKL_INLINE
+#endif
 
 /**
  * Helper functions for the conversion to Kokkos
@@ -28,7 +33,7 @@ namespace conv {
 // Copied from YAKL
 template <class T1, class T2,
           typename std::enable_if<std::is_arithmetic<T1>::value && std::is_arithmetic<T2>::value,bool>::type=false>
-KOKKOS_INLINE_FUNCTION decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) { return cond ? t : f; }
+GENERIC_INLINE decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) { return cond ? t : f; }
 
 // A meta function that will return true if T is either a Kokkos::View or a
 // Kokkos::OffsetView (we use these in a couple places).
@@ -51,12 +56,12 @@ inline constexpr bool is_view_v = is_view<T>::value;
 // or View.
 template <class T,
           typename std::enable_if<!is_view_v<T>>::type* = nullptr>
-KOKKOS_INLINE_FUNCTION
+GENERIC_INLINE
 T constexpr epsilon(T) { return std::numeric_limits<T>::epsilon(); }
 
 template <class View,
           typename std::enable_if<is_view_v<View>>::type* = nullptr>
-KOKKOS_INLINE_FUNCTION
+GENERIC_INLINE
 typename View::non_const_value_type constexpr epsilon(const View& arr)
 { return std::numeric_limits<typename View::non_const_value_type>::epsilon(); }
 

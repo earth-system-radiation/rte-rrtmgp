@@ -3,6 +3,7 @@
 #include "rrtmgp_conversion.h"
 
 #ifdef RRTMGP_ENABLE_YAKL
+#include "YAKL_netcdf.h"
 void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_lev, real2d &t_lev,
                 GasConcs &gas_concs, real2d &col_dry, int ncol) {
   using yakl::fortran::parallel_for;

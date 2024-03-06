@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 project(standalone)
 
-set(CPP_SRC 
+set(CPP_SRC
     ../mo_load_coefficients.cpp
     ../../extensions/fluxes_byband/mo_fluxes_byband_kernels.cpp
-    mo_garand_atmos_io.cpp 
+    mo_garand_atmos_io.cpp
     mo_load_cloud_coefficients.cpp
     rrtmgp_allsky.cpp
 )

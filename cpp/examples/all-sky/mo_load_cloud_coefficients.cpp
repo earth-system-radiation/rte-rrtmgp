@@ -2,6 +2,8 @@
 #include "mo_load_cloud_coefficients.h"
 
 #ifdef RRTMGP_ENABLE_YAKL
+#include "YAKL_netcdf.h"
+
 // read cloud optical property LUT coefficients from NetCDF file
 void load_cld_lutcoeff(CloudOptics &cloud_spec, std::string cld_coeff_file) {
   yakl::SimpleNetCDF io;

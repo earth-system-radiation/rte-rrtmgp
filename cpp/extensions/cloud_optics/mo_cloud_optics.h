@@ -856,8 +856,8 @@ public:
     Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       real tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd);
       real taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd);
-      optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / std::max(conv::epsilon(tau), taussa);
-      optical_props_ssa(icol,ilay,ibnd) = taussa / std::max(conv::epsilon(tau), tau);
+      optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / Kokkos::fmax(conv::epsilon(tau), taussa);
+      optical_props_ssa(icol,ilay,ibnd) = taussa / Kokkos::fmax(conv::epsilon(tau), tau);
       optical_props_tau(icol,ilay,ibnd) = tau;
     });
   }
@@ -896,7 +896,7 @@ public:
     //     do icol = 1, ncol
     Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
-        int index = std::min( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.) - 1;
+        int index = Kokkos::fmin( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.) - 1;
         real fint = (re(icol,ilay) - offset)/step_size - index;
         real t   = lwp(icol,ilay)    * (tau_table(index,  ibnd) + fint * (tau_table(index+1,ibnd) - tau_table(index,ibnd)));
         real ts  = t                 * (ssa_table(index,  ibnd) + fint * (ssa_table(index+1,ibnd) - ssa_table(index,ibnd)));
@@ -926,14 +926,14 @@ public:
         // Finds index into size regime table
         // This works only if there are precisely three size regimes (four bounds) and it's
         //   previously guaranteed that size_bounds(1) <= size <= size_bounds(4)
-        irad = std::min(floor((re(icol,ilay) - re_bounds_ext(2))/re_bounds_ext(3))+2, 3.);
+        irad = Kokkos::fmin(floor((re(icol,ilay) - re_bounds_ext(2))/re_bounds_ext(3))+2, 3.);
         real t = lwp(icol,ilay) *         pade_eval(ibnd, nbnd, nsizes, m_ext, n_ext, irad, re(icol,ilay), coeffs_ext);
 
-        irad = std::min(floor((re(icol,ilay) - re_bounds_ssa(2))/re_bounds_ssa(3))+2, 3.);
+        irad = Kokkos::fmin(floor((re(icol,ilay) - re_bounds_ssa(2))/re_bounds_ssa(3))+2, 3.);
         // Pade approximants for co-albedo can sometimes be negative
-        real ts = t * (1. - std::max(0., pade_eval(ibnd, nbnd, nsizes, m_ssa, n_ssa, irad, re(icol,ilay), coeffs_ssa)));
+        real ts = t * (1. - Kokkos::fmax(0., pade_eval(ibnd, nbnd, nsizes, m_ssa, n_ssa, irad, re(icol,ilay), coeffs_ssa)));
 
-        irad = std::min(floor((re(icol,ilay) - re_bounds_asy(2))/re_bounds_asy(3))+2, 3.);
+        irad = Kokkos::fmin(floor((re(icol,ilay) - re_bounds_asy(2))/re_bounds_asy(3))+2, 3.);
         taussag(icol,ilay,ibnd) = ts *    pade_eval(ibnd, nbnd, nsizes, m_asy, n_asy, irad, re(icol,ilay), coeffs_asy);
 
         taussa (icol,ilay,ibnd) = ts;
@@ -948,7 +948,7 @@ public:
 
   // Evaluate Pade approximant of order [m/n]
   KOKKOS_INLINE_FUNCTION
-  real pade_eval(int iband, int nbnd, int nrads, int m, int n, int irad, real re, real3dk const &pade_coeffs) {
+  static real pade_eval(int iband, int nbnd, int nrads, int m, int n, int irad, real re, real3dk const &pade_coeffs) {
     real denom = pade_coeffs(iband,irad,n+m-1);
     for (int i = n-1+m ; i >= 1+m ; i--) {
       denom = pade_coeffs(iband,irad,i-1)+re*denom;

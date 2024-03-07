@@ -27,6 +27,9 @@ $this_dir/cmakeclean.sh
 #
 # Example: Enable YAKL with release build type with threads
 #  YAKL_ARCH=OPENMP $path_to_build/cmakescript.sh -DRRTMGP_ENABLE_YAKL=On -DCMAKE_BUILD_TYPE=Release
+#
+# Example: Enable Kokkos on weaver
+#  $path_to_build/cmakescript.sh -C $KOKKOSHOME/../../cmake/machine-files/weaver.cmake -DKokkos_ENABLE_CUDA_CONSTEXPR=On -DRRTMGP_ENABLE_KOKKOS=On -DCMAKE_BUILD_TYPE=Release
 cmake                                          \
   $@                                           \
   -DYAKL_CXX_FLAGS="${YAKL_CXX_FLAGS}"         \

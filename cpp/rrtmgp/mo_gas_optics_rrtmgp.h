@@ -1739,8 +1739,10 @@ public:
     // creates log reference pressure
     this->press_ref_log = real1dk("press_ref_log", this->press_ref.extent(0));
     // Running a kernel because it's more convenient in this case
+    auto this_press_ref_log = this->press_ref_log;
+    auto this_press_ref = this->press_ref;
     Kokkos::parallel_for( this->press_ref.extent(0) , KOKKOS_LAMBDA (int i) {
-      this->press_ref_log(i) = log(this->press_ref(i));
+       this_press_ref_log(i) = log(this_press_ref(i));
     });
 
     // log scale of reference pressure (this is a scalar, not an array)
@@ -1798,8 +1800,10 @@ public:
     this->is_key = bool1dk("is_key",this->get_ngas());
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
+    auto this_flavor = this->flavor;
+    auto this_is_key = this->is_key;
     Kokkos::parallel_for( MDRangeP<2>( {0, 0}, {this->flavor.extent(0), this->flavor.extent(1)} ) , KOKKOS_LAMBDA (int i, int j) {
-      if (this->flavor(i,j) != -1) { this->is_key(this->flavor(i,j)) = true; }
+      if (this_flavor(i,j) != -1) { this_is_key(this_flavor(i,j)) = true; }
     });
   }
 
@@ -2042,8 +2046,9 @@ public:
     // External source function is constant
     if (toa_src.extent(0) != ncol || toa_src.extent(1) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
+    auto this_solar_src = this->solar_src;
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
-      toa_src(icol,igpt) = this->solar_src(igpt);
+      toa_src(icol,igpt) = this_solar_src(igpt);
     });
   }
 
@@ -2244,7 +2249,7 @@ public:
     //   do icol = 1, ncol
     const auto m_dry = ::m_dry;
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
-      real delta_plev = std::abs(plev(icol,ilev) - plev(icol,ilev+1));
+      real delta_plev = Kokkos::fabs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1. / (1.+vmr_h2o(icol,ilev));
       real m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;

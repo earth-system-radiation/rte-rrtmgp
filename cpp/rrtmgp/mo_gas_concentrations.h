@@ -357,8 +357,9 @@ public:
     if (igas == GAS_NOT_IN_LIST) { stoprun("GasConcs::get_vmr; gas not found" ); }
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
+    auto this_concs = this->concs;
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
-      array(icol,ilay) = this->concs(icol,ilay,igas);
+      array(icol,ilay) = this_concs(icol,ilay,igas);
     });
   }
 

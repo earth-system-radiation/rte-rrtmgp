@@ -616,8 +616,8 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
       real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                        tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
       g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) +
-                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / std::max(eps,tauscat12);
-      ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
+                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / Kokkos::fmax(eps,tauscat12);
+      ssa1(icol,ilay,igpt) = tauscat12 / Kokkos::fmax(eps,tau12);
       tau1(icol,ilay,igpt) = tau12;
     }
   });
@@ -718,8 +718,8 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3dk const &t
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
     g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) +
                           tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt))
-                           / std::max(eps,tauscat12);
-    ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
+                           / Kokkos::fmax(eps,tauscat12);
+    ssa1(icol,ilay,igpt) = tauscat12 / Kokkos::fmax(eps,tau12);
     tau1(icol,ilay,igpt) = tau12;
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";

@@ -515,7 +515,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1dk const &mu0, real
     //   k = 0 for isotropic, conservative scattering; this lower limit on k
     //   gives relative error with respect to conservative solution
     //   of < 0.1% in Rdif down to tau = 10^-9
-    real k = sqrt(std::max((gamma1 - gamma2) *
+    real k = sqrt(Kokkos::fmax((gamma1 - gamma2) *
                            (gamma1 + gamma2),
                            1.e-12));
     real exp_minusktau = exp(-tau(icol,ilay,igpt)*k);
@@ -545,7 +545,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1dk const &mu0, real
     //   and rearranging to avoid div by 0.
     RT_term =  w0(icol,ilay,igpt) * RT_term/merge(1. - k_mu*k_mu,
                                                   eps,
-                                                  std::abs(1. - k_mu*k_mu) >= eps);
+                                                  Kokkos::fabs(1. - k_mu*k_mu) >= eps);
 
     Rdir(icol,ilay,igpt) = RT_term  *
        ((1. - k_mu) * (alpha2 + k_gamma3)                  -

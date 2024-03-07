@@ -208,7 +208,7 @@ void interpolate1D(real val, real offset, real delta, real2dk const &table,
                    real1dk const &res, int tab_d1, int tab_d2) {
   real val0 = (val - offset) / delta;
   real frac = val0 - int(val0); // get fractional part
-  int index = std::min(tab_d1-1, std::max(1, (int)(val0)+1)) - 1; // limit the index range
+  int index = Kokkos::fmin(tab_d1-1, Kokkos::fmax(1, (int)(val0)+1)) - 1; // limit the index range
   for (int i=0; i<tab_d2; i++) {
     res(i) = table(index,i) + frac * (table(index+1,i) - table(index,i));
   }

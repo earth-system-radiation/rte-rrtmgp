@@ -293,10 +293,11 @@ public:
     //   Efficient only when g-point indexes start at 1 and are contiguous.
     this->gpt2band = int1dk("gpt2band", this->ngpt);
     // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(int dummy) {
+    auto this_gpt2band = this->gpt2band;
+    Kokkos::parallel_for(1, KOKKOS_CLASS_LAMBDA(int dummy) {
       for (int iband=0; iband < band_lims_gpt_lcl.extent(1); iband++) {
         for (int i=band_lims_gpt_lcl(0,iband); i <= band_lims_gpt_lcl(1,iband); i++) {
-          this->gpt2band(i) = iband;
+          this_gpt2band(i) = iband;
         }
       }
     });

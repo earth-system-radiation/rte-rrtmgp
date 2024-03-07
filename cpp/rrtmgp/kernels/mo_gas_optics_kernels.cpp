@@ -605,12 +605,12 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
     // index and factor for temperature interpolation
     jtemp(icol,ilay) = (int) ((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta);
-    jtemp(icol,ilay) = std::min(ntemp - 1, std::max(1, jtemp(icol,ilay))) - 1; // limit the index range
+    jtemp(icol,ilay) = Kokkos::fmin(ntemp - 1, Kokkos::fmax(1, jtemp(icol,ilay))) - 1; // limit the index range
     ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta;
 
     // index and factor for pressure interpolation
     real locpress = 1. + (log(play(icol,ilay)) - press_ref_log(0)) / press_ref_log_delta;
-    jpress(icol,ilay) = std::min(npres-1, std::max(1, (int)(locpress)));
+    jpress(icol,ilay) = Kokkos::fmin(npres-1, Kokkos::fmax(1, (int)(locpress)));
     fpress(icol,ilay) = locpress - (real)(jpress(icol,ilay));
 
     // determine if in lower or upper part of atmosphere
@@ -632,7 +632,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     real eta = merge(col_gas(icol,ilay,igases1) / col_mix(itemp,iflav,icol,ilay), 0.5,
                      col_mix(itemp,iflav,icol,ilay) > 2. * tiny);
     real loceta = eta * (neta-1.0);
-    jeta(itemp,iflav,icol,ilay) = std::min((int)(loceta)+1, neta-1) - 1;
+    jeta(itemp,iflav,icol,ilay) = Kokkos::fmin((int)(loceta)+1, neta-1) - 1;
     real feta = fmod(loceta, 1.0);
     // compute interpolation fractions needed for minor species
     real ftemp_term = ((2.0 - (itemp+1)) + (2.0 * (itemp+1) - 3.0 ) * ftemp(icol,ilay));
@@ -936,7 +936,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) < mn) {
               minloc = i;
             }
-            mn = std::min(mn,play(icol,i));
+            mn = Kokkos::fmin(mn,play(icol,i));
           }
         }
         itropo_lower(icol,0) = minloc;
@@ -951,7 +951,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) > mx) {
               maxloc = i;
             }
-            mx = std::max(mx,play(icol,i));
+            mx = Kokkos::fmax(mx,play(icol,i));
           }
         }
         itropo_upper(icol,1) = maxloc;
@@ -970,7 +970,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) < mn) {
               minloc = i;
             }
-            mn = std::min(mn,play(icol,i));
+            mn = Kokkos::fmin(mn,play(icol,i));
           }
         }
         itropo_lower(icol,1) = minloc;
@@ -985,7 +985,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) > mx) {
               maxloc = i;
             }
-            mx = std::max(mx,play(icol,i));
+            mx = Kokkos::fmax(mx,play(icol,i));
           }
         }
         itropo_upper(icol,0) = maxloc;

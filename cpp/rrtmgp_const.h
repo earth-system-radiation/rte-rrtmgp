@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <cstdlib>
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 #include <Kokkos_Core.hpp>

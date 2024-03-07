@@ -249,7 +249,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
     //   and rearranging to avoid div by 0.
     RT_term =  w0(icol,ilay,igpt) * RT_term/merge(1. - k_mu*k_mu,
                                                   eps,
-                                                  abs(1. - k_mu*k_mu) >= eps);
+                                                  std::abs(1. - k_mu*k_mu) >= eps);
 
     Rdir(icol,ilay,igpt) = RT_term  *
        ((1. - k_mu) * (alpha2 + k_gamma3)                  -
@@ -545,7 +545,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1dk const &mu0, real
     //   and rearranging to avoid div by 0.
     RT_term =  w0(icol,ilay,igpt) * RT_term/merge(1. - k_mu*k_mu,
                                                   eps,
-                                                  abs(1. - k_mu*k_mu) >= eps);
+                                                  std::abs(1. - k_mu*k_mu) >= eps);
 
     Rdir(icol,ilay,igpt) = RT_term  *
        ((1. - k_mu) * (alpha2 + k_gamma3)                  -

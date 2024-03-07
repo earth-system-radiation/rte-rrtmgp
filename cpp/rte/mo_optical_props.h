@@ -173,7 +173,7 @@ public:
     // auto &this_band_lims_wvn = this->band_lims_wvn;
     // auto &rhs_band_lims_wvn  = rhs.band_lims_wvn;
     // parallel_for( YAKL_AUTO_LABEL() , Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-    //   if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
+    //   if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
     //     ret = false;
     //   }
     // });
@@ -187,7 +187,7 @@ public:
     auto rhs_band_lims_wvn  = rhs.band_lims_wvn  .createHostCopy();
     for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
       for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
-        if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
+        if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
           ret = false;
         }
       }
@@ -400,7 +400,7 @@ public:
     Kokkos::deep_copy(rhs_band_lims_wvn, rhs.band_lims_wvn);
     for (int j=0 ; j < this->band_lims_wvn.extent(1); j++) {
       for (int i=0 ; i < this->band_lims_wvn.extent(0); i++) {
-        if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*conv::epsilon(this_band_lims_wvn) ) {
+        if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*conv::epsilon(this_band_lims_wvn) ) {
           ret = false;
         }
       }

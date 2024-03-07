@@ -45,15 +45,15 @@ int main(int argc , char **argv) {
     std::string input_file        =      argv[1];
     std::string k_dist_file       =      argv[2];
     std::string cloud_optics_file =      argv[3];
-    int ncol                      = atoi(argv[4]);
+    int ncol                      = std::atoi(argv[4]);
     int nloops = 1;
-    if (argc >= 6) { nloops       = atoi(argv[5]); }
+    if (argc >= 6) { nloops       = std::atoi(argv[5]); }
     if (ncol   <= 0) { stoprun("Error: Number of columns must be > 0"); }
     if (nloops <= 0) { stoprun("Error: Number of loops must be > 0"); }
     if (argc > 6) { std::cout << "WARNING: Using only 5 parameters. Ignoring the rest\n"; }
     if (input_file == "-h" || input_file == "--help") {
       std::cout << "./rrtmgp_allsky  input_file  absorption_coefficients_file  cloud_optics_file  ncol  [nloops]\n\n";
-      exit(0);
+      std::exit(0);
     }
 
     if (verbose) {
@@ -365,24 +365,24 @@ int main(int argc , char **argv) {
       // Hacky "unit" test against pre-computed reference fluxes
       if (ncol == 1 && nloops == 1) {
 #ifdef RRTMGP_ENABLE_YAKL
-        if (abs(sum(flux_up )-19104.862129836212)/(19104.862129836212) > 1.e-10) exit(-1);
-        if (abs(sum(flux_dn )-38046.157649700355)/(38046.157649700355) > 1.e-10) exit(-1);
-        if (abs(sum(flux_dir)-24998.593939345046)/(24998.593939345046) > 1.e-10) exit(-1);
+        if (std::abs(sum(flux_up )-19104.862129836212)/(19104.862129836212) > 1.e-10) std::exit(-1);
+        if (std::abs(sum(flux_dn )-38046.157649700355)/(38046.157649700355) > 1.e-10) std::exit(-1);
+        if (std::abs(sum(flux_dir)-24998.593939345046)/(24998.593939345046) > 1.e-10) std::exit(-1);
         // And test to make sure our broadband and byband fluxes are consistent
-        if (abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) exit(-1);
-        if (abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) exit(-1);
-        if (abs(sum(flux_dir)-sum(bnd_flux_dir) )/sum(flux_dir)        > 1.e-10) exit(-1);
-        if (abs(sum(flux_net)-sum(bnd_flux_net) )/sum(flux_net)        > 1.e-10) exit(-1);
+        if (std::abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) std::exit(-1);
+        if (std::abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) std::exit(-1);
+        if (std::abs(sum(flux_dir)-sum(bnd_flux_dir) )/sum(flux_dir)        > 1.e-10) std::exit(-1);
+        if (std::abs(sum(flux_net)-sum(bnd_flux_net) )/sum(flux_net)        > 1.e-10) std::exit(-1);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-        if (abs(conv::sum(flux_up_k )-19104.862129836212)/(19104.862129836212)          > 1.e-10) exit(-1);
-        if (abs(conv::sum(flux_dn_k )-38046.157649700355)/(38046.157649700355)          > 1.e-10) exit(-1);
-        if (abs(conv::sum(flux_dir_k)-24998.593939345046)/(24998.593939345046)          > 1.e-10) exit(-1);
+        if (std::abs(conv::sum(flux_up_k )-19104.862129836212)/(19104.862129836212)          > 1.e-10) std::exit(-1);
+        if (std::abs(conv::sum(flux_dn_k )-38046.157649700355)/(38046.157649700355)          > 1.e-10) std::exit(-1);
+        if (std::abs(conv::sum(flux_dir_k)-24998.593939345046)/(24998.593939345046)          > 1.e-10) std::exit(-1);
         // And test to make sure our broadband and byband fluxes are consistent
-        if (abs(conv::sum(flux_up_k )-conv::sum(bnd_flux_up_k ) )/conv::sum(flux_up_k ) > 1.e-10) exit(-1);
-        if (abs(conv::sum(flux_dn_k )-conv::sum(bnd_flux_dn_k ) )/conv::sum(flux_dn_k ) > 1.e-10) exit(-1);
-        if (abs(conv::sum(flux_dir_k)-conv::sum(bnd_flux_dir_k) )/conv::sum(flux_dir_k) > 1.e-10) exit(-1);
-        if (abs(conv::sum(flux_net_k)-conv::sum(bnd_flux_net_k) )/conv::sum(flux_net_k) > 1.e-10) exit(-1);
+        if (std::abs(conv::sum(flux_up_k )-conv::sum(bnd_flux_up_k ) )/conv::sum(flux_up_k ) > 1.e-10) std::exit(-1);
+        if (std::abs(conv::sum(flux_dn_k )-conv::sum(bnd_flux_dn_k ) )/conv::sum(flux_dn_k ) > 1.e-10) std::exit(-1);
+        if (std::abs(conv::sum(flux_dir_k)-conv::sum(bnd_flux_dir_k) )/conv::sum(flux_dir_k) > 1.e-10) std::exit(-1);
+        if (std::abs(conv::sum(flux_net_k)-conv::sum(bnd_flux_net_k) )/conv::sum(flux_net_k) > 1.e-10) std::exit(-1);
 #endif
       }
 
@@ -646,20 +646,20 @@ int main(int argc , char **argv) {
       // Hacky "unit" test against pre-computed reference fluxes
       if (ncol == 1 && nloops == 1) {
 #ifdef RRTMGP_ENABLE_YAKL
-        if (abs(sum(flux_up )-10264.518998579415)/(10264.518998579415) > 1.e-10) exit(-1);
-        if (abs(sum(flux_dn )-6853.2350138542843)/(6853.2350138542843) > 1.e-10) exit(-1);
+        if (std::abs(sum(flux_up )-10264.518998579415)/(10264.518998579415) > 1.e-10) std::exit(-1);
+        if (std::abs(sum(flux_dn )-6853.2350138542843)/(6853.2350138542843) > 1.e-10) std::exit(-1);
         // And test to make sure our broadband and byband fluxes are consistent
-        if (abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) exit(-1);
-        if (abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) exit(-1);
-        if (abs(sum(flux_net)-sum(bnd_flux_net) )/sum(flux_net)        > 1.e-10) exit(-1);
+        if (std::abs(sum(flux_up )-sum(bnd_flux_up ) )/sum(flux_up )        > 1.e-10) std::exit(-1);
+        if (std::abs(sum(flux_dn )-sum(bnd_flux_dn ) )/sum(flux_dn )        > 1.e-10) std::exit(-1);
+        if (std::abs(sum(flux_net)-sum(bnd_flux_net) )/sum(flux_net)        > 1.e-10) std::exit(-1);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-        if (abs(conv::sum(flux_up_k )-10264.518998579415)/(10264.518998579415)          > 1.e-10) exit(-1);
-        if (abs(conv::sum(flux_dn_k )-6853.2350138542843)/(6853.2350138542843)          > 1.e-10) exit(-1);
+        if (std::abs(conv::sum(flux_up_k )-10264.518998579415)/(10264.518998579415)          > 1.e-10) std::exit(-1);
+        if (std::abs(conv::sum(flux_dn_k )-6853.2350138542843)/(6853.2350138542843)          > 1.e-10) std::exit(-1);
         // And test to make sure our broadband and byband fluxes are consistent
-        if (abs(conv::sum(flux_up_k )-conv::sum(bnd_flux_up_k ) )/conv::sum(flux_up_k ) > 1.e-10) exit(-1);
-        if (abs(conv::sum(flux_dn_k )-conv::sum(bnd_flux_dn_k ) )/conv::sum(flux_dn_k ) > 1.e-10) exit(-1);
-        if (abs(conv::sum(flux_net_k)-conv::sum(bnd_flux_net_k) )/conv::sum(flux_net_k) > 1.e-10) exit(-1);
+        if (std::abs(conv::sum(flux_up_k )-conv::sum(bnd_flux_up_k ) )/conv::sum(flux_up_k ) > 1.e-10) std::exit(-1);
+        if (std::abs(conv::sum(flux_dn_k )-conv::sum(bnd_flux_dn_k ) )/conv::sum(flux_dn_k ) > 1.e-10) std::exit(-1);
+        if (std::abs(conv::sum(flux_net_k)-conv::sum(bnd_flux_net_k) )/conv::sum(flux_net_k) > 1.e-10) std::exit(-1);
 #endif
       }
 

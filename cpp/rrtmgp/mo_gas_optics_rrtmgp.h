@@ -1136,7 +1136,7 @@ public:
     //   do icol = 1, ncol
     YAKL_SCOPE( m_dry , ::m_dry );
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
-      real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
+      real delta_plev = std::abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1. / (1.+vmr_h2o(icol,ilev));
       real m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
@@ -2244,7 +2244,7 @@ public:
     //   do icol = 1, ncol
     const auto m_dry = ::m_dry;
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
-      real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
+      real delta_plev = std::abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1. / (1.+vmr_h2o(icol,ilev));
       real m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;

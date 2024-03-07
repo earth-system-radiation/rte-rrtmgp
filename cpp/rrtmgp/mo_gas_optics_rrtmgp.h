@@ -1186,7 +1186,6 @@ public:
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
 
-    conv::printy("is_key", is_key);
     std::string prefix = print_prefix ? "JGFY" : "";
 
                                                       std::cout << prefix << "name                                  : " << std::setw(20) << name                                   << "\n";
@@ -2281,7 +2280,6 @@ public:
   }
 
   void print_norms(const bool print_prefix=false) const {
-    conv::printk("is_key", is_key);
     std::string prefix = print_prefix ? "JGFK" : "";
                                                       std::cout << prefix << "name                                  : " << std::setw(20) << name                                   << "\n";
                                                       std::cout << prefix << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n";

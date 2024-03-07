@@ -35,7 +35,7 @@ make -j16 || exit 1
 ../test_sw.sh | grep JGFY | sort > JGFY
 
 # Check and report diffs
-diff JGFK JGFY
+diff JGFK JGFY || echo "!FAIL!"
 wc -l JGFK
 wc -l JGFY
 diff JGFK JGFY | wc -l

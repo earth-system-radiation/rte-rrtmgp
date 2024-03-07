@@ -276,7 +276,6 @@ public:
     for (int imnr=1 ; imnr <= size(scaling_gas_atm,1) ; imnr++) {
       // This will be -1 if there's no interacting gas
       idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm(imnr), gas_names);
-      conv::p1d(idx_minor_scaling_atm, "idx_minor_scaling", imnr);
     }
   }
 
@@ -1465,7 +1464,6 @@ public:
     for (auto imnr=0 ; imnr < scaling_gas_atm.size() ; imnr++) {
       // This will be -1 if there's no interacting gas
       idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm[imnr], gas_names);
-      conv::p1d(idx_minor_scaling_atm, "idx_minor_scaling", imnr);
     }
   }
 

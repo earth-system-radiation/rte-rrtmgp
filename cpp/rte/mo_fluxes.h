@@ -66,14 +66,15 @@ public:
   }
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
+    std::string prefix = print_prefix ? "JGFY" : "";
 
-    if (allocated(flux_up    )) { std::cout << std::setprecision(16) << "flux_up    : " << sum(flux_up    ) << "\n"; }
-    if (allocated(flux_dn    )) { std::cout << std::setprecision(16) << "flux_dn    : " << sum(flux_dn    ) << "\n"; }
-    if (allocated(flux_net   )) { std::cout << std::setprecision(16) << "flux_net   : " << sum(flux_net   ) << "\n"; }
-    if (allocated(flux_dn_dir)) { std::cout << std::setprecision(16) << "flux_dn_dir: " << sum(flux_dn_dir) << "\n"; }
+    if (allocated(flux_up    )) { std::cout << prefix << std::setprecision(16) << "flux_up    : " << sum(flux_up    ) << "\n"; }
+    if (allocated(flux_dn    )) { std::cout << prefix << std::setprecision(16) << "flux_dn    : " << sum(flux_dn    ) << "\n"; }
+    if (allocated(flux_net   )) { std::cout << prefix << std::setprecision(16) << "flux_net   : " << sum(flux_net   ) << "\n"; }
+    if (allocated(flux_dn_dir)) { std::cout << prefix << std::setprecision(16) << "flux_dn_dir: " << sum(flux_dn_dir) << "\n"; }
   }
 
 };
@@ -119,11 +120,12 @@ public:
   }
 
 
-  void print_norms() const {
-    if (flux_up.is_allocated()    ) { std::cout << std::setprecision(16) << "flux_up    : " << conv::sum(flux_up    ) << "\n"; }
-    if (flux_dn.is_allocated()    ) { std::cout << std::setprecision(16) << "flux_dn    : " << conv::sum(flux_dn    ) << "\n"; }
-    if (flux_net.is_allocated()   ) { std::cout << std::setprecision(16) << "flux_net   : " << conv::sum(flux_net   ) << "\n"; }
-    if (flux_dn_dir.is_allocated()) { std::cout << std::setprecision(16) << "flux_dn_dir: " << conv::sum(flux_dn_dir) << "\n"; }
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+    if (flux_up.is_allocated()    ) { std::cout << prefix << std::setprecision(16) << "flux_up    : " << conv::sum(flux_up    ) << "\n"; }
+    if (flux_dn.is_allocated()    ) { std::cout << prefix << std::setprecision(16) << "flux_dn    : " << conv::sum(flux_dn    ) << "\n"; }
+    if (flux_net.is_allocated()   ) { std::cout << prefix << std::setprecision(16) << "flux_net   : " << conv::sum(flux_net   ) << "\n"; }
+    if (flux_dn_dir.is_allocated()) { std::cout << prefix << std::setprecision(16) << "flux_dn_dir: " << conv::sum(flux_dn_dir) << "\n"; }
   }
 
 #ifdef RRTMGP_ENABLE_YAKL

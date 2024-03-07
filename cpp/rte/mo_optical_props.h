@@ -559,15 +559,16 @@ public:
   inline void increment(OpticalProps2str &that);
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
+    std::string prefix = print_prefix ? "JGFY" : "";
 
-                                    std::cout << "name         : " << name               << "\n";
-    if (allocated(band2gpt     )) { std::cout << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
-    if (allocated(gpt2band     )) { std::cout << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
-    if (allocated(band_lims_wvn)) { std::cout << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
-    if (allocated(tau          )) { std::cout << "tau          : " << sum(tau          ) << "\n"; }
+                                    std::cout << prefix << "name         : " << name               << "\n";
+    if (allocated(band2gpt     )) { std::cout << prefix << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
+    if (allocated(gpt2band     )) { std::cout << prefix << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
+    if (allocated(band_lims_wvn)) { std::cout << prefix << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
+    if (allocated(tau          )) { std::cout << prefix << "tau          : " << sum(tau          ) << "\n"; }
   }
 
 };
@@ -622,12 +623,13 @@ public:
   // Implemented later because OpticalProps2str hasn't been created yet
   inline void increment(OpticalProps2strK &that);
 
-  void print_norms() const {
-                                        std::cout << "name         : " << name               << "\n";
-    if (band2gpt.is_allocated()     ) { std::cout << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
-    if (gpt2band.is_allocated()     ) { std::cout << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
-    if (band_lims_wvn.is_allocated()) { std::cout << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
-    if (tau.is_allocated()          ) { std::cout << "tau          : " << conv::sum(tau          ) << "\n"; }
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+                                        std::cout << prefix << "name         : " << name               << "\n";
+    if (band2gpt.is_allocated()     ) { std::cout << prefix << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
+    if (gpt2band.is_allocated()     ) { std::cout << prefix << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
+    if (band_lims_wvn.is_allocated()) { std::cout << prefix << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
+    if (tau.is_allocated()          ) { std::cout << prefix << "tau          : " << conv::sum(tau          ) << "\n"; }
   }
 };
 #endif
@@ -748,17 +750,18 @@ public:
   }
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
+    std::string prefix = print_prefix ? "JGFY" : "";
 
-                                    std::cout << "name         : " << name               << "\n";
-    if (allocated(band2gpt     )) { std::cout << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
-    if (allocated(gpt2band     )) { std::cout << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
-    if (allocated(band_lims_wvn)) { std::cout << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
-    if (allocated(tau          )) { std::cout << "tau          : " << sum(tau          ) << "\n"; }
-    if (allocated(ssa          )) { std::cout << "ssa          : " << sum(ssa          ) << "\n"; }
-    if (allocated(g            )) { std::cout << "g            : " << sum(g            ) << "\n"; }
+                                    std::cout << prefix << "name         : " << name               << "\n";
+    if (allocated(band2gpt     )) { std::cout << prefix << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
+    if (allocated(gpt2band     )) { std::cout << prefix << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
+    if (allocated(band_lims_wvn)) { std::cout << prefix << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
+    if (allocated(tau          )) { std::cout << prefix << "tau          : " << sum(tau          ) << "\n"; }
+    if (allocated(ssa          )) { std::cout << prefix << "ssa          : " << sum(ssa          ) << "\n"; }
+    if (allocated(g            )) { std::cout << prefix << "g            : " << sum(g            ) << "\n"; }
   }
 
 };
@@ -883,14 +886,15 @@ public:
   }
 
 
-  void print_norms() const {
-                                        std::cout << "name         : " << name                     << "\n";
-    if (band2gpt.is_allocated()     ) { std::cout << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
-    if (gpt2band.is_allocated()     ) { std::cout << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
-    if (band_lims_wvn.is_allocated()) { std::cout << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
-    if (tau.is_allocated()          ) { std::cout << "tau          : " << conv::sum(tau          ) << "\n"; }
-    if (ssa.is_allocated()          ) { std::cout << "ssa          : " << conv::sum(ssa          ) << "\n"; }
-    if (g.is_allocated()            ) { std::cout << "g            : " << conv::sum(g            ) << "\n"; }
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+                                        std::cout << prefix << "name         : " << name                     << "\n";
+    if (band2gpt.is_allocated()     ) { std::cout << prefix << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
+    if (gpt2band.is_allocated()     ) { std::cout << prefix << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
+    if (band_lims_wvn.is_allocated()) { std::cout << prefix << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
+    if (tau.is_allocated()          ) { std::cout << prefix << "tau          : " << conv::sum(tau          ) << "\n"; }
+    if (ssa.is_allocated()          ) { std::cout << prefix << "ssa          : " << conv::sum(ssa          ) << "\n"; }
+    if (g.is_allocated()            ) { std::cout << prefix << "g            : " << conv::sum(g            ) << "\n"; }
   }
 
 };

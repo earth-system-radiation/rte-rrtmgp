@@ -102,15 +102,12 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_YAKL
     GasOpticsRRTMGP k_dist;
     load_and_init(k_dist, k_dist_file, gas_concs);
-    //k_dist.print_norms(true);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
     GasOpticsRRTMGPK k_dist_k;
     load_and_init(k_dist_k, k_dist_file, gas_concs_k);
     VALIDATE_KOKKOS(k_dist, k_dist_k);
-    //k_dist_k.print_norms(true);
 #endif
-    return 0; // JGF REMOVE
 
     bool is_sw = COMPUTE_SWITCH(k_dist.source_is_external(), k_dist_k.source_is_external());
 
@@ -133,9 +130,7 @@ int main(int argc , char **argv) {
     }
     cloud_optics_k.set_ice_roughness(2);
     VALIDATE_KOKKOS(cloud_optics, cloud_optics_k);
-    cloud_optics_k.print_norms(true);
 #endif
-    return 0; // JGF REMOVE
 
     // Problem sizes
     int nbnd = COMPUTE_SWITCH(k_dist.get_nband(), k_dist_k.get_nband());
@@ -148,7 +143,6 @@ int main(int argc , char **argv) {
     Kokkos::deep_copy(p_lay_host_k, p_lay_k);
 #endif
     bool top_at_1 = COMPUTE_SWITCH(p_lay_host(1, 1) < p_lay_host(1, nlay), p_lay_host_k(0, 0) < p_lay_host_k(0, nlay-1));
-
 
     // LW calculations neglect scattering; SW calculations use the 2-stream approximation
     if (is_sw) {  // Shortwave
@@ -282,13 +276,11 @@ int main(int argc , char **argv) {
 
 #ifdef RRTMGP_ENABLE_YAKL
         cloud_optics.cloud_optics(ncol, nlay, lwp, iwp, rel, rei, clouds);
-        //cloud_optics.print_norms(true);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
         cloud_optics_k.cloud_optics(ncol, nlay, lwp_k, iwp_k, rel_k, rei_k, clouds_k);
         VALIDATE_KOKKOS(cloud_optics, cloud_optics_k);
         VALIDATE_KOKKOS(clouds, clouds_k);
-        //cloud_optics_k.print_norms(true);
 #endif
 
         // Solvers

@@ -16,15 +16,15 @@ This header files C-compatible Boolean and floating point types (see mo_rte_type
 */
 
 #ifdef RTE_USE_CBOOL
-typedef Bool signed char;
+typedef signed char Bool;
 #else
-typedef Bool int;
+typedef int Bool;
 #endif
 
 #ifdef RTE_USE_SP
-typedef Float float;
+typedef float Float;
 const Float Float_epsilon = FLT_EPSILON;
 #else
-typedef Float double;
+typedef double Float;
 const Float Float_epsilon = DBL_EPSILON;
 #endif

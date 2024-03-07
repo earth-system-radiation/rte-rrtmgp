@@ -214,7 +214,7 @@ public:
     std::cout << prefix << "ncol      : " << ncol       << "\n";
     std::cout << prefix << "nlay      : " << nlay       << "\n";
     std::cout << prefix << "ngas      : " << ngas       << "\n";
-    if (allocated(gas_name)) {
+    if (gas_name.size() > 0) {
       std::cout << prefix << "gas_name  : ";
       for (auto& item : gas_name) {
         std::cout << item << " ";

@@ -1,4 +1,3 @@
-
 /* This code is part of Radiative Transfer for Energetics (RTE)
 
 Contacts: Robert Pincus and Eli Mlawer
@@ -15,6 +14,8 @@ This header files defines the C bindings for the kernels used in RTE
   Adapted from code written by Chiel van Heerwaarden at Wageningen University and Research 
 
 */
+
+include "rte_types.h"
 
 extern "C"
 {

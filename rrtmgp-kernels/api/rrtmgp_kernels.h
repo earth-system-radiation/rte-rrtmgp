@@ -11,8 +11,11 @@ Use and duplication is permitted under the terms of the
     BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 
 This header files defines the C bindings for the kernels used in RRTMGP 
+  Adapted from code written by Chiel van Heerwaarden at Wageningen University and Research 
 
 */
+
+include "rte_types.h"
 
 extern "C"
 {

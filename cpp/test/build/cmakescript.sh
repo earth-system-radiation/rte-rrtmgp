@@ -12,8 +12,21 @@ $this_dir/cmakeclean.sh
 
 # Configure new build. This will pass along arguments to this script
 # to CMake so you can set things like CMAKE_BUILD_TYPE easily.
+#
 # Example: Enable Kokkos and debug build type:
 #  $path_to_build/cmakescript.sh -DRRTMGP_ENABLE_KOKKOS=On -DCMAKE_BUILD_TYPE=Debug
+#
+# Example: Enable Kokkos and YAKL with debug build type:
+#  $path_to_build/cmakescript.sh -DRRTMGP_ENABLE_KOKKOS=On -DRRTMGP_ENABLE_YAKL=On -DCMAKE_BUILD_TYPE=Debug
+#
+# Example: Enable Kokkos with release build type:
+#  $path_to_build/cmakescript.sh -DRRTMGP_ENABLE_KOKKOS=On -DCMAKE_BUILD_TYPE=Release
+#
+# Example: Enable Kokkos with release build type and machine setup
+#  $path_to_build/cmakescript.sh -C $KOKKOSHOME/../../cmake/machine-files/mappy.cmake -DRRTMGP_ENABLE_KOKKOS=On -DCMAKE_BUILD_TYPE=Release
+#
+# Example: Enable YAKL with release build type with threads
+#  YAKL_ARCH=OPENMP $path_to_build/cmakescript.sh -DRRTMGP_ENABLE_YAKL=On -DCMAKE_BUILD_TYPE=Release
 cmake                                          \
   $@                                           \
   -DYAKL_CXX_FLAGS="${YAKL_CXX_FLAGS}"         \

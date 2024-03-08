@@ -350,9 +350,10 @@ int main(int argc , char **argv) {
         if (print_norms) fluxes_k.print_norms();
 #endif
       }
+
       auto stop_t = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
-      std::cout << "Shortwave did " << nloops << " loops in " <<  duration.count() / 1000000.0 << " s" << std::endl;
+      std::cout << "Shortwave did " << nloops << " loops of " << ncol << " cols and " << nlay << " layers in " <<  duration.count() / 1000000.0 << " s" << std::endl;
 
       if (verbose) std::cout << "Writing fluxes\n\n";
 #ifdef RRTMGP_ENABLE_YAKL
@@ -622,7 +623,6 @@ int main(int argc , char **argv) {
         rte_lw(max_gauss_pts, gauss_Ds_k, gauss_wts_k, atmos_k, top_at_1, lw_sources_k, emis_sfc_k, fluxes_k);
         VALIDATE_KOKKOS(fluxes, fluxes_k);
 #endif
-
 #ifdef RRTMGP_ENABLE_YAKL
         if (print_norms) fluxes.print_norms();
 #endif
@@ -633,7 +633,7 @@ int main(int argc , char **argv) {
 
       auto stop_t = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
-      std::cout << "Longwave did " << nloops << " loops in " <<  duration.count() / 1000000.0 << " s" << std::endl;
+      std::cout << "Longwave did " << nloops << " loops of " << ncol << " cols and " << nlay << " layers in " <<  duration.count() / 1000000.0 << " s" << std::endl;
 
       if (verbose) std::cout << "Writing fluxes\n\n";
 #ifdef RRTMGP_ENABLE_YAKL

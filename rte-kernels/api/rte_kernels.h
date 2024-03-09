@@ -15,7 +15,7 @@ This header files defines the C bindings for the kernels used in RTE
 
 */
 
-include "rte_types.h"
+#include "rte_types.h"
 
 extern "C"
 {
@@ -86,7 +86,7 @@ extern "C"
     void rte_increment_2stream_by_nstream(
             int* ncol, int* nlay, int* ngpt, int* nmom,
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
-            Float* tau_in, Float* ssa_in, Float* p_in)
+            Float* tau_in, Float* ssa_in, Float* p_in);
  
     void rte_increment_nstream_by_1scalar(
             int* ncol, int* nlay, int* ngpt,
@@ -124,7 +124,7 @@ extern "C"
             int* ncol, int* nlay, int* ngpt,
             Float* tau_inout, Float* ssa_inout,
             Float* tau_in,
-            int* nbnd, int* band_lims_gpoint)''
+            int* nbnd, int* band_lims_gpoint);
 
     void rte_inc_2stream_by_2stream_bybnd(
             int* ncol, int* nlay, int* ngpt,
@@ -202,9 +202,9 @@ extern "C"
             Float* bnd_flux_dn, Float* bnd_flux_up, Float* bnd_flux_net);
 
     // Array utilities 
-    void zero_array_1D(int* ni, Float* array);
+    void zero_array_1D(const int* ni, Float* array);
     void zero_array_2D(int* ni, int* nj, Float* array);
     void zero_array_3D(int* ni, int* nj, int* nk, Float* array);
-    void zero_array_4D(int* ni, int* nj, int* nk, int* nl, Float* array)
+    void zero_array_4D(int* ni, int* nj, int* nk, int* nl, Float* array);
  
 }

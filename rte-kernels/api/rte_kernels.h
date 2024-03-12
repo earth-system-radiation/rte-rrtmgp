@@ -107,100 +107,142 @@ extern "C"
     // OPTICAL PROPS - INCREMENT
     void rte_increment_1scalar_by_1scalar(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* tau_in);
+              // [inout] tau_inout: vector of length ncol*nlay*ngpt
+              // [in]    tau_in:    vector of length ncol*nlay*ngpt
  
 
     void rte_increment_1scalar_by_2stream(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout,
+              // [inout] tau_inout:      vector of length ncol*nlay*ngpt
             Float* tau_in, Float* ssa_in);
+              // [in]    tau_in, ssa_in: vector of length ncol*nlay*ngpt
  
     void rte_increment_1scalar_by_nstream(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout,
+              // [inout] tau_inout: vector of length ncol*nlay*ngpt
             Float* tau_in, Float* ssa_in);
+              // [in]    tau_in, ssa_in: vector of length ncol*nlay*ngpt
  
     void rte_increment_2stream_by_1scalar(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout,
+              // [inout] tau_inout, ssa_inout: vector of length ncol*nlay*ngpt
             Float* tau_in);
+              // [in]    tau_in:               vector of length ncol*nlay*ngpt
  
     void rte_increment_2stream_by_2stream(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
+              // [inout] tau_inout, ssa_inout, g_inout: vector of length ncol*nlay*ngpt
             Float* tau_in, Float* ssa_in, Float* g_in);
+              // [in]    tau_in,    ssa_in,     g_in:   vector of length ncol*nlay*ngpt
  
 
     void rte_increment_2stream_by_nstream(
             int* ncol, int* nlay, int* ngpt, int* nmom,
+              // [in] ncol, nlay, ngpt, nmom: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
+              // [inout] tau_inout, ssa_inout, g_inout: vector of length ncol*nlay*ngpt
             Float* tau_in, Float* ssa_in, Float* p_in);
+              // [in]    tau_in,    ssa_in,:   vector of length ncol*nlay*ngpt
+              // [in]    p_in: vector of length nmom*ncol*nlay*ngpt
  
     void rte_increment_nstream_by_1scalar(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout,
+              // [inout] tau_inout, ssa_inout: vector of length ncol*nlay*ngpt
             Float* tau_in);
- 
+               // [in]    tau_in:    vector of length ncol*nlay*ngpt
+
     void rte_increment_nstream_by_2stream(
             int* ncol, int* nlay, int* ngpt, int* nmom1,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* p_inout,
+              // [inout] tau_inout, ssa_inout:   vector of length ncol*nlay*ngpt
+              // [inout] p_inout:                vector of length nmom*ncol*nlay*ngpt
             Float* tau_in, Float* ssa_in, Float* g_in);
- 
+               // [in]    tau_in,    ssa_in,     g_in:   vector of length ncol*nlay*ngpt
+
     void rte_increment_nstream_by_nstream(
             int* ncol, int* nlay, int* ngpt, int* nmom1, int* nmom2,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* p_inout,
+              // [inout] tau_inout, ssa_inout:   vector of length ncol*nlay*ngpt
+              // [inout] p_inout:                vector of length nmom*ncol*nlay*ngpt
             Float* tau_in, Float* ssa_in, Float* p_in);
+              // [in]    tau_in,    ssa_in,:   vector of length ncol*nlay*ngpt
+              // [in]    p_in: vector of length nmom*ncol*nlay*ngpt
 
     // OPTICAL PROPS - INCREMENT BYBND
+    // Arugments correspond to functions above with added
+    // [in] nbnd: constant scalar
+    // [in] band_lims_gpoint: vector of length 2*nband
     void rte_inc_1scalar_by_1scalar_bybnd(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* tau_in,
             int* nbnd, int* band_lims_gpoint);
 
     void rte_inc_1scalar_by_2stream_bybnd(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout,
             Float* tau_in, Float* ssa_in,
             int* nbnd, int* band_lims_gpoint);
 
     void rte_inc_1scalar_by_nstream_bybnd(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout,
             int* nbnd, int* band_lims_gpoint);
 
     void rte_inc_2stream_by_1scalar_bybnd(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout,
             Float* tau_in,
             int* nbnd, int* band_lims_gpoint);
 
     void rte_inc_2stream_by_2stream_bybnd(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
             Float* tau_in, Float* ssa_in, Float* g_in,
             int* nbnd, int* band_lims_gpoint);
   
     void rte_inc_2stream_by_nstream_bybnd(
             int* ncol, int* nlay, int* ngpt, int* nmom,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* g_inout,
             Float* tau_in, Float* ssa_in, Float* p_in,
             int* nbnd, int* band_lims_gpoint);
 
-
     void rte_inc_nstream_by_1scalar_bybnd(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout,
             Float* tau_in,
             int* nbnd, int* band_lims_gpoint);
 
     void rte_inc_nstream_by_2stream_bybnd(
             int* ncol, int* nlay, int* ngpt, int* nmom1,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* p_inout,
             Float* tau_in, Float* ssa_in, Float* g_in,
             int* nbnd, int* band_lims_gpoint);
 
     void rte_inc_nstream_by_nstream_bybnd(
             int* ncol, int* nlay, int* ngpt, int* nmom1, int* nmom2,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* p_inout,
             Float* tau_in, Float* ssa_in, Float* p_in,
             int* nbnd, int* band_lims_gpoint);
@@ -208,10 +250,12 @@ extern "C"
     // OPTICAL PROPS - DELTA SCALING
     void rte_delta_scale_2str_k(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* g_inout);
 
     void rte_delta_scale_2str_f_k(
             int* ncol, int* nlay, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* g_inout, Float* f);
 
     // OPTICAL PROPS - SUBSET

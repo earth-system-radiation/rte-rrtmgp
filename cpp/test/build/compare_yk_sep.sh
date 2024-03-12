@@ -12,11 +12,7 @@
 # Build
 ../cmakescript.sh -DRRTMGP_ENABLE_KOKKOS=On -DCMAKE_BUILD_TYPE=Debug
 
-make -j16
-make -j16
-make -j16
-make -j16
-make -j16 || exit 1
+make -j8 || exit 1
 
 # Run lw and grab kokkos data, use sed to make sure it matches yakl sentinel
 # Not sure if we want to sort since that hides iteration order changes.
@@ -25,11 +21,7 @@ make -j16 || exit 1
 # Build
 ../cmakescript.sh -DRRTMGP_ENABLE_YAKL=On -DCMAKE_BUILD_TYPE=Debug
 
-make -j16
-make -j16
-make -j16
-make -j16
-make -j16 || exit 1
+make -j8 || exit 1
 
 # Run lw and grab yakl data
 ../test_sw.sh | grep JGFY | sort > JGFY

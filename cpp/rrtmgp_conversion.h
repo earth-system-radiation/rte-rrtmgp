@@ -10,7 +10,7 @@
 #ifdef RRTMGP_ENABLE_YAKL
 // Both are on, validate
 #define COMPUTE_SWITCH(yimpl, kimpl) \
-  kimpl; RRT_REQUIRE(yimpl == kimpl, "Bad COMPUTE_SWITCH")
+  (kimpl); RRT_REQUIRE((yimpl) == (kimpl), "Bad COMPUTE_SWITCH")
 #else
 #define COMPUTE_SWITCH(yimpl, kimpl) kimpl
 #endif
@@ -384,14 +384,16 @@ sum(const KView& view)
   using exe_space_t = typename KView::execution_space;
   using sum_t       = std::conditional_t<std::is_same<scalar_t, bool>::value, int, scalar_t>;
 
-  // JGF REMOVE
-  auto adjust = std::is_same<scalar_t, int>::value ? 1 : 0;
+  // If comparing sums of ints against f90, the values will need to be adjusted if
+  // the sums are going to match. This would only be done during debugging, so disable
+  // this for now.
+  // auto adjust = std::is_same<scalar_t, int>::value ? 1 : 0;
 
   sum_t rv;
   Kokkos::parallel_reduce(
     Kokkos::RangePolicy<exe_space_t>(0, view.size()),
     KOKKOS_LAMBDA(size_t i, sum_t& lsum) {
-      lsum += (view.data()[i] + adjust);
+      lsum += (view.data()[i] /*+ adjust*/);
     }, Kokkos::Sum<sum_t>(rv));
   return rv;
 }

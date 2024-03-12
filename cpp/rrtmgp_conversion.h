@@ -398,6 +398,62 @@ sum(const KView& view)
   return rv;
 }
 
+// MemPool singleton
+struct MemPoolSingleton
+{
+  using DeviceMemPool = typename Kokkos::MemoryPool<typename DefaultDevice::execution_space>;
+  using HostMemPool   = typename Kokkos::MemoryPool<typename HostDevice::execution_space>;
+
+ public:
+  inline static DeviceMemPool s_device_mem_pool;
+  inline static HostMemPool   s_host_mem_pool;
+
+  static void init(
+    const int dev_capacity, const int dev_min_block_size, const int dev_max_block_size, const int dev_super_block_size,
+    const int hst_capacity, const int hst_min_block_size, const int hst_max_block_size, const int hst_super_block_size)
+  {
+    static bool is_init = false;
+    RRT_REQUIRE(!is_init, "Multiple MemPoolSingleton inits");
+    s_device_mem_pool = DeviceMemPool(typename DefaultDevice::memory_space(), dev_capacity, dev_min_block_size, dev_max_block_size, dev_super_block_size);
+    s_host_mem_pool = HostMemPool(typename HostDevice::memory_space(), hst_capacity, hst_min_block_size, hst_max_block_size, hst_super_block_size);
+  }
+
+  template <typename T>
+  static inline
+  T* alloc_device(const int num)
+  {
+    return reinterpret_cast<T*>(s_device_mem_pool.allocate(num * sizeof(T)));
+  }
+
+  template <typename T>
+  static inline
+  T* alloc_host(const int num)
+  {
+    return reinterpret_cast<T*>(s_host_mem_pool.allocate(num * sizeof(T)));
+  }
+
+  template <typename T>
+  static inline
+  void dealloc_device(const int num, const T* data)
+  {
+    s_device_mem_pool.deallocate(data, num * sizeof(T));
+  }
+
+  template <typename T>
+  static inline
+  void dealloc_host(const int num, const T* data)
+  {
+    s_host_mem_pool.deallocate(data, num * sizeof(T));
+  }
+
+  static inline
+  void finalize()
+  {
+    s_device_mem_pool = DeviceMemPool();
+    s_host_mem_pool = HostMemPool();
+  }
+};
+
 //Error reporting routine for the PNetCDF I/O
 /** @private */
 inline void ncwrap( int ierr , int line ) {

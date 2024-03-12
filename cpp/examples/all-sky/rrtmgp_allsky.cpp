@@ -272,6 +272,14 @@ int main(int argc , char **argv) {
       if (verbose) std::cout << "Running the main loop\n\n";
       auto start_t = std::chrono::high_resolution_clock::now();
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+      const size_t MinBlockSize   = 64;
+      const size_t MaxBlockSize   = 1024;
+      const size_t SuperBlockSize = 4096;
+      conv::MemPoolSingleton::init(10000, MinBlockSize, MaxBlockSize, SuperBlockSize,
+                                   10000, MinBlockSize, MaxBlockSize, SuperBlockSize);
+      ureal1dk my_u_view(conv::MemPoolSingleton::alloc_host<real>(100), 100);
+#endif
       for (int iloop = 1 ; iloop <= nloops ; iloop++) {
 
 #ifdef RRTMGP_ENABLE_YAKL
@@ -350,6 +358,11 @@ int main(int argc , char **argv) {
         if (print_norms) fluxes_k.print_norms();
 #endif
       }
+
+#ifdef RRTMGP_ENABLE_KOKKOS
+      conv::MemPoolSingleton::finalize();
+#endif
+
 
       auto stop_t = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);

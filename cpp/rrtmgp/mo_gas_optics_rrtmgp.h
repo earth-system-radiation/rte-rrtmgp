@@ -9,6 +9,8 @@
 #include "mo_rrtmgp_util_reorder.h"
 #include "mo_gas_concentrations.h"
 
+#include <iomanip>
+
 // This code is part of RRTM for GCM Applications - Parallel (RRTMGP)
 //
 // Contacts: Robert Pincus and Eli Mlawer
@@ -32,6 +34,7 @@
 //
 // -------------------------------------------------------------------------------------------------
 
+#ifdef RRTMGP_ENABLE_YAKL
 class GasOpticsRRTMGP : public OpticalProps {
 public:
   // RRTMGP computes absorption in each band arising from
@@ -1133,7 +1136,7 @@ public:
     //   do icol = 1, ncol
     YAKL_SCOPE( m_dry , ::m_dry );
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
-      real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
+      real delta_plev = std::abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1. / (1.+vmr_h2o(icol,ilev));
       real m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
@@ -1178,54 +1181,56 @@ public:
 
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
     using yakl::intrinsics::count;
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
 
-                                                      std::cout << "name                                  : " << std::setw(20) << name                                   << "\n";
-                                                      std::cout << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n";
-                                                      std::cout << "press_ref_min                         : " << std::setw(20) << press_ref_min                          << "\n";
-                                                      std::cout << "press_ref_max                         : " << std::setw(20) << press_ref_max                          << "\n";
-                                                      std::cout << "temp_ref_min                          : " << std::setw(20) << temp_ref_min                           << "\n";
-                                                      std::cout << "temp_ref_max                          : " << std::setw(20) << temp_ref_max                           << "\n";
-                                                      std::cout << "press_ref_log_delta                   : " << std::setw(20) << press_ref_log_delta                    << "\n";
-                                                      std::cout << "temp_ref_delta                        : " << std::setw(20) << temp_ref_delta                         << "\n";
-                                                      std::cout << "press_ref_trop_log                    : " << std::setw(20) << press_ref_trop_log                     << "\n";
-    if (allocated(gas_names                      )) { std::cout << "gas_names                             : " << std::setw(20) << gas_names                              << "\n"; }
-    if (allocated(band2gpt                       )) { std::cout << "sum(band2gpt     )                    : " << std::setw(20) << sum(band2gpt     )                     << "\n"; }
-    if (allocated(gpt2band                       )) { std::cout << "sum(gpt2band     )                    : " << std::setw(20) << sum(gpt2band     )                     << "\n"; }
-    if (allocated(band_lims_wvn                  )) { std::cout << "sum(band_lims_wvn)                    : " << std::setw(20) << sum(band_lims_wvn)                     << "\n"; }
-    if (allocated(press_ref                      )) { std::cout << "sum(press_ref    )                    : " << std::setw(20) << sum(press_ref    )                     << "\n"; }
-    if (allocated(press_ref_log                  )) { std::cout << "sum(press_ref_log)                    : " << std::setw(20) << sum(press_ref_log)                     << "\n"; }
-    if (allocated(temp_ref                       )) { std::cout << "sum(temp_ref     )                    : " << std::setw(20) << sum(temp_ref     )                     << "\n"; }
-    if (allocated(vmr_ref                        )) { std::cout << "sum(vmr_ref                )          : " << std::setw(20) << sum(vmr_ref                )           << "\n"; }
-    if (allocated(flavor                         )) { std::cout << "sum(flavor                 )          : " << std::setw(20) << sum(flavor                 )           << "\n"; }
-    if (allocated(gpoint_flavor                  )) { std::cout << "sum(gpoint_flavor          )          : " << std::setw(20) << sum(gpoint_flavor          )           << "\n"; }
-    if (allocated(kmajor                         )) { std::cout << "sum(kmajor                 )          : " << std::setw(20) << sum(kmajor                 )           << "\n"; }
-    if (allocated(minor_limits_gpt_lower         )) { std::cout << "sum(minor_limits_gpt_lower )          : " << std::setw(20) << sum(minor_limits_gpt_lower )           << "\n"; }
-    if (allocated(minor_limits_gpt_upper         )) { std::cout << "sum(minor_limits_gpt_upper )          : " << std::setw(20) << sum(minor_limits_gpt_upper )           << "\n"; }
-    if (allocated(idx_minor_lower                )) { std::cout << "sum(idx_minor_lower        )          : " << std::setw(20) << sum(idx_minor_lower        )           << "\n"; }
-    if (allocated(idx_minor_upper                )) { std::cout << "sum(idx_minor_upper        )          : " << std::setw(20) << sum(idx_minor_upper        )           << "\n"; }
-    if (allocated(idx_minor_scaling_lower        )) { std::cout << "sum(idx_minor_scaling_lower)          : " << std::setw(20) << sum(idx_minor_scaling_lower)           << "\n"; }
-    if (allocated(idx_minor_scaling_upper        )) { std::cout << "sum(idx_minor_scaling_upper)          : " << std::setw(20) << sum(idx_minor_scaling_upper)           << "\n"; }
-    if (allocated(kminor_start_lower             )) { std::cout << "sum(kminor_start_lower     )          : " << std::setw(20) << sum(kminor_start_lower     )           << "\n"; }
-    if (allocated(kminor_start_upper             )) { std::cout << "sum(kminor_start_upper     )          : " << std::setw(20) << sum(kminor_start_upper     )           << "\n"; }
-    if (allocated(kminor_lower                   )) { std::cout << "sum(kminor_lower           )          : " << std::setw(20) << sum(kminor_lower           )           << "\n"; }
-    if (allocated(kminor_upper                   )) { std::cout << "sum(kminor_upper           )          : " << std::setw(20) << sum(kminor_upper           )           << "\n"; }
-    if (allocated(krayl                          )) { std::cout << "sum(krayl                  )          : " << std::setw(20) << sum(krayl                  )           << "\n"; }
-    if (allocated(planck_frac                    )) { std::cout << "sum(planck_frac            )          : " << std::setw(20) << sum(planck_frac            )           << "\n"; }
-    if (allocated(totplnk                        )) { std::cout << "sum(totplnk                )          : " << std::setw(20) << sum(totplnk                )           << "\n"; }
-    if (allocated(solar_src                      )) { std::cout << "sum(solar_src              )          : " << std::setw(20) << sum(solar_src              )           << "\n"; }
-    if (allocated(minor_scales_with_density_lower)) { std::cout << "count(minor_scales_with_density_lower): " << std::setw(20) << count(minor_scales_with_density_lower) << "\n"; }
-    if (allocated(minor_scales_with_density_upper)) { std::cout << "count(minor_scales_with_density_upper): " << std::setw(20) << count(minor_scales_with_density_upper) << "\n"; }
-    if (allocated(scale_by_complement_lower      )) { std::cout << "count(scale_by_complement_lower      ): " << std::setw(20) << count(scale_by_complement_lower      ) << "\n"; }
-    if (allocated(scale_by_complement_upper      )) { std::cout << "count(scale_by_complement_upper      ): " << std::setw(20) << count(scale_by_complement_upper      ) << "\n"; }
-    if (allocated(is_key                         )) { std::cout << "count(is_key                         ): " << std::setw(20) << count(is_key                         ) << "\n"; }
+    std::string prefix = print_prefix ? "JGFY" : "";
+
+                                                      std::cout << prefix << "name                                  : " << std::setw(20) << name                                   << "\n";
+                                                      std::cout << prefix << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n";
+                                                      std::cout << prefix << "press_ref_min                         : " << std::setw(20) << press_ref_min                          << "\n";
+                                                      std::cout << prefix << "press_ref_max                         : " << std::setw(20) << press_ref_max                          << "\n";
+                                                      std::cout << prefix << "temp_ref_min                          : " << std::setw(20) << temp_ref_min                           << "\n";
+                                                      std::cout << prefix << "temp_ref_max                          : " << std::setw(20) << temp_ref_max                           << "\n";
+                                                      std::cout << prefix << "press_ref_log_delta                   : " << std::setw(20) << press_ref_log_delta                    << "\n";
+                                                      std::cout << prefix << "temp_ref_delta                        : " << std::setw(20) << temp_ref_delta                         << "\n";
+                                                      std::cout << prefix << "press_ref_trop_log                    : " << std::setw(20) << press_ref_trop_log                     << "\n";
+    if (allocated(band2gpt                       )) { std::cout << prefix << "sum(band2gpt     )                    : " << std::setw(20) << sum(band2gpt     )                     << "\n"; }
+    if (allocated(gpt2band                       )) { std::cout << prefix << "sum(gpt2band     )                    : " << std::setw(20) << sum(gpt2band     )                     << "\n"; }
+    if (allocated(band_lims_wvn                  )) { std::cout << prefix << "sum(band_lims_wvn)                    : " << std::setw(20) << sum(band_lims_wvn)                     << "\n"; }
+    if (allocated(press_ref                      )) { std::cout << prefix << "sum(press_ref    )                    : " << std::setw(20) << sum(press_ref    )                     << "\n"; }
+    if (allocated(press_ref_log                  )) { std::cout << prefix << "sum(press_ref_log)                    : " << std::setw(20) << sum(press_ref_log)                     << "\n"; }
+    if (allocated(temp_ref                       )) { std::cout << prefix << "sum(temp_ref     )                    : " << std::setw(20) << sum(temp_ref     )                     << "\n"; }
+    if (allocated(vmr_ref                        )) { std::cout << prefix << "sum(vmr_ref                )          : " << std::setw(20) << sum(vmr_ref                )           << "\n"; }
+    if (allocated(flavor                         )) { std::cout << prefix << "sum(flavor                 )          : " << std::setw(20) << sum(flavor                 )           << "\n"; }
+    if (allocated(gpoint_flavor                  )) { std::cout << prefix << "sum(gpoint_flavor          )          : " << std::setw(20) << sum(gpoint_flavor          )           << "\n"; }
+    if (allocated(kmajor                         )) { std::cout << prefix << "sum(kmajor                 )          : " << std::setw(20) << sum(kmajor                 )           << "\n"; }
+    if (allocated(minor_limits_gpt_lower         )) { std::cout << prefix << "sum(minor_limits_gpt_lower )          : " << std::setw(20) << sum(minor_limits_gpt_lower )           << "\n"; }
+    if (allocated(minor_limits_gpt_upper         )) { std::cout << prefix << "sum(minor_limits_gpt_upper )          : " << std::setw(20) << sum(minor_limits_gpt_upper )           << "\n"; }
+    if (allocated(idx_minor_lower                )) { std::cout << prefix << "sum(idx_minor_lower        )          : " << std::setw(20) << sum(idx_minor_lower        )           << "\n"; }
+    if (allocated(idx_minor_upper                )) { std::cout << prefix << "sum(idx_minor_upper        )          : " << std::setw(20) << sum(idx_minor_upper        )           << "\n"; }
+    if (allocated(idx_minor_scaling_lower        )) { std::cout << prefix << "sum(idx_minor_scaling_lower)          : " << std::setw(20) << sum(idx_minor_scaling_lower)           << "\n"; }
+    if (allocated(idx_minor_scaling_upper        )) { std::cout << prefix << "sum(idx_minor_scaling_upper)          : " << std::setw(20) << sum(idx_minor_scaling_upper)           << "\n"; }
+    if (allocated(kminor_start_lower             )) { std::cout << prefix << "sum(kminor_start_lower     )          : " << std::setw(20) << sum(kminor_start_lower     )           << "\n"; }
+    if (allocated(kminor_start_upper             )) { std::cout << prefix << "sum(kminor_start_upper     )          : " << std::setw(20) << sum(kminor_start_upper     )           << "\n"; }
+    if (allocated(kminor_lower                   )) { std::cout << prefix << "sum(kminor_lower           )          : " << std::setw(20) << sum(kminor_lower           )           << "\n"; }
+    if (allocated(kminor_upper                   )) { std::cout << prefix << "sum(kminor_upper           )          : " << std::setw(20) << sum(kminor_upper           )           << "\n"; }
+    if (allocated(krayl                          )) { std::cout << prefix << "sum(krayl                  )          : " << std::setw(20) << sum(krayl                  )           << "\n"; }
+    if (allocated(planck_frac                    )) { std::cout << prefix << "sum(planck_frac            )          : " << std::setw(20) << sum(planck_frac            )           << "\n"; }
+    if (allocated(totplnk                        )) { std::cout << prefix << "sum(totplnk                )          : " << std::setw(20) << sum(totplnk                )           << "\n"; }
+    if (allocated(solar_src                      )) { std::cout << prefix << "sum(solar_src              )          : " << std::setw(20) << sum(solar_src              )           << "\n"; }
+    if (allocated(minor_scales_with_density_lower)) { std::cout << prefix << "count(minor_scales_with_density_lower): " << std::setw(20) << count(minor_scales_with_density_lower) << "\n"; }
+    if (allocated(minor_scales_with_density_upper)) { std::cout << prefix << "count(minor_scales_with_density_upper): " << std::setw(20) << count(minor_scales_with_density_upper) << "\n"; }
+    if (allocated(scale_by_complement_lower      )) { std::cout << prefix << "count(scale_by_complement_lower      ): " << std::setw(20) << count(scale_by_complement_lower      ) << "\n"; }
+    if (allocated(scale_by_complement_upper      )) { std::cout << prefix << "count(scale_by_complement_upper      ): " << std::setw(20) << count(scale_by_complement_upper      ) << "\n"; }
+    if (allocated(is_key                         )) { std::cout << prefix << "count(is_key                         ): " << std::setw(20) << count(is_key                         ) << "\n"; }
   }
 
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class GasOpticsRRTMGPK : public OpticalPropsK {
@@ -1734,8 +1739,10 @@ public:
     // creates log reference pressure
     this->press_ref_log = real1dk("press_ref_log", this->press_ref.extent(0));
     // Running a kernel because it's more convenient in this case
+    auto this_press_ref_log = this->press_ref_log;
+    auto this_press_ref = this->press_ref;
     Kokkos::parallel_for( this->press_ref.extent(0) , KOKKOS_LAMBDA (int i) {
-      this->press_ref_log(i) = log(this->press_ref(i));
+       this_press_ref_log(i) = log(this_press_ref(i));
     });
 
     // log scale of reference pressure (this is a scalar, not an array)
@@ -1793,8 +1800,10 @@ public:
     this->is_key = bool1dk("is_key",this->get_ngas());
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
+    auto this_flavor = this->flavor;
+    auto this_is_key = this->is_key;
     Kokkos::parallel_for( MDRangeP<2>( {0, 0}, {this->flavor.extent(0), this->flavor.extent(1)} ) , KOKKOS_LAMBDA (int i, int j) {
-      if (this->flavor(i,j) != -1) { this->is_key(this->flavor(i,j)) = true; }
+      if (this_flavor(i,j) != -1) { this_is_key(this_flavor(i,j)) = true; }
     });
   }
 
@@ -2037,8 +2046,9 @@ public:
     // External source function is constant
     if (toa_src.extent(0) != ncol || toa_src.extent(1) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , YAKL_LAMBDA (int igpt, int icol) {
-      toa_src(icol,igpt) = this->solar_src(igpt);
+    auto this_solar_src = this->solar_src;
+    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+      toa_src(icol,igpt) = this_solar_src(igpt);
     });
   }
 
@@ -2176,7 +2186,7 @@ public:
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
       //   do icol = 1, ncol
-      Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay+1,ncol}) , YAKL_LAMBDA (int ilay, int icol) {
+      Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay+1,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         if (ilay == 0) {
           tlev_wk(icol,0) = tlay(icol,0) + (plev(icol,0)-play(icol,0))*(tlay(icol,1)-tlay(icol,0)) / (play(icol,1)-play(icol,0));
         }
@@ -2193,7 +2203,7 @@ public:
     }
     // Compute internal (Planck) source functions at layers and levels,
     //  which depend on mapping from spectral space that creates k-distribution.
-    int nlayTmp = yakl::intrinsics::merge( nlay-1 , 0 , top_at_1 );
+    int nlayTmp = conv::merge( nlay-1 , 0 , top_at_1 );
     compute_Planck_source(ncol, nlay, nbnd, ngpt, this->get_nflav(), this->get_neta(), this->get_npres(), this->get_ntemp(),
                           this->get_nPlanckTemp(), tlay, tlev_wk, tsfc, nlayTmp, fmajor, jeta, tropo, jtemp, jpress,
                           this->get_gpoint_bands(), this->get_band_lims_gpoint(), this->planck_frac, this->temp_ref_min,
@@ -2223,7 +2233,7 @@ public:
     if (latitude.is_allocated()) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
-      Kokkos::parallel_for( ncol , YAKL_LAMBDA (int icol) {
+      Kokkos::parallel_for( ncol , KOKKOS_LAMBDA (int icol) {
         g0(icol) = helmert1 - helmert2 * cos(2.0 * M_PI * latitude(icol) / 180.0); // acceleration due to gravity [m/s^2]
       });
     } else {
@@ -2239,7 +2249,7 @@ public:
     //   do icol = 1, ncol
     const auto m_dry = ::m_dry;
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
-      real delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1));
+      real delta_plev = Kokkos::fabs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1. / (1.+vmr_h2o(icol,ilev));
       real m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
@@ -2274,48 +2284,49 @@ public:
     }
   }
 
-  void print_norms() const {
-                                                      std::cout << "name                                  : " << std::setw(20) << name                                   << "\n";
-                                                      std::cout << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n";
-                                                      std::cout << "press_ref_min                         : " << std::setw(20) << press_ref_min                          << "\n";
-                                                      std::cout << "press_ref_max                         : " << std::setw(20) << press_ref_max                          << "\n";
-                                                      std::cout << "temp_ref_min                          : " << std::setw(20) << temp_ref_min                           << "\n";
-                                                      std::cout << "temp_ref_max                          : " << std::setw(20) << temp_ref_max                           << "\n";
-                                                      std::cout << "press_ref_log_delta                   : " << std::setw(20) << press_ref_log_delta                    << "\n";
-                                                      std::cout << "temp_ref_delta                        : " << std::setw(20) << temp_ref_delta                         << "\n";
-                                                      std::cout << "press_ref_trop_log                    : " << std::setw(20) << press_ref_trop_log                     << "\n";
-    //if (gas_names.is_allocated()                      ) { std::cout << "gas_names                             : " << std::setw(20) << gas_names                              << "\n"; }
-    if (band2gpt.is_allocated()                       ) { std::cout << "sum(band2gpt     )                    : " << std::setw(20) << conv::sum(band2gpt     )                     << "\n"; }
-    if (gpt2band.is_allocated()                       ) { std::cout << "sum(gpt2band     )                    : " << std::setw(20) << conv::sum(gpt2band     )                     << "\n"; }
-    if (band_lims_wvn.is_allocated()                  ) { std::cout << "sum(band_lims_wvn)                    : " << std::setw(20) << conv::sum(band_lims_wvn)                     << "\n"; }
-    if (press_ref.is_allocated()                      ) { std::cout << "sum(press_ref    )                    : " << std::setw(20) << conv::sum(press_ref    )                     << "\n"; }
-    if (press_ref_log.is_allocated()                  ) { std::cout << "sum(press_ref_log)                    : " << std::setw(20) << conv::sum(press_ref_log)                     << "\n"; }
-    if (temp_ref.is_allocated()                       ) { std::cout << "sum(temp_ref     )                    : " << std::setw(20) << conv::sum(temp_ref     )                     << "\n"; }
-    if (vmr_ref.is_allocated()                        ) { std::cout << "sum(vmr_ref                )          : " << std::setw(20) << conv::sum(vmr_ref                )           << "\n"; }
-    if (flavor.is_allocated()                         ) { std::cout << "sum(flavor                 )          : " << std::setw(20) << conv::sum(flavor                 )           << "\n"; }
-    if (gpoint_flavor.is_allocated()                  ) { std::cout << "sum(gpoint_flavor          )          : " << std::setw(20) << conv::sum(gpoint_flavor          )           << "\n"; }
-    if (kmajor.is_allocated()                         ) { std::cout << "sum(kmajor                 )          : " << std::setw(20) << conv::sum(kmajor                 )           << "\n"; }
-    if (minor_limits_gpt_lower.is_allocated()         ) { std::cout << "sum(minor_limits_gpt_lower )          : " << std::setw(20) << conv::sum(minor_limits_gpt_lower )           << "\n"; }
-    if (minor_limits_gpt_upper.is_allocated()         ) { std::cout << "sum(minor_limits_gpt_upper )          : " << std::setw(20) << conv::sum(minor_limits_gpt_upper )           << "\n"; }
-    if (idx_minor_lower.is_allocated()                ) { std::cout << "sum(idx_minor_lower        )          : " << std::setw(20) << conv::sum(idx_minor_lower        )           << "\n"; }
-    if (idx_minor_upper.is_allocated()                ) { std::cout << "sum(idx_minor_upper        )          : " << std::setw(20) << conv::sum(idx_minor_upper        )           << "\n"; }
-    if (idx_minor_scaling_lower.is_allocated()        ) { std::cout << "sum(idx_minor_scaling_lower)          : " << std::setw(20) << conv::sum(idx_minor_scaling_lower)           << "\n"; }
-    if (idx_minor_scaling_upper.is_allocated()        ) { std::cout << "sum(idx_minor_scaling_upper)          : " << std::setw(20) << conv::sum(idx_minor_scaling_upper)           << "\n"; }
-    if (kminor_start_lower.is_allocated()             ) { std::cout << "sum(kminor_start_lower     )          : " << std::setw(20) << conv::sum(kminor_start_lower     )           << "\n"; }
-    if (kminor_start_upper.is_allocated()             ) { std::cout << "sum(kminor_start_upper     )          : " << std::setw(20) << conv::sum(kminor_start_upper     )           << "\n"; }
-    if (kminor_lower.is_allocated()                   ) { std::cout << "sum(kminor_lower           )          : " << std::setw(20) << conv::sum(kminor_lower           )           << "\n"; }
-    if (kminor_upper.is_allocated()                   ) { std::cout << "sum(kminor_upper           )          : " << std::setw(20) << conv::sum(kminor_upper           )           << "\n"; }
-    if (krayl.is_allocated()                          ) { std::cout << "sum(krayl                  )          : " << std::setw(20) << conv::sum(krayl                  )           << "\n"; }
-    if (planck_frac.is_allocated()                    ) { std::cout << "sum(planck_frac            )          : " << std::setw(20) << conv::sum(planck_frac            )           << "\n"; }
-    if (totplnk.is_allocated()                        ) { std::cout << "sum(totplnk                )          : " << std::setw(20) << conv::sum(totplnk                )           << "\n"; }
-    if (solar_src.is_allocated()                      ) { std::cout << "sum(solar_src              )          : " << std::setw(20) << conv::sum(solar_src              )           << "\n"; }
-    if (minor_scales_with_density_lower.is_allocated()) { std::cout << "count(minor_scales_with_density_lower): " << std::setw(20) << conv::sum(minor_scales_with_density_lower) << "\n"; }
-    if (minor_scales_with_density_upper.is_allocated()) { std::cout << "count(minor_scales_with_density_upper): " << std::setw(20) << conv::sum(minor_scales_with_density_upper) << "\n"; }
-    if (scale_by_complement_lower.is_allocated()      ) { std::cout << "count(scale_by_complement_lower      ): " << std::setw(20) << conv::sum(scale_by_complement_lower      ) << "\n"; }
-    if (scale_by_complement_upper.is_allocated()      ) { std::cout << "count(scale_by_complement_upper      ): " << std::setw(20) << conv::sum(scale_by_complement_upper      ) << "\n"; }
-    if (is_key.is_allocated()                         ) { std::cout << "count(is_key                         ): " << std::setw(20) << conv::sum(is_key                         ) << "\n"; }
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+                                                      std::cout << prefix << "name                                  : " << std::setw(20) << name                                   << "\n";
+                                                      std::cout << prefix << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n";
+                                                      std::cout << prefix << "press_ref_min                         : " << std::setw(20) << press_ref_min                          << "\n";
+                                                      std::cout << prefix << "press_ref_max                         : " << std::setw(20) << press_ref_max                          << "\n";
+                                                      std::cout << prefix << "temp_ref_min                          : " << std::setw(20) << temp_ref_min                           << "\n";
+                                                      std::cout << prefix << "temp_ref_max                          : " << std::setw(20) << temp_ref_max                           << "\n";
+                                                      std::cout << prefix << "press_ref_log_delta                   : " << std::setw(20) << press_ref_log_delta                    << "\n";
+                                                      std::cout << prefix << "temp_ref_delta                        : " << std::setw(20) << temp_ref_delta                         << "\n";
+                                                      std::cout << prefix << "press_ref_trop_log                    : " << std::setw(20) << press_ref_trop_log                     << "\n";
+    if (band2gpt.is_allocated()                       ) { std::cout << prefix << "sum(band2gpt     )                    : " << std::setw(20) << conv::sum(band2gpt     )                     << "\n"; }
+    if (gpt2band.is_allocated()                       ) { std::cout << prefix << "sum(gpt2band     )                    : " << std::setw(20) << conv::sum(gpt2band     )                     << "\n"; }
+    if (band_lims_wvn.is_allocated()                  ) { std::cout << prefix << "sum(band_lims_wvn)                    : " << std::setw(20) << conv::sum(band_lims_wvn)                     << "\n"; }
+    if (press_ref.is_allocated()                      ) { std::cout << prefix << "sum(press_ref    )                    : " << std::setw(20) << conv::sum(press_ref    )                     << "\n"; }
+    if (press_ref_log.is_allocated()                  ) { std::cout << prefix << "sum(press_ref_log)                    : " << std::setw(20) << conv::sum(press_ref_log)                     << "\n"; }
+    if (temp_ref.is_allocated()                       ) { std::cout << prefix << "sum(temp_ref     )                    : " << std::setw(20) << conv::sum(temp_ref     )                     << "\n"; }
+    if (vmr_ref.is_allocated()                        ) { std::cout << prefix << "sum(vmr_ref                )          : " << std::setw(20) << conv::sum(vmr_ref                )           << "\n"; }
+    if (flavor.is_allocated()                         ) { std::cout << prefix << "sum(flavor                 )          : " << std::setw(20) << conv::sum(flavor                 )           << "\n"; }
+    if (gpoint_flavor.is_allocated()                  ) { std::cout << prefix << "sum(gpoint_flavor          )          : " << std::setw(20) << conv::sum(gpoint_flavor          )           << "\n"; }
+    if (kmajor.is_allocated()                         ) { std::cout << prefix << "sum(kmajor                 )          : " << std::setw(20) << conv::sum(kmajor                 )           << "\n"; }
+    if (minor_limits_gpt_lower.is_allocated()         ) { std::cout << prefix << "sum(minor_limits_gpt_lower )          : " << std::setw(20) << conv::sum(minor_limits_gpt_lower )           << "\n"; }
+    if (minor_limits_gpt_upper.is_allocated()         ) { std::cout << prefix << "sum(minor_limits_gpt_upper )          : " << std::setw(20) << conv::sum(minor_limits_gpt_upper )           << "\n"; }
+    if (idx_minor_lower.is_allocated()                ) { std::cout << prefix << "sum(idx_minor_lower        )          : " << std::setw(20) << conv::sum(idx_minor_lower        )           << "\n"; }
+    if (idx_minor_upper.is_allocated()                ) { std::cout << prefix << "sum(idx_minor_upper        )          : " << std::setw(20) << conv::sum(idx_minor_upper        )           << "\n"; }
+    if (idx_minor_scaling_lower.is_allocated()        ) { std::cout << prefix << "sum(idx_minor_scaling_lower)          : " << std::setw(20) << conv::sum(idx_minor_scaling_lower)           << "\n"; }
+    if (idx_minor_scaling_upper.is_allocated()        ) { std::cout << prefix << "sum(idx_minor_scaling_upper)          : " << std::setw(20) << conv::sum(idx_minor_scaling_upper)           << "\n"; }
+    if (kminor_start_lower.is_allocated()             ) { std::cout << prefix << "sum(kminor_start_lower     )          : " << std::setw(20) << conv::sum(kminor_start_lower     )           << "\n"; }
+    if (kminor_start_upper.is_allocated()             ) { std::cout << prefix << "sum(kminor_start_upper     )          : " << std::setw(20) << conv::sum(kminor_start_upper     )           << "\n"; }
+    if (kminor_lower.is_allocated()                   ) { std::cout << prefix << "sum(kminor_lower           )          : " << std::setw(20) << conv::sum(kminor_lower           )           << "\n"; }
+    if (kminor_upper.is_allocated()                   ) { std::cout << prefix << "sum(kminor_upper           )          : " << std::setw(20) << conv::sum(kminor_upper           )           << "\n"; }
+    if (krayl.is_allocated()                          ) { std::cout << prefix << "sum(krayl                  )          : " << std::setw(20) << conv::sum(krayl                  )           << "\n"; }
+    if (planck_frac.is_allocated()                    ) { std::cout << prefix << "sum(planck_frac            )          : " << std::setw(20) << conv::sum(planck_frac            )           << "\n"; }
+    if (totplnk.is_allocated()                        ) { std::cout << prefix << "sum(totplnk                )          : " << std::setw(20) << conv::sum(totplnk                )           << "\n"; }
+    if (solar_src.is_allocated()                      ) { std::cout << prefix << "sum(solar_src              )          : " << std::setw(20) << conv::sum(solar_src              )           << "\n"; }
+    if (minor_scales_with_density_lower.is_allocated()) { std::cout << prefix << "count(minor_scales_with_density_lower): " << std::setw(20) << conv::sum(minor_scales_with_density_lower) << "\n"; }
+    if (minor_scales_with_density_upper.is_allocated()) { std::cout << prefix << "count(minor_scales_with_density_upper): " << std::setw(20) << conv::sum(minor_scales_with_density_upper) << "\n"; }
+    if (scale_by_complement_lower.is_allocated()      ) { std::cout << prefix << "count(scale_by_complement_lower      ): " << std::setw(20) << conv::sum(scale_by_complement_lower      ) << "\n"; }
+    if (scale_by_complement_upper.is_allocated()      ) { std::cout << prefix << "count(scale_by_complement_upper      ): " << std::setw(20) << conv::sum(scale_by_complement_upper      ) << "\n"; }
+    if (is_key.is_allocated()                         ) { std::cout << prefix << "count(is_key                         ): " << std::setw(20) << conv::sum(is_key                         ) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const GasOpticsRRTMGP& orig) const
   {
     OpticalPropsK::validate_kokkos(orig);
@@ -2371,6 +2382,7 @@ public:
 
     conv::compare_yakl_to_kokkos(orig.is_key, is_key);
   }
+#endif
 
 };
 #endif

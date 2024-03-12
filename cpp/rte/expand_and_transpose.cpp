@@ -1,6 +1,7 @@
 
 #include "expand_and_transpose.h"
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)
 void expand_and_transpose(OpticalProps const &ops, real2d const &arr_in, real2d const &arr_out) {
   using yakl::intrinsics::size;
@@ -19,6 +20,7 @@ void expand_and_transpose(OpticalProps const &ops, real2d const &arr_in, real2d 
     }
   });
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)

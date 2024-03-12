@@ -28,7 +28,7 @@
 //
 // -------------------------------------------------------------------------------------------------
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 class GasConcs {
 public:
   static int constexpr GAS_NOT_IN_LIST = -1;
@@ -204,24 +204,28 @@ public:
   }
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
+
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
 
-    std::cout << "ncol      : " << ncol       << "\n";
-    std::cout << "nlay      : " << nlay       << "\n";
-    std::cout << "ngas      : " << ngas       << "\n";
-    if (allocated(gas_name)) {
-      std::cout << "gas_name  : ";
+    std::string prefix = print_prefix ? "JGFY" : "";
+
+    std::cout << prefix << "ncol      : " << ncol       << "\n";
+    std::cout << prefix << "nlay      : " << nlay       << "\n";
+    std::cout << prefix << "ngas      : " << ngas       << "\n";
+    if (gas_name.size() > 0) {
+      std::cout << prefix << "gas_name  : ";
       for (auto& item : gas_name) {
         std::cout << item << " ";
       }
       std::cout << "\n";
     }
-    if (allocated(concs   )) { std::cout << "sum(concs): " << sum(concs) << "\n"; }
+    if (allocated(concs   )) { std::cout << prefix << "sum(concs): " << sum(concs) << "\n"; }
   }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class GasConcsK {
@@ -353,8 +357,9 @@ public:
     if (igas == GAS_NOT_IN_LIST) { stoprun("GasConcs::get_vmr; gas not found" ); }
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
+    auto this_concs = this->concs;
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
-      array(icol,ilay) = this->concs(icol,ilay,igas);
+      array(icol,ilay) = this_concs(icol,ilay,igas);
     });
   }
 
@@ -374,23 +379,26 @@ public:
   }
 
 
-  void print_norms() const {
-    std::cout << "ncol      : " << ncol       << "\n";
-    std::cout << "nlay      : " << nlay       << "\n";
-    std::cout << "ngas      : " << ngas       << "\n";
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+    std::cout << prefix << "ncol      : " << ncol       << "\n";
+    std::cout << prefix << "nlay      : " << nlay       << "\n";
+    std::cout << prefix << "ngas      : " << ngas       << "\n";
     if (gas_name.size() > 0) {
-      std::cout << "gas_name  : ";
+      std::cout << prefix << "gas_name  : ";
       for (auto& item : gas_name) {
         std::cout << item << " ";
       }
       std::cout << "\n";
     }
-    if (concs.is_allocated()) { std::cout << "sum(concs): " << conv::sum(concs) << "\n"; }
+    if (concs.is_allocated()) { std::cout << prefix << "sum(concs): " << conv::sum(concs) << "\n"; }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const GasConcs& orig) const {
     conv::compare_yakl_to_kokkos(orig.concs, concs);
   }
+#endif
 
 };
 #endif

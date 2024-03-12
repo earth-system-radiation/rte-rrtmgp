@@ -2,7 +2,7 @@
 #include "mo_optical_props_kernels.h"
 
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 // increment 2stream by 2stream
 void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
                                   real3d const &tau1, real3d const &ssa1, real3d const &g1,
@@ -595,6 +595,7 @@ void extract_subset_absorption_tau(int ncol, int nlay, int ngpt, real3d const &t
   });
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // increment 2stream by 2stream
@@ -615,8 +616,8 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
       real tauscat12 = tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) +
                        tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd);
       g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) +
-                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / std::max(eps,tauscat12);
-      ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
+                            tau2(icol,ilay,ibnd) * ssa2(icol,ilay,ibnd) * g2(icol,ilay,ibnd)) / Kokkos::fmax(eps,tauscat12);
+      ssa1(icol,ilay,igpt) = tauscat12 / Kokkos::fmax(eps,tau12);
       tau1(icol,ilay,igpt) = tau12;
     }
   });
@@ -717,8 +718,8 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3dk const &t
                      tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt);
     g1(icol,ilay,igpt) = (tau1(icol,ilay,igpt) * ssa1(icol,ilay,igpt) * g1(icol,ilay,igpt) +
                           tau2(icol,ilay,igpt) * ssa2(icol,ilay,igpt) * g2(icol,ilay,igpt))
-                           / std::max(eps,tauscat12);
-    ssa1(icol,ilay,igpt) = tauscat12 / std::max(eps,tau12);
+                           / Kokkos::fmax(eps,tauscat12);
+    ssa1(icol,ilay,igpt) = tauscat12 / Kokkos::fmax(eps,tau12);
     tau1(icol,ilay,igpt) = tau12;
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";

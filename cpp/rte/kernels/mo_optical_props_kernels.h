@@ -3,6 +3,7 @@
 
 #include "rrtmgp_const.h"
 
+#ifdef RRTMGP_ENABLE_YAKL
 // increment 2stream by 2stream
 void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
                                   real3d const &tau1, real3d const &ssa1, real3d const &g1,
@@ -144,6 +145,7 @@ void extract_subset_dim2_4d(int nmom, int ncol, int nlay, int ngpt, real3d const
 // Extract the absorption optical thickness which requires mulitplying by 1 - ssa
 void extract_subset_absorption_tau(int ncol, int nlay, int ngpt, real3d const &tau_in, real3d const &ssa_in, int colS, int colE,
                                    real3d const &tau_out);
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 

@@ -5,7 +5,24 @@
 #include <netcdf.h>
 #include <stdexcept>
 
+// Validate if both enabled?
 #ifdef RRTMGP_ENABLE_KOKKOS
+#ifdef RRTMGP_ENABLE_YAKL
+// Both are on, validate
+#define COMPUTE_SWITCH(yimpl, kimpl) \
+  (kimpl); RRT_REQUIRE((yimpl) == (kimpl), "Bad COMPUTE_SWITCH")
+#else
+#define COMPUTE_SWITCH(yimpl, kimpl) kimpl
+#endif
+#else
+#define COMPUTE_SWITCH(yimpl, kimpl) yimpl
+#endif
+
+#ifdef RRTMGP_ENABLE_KOKKOS
+#define GENERIC_INLINE KOKKOS_INLINE_FUNCTION
+#else
+#define GENERIC_INLINE YAKL_INLINE
+#endif
 
 /**
  * Helper functions for the conversion to Kokkos
@@ -13,15 +30,43 @@
 
 namespace conv {
 
+// Print an entire view + sentinel
+template <typename KView>
+void printk(const std::string& name, const KView& view)
+{
+  for (size_t i = 0; i < view.size(); ++i) {
+    std::cout << "JGFK " << name << "(" << i << ") = " << view.data()[i] << std::endl;
+  }
+}
+
+// Print an entire yakl array + sentinel
+template <typename YArray>
+void printy(const std::string& name, const YArray& array)
+{
+  for (size_t i = 0; i < array.totElems(); ++i) {
+    std::cout << "JGFY " << name << "(" << i << ") = " << array.data()[i] << std::endl;
+  }
+}
+
+// Copied from YAKL
+template <class T1, class T2,
+          typename std::enable_if<std::is_arithmetic<T1>::value && std::is_arithmetic<T2>::value,bool>::type=false>
+GENERIC_INLINE decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) { return cond ? t : f; }
+
 // A meta function that will return true if T is either a Kokkos::View or a
 // Kokkos::OffsetView (we use these in a couple places).
 template <typename T>
 struct is_view
 {
+#ifdef RRTMGP_ENABLE_KOKKOS
   static constexpr bool value = Kokkos::is_view<T>::value || Kokkos::Experimental::is_offset_view<T>::value;
+#else
+  static constexpr bool value = false;
+#endif
 };
 
 // Convenient way of using is_view meta function
+
 template <class T>
 inline constexpr bool is_view_v = is_view<T>::value;
 
@@ -29,12 +74,12 @@ inline constexpr bool is_view_v = is_view<T>::value;
 // or View.
 template <class T,
           typename std::enable_if<!is_view_v<T>>::type* = nullptr>
-KOKKOS_INLINE_FUNCTION
+GENERIC_INLINE
 T constexpr epsilon(T) { return std::numeric_limits<T>::epsilon(); }
 
 template <class View,
           typename std::enable_if<is_view_v<View>>::type* = nullptr>
-KOKKOS_INLINE_FUNCTION
+GENERIC_INLINE
 typename View::non_const_value_type constexpr epsilon(const View& arr)
 { return std::numeric_limits<typename View::non_const_value_type>::epsilon(); }
 
@@ -135,6 +180,28 @@ do {                                                      \
 // not an assert macro, so it's always on.
 #define RRT_REQUIRE(condition, msg) IMPL_THROW_RRT(condition, msg, std::runtime_error)
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+
+// Macros for validating kokkos using yakl. These all do nothing if
+// YAKL is not enabled.
+#ifdef RRTMGP_ENABLE_YAKL
+#define VALIDATE_KOKKOS(yobj, kobj) kobj.validate_kokkos(yobj)
+#else
+#define VALIDATE_KOKKOS(yobj, kobj) (void)0
+#endif
+
+#ifdef RRTMGP_ENABLE_YAKL
+#define COMPARE_ALL_WRAP(yobjs, kobjs) conv::compare_all_yakl_to_kokkos(yobjs, kobjs)
+#else
+#define COMPARE_ALL_WRAP(yobjs, kobjs) (void)0
+#endif
+
+#ifdef RRTMGP_ENABLE_YAKL
+#define COMPARE_WRAP(yobj, kobj) conv::compare_yakl_to_kokkos(yobj, kobj)
+#else
+#define COMPARE_WRAP(yobj, kobj) (void)0
+#endif
+
 // Copied from EKAT. Get Kokkos view template type
 template<typename T, int N>
 struct DataND {
@@ -173,6 +240,7 @@ bool approx_eq<real>(const real lhs, const real rhs)
   return std::abs(lhs - rhs) < tol;
 }
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Compare a yakl array to a kokkos view, checking they are functionally
 // identical (same rank, dims, and values).
 template <typename YArray, typename KView>
@@ -258,6 +326,7 @@ typename ToYakl<KView>::type to_yakl(const KView& view)
   });
   return rv;
 }
+#endif
 
 // A < functor
 template <typename T>
@@ -308,41 +377,26 @@ typename KView::non_const_value_type maxval(const KView& view)
 
 // Get sum of view
 template <typename KView>
-typename KView::non_const_value_type sum(const KView& view)
+std::conditional_t<std::is_same<typename KView::non_const_value_type, bool>::value, int, typename KView::non_const_value_type>
+sum(const KView& view)
 {
   using scalar_t    = typename KView::non_const_value_type;
   using exe_space_t = typename KView::execution_space;
   using sum_t       = std::conditional_t<std::is_same<scalar_t, bool>::value, int, scalar_t>;
 
+  // If comparing sums of ints against f90, the values will need to be adjusted if
+  // the sums are going to match. This would only be done during debugging, so disable
+  // this for now.
+  // auto adjust = std::is_same<scalar_t, int>::value ? 1 : 0;
+
   sum_t rv;
   Kokkos::parallel_reduce(
     Kokkos::RangePolicy<exe_space_t>(0, view.size()),
     KOKKOS_LAMBDA(size_t i, sum_t& lsum) {
-      lsum += view.data()[i];
+      lsum += (view.data()[i] /*+ adjust*/);
     }, Kokkos::Sum<sum_t>(rv));
   return rv;
 }
-
-// Print an entire view + sentinel
-template <typename KView,
-          typename std::enable_if<is_view_v<KView>>::type* = nullptr>
-void print(const std::string& name, const KView& view)
-{
-  for (size_t i = 0; i < view.size(); ++i) {
-    std::cout << "JGFK " << name << "(" << i << ") = " << view.data()[i] << std::endl;
-  }
-}
-
-// Print an entire yakl array + sentinel
-template <typename YArray,
-          typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
-void print(const std::string& name, const YArray& array)
-{
-  for (size_t i = 0; i < array.totElems(); ++i) {
-    std::cout << "JGFY " << name << "(" << i << ") = " << array.data()[i] << std::endl;
-  }
-}
-
 
 //Error reporting routine for the PNetCDF I/O
 /** @private */
@@ -973,6 +1027,6 @@ public:
   }
 };
 
-}
-
 #endif
+
+}

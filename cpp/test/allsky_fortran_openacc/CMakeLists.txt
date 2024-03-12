@@ -36,3 +36,6 @@ add_executable(allsky_fortran_openacc ${FORTRAN_FILES_ACC})
 set_source_files_properties(${FORTRAN_FILES_ACC} PROPERTIES COMPILE_FLAGS "${YAKL_F90_FLAGS}")
 target_link_libraries(allsky_fortran_openacc "${F90_LINK}")
 
+# Multiple executables share similar f90 files. We need to ensure races
+# don't happen in the build system
+add_dependencies(allsky_fortran_openacc allsky_fortran)

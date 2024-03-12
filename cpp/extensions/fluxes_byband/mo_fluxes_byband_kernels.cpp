@@ -1,5 +1,6 @@
 #include "mo_fluxes_byband_kernels.h"
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Spectral reduction over all points
 void sum_byband(int ncol, int nlev, int ngpt, int nbnd, int2d const &bnd_lims, real3d const &spectral_flux, real3d &byband_flux) {
   using yakl::fortran::parallel_for;
@@ -22,8 +23,10 @@ void net_byband(int ncol, int nlev, int nbnd, real3d const &bnd_flux_dn, real3d 
       bnd_flux_net(icol,ilev,ibnd) = bnd_flux_dn(icol,ilev,ibnd) - bnd_flux_up(icol,ilev,ibnd);
   });
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
+// Spectral reduction over all points
 void sum_byband(int ncol, int nlev, int ngpt, int nbnd, int2dk const &bnd_lims, real3dk const &spectral_flux, real3dk &byband_flux) {
   Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlev,ncol}) , KOKKOS_LAMBDA (int ibnd, int ilev, int icol) {
     real bb_flux_s = 0.0;

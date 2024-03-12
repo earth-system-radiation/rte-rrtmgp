@@ -6,7 +6,7 @@
 //#include "mo_fluxes_broadband_kernels.h"
 #include <iomanip>
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 class FluxesByband : public FluxesBroadband {
     public:
         real3d bnd_flux_up;
@@ -42,6 +42,7 @@ class FluxesByband : public FluxesBroadband {
     }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class FluxesBybandK : public FluxesBroadbandK {
@@ -75,6 +76,7 @@ public:
     }
   }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const FluxesByband& orig)
   {
     FluxesBroadbandK::validate_kokkos(orig);
@@ -84,5 +86,6 @@ public:
     conv::compare_yakl_to_kokkos(orig.bnd_flux_dn_dir, bnd_flux_dn_dir);
     conv::compare_yakl_to_kokkos(orig.bnd_flux_net, bnd_flux_net);
   }
+#endif
 };
 #endif

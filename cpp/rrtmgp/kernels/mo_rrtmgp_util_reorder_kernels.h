@@ -3,7 +3,7 @@
 
 #include "rrtmgp_const.h"
 
-
+#ifdef RRTMGP_ENABLE_YAKL
 inline void reorder_123x321_kernel(int d1, int d2, int d3, real3d const &array_in, real3d const &array_out) {
   using yakl::fortran::parallel_for;
   using yakl::fortran::SimpleBounds;
@@ -38,6 +38,7 @@ inline void reorder_123x312_kernel(int d1, int d2, int d3, real3d const &array_i
     array_out(i3,i1,i2) = array_in(i1,i2,i3);
   });
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 inline void reorder_123x321_kernel(int d1, int d2, int d3, real3dk const &array_in, real3dk const &array_out) {

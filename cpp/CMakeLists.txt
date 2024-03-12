@@ -14,18 +14,22 @@ set(CXX_SRC
   rte/kernels/mo_rte_solver_kernels.cpp
 )
 
+set (CMAKE_CXX_STANDARD 17)
+
 # Add RRTMGP as a library and make sure we link against YAKL
 add_library(rrtmgp STATIC ${CXX_SRC})
-target_link_libraries(rrtmgp yakl)
+if (RRTMGP_ENABLE_YAKL)
+  include(${YAKL_HOME}/yakl_utils.cmake)
+  yakl_process_target(rrtmgp)
+  target_include_directories(rrtmgp PUBLIC ${YAKL_HOME})
+  message(STATUS "YAKL Flags: ${YAKL_COMPILER_FLAGS}")
+endif()
+
 if (RRTMGP_ENABLE_KOKKOS)
   target_link_libraries(rrtmgp Kokkos::kokkos)
 endif()
 
 # Special compile flags for C++ source
-include(${YAKL_HOME}/yakl_utils.cmake)
-yakl_process_target(rrtmgp)
-message(STATUS "YAKL Flags: ${YAKL_COMPILER_FLAGS}")
-target_include_directories(rrtmgp PUBLIC ${YAKL_HOME})
 target_include_directories(rrtmgp PUBLIC ./)
 target_include_directories(rrtmgp PUBLIC rte)
 target_include_directories(rrtmgp PUBLIC rte/kernels)

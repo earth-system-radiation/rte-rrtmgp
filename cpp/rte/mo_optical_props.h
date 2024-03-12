@@ -8,6 +8,7 @@
 // Base class for optical properties
 //   Describes the spectral discretization including the wavenumber limits
 //   of each band (spectral region) and the mapping between g-points and bands
+#ifdef RRTMGP_ENABLE_YAKL
 class OpticalProps {
 public:
   int2d  band2gpt;       // (begin g-point, end g-point) = band2gpt(2,band)
@@ -172,7 +173,7 @@ public:
     // auto &this_band_lims_wvn = this->band_lims_wvn;
     // auto &rhs_band_lims_wvn  = rhs.band_lims_wvn;
     // parallel_for( YAKL_AUTO_LABEL() , Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-    //   if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
+    //   if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
     //     ret = false;
     //   }
     // });
@@ -186,7 +187,7 @@ public:
     auto rhs_band_lims_wvn  = rhs.band_lims_wvn  .createHostCopy();
     for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
       for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
-        if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
+        if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
           ret = false;
         }
       }
@@ -249,6 +250,7 @@ public:
   std::string get_name() const { return this->name; }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalPropsK {
@@ -291,10 +293,11 @@ public:
     //   Efficient only when g-point indexes start at 1 and are contiguous.
     this->gpt2band = int1dk("gpt2band", this->ngpt);
     // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(int dummy) {
+    auto this_gpt2band = this->gpt2band;
+    Kokkos::parallel_for(1, KOKKOS_CLASS_LAMBDA(int dummy) {
       for (int iband=0; iband < band_lims_gpt_lcl.extent(1); iband++) {
         for (int i=band_lims_gpt_lcl(0,iband); i <= band_lims_gpt_lcl(1,iband); i++) {
-          this->gpt2band(i) = iband;
+          this_gpt2band(i) = iband;
         }
       }
     });
@@ -398,7 +401,7 @@ public:
     Kokkos::deep_copy(rhs_band_lims_wvn, rhs.band_lims_wvn);
     for (int j=0 ; j < this->band_lims_wvn.extent(1); j++) {
       for (int i=0 ; i < this->band_lims_wvn.extent(0); i++) {
-        if ( abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*conv::epsilon(this_band_lims_wvn) ) {
+        if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*conv::epsilon(this_band_lims_wvn) ) {
           ret = false;
         }
       }
@@ -447,6 +450,7 @@ public:
 
   std::string get_name() const { return this->name; }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const OpticalProps& orig) const
   {
     RRT_REQUIRE(orig.ngpt == ngpt, "Bad ngpt");
@@ -455,9 +459,11 @@ public:
     conv::compare_yakl_to_kokkos(orig.gpt2band, gpt2band, true /*idx data*/);
     conv::compare_yakl_to_kokkos(orig.band_lims_wvn, band_lims_wvn);
   }
+#endif
 };
 #endif
 
+#ifdef RRTMGP_ENABLE_YAKL
 class OpticalPropsArry : public OpticalProps {
 public:
   real3d tau; // optical depth (ncol, nlay, ngpt)
@@ -465,6 +471,7 @@ public:
   int get_ncol() const { if (yakl::intrinsics::allocated(tau)) { return yakl::intrinsics::size(this->tau,1); } else { return 0; } }
   int get_nlay() const { if (yakl::intrinsics::allocated(tau)) { return yakl::intrinsics::size(this->tau,2); } else { return 0; } }
 };
+#endif
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalPropsArryK : public OpticalPropsK {
 public:
@@ -473,21 +480,26 @@ public:
   int get_ncol() const { if (tau.is_allocated()) { return this->tau.extent(0); } else { return 0; } }
   int get_nlay() const { if (tau.is_allocated()) { return this->tau.extent(1); } else { return 0; } }
 
+#ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const OpticalPropsArry& orig) const
   {
     OpticalPropsK::validate_kokkos(orig);
     conv::compare_yakl_to_kokkos(orig.tau, tau);
   }
+#endif
 };
 #endif
 
 
 // We need to know about 2str's existence because it is referenced in 1scl
+#ifdef RRTMGP_ENABLE_YAKL
 class OpticalProps2str;
+#endif
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalProps2strK;
 #endif
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Not implementing get_subset because it isn't used
 class OpticalProps1scl : public OpticalPropsArry {
 public:
@@ -548,18 +560,20 @@ public:
   inline void increment(OpticalProps2str &that);
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
+    std::string prefix = print_prefix ? "JGFY" : "";
 
-                                    std::cout << "name         : " << name               << "\n";
-    if (allocated(band2gpt     )) { std::cout << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
-    if (allocated(gpt2band     )) { std::cout << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
-    if (allocated(band_lims_wvn)) { std::cout << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
-    if (allocated(tau          )) { std::cout << "tau          : " << sum(tau          ) << "\n"; }
+                                    std::cout << prefix << "name         : " << name               << "\n";
+    if (allocated(band2gpt     )) { std::cout << prefix << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
+    if (allocated(gpt2band     )) { std::cout << prefix << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
+    if (allocated(band_lims_wvn)) { std::cout << prefix << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
+    if (allocated(tau          )) { std::cout << prefix << "tau          : " << sum(tau          ) << "\n"; }
   }
 
 };
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalProps1sclK : public OpticalPropsArryK {
@@ -610,17 +624,19 @@ public:
   // Implemented later because OpticalProps2str hasn't been created yet
   inline void increment(OpticalProps2strK &that);
 
-  void print_norms() const {
-                                        std::cout << "name         : " << name               << "\n";
-    if (band2gpt.is_allocated()     ) { std::cout << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
-    if (gpt2band.is_allocated()     ) { std::cout << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
-    if (band_lims_wvn.is_allocated()) { std::cout << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
-    if (tau.is_allocated()          ) { std::cout << "tau          : " << conv::sum(tau          ) << "\n"; }
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+                                        std::cout << prefix << "name         : " << name               << "\n";
+    if (band2gpt.is_allocated()     ) { std::cout << prefix << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
+    if (gpt2band.is_allocated()     ) { std::cout << prefix << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
+    if (band_lims_wvn.is_allocated()) { std::cout << prefix << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
+    if (tau.is_allocated()          ) { std::cout << prefix << "tau          : " << conv::sum(tau          ) << "\n"; }
   }
 };
 #endif
 
 
+#ifdef RRTMGP_ENABLE_YAKL
 // Not implementing get_subset because it isn't used
 class OpticalProps2str : public OpticalPropsArry {
 public:
@@ -735,17 +751,18 @@ public:
   }
 
 
-  void print_norms() const {
+  void print_norms(const bool print_prefix=false) const {
     using yakl::intrinsics::sum;
     using yakl::intrinsics::allocated;
+    std::string prefix = print_prefix ? "JGFY" : "";
 
-                                    std::cout << "name         : " << name               << "\n";
-    if (allocated(band2gpt     )) { std::cout << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
-    if (allocated(gpt2band     )) { std::cout << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
-    if (allocated(band_lims_wvn)) { std::cout << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
-    if (allocated(tau          )) { std::cout << "tau          : " << sum(tau          ) << "\n"; }
-    if (allocated(ssa          )) { std::cout << "ssa          : " << sum(ssa          ) << "\n"; }
-    if (allocated(g            )) { std::cout << "g            : " << sum(g            ) << "\n"; }
+                                    std::cout << prefix << "name         : " << name               << "\n";
+    if (allocated(band2gpt     )) { std::cout << prefix << "band2gpt     : " << sum(band2gpt     ) << "\n"; }
+    if (allocated(gpt2band     )) { std::cout << prefix << "gpt2band     : " << sum(gpt2band     ) << "\n"; }
+    if (allocated(band_lims_wvn)) { std::cout << prefix << "band_lims_wvn: " << sum(band_lims_wvn) << "\n"; }
+    if (allocated(tau          )) { std::cout << prefix << "tau          : " << sum(tau          ) << "\n"; }
+    if (allocated(ssa          )) { std::cout << prefix << "ssa          : " << sum(ssa          ) << "\n"; }
+    if (allocated(g            )) { std::cout << prefix << "g            : " << sum(g            ) << "\n"; }
   }
 
 };
@@ -765,6 +782,7 @@ inline void OpticalProps1scl::increment(OpticalProps2str &that) {
     inc_2stream_by_1scalar_bybnd(ncol, nlay, ngpt, that.tau, that.ssa, this->tau, that.get_nband(), that.get_band_lims_gpoint());
   }
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 class OpticalProps2strK : public OpticalPropsArryK {
@@ -869,14 +887,15 @@ public:
   }
 
 
-  void print_norms() const {
-                                        std::cout << "name         : " << name                     << "\n";
-    if (band2gpt.is_allocated()     ) { std::cout << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
-    if (gpt2band.is_allocated()     ) { std::cout << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
-    if (band_lims_wvn.is_allocated()) { std::cout << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
-    if (tau.is_allocated()          ) { std::cout << "tau          : " << conv::sum(tau          ) << "\n"; }
-    if (ssa.is_allocated()          ) { std::cout << "ssa          : " << conv::sum(ssa          ) << "\n"; }
-    if (g.is_allocated()            ) { std::cout << "g            : " << conv::sum(g            ) << "\n"; }
+  void print_norms(const bool print_prefix=false) const {
+    std::string prefix = print_prefix ? "JGFK" : "";
+                                        std::cout << prefix << "name         : " << name                     << "\n";
+    if (band2gpt.is_allocated()     ) { std::cout << prefix << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
+    if (gpt2band.is_allocated()     ) { std::cout << prefix << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
+    if (band_lims_wvn.is_allocated()) { std::cout << prefix << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
+    if (tau.is_allocated()          ) { std::cout << prefix << "tau          : " << conv::sum(tau          ) << "\n"; }
+    if (ssa.is_allocated()          ) { std::cout << prefix << "ssa          : " << conv::sum(ssa          ) << "\n"; }
+    if (g.is_allocated()            ) { std::cout << prefix << "g            : " << conv::sum(g            ) << "\n"; }
   }
 
 };

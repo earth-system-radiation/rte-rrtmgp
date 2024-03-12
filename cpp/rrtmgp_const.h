@@ -1,10 +1,14 @@
 
 #pragma once
 
+#ifdef RRTMGP_ENABLE_YAKL
 #include "YAKL.h"
+#endif
+
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <cstdlib>
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -23,15 +27,12 @@ using FOView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutLeft, Device>;
 
 template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
 using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank> >;//, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
-
-
-// template <typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
-// using MDRangeP3 = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left, Kokkos::Iterate::Left> >;
 #endif
 
-template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
-
 typedef double real;
+
+#ifdef RRTMGP_ENABLE_YAKL
+template <class T, int rank, int myMem> using FArray = yakl::Array<T,rank,myMem,yakl::styleFortran>;
 
 YAKL_INLINE real constexpr operator"" _wp( long double x ) {
   return static_cast<real>(x);
@@ -104,6 +105,7 @@ typedef FArray<bool,7,yakl::memHost> boolHost7d;
 typedef FArray<char,2,yakl::memHost> charHost2d;
 
 typedef FArray<std::string,1,yakl::memHost> string1d;
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 typedef FView<real*>       real1dk;
@@ -183,4 +185,14 @@ inline void stoprun( std::string str ) {
   std::cout << "FATAL ERROR:\n";
   std::cout << str << "\n" << std::endl;
   throw str;
+}
+
+inline
+std::ostream& operator<<(std::ostream& out, const string1dv& names)
+{
+  for (const auto& name : names) {
+    out << name << " ";
+  }
+  out << std::endl;
+  return out;
 }

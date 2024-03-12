@@ -4,6 +4,7 @@
 #include <limits>
 
 
+#ifdef RRTMGP_ENABLE_YAKL
 void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres, int ntemp, int2d const &flavor,
                    real1d const &press_ref_log, real1d const &temp_ref, real press_ref_log_delta, real temp_ref_min,
                    real temp_ref_delta, real press_ref_trop_log, real3d const &vmr_ref, real2d const &play,
@@ -584,6 +585,7 @@ void combine_and_reorder_nstr(int ncol, int nlay, int ngpt, int nmom, real3d con
     }
   });
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres, int ntemp, int2dk const &flavor,
@@ -591,7 +593,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
                    real temp_ref_delta, real press_ref_trop_log, realOff3dk const &vmr_ref, real2dk const &play,
                    real2dk const &tlay, realOff3dk const &col_gas, int2dk const &jtemp, real6dk const &fmajor, real5dk const &fminor,
                    real4dk const &col_mix, bool2dk const &tropo, int4dk const &jeta, int2dk const &jpress) {
-  using yakl::intrinsics::merge;
+  using conv::merge;
 
   real2dk ftemp ("ftemp" ,ncol,nlay);
   real2dk fpress("fpress",ncol,nlay);
@@ -603,12 +605,12 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
     // index and factor for temperature interpolation
     jtemp(icol,ilay) = (int) ((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta);
-    jtemp(icol,ilay) = std::min(ntemp - 1, std::max(1, jtemp(icol,ilay))) - 1; // limit the index range
+    jtemp(icol,ilay) = Kokkos::fmin(ntemp - 1, Kokkos::fmax(1, jtemp(icol,ilay))) - 1; // limit the index range
     ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta;
 
     // index and factor for pressure interpolation
     real locpress = 1. + (log(play(icol,ilay)) - press_ref_log(0)) / press_ref_log_delta;
-    jpress(icol,ilay) = std::min(npres-1, std::max(1, (int)(locpress)));
+    jpress(icol,ilay) = Kokkos::fmin(npres-1, Kokkos::fmax(1, (int)(locpress)));
     fpress(icol,ilay) = locpress - (real)(jpress(icol,ilay));
 
     // determine if in lower or upper part of atmosphere
@@ -630,7 +632,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     real eta = merge(col_gas(icol,ilay,igases1) / col_mix(itemp,iflav,icol,ilay), 0.5,
                      col_mix(itemp,iflav,icol,ilay) > 2. * tiny);
     real loceta = eta * (neta-1.0);
-    jeta(itemp,iflav,icol,ilay) = std::min((int)(loceta)+1, neta-1) - 1;
+    jeta(itemp,iflav,icol,ilay) = Kokkos::fmin((int)(loceta)+1, neta-1) - 1;
     real feta = fmod(loceta, 1.0);
     // compute interpolation fractions needed for minor species
     real ftemp_term = ((2.0 - (itemp+1)) + (2.0 * (itemp+1) - 3.0 ) * ftemp(icol,ilay));
@@ -680,7 +682,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
                            int1dk const &gpoint_bands, int2dk const &band_lims_gpt, real4dk const &pfracin, real temp_ref_min,
                            real totplnk_delta, real2dk const &totplnk, int2dk const &gpoint_flavor, real2dk const &sfc_src,
                            real3dk const &lay_src, real3dk const &lev_src_inc, real3dk const &lev_src_dec) {
-  using yakl::intrinsics::merge;
+  using conv::merge;
 
   real3dk pfrac          ("pfrac"          ,ngpt,nlay,ncol);
   real3dk planck_function("planck_function",nbnd,nlay+1,ncol);
@@ -784,7 +786,7 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
                           int2dk const &gpoint_flavor, int2dk const &band_lims_gpt, real4dk const &krayl, int idx_h2o,
                           real2dk const &col_dry, realOff3dk const &col_gas, real5dk const &fminor, int4dk const &jeta,
                           bool2dk const &tropo, int2dk const &jtemp, real3dk const &tau_rayleigh) {
-  using yakl::intrinsics::merge;
+  using conv::merge;
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
@@ -871,7 +873,7 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
                               int ntemp, int2dk const &gpoint_flavor, int2dk const &band_lims_gpt, real4dk const &kmajor,
                               real4dk const &col_mix, real6dk const &fmajor, int4dk const &jeta, bool2dk const &tropo,
                               int2dk const &jtemp, int2dk const &jpress, real3dk const &tau) {
-  using yakl::intrinsics::merge;
+  using conv::merge;
 
   // optical depth calculation for major species
   // for (int ilay=1; ilay<=nlay; ilay++) {
@@ -934,7 +936,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) < mn) {
               minloc = i;
             }
-            mn = std::min(mn,play(icol,i));
+            mn = Kokkos::fmin(mn,play(icol,i));
           }
         }
         itropo_lower(icol,0) = minloc;
@@ -949,7 +951,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) > mx) {
               maxloc = i;
             }
-            mx = std::max(mx,play(icol,i));
+            mx = Kokkos::fmax(mx,play(icol,i));
           }
         }
         itropo_upper(icol,1) = maxloc;
@@ -968,7 +970,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) < mn) {
               minloc = i;
             }
-            mn = std::min(mn,play(icol,i));
+            mn = Kokkos::fmin(mn,play(icol,i));
           }
         }
         itropo_lower(icol,1) = minloc;
@@ -983,7 +985,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
             if (play(icol,i) > mx) {
               maxloc = i;
             }
-            mx = std::max(mx,play(icol,i));
+            mx = Kokkos::fmax(mx,play(icol,i));
           }
         }
         itropo_upper(icol,0) = maxloc;

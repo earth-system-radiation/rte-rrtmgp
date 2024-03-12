@@ -45,6 +45,7 @@
 
 
 // Interface using only optical properties and source functions as inputs; fluxes as outputs.
+#ifdef RRTMGP_ENABLE_YAKL
 template <class FluxesType>
 void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, OpticalProps1scl const &optical_props,
             bool top_at_1, SourceFuncLW const &sources, real2d const &sfc_emis,
@@ -140,6 +141,7 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
   // ...and reduce spectral fluxes to desired output quantities
   fluxes.reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1);
 }
+#endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // Interface using only optical properties and source functions as inputs; fluxes as outputs.

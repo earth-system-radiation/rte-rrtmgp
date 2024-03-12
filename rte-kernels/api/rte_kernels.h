@@ -22,20 +22,37 @@ extern "C"
     // SHORTWAVE SOLVERS
     void rte_sw_solver_noscat(
             int* ncol, int* nlay, int* ngpt, Bool* top_at_1,
+              // [in] ncol, nlay, ngpt: constant scalars
+              // [in] top_at_1: constant Bool 
             Float* tau,
+              // [in] tau: vector of length ncol*nlay*ngpt 
             Float* mu0,
+              // [in] mu0: vector of length ncol*nlay
             Float* inc_flux_dir,
+              // [in] inc_flux_dir: vector of length ncol*ngpt 
             Float* flux_dir);
+              // [out] flux_dir: vector of length ncol*(nlay+1)*ngpt 
 
     void rte_sw_solver_2stream(
             int* ncol, int* nlay, int* ngpt, Bool* top_at_1,
+              // [in] ncol, nlay, ngpt: constant scalars
+              // [in] top_at_1: constant Bool 
             Float* tau, Float* ssa, Float* g,
+              // [in] tau, ssa, g: vectors of length ncol*nlay*ngpt 
             Float* mu0,
+              // [in] mu0: vector of length ncol*nlay
             Float* sfc_alb_dir, Float* sfc_alb_dif,
+              // [in] sfc_alb_dir, sfc_alb_dif: vector of length ncol*ngpt
             Float* inc_flux_dir,
+              // [in] inc_flux_dir: vector of length ncol*ngpt 
             Float* flux_up, Float* flux_dn, Float* flux_dir,
+              // [out] flux_dir: vector of length ncol*(nlay+1)*ngpt 
             Bool* has_dif_bc, Float* inc_flux_dif,
-            Bool* do_broadband, Float* flux_up_loc, Float* flux_dn_loc, Float* flux_dir_loc);
+              // [in] has_dif_bc: constant Bool 
+              // [in] inc_flux_dif: vector of length ncol*ngpt 
+            Bool* do_broadband, Float* broadband_up, Float* broadband_dn, Float* broadband_dir);
+              // [in] has_dif_bc: constant Bool 
+              // [out] broadband_up, broadband_dn, broadband_dir: vector of length ncol*(nlay+1)
 
     void rte_lw_solver_noscat(
             int* ncol, int* nlay, int* ngpt, 
@@ -73,11 +90,19 @@ extern "C"
 
     void rte_lw_solver_2stream(
             int* ncol, int* nlay, int* ngpt, Bool* top_at_1,
+              // [in] ncol, nlay, ngpt: constant scalars
+              // [in] top_at_1: constant Bool 
             Float* tau, Float* ssa, Float* g,
+               // [in] tau, ssa, g: vectors of length ncol*nlay*ngpt 
             Float* lay_source, Float* lev_source,
+               // [in] lay_source: vector of length ncol*nlay*ngpt 
+               // [in] lev_source: vector of length ncol*(nlay+1)*ngpt 
             Float* sfc_emis, Float* sfc_src,
+              // [in] sfc_emis, sfc_src: vectors of length ncol*ngpt 
             Float* inc_flux,
+              // [in] inc_flux: vector of length ncol*ngpt 
             Float* flux_up, Float* flux_dn);
+              // [out] flux_up, flux_dn: vector of length ncol*(nlay+1)*ngpt 
 
     // OPTICAL PROPS - INCREMENT
     void rte_increment_1scalar_by_1scalar(

@@ -38,15 +38,38 @@ extern "C"
             Bool* do_broadband, Float* flux_up_loc, Float* flux_dn_loc, Float* flux_dir_loc);
 
     void rte_lw_solver_noscat(
-            int* ncol, int* nlay, int* ngpt, Bool* top_at_1, int* nmus,
+            int* ncol, int* nlay, int* ngpt, 
+              // [in] ncol, nlay, ngpt: constant scalars
+            Bool* top_at_1, int* nmus,
+              // [in] top_at_1: constant Bool 
+              // [in] nmus: constant scalar
             Float* secants, Float* weights,
+              // [in] secants, weights: vectors of length nmus
             Float* tau, Float* lay_source,
+              // [in] taus, lay_source: vectors of length ncol*nlay*ngpt 
             Float* lev_source,
+              // [in] lev_source: vectors of length ncol*(nlay+1)*ngpt 
             Float* sfc_emis, Float* sfc_src,
+              // [in] sfc_emis, sfc_src: vectors of length ncol*ngpt 
             Float* inc_flux,
+              // [in] inc_flux: vector of length ncol*ngpt 
             Float* flux_up, Float* flux_dn,
-            Bool* do_broadband, Float* flux_up_loc, Float* flux_dn_loc,
-            Bool* do_jacobians, Float* sfc_src_jac, Float* flux_up_jac);
+              // [out] flux_up, flux_dn: vector of length ncol*(nlay+1)*ngpt 
+            Bool* do_broadband, 
+              // [in] do_broadband: constant Bool 
+            Float* broadband_up, Float* broadband_dn,
+              // [out] broadband_up, broadband_dn: vector of length ncol*(nlay+1)
+            Bool* do_jacobians, 
+              // [in] do_jacobians: constant Bool 
+            Float* sfc_src_jac, 
+              // [in] sfc_src_jac: vector of length ncol*ngpt 
+            Float* flux_up_jac,
+              // [out] flux_up_jac: vector of length ncol*(nlay+1)*ngpt 
+            Bool* do_rescaling,
+              // [in] do_rescaling: constant Bool 
+            Float* ssa, g);
+              // [in] ssa, g: vectors of length ncol*nlay*ngpt 
+            
 
     void rte_lw_solver_2stream(
             int* ncol, int* nlay, int* ngpt, Bool* top_at_1,
@@ -203,8 +226,16 @@ extern "C"
 
     // Array utilities 
     void zero_array_1D(const int* ni, Float* array);
+      // [in]  ni is a constant scalar 
+      // [out] array is a vector of size ni
     void zero_array_2D(int* ni, int* nj, Float* array);
+      // [in]  ni, nj are constant scalars
+      // [out] array is a vector of size ni*nj
     void zero_array_3D(int* ni, int* nj, int* nk, Float* array);
+      // [in]  ni, nj, nk are constant scalars
+      // [out] array is a vector of size ni*nj*nk
     void zero_array_4D(int* ni, int* nj, int* nk, int* nl, Float* array);
+      // [in]  ni, nj, nk, nl are constant scalars
+      // [out] array is a vector of size ni*nj*nk*nl
  
 }

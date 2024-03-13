@@ -130,15 +130,21 @@ void rte_sw(OpticalProps2strK const &atmos, bool top_at_1, real1dk const &mu0, r
 template <class FluxesType>
 void rte_sw(OpticalProps2strK const &atmos, bool top_at_1, real1dk const &mu0, real2dk const &inc_flux,
             real2dk const &sfc_alb_dir, real2dk const &sfc_alb_dif, FluxesType &fluxes, real2dk const &inc_flux_dif) {
-  real3dk gpt_flux_up;
-  real3dk gpt_flux_dn;
-  real3dk gpt_flux_dir;
-  real2dk sfc_alb_dir_gpt;
-  real2dk sfc_alb_dif_gpt;
-  int ncol  = atmos.get_ncol();
-  int nlay  = atmos.get_nlay();
-  int ngpt  = atmos.get_ngpt();
-  int nband = atmos.get_nband();
+  using pool = conv::MemPoolSingleton;
+
+  const int ncol  = atmos.get_ncol();
+  const int nlay  = atmos.get_nlay();
+  const int ngpt  = atmos.get_ngpt();
+  const int nband = atmos.get_nband();
+
+  const int dsize1 = ncol * (nlay+1) * ngpt;
+  const int dsize2 = ncol * ngpt;
+  real* data = pool::alloc<real>(dsize1*3 + dsize2*2), *dcurr = data;
+  real3dk gpt_flux_up(dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
+  real3dk gpt_flux_dn(dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
+  real3dk gpt_flux_dir(dcurr,ncol, nlay+1, ngpt);  dcurr += dsize1;
+  real2dk sfc_alb_dir_gpt(dcurr,ncol, ngpt);  dcurr += dsize2;
+  real2dk sfc_alb_dif_gpt(dcurr,ncol, ngpt);  dcurr += dsize2;
 
   // Error checking -- consistency of sizes and validity of values
   if (! fluxes.are_desired()) { stoprun("rte_sw: no space allocated for fluxes"); }
@@ -168,11 +174,6 @@ void rte_sw(OpticalProps2strK const &atmos, bool top_at_1, real1dk const &mu0, r
     if (any(sfc_alb_dif < 0.) || any(sfc_alb_dif > 1.)) { stoprun("rte_sw: sfc_alb_dif out of bounds [0,1]"); }
   #endif
 
-  gpt_flux_up  = real3dk("gpt_flux_up" ,ncol, nlay+1, ngpt);
-  gpt_flux_dn  = real3dk("gpt_flux_dn" ,ncol, nlay+1, ngpt);
-  gpt_flux_dir = real3dk("gpt_flux_dir",ncol, nlay+1, ngpt);
-  sfc_alb_dir_gpt = real2dk("sfc_alb_dir_gpt",ncol, ngpt);
-  sfc_alb_dif_gpt = real2dk("sfc_alb_dif_gpt",ncol, ngpt);
   // Lower boundary condition -- expand surface albedos by band to gpoints
   //   and switch dimension ordering
   expand_and_transpose(atmos, sfc_alb_dir, sfc_alb_dir_gpt);
@@ -198,5 +199,7 @@ void rte_sw(OpticalProps2strK const &atmos, bool top_at_1, real1dk const &mu0, r
 
   // ...and reduce spectral fluxes to desired output quantities
   fluxes.reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir);
+
+  pool::dealloc(data, dcurr - data);
 }
 #endif

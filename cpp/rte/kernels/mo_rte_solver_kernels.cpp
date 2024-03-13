@@ -830,14 +830,19 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3dk const &tau, real3dk const &ssa, real3dk const &g,
                        real1dk const &mu0, real2dk const &sfc_alb_dir, real2dk const &sfc_alb_dif, real3dk const &flux_up,
                        real3dk const &flux_dn, real3dk const &flux_dir) {
-  real3dk Rdif      ("Rdif      ",ncol,nlay,ngpt);
-  real3dk Tdif      ("Tdif      ",ncol,nlay,ngpt);
-  real3dk Rdir      ("Rdir      ",ncol,nlay,ngpt);
-  real3dk Tdir      ("Tdir      ",ncol,nlay,ngpt);
-  real3dk Tnoscat   ("Tnoscat   ",ncol,nlay,ngpt);
-  real3dk source_up ("source_up ",ncol,nlay,ngpt);
-  real3dk source_dn ("source_dn ",ncol,nlay,ngpt);
-  real2dk source_srf("source_srf",ncol     ,ngpt);
+  using pool = conv::MemPoolSingleton;
+
+  const int dsize1 = ncol*nlay*ngpt;
+  const int dsize2 = ncol*ngpt;
+  real* data = pool::alloc<real>(dsize1*7 + dsize2), *dcurr = data;
+  real3dk Rdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk Tdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk Rdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk Tdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk Tnoscat   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real2dk source_srf(dcurr,ncol     ,ngpt); dcurr += dsize2;
 
   // Cell properties: transmittance and reflectance for direct and diffuse radiation
   sw_two_stream(ncol, nlay, ngpt, mu0,
@@ -860,13 +865,20 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3dk cons
   Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
   });
+
+  pool::dealloc(data, dcurr - data);
 }
 
 void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const &albedo_sfc, real3dk const &rdif, real3dk const &tdif,
             real3dk const &src_dn, real3dk const &src_up, real2dk const &src_sfc, real3dk const &flux_up, real3dk const &flux_dn) {
-  real3dk albedo("albedo",ncol,nlay+1,ngpt);
-  real3dk src   ("src   ",ncol,nlay+1,ngpt);
-  real3dk denom ("denom ",ncol,nlay  ,ngpt);
+  using pool = conv::MemPoolSingleton;
+
+  const int dsize1 = ncol*(nlay+1)*ngpt;
+  const int dsize2 = ncol*nlay*ngpt;
+  real* data = pool::alloc<real>(dsize1*2 + dsize2), *dcurr = data;
+  real3dk albedo(dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  real3dk src   (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  real3dk denom (dcurr,ncol,nlay  ,ngpt); dcurr += dsize2;
 
   // Indexing into arrays for upward and downward propagation depends on the vertical
   //   orientation of the arrays (whether the domain top is at the first or last index)
@@ -950,6 +962,8 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const &albedo_s
       }
     });
   }
+
+  pool::dealloc(data, dcurr - data);
 }
 
 #endif

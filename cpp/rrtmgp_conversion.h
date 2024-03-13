@@ -409,21 +409,19 @@ struct MemPoolSingleton
   inline static HostMemPool   s_host_mem_pool;
 
   static void init(
-    const int dev_capacity, const int dev_min_block_size, const int dev_max_block_size, const int dev_super_block_size,
-    const int hst_capacity, const int hst_min_block_size, const int hst_max_block_size, const int hst_super_block_size)
+    const size_t dev_capacity, const size_t dev_min_block_size, const size_t dev_max_block_size, const size_t dev_super_block_size,
+    const size_t hst_capacity, const size_t hst_min_block_size, const size_t hst_max_block_size, const size_t hst_super_block_size)
   {
     static bool is_init = false;
     RRT_REQUIRE(!is_init, "Multiple MemPoolSingleton inits");
     s_device_mem_pool = DeviceMemPool(typename DefaultDevice::memory_space(), dev_capacity, dev_min_block_size, dev_max_block_size, dev_super_block_size);
-    s_host_mem_pool = HostMemPool(typename HostDevice::memory_space(), hst_capacity, hst_min_block_size, hst_max_block_size, hst_super_block_size);
-    s_device_mem_pool.print_state(std::cout);
+    //s_host_mem_pool = HostMemPool(typename HostDevice::memory_space(), hst_capacity, hst_min_block_size, hst_max_block_size, hst_super_block_size);
   }
 
   template <typename T>
   static inline
   T* alloc(const int num) noexcept
   {
-    std::cout << "JGF Trying to allocate: " << num * sizeof(T) << " bytes" << std::endl;
     T* rv = reinterpret_cast<T*>(s_device_mem_pool.allocate(num * sizeof(T)));
     assert(rv != nullptr);
     return rv;
@@ -433,7 +431,9 @@ struct MemPoolSingleton
   static inline
   T* alloc_host(const int num) noexcept
   {
-    return reinterpret_cast<T*>(s_host_mem_pool.allocate(num * sizeof(T)));
+    T* rv = reinterpret_cast<T*>(s_host_mem_pool.allocate(num * sizeof(T)));
+    assert(rv != nullptr);
+    return rv;
   }
 
   template <typename T>
@@ -455,6 +455,12 @@ struct MemPoolSingleton
   {
     s_device_mem_pool = DeviceMemPool();
     s_host_mem_pool = HostMemPool();
+  }
+
+  static inline
+  void print_state()
+  {
+    s_device_mem_pool.print_state(std::cout);
   }
 };
 

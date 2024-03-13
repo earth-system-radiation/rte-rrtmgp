@@ -46,7 +46,7 @@ mo_load_coefficients.o:         mo_simple_netcdf.o                              
 mo_load_cloud_coefficients.o:   mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o         mo_load_cloud_coefficients.F90
 mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.F90
 
-tests:
+tests: rrtmgp_allsky
 	$(RUN_CMD) bash all_tests.sh  
 
 check:

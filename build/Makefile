@@ -12,6 +12,7 @@ RRTMGP_KERNEL_DIR = ../rrtmgp-kernels
 all:           librte.a                  librrtmgp.a \
                librtekernels.a librtef.a librrtmgpkernels.a librrtmgpf.a
 separate-libs: librtekernels.a librtef.a librrtmgpkernels.a librrtmgpf.a
+libs: all
 
 COMPILE = $(FC) $(FCFLAGS) $(FCINCLUDE) -c
 %.o: %.F90
@@ -22,23 +23,32 @@ include $(RRTMGP_DIR)/Make.depends
 include $(RTE_KERNEL_DIR)/Make.depends
 include $(RRTMGP_KERNEL_DIR)/Make.depends
 
-VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
 #
 # If using OpenACC/OpenMP files in *-kernels/accel take precendence  
 #
 ifeq ($(RTE_KERNELS), accel)
-	VPATH = $(RTE_DIR):$(RTE_KERNEL_DIR)/accel:$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
+	VPATH = $(RTE_KERNEL_DIR)/accel$(RRTMGP_KERNEL_DIR)/accel
 endif
-
+VPATH += $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
+#
+# If using external libraries just compile the interfaces 
+#    (and, for now, the OpenACC kernels)
+#
 librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
 	ar -rvs librte.a $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
-
+#
+# Library with just the kernels...
+#
 librtekernels.a: $(RTE_FORTRAN_KERNELS)
 	ar -rvs librtekernels.a $(RTE_FORTRAN_KERNELS)
-
+#
+# ... and just the Fortran front-end 
+#
 librtef.a: $(RTE_FORTRAN_INTERFACE)
 	ar -rvs librtef.a $(RTE_FORTRAN_INTERFACE)
-
+#
+# As with RTE, libraries with Fortran front-end and kernels, separate and combined 
+#
 librrtmgp.a: $(RRTMGP_FORTRAN_KERNELS)  $(RRTMGP_FORTRAN_INTERFACE)
 	ar -rvs librrtmgp.a $(RRTMGP_FORTRAN_KERNELS) $(RRTMGP_FORTRAN_INTERFACE)
 

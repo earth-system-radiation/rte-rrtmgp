@@ -269,17 +269,18 @@ int main(int argc , char **argv) {
                        std::vector<real2dk>({lwp_k, iwp_k, rel_k, rei_k}));
 #endif
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+      const size_t MinBlockSize   = 32768;
+      const size_t MaxBlockSize   = 10485760;
+      const size_t SuperBlockSize = 104857600;
+      conv::MemPoolSingleton::init(200000000, MinBlockSize, MaxBlockSize, SuperBlockSize,
+                                   200000000, MinBlockSize, MaxBlockSize, SuperBlockSize);
+      realOff3dk col_gas  ("col_gas"     ,std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist.get_ngas()-1));
+#endif
+
       if (verbose) std::cout << "Running the main loop\n\n";
       auto start_t = std::chrono::high_resolution_clock::now();
 
-#ifdef RRTMGP_ENABLE_KOKKOS
-      const size_t MinBlockSize   = 64;
-      const size_t MaxBlockSize   = 1024;
-      const size_t SuperBlockSize = 4096;
-      conv::MemPoolSingleton::init(10000, MinBlockSize, MaxBlockSize, SuperBlockSize,
-                                   10000, MinBlockSize, MaxBlockSize, SuperBlockSize);
-      ureal1dk my_u_view(conv::MemPoolSingleton::alloc_host<real>(100), 100);
-#endif
       for (int iloop = 1 ; iloop <= nloops ; iloop++) {
 
 #ifdef RRTMGP_ENABLE_YAKL
@@ -319,7 +320,7 @@ int main(int argc , char **argv) {
         k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay, gas_concs, atmos, toa_flux);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-        k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, gas_concs_k, atmos_k, toa_flux_k);
+        k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, gas_concs_k, col_gas, atmos_k, toa_flux_k);
         VALIDATE_KOKKOS(k_dist, k_dist_k);
         VALIDATE_KOKKOS(gas_concs, gas_concs_k);
         VALIDATE_KOKKOS(atmos, atmos_k);
@@ -573,6 +574,15 @@ int main(int argc , char **argv) {
       COMPARE_WRAP(rei, rei_k);
 #endif
 
+#ifdef RRTMGP_ENABLE_KOKKOS
+      // const size_t MinBlockSize   = 32768;
+      // const size_t MaxBlockSize   = 1048576;
+      // const size_t SuperBlockSize = 1048576;
+      // conv::MemPoolSingleton::init(10000000, MinBlockSize, MaxBlockSize, SuperBlockSize,
+      //                              10000000, MinBlockSize, MaxBlockSize, SuperBlockSize);
+      realOff3dk col_gas  ("col_gas"     ,std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist.get_ngas()-1));
+#endif
+
       // Multiple iterations for big problem sizes, and to help identify data movement
       //   For CPUs we can introduce OpenMP threading over loop iterations
       if (verbose) std::cout << "Running the main loop\n\n";
@@ -613,7 +623,7 @@ int main(int argc , char **argv) {
         k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay, t_sfc, gas_concs, atmos, lw_sources, real2d(), t_lev);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-        k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, t_sfc_k, gas_concs_k, atmos_k, lw_sources_k, real2dk(), t_lev_k);
+        k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, t_sfc_k, gas_concs_k, col_gas, atmos_k, lw_sources_k, real2dk(), t_lev_k);
         VALIDATE_KOKKOS(k_dist, k_dist_k);
         VALIDATE_KOKKOS(gas_concs, gas_concs_k);
         VALIDATE_KOKKOS(atmos, atmos_k);

@@ -51,7 +51,7 @@ void printy(const std::string& name, const YArray& array)
 // Copied from YAKL
 template <class T1, class T2,
           typename std::enable_if<std::is_arithmetic<T1>::value && std::is_arithmetic<T2>::value,bool>::type=false>
-GENERIC_INLINE decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) { return cond ? t : f; }
+GENERIC_INLINE decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) noexcept { return cond ? t : f; }
 
 // A meta function that will return true if T is either a Kokkos::View or a
 // Kokkos::OffsetView (we use these in a couple places).
@@ -336,7 +336,7 @@ struct LTFunc
   LTFunc(T val) : m_val(val) {}
 
   KOKKOS_INLINE_FUNCTION
-  bool operator()(const T& val) const
+  bool operator()(const T& val) const noexcept
   {
     return val < m_val;
   }
@@ -416,32 +416,34 @@ struct MemPoolSingleton
     RRT_REQUIRE(!is_init, "Multiple MemPoolSingleton inits");
     s_device_mem_pool = DeviceMemPool(typename DefaultDevice::memory_space(), dev_capacity, dev_min_block_size, dev_max_block_size, dev_super_block_size);
     s_host_mem_pool = HostMemPool(typename HostDevice::memory_space(), hst_capacity, hst_min_block_size, hst_max_block_size, hst_super_block_size);
+    s_device_mem_pool.print_state(std::cout);
   }
 
   template <typename T>
   static inline
-  T* alloc_device(const int num)
+  T* alloc(const int num) noexcept
   {
+    std::cout << "JGF Trying to allocate: " << num * sizeof(T) << " bytes" << std::endl;
     return reinterpret_cast<T*>(s_device_mem_pool.allocate(num * sizeof(T)));
   }
 
   template <typename T>
   static inline
-  T* alloc_host(const int num)
+  T* alloc_host(const int num) noexcept
   {
     return reinterpret_cast<T*>(s_host_mem_pool.allocate(num * sizeof(T)));
   }
 
   template <typename T>
   static inline
-  void dealloc_device(const int num, const T* data)
+  void dealloc(T* data, const int num) noexcept
   {
     s_device_mem_pool.deallocate(data, num * sizeof(T));
   }
 
   template <typename T>
   static inline
-  void dealloc_host(const int num, const T* data)
+  void dealloc_host(T* data, const int num) noexcept
   {
     s_host_mem_pool.deallocate(data, num * sizeof(T));
   }

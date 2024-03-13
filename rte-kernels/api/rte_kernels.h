@@ -252,46 +252,88 @@ extern "C"
             int* ncol, int* nlay, int* ngpt,
               // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout, Float* ssa_inout, Float* g_inout);
+              // [inout] tau_inout, ssa_inout, g_inout: vectors of length ncol*nlay*ngpt
 
     void rte_delta_scale_2str_f_k(
             int* ncol, int* nlay, int* ngpt,
               // [in] ncol, nlay, ngpt: constant scalars
-            Float* tau_inout, Float* ssa_inout, Float* g_inout, Float* f);
+            Float* tau_inout, Float* ssa_inout, Float* g_inout, 
+              // [inout] tau_inout, ssa_inout, g_inout: vectors of length ncol*nlay*ngpt
+            Float* f);
+              // [in]    f: : vectors of length ncol*nlay*ngpt
 
     // OPTICAL PROPS - SUBSET
     void rte_extract_subset_dim1_3d(
-            int* ncol, int* nlay, int* ngpt, Float* array_in, int* ncol_start, int* ncol_end, Float* array_out);
+            int* ncol, int* nlay, int* ngpt, 
+              // [in] ncol, nlay, ngpt: constant scalars
+            Float* array_in, 
+              // [in] array_in: vector of size ncol*nlay*ngpt 
+            int* ncol_start, int* ncol_end, 
+              // [in] ncol_start, ncol_end: constant scalars
+            Float* array_out);
+              // [out] array_out: vector of size (ncol_end-ncol_start+1)*nlay*ngpt 
 
     void rte_extract_subset_dim2_4d(
-            int* ncol, int* nlay, int* ngpt, Float* array_in, int* ncol_start, int* ncol_end, Float* array_out);
+            int* nmom, int* ncol, int* nlay, int* ngpt, 
+              // [in] nmom, ncol, nlay, ngpt: constant scalars
+            Float* array_in, 
+              // [in] array_in: vector of size nmom*ncol*nlay*ngpt 
+            int* ncol_start, int* ncol_end, 
+              // [in] ncol_start, ncol_end: constant scalars
+            Float* array_out);
+              // [out] array_out: vector of size nmom*(ncol_end-ncol_start+1)*nlay*ngpt 
 
     void rte_extract_subset_absorption_tau(
-            int* ncol, int* nlay, int* ngpt, Float* tau_in, Float* ssa_in, int* ncol_start, int* ncol_end, Float* tau_out);
+            int* ncol, int* nlay, int* ngpt, 
+              // [in] ncol, nlay, ngpt: constant scalars
+            Float* tau_in, Float* ssa_in, 
+              // [in] tau_in, ssa_in: vectors of size ncol*nlay*ngpt 
+            int* ncol_start, int* ncol_end, 
+              // [in] ncol_start, ncol_end: constant scalars
+            Float* tau_out);
+              // [out] tau_out: vector of size (ncol_end-ncol_start+1)*nlay*ngpt 
 
    // Fluxes - reduction 
     void rte_sum_broadband(
             int* ncol, int* nlev, int* ngpt,
-            Float* gpt_flux, Float* flux);
+              // [in] ncol, nlay, ngpt: constant scalars
+            Float* gpt_flux, 
+              // [in] gpt_flux: vector of length ncol*nlev*ngpt
+            Float* flux);
+              // [out] flux: vector of length ncol*nlev
 
     void rte_net_broadband_full(
             int* ncol, int* nlev, int* ngpt,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* gpt_flux_dn, Float* gpt_flux_up,
+              // [in] gpt_flux_dn, gpt_flux_up: vector of length ncol*nlev*ngpt
             Float* flux_net);
+              // [out] flux_net: vector of length ncol*nlev
 
     void rte_net_broadband_precalc(
             int* ncol, int* nlev,
+              // [in] ncol, nlay, ngpt: constant scalars
             Float* broadband_flux_dn, Float* broadband_flux_up,
+              // [in] broadband_flux_dn, broadband_flux_up: vector of length ncol*nlev
             Float* broadband_flux_net);
+              // [out] broadband_flux_net: vector of length ncol*nlev
 
     void rte_sum_byband(
             int* ncol, int* nlev, int* ngpt, int* nbnd,
+              // [in] ncol, nlay, ngpt, nbnd: constant scalars
             int* band_lims,
+              // [in] band_lims: vector of length 2*nband
             Float* gpt_flux,
+              // [in] gpt_flux: vector of length ncol*nlev*ngpt
             Float* bnd_flux);
 
     void rte_net_byband_full(
             int* ncol, int* nlev, int* ngpt, int* nbnd, int* band_lims,
-            Float* bnd_flux_dn, Float* bnd_flux_up, Float* bnd_flux_net);
+              // [in] ncol, nlay, ngpt, nmom: constant scalars
+            Float* bnd_flux_dn, Float* bnd_flux_up, 
+              // [in] bnd_flux_dn, bnd_flux_up: vectors of length ncol*nlev*nbnd
+            Float* bnd_flux_net);
+             // [out] bnd_flux_net: vector of length ncol*nlev*nbnd
 
     // Array utilities 
     void zero_array_1D(const int* ni, Float* array);

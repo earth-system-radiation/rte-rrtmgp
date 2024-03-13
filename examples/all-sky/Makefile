@@ -1,3 +1,4 @@
+#!/usr/bin/env make
 #
 # Location of RTE+RRTMGP libraries, module files.
 #

@@ -270,9 +270,9 @@ int main(int argc , char **argv) {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      const size_t MinBlockSize   = 32768;
+      const size_t MinBlockSize   = 1024;
       const size_t MaxBlockSize   = 10485760;
-      const size_t SuperBlockSize = 104857600;
+      const size_t SuperBlockSize = 10485760;
       conv::MemPoolSingleton::init(200000000, MinBlockSize, MaxBlockSize, SuperBlockSize,
                                    200000000, MinBlockSize, MaxBlockSize, SuperBlockSize);
       realOff3dk col_gas  ("col_gas"     ,std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist.get_ngas()-1));
@@ -363,7 +363,6 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_KOKKOS
       conv::MemPoolSingleton::finalize();
 #endif
-
 
       auto stop_t = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);

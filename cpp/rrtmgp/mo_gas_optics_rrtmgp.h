@@ -1990,11 +1990,11 @@ public:
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     // Interpolation coefficients for use in source function
-    uint2dk  jtemp (pool::alloc<int>(ncol*nlay),  ncol,nlay);
-    uint2dk  jpress(pool::alloc<int>(ncol*nlay),  ncol,nlay);
-    ubool2dk tropo (pool::alloc<bool>(ncol*nlay), ncol,nlay);
-    ureal6dk fmajor(pool::alloc<real>(2*2*2*this->get_nflav()*ncol*nlay), 2,2,2,this->get_nflav(),ncol,nlay);
-    uint4dk  jeta  (pool::alloc<int>(2*this->get_nflav()*ncol*nlay), 2, this->get_nflav(), ncol, nlay);
+    int2dk  jtemp (pool::alloc<int>(ncol*nlay),  ncol,nlay);
+    int2dk  jpress(pool::alloc<int>(ncol*nlay),  ncol,nlay);
+    bool2dk tropo (pool::alloc<bool>(ncol*nlay), ncol,nlay);
+    real6dk fmajor(pool::alloc<real>(2*2*2*this->get_nflav()*ncol*nlay), 2,2,2,this->get_nflav(),ncol,nlay);
+    int4dk  jeta  (pool::alloc<int>(2*this->get_nflav()*ncol*nlay), 2, this->get_nflav(), ncol, nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress,
                      jeta, tropo, fmajor, col_dry);
@@ -2044,11 +2044,11 @@ public:
     int nflav = get_nflav();
 
     // Interpolation coefficients for use in source function
-    uint2dk  jtemp (pool::alloc<int>(ncol*nlay),  ncol,nlay);
-    uint2dk  jpress(pool::alloc<int>(ncol*nlay),  ncol,nlay);
-    ubool2dk tropo (pool::alloc<bool>(ncol*nlay), ncol,nlay);
-    ureal6dk fmajor(pool::alloc<real>(2*2*2*this->get_nflav()*ncol*nlay), 2,2,2,this->get_nflav(),ncol,nlay);
-    uint4dk  jeta  (pool::alloc<int>(2*this->get_nflav()*ncol*nlay), 2, this->get_nflav(), ncol, nlay);
+    int2dk  jtemp (pool::alloc<int>(ncol*nlay),  ncol,nlay);
+    int2dk  jpress(pool::alloc<int>(ncol*nlay),  ncol,nlay);
+    bool2dk tropo (pool::alloc<bool>(ncol*nlay), ncol,nlay);
+    real6dk fmajor(pool::alloc<real>(2*2*2*this->get_nflav()*ncol*nlay), 2,2,2,this->get_nflav(),ncol,nlay);
+    int4dk  jeta  (pool::alloc<int>(2*this->get_nflav()*ncol*nlay), 2, this->get_nflav(), ncol, nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress, jeta,
                      tropo, fmajor, col_dry);
@@ -2071,8 +2071,8 @@ public:
   // Returns optical properties and interpolation coefficients
   template <class T>
   void compute_gas_taus(bool top_at_1, int ncol, int nlay, int ngpt, int nband, real2dk const &play, real2dk const &plev, real2dk const &tlay,
-                        GasConcsK const &gas_desc, realOff3dk const& col_gas, T &optical_props, uint2dk const &jtemp, uint2dk const &jpress, uint4dk const &jeta,
-                        ubool2dk const &tropo, ureal6dk const &fmajor, real2dk const &col_dry=real2dk() ) {
+                        GasConcsK const &gas_desc, realOff3dk const& col_gas, T &optical_props, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta,
+                        bool2dk const &tropo, real6dk const &fmajor, real2dk const &col_dry=real2dk() ) {
     // Number of molecules per cm^2
     using pool = conv::MemPoolSingleton;
 
@@ -2081,11 +2081,11 @@ public:
     const int size3 = 2*this->get_nflav()*ncol*nlay;
     const int size4 = 2*2*this->get_nflav()*ncol*nlay;
     real* data = pool::alloc<real>(size1*2 + size2 + size3 + size4);
-    ureal3dk tau         (data,ngpt,nlay,ncol);
-    ureal3dk tau_rayleigh(data + size1,ngpt,nlay,ncol);
+    real3dk tau         (data,ngpt,nlay,ncol);
+    real3dk tau_rayleigh(data + size1,ngpt,nlay,ncol);
     // Interpolation variables used in major gas but not elsewhere, so don't need exporting
-    ureal3dk vmr         (data + size1*2, ncol,nlay,this->get_ngas());
-    ureal4dk col_mix     (data + size1*2 + size2, 2,this->get_nflav(),ncol,nlay); // combination of major species's column amounts
+    real3dk vmr         (data + size1*2, ncol,nlay,this->get_ngas());
+    real4dk col_mix     (data + size1*2 + size2, 2,this->get_nflav(),ncol,nlay); // combination of major species's column amounts
                                                                        // index(1) : reference temperature level
                                                                        // index(2) : flavor
                                                                        // index(3) : layer
@@ -2134,7 +2134,7 @@ public:
       // Get vmr if  gas is provided in ty_gas_concs
       for (size_t igas2 = 0 ; igas2 < gas_desc.gas_name.size() ; igas2++) {
         if ( lower_case(this->gas_names[igas]) == lower_case(gas_desc.gas_name[igas2]) ) {
-          ureal2dk vmr_slice = Kokkos::subview(vmr, Kokkos::ALL, Kokkos::ALL, igas);
+          real2dk vmr_slice = Kokkos::subview(vmr, Kokkos::ALL, Kokkos::ALL, igas);
           gas_desc.get_vmr(this->gas_names[igas], vmr_slice);
         }
       }
@@ -2142,10 +2142,12 @@ public:
 
     // Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     int idx_h2o = string_loc_in_array("h2o", this->gas_names);
-    ureal2dk col_dry_wk;
+    real2dk col_dry_wk;
+    bool dealloc_col_dry = false;
     if (col_dry.is_allocated()) {
       col_dry_wk = col_dry;
     } else {
+      dealloc_col_dry = true;
       col_dry_wk = this->get_col_dry(Kokkos::subview(vmr, Kokkos::ALL, Kokkos::ALL, idx_h2o),plev); // dry air column amounts computation
     }
     // compute column gas amounts [molec/cm^2]
@@ -2185,18 +2187,26 @@ public:
     combine_and_reorder(tau, tau_rayleigh, this->krayl.is_allocated(), optical_props);
 
     pool::dealloc(data, size1*2 + size2 + size3 + size4);
+    if (dealloc_col_dry) {
+      pool::dealloc(col_dry_wk.data(), col_dry_wk.size());
+    }
   }
 
   // Compute Planck source functions at layer centers and levels
   void source(bool top_at_1, int ncol, int nlay, int nbnd, int ngpt, real2dk const &play, real2dk const &plev, real2dk const &tlay,
-              real1dk const &tsfc, uint2dk const &jtemp, uint2dk const &jpress, uint4dk const &jeta, ubool2dk const &tropo,
-              ureal6dk const &fmajor, SourceFuncLWK &sources, real2dk const &tlev=real2dk()) {
-    real3dk lay_source_t    ("lay_source_t    ",ngpt,nlay,ncol);
-    real3dk lev_source_inc_t("lev_source_inc_t",ngpt,nlay,ncol);
-    real3dk lev_source_dec_t("lev_source_dec_t",ngpt,nlay,ncol);
-    real2dk sfc_source_t    ("sfc_source_t    ",ngpt     ,ncol);
+              real1dk const &tsfc, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta, bool2dk const &tropo,
+              real6dk const &fmajor, SourceFuncLWK &sources, real2dk const &tlev=real2dk()) {
+    using pool = conv::MemPoolSingleton;
+    const int dsize1 = ngpt * nlay * ncol;
+    const int dsize2 = ngpt * ncol;
+    const int dsize3 = ncol * (nlay+1);
+    real* data = pool::alloc<real>(dsize1*3 + dsize2 + dsize3*2);
+    real3dk lay_source_t    (data,ngpt,nlay,ncol);
+    real3dk lev_source_inc_t(data + dsize1,ngpt,nlay,ncol);
+    real3dk lev_source_dec_t(data + dsize1*2,ngpt,nlay,ncol);
+    real2dk sfc_source_t    (data + dsize1*3,ngpt     ,ncol);
     // Variables for temperature at layer edges [K] (ncol, nlay+1)
-    real2dk tlev_arr("tlev_arr",ncol,nlay+1);
+    real2dk tlev_arr(data + dsize1*3 + dsize2,ncol,nlay+1);
 
     // Source function needs temperature at interfaces/levels and at layer centers
     real2dk tlev_wk;
@@ -2204,7 +2214,7 @@ public:
       //   Users might have provided these
       tlev_wk = tlev;
     } else {
-      tlev_wk = real2dk("tlev_wk",ncol,nlay+1);
+      tlev_wk = real2dk(data + dsize1*3 + dsize2 + dsize3,ncol,nlay+1);
       // Interpolate temperature to levels if not provided
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
@@ -2242,17 +2252,21 @@ public:
     reorder123x321(ngpt, nlay, ncol, lay_source_t    , sources.lay_source    );
     reorder123x321(ngpt, nlay, ncol, lev_source_inc_t, sources.lev_source_inc);
     reorder123x321(ngpt, nlay, ncol, lev_source_dec_t, sources.lev_source_dec);
+
+    pool::dealloc(data, dsize1*3 + dsize2 + dsize3*2);
   }
 
   // Utility function, provided for user convenience
   // computes column amounts of dry air using hydrostatic equation
   real2dk get_col_dry(real2dk const &vmr_h2o, real2dk const &plev, real1dk const &latitude=real1dk()) {
+    using pool = conv::MemPoolSingleton;
+
     // first and second term of Helmert formula
     real constexpr helmert1 = 9.80665;
     real constexpr helmert2 = 0.02586;
     int ncol = plev.extent(0);
     int nlev = plev.extent(1);
-    real1dk g0("g0",plev.extent(0));
+    real1dk g0(pool::alloc<real>(plev.extent(0)), plev.extent(0));
     if (latitude.is_allocated()) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
@@ -2267,7 +2281,7 @@ public:
       });
     }
 
-    real2dk col_dry("col_dry",plev.extent(0),plev.extent(1)-1);
+    real2dk col_dry(pool::alloc<real>(plev.extent(0) * (plev.extent(1)-1)) ,plev.extent(0),plev.extent(1)-1);
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
     const auto m_dry = ::m_dry;
@@ -2278,6 +2292,7 @@ public:
       real m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
       col_dry(icol,ilev) = 10. * delta_plev * avogad * fact/(1000.*m_air*100.*g0(icol));
     });
+    pool::dealloc(g0.data(), g0.size());
     return col_dry;
   }
 

@@ -203,32 +203,6 @@ typedef FView<char**, HostDevice> charHost2dk;
 // this is useful in a couple situations
 typedef FOView<real***>             realOff3dk;
 typedef FOView<real***, HostDevice> realOffHost3dk;
-
-// Unmanaged views
-typedef Unmanaged<FView<real*>>       ureal1dk;
-typedef Unmanaged<FView<real**>>      ureal2dk;
-typedef Unmanaged<FView<real***>>     ureal3dk;
-typedef Unmanaged<FView<real****>>    ureal4dk;
-typedef Unmanaged<FView<real*****>>   ureal5dk;
-typedef Unmanaged<FView<real******>>  ureal6dk;
-typedef Unmanaged<FView<real*******>> ureal7dk;
-
-typedef Unmanaged<FView<bool*>>       ubool1dk;
-typedef Unmanaged<FView<bool**>>      ubool2dk;
-typedef Unmanaged<FView<bool***>>     ubool3dk;
-typedef Unmanaged<FView<bool****>>    ubool4dk;
-typedef Unmanaged<FView<bool*****>>   ubool5dk;
-typedef Unmanaged<FView<bool******>>  ubool6dk;
-typedef Unmanaged<FView<bool*******>> ubool7dk;
-
-typedef Unmanaged<FView<int*>>       uint1dk;
-typedef Unmanaged<FView<int**>>      uint2dk;
-typedef Unmanaged<FView<int***>>     uint3dk;
-typedef Unmanaged<FView<int****>>    uint4dk;
-typedef Unmanaged<FView<int*****>>   uint5dk;
-typedef Unmanaged<FView<int******>>  uint6dk;
-typedef Unmanaged<FView<int*******>> uint7dk;
-
 #endif
 
 typedef std::vector<std::string> string1dv;

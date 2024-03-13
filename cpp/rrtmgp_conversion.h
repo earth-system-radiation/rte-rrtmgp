@@ -424,7 +424,9 @@ struct MemPoolSingleton
   T* alloc(const int num) noexcept
   {
     std::cout << "JGF Trying to allocate: " << num * sizeof(T) << " bytes" << std::endl;
-    return reinterpret_cast<T*>(s_device_mem_pool.allocate(num * sizeof(T)));
+    T* rv = reinterpret_cast<T*>(s_device_mem_pool.allocate(num * sizeof(T)));
+    assert(rv != nullptr);
+    return rv;
   }
 
   template <typename T>

@@ -358,7 +358,6 @@ public:
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
     auto this_concs = this->concs;
-    std::cout << "JGF: " << array.extent(1) << ", " << array.extent(0) << std::endl;
     Kokkos::parallel_for( MDRangeP<2>({0,0}, {array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
       array(icol,ilay) = this_concs(icol,ilay,igas);
     });

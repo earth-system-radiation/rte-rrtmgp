@@ -761,8 +761,8 @@ public:
     // Array sizes
     const int num_bools = ncol * nlay;
     bool* bdata         = pool::alloc<bool>(num_bools * 2);
-    ubool2dk liqmsk(bdata,             ncol, nlay);
-    ubool2dk icemsk(bdata + num_bools, ncol, nlay);
+    bool2dk liqmsk(bdata,             ncol, nlay);
+    bool2dk icemsk(bdata + num_bools, ncol, nlay);
 
     // Spectral consistency
     if (! this->bands_are_equal(optical_props)) { stoprun("cloud optics: optical properties don't have the same band structure"); }
@@ -800,12 +800,12 @@ public:
     //    use ty_optical_props_arry.increment but this involves substantially more division.
     const int num_tau = clwp.extent(0) *  clwp.extent(1) * this->get_nband();
     real* data        = pool::alloc<real>(num_tau * 6);
-    ureal3dk ltau    (data,             clwp.extent(0), clwp.extent(1), this->get_nband());
-    ureal3dk ltaussa (data + num_tau,   clwp.extent(0), clwp.extent(1), this->get_nband());
-    ureal3dk ltaussag(data + num_tau*2, clwp.extent(0), clwp.extent(1), this->get_nband());
-    ureal3dk itau    (data + num_tau*3, clwp.extent(0), clwp.extent(1), this->get_nband());
-    ureal3dk itaussa (data + num_tau*4, clwp.extent(0), clwp.extent(1), this->get_nband());
-    ureal3dk itaussag(data + num_tau*5, clwp.extent(0), clwp.extent(1), this->get_nband());
+    real3dk ltau    (data,             clwp.extent(0), clwp.extent(1), this->get_nband());
+    real3dk ltaussa (data + num_tau,   clwp.extent(0), clwp.extent(1), this->get_nband());
+    real3dk ltaussag(data + num_tau*2, clwp.extent(0), clwp.extent(1), this->get_nband());
+    real3dk itau    (data + num_tau*3, clwp.extent(0), clwp.extent(1), this->get_nband());
+    real3dk itaussa (data + num_tau*4, clwp.extent(0), clwp.extent(1), this->get_nband());
+    real3dk itaussag(data + num_tau*5, clwp.extent(0), clwp.extent(1), this->get_nband());
     if (this->lut_extliq.is_allocated()) {
       // Liquid
       compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq, this->liq_nsteps,this->liq_step_size,this->radliq_lwr,
@@ -898,7 +898,7 @@ public:
   // We could also try gather/scatter for efficiency
   void compute_all_from_table(int ncol, int nlay, int nbnd, bool2dk const &mask, real2dk const &lwp, real2dk const &re,
                               int nsteps, real step_size, real offset, real2dk const &tau_table, real2dk const &ssa_table,
-                              real2dk const &asy_table, ureal3dk &tau, ureal3dk &taussa, ureal3dk &taussag) {
+                              real2dk const &asy_table, real3dk &tau, real3dk &taussa, real3dk &taussag) {
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
@@ -924,7 +924,7 @@ public:
                              int m_ext, int n_ext, real1dk const &re_bounds_ext, real3dk const &coeffs_ext,
                              int m_ssa, int n_ssa, real1dk const &re_bounds_ssa, real3dk const &coeffs_ssa,
                              int m_asy, int n_asy, real1dk const &re_bounds_asy, real3dk const &coeffs_asy,
-                             ureal3dk &tau, ureal3dk &taussa, ureal3dk &taussag) {
+                             real3dk &tau, real3dk &taussa, real3dk &taussag) {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1, ncol

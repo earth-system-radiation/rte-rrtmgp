@@ -362,13 +362,13 @@ int main(int argc , char **argv) {
 #endif
       }
 
-#ifdef RRTMGP_ENABLE_KOKKOS
-      conv::MemPoolSingleton::finalize();
-#endif
-
       auto stop_t = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
       std::cout << "Shortwave did " << nloops << " loops of " << ncol << " cols and " << nlay << " layers in " <<  duration.count() / 1000000.0 << " s" << std::endl;
+
+#ifdef RRTMGP_ENABLE_KOKKOS
+      conv::MemPoolSingleton::finalize();
+#endif
 
       if (verbose) std::cout << "Writing fluxes\n\n";
 #ifdef RRTMGP_ENABLE_YAKL
@@ -576,11 +576,13 @@ int main(int argc , char **argv) {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      // const size_t MinBlockSize   = 32768;
-      // const size_t MaxBlockSize   = 1048576;
-      // const size_t SuperBlockSize = 1048576;
-      // conv::MemPoolSingleton::init(10000000, MinBlockSize, MaxBlockSize, SuperBlockSize,
-      //                              10000000, MinBlockSize, MaxBlockSize, SuperBlockSize);
+      const size_t MaxBlockSize   = 528640000;
+      const size_t MinBlockSize   = MaxBlockSize / 20;
+      const size_t SuperBlockSize = MaxBlockSize;
+      const size_t Capacity       = 4e9;
+      conv::MemPoolSingleton::init(Capacity, MinBlockSize, MaxBlockSize, SuperBlockSize,
+                                   Capacity, MinBlockSize, MaxBlockSize, SuperBlockSize);
+      conv::MemPoolSingleton::print_state();
       realOff3dk col_gas  ("col_gas"     ,std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 
@@ -658,6 +660,10 @@ int main(int argc , char **argv) {
       auto stop_t = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
       std::cout << "Longwave did " << nloops << " loops of " << ncol << " cols and " << nlay << " layers in " <<  duration.count() / 1000000.0 << " s" << std::endl;
+
+#ifdef RRTMGP_ENABLE_KOKKOS
+      conv::MemPoolSingleton::finalize();
+#endif
 
       if (verbose) std::cout << "Writing fluxes\n\n";
 #ifdef RRTMGP_ENABLE_YAKL

@@ -154,16 +154,36 @@ template <class FluxesType>
 void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts, OpticalProps1sclK const &optical_props,
             bool top_at_1, SourceFuncLWK const &sources, real2dk const &sfc_emis,
             FluxesType &fluxes, real2dk const &inc_flux, int n_gauss_angles) {
-  real3dk gpt_flux_up;
-  real3dk gpt_flux_dn;
-  real2dk sfc_emis_gpt;
+  using pool = conv::MemPoolSingleton;
+
+  const int ncol  = optical_props.get_ncol();
+  const int nlay  = optical_props.get_nlay();
+  const int ngpt  = optical_props.get_ngpt();
+  const int nband = optical_props.get_nband();
+
+  // Number of quadrature points for no-scattering calculation
+  int n_quad_angs = 1;
+  if ( n_gauss_angles != -1 ) {
+    if (n_gauss_angles > max_gauss_pts) {
+      stoprun("rte_lw: asking for too many quadrature points for no-scattering calculation");
+    }
+    if (n_gauss_angles < 1) {
+      stoprun("rte_lw: have to ask for at least one quadrature point for no-scattering calculation");
+    }
+    n_quad_angs = n_gauss_angles;
+  }
+
+  const int dsize1 = ncol * (nlay+1) * ngpt;
+  const int dsize2 = ncol * ngpt;
+  real* data = pool::alloc<real>(dsize1*2 + dsize2), *dcurr = data;
+  real3dk gpt_flux_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  real3dk gpt_flux_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  real2dk sfc_emis_gpt(dcurr,ncol       ,ngpt); dcurr += dsize2;
+  real1dk tmp_Ds      (dcurr,n_quad_angs); dcurr += n_quad_angs;
+  real1dk tmp_wts     (dcurr,n_quad_angs); dcurr += n_quad_angs;
 
   // Error checking
   //   if inc_flux is present it has the right dimensions, is positive definite
-  int ncol  = optical_props.get_ncol();
-  int nlay  = optical_props.get_nlay();
-  int ngpt  = optical_props.get_ngpt();
-  int nband = optical_props.get_nband();
 
   // Error checking -- consistency of sizes and validity of values
   if (! fluxes.are_desired()) { stoprun("rte_lw: no space allocated for fluxes"); }
@@ -187,25 +207,10 @@ void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts
     #endif
   }
 
-  // Number of quadrature points for no-scattering calculation
-  int n_quad_angs = 1;
-  if ( n_gauss_angles != -1 ) {
-    if (n_gauss_angles > max_gauss_pts) {
-      stoprun("rte_lw: asking for too many quadrature points for no-scattering calculation");
-    }
-    if (n_gauss_angles < 1) {
-      stoprun("rte_lw: have to ask for at least one quadrature point for no-scattering calculation");
-    }
-    n_quad_angs = n_gauss_angles;
-  }
-
   // Ensure values of tau, ssa, and g are reasonable
   optical_props.validate();
 
   // Lower boundary condition -- expand surface emissivity by band to gpoints
-  gpt_flux_up  = real3dk("gpt_flux_up" ,ncol,nlay+1,ngpt);
-  gpt_flux_dn  = real3dk("gpt_flux_dn" ,ncol,nlay+1,ngpt);
-  sfc_emis_gpt = real2dk("sfc_emis_gpt",ncol       ,ngpt);
   expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt);
 
   //   Upper boundary condition
@@ -219,8 +224,6 @@ void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts
   // Compute the radiative transfer...
   // No scattering two-stream calculation
   optical_props.validate();
-  real1dk tmp_Ds ("tmp_Ds" ,n_quad_angs);
-  real1dk tmp_wts("tmp_wts",n_quad_angs);
   // for (int i=1 ; i <= n_quad_angs ; i++) {
   Kokkos::parallel_for( n_quad_angs , KOKKOS_LAMBDA (int i) {
     tmp_Ds (i) = gauss_Ds (i,n_quad_angs - 1);
@@ -231,5 +234,7 @@ void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts
                              sfc_emis_gpt, sources.sfc_source, gpt_flux_up, gpt_flux_dn);
   // ...and reduce spectral fluxes to desired output quantities
   fluxes.reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1);
+
+  pool::dealloc(data, dcurr - data);
 }
 #endif

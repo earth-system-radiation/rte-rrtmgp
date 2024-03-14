@@ -140,11 +140,11 @@ void rte_sw(OpticalProps2strK const &atmos, bool top_at_1, real1dk const &mu0, r
   const int dsize1 = ncol * (nlay+1) * ngpt;
   const int dsize2 = ncol * ngpt;
   real* data = pool::alloc<real>(dsize1*3 + dsize2*2), *dcurr = data;
-  real3dk gpt_flux_up(dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
-  real3dk gpt_flux_dn(dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
-  real3dk gpt_flux_dir(dcurr,ncol, nlay+1, ngpt);  dcurr += dsize1;
-  real2dk sfc_alb_dir_gpt(dcurr,ncol, ngpt);  dcurr += dsize2;
-  real2dk sfc_alb_dif_gpt(dcurr,ncol, ngpt);  dcurr += dsize2;
+  real3dk gpt_flux_up    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
+  real3dk gpt_flux_dn    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
+  real3dk gpt_flux_dir   (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
+  real2dk sfc_alb_dir_gpt(dcurr,ncol, ngpt);         dcurr += dsize2;
+  real2dk sfc_alb_dif_gpt(dcurr,ncol, ngpt);         dcurr += dsize2;
 
   // Error checking -- consistency of sizes and validity of values
   if (! fluxes.are_desired()) { stoprun("rte_sw: no space allocated for fluxes"); }

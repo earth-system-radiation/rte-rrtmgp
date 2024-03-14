@@ -760,9 +760,9 @@ public:
     if (! (this->lut_extliq.is_allocated() || this->pade_extliq.is_allocated())) { stoprun("cloud optics: no data has been initialized"); }
     // Array sizes
     const int num_bools = ncol * nlay;
-    bool* bdata         = pool::alloc<bool>(num_bools * 2);
-    bool2dk liqmsk(bdata,             ncol, nlay);
-    bool2dk icemsk(bdata + num_bools, ncol, nlay);
+    bool* bdata         = pool::alloc<bool>(num_bools * 2), *bcurr = bdata;
+    bool2dk liqmsk(bcurr, ncol, nlay); bcurr += num_bools;
+    bool2dk icemsk(bcurr, ncol, nlay); bcurr += num_bools;
 
     // Spectral consistency
     if (! this->bands_are_equal(optical_props)) { stoprun("cloud optics: optical properties don't have the same band structure"); }
@@ -799,13 +799,13 @@ public:
     // We could compute the properties for liquid and ice separately and
     //    use ty_optical_props_arry.increment but this involves substantially more division.
     const int num_tau = clwp.extent(0) *  clwp.extent(1) * this->get_nband();
-    real* data        = pool::alloc<real>(num_tau * 6);
-    real3dk ltau    (data,             clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk ltaussa (data + num_tau,   clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk ltaussag(data + num_tau*2, clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk itau    (data + num_tau*3, clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk itaussa (data + num_tau*4, clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk itaussag(data + num_tau*5, clwp.extent(0), clwp.extent(1), this->get_nband());
+    real* data        = pool::alloc<real>(num_tau * 6), *dcurr = data;
+    real3dk ltau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk ltaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk ltaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk itau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk itaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk itaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
     if (this->lut_extliq.is_allocated()) {
       // Liquid
       compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq, this->liq_nsteps,this->liq_step_size,this->radliq_lwr,
@@ -836,8 +836,8 @@ public:
     //   See also the increment routines in mo_optical_props_kernels
     combine( nbnd, nlay, ncol, ltau, itau, ltaussa, itaussa, ltaussag, itaussag, optical_props );
 
-    pool::dealloc(bdata, 2 * num_bools);
-    pool::dealloc(data , 6 * num_tau);
+    pool::dealloc(bdata, bcurr - bdata);
+    pool::dealloc(data , dcurr - data);
   }
 
   void combine( int nbnd, int nlay, int ncol, real3dk const &ltau, real3dk const &itau, real3dk const &ltaussa, real3dk const &itaussa,

@@ -1992,9 +1992,9 @@ public:
     // Interpolation coefficients for use in source function
     int2dk  jtemp (pool::alloc<int>(ncol*nlay),  ncol,nlay);
     int2dk  jpress(pool::alloc<int>(ncol*nlay),  ncol,nlay);
+    int4dk  jeta  (pool::alloc<int>(2*this->get_nflav()*ncol*nlay), 2, this->get_nflav(), ncol, nlay);
     bool2dk tropo (pool::alloc<bool>(ncol*nlay), ncol,nlay);
     real6dk fmajor(pool::alloc<real>(2*2*2*this->get_nflav()*ncol*nlay), 2,2,2,this->get_nflav(),ncol,nlay);
-    int4dk  jeta  (pool::alloc<int>(2*this->get_nflav()*ncol*nlay), 2, this->get_nflav(), ncol, nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress,
                      jeta, tropo, fmajor, col_dry);
@@ -2080,20 +2080,20 @@ public:
     const int size2 = ncol*nlay*this->get_ngas();
     const int size3 = 2*this->get_nflav()*ncol*nlay;
     const int size4 = 2*2*this->get_nflav()*ncol*nlay;
-    real* data = pool::alloc<real>(size1*2 + size2 + size3 + size4);
-    real3dk tau         (data,ngpt,nlay,ncol);
-    real3dk tau_rayleigh(data + size1,ngpt,nlay,ncol);
+    real* data = pool::alloc<real>(size1*2 + size2 + size3 + size4), *dcurr = data;
+    real3dk tau         (dcurr,ngpt,nlay,ncol); dcurr += size1;
+    real3dk tau_rayleigh(dcurr,ngpt,nlay,ncol); dcurr += size1;
     // Interpolation variables used in major gas but not elsewhere, so don't need exporting
-    real3dk vmr         (data + size1*2, ncol,nlay,this->get_ngas());
-    real4dk col_mix     (data + size1*2 + size2, 2,this->get_nflav(),ncol,nlay); // combination of major species's column amounts
-                                                                       // index(1) : reference temperature level
-                                                                       // index(2) : flavor
-                                                                       // index(3) : layer
-    real5dk fminor      (data + size1*2 + size2 + size3, 2,2,this->get_nflav(),ncol,nlay); // interpolation fractions for minor species
-                                                                         // index(1) : reference eta level (temperature dependent)
-                                                                         // index(2) : reference temperature level
-                                                                         // index(3) : flavor
-                                                                         // index(4) : layer
+    real3dk vmr         (dcurr,ncol,nlay,this->get_ngas()); dcurr += size2;
+    real4dk col_mix     (dcurr,2,this->get_nflav(),ncol,nlay); dcurr += size3; // combination of major species's column amounts
+                                                                               // index(1) : reference temperature level
+                                                                               // index(2) : flavor
+                                                                               // index(3) : layer
+    real5dk fminor      (dcurr,2,2,this->get_nflav(),ncol,nlay); dcurr += size4; // interpolation fractions for minor species
+                                                                                 // index(1) : reference eta level (temperature dependent)
+                                                                                 // index(2) : reference temperature level
+                                                                                 // index(3) : flavor
+                                                                                 // index(4) : layer
     // Error checking
     // Check for initialization
     if (! this->is_initialized()) { stoprun("ERROR: spectral configuration not loaded"); }
@@ -2186,7 +2186,7 @@ public:
     }
     combine_and_reorder(tau, tau_rayleigh, this->krayl.is_allocated(), optical_props);
 
-    pool::dealloc(data, size1*2 + size2 + size3 + size4);
+    pool::dealloc(data, dcurr - data);
     if (dealloc_col_dry) {
       pool::dealloc(col_dry_wk.data(), col_dry_wk.size());
     }
@@ -2200,21 +2200,22 @@ public:
     const int dsize1 = ngpt * nlay * ncol;
     const int dsize2 = ngpt * ncol;
     const int dsize3 = ncol * (nlay+1);
-    real* data = pool::alloc<real>(dsize1*3 + dsize2 + dsize3*2);
-    real3dk lay_source_t    (data,ngpt,nlay,ncol);
-    real3dk lev_source_inc_t(data + dsize1,ngpt,nlay,ncol);
-    real3dk lev_source_dec_t(data + dsize1*2,ngpt,nlay,ncol);
-    real2dk sfc_source_t    (data + dsize1*3,ngpt     ,ncol);
+    real* data = pool::alloc<real>(dsize1*3 + dsize2 + dsize3*2), *dcurr = data;
+    real3dk lay_source_t    (dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    real3dk lev_source_inc_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    real3dk lev_source_dec_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    real2dk sfc_source_t    (dcurr,ngpt     ,ncol); dcurr += dsize2;
     // Variables for temperature at layer edges [K] (ncol, nlay+1)
-    real2dk tlev_arr(data + dsize1*3 + dsize2,ncol,nlay+1);
+    real2dk tlev_arr(dcurr,ncol,nlay+1); dcurr += dsize3;
 
     // Source function needs temperature at interfaces/levels and at layer centers
     real2dk tlev_wk;
     if (tlev.is_allocated()) {
       //   Users might have provided these
       tlev_wk = tlev;
+      dcurr += dsize3;
     } else {
-      tlev_wk = real2dk(data + dsize1*3 + dsize2 + dsize3,ncol,nlay+1);
+      tlev_wk = real2dk(dcurr,ncol,nlay+1); dcurr += dsize3;
       // Interpolate temperature to levels if not provided
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
@@ -2253,7 +2254,7 @@ public:
     reorder123x321(ngpt, nlay, ncol, lev_source_inc_t, sources.lev_source_inc);
     reorder123x321(ngpt, nlay, ncol, lev_source_dec_t, sources.lev_source_dec);
 
-    pool::dealloc(data, dsize1*3 + dsize2 + dsize3*2);
+    pool::dealloc(data, dcurr - data);
   }
 
   // Utility function, provided for user convenience
@@ -2266,7 +2267,7 @@ public:
     real constexpr helmert2 = 0.02586;
     int ncol = plev.extent(0);
     int nlev = plev.extent(1);
-    real1dk g0(pool::alloc<real>(plev.extent(0)), plev.extent(0));
+    real1dk g0(pool::alloc<real>(ncol), ncol);
     if (latitude.is_allocated()) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
@@ -2281,7 +2282,7 @@ public:
       });
     }
 
-    real2dk col_dry(pool::alloc<real>(plev.extent(0) * (plev.extent(1)-1)) ,plev.extent(0),plev.extent(1)-1);
+    real2dk col_dry(pool::alloc<real>(ncol * (nlev-1)) ,ncol,nlev-1);
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
     const auto m_dry = ::m_dry;

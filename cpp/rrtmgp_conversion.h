@@ -422,7 +422,17 @@ struct MemPoolSingleton
   static inline
   T* alloc(const int num) noexcept
   {
-    T* rv = reinterpret_cast<T*>(s_device_mem_pool.allocate(num * sizeof(T)));
+    T* rv;
+#ifdef KOKKOS_ENABLE_CUDA
+    uint64_t addr = 0;
+    DeviceMemPool pool_temp = s_device_mem_pool;
+    Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(size_t, uint64_t& ptr) {
+      ptr = reinterpret_cast<uint64_t>(pool_temp.allocate(num * sizeof(T)));
+    }, Kokkos::Max<uint64_t>(addr));
+    rv = reinterpret_cast<T*>(addr);
+#else
+    rv = reinterpret_cast<T*>(s_device_mem_pool.allocate(num * sizeof(T)));
+#endif
     assert(rv != nullptr);
     return rv;
   }
@@ -440,7 +450,14 @@ struct MemPoolSingleton
   static inline
   void dealloc(T* data, const int num) noexcept
   {
+#ifdef KOKKOS_ENABLE_CUDA
+    DeviceMemPool pool_temp = s_device_mem_pool;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t) {
+      pool_temp.deallocate(data, num * sizeof(T));
+    });
+#else
     s_device_mem_pool.deallocate(data, num * sizeof(T));
+#endif
   }
 
   template <typename T>

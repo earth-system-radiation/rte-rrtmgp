@@ -2134,7 +2134,7 @@ public:
       // Get vmr if  gas is provided in ty_gas_concs
       for (size_t igas2 = 0 ; igas2 < gas_desc.gas_name.size() ; igas2++) {
         if ( lower_case(this->gas_names[igas]) == lower_case(gas_desc.gas_name[igas2]) ) {
-          real2dk vmr_slice = Kokkos::subview(vmr, Kokkos::ALL, Kokkos::ALL, igas);
+          auto vmr_slice = Kokkos::subview(vmr, Kokkos::ALL, Kokkos::ALL, igas);
           gas_desc.get_vmr(this->gas_names[igas], vmr_slice);
         }
       }
@@ -2259,7 +2259,8 @@ public:
 
   // Utility function, provided for user convenience
   // computes column amounts of dry air using hydrostatic equation
-  real2dk get_col_dry(real2dk const &vmr_h2o, real2dk const &plev, real1dk const &latitude=real1dk()) {
+  template <typename View>
+  real2dk get_col_dry(View const &vmr_h2o, real2dk const &plev, real1dk const &latitude=real1dk()) {
     using pool = conv::MemPoolSingleton;
 
     // first and second term of Helmert formula

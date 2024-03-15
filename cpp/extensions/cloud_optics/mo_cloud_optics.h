@@ -896,9 +896,11 @@ public:
   //   elements starting at "offset." The table's second dimension is band.
   // Returns 0 where the mask is false.
   // We could also try gather/scatter for efficiency
+  template <typename StrideView>
   void compute_all_from_table(int ncol, int nlay, int nbnd, bool2dk const &mask, real2dk const &lwp, real2dk const &re,
-                              int nsteps, real step_size, real offset, real2dk const &tau_table, real2dk const &ssa_table,
-                              real2dk const &asy_table, real3dk &tau, real3dk &taussa, real3dk &taussag) {
+                              int nsteps, real step_size, real offset,
+                              StrideView const &tau_table, StrideView const &ssa_table, StrideView const &asy_table,
+                              real3dk &tau, real3dk &taussa, real3dk &taussag) {
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
@@ -920,10 +922,11 @@ public:
   }
 
   // Pade functions
+  template <typename StrideView>
   void compute_all_from_pade(int ncol, int nlay, int nbnd, int nsizes, bool2dk const &mask, real2dk const &lwp, real2dk const &re,
-                             int m_ext, int n_ext, real1dk const &re_bounds_ext, real3dk const &coeffs_ext,
-                             int m_ssa, int n_ssa, real1dk const &re_bounds_ssa, real3dk const &coeffs_ssa,
-                             int m_asy, int n_asy, real1dk const &re_bounds_asy, real3dk const &coeffs_asy,
+                             int m_ext, int n_ext, real1dk const &re_bounds_ext, StrideView const &coeffs_ext,
+                             int m_ssa, int n_ssa, real1dk const &re_bounds_ssa, StrideView const &coeffs_ssa,
+                             int m_asy, int n_asy, real1dk const &re_bounds_asy, StrideView const &coeffs_asy,
                              real3dk &tau, real3dk &taussa, real3dk &taussag) {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay

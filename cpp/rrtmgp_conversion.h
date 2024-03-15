@@ -247,14 +247,20 @@ template <typename YArray, typename KView>
 void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index_data=false)
 {
   using yakl::intrinsics::size;
+  using LeftHostView = Kokkos::View<typename KView::non_const_data_type, Kokkos::LayoutLeft, HostDevice>;
 
   constexpr auto krank = KView::rank;
   const auto yrank = yarray.get_rank();
 
   RRT_REQUIRE(krank == yrank, "Rank mismatch for: " << kview.label());
 
-  auto hkview = Kokkos::create_mirror_view(kview);
+  Kokkos::LayoutLeft llayout;
+  for (auto r = 0; r < krank; ++r) {
+    llayout.dimension[r] = kview.layout().dimension[r];
+  }
+  LeftHostView hkview("read_data", llayout);
   Kokkos::deep_copy(hkview, kview);
+
   auto hyarray = yarray.createHostCopy();
 
   for (auto r = 0; r < krank; ++r) {
@@ -1008,6 +1014,8 @@ public:
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
     using T       = typename View::non_const_value_type;
+
+    using LeftHostView = Kokkos::View<typename View::non_const_data_type, Kokkos::LayoutLeft, HostDevice>;
     constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
     constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
     constexpr auto rank = View::rank;
@@ -1018,11 +1026,7 @@ public:
     if ( ! var.isNull() ) {
       auto varDims = var.getDims();
       if (varDims.size() != rank) { throw std::runtime_error("Existing variable's rank != array's rank"); }
-      if (is_c_layout) {
-        for (int i=0; i < varDims.size(); i++) { dimSizes[i] = varDims[i].getSize(); }
-      } else {
-        for (int i=0; i < varDims.size(); i++) { dimSizes[i] = varDims[varDims.size()-1-i].getSize(); }
-      }
+      for (int i=0; i < varDims.size(); i++) { dimSizes[i] = varDims[varDims.size()-1-i].getSize(); }
       bool createArr = false;
       for (int i=0; i < dimSizes.size(); i++) {
         if (dimSizes[i] != arr.extent(i)) {
@@ -1035,36 +1039,26 @@ public:
       }
     } else { throw std::runtime_error("Variable does not exist"); }
 
-    if (is_device_mem) {
-      auto arrHost = Kokkos::create_mirror_view(arr);
-      if (std::is_same<T,bool>::value) {
-        int* tmp = new int[arr.size()];
-        var.getVar(tmp);
-        for (size_t i=0; i < arr.size(); ++i) { arrHost.data()[i] = (tmp[i] == 1); }
-        delete[] tmp;
-      }
-      else {
-        var.getVar(arrHost.data());
-        // integer data is nearly always idx data, so adjust it to 0-based
-        if (std::is_same<T,int>::value) {
-          for (size_t i=0; i < arr.size(); ++i) { arrHost.data()[i] -= 1; }
-        }
-      }
-      Kokkos::deep_copy(arr, arrHost);
-    } else {
-      if (std::is_same<T,bool>::value) {
-        int* tmp = new int[arr.size()];
-        var.getVar(tmp);
-        for (size_t i=0; i < arr.size(); ++i) { arr.data()[i] = (tmp[i] == 1); }
-        delete[] tmp;
-      } else {
-        var.getVar(arr.data());
-        // integer data is nearly always idx data, so adjust it to 0-based
-        if (std::is_same<T,int>::value) {
-          for (size_t i=0; i < arr.size(); ++i) { arr.data()[i] -= 1; }
-        }
+    Kokkos::LayoutLeft llayout;
+    for (auto r = 0; r < rank; ++r) {
+      llayout.dimension[r] = arr.layout().dimension[r];
+    }
+    LeftHostView read_data("read_data", llayout);
+
+    if (std::is_same<T,bool>::value) {
+      int* tmp = new int[arr.size()];
+      var.getVar(tmp);
+      for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] = (tmp[i] == 1); }
+      delete[] tmp;
+    }
+    else {
+      var.getVar(read_data.data());
+      // integer data is nearly always idx data, so adjust it to 0-based
+      if (std::is_same<T,int>::value) {
+        for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] -= 1; }
       }
     }
+    Kokkos::deep_copy(arr, read_data);
   }
 
 

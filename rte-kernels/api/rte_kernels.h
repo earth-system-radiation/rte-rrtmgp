@@ -84,7 +84,7 @@ extern "C"
               // [out] flux_up_jac: vector of length ncol*(nlay+1)*ngpt 
             Bool* do_rescaling,
               // [in] do_rescaling: constant Bool 
-            Float* ssa, g);
+            Float* ssa, Float* g);
               // [in] ssa, g: vectors of length ncol*nlay*ngpt 
             
 

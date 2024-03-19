@@ -20,59 +20,109 @@ include "rte_types.h"
 extern "C"
 {
     void rrtmgp_interpolation(
-            int* ncol, int* nlay,
-            int* ngas, int* nflav, int* neta, int* npres, int* ntemp,
+            const int ncol&, const int nlay&,
+            const int ngas&, const int nflav&, const int neta&, 
+            const int npres&, const int ntemp&,
             int* flavor,
+              // [in] (2,nflav)
             Float* press_ref_log,
+              // [in] (npres)
             Float* temp_ref,
-            Float* press_ref_log_delta,
-            Float* temp_ref_min,
-            Float* temp_ref_delta,
-            Float* press_ref_trop_log,
+              // [in] (ntemp)
+            const Float press_ref_log_delta&,
+            const Float temp_ref_min&,
+            const Float temp_ref_delta&,
+            const Float press_ref_trop_log&,
             Float* vmr_ref,
+              // [in] (2,ngas+1,ntemp)
             Float* play,
+              // [in] (ncol,nlay) 
             Float* tlay,
+              // [in] (ncol,nlay) 
             Float* col_gas,
+              // [in] (ncol,nlay,ngas+1)
             int* jtemp,
-            Float* fmajor, Float* fminor,
+              // [out] (ncol*nlay) 
+            Float* fmajor,
+              // [out] (2,2,2,ncol,nlay,nflav) 
+            Float* fminor,
+              // [out[ (2,2,  ncol,nlay,nflav))
             Float* col_mix,
+              // [out] (2,    ncol,nlay,nflav)
             Bool* tropo,
+              // [out] size (ncol*nlay) 
             int* jeta,
+              // [out] size (2*ncol*nlay*nflav) 
             int* jpress);
+              // [out] size (ncol*nlay) 
 
     void rrtmgp_compute_tau_absorption(
-            int* ncol, int* nlay, int* nband, int* ngpt,
-            int* ngas, int* nflav, int* neta, int* npres, int* ntemp,
-            int* nminorlower, int* nminorklower,
-            int* nminorupper, int* nminorkupper,
-            int* idx_h2o,
+            const int ncol&, const int nlay&, const int nband&, const int ngpt&,
+            const int ngas&, const int nflav&, const int neta&, 
+            const int npres&, const int ntemp&,
+            const int nminorlower&, const int nminorklower&,
+            const int nminorupper&, const int nminorkupper&,
+            const int idx_h2o&,
             int* gpoint_flavor,
+              // [in] (2,ngpt)
             int* band_lims_gpt,
+              // [in] (2,nbnd)
             Float* kmajor,
+              // [in] (ntemp,neta,npres+1,ngpt)
             Float* kminor_lower,
+              // [in] (ntemp,neta,nminorklower)
             Float* kminor_upper,
+              // [in] (ntemp,neta,nminorkupper)
             int* minor_limits_gpt_lower,
+              // [in] (2,nminorlower)
             int* minor_limits_gpt_upper,
+              // [in] (2,nminorupper)
             Bool* minor_scales_with_density_lower,
+              // [in] (  nminorlower)
             Bool* minor_scales_with_density_upper,
+              // [in] (  nminorupper)
             Bool* scale_by_complement_lower,
+              // [in] (  nminorlower)
             Bool* scale_by_complement_upper,
+              // [in] (  nminorupper)
             int* idx_minor_lower,
+              // [in] (  nminorlower)
             int* idx_minor_upper,
+              // [in] (  nminorupper)
             int* idx_minor_scaling_lower,
+              // [in] (  nminorlower)
             int* idx_minor_scaling_upper,
+              // [in] (  nminorupper)
             int* kminor_start_lower,
+              // [in] (  nminorlower)
             int* kminor_start_upper,
+              // [in] (  nminorupper)
             Bool* tropo,
-            Float* col_mix, Float* fmajor,
-            Float* fminor, Float* play,
-            Float* tlay, Float* col_gas,
-            int* jeta, int* jtemp,
-            int* jpress, Float* tau);
+              // [in] (ncol,nlay)
+            Float* col_mix, 
+              // [in] (2,    ncol,nlay,nflav       )
+            Float* fmajor,
+              // [in] (2,2,2,ncol,nlay,nflav       )
+            Float* fminor, 
+             // [in] (2,2,  ncol,nlay,nflav       )
+            Float* play,
+              // [in] (ncol,nlay)
+            Float* tlay, 
+              // [in] (ncol,nlay)
+            Float* col_gas,
+              // [in] (ncol,nlay,ngas+1)
+            int* jeta, 
+              // [in] (2,    ncol,nlay,nflav       )
+            int* jtemp,
+              // [in] (ncol,nlay)
+            int* jpress, 
+              // [in] (ncol,nlay)
+            Float* tau);
+              // [inout] (ncol,nlay.ngpt)
 
     void rrtmgp_compute_tau_rayleigh(
-            int* ncol, int* nlay, int* nband, int* ngpt,
-            int* ngas, int* nflav, int* neta, int* npres, int* ntemp,
+            const int ncol&, const int nlay&, const int nband&, const int ngpt&,
+            const int ngas&, const int nflav&, const int neta&, const int npres&, const int ntemp&,
             int* gpoint_flavor,
             int* band_lims_gpt,
             Float* krayl,
@@ -82,9 +132,9 @@ extern "C"
             Float* tau_rayleigh);
 
     void rrtmgp_compute_Planck_source(
-            int* ncol, int* nlay, int* nbnd, int* ngpt,
-            int* nflav, int* neta, int* npres, int* ntemp,
-            int* nPlanckTemp,
+            const int ncol&, const int nlay&, int* nbnd, const int ngpt&,
+            const int nflav&, const int neta&, const int npres&, const int ntemp&,
+            int nPlanckTemp&,
             Float* tlay,
             Float* tlev,
             Float* tsfc,

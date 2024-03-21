@@ -175,7 +175,7 @@ void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts
 
   const int dsize1 = ncol * (nlay+1) * ngpt;
   const int dsize2 = ncol * ngpt;
-  real* data = pool::alloc<real>(dsize1*2 + dsize2), *dcurr = data;
+  real* data = pool::alloc<real>(dsize1*2 + dsize2 + 2*n_quad_angs), *dcurr = data;
   real3dk gpt_flux_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
   real3dk gpt_flux_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
   real2dk sfc_emis_gpt(dcurr,ncol       ,ngpt); dcurr += dsize2;

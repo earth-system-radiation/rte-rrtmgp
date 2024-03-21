@@ -449,6 +449,7 @@ struct MemPoolSingleton
   void finalize()
   {
     print_state();
+    assert(s_curr_used == 0); // !=0 indicates we may have forgetten a dealloc
     s_mem = Kokkos::View<real*>();
   }
 

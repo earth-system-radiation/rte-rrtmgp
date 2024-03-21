@@ -409,10 +409,10 @@ struct MemPoolSingleton
 {
  public:
   static inline Kokkos::View<real*> s_mem;
-  static inline size_t s_curr_used;
-  static inline size_t s_high_water;
+  static inline int64_t s_curr_used;
+  static inline int64_t s_high_water;
 
-  static void init(const size_t capacity)
+  static void init(const int64_t capacity)
   {
     static bool is_init = false;
     RRT_REQUIRE(!is_init, "Multiple MemPoolSingleton inits");
@@ -423,10 +423,10 @@ struct MemPoolSingleton
 
   template <typename T>
   static inline
-  T* alloc(const int num) noexcept
+  T* alloc(const int64_t num) noexcept
   {
     assert(sizeof(T) <= sizeof(real));
-    const size_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
+    const int64_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
     T* rv = reinterpret_cast<T*>(s_mem.data() + s_curr_used);
     s_curr_used += num_reals;
     assert(s_curr_used <= s_mem.size());
@@ -438,9 +438,9 @@ struct MemPoolSingleton
 
   template <typename T>
   static inline
-  void dealloc(const T*, const int num) noexcept
+  void dealloc(const T*, const int64_t num) noexcept
   {
-    const size_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
+    const int64_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
     s_curr_used -= num_reals;
     assert(s_curr_used >= 0);
   }
@@ -448,6 +448,7 @@ struct MemPoolSingleton
   static inline
   void finalize()
   {
+    print_state();
     s_mem = Kokkos::View<real*>();
   }
 

@@ -270,14 +270,8 @@ int main(int argc , char **argv) {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      const size_t MaxBlockSize   = 528640000;
-      const size_t MinBlockSize   = MaxBlockSize / 20;
-      const size_t SuperBlockSize = MaxBlockSize;
-      const size_t Capacity       = 4e9;
-      conv::MemPoolSingleton::init(Capacity, MinBlockSize, MaxBlockSize, SuperBlockSize,
-                                   Capacity, MinBlockSize, MaxBlockSize, SuperBlockSize);
-      conv::MemPoolSingleton::print_state();
-      realOff3dk col_gas  ("col_gas"     ,std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
+      conv::MemPoolSingleton::init(1e6);
+      realOff3dk col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 
       if (verbose) std::cout << "Running the main loop\n\n";
@@ -576,14 +570,8 @@ int main(int argc , char **argv) {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      const size_t MaxBlockSize   = 528640000;
-      const size_t MinBlockSize   = MaxBlockSize / 20;
-      const size_t SuperBlockSize = MaxBlockSize;
-      const size_t Capacity       = 4e9;
-      conv::MemPoolSingleton::init(Capacity, MinBlockSize, MaxBlockSize, SuperBlockSize,
-                                   Capacity, MinBlockSize, MaxBlockSize, SuperBlockSize);
-      conv::MemPoolSingleton::print_state();
-      realOff3dk col_gas  ("col_gas"     ,std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
+      conv::MemPoolSingleton::init(1e6);
+      realOff3dk col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 
       // Multiple iterations for big problem sizes, and to help identify data movement

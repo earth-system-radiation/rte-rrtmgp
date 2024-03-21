@@ -404,86 +404,57 @@ sum(const KView& view)
   return rv;
 }
 
-// MemPool singleton
+// MemPool singleton. Stack allocation pattern only.
 struct MemPoolSingleton
 {
-  using DeviceMemPool = typename Kokkos::MemoryPool<typename DefaultDevice::execution_space>;
-  using HostMemPool   = typename Kokkos::MemoryPool<typename HostDevice::execution_space>;
-
  public:
-  inline static DeviceMemPool s_device_mem_pool;
-  inline static HostMemPool   s_host_mem_pool;
+  static inline Kokkos::View<real*> s_mem;
+  static inline size_t s_curr_used;
+  static inline size_t s_high_water;
 
-  static void init(
-    const size_t dev_capacity, const size_t dev_min_block_size, const size_t dev_max_block_size, const size_t dev_super_block_size,
-    const size_t hst_capacity, const size_t hst_min_block_size, const size_t hst_max_block_size, const size_t hst_super_block_size)
+  static void init(const size_t capacity)
   {
     static bool is_init = false;
     RRT_REQUIRE(!is_init, "Multiple MemPoolSingleton inits");
-    s_device_mem_pool = DeviceMemPool(typename DefaultDevice::memory_space(), dev_capacity, dev_min_block_size, dev_max_block_size, dev_super_block_size);
-    //s_host_mem_pool = HostMemPool(typename HostDevice::memory_space(), hst_capacity, hst_min_block_size, hst_max_block_size, hst_super_block_size);
+    s_mem = Kokkos::View<real*>("s_mem", capacity);
+    s_curr_used = 0;
+    s_high_water = 0;
   }
 
   template <typename T>
   static inline
   T* alloc(const int num) noexcept
   {
-    T* rv;
-#ifdef KOKKOS_ENABLE_CUDA
-    uint64_t addr = 0;
-    DeviceMemPool pool_temp = s_device_mem_pool;
-    Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(size_t, uint64_t& ptr) {
-      ptr = reinterpret_cast<uint64_t>(pool_temp.allocate(num * sizeof(T)));
-    }, Kokkos::Max<uint64_t>(addr));
-    rv = reinterpret_cast<T*>(addr);
-#else
-    rv = reinterpret_cast<T*>(s_device_mem_pool.allocate(num * sizeof(T)));
-#endif
-    assert(rv != nullptr);
+    assert(sizeof(T) <= sizeof(real));
+    const size_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
+    T* rv = reinterpret_cast<T*>(s_mem.data() + s_curr_used);
+    s_curr_used += num_reals;
+    assert(s_curr_used <= s_mem.size());
+    if (s_curr_used > s_high_water) {
+      s_high_water = s_curr_used;
+    }
     return rv;
   }
 
   template <typename T>
   static inline
-  T* alloc_host(const int num) noexcept
+  void dealloc(const T*, const int num) noexcept
   {
-    T* rv = reinterpret_cast<T*>(s_host_mem_pool.allocate(num * sizeof(T)));
-    assert(rv != nullptr);
-    return rv;
-  }
-
-  template <typename T>
-  static inline
-  void dealloc(T* data, const int num) noexcept
-  {
-#ifdef KOKKOS_ENABLE_CUDA
-    DeviceMemPool pool_temp = s_device_mem_pool;
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t) {
-      pool_temp.deallocate(data, num * sizeof(T));
-    });
-#else
-    s_device_mem_pool.deallocate(data, num * sizeof(T));
-#endif
-  }
-
-  template <typename T>
-  static inline
-  void dealloc_host(T* data, const int num) noexcept
-  {
-    s_host_mem_pool.deallocate(data, num * sizeof(T));
+    const size_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
+    s_curr_used -= num_reals;
+    assert(s_curr_used >= 0);
   }
 
   static inline
   void finalize()
   {
-    s_device_mem_pool = DeviceMemPool();
-    s_host_mem_pool = HostMemPool();
+    s_mem = Kokkos::View<real*>();
   }
 
   static inline
   void print_state()
   {
-    s_device_mem_pool.print_state(std::cout);
+    std::cout << "Used " << s_curr_used << " of out of " << s_mem.size() << ", high_water was " << s_high_water << std::endl;
   }
 };
 

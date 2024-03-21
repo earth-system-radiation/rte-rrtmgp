@@ -989,8 +989,6 @@ public:
     using T       = typename View::non_const_value_type;
 
     using LeftHostView = Kokkos::View<typename View::non_const_data_type, Kokkos::LayoutLeft, HostDevice>;
-    constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
-    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
     constexpr auto rank = View::rank;
 
     // Make sure the variable is there and is the right dimension

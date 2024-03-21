@@ -45,7 +45,7 @@ int main(int argc , char **argv) {
     std::string input_file        =      argv[1];
     std::string k_dist_file       =      argv[2];
     std::string cloud_optics_file =      argv[3];
-    int ncol                      = std::atoi(argv[4]);
+    const int ncol                = std::atoi(argv[4]);
     int nloops = 1;
     if (argc >= 6) { nloops       = std::atoi(argv[5]); }
     if (ncol   <= 0) { stoprun("Error: Number of columns must be > 0"); }
@@ -95,7 +95,8 @@ int main(int argc , char **argv) {
     VALIDATE_KOKKOS(gas_concs, gas_concs_k);
 #endif
 
-    int nlay = COMPUTE_SWITCH(size(p_lay,2), p_lay_k.extent(1));
+    const int nlay = COMPUTE_SWITCH(size(p_lay,2), p_lay_k.extent(1));
+    const int nlev = COMPUTE_SWITCH(size(p_lev,2), p_lev_k.extent(1));
 
     // load data into classes
     if (verbose) std::cout << "Reading k_dist file\n\n";
@@ -270,7 +271,9 @@ int main(int argc , char **argv) {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      conv::MemPoolSingleton::init(2e6);
+      const size_t base_ref = 18000;
+      const size_t my_size_ref = ncol * nlay * nlev;
+      conv::MemPoolSingleton::init(2e6 * (float(my_size_ref) / base_ref));
       realOff3dk col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 
@@ -570,7 +573,9 @@ int main(int argc , char **argv) {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      conv::MemPoolSingleton::init(2e6);
+      const size_t base_ref = 18000;
+      const size_t my_size_ref = ncol * nlay * nlev;
+      conv::MemPoolSingleton::init(2e6 * (float(my_size_ref) / base_ref));
       realOff3dk col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 

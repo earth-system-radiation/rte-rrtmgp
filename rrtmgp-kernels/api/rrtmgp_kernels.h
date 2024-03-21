@@ -94,7 +94,7 @@ extern "C"
             Float* tau_rayleigh); // [inout] (ncol,nlay.ngpt)
 
     void rrtmgp_compute_Planck_source(
-            const int ncol&, const int nlay&, int* nbnd, const int ngpt&,
+            const int ncol&, const int nlay&, const int nbnd&, const int ngpt&,
             const int nflav&, const int neta&, const int npres&, const int ntemp&,
             const int nPlanckTemp&,
             const Float* tlay, // (ncol,nlay  )

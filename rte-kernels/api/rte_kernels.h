@@ -203,6 +203,7 @@ extern "C"
             int* ncol, int* nlay, int* ngpt,
               // [in] ncol, nlay, ngpt: constant scalars
             Float* tau_inout,
+            Float* tau_in, Float* ssa_in,
             int* nbnd, int* band_lims_gpoint);
 
     void rte_inc_2stream_by_1scalar_bybnd(

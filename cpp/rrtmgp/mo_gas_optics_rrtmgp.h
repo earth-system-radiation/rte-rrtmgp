@@ -1990,11 +1990,11 @@ public:
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     // Interpolation coefficients for use in source function
-    int2dk  jtemp (pool::alloc<int>(ncol*nlay),  ncol,nlay);
-    int2dk  jpress(pool::alloc<int>(ncol*nlay),  ncol,nlay);
-    int4dk  jeta  (pool::alloc<int>(2*this->get_nflav()*ncol*nlay), 2, this->get_nflav(), ncol, nlay);
-    bool2dk tropo (pool::alloc<bool>(ncol*nlay), ncol,nlay);
-    real6dk fmajor(pool::alloc<real>(2*2*2*this->get_nflav()*ncol*nlay), 2,2,2,this->get_nflav(),ncol,nlay);
+    int2dk  jtemp  = pool::alloc<int2dk> (ncol, nlay);
+    int2dk  jpress = pool::alloc<int2dk> (ncol, nlay);
+    int4dk  jeta   = pool::alloc<int4dk> (2, this->get_nflav(), ncol, nlay);
+    bool2dk tropo  = pool::alloc<bool2dk>(ncol, nlay);
+    real6dk fmajor = pool::alloc<real6dk>(2,2,2,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress,
                      jeta, tropo, fmajor, col_dry);
@@ -2024,11 +2024,11 @@ public:
     // Interpolate source function
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
 
-    pool::dealloc(jtemp.data(), jtemp.size());
-    pool::dealloc(jpress.data(), jpress.size());
-    pool::dealloc(tropo.data(), tropo.size());
-    pool::dealloc(fmajor.data(), fmajor.size());
-    pool::dealloc(jeta.data(), jeta.size());
+    pool::dealloc(jtemp);
+    pool::dealloc(jpress);
+    pool::dealloc(tropo);
+    pool::dealloc(fmajor);
+    pool::dealloc(jeta);
   }
 
   // Compute gas optical depth given temperature, pressure, and composition
@@ -2044,11 +2044,11 @@ public:
     int nflav = get_nflav();
 
     // Interpolation coefficients for use in source function
-    int2dk  jtemp (pool::alloc<int>(ncol*nlay),  ncol,nlay);
-    int2dk  jpress(pool::alloc<int>(ncol*nlay),  ncol,nlay);
-    bool2dk tropo (pool::alloc<bool>(ncol*nlay), ncol,nlay);
-    real6dk fmajor(pool::alloc<real>(2*2*2*this->get_nflav()*ncol*nlay), 2,2,2,this->get_nflav(),ncol,nlay);
-    int4dk  jeta  (pool::alloc<int>(2*this->get_nflav()*ncol*nlay), 2, this->get_nflav(), ncol, nlay);
+    int2dk  jtemp  = pool::alloc<int2dk> (ncol,nlay);
+    int2dk  jpress = pool::alloc<int2dk> (ncol,nlay);
+    bool2dk tropo  = pool::alloc<bool2dk>(ncol,nlay);
+    real6dk fmajor = pool::alloc<real6dk>(2,2,2,this->get_nflav(),ncol,nlay);
+    int4dk  jeta   = pool::alloc<int4dk> (2,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress, jeta,
                      tropo, fmajor, col_dry);
@@ -2061,11 +2061,11 @@ public:
       toa_src(icol,igpt) = this_solar_src(igpt);
     });
 
-    pool::dealloc(jtemp.data(), jtemp.size());
-    pool::dealloc(jpress.data(), jpress.size());
-    pool::dealloc(tropo.data(), tropo.size());
-    pool::dealloc(fmajor.data(), fmajor.size());
-    pool::dealloc(jeta.data(), jeta.size());
+    pool::dealloc(jtemp);
+    pool::dealloc(jpress);
+    pool::dealloc(tropo);
+    pool::dealloc(fmajor);
+    pool::dealloc(jeta);
   }
 
   // Returns optical properties and interpolation coefficients
@@ -2188,7 +2188,7 @@ public:
 
     pool::dealloc(data, dcurr - data);
     if (dealloc_col_dry) {
-      pool::dealloc(col_dry_wk.data(), col_dry_wk.size());
+      pool::dealloc(col_dry_wk);
     }
   }
 

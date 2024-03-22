@@ -436,6 +436,42 @@ struct MemPoolSingleton
     return rv;
   }
 
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1), dim1); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2), dim1, dim2); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3), dim1, dim2, dim3); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4), dim1, dim2, dim3, dim4); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4*dim5), dim1, dim2, dim3, dim4, dim5); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5, const int dim6) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4*dim5*dim6), dim1, dim2, dim3, dim4, dim5, dim6); }
+
   template <typename T>
   static inline
   void dealloc(const T*, const int64_t num) noexcept
@@ -443,6 +479,13 @@ struct MemPoolSingleton
     const int64_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
     s_curr_used -= num_reals;
     assert(s_curr_used >= 0);
+  }
+
+  template <typename View>
+  static inline
+  void dealloc(const View& view) noexcept
+  {
+    dealloc(view.data(), view.size());
   }
 
   static inline

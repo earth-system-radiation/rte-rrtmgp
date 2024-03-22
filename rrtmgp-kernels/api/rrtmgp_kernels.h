@@ -45,7 +45,7 @@ extern "C"
 
     void rrtmgp_compute_tau_absorption(
         const int &ncol, const int &nlay, const int &nband, const int &ngpt,
-        const int &ngas, const int &nflav, &const int neta,
+        const int &ngas, const int &nflav, const int &neta,
         const int &npres, const int &ntemp,
         const int &nminorlower, const int &nminorklower,
         const int &nminorupper, const int &nminorkupper,

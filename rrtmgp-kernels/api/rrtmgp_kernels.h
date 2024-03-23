@@ -20,16 +20,16 @@ This header files defines the C bindings for the kernels used in RRTMGP
 extern "C"
 {
     void rrtmgp_interpolation(
-        const int &ncol, const int &nlay,
-        const int &ngas, const int &nflav, const int &neta,
-        const int &npres, const int &ntemp,
+        const int& ncol, const int& nlay,
+        const int& ngas, const int& nflav, const int& neta,
+        const int& npres, const int& ntemp,
         const int* flavor,  // (2,nflav)
         const Float* press_ref_log, // (npres)
         const Float* temp_ref, // (ntemp)
-        const Float &press_ref_log_delta,
-        const Float &temp_ref_min,
-        const Float &temp_ref_delta,
-        const Float &press_ref_trop_log,
+        const Float& press_ref_log_delta,
+        const Float& temp_ref_min,
+        const Float& temp_ref_delta,
+        const Float& press_ref_trop_log,
         const Float* vmr_ref, //(2,ngas+1,ntemp)
         const Float* play, // (ncol,nlay)
         const Float* tlay,    // (ncol,nlay)
@@ -44,12 +44,12 @@ extern "C"
     );
 
     void rrtmgp_compute_tau_absorption(
-        const int &ncol, const int &nlay, const int &nband, const int &ngpt,
-        const int &ngas, const int &nflav, const int &neta,
-        const int &npres, const int &ntemp,
-        const int &nminorlower, const int &nminorklower,
-        const int &nminorupper, const int &nminorkupper,
-        const int &idx_h2o,
+        const int& ncol, const int& nlay, const int& nband, const int& ngpt,
+        const int& ngas, const int& nflav, const int& neta,
+        const int& npres, const int& ntemp,
+        const int& nminorlower, const int& nminorklower,
+        const int& nminorupper, const int& nminorkupper,
+        const int& idx_h2o,
         const int* gpoint_flavor, // (2,ngpt)
         const int* band_lims_gpt, // (2,nbnd)
         const Float* kmajor, // (ntemp,neta,npres+1,ngpt)
@@ -81,12 +81,12 @@ extern "C"
     );
 
     void rrtmgp_compute_tau_rayleigh(
-        const int &ncol, const int &nlay, const int &nband, const int &ngpt,
-        const int &ngas, const int &nflav, const int &neta, const int &npres, const int &ntemp,
+        const int& ncol, const int& nlay, const int& nband, const int& ngpt,
+        const int& ngas, const int& nflav, const int& neta, const int& npres, const int& ntemp,
         const int* gpoint_flavor, // (2,ngpt)
         const int* band_lims_gpt,  // (2,nbnd)
         const Float* krayl,  // (ntemp,neta,ngpt,2)
-        const int &idx_h2o,
+        const int& idx_h2o,
         const Float* col_dry, // (ncol,nlay)
         const Float* col_gas, // (ncol,nlay,ngas+1)
         const Float* fminor, // (2,2,ncol,nlay,nflav)
@@ -97,13 +97,13 @@ extern "C"
     );
 
     void rrtmgp_compute_Planck_source(
-        const int &ncol, const int &nlay, const int &nbnd, const int &ngpt,
-        const int &nflav, const int &neta, const int &npres, const int &ntemp,
-        const int &nPlanckTemp,
+        const int& ncol, const int& nlay, const int& nbnd, const int& ngpt,
+        const int& nflav, const int& neta, const int& npres, const int& ntemp,
+        const int& nPlanckTemp,
         const Float* tlay, // (ncol,nlay  )
         const Float* tlev, // (ncol,nlay+1)
         const Float* tsfc, //(ncol       )
-        const int &sfc_lay,
+        const int& sfc_lay,
         const Float* fmajor, // (2,2,2,ncol,nlay,nflav)
         const int* jeta, // (2,    ncol,nlay,nflav)
         const Bool* tropo, // (            ncol,nlay)
@@ -112,7 +112,7 @@ extern "C"
         const int* gpoint_bands, // (ngpt)
         const int* band_lims_gpt, // (2, nbnd)
         const Float* pfracin, // (ntemp,neta,npres+1,ngpt)
-        const Float &temp_ref_min, const Float &totplnk_delta,
+        const Float& temp_ref_min, const Float& totplnk_delta,
         const Float* totplnk, // (nPlanckTemp,nbnd)
         const int* gpoint_flavor, // (2,ngpt)
         Float* sfc_src, // [out] (ncol,       ngpt)

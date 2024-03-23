@@ -215,7 +215,7 @@ extern "C"
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in,  //     (ncol,nlay,nbnd)
             const Float* ssa_in,  //     (ncol,nlay,nbnd)
-            const int nbnd,
+            const int &nbnd,
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_2stream_by_1scalar_bybnd(

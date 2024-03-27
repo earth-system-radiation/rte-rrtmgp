@@ -27,7 +27,7 @@ include $(RRTMGP_KERNEL_DIR)/Make.depends
 # If using OpenACC/OpenMP files in *-kernels/accel take precendence  
 #
 ifeq ($(RTE_KERNELS), accel)
-	VPATH = $(RTE_KERNEL_DIR)/accel$(RRTMGP_KERNEL_DIR)/accel
+	VPATH = $(RTE_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR)/accel
 endif
 ifeq ($(RTE_KERNELS), extern)
 	VPATH = $(RTE_KERNEL_DIR)/api$(RRTMGP_KERNEL_DIR)/api

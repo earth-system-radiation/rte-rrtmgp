@@ -29,13 +29,16 @@ include $(RRTMGP_KERNEL_DIR)/Make.depends
 ifeq ($(RTE_KERNELS), accel)
 	VPATH = $(RTE_KERNEL_DIR)/accel:$(RRTMGP_KERNEL_DIR)/accel
 endif
-ifeq ($(RTE_KERNELS), extern)
-	VPATH = $(RTE_KERNEL_DIR)/api$(RRTMGP_KERNEL_DIR)/api
-endif
-VPATH += $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
 #
 # If using external libraries just compile the interfaces 
-#    (and, for now, the OpenACC kernels)
+#
+ifeq ($(RTE_KERNELS), extern)
+	VPATH = $(RTE_KERNEL_DIR)/api:$(RRTMGP_KERNEL_DIR)/api
+endif
+VPATH += $(RTE_DIR):$(RTE_KERNEL_DIR):$(RRTMGP_DIR):$(RRTMGP_KERNEL_DIR):$(GAS_OPTICS_DIR)
+
+#
+# Complete library - kernels plus Fortran front end 
 #
 librte.a: $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)
 	ar -rvs librte.a $(RTE_FORTRAN_KERNELS) $(RTE_FORTRAN_INTERFACE)

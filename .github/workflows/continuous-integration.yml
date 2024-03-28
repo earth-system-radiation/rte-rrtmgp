@@ -86,14 +86,14 @@ jobs:
     #
     # Build libraries, examples and tests
     #
-    - name: Build libraries, examples and tests
+    - name: Build libraries
       run: |
         $FC --version
         make -j4 libs
     #
     # Run examples and tests
     #
-    - name: Run examples and tests
+    - name: Build and run examples and tests
       run: make -j4 tests
     #
     # Compare the results

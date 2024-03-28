@@ -31,4 +31,4 @@ jobs:
     - name: Build libraries
       run: |
         $FC --version
-        make -j4 libs
+        make -C build -j4 libs

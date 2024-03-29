@@ -211,7 +211,9 @@ extern "C"
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_1scalar_by_nstream_bybnd(
-            const int& ncol, const int& nlay, const int ngpt,
+            const int& ncol,
+            const int& nlay,
+            const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in,  //     (ncol,nlay,nbnd)
             const Float* ssa_in,  //     (ncol,nlay,nbnd)
@@ -219,7 +221,9 @@ extern "C"
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_2stream_by_1scalar_bybnd(
-            const int& ncol, const int& nlay, const int& ngpt,
+            const int& ncol,
+            const int& nlay,
+            const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in,  //     (ncol,nlay,nbnd)

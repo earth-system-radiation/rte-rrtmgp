@@ -64,8 +64,8 @@ module mo_rte_solver_kernels
                                                               !! Absorption optical thickness []
       real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source
                                                               !! Planck source at layer average temperature [W/m2]
-      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source
-                                                              !! Planck source at layer edge for radiation  [W/m2]
+      real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source
+                                                              !! Planck source at layer edge for radiation [W/m2]
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
                                                               !! Surface emissivity      []
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src
@@ -119,8 +119,8 @@ module mo_rte_solver_kernels
                                                               !! Optical thickness, single-scattering albedo, asymmetry parameter []
       real(wp), dimension(ncol,nlay,  ngpt),   intent(in   ) :: lay_source
                                                               !! Planck source at layer average temperature [W/m2]
-      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source
-                                                              !! Planck source at layer edge for radiation  [W/m2]
+      real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source
+                                                              !! Planck source at layer edge for radiation [W/m2]
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
                                                               !! Surface emissivity      []
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src

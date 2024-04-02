@@ -810,6 +810,7 @@ contains
     character(len=128)                         :: error_msg !! Empty if successful 
 
     real(wp) :: norm
+    integer  :: igpt, length 
     ! ----------------------------------------------------------
     error_msg = ""
     if(tsi < 0._wp) then
@@ -818,12 +819,21 @@ contains
       !
       ! Scale the solar source function to the input tsi
       !
-      !$acc kernels
-      !$omp target
-      norm = 1._wp/sum(this%solar_source(:))
-      this%solar_source(:) = this%solar_source(:) * tsi * norm
-      !$acc end kernels
-      !$omp end target
+      norm = 0._wp
+      length = size(this%solar_source)
+      !$acc parallel loop gang vector reduction(+:norm)
+      !$omp target teams distribute parallel do simd reduction(+:norm)
+      do igpt = 1, length
+         norm = norm + this%solar_source(igpt)
+      end do
+
+      norm = 1._wp/norm
+
+      !$acc parallel loop gang vector
+      !$omp target teams distribute parallel do simd
+      do igpt = 1, length
+         this%solar_source(igpt) = this%solar_source(igpt) * tsi * norm
+      end do
     end if
 
   end function set_tsi

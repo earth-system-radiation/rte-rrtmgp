@@ -9,7 +9,6 @@
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
-
 module mo_gas_optics_rrtmgp_kernels
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array
@@ -241,8 +240,8 @@ module mo_gas_optics_rrtmgp_kernels
       ! Table-specific
       integer, dimension(ngpt),                     intent(in) :: gpoint_bands  !! band to which each g-point belongs
       integer, dimension(2, nbnd),                  intent(in) :: band_lims_gpt !! start and end g-point for each band
-      real(wp),                                     intent(in) :: temp_ref_min, totplnk_delta !! interpolation constants
       real(wp), dimension(ntemp,neta,npres+1,ngpt), intent(in) :: pfracin       !! Fraction of the Planck function in each g-point
+      real(wp),                                     intent(in) :: temp_ref_min, totplnk_delta !! interpolation constants
       real(wp), dimension(nPlanckTemp,nbnd),        intent(in) :: totplnk       !! Total Planck function by band at each temperature 
       integer,  dimension(2,ngpt),                  intent(in) :: gpoint_flavor !! major gas flavor (pair) by upper/lower, g-point
 

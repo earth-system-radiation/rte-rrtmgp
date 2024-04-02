@@ -1,28 +1,23 @@
+#!/usr/bin/env make
 #
 # Location of RTE+RRTMGP libraries, module files.
-#   Default values can be overridden with environmental variables 
 #
-RRTMGP_DIR ?= $(RRTMGP_ROOT)/build
-KERNEL_DIR ?= $(RRTMGP_ROOT)/build 
+RRTMGP_BUILD = $(RRTMGP_ROOT)/build
+#
+# RRTMGP library, module files
+#
+LDFLAGS   += -L$(RRTMGP_BUILD)
+LIBS      += -lrrtmgpkernels -lrtekernels -lrrtmgpf -lrtef
+FCINCLUDE += -I$(RRTMGP_BUILD)
 
-FCINCLUDE += -I$(RRTMGP_DIR)
-LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
-LIBS      += -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
-#
 # netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 
 #FCINCLUDE += -I$(NFHOME)/include
 
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
-#
-# Include libraries needed for CUDA kernels 
-#
-ifeq ($(RTE_KERNELS), extern)
-	LIBS += -c++libs -cuda
-endif
 
-VPATH  = .:$(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
+VPATH  = $(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
 VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/:$(RRTMGP_ROOT)/extensions/solar_variability
 
 # Compilation rules
@@ -46,7 +41,7 @@ CLOUDS    += mo_cloud_sampling.o mo_cloud_optics_rrtmgp.o mo_load_cloud_coeffici
 ADDITIONS += mo_solar_variability.o
 
 # Many codes will need to be updated if the library changes
-# LIB_DEPS = $(RRTMGP_DIR)/build/librte.a $(RRTMGP_DIR)/build/librrtmgp.a
+# LIB_DEPS = $(RRTMGP_BUILD)/librte.a $(RRTMGP_BUILD)/librrtmgp.a
 #
 # Targets
 #
@@ -84,7 +79,7 @@ rte_sw_solver_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_sw_solver_unit_te
 
 
 .PHONY: tests
-tests:
+tests: check_variants check_equivalence test_zenith_angle_spherical_correction rte_sw_solver_unit_tests rte_optic_prop_unit_tests rte_lw_solver_unit_tests
 	cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc
 	$(RUN_CMD) bash all_tests.sh
 

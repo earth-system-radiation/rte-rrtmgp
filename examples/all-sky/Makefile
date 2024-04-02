@@ -1,14 +1,14 @@
+#!/usr/bin/env make
 #
 # Location of RTE+RRTMGP libraries, module files.
 #
-RRTMGP_DIR ?= $(RRTMGP_ROOT)/build
-KERNEL_DIR ?= $(RRTMGP_ROOT)/build 
+RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
 #
-FCINCLUDE += -I$(RRTMGP_DIR)
-LDFLAGS   += -L$(RRTMGP_DIR) -L$(KERNEL_DIR)
-LIBS      +=  -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
+LDFLAGS   += -L$(RRTMGP_BUILD)
+LIBS      += -lrrtmgpkernels -lrtekernels -lrrtmgpf -lrtef
+FCINCLUDE += -I$(RRTMGP_BUILD)
 
 # netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 
 #FCINCLUDE += -I$(NFHOME)/include
@@ -16,12 +16,6 @@ LIBS      +=  -lrrtmgpf -lrtef -lrtekernels -lrrtmgpkernels
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
-#
-# Include libraries needed for CUDA kernels 
-#
-ifeq ($(RTE_KERNELS), extern)
-	LIBS += -c++libs -cuda
-endif
 
 VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend # Needed for cloud_optics and aerosol_optics
 
@@ -53,7 +47,7 @@ mo_load_coefficients.o:         mo_simple_netcdf.o                              
 mo_load_cloud_coefficients.o:   mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o         mo_load_cloud_coefficients.F90
 mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.F90
 
-tests:
+tests: rrtmgp_allsky
 	$(RUN_CMD) bash all_tests.sh  
 
 check:

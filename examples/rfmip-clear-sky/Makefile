@@ -38,11 +38,11 @@ ADDITIONS = mo_simple_netcdf.o mo_rfmip_io.o mo_load_coefficients.o
 
 all: rrtmgp_rfmip_lw rrtmgp_rfmip_sw
 
-rrtmgp_rfmip_lw:   rrtmgp_rfmip_lw.o   $(ADDITIONS) $(RRTMGP_BUILD)/librrtmgp.a $(RRTMGP_BUILD)/librte.a
+rrtmgp_rfmip_lw:   rrtmgp_rfmip_lw.o   $(ADDITIONS)
 
 rrtmgp_rfmip_lw.o: rrtmgp_rfmip_lw.F90 $(ADDITIONS)
 
-rrtmgp_rfmip_sw:   rrtmgp_rfmip_sw.o   $(ADDITIONS) $(RRTMGP_BUILD)/librrtmgp.a $(RRTMGP_BUILD)/librte.a
+rrtmgp_rfmip_sw:   rrtmgp_rfmip_sw.o   $(ADDITIONS)
 
 rrtmgp_rfmip_sw.o: rrtmgp_rfmip_sw.F90 $(ADDITIONS)
 

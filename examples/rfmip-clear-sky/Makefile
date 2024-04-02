@@ -7,7 +7,7 @@ RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 # RRTMGP library, module files
 #
 LDFLAGS   += -L$(RRTMGP_BUILD)
-LIBS      += -lrrtmgpkernels -lrtekernels -lrrtmgpf -lrtef
+LIBS      += -lrrtmgpf -lrtef -lrrtmgpkernels -lrtekernels 
 FCINCLUDE += -I$(RRTMGP_BUILD)
 
 # netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 

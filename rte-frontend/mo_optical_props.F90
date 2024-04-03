@@ -275,7 +275,7 @@ contains
     !
     ! Assignment
     !
-    call this%finalize_base()
+    if (this%is_initialized()) call this%finalize_base()
     allocate(this%band2gpt     (2,size(band_lims_wvn,2)), &
              this%band_lims_wvn(2,size(band_lims_wvn,2)))
     this%band2gpt      = band_lims_gpt_lcl

@@ -277,21 +277,20 @@ contains
     !
     if (this%is_initialized()) call this%finalize_base()
     allocate(this%band2gpt     (2,size(band_lims_wvn,2)), &
-             this%band_lims_wvn(2,size(band_lims_wvn,2)))
+             this%band_lims_wvn(2,size(band_lims_wvn,2)), &
+             this%gpt2band     (maxval(band_lims_gpt_lcl)))
     this%band2gpt      = band_lims_gpt_lcl
     this%band_lims_wvn = band_lims_wvn
-    if(present(name)) this%name = trim(name)
-
     !
     ! Make a map between g-points and bands
     !   Efficient only when g-point indexes start at 1 and are contiguous.
     !
-    allocate(this%gpt2band(maxval(band_lims_gpt_lcl)))
     do iband=1,size(band_lims_gpt_lcl,dim=2)
       this%gpt2band(band_lims_gpt_lcl(1,iband):band_lims_gpt_lcl(2,iband)) = iband
     end do
-    !$acc        enter data copyin(this%band2gpt, this%gpt2band, this%band_lims_wvn)
+    !$acc        enter data copyin(this, this%band2gpt, this%gpt2band, this%band_lims_wvn)
     !$omp target enter data map(to:this%band2gpt, this%gpt2band, this%band_lims_wvn)
+    if(present(name)) this%name = trim(name)
 
   end function init_base
   !-------------------------------------------------------------------------------------------------

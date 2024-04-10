@@ -1,6 +1,6 @@
 
 #include "mo_optical_props_kernels.h"
-
+#include "rrtmgp_conversion.h"
 
 #ifdef RRTMGP_ENABLE_YAKL
 // increment 2stream by 2stream
@@ -608,7 +608,7 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
   // do igpt = 1 , ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( MDRangeP<4>({0,0,0,0}, {nbnd,ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<4>({nbnd,ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
     if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
       // t=tau1 + tau2
       real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -639,7 +639,7 @@ void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, real3dk const &t
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( MDRangeP<3>({0, 0, 0}, {ngpt,nlay,ncol}), KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}), KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -652,7 +652,7 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, real3dk const &t
   // do igpt = 1 , ngpt
   //   do ilay = 1 , nlay
   //     do icol = 1 , ncol
-  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=0; ibnd<nbnd; ibnd++) {
       if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
         tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);
@@ -669,7 +669,7 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3dk const &tau, r
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       real f  = g  (icol,ilay,igpt) * g  (icol,ilay,igpt);
       real wf = ssa(icol,ilay,igpt) * f;
@@ -691,7 +691,7 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, real3dk const &tau, r
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       real wf = ssa(icol,ilay,igpt) * f(icol,ilay,igpt);
       tau(icol,ilay,igpt) = (1. - wf) * tau(icol,ilay,igpt);
@@ -710,7 +710,7 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, real3dk const &t
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     // t=tau1 + tau2
     real tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t

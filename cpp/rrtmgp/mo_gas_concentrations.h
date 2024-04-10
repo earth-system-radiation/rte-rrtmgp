@@ -295,7 +295,7 @@ public:
     }
     if (w < 0. || w > 1.) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     auto this_concs = this->concs;
-    Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    Kokkos::parallel_for(conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
       this_concs(icol, ilay, igas) = w;
     });
   }
@@ -318,7 +318,7 @@ public:
       if (badVal) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     auto this_concs = this->concs;
-    Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    Kokkos::parallel_for(conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
       this_concs(icol, ilay, igas) = w(ilay);
     });
   }
@@ -343,7 +343,7 @@ public:
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     auto this_concs = this->concs;
-    Kokkos::parallel_for(MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    Kokkos::parallel_for(conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
       this_concs(icol, ilay, igas) = w(icol, ilay);
     });
   }
@@ -359,7 +359,7 @@ public:
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
     auto this_concs = this->concs;
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<2>({array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
       array(icol,ilay) = this_concs(icol,ilay,igas);
     });
   }

@@ -773,7 +773,7 @@ public:
     // Cloud masks; don't need value re values if there's no cloud
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
       liqmsk(icol,ilay) = clwp(icol,ilay) > 0.;
       icemsk(icol,ilay) = ciwp(icol,ilay) > 0.;
     });
@@ -846,7 +846,7 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<3>({nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       // Absorption optical depth  = (1-ssa) * tau = tau - taussa
       optical_props_tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) +
                                           (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd));
@@ -861,7 +861,7 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<3>({nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       real tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd);
       real taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd);
       optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / Kokkos::fmax(conv::epsilon(tau), taussa);
@@ -904,7 +904,7 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
-    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<3>({nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
         int index = Kokkos::fmin( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.) - 1;
         real fint = (re(icol,ilay) - offset)/step_size - index;
@@ -931,7 +931,7 @@ public:
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<3>({nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
       if (mask(icol,ilay)) {
         int irad;
         // Finds index into size regime table

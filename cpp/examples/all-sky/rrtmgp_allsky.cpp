@@ -257,7 +257,7 @@ int main(int argc , char **argv) {
       });
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && ((icol+1) % 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);
@@ -557,7 +557,7 @@ int main(int argc , char **argv) {
       });
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && ((icol+1) % 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);

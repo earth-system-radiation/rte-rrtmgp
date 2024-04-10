@@ -402,7 +402,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3dk 
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       for (int ilev=0; ilev<nlay; ilev++) {
         source_up(icol,ilev,igpt)     =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
         source_dn(icol,ilev,igpt)     =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
@@ -417,7 +417,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3dk 
     // previous level is up (+1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
         source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
@@ -440,7 +440,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
     // Top of domain is index 1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       // Downward propagation
       for (int ilev=1; ilev<nlay+1; ilev++) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev-1,igpt)*radn_dn(icol,ilev-1,igpt) + source_dn(icol,ilev-1,igpt);
@@ -458,7 +458,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
     // Top of domain is index nlay+1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       // Downward propagation
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
@@ -501,7 +501,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1dk const &mu0, real
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     // Zdunkowski Practical Improved Flux Method "PIFM"
     //  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
     real gamma1= (8. - w0(icol,ilay,igpt) * (5. + 3. * g(icol,ilay,igpt))) * .25;

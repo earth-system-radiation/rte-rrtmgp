@@ -240,6 +240,60 @@ bool approx_eq<real>(const real lhs, const real rhs)
   return std::abs(lhs - rhs) < tol;
 }
 
+// get_mdrp, returns multidimensional range policy. Start is assumed to be {0}*N
+template <int N> struct DefaultTile;
+
+#define OMEGA_TILE_LENGTH 64
+
+template <> struct DefaultTile<1> {
+   static constexpr int value[] = {OMEGA_TILE_LENGTH};
+};
+
+template <> struct DefaultTile<2> {
+   static constexpr int value[] = {1, OMEGA_TILE_LENGTH};
+};
+
+template <> struct DefaultTile<3> {
+   static constexpr int value[] = {1, 1, OMEGA_TILE_LENGTH};
+};
+
+template <> struct DefaultTile<4> {
+   static constexpr int value[] = {1, 1, 1, OMEGA_TILE_LENGTH};
+};
+
+template <> struct DefaultTile<5> {
+   static constexpr int value[] = {1, 1, 1, 1, OMEGA_TILE_LENGTH};
+};
+
+// template <> struct DefaultTile<1> {
+//    static constexpr int value[] = {OMEGA_TILE_LENGTH};
+// };
+
+// template <> struct DefaultTile<2> {
+//    static constexpr int value[] = {OMEGA_TILE_LENGTH, 1};
+// };
+
+// template <> struct DefaultTile<3> {
+//    static constexpr int value[] = {OMEGA_TILE_LENGTH, 1, 1};
+// };
+
+// template <> struct DefaultTile<4> {
+//    static constexpr int value[] = {OMEGA_TILE_LENGTH, 1, 1, 1};
+// };
+
+// template <> struct DefaultTile<5> {
+//    static constexpr int value[] = {OMEGA_TILE_LENGTH, 1, 1, 1, 1};
+// };
+
+template <int N, typename IntT>
+inline
+MDRangeP<N> get_mdrp(const IntT (&upper_bounds)[N])
+{
+  assert(N > 1);
+  const IntT lower_bounds[N] = {0};
+  return MDRangeP<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
+}
+
 #ifdef RRTMGP_ENABLE_YAKL
 // Compare a yakl array to a kokkos view, checking they are functionally
 // identical (same rank, dims, and values).

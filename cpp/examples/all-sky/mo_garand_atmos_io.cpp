@@ -123,22 +123,22 @@ void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk 
   real2dk tmp2d;
   // p_lay
   io.read(tmp2d,"p_lay");
-  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
     p_lay(icol,ilay) = tmp2d(0,ilay);
   });
   // t_lay
   io.read(tmp2d,"t_lay");
-  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
     t_lay(icol,ilay) = tmp2d(0,ilay);
   });
   // p_lev
   io.read(tmp2d,"p_lev");
-  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<2>({nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
     p_lev(icol,ilev) = tmp2d(0,ilev);
   });
   // t_lev
   io.read(tmp2d,"t_lev");
-  Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
+  Kokkos::parallel_for( conv::get_mdrp<2>({nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
     t_lev(icol,ilev) = tmp2d(0,ilev);
   });
 
@@ -168,7 +168,7 @@ void read_atmos(std::string input_file, real2dk &p_lay, real2dk &t_lay, real2dk 
     col_dry = real2dk("col_dry",ncol,nlay);
     tmp2d = real2dk();     // Reset the tmp2d variable
     io.read(tmp2d,"col_dry");
-    Kokkos::parallel_for( MDRangeP<2>({0,0}, {nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+    Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
       col_dry(icol,ilay) = tmp2d(0,ilay);
     });
   }

@@ -1003,6 +1003,7 @@ contains
 
     ! Ancillary variables
     real(wp), parameter :: min_k = 1.e4_wp * epsilon(1._wp) ! Suggestion from Chiel van Heerwaarden
+    real(wp), parameter :: min_mu0 = epsilon(1._wp)**(1._wp/3._wp)
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat
@@ -1061,7 +1062,7 @@ contains
         !   levels with mu0 <= 0 have no direct beam and hence no source for diffuse light
         !   Compute transmission and reflection using a nominal value but mask out later 
         !
-        mu0_s = max(sqrt(epsilon(1._wp)), mu0(i, lay_index)) 
+        mu0_s = max(min_mu0, mu0(i, lay_index)) 
         k_mu     = k * mu0_s
         !
         ! Equation 14, multiplying top and bottom by exp(-k*tau)

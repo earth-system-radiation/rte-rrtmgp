@@ -1022,6 +1022,7 @@ contains
         dir_flux_trans => flux_dn_dir(:,lay_index  )
       end if
 
+      !$OMP SIMD
       do i = 1, ncol
         !
         ! Scalars

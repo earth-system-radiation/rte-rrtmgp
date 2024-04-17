@@ -432,7 +432,7 @@ program rte_check_equivalence
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
       call report_err("  halving/doubling fails")
 
@@ -442,8 +442,8 @@ program rte_check_equivalence
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
       call report_err("  Incrementing with 1scl fails")
 
      call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
@@ -453,8 +453,8 @@ program rte_check_equivalence
                                        toa_flux))
    call increment_with_2str(atmos)
    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-      .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-      .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+      .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
+      .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
       call report_err("  Incrementing with 2str fails")
 
     call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
@@ -468,8 +468,8 @@ program rte_check_equivalence
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
       call report_err("  Incrementing with nstr fails")
     print *, "  Incrementing"
   end if 

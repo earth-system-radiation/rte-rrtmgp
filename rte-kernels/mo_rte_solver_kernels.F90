@@ -1003,7 +1003,7 @@ contains
 
     ! Ancillary variables
     real(wp), parameter :: min_k = 1.e4_wp * epsilon(1._wp) ! Suggestion from Chiel van Heerwaarden
-    real(wp), parameter :: min_mu0 = epsilon(1._wp)**(1._wp/3._wp)
+    real(wp), parameter :: min_mu0 = sqrt(epsilon(1._wp))
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat

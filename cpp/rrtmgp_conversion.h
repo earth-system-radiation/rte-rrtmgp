@@ -51,7 +51,7 @@ void printy(const std::string& name, const YArray& array)
 // Copied from YAKL
 template <class T1, class T2,
           typename std::enable_if<std::is_arithmetic<T1>::value && std::is_arithmetic<T2>::value,bool>::type=false>
-GENERIC_INLINE decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) { return cond ? t : f; }
+GENERIC_INLINE decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) noexcept { return cond ? t : f; }
 
 // A meta function that will return true if T is either a Kokkos::View or a
 // Kokkos::OffsetView (we use these in a couple places).
@@ -247,14 +247,20 @@ template <typename YArray, typename KView>
 void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index_data=false)
 {
   using yakl::intrinsics::size;
+  using LeftHostView = Kokkos::View<typename KView::non_const_data_type, Kokkos::LayoutLeft, HostDevice>;
 
   constexpr auto krank = KView::rank;
   const auto yrank = yarray.get_rank();
 
   RRT_REQUIRE(krank == yrank, "Rank mismatch for: " << kview.label());
 
-  auto hkview = Kokkos::create_mirror_view(kview);
+  Kokkos::LayoutLeft llayout;
+  for (auto r = 0; r < krank; ++r) {
+    llayout.dimension[r] = kview.layout().dimension[r];
+  }
+  LeftHostView hkview("read_data", llayout);
   Kokkos::deep_copy(hkview, kview);
+
   auto hyarray = yarray.createHostCopy();
 
   for (auto r = 0; r < krank; ++r) {
@@ -336,7 +342,7 @@ struct LTFunc
   LTFunc(T val) : m_val(val) {}
 
   KOKKOS_INLINE_FUNCTION
-  bool operator()(const T& val) const
+  bool operator()(const T& val) const noexcept
   {
     return val < m_val;
   }
@@ -397,6 +403,105 @@ sum(const KView& view)
     }, Kokkos::Sum<sum_t>(rv));
   return rv;
 }
+
+// MemPool singleton. Stack allocation pattern only.
+struct MemPoolSingleton
+{
+ public:
+  static inline Kokkos::View<real*> s_mem;
+  static inline int64_t s_curr_used;
+  static inline int64_t s_high_water;
+
+  static void init(const int64_t capacity)
+  {
+    static bool is_init = false;
+    RRT_REQUIRE(!is_init, "Multiple MemPoolSingleton inits");
+    s_mem = Kokkos::View<real*>("s_mem", capacity);
+    s_curr_used = 0;
+    s_high_water = 0;
+  }
+
+  template <typename T>
+  static inline
+  T* alloc(const int64_t num) noexcept
+  {
+    assert(sizeof(T) <= sizeof(real));
+    const int64_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
+    T* rv = reinterpret_cast<T*>(s_mem.data() + s_curr_used);
+    s_curr_used += num_reals;
+    assert(s_curr_used <= s_mem.size());
+    if (s_curr_used > s_high_water) {
+      s_high_water = s_curr_used;
+    }
+    return rv;
+  }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1), dim1); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2), dim1, dim2); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3), dim1, dim2, dim3); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4), dim1, dim2, dim3, dim4); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4*dim5), dim1, dim2, dim3, dim4, dim5); }
+
+  template <typename View,
+            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  static inline
+  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5, const int dim6) noexcept
+  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4*dim5*dim6), dim1, dim2, dim3, dim4, dim5, dim6); }
+
+  template <typename T>
+  static inline
+  void dealloc(const T*, const int64_t num) noexcept
+  {
+    const int64_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
+    s_curr_used -= num_reals;
+    assert(s_curr_used >= 0);
+  }
+
+  template <typename View>
+  static inline
+  void dealloc(const View& view) noexcept
+  {
+    dealloc(view.data(), view.size());
+  }
+
+  static inline
+  void finalize()
+  {
+    print_state();
+    assert(s_curr_used == 0); // !=0 indicates we may have forgetten a dealloc
+    s_mem = Kokkos::View<real*>();
+  }
+
+  static inline
+  void print_state()
+  {
+    std::cout << "Used " << s_curr_used << " of out of " << s_mem.size() << ", high_water was " << s_high_water << std::endl;
+  }
+};
 
 //Error reporting routine for the PNetCDF I/O
 /** @private */
@@ -925,8 +1030,8 @@ public:
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
     using T       = typename View::non_const_value_type;
-    constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
-    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+
+    using LeftHostView = Kokkos::View<typename View::non_const_data_type, Kokkos::LayoutLeft, HostDevice>;
     constexpr auto rank = View::rank;
 
     // Make sure the variable is there and is the right dimension
@@ -935,11 +1040,7 @@ public:
     if ( ! var.isNull() ) {
       auto varDims = var.getDims();
       if (varDims.size() != rank) { throw std::runtime_error("Existing variable's rank != array's rank"); }
-      if (is_c_layout) {
-        for (int i=0; i < varDims.size(); i++) { dimSizes[i] = varDims[i].getSize(); }
-      } else {
-        for (int i=0; i < varDims.size(); i++) { dimSizes[i] = varDims[varDims.size()-1-i].getSize(); }
-      }
+      for (int i=0; i < varDims.size(); i++) { dimSizes[i] = varDims[varDims.size()-1-i].getSize(); }
       bool createArr = false;
       for (int i=0; i < dimSizes.size(); i++) {
         if (dimSizes[i] != arr.extent(i)) {
@@ -952,36 +1053,26 @@ public:
       }
     } else { throw std::runtime_error("Variable does not exist"); }
 
-    if (is_device_mem) {
-      auto arrHost = Kokkos::create_mirror_view(arr);
-      if (std::is_same<T,bool>::value) {
-        int* tmp = new int[arr.size()];
-        var.getVar(tmp);
-        for (size_t i=0; i < arr.size(); ++i) { arrHost.data()[i] = (tmp[i] == 1); }
-        delete[] tmp;
-      }
-      else {
-        var.getVar(arrHost.data());
-        // integer data is nearly always idx data, so adjust it to 0-based
-        if (std::is_same<T,int>::value) {
-          for (size_t i=0; i < arr.size(); ++i) { arrHost.data()[i] -= 1; }
-        }
-      }
-      Kokkos::deep_copy(arr, arrHost);
-    } else {
-      if (std::is_same<T,bool>::value) {
-        int* tmp = new int[arr.size()];
-        var.getVar(tmp);
-        for (size_t i=0; i < arr.size(); ++i) { arr.data()[i] = (tmp[i] == 1); }
-        delete[] tmp;
-      } else {
-        var.getVar(arr.data());
-        // integer data is nearly always idx data, so adjust it to 0-based
-        if (std::is_same<T,int>::value) {
-          for (size_t i=0; i < arr.size(); ++i) { arr.data()[i] -= 1; }
-        }
+    Kokkos::LayoutLeft llayout;
+    for (auto r = 0; r < rank; ++r) {
+      llayout.dimension[r] = arr.layout().dimension[r];
+    }
+    LeftHostView read_data("read_data", llayout);
+
+    if (std::is_same<T,bool>::value) {
+      int* tmp = new int[arr.size()];
+      var.getVar(tmp);
+      for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] = (tmp[i] == 1); }
+      delete[] tmp;
+    }
+    else {
+      var.getVar(read_data.data());
+      // integer data is nearly always idx data, so adjust it to 0-based
+      if (std::is_same<T,int>::value) {
+        for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] -= 1; }
       }
     }
+    Kokkos::deep_copy(arr, read_data);
   }
 
 

@@ -488,8 +488,9 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1dk const &mu0, real
                           real3dk const &w0, real3dk const &g, real3dk &Rdif, real3dk const &Tdif,
                           real3dk const &Rdir, real3dk const &Tdir, real3dk const &Tnoscat) {
   using conv::merge;
+  using pool = conv::MemPoolSingleton;
 
-  real1dk mu0_inv("mu0_inv",ncol);
+  real1dk mu0_inv(pool::alloc<real>(ncol), ncol);
 
   real eps = std::numeric_limits<real>::epsilon();
 
@@ -562,6 +563,8 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1dk const &mu0, real
                           2.0 * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau );
 
   });
+
+  pool::dealloc(mu0_inv.data(), mu0_inv.size());
 }
 
 

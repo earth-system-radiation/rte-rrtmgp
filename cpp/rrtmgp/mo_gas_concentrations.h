@@ -170,7 +170,7 @@ public:
 
 
   // Get concentration as a 2-D field of columns and levels
-  // array is expected to be in devide memory
+  // array is expected to be in device memory
   void get_vmr(std::string gas, real2d const &array) const {
     using yakl::intrinsics::size;
     using yakl::fortran::parallel_for;
@@ -349,8 +349,9 @@ public:
   }
 
   // Get concentration as a 2-D field of columns and levels
-  // array is expected to be in devide memory
-  void get_vmr(std::string gas, real2dk const &array) const {
+  // array is expected to be in device memory
+  template <typename View>
+  void get_vmr(std::string gas, View const &array) const {
     if (this->ncol != array.extent(0)) { stoprun("ty_gas_concs->get_vmr; gas array is wrong size (ncol)" ); }
     if (this->nlay != array.extent(1)) { stoprun("ty_gas_concs->get_vmr; gas array is wrong size (nlay)" ); }
     int igas = this->find_gas(gas);

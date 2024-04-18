@@ -203,9 +203,10 @@ real interpolate2D(real2dk const &fminor, real3dk const &k, int igpt, int1dk con
 //
 // One dimensional interpolation -- return all values along second table dimension
 //
+template <typename View>
 KOKKOS_INLINE_FUNCTION
 void interpolate1D(real val, real offset, real delta, real2dk const &table,
-                   real1dk const &res, int tab_d1, int tab_d2) {
+                   View const &res, int tab_d1, int tab_d2) {
   real val0 = (val - offset) / delta;
   real frac = val0 - int(val0); // get fractional part
   int index = Kokkos::fmin(tab_d1-1, Kokkos::fmax(1, (int)(val0)+1)) - 1; // limit the index range

@@ -753,13 +753,16 @@ public:
   // Compute single-scattering properties
   template <class T>  // T is a template for a child class of OpticalPropsArry
   void cloud_optics(const int ncol, const int nlay, real2dk const &clwp, real2dk const &ciwp, real2dk const &reliq, real2dk const &reice, T &optical_props) {
+    using pool = conv::MemPoolSingleton;
 
     int nbnd = this->get_nband();
     // Error checking
     if (! (this->lut_extliq.is_allocated() || this->pade_extliq.is_allocated())) { stoprun("cloud optics: no data has been initialized"); }
     // Array sizes
-    bool2dk liqmsk("liqmsk",ncol, nlay);
-    bool2dk icemsk("icemsk",ncol, nlay);
+    const int num_bools = ncol * nlay;
+    bool* bdata         = pool::alloc<bool>(num_bools * 2), *bcurr = bdata;
+    bool2dk liqmsk(bcurr, ncol, nlay); bcurr += num_bools;
+    bool2dk icemsk(bcurr, ncol, nlay); bcurr += num_bools;
 
     // Spectral consistency
     if (! this->bands_are_equal(optical_props)) { stoprun("cloud optics: optical properties don't have the same band structure"); }
@@ -795,12 +798,14 @@ public:
     // These are used to determine the optical properties of ice and water cloud together.
     // We could compute the properties for liquid and ice separately and
     //    use ty_optical_props_arry.increment but this involves substantially more division.
-    real3dk ltau    ("ltau    ",clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk ltaussa ("ltaussa ",clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk ltaussag("ltaussag",clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk itau    ("itau    ",clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk itaussa ("itaussa ",clwp.extent(0), clwp.extent(1), this->get_nband());
-    real3dk itaussag("itaussag",clwp.extent(0), clwp.extent(1), this->get_nband());
+    const int num_tau = clwp.extent(0) *  clwp.extent(1) * this->get_nband();
+    real* data        = pool::alloc<real>(num_tau * 6), *dcurr = data;
+    real3dk ltau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk ltaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk ltaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk itau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk itaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    real3dk itaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
     if (this->lut_extliq.is_allocated()) {
       // Liquid
       compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq, this->liq_nsteps,this->liq_step_size,this->radliq_lwr,
@@ -830,6 +835,9 @@ public:
     // Combine liquid and ice contributions into total cloud optical properties
     //   See also the increment routines in mo_optical_props_kernels
     combine( nbnd, nlay, ncol, ltau, itau, ltaussa, itaussa, ltaussag, itaussag, optical_props );
+
+    pool::dealloc(bdata, bcurr - bdata);
+    pool::dealloc(data , dcurr - data);
   }
 
   void combine( int nbnd, int nlay, int ncol, real3dk const &ltau, real3dk const &itau, real3dk const &ltaussa, real3dk const &itaussa,
@@ -888,9 +896,11 @@ public:
   //   elements starting at "offset." The table's second dimension is band.
   // Returns 0 where the mask is false.
   // We could also try gather/scatter for efficiency
+  template <typename StrideView>
   void compute_all_from_table(int ncol, int nlay, int nbnd, bool2dk const &mask, real2dk const &lwp, real2dk const &re,
-                              int nsteps, real step_size, real offset, real2dk const &tau_table, real2dk const &ssa_table,
-                              real2dk const &asy_table, real3dk &tau, real3dk &taussa, real3dk &taussag) {
+                              int nsteps, real step_size, real offset,
+                              StrideView const &tau_table, StrideView const &ssa_table, StrideView const &asy_table,
+                              real3dk &tau, real3dk &taussa, real3dk &taussag) {
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
@@ -912,10 +922,11 @@ public:
   }
 
   // Pade functions
+  template <typename StrideView>
   void compute_all_from_pade(int ncol, int nlay, int nbnd, int nsizes, bool2dk const &mask, real2dk const &lwp, real2dk const &re,
-                             int m_ext, int n_ext, real1dk const &re_bounds_ext, real3dk const &coeffs_ext,
-                             int m_ssa, int n_ssa, real1dk const &re_bounds_ssa, real3dk const &coeffs_ssa,
-                             int m_asy, int n_asy, real1dk const &re_bounds_asy, real3dk const &coeffs_asy,
+                             int m_ext, int n_ext, real1dk const &re_bounds_ext, StrideView const &coeffs_ext,
+                             int m_ssa, int n_ssa, real1dk const &re_bounds_ssa, StrideView const &coeffs_ssa,
+                             int m_asy, int n_asy, real1dk const &re_bounds_asy, StrideView const &coeffs_asy,
                              real3dk &tau, real3dk &taussa, real3dk &taussag) {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay

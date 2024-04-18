@@ -26,7 +26,11 @@ template <typename T, typename Device=DefaultDevice>
 using FOView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutLeft, Device>;
 
 template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
-using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank> >;//, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
+#ifdef KOKKOS_ENABLE_CUDA
+using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank, Kokkos::Iterate::Left, Kokkos::Iterate::Right> >;
+#else
+using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank> >;
+#endif
 #endif
 
 typedef double real;

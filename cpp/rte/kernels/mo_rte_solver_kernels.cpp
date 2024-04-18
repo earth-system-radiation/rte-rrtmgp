@@ -697,10 +697,17 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const &inc_fl
 void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const &D, real1dk const &weights, int weight_ind, real3dk const &tau,
                       real3dk const &lay_source, real3dk const &lev_source_inc, real3dk const &lev_source_dec,
                       real2dk const &sfc_emis, real2dk const &sfc_src, real3dk const &radn_up, real3dk const &radn_dn) {
-  real3dk tau_loc   ("tau_loc   ",ncol,nlay,ngpt);
-  real3dk trans     ("trans     ",ncol,nlay,ngpt);
-  real2dk source_sfc("source_sfc",ncol,     ngpt);
-  real2dk sfc_albedo("sfc_albedo",ncol,     ngpt);
+  using pool = conv::MemPoolSingleton;
+
+  const int dsize1 = ncol*nlay*ngpt;
+  const int dsize2 = ncol*ngpt;
+  real* data = pool::alloc<real>(dsize1*4 + dsize2*2), *dcurr=data;
+  real3dk tau_loc   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk trans     (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real2dk source_sfc(dcurr,ncol,     ngpt); dcurr += dsize2;
+  real2dk sfc_albedo(dcurr,ncol,     ngpt); dcurr += dsize2;
 
   real tau_thresh = sqrt( std::numeric_limits<real>::epsilon() );
 
@@ -739,8 +746,6 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const
     source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt);
   });
 
-  real3dk source_dn ("source_dn ",ncol,nlay,ngpt);
-  real3dk source_up ("source_up ",ncol,nlay,ngpt);
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
@@ -768,6 +773,8 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const
     radn_dn(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
     radn_up(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
   });
+
+  pool::dealloc(data, dcurr - data);
 }
 
 // LW transport, no scattering, multi-angle quadrature
@@ -777,10 +784,15 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
                                 real3dk const &tau, real3dk const &lay_source, real3dk const &lev_source_inc, real3dk const &lev_source_dec,
                                 real2dk const &sfc_emis, real2dk const &sfc_src, real3dk const &flux_up, real3dk const &flux_dn) {
   // Local variables
-  real3dk radn_dn ("radn_dn ",ncol,nlay+1,ngpt);
-  real3dk radn_up ("radn_up ",ncol,nlay+1,ngpt);
-  real2dk Ds_ncol ("Ds_ncol ",ncol,       ngpt);
-  real2dk flux_top("flux_top",ncol,       ngpt);
+  using pool = conv::MemPoolSingleton;
+
+  const int dsize1 = ncol*(nlay+1)*ngpt;
+  const int dsize2 = ncol*ngpt;
+  real* data = pool::alloc<real>(dsize1*2 + dsize2*2), *dcurr=data;
+  real3dk radn_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  real3dk radn_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  real2dk Ds_ncol (dcurr,ncol,       ngpt); dcurr += dsize2;
+  real2dk flux_top(dcurr,ncol,       ngpt); dcurr += dsize2;
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
@@ -825,19 +837,26 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
     });
 
   } // imu
+
+  pool::dealloc(data, dcurr - data);
 }
 
 void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3dk const &tau, real3dk const &ssa, real3dk const &g,
                        real1dk const &mu0, real2dk const &sfc_alb_dir, real2dk const &sfc_alb_dif, real3dk const &flux_up,
                        real3dk const &flux_dn, real3dk const &flux_dir) {
-  real3dk Rdif      ("Rdif      ",ncol,nlay,ngpt);
-  real3dk Tdif      ("Tdif      ",ncol,nlay,ngpt);
-  real3dk Rdir      ("Rdir      ",ncol,nlay,ngpt);
-  real3dk Tdir      ("Tdir      ",ncol,nlay,ngpt);
-  real3dk Tnoscat   ("Tnoscat   ",ncol,nlay,ngpt);
-  real3dk source_up ("source_up ",ncol,nlay,ngpt);
-  real3dk source_dn ("source_dn ",ncol,nlay,ngpt);
-  real2dk source_srf("source_srf",ncol     ,ngpt);
+  using pool = conv::MemPoolSingleton;
+
+  const int dsize1 = ncol*nlay*ngpt;
+  const int dsize2 = ncol*ngpt;
+  real* data = pool::alloc<real>(dsize1*7 + dsize2), *dcurr = data;
+  real3dk Rdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk Tdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk Rdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk Tdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk Tnoscat   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real3dk source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  real2dk source_srf(dcurr,ncol     ,ngpt); dcurr += dsize2;
 
   // Cell properties: transmittance and reflectance for direct and diffuse radiation
   sw_two_stream(ncol, nlay, ngpt, mu0,
@@ -860,13 +879,20 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3dk cons
   Kokkos::parallel_for( MDRangeP<3>({0,0,0}, {ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
   });
+
+  pool::dealloc(data, dcurr - data);
 }
 
 void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const &albedo_sfc, real3dk const &rdif, real3dk const &tdif,
             real3dk const &src_dn, real3dk const &src_up, real2dk const &src_sfc, real3dk const &flux_up, real3dk const &flux_dn) {
-  real3dk albedo("albedo",ncol,nlay+1,ngpt);
-  real3dk src   ("src   ",ncol,nlay+1,ngpt);
-  real3dk denom ("denom ",ncol,nlay  ,ngpt);
+  using pool = conv::MemPoolSingleton;
+
+  const int dsize1 = ncol*(nlay+1)*ngpt;
+  const int dsize2 = ncol*nlay*ngpt;
+  real* data = pool::alloc<real>(dsize1*2 + dsize2), *dcurr = data;
+  real3dk albedo(dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  real3dk src   (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  real3dk denom (dcurr,ncol,nlay  ,ngpt); dcurr += dsize2;
 
   // Indexing into arrays for upward and downward propagation depends on the vertical
   //   orientation of the arrays (whether the domain top is at the first or last index)
@@ -950,6 +976,8 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2dk const &albedo_s
       }
     });
   }
+
+  pool::dealloc(data, dcurr - data);
 }
 
 #endif

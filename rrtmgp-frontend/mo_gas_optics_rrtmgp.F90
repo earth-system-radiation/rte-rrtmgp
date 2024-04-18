@@ -309,30 +309,29 @@ contains
 
     !
     ! Interpolate source function
+    ! present status of optional argument should be passed to source()
+    !    but nvfortran (and PGI Fortran before it) do not do so
     !
-    if(present(tlev)) then
-      !
-      ! present status of optional argument should be passed to source()
-      !   but isn't with PGI 19.10
-      !
+    if(present(tlev)) then   
       error_msg = source(this,                               &
                          ncol, nlay, nband, ngpt, optical_props%top_is_at_1(),  &
                          play, plev, tlay, tsfc,             &
                          jtemp, jpress, jeta, tropo, fmajor, &
                          sources,                            &
                          tlev)
-      !$acc exit data delete(tlev)
+      !$acc        exit data      delete(tlev)
       !$omp target exit data map(release:tlev)
-    else
+    else 
       error_msg = source(this,                               &
                          ncol, nlay, nband, ngpt, optical_props%top_is_at_1(),  &
                          play, plev, tlay, tsfc,             &
                          jtemp, jpress, jeta, tropo, fmajor, &
                          sources)
-    end if
-    !$acc exit data delete(tsfc)
+
+    end if 
+    !$acc        exit data      delete(tsfc)
     !$omp target exit data map(release:tsfc)
-    !$acc exit data delete(jtemp, jpress, tropo, fmajor, jeta)
+    !$acc        exit data      delete(jtemp, jpress, tropo, fmajor, jeta)
     !$omp target exit data map(release:jtemp, jpress, tropo, fmajor, jeta)
 
   end function gas_optics_int
@@ -813,6 +812,7 @@ contains
     character(len=128)                         :: error_msg !! Empty if successful 
 
     real(wp) :: norm
+    integer  :: igpt, length 
     ! ----------------------------------------------------------
     error_msg = ""
     if(tsi < 0._wp) then
@@ -821,12 +821,21 @@ contains
       !
       ! Scale the solar source function to the input tsi
       !
-      !$acc kernels
-      !$omp target
-      norm = 1._wp/sum(this%solar_source(:))
-      this%solar_source(:) = this%solar_source(:) * tsi * norm
-      !$acc end kernels
-      !$omp end target
+      norm = 0._wp
+      length = size(this%solar_source)
+      !$acc parallel loop gang vector reduction(+:norm)
+      !$omp target teams distribute parallel do simd reduction(+:norm)
+      do igpt = 1, length
+         norm = norm + this%solar_source(igpt)
+      end do
+
+      norm = 1._wp/norm
+
+      !$acc parallel loop gang vector
+      !$omp target teams distribute parallel do simd
+      do igpt = 1, length
+         this%solar_source(igpt) = this%solar_source(igpt) * tsi * norm
+      end do
     end if
 
   end function set_tsi
@@ -869,7 +878,15 @@ contains
     error_msg = ""
     !
     ! Source function needs temperature at interfaces/levels and at layer centers
+    !   Allocate small local array for tlev unconditionally
     !
+    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source)     &
+    !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac) & 
+    !$acc              create(tlev_arr)
+    !$omp target data                 map(from:sources%lay_source, sources%lev_source)     &
+    !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac) &
+    !$omp           map(alloc:tlev_arr)
+
     if (present(tlev)) then
       !   Users might have provided these
       tlev_wk => tlev
@@ -879,32 +896,30 @@ contains
       ! Interpolate temperature to levels if not provided
       !   Interpolation and extrapolation at boundaries is weighted by pressure
       !
+     !$acc                parallel loop gang vector
+     !$omp target teams distribute parallel do simd 
       do icol = 1, ncol
-         tlev_arr(icol,1) = tlay(icol,1) &
+         tlev_arr(icol,1)      = tlay(icol,1) &
                            + (plev(icol,1)-play(icol,1))*(tlay(icol,2)-tlay(icol,1))  &
-              &                                           / (play(icol,2)-play(icol,1))
+                                                          / (play(icol,2)-play(icol,1))
+         tlev_arr(icol,nlay+1) = tlay(icol,nlay)                                                             &
+                                + (plev(icol,nlay+1)-play(icol,nlay))*(tlay(icol,nlay)-tlay(icol,nlay-1))  &
+                                                          / (play(icol,nlay)-play(icol,nlay-1))
       end do
-      do ilay = 2, nlay
+     !$acc                parallel loop gang vector collapse(2) 
+     !$omp target teams distribute parallel do simd collapse(2)
+     do ilay = 2, nlay
         do icol = 1, ncol
            tlev_arr(icol,ilay) = (play(icol,ilay-1)*tlay(icol,ilay-1)*(plev(icol,ilay  )-play(icol,ilay)) &
                                 +  play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay))) /  &
                                   (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)))
         end do
       end do
-      do icol = 1, ncol
-         tlev_arr(icol,nlay+1) = tlay(icol,nlay)                                                             &
-                                + (plev(icol,nlay+1)-play(icol,nlay))*(tlay(icol,nlay)-tlay(icol,nlay-1))  &
-                                                                      / (play(icol,nlay)-play(icol,nlay-1))
-      end do
     end if
 
     !-------------------------------------------------------------------
     ! Compute internal (Planck) source functions at layers and levels,
     !  which depend on mapping from spectral space that creates k-distribution.
-    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source) &
-    !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac)
-    !$omp target data                 map(from:sources%lay_source, sources%lev_source) &
-    !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac)
 
     call compute_Planck_source(ncol, nlay, nbnd, ngpt, &
                 get_nflav(this), this%get_neta(), this%get_npres(), this%get_ntemp(), this%get_nPlanckTemp(), &
@@ -1728,10 +1743,10 @@ contains
   !
   subroutine finalize(this)
     class(ty_gas_optics_rrtmgp), intent(inout) :: this
-    real(wp),      dimension(:),     allocatable :: press_ref,  press_ref_log, temp_ref
 
     if(this%is_loaded()) then
       !$acc exit data delete(this%gas_names, this%vmr_ref, this%flavor) &
+      !$acc           delete(this%press_ref, this%press_ref_log, this%temp_ref) &
       !$acc           delete(this%gpoint_flavor, this%kmajor)  &
       !$acc           delete(this%minor_limits_gpt_lower) &
       !$acc           delete(this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
@@ -1742,6 +1757,7 @@ contains
       !$acc           delete(this%idx_minor_upper, this%idx_minor_scaling_upper)  &
       !$acc           delete(this%kminor_start_upper, this%kminor_upper)
       !$omp target exit data map(release:this%gas_names, this%vmr_ref, this%flavor) &
+      !$omp map(release:this%press_ref, this%press_ref_log, this%temp_ref)
       !$omp map(release:this%gpoint_flavor, this%kmajor)  &
       !$omp map(release:this%minor_limits_gpt_lower) &
       !$omp map(release:this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &
@@ -1752,6 +1768,7 @@ contains
       !$omp map(release:this%idx_minor_upper, this%idx_minor_scaling_upper)  &
       !$omp map(release:this%kminor_start_upper, this%kminor_upper)
       deallocate(this%gas_names, this%vmr_ref, this%flavor, this%gpoint_flavor, this%kmajor)
+      deallocate(this%press_ref, this%press_ref_log, this%temp_ref)
       deallocate(this%minor_limits_gpt_lower, &
                  this%minor_scales_with_density_lower, this%scale_by_complement_lower, &
                  this%idx_minor_lower, this%idx_minor_scaling_lower, this%kminor_start_lower, this%kminor_lower)

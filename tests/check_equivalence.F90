@@ -433,13 +433,14 @@ program rte_check_equivalence
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) then  
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  halving/doubling fails")
-      print *, maxval(abs(tst_flux_up-ref_flux_up)/spacing(ref_flux_up))
-      print *, maxval(abs(tst_flux_dn-ref_flux_dn)/spacing(ref_flux_dn))
-      print *, maxval(abs(tst_flux_dir-ref_flux_dir)/spacing(ref_flux_dir))
-    end if  
 
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
+                                       t_lay,        &
+                                       gas_concs,    &
+                                       atmos,        &
+                                       toa_flux))
     call increment_with_1scl(atmos)
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
@@ -447,8 +448,12 @@ program rte_check_equivalence
                             fluxes))
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))  then
       call report_err("  Incrementing with 1scl fails")
+      print *, maxval(abs(tst_flux_up-ref_flux_up)/spacing(ref_flux_up))
+      print *, maxval(abs(tst_flux_dn-ref_flux_dn)/spacing(ref_flux_dn))
+      print *, maxval(abs(tst_flux_dir-ref_flux_dir)/spacing(ref_flux_dir))
+    end if  
 
      call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay,        &

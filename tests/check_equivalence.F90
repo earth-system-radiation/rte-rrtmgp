@@ -435,9 +435,9 @@ program rte_check_equivalence
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 8._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp)) then  
       call report_err("  halving/doubling fails")
-      print *, maxval(abs(tst_flux_up-ref_flux_up) <= tolerance * spacing(ref_flux_up))
-      print *, maxval(abs(tst_flux_dn-ref_flux_dn) <= tolerance * spacing(ref_flux_dn))
-      print *, maxval(abs(tst_flux_up-ref_flux_dir) <= tolerance * spacing(ref_flux_dir))
+      print *, maxval(abs(tst_flux_up-ref_flux_up)/spacing(ref_flux_up))
+      print *, maxval(abs(tst_flux_dn-ref_flux_dn)/spacing(ref_flux_dn))
+      print *, maxval(abs(tst_flux_up-ref_flux_dir)/spacing(ref_flux_dir))
     end if  
 
     call increment_with_1scl(atmos)

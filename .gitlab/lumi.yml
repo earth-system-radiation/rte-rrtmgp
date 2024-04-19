@@ -7,6 +7,7 @@ default:
     - lumi
 
 variables:
+  RRTMGP_DATA_TAG: feature-update-lw-quadrature
   SCHEDULER_PARAMETERS: >-
     --account=project_465000454
     --nodes=1
@@ -39,7 +40,7 @@ variables:
 .dp:
   variables:
     FPMODEL: DP
-    FAILURE_THRESHOLD: "5.8e-2"
+    FAILURE_THRESHOLD: "7.e-4"
 
 .sp:
   variables:
@@ -96,7 +97,7 @@ setup-python:
     #
     # Check out data
     #
-    - git clone --depth 1 https://github.com/earth-system-radiation/rrtmgp-data.git "${RRTMGP_DATA}"
+    - git clone --branch ${RRTMGP_DATA_TAG}--depth 1 https://github.com/earth-system-radiation/rrtmgp-data.git "${RRTMGP_DATA}"
     #
     # Run examples and tests
     #

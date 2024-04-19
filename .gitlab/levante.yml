@@ -7,6 +7,7 @@ include:
     file: '.slurm-ci.yml'
 
 variables:
+  RRTMGP_DATA_TAG: feature-update-lw-quadrature
   SCHEDULER_PARAMETERS: >-
     --account=mh0287
     --time=05:00
@@ -47,7 +48,7 @@ variables:
 .dp:
   variables:
     FPMODEL: DP
-    FAILURE_THRESHOLD: "5.8e-2"
+    FAILURE_THRESHOLD: "7.e-4"
 
 .sp:
   variables:
@@ -81,7 +82,7 @@ variables:
     #
     # Check out data
     #
-    - git clone --depth 1 https://github.com/earth-system-radiation/rrtmgp-data.git "${RRTMGP_DATA}"
+    - git clone --branch ${RRTMGP_DATA_TAG}--depth 1 https://github.com/earth-system-radiation/rrtmgp-data.git "${RRTMGP_DATA}"
     #
     # Run examples and tests
     #

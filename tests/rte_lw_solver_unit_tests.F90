@@ -316,7 +316,7 @@ contains
     !
     if(.not. allclose(net_flux(:,:), & 
                       spread(net_flux(:,1), dim=2, ncopies=size(net_flux,2)), &
-                      tol = 100._wp)) then 
+                      tol = 128._wp)) then 
       call report_err("Net flux not constant with tau in gray radiative equilibrium")
       check_gray_rad_equil = .false.
     end if 

@@ -307,6 +307,8 @@ contains
     if(.not. allclose(up_flux(:,toa), &
                       gray_rad_equil_olr(sfc_t, lw_tau), tol=4._wp)) then
       call report_err("OLR is not consistent with gray radiative equilibrium")
+      print *, maxval((up_flux(:,toa) - &
+                       gray_rad_equil_olr(sfc_t, lw_tau))/spacing(gray_rad_equil_olr(sfc_t, lw_tau)))
       check_gray_rad_equil = .false.
     end if 
     !
@@ -316,7 +318,7 @@ contains
     !
     if(.not. allclose(net_flux(:,:), & 
                       spread(net_flux(:,1), dim=2, ncopies=size(net_flux,2)), &
-                      tol = 128._wp)) then 
+                      tol = 100._wp)) then 
       print *, maxval((net_flux(:,:) - &
                        spread(net_flux(:,1), dim=2, ncopies=size(net_flux,2)))/spacing(net_flux(:,:)))
       call report_err("Net flux not constant with tau in gray radiative equilibrium")

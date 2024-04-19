@@ -276,18 +276,12 @@ contains
       do ilay = 2, nlay+1
         sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) * & 
                                            (1._wp + D * sum(atmos%tau(:,:ilay-1,1),dim=2))
-        !
-        ! The source is linear in optical depth so layer source is average of edges
-        !
-        sources%lay_source(:,ilay-1,1) = 0.5_wp * (sources%lev_source(:,ilay,  1) + & 
-                                                   sources%lev_source(:,ilay-1,1))
       end do
     if (.not. top_at_1) then
       !
       ! Reverse vertical ordering of source functions
       !
       sources%lev_source(:,1:nlay+1,1) = sources%lev_source(:,nlay+1:1:-1,1)
-      sources%lay_source(:,1:nlay,  1) = sources%lay_source(:,nlay  :1:-1,1)
     end if 
   end subroutine gray_rad_equil
   ! ------------------------------------------------------------------------------------

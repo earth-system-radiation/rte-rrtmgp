@@ -269,7 +269,6 @@ contains
 
     if(present(sources)) then 
       sources%lev_source(:,:,:) = sources%lev_source(:,nlay+1:1:-1,:)
-      sources%lay_source(:,:,:) = sources%lay_source(:,nlay  :1:-1,:)
     end if                           
   end subroutine vr
   ! ----------------------------------------------------------------------------

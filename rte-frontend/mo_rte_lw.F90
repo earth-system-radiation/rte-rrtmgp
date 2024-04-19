@@ -356,7 +356,6 @@ contains
                                 logical(top_at_1, wl), n_quad_angs,         &
                                 secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                 optical_props%tau,                 &
-                                sources%lay_source,                &
                                 sources%lev_source,                &
                                 sfc_emis_gpt, sources%sfc_source,  &
                                 inc_flux_diffuse,                  &
@@ -375,9 +374,9 @@ contains
             !
             call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
                                    optical_props%tau, optical_props%ssa, optical_props%g, &
-                                   sources%lay_source, sources%lev_source,                &
-                                   sfc_emis_gpt, sources%sfc_source,       &
-                                   inc_flux_diffuse,                       &
+                                   sources%lev_source,               &
+                                   sfc_emis_gpt, sources%sfc_source, &
+                                   inc_flux_diffuse,                 &
                                    gpt_flux_up, gpt_flux_dn)
           else
             allocate(secants(ncol, ngpt, n_quad_angs))
@@ -399,7 +398,6 @@ contains
                                   logical(top_at_1, wl), n_quad_angs,         &
                                   secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                   optical_props%tau,                 &
-                                  sources%lay_source,                &
                                   sources%lev_source,                &
                                   sfc_emis_gpt, sources%sfc_source,  &
                                   inc_flux_diffuse,                  &

@@ -41,7 +41,7 @@ module mo_rte_solver_kernels
     subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
                                 nmus, Ds, weights,          &
                                 tau,                        &
-                                lay_source, lev_source,     &
+                                lev_source,                 &
                                 sfc_emis, sfc_src,          &
                                 inc_flux,                   &
                                 flux_up, flux_dn,           &
@@ -62,8 +62,6 @@ module mo_rte_solver_kernels
                                                               !! quadrature weights
       real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau
                                                               !! Absorption optical thickness []
-      real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source
-                                                              !! Planck source at layer average temperature [W/m2]
       real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source
                                                               !! Planck source at layer edge for radiation [W/m2]
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
@@ -107,7 +105,7 @@ module mo_rte_solver_kernels
   interface
     subroutine lw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
                                   tau, ssa, g,                &
-                                  lay_source, lev_source, sfc_emis, sfc_src, &
+                                  lev_source, sfc_emis, sfc_src, &
                                   inc_flux,                   &
                                   flux_up, flux_dn) bind(C, name="rte_lw_solver_2stream")
       use mo_rte_kind,      only: wp, wl
@@ -117,8 +115,6 @@ module mo_rte_solver_kernels
                                                               !! ilay = 1 is the top of the atmosphere?
       real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, ssa, g
                                                               !! Optical thickness, single-scattering albedo, asymmetry parameter []
-      real(wp), dimension(ncol,nlay,  ngpt),   intent(in   ) :: lay_source
-                                                              !! Planck source at layer average temperature [W/m2]
       real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source
                                                               !! Planck source at layer edge for radiation [W/m2]
       real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis

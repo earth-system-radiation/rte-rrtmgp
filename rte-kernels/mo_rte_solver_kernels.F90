@@ -49,7 +49,7 @@ contains
   !
   ! ---------------------------------------------------------------
   subroutine lw_solver_noscat_oneangle(ncol, nlay, ngpt, top_at_1, D, weight, &
-                              tau, lay_source, lev_source, sfc_emis, sfc_src, &
+                              tau, lev_source, sfc_emis, sfc_src, &
                               incident_flux,    &
                               flux_up, flux_dn, &
                               do_broadband, broadband_up, broadband_dn, &
@@ -60,7 +60,6 @@ contains
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: D            ! secant of propagation angle  []
     real(wp),                              intent(in   ) :: weight       ! quadrature weight
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source   ! Planck source at layer edge  [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
@@ -186,7 +185,7 @@ contains
       ! Source function for diffuse radiation
       !
       call lw_source_noscat(ncol, nlay, top_at_1, &
-                            lay_source(:,:,igpt), lev_source(:,:,igpt), &
+                            lev_source(:,:,igpt), &
                             tau_loc, trans, source_dn, source_up)
       !
       ! Transport down
@@ -248,7 +247,7 @@ contains
   subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
                               nmus, Ds, weights,          &
                               tau,                        &
-                              lay_source, lev_source,     &
+                              lev_source,                 &
                               sfc_emis, sfc_src,          &
                               inc_flux,                   &
                               flux_up, flux_dn,           &
@@ -268,8 +267,6 @@ contains
                                                             !! quadrature weights
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau
                                                             !! Absorption optical thickness []
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source
-                                                            !! Planck source at layer average temperature [W/m2]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source
                                                             !! Planck source at layer edge for radiation[W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
@@ -313,7 +310,7 @@ contains
     !
     call lw_solver_noscat_oneangle(ncol, nlay, ngpt, &
                           top_at_1, Ds(:,:,1), weights(1), tau,      &
-                          lay_source, lev_source, sfc_emis, sfc_src, &
+                          lev_source, sfc_emis, sfc_src, &
                           inc_flux,         &
                           flux_up, flux_dn, &
                           do_broadband, broadband_up, broadband_dn, &
@@ -343,7 +340,7 @@ contains
     do imu = 2, nmus
       call lw_solver_noscat_oneangle(ncol, nlay, ngpt, &
                             top_at_1, Ds(:,:,imu), weights(imu), tau, &
-                            lay_source, lev_source, sfc_emis, sfc_src, &
+                            lev_source, sfc_emis, sfc_src, &
                             inc_flux,         &
                             this_flux_up,  this_flux_dn, &
                             do_broadband, this_broadband_up, this_broadband_dn, &
@@ -376,7 +373,7 @@ contains
   ! -------------------------------------------------------------------------------------------------
    subroutine lw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
                                  tau, ssa, g,                &
-                                 lay_source, lev_source, sfc_emis, sfc_src, &
+                                 lev_source, sfc_emis, sfc_src, &
                                  inc_flux,                   &
                                  flux_up, flux_dn) bind(C, name="rte_lw_solver_2stream")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
@@ -385,8 +382,6 @@ contains
                                                             !! ilay = 1 is the top of the atmosphere?
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, ssa, g
                                                             !! Optical thickness, single-scattering albedo, asymmetry parameter []
-    real(wp), dimension(ncol,nlay,  ngpt),   intent(in   ) :: lay_source
-                                                            !! Planck source at layer average temperature [W/m2]
     real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source
                                                             !! Planck source at layer edge temperature  [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
@@ -419,7 +414,7 @@ contains
       !
       call lw_source_2str(ncol, nlay, top_at_1, &
                           sfc_emis(:,igpt), sfc_src(:,igpt), &
-                          lay_source(:,:,igpt), lev_source, &
+                          lev_source, &
                           gamma1, gamma2, Rdif, Tdif, tau(:,:,igpt), &
                           source_dn, source_up, source_sfc)
       !
@@ -617,12 +612,11 @@ contains
   ! See Clough et al., 1992, doi: 10.1029/92JD01419, Eq 13
   !
   ! ---------------------------------------------------------------
-  subroutine lw_source_noscat(ncol, nlay, top_at_1, lay_source, lev_source, tau, trans, &
+  subroutine lw_source_noscat(ncol, nlay, top_at_1, lev_source, tau, trans, &
                               source_dn, source_up)
     integer,                           intent(in) :: ncol, nlay
     logical(wl),                       intent(in) :: top_at_1
-    real(wp), dimension(ncol, nlay  ), intent(in) :: lay_source, & ! Planck source at layer center
-                                                     tau,        & ! Optical path (tau/mu)
+    real(wp), dimension(ncol, nlay  ), intent(in) :: tau,        & ! Optical path (tau/mu)
                                                      trans         ! Transmissivity (exp(-tau))
     real(wp), dimension(ncol, nlay+1), intent(in) :: lev_source    ! Planck source at levels (layer edges)
     real(wp), dimension(ncol, nlay  ), target, & 
@@ -656,20 +650,12 @@ contains
       end if
       !
       ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
+      !   Adapted 
       !
       source_inc(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay+1) + &
-                              2._wp * fact * (lay_source(icol,ilay) - lev_source(icol,ilay+1))
+                              fact * (lev_source(icol,ilay  ) - lev_source(icol,ilay+1))
       source_dec(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay ) + &
-                              2._wp * fact * (lay_source(icol,ilay) - lev_source(icol,ilay  ))
-      !
-      ! Even better - omit the layer Planck source (not working so well)
-      !
-      if(.false.) then 
-        source_inc(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay+1) + &
-                                fact * (lev_source(icol,ilay  ) - lev_source(icol,ilay+1))
-        source_dec(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay ) + &
-                                fact * (lev_source(icol,ilay+1) - lev_source(icol,ilay  ))
-      end if 
+                              fact * (lev_source(icol,ilay+1) - lev_source(icol,ilay  ))
       end do 
     end do
   end subroutine lw_source_noscat
@@ -916,14 +902,13 @@ contains
   ! ---------------------------------------------------------------
   subroutine lw_source_2str(ncol, nlay, top_at_1,   &
                             sfc_emis, sfc_src,      &
-                            lay_source, lev_source, &
+                            lev_source, &
                             gamma1, gamma2, rdif, tdif, tau, source_dn, source_up, source_sfc) &
                             bind (C, name="rte_lw_source_2str")
     integer,                         intent(in) :: ncol, nlay
     logical(wl),                     intent(in) :: top_at_1
     real(wp), dimension(ncol      ), intent(in) :: sfc_emis, sfc_src
-    real(wp), dimension(ncol, nlay), intent(in) :: lay_source,    & ! Planck source at layer center
-                                                   tau,           & ! Optical depth (tau)
+    real(wp), dimension(ncol, nlay), intent(in) :: tau,           & ! Optical depth (tau)
                                                    gamma1, gamma2,& ! Coupling coefficients
                                                    rdif, tdif       ! Layer reflectance and transmittance
     real(wp), dimension(ncol, nlay+1), target, &

@@ -2,7 +2,10 @@ workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "api"
 
-default:
+include:
+  - local: '.gitlab/common.yml'
+
+.default:
   tags:
     - lumi
 
@@ -18,12 +21,14 @@ variables:
   EXTRA_SCHEDULER_PARAMETERS:
 
 .gpu:
+  extends: .default
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=dev-g
       --gpus=1
 
 .cpu:
+  extends: .default
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=debug
@@ -36,20 +41,10 @@ variables:
     VERSION_FCFLAGS: -V
     COMPILER_MODULES: PrgEnv-cray cce/16.0.1 craype-x86-milan
 
-.dp:
-  variables:
-    FPMODEL: DP
-    FAILURE_THRESHOLD: "5.8e-2"
-
-.sp:
-  variables:
-    FPMODEL: SP
-    FAILURE_THRESHOLD: "3.5e-1"
-
 #
 # Set up Python virtual environment
 #
-.python-common:
+.python-common-lumi:
   variables:
     PYHOME: ${CI_PROJECT_DIR}/python-venv
     FF_USE_FASTZIP: 1
@@ -57,7 +52,7 @@ variables:
 setup-python:
   extends:
     - .cpu
-    - .python-common
+    - .python-common-lumi
   script:
     - test ! -d "${PYHOME}" || exit 0
     - module load cray-python
@@ -74,43 +69,23 @@ setup-python:
       - ${PYHOME}
     expire_in: 60 minutes
 
-.common:
-  extends: .python-common
+.common-lumi:
+  extends:
+    - .python-common-lumi
+    - .common
   needs:
     - setup-python
-  variables:
-    # Make variables:
-    RRTMGP_ROOT: ${CI_PROJECT_DIR}
-    RRTMGP_DATA: ${CI_PROJECT_DIR}/rrtmgp-data
   before_script:
     - module --force purge
     - module load ${COMPILER_MODULES} ${EXTRA_COMPILER_MODULES} cray-hdf5 cray-netcdf
     # Extend the existing environment variables:
     - export PATH="${PYHOME}/bin:${PATH}"
-  script:
-    #
-    # Build libraries, examples and tests
-    #
-    - ${FC} ${VERSION_FCFLAGS}
-    - make -j8 libs
-    #
-    # Check out data
-    #
-    - git clone --depth 1 https://github.com/earth-system-radiation/rrtmgp-data.git "${RRTMGP_DATA}"
-    #
-    # Run examples and tests
-    #
-    - make -j8 tests
-    #
-    # Compare the results
-    #
-    - make -j8 check
 
 .cce-gpu-openacc:
   extends:
     - .gpu
     - .cce
-    - .common
+    - .common-lumi
   variables:
     # Compiler flags used for ICON model:
     FCFLAGS: -hacc -hadd_paren -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -g -DRTE_USE_${FPMODEL}

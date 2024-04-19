@@ -207,7 +207,7 @@ module mo_gas_optics_rrtmgp_kernels
                       fmajor, jeta, tropo, jtemp, jpress,    &
                       gpoint_bands, band_lims_gpt,           &
                       pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, &
-                      sfc_src, lay_src, lev_src, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
+                      sfc_src, lev_src, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
       use mo_rte_kind,      only : wp, wl
       integer,                                    intent(in) :: ncol, nlay, nbnd, ngpt
         !! input dimensions 
@@ -235,7 +235,6 @@ module mo_gas_optics_rrtmgp_kernels
       integer,  dimension(2,ngpt),                  intent(in) :: gpoint_flavor !! major gas flavor (pair) by upper/lower, g-point
 
       real(wp), dimension(ncol,       ngpt), intent(out) :: sfc_src  !! Planck emssion from the surface 
-      real(wp), dimension(ncol,nlay,  ngpt), intent(out) :: lay_src  !! Planck emssion from layer centers
       real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: lev_src  !! Planck emission at layer boundaries
       real(wp), dimension(ncol,       ngpt), intent(out) :: sfc_source_Jac 
         !! Jacobian (derivative) of the surface Planck source with respect to surface temperature 

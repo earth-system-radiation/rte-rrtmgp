@@ -571,7 +571,7 @@ contains
                     fmajor, jeta, tropo, jtemp, jpress,    &
                     gpoint_bands, band_lims_gpt,           &
                     pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, &
-                    sfc_src, lay_src, lev_src, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
+                    sfc_src, lev_src, sfc_source_Jac) bind(C, name="rrtmgp_compute_Planck_source")
     integer,                                    intent(in) :: ncol, nlay, nbnd, ngpt
       !! input dimensions 
     integer,                                    intent(in) :: nflav, neta, npres, ntemp, nPlanckTemp
@@ -598,7 +598,6 @@ contains
     integer,  dimension(2,ngpt),                  intent(in) :: gpoint_flavor !! major gas flavor (pair) by upper/lower, g-point
 
     real(wp), dimension(ncol,       ngpt), intent(out) :: sfc_src  !! Planck emission from the surface 
-    real(wp), dimension(ncol,nlay,  ngpt), intent(out) :: lay_src  !! Planck emission from layer centers
     real(wp), dimension(ncol,nlay+1,ngpt), intent(out) :: lev_src  !! Planck emission from layer boundaries
     real(wp), dimension(ncol,       ngpt), intent(out) :: sfc_source_Jac 
       !! Jacobian (derivative) of the surface Planck source with respect to surface temperature 
@@ -651,28 +650,6 @@ contains
         end do
       end do
     end do !icol
-
-    do ilay = 1, nlay
-      do icol = 1, ncol
-        ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
-        planck_function(icol,ilay,1:nbnd) = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk)
-      end do
-    end do
-
-    !
-    ! Map to g-points
-    !
-    do ibnd = 1, nbnd
-      gptS = band_lims_gpt(1, ibnd)
-      gptE = band_lims_gpt(2, ibnd)
-      do igpt = gptS, gptE
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            lay_src(icol,ilay,igpt) = pfrac(icol,ilay,igpt) * planck_function(icol,ilay,ibnd)
-          end do
-        end do
-      end do
-    end do
 
     ! compute level source irradiances for each g-point
     do icol = 1, ncol

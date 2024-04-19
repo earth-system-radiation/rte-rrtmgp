@@ -869,10 +869,10 @@ contains
     ! Source function needs temperature at interfaces/levels and at layer centers
     !   Allocate small local array for tlev unconditionally
     !
-    !$acc        data copyin(sources) copyout( sources%lay_source, sources%lev_source)     &
+    !$acc        data copyin(sources) copyout( sources%lev_source)     &
     !$acc                             copyout( sources%sfc_source, sources%sfc_source_Jac) & 
     !$acc              create(tlev_arr)
-    !$omp target data                 map(from:sources%lay_source, sources%lev_source)     &
+    !$omp target data                 map(from:sources%lev_source)     &
     !$omp                             map(from:sources%sfc_source, sources%sfc_source_Jac) &
     !$omp           map(alloc:tlev_arr)
 
@@ -922,7 +922,7 @@ contains
                 fmajor, jeta, tropo, jtemp, jpress,                    &
                 this%get_gpoint_bands(), this%get_band_lims_gpoint(), this%planck_frac, this%temp_ref_min,&
                 this%totplnk_delta, this%totplnk, this%gpoint_flavor,  &
-                sources%sfc_source, sources%lay_source, sources%lev_source, &
+                sources%sfc_source, sources%lev_source, &
                 sources%sfc_source_Jac)
     !$acc end        data
     !$omp end target data

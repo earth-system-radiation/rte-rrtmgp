@@ -116,7 +116,6 @@ extern "C"
         const Float* totplnk, // (nPlanckTemp,nbnd)
         const int* gpoint_flavor, // (2,ngpt)
         Float* sfc_src, // [out] (ncol,       ngpt)
-        Float* lay_src, // [out] (ncol,nlay,  ngpt)
         Float* lev_src, // [out] (ncol,nlay+1,ngpt)
         Float* sfc_src_jac // [out] (ncol,       ngpt)
     );

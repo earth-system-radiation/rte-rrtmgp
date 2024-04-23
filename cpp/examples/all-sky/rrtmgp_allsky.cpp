@@ -140,8 +140,7 @@ int main(int argc , char **argv) {
     auto p_lay_host = p_lay.createHostCopy();
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-    auto p_lay_host_k = Kokkos::create_mirror_view(p_lay_k);
-    Kokkos::deep_copy(p_lay_host_k, p_lay_k);
+    auto p_lay_host_k = Kokkos::create_mirror_view_and_copy(HostDevice(), p_lay_k);
 #endif
     bool top_at_1 = COMPUTE_SWITCH(p_lay_host(1, 1) < p_lay_host(1, nlay), p_lay_host_k(0, 0) < p_lay_host_k(0, nlay-1));
 
@@ -494,8 +493,7 @@ int main(int argc , char **argv) {
       real1dk t_sfc_k   ("t_sfc"        ,ncol);
       real2dk emis_sfc_k("emis_sfc",nbnd,ncol);
       // Surface temperature
-      auto t_lev_host_k = Kokkos::create_mirror_view(t_lev_k);
-      Kokkos::deep_copy(t_lev_host_k, t_lev_k);
+      auto t_lev_host_k = Kokkos::create_mirror_view_and_copy(HostDevice(), t_lev_k);
       Kokkos::deep_copy(t_sfc_k, t_lev_host_k(0, merge(nlay, 0, top_at_1)));
       Kokkos::deep_copy(emis_sfc_k, 0.98);
       COMPARE_WRAP(t_sfc, t_sfc_k);

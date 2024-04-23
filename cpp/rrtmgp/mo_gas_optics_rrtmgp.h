@@ -1598,10 +1598,8 @@ public:
                        intHost1dk  const &kminor_start_upper,
                        realHost3dk const &rayl_lower,
                        realHost3dk const &rayl_upper) {
-    auto band_lims_wavenum_h = Kokkos::create_mirror_view(DefaultDevice(), band_lims_wavenum);
-    auto band2gpt_h = Kokkos::create_mirror_view(DefaultDevice(), band2gpt);
-    Kokkos::deep_copy(band_lims_wavenum_h, band_lims_wavenum);
-    Kokkos::deep_copy(band2gpt_h, band2gpt);
+    auto band_lims_wavenum_h = Kokkos::create_mirror_view_and_copy(DefaultDevice(), band_lims_wavenum);
+    auto band2gpt_h = Kokkos::create_mirror_view_and_copy(DefaultDevice(), band2gpt);
     OpticalPropsK::init(band_lims_wavenum_h, band2gpt_h);
 
     // Which gases known to the gas optics are present in the host model (available_gases)?
@@ -1633,8 +1631,7 @@ public:
       }
     }
     // Allocate class copy, and deep copy to the class data member
-    this->vmr_ref = Kokkos::create_mirror_view(DefaultDevice(), vmr_ref_red);
-    Kokkos::deep_copy(this->vmr_ref, vmr_ref_red);
+    this->vmr_ref = Kokkos::create_mirror_view_and_copy(DefaultDevice(), vmr_ref_red);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // REDUCE MINOR ARRAYS SO VARIABLES ONLY CONTAIN MINOR GASES THAT ARE AVAILABLE
@@ -1654,17 +1651,11 @@ public:
                         minor_limits_gpt_lower_red, minor_scales_with_density_lower_red, scaling_gas_lower_red,
                         scale_by_complement_lower_red, kminor_start_lower_red);
 
-    this->kminor_lower                    = Kokkos::create_mirror_view(DefaultDevice(), kminor_lower_red);
-    this->minor_limits_gpt_lower          = Kokkos::create_mirror_view(DefaultDevice(), minor_limits_gpt_lower_red);
-    this->minor_scales_with_density_lower = Kokkos::create_mirror_view(DefaultDevice(), minor_scales_with_density_lower_red);
-    this->scale_by_complement_lower       = Kokkos::create_mirror_view(DefaultDevice(), scale_by_complement_lower_red);
-    this->kminor_start_lower              = Kokkos::create_mirror_view(DefaultDevice(), kminor_start_lower_red);
-
-    Kokkos::deep_copy(this->kminor_lower, kminor_lower_red);
-    Kokkos::deep_copy(this->minor_limits_gpt_lower, minor_limits_gpt_lower_red);
-    Kokkos::deep_copy(this->minor_scales_with_density_lower, minor_scales_with_density_lower_red);
-    Kokkos::deep_copy(this->scale_by_complement_lower, scale_by_complement_lower_red);
-    Kokkos::deep_copy(this->kminor_start_lower, kminor_start_lower_red);
+    this->kminor_lower                    = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kminor_lower_red);
+    this->minor_limits_gpt_lower          = Kokkos::create_mirror_view_and_copy(DefaultDevice(), minor_limits_gpt_lower_red);
+    this->minor_scales_with_density_lower = Kokkos::create_mirror_view_and_copy(DefaultDevice(), minor_scales_with_density_lower_red);
+    this->scale_by_complement_lower       = Kokkos::create_mirror_view_and_copy(DefaultDevice(), scale_by_complement_lower_red);
+    this->kminor_start_lower              = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kminor_start_lower_red);
 
     // Find the largest number of g-points per band
     this->max_gpt_diff_lower = std::numeric_limits<int>::lowest();
@@ -1687,17 +1678,11 @@ public:
                         minor_limits_gpt_upper_red, minor_scales_with_density_upper_red, scaling_gas_upper_red,
                         scale_by_complement_upper_red, kminor_start_upper_red);
 
-    this->kminor_upper                    = Kokkos::create_mirror_view(DefaultDevice(), kminor_upper_red);
-    this->minor_limits_gpt_upper          = Kokkos::create_mirror_view(DefaultDevice(), minor_limits_gpt_upper_red);
-    this->minor_scales_with_density_upper = Kokkos::create_mirror_view(DefaultDevice(), minor_scales_with_density_upper_red);
-    this->scale_by_complement_upper       = Kokkos::create_mirror_view(DefaultDevice(), scale_by_complement_upper_red);
-    this->kminor_start_upper              = Kokkos::create_mirror_view(DefaultDevice(), kminor_start_upper_red);
-
-    Kokkos::deep_copy(this->kminor_upper, kminor_upper_red);
-    Kokkos::deep_copy(this->minor_limits_gpt_upper, minor_limits_gpt_upper_red);
-    Kokkos::deep_copy(this->minor_scales_with_density_upper, minor_scales_with_density_upper_red);
-    Kokkos::deep_copy(this->scale_by_complement_upper, scale_by_complement_upper_red);
-    Kokkos::deep_copy(this->kminor_start_upper, kminor_start_upper_red);
+    this->kminor_upper                    = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kminor_upper_red);
+    this->minor_limits_gpt_upper          = Kokkos::create_mirror_view_and_copy(DefaultDevice(), minor_limits_gpt_upper_red);
+    this->minor_scales_with_density_upper = Kokkos::create_mirror_view_and_copy(DefaultDevice(), minor_scales_with_density_upper_red);
+    this->scale_by_complement_upper       = Kokkos::create_mirror_view_and_copy(DefaultDevice(), scale_by_complement_upper_red);
+    this->kminor_start_upper              = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kminor_start_upper_red);
 
     // Find the largest number of g-points per band
     this->max_gpt_diff_upper = std::numeric_limits<int>::lowest();
@@ -1708,12 +1693,9 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // HANDLE ARRAYS NOT REDUCED BY THE PRESENCE, OR LACK THEREOF, OF A GAS
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    this->press_ref = Kokkos::create_mirror_view(DefaultDevice(), press_ref);
-    this->temp_ref  = Kokkos::create_mirror_view(DefaultDevice(), temp_ref);
-    this->kmajor    = Kokkos::create_mirror_view(DefaultDevice(), kmajor);
-    Kokkos::deep_copy(this->press_ref, press_ref);
-    Kokkos::deep_copy(this->temp_ref, temp_ref);
-    Kokkos::deep_copy(this->kmajor, kmajor);
+    this->press_ref = Kokkos::create_mirror_view_and_copy(DefaultDevice(), press_ref);
+    this->temp_ref  = Kokkos::create_mirror_view_and_copy(DefaultDevice(), temp_ref);
+    this->kmajor    = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kmajor);
 
     // Process rayl_lower and rayl_upper into a combined this->krayl
     if (rayl_lower.is_allocated() != rayl_upper.is_allocated()) {
@@ -1729,8 +1711,7 @@ public:
           }
         }
       }
-      this->krayl = Kokkos::create_mirror_view(DefaultDevice(), krayltmp);
-      Kokkos::deep_copy(this->krayl, krayltmp);
+      this->krayl = Kokkos::create_mirror_view_and_copy(DefaultDevice(), krayltmp);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1753,19 +1734,15 @@ public:
     intHost1dk idx_minor_upper_tmp;
     create_idx_minor(this->gas_names, gas_minor, identifier_minor, minor_gases_lower_red, idx_minor_lower_tmp);
     create_idx_minor(this->gas_names, gas_minor, identifier_minor, minor_gases_upper_red, idx_minor_upper_tmp);
-    this->idx_minor_lower = Kokkos::create_mirror_view(DefaultDevice(), idx_minor_lower_tmp);
-    this->idx_minor_upper = Kokkos::create_mirror_view(DefaultDevice(), idx_minor_upper_tmp);
-    Kokkos::deep_copy(this->idx_minor_lower, idx_minor_lower_tmp);
-    Kokkos::deep_copy(this->idx_minor_upper, idx_minor_upper_tmp);
+    this->idx_minor_lower = Kokkos::create_mirror_view_and_copy(DefaultDevice(), idx_minor_lower_tmp);
+    this->idx_minor_upper = Kokkos::create_mirror_view_and_copy(DefaultDevice(), idx_minor_upper_tmp);
     // Get index of gas (if present) that has special treatment in density scaling
     intHost1dk idx_minor_scaling_lower_tmp;
     intHost1dk idx_minor_scaling_upper_tmp;
     create_idx_minor_scaling(this->gas_names, scaling_gas_lower_red, idx_minor_scaling_lower_tmp);
     create_idx_minor_scaling(this->gas_names, scaling_gas_upper_red, idx_minor_scaling_upper_tmp);
-    this->idx_minor_scaling_lower = Kokkos::create_mirror_view(DefaultDevice(), idx_minor_scaling_lower_tmp);
-    this->idx_minor_scaling_upper = Kokkos::create_mirror_view(DefaultDevice(), idx_minor_scaling_upper_tmp);
-    Kokkos::deep_copy(this->idx_minor_scaling_lower, idx_minor_scaling_lower_tmp);
-    Kokkos::deep_copy(this->idx_minor_scaling_upper, idx_minor_scaling_upper_tmp);
+    this->idx_minor_scaling_lower = Kokkos::create_mirror_view_and_copy(DefaultDevice(), idx_minor_scaling_lower_tmp);
+    this->idx_minor_scaling_upper = Kokkos::create_mirror_view_and_copy(DefaultDevice(), idx_minor_scaling_upper_tmp);
 
     // create flavor list
     // Reduce (remap) key_species list; checks that all key gases are present in incoming
@@ -1775,14 +1752,11 @@ public:
     // create flavor and gpoint_flavor lists
     intHost2dk flavor_tmp;
     intHost2dk gpoint_flavor_tmp;
-    auto gpoint_bands_tmp = Kokkos::create_mirror_view(this->get_gpoint_bands());
-    Kokkos::deep_copy(gpoint_bands_tmp, this->get_gpoint_bands());
+    auto gpoint_bands_tmp = Kokkos::create_mirror_view_and_copy(HostDevice(), this->get_gpoint_bands());
     create_flavor       (key_species_red, flavor_tmp);
     create_gpoint_flavor(key_species_red, gpoint_bands_tmp, flavor_tmp, gpoint_flavor_tmp);
-    this->flavor        = Kokkos::create_mirror_view(DefaultDevice(), flavor_tmp);
-    this->gpoint_flavor = Kokkos::create_mirror_view(DefaultDevice(), gpoint_flavor_tmp);
-    Kokkos::deep_copy(this->flavor, flavor_tmp);
-    Kokkos::deep_copy(this->gpoint_flavor, gpoint_flavor_tmp);
+    this->flavor        = Kokkos::create_mirror_view_and_copy(DefaultDevice(), flavor_tmp);
+    this->gpoint_flavor = Kokkos::create_mirror_view_and_copy(DefaultDevice(), gpoint_flavor_tmp);
 
     // minimum, maximum reference temperature, pressure -- assumes low-to-high ordering
     //   for T, high-to-low ordering for p
@@ -1850,10 +1824,8 @@ public:
                     kminor_start_lower, kminor_start_upper, rayl_lower, rayl_upper);
 
     // Planck function tables
-    this->totplnk = Kokkos::create_mirror_view(DefaultDevice(), totplnk);
-    this->planck_frac = Kokkos::create_mirror_view(DefaultDevice(), planck_frac);
-    Kokkos::deep_copy(this->totplnk, totplnk);
-    Kokkos::deep_copy(this->planck_frac, planck_frac);
+    this->totplnk = Kokkos::create_mirror_view_and_copy(DefaultDevice(), totplnk);
+    this->planck_frac = Kokkos::create_mirror_view_and_copy(DefaultDevice(), planck_frac);
     // Temperature steps for Planck function interpolation
     //   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
     //   Planck grid and the Planck grid is equally spaced
@@ -1904,8 +1876,7 @@ public:
                     kminor_start_lower, kminor_start_upper, rayl_lower, rayl_upper);
 
     // Solar source table init
-    this->solar_src = Kokkos::create_mirror_view(DefaultDevice(), solar_src);
-    Kokkos::deep_copy(this->solar_src, solar_src);
+    this->solar_src = Kokkos::create_mirror_view_and_copy(DefaultDevice(), solar_src);
     this->totplnk_delta = 0.;
   }
 
@@ -1965,8 +1936,7 @@ public:
   // Ensure that every key gas required by the k-distribution is present in the gas concentration object
   void check_key_species_present(GasConcsK const &gas_desc) const {
     string1dv key_gas_names;
-    auto is_key_h = Kokkos::create_mirror_view(this->is_key);
-    Kokkos::deep_copy(is_key_h, this->is_key);
+    auto is_key_h = Kokkos::create_mirror_view_and_copy(HostDevice(), this->is_key);
     for (auto i = 0; i < is_key_h.extent(0); ++i) {
       if (is_key_h(i)) {
         key_gas_names.push_back(this->gas_names[i]);

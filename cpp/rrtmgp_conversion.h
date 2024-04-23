@@ -412,8 +412,8 @@ bool any(const KView& view, const Functor& functor)
   Kokkos::parallel_reduce(
     Kokkos::RangePolicy<exe_space_t>(0, view.size()),
     KOKKOS_LAMBDA(size_t i, bool& val) {
-      val = functor(view.data()[i]);
-    }, Kokkos::BOr<bool>(rv));
+      val |= functor(view.data()[i]);
+    }, Kokkos::LOr<bool>(rv));
 
   return rv;
 }
@@ -432,6 +432,23 @@ typename KView::non_const_value_type maxval(const KView& view)
       const scalar_t val = view.data()[i];
       if (val > lmax) lmax = val;
     }, Kokkos::Max<scalar_t>(rv));
+  return rv;
+}
+
+// Get min val of View
+template <typename KView>
+typename KView::non_const_value_type minval(const KView& view)
+{
+  using scalar_t    = typename KView::non_const_value_type;
+  using exe_space_t = typename KView::execution_space;
+
+  scalar_t rv;
+  Kokkos::parallel_reduce(
+    Kokkos::RangePolicy<exe_space_t>(0, view.size()),
+    KOKKOS_LAMBDA(size_t i, scalar_t& lmax) {
+      const scalar_t val = view.data()[i];
+      if (val > lmax) lmax = val;
+    }, Kokkos::Min<scalar_t>(rv));
   return rv;
 }
 
@@ -967,8 +984,7 @@ public:
     }
 
     if (is_device_mem) {
-      auto hv = Kokkos::create_mirror_view(arr);
-      Kokkos::deep_copy(hv, arr);
+      auto hv = Kokkos::create_mirror_view_and_copy(HostDevice(), arr);
       var.putVar(hv.data());
     } else {
       var.putVar(arr.data());
@@ -1068,8 +1084,7 @@ public:
       count[i] = dims[i].getSize();
     }
     if (is_device_mem) {
-      auto hv = Kokkos::create_mirror_view(arr);
-      Kokkos::deep_copy(hv, arr);
+      auto hv = Kokkos::create_mirror_view_and_copy(HostDevice(), arr);
       var.putVar(start,count,hv.data());
     } else {
       var.putVar(start,count,arr.data());

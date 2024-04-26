@@ -237,6 +237,9 @@ inline
 bool approx_eq<real>(const real lhs, const real rhs)
 {
   constexpr real tol = 1e-12;
+  if (std::isnan(lhs) && std::isnan(rhs)) {
+    return true;
+  }
   return std::abs(lhs - rhs) < tol;
 }
 
@@ -314,6 +317,13 @@ void compare_yakl_to_kokkos(const YArray& yarray, const KView& kview, bool index
   }
   LeftHostView hkview("read_data", llayout);
   Kokkos::deep_copy(hkview, kview);
+
+  RRT_REQUIRE(kview.is_allocated() == yakl::intrinsics::allocated(yarray),
+              "Allocation status mismatch for: " << kview.label());
+  if (!kview.is_allocated()) {
+    // we're done
+    return;
+  }
 
   auto hyarray = yarray.createHostCopy();
 

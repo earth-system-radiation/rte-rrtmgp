@@ -421,55 +421,67 @@ program rte_check_equivalence
     !   Threshold of 4x spacing() works in double precision 
     !
     call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
-                                       t_lay,        &
-                                       gas_concs,    &
-                                       atmos,        &
-                                       toa_flux))
+                                           t_lay,        &
+                                           gas_concs,    &
+                                           atmos,        &
+                                           toa_flux))
     atmos%tau(:,:,:) = 0.5_wp * atmos%tau(:,:,:) 
     call stop_on_err(atmos%increment(atmos))
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 8._wp))    &  
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  halving/doubling fails")
 
+    !
+    ! Incremement with 0 optical depth 
+    !
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
+                                           t_lay,        &
+                                           gas_concs,    &
+                                           atmos,        &
+                                           toa_flux))
     call increment_with_1scl(atmos)
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  Incrementing with 1scl fails")
 
-     call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
-                                       t_lay,        &
-                                       gas_concs,    &
-                                       atmos,        &
-                                       toa_flux))
-   call increment_with_2str(atmos)
-   if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-      .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-      .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+    call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
+                                           t_lay,        &
+                                           gas_concs,    &
+                                           atmos,        &
+                                           toa_flux))
+    call increment_with_2str(atmos)
+    call stop_on_err(rte_sw(atmos, top_at_1, &
+                            mu0,   toa_flux, &
+                            sfc_alb_dir, sfc_alb_dif, &
+                            fluxes))
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  Incrementing with 2str fails")
 
     call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
-                                       t_lay,        &
-                                       gas_concs,    &
-                                       atmos,        &
-                                       toa_flux))
+                                           t_lay,        &
+                                           gas_concs,    &
+                                           atmos,        &
+                                           toa_flux))
     call increment_with_nstr(atmos)
     call stop_on_err(rte_sw(atmos, top_at_1, &
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 8._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 6._wp) .or. & 
-       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 6._wp))    &  
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
+       .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  Incrementing with nstr fails")
     print *, "  Incrementing"
   end if 

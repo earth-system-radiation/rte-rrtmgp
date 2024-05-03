@@ -1003,6 +1003,7 @@ contains
 
     ! Ancillary variables
     real(wp), parameter :: min_k = 1.e4_wp * epsilon(1._wp) ! Suggestion from Chiel van Heerwaarden
+    real(wp), parameter :: min_mu0 = sqrt(epsilon(1._wp))
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat
@@ -1022,6 +1023,7 @@ contains
         dir_flux_trans => flux_dn_dir(:,lay_index  )
       end if
 
+      !$OMP SIMD
       do i = 1, ncol
         !
         ! Scalars
@@ -1029,7 +1031,6 @@ contains
         tau_s = tau(i, lay_index)
         w0_s  = w0 (i, lay_index)
         g_s   = g  (i, lay_index)
-        mu0_s = mu0(i, lay_index)
         !
         ! Zdunkowski Practical Improved Flux Method "PIFM"
         !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
@@ -1059,63 +1060,69 @@ contains
         !
         ! On a round earth, where mu0 can increase with depth in the atmosphere,
         !   levels with mu0 <= 0 have no direct beam and hence no source for diffuse light
+        !   Compute transmission and reflection using a nominal value but mask out later 
         !
-        if(mu0_s > 0._wp) then
-          k_mu     = k * mu0_s
-          !
-          ! Equation 14, multiplying top and bottom by exp(-k*tau)
-          !   and rearranging to avoid div by 0.
-          !
-          RT_term =  w0_s * RT_term/merge(1._wp - k_mu*k_mu, &
-                                          epsilon(1._wp),    &
-                                          abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
-          !
-          ! Zdunkowski Practical Improved Flux Method "PIFM"
-          !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
-          !
-          gamma3 = (2._wp - 3._wp * mu0_s *         g_s ) * .25_wp
-          gamma4 =  1._wp - gamma3
-          alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
-          alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
+        mu0_s = max(min_mu0, mu0(i, lay_index)) 
+        k_mu     = k * mu0_s
+        !
+        ! Equation 14, multiplying top and bottom by exp(-k*tau)
+        !   and rearranging to avoid div by 0.
+        !
+        RT_term =  w0_s * RT_term/merge(1._wp - k_mu*k_mu, &
+                                        epsilon(1._wp),    &
+                                        abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
+        !
+        ! Zdunkowski Practical Improved Flux Method "PIFM"
+        !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
+        !
+        gamma3 = (2._wp - 3._wp * mu0_s *         g_s ) * .25_wp
+        gamma4 =  1._wp - gamma3
+        alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
+        alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
 
-          !
-          ! Transmittance of direct, unscattered beam.
-          !
-          k_gamma3 = k * gamma3
-          k_gamma4 = k * gamma4
-          Tnoscat = exp(-tau_s/mu0_s)
-          Rdir = RT_term  *                                            &
-              ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
-               (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
-               2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau * Tnoscat)
-          !
-          ! Equation 15, multiplying top and bottom by exp(-k*tau),
-          !   multiplying through by exp(-tau/mu0) to
-          !   prefer underflow to overflow
-          ! Omitting direct transmittance
-          !
-          Tdir = -RT_term *                                                             &
-                ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
-                 (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
-                 2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
-          ! Final check that energy is not spuriously created, by recognizing that
-          ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
-          ! or penetrate through but be scattered on the way - the rest is absorbed
-          ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
-          Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))
-          Tdir    = max(0.0_wp, min(Tdir, (1.0_wp - Tnoscat - Rdir) ))
+        !
+        ! Transmittance of direct, unscattered beam.
+        !
+        k_gamma3 = k * gamma3
+        k_gamma4 = k * gamma4
+        Tnoscat = exp(-tau_s/mu0_s)
+        Rdir = RT_term  *                                            &
+            ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
+             (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
+             2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau * Tnoscat)
+        !
+        ! Equation 15, multiplying top and bottom by exp(-k*tau),
+        !   multiplying through by exp(-tau/mu0) to
+        !   prefer underflow to overflow
+        ! Omitting direct transmittance
+        !
+        Tdir = -RT_term *                                                             &
+              ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
+               (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
+               2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
+        ! Final check that energy is not spuriously created, by recognizing that
+        ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
+        ! or penetrate through but be scattered on the way - the rest is absorbed
+        ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
+        Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))
+        Tdir    = max(0.0_wp, min(Tdir, (1.0_wp - Tnoscat - Rdir) ))
 
-          source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
-          source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
-          dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
-        else
-          source_up(i,lay_index) = 0._wp
-          source_dn(i,lay_index) = 0._wp
-          dir_flux_trans(i)      = 0._wp
-        end if
+        source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
+        source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
+        dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
       end do
     end do
-    source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)
+    !
+    ! T and R for the direct beam are computed using nominal values even when the 
+    !   sun is below the horizon (mu0 < 0); set those values back to zero
+    ! This won't be efficient if many nighttime columns are passed
+    !
+    source_sfc(:) = merge(dir_flux_trans(:)*sfc_albedo(:), & 
+                          0._wp, mu0(:,lay_index) > 0._wp) 
+    where(mu0(:,:) <= 0._wp) 
+      source_up(:,:) = 0._wp
+      source_dn(:,:) = 0._wp
+    end where 
 
   end subroutine sw_dif_and_source
 ! ---------------------------------------------------------------

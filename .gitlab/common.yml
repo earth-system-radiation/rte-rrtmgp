@@ -1,0 +1,37 @@
+.dp:
+  variables:
+    FPMODEL: DP
+    FAILURE_THRESHOLD: "5.8e-2"
+
+.sp:
+  variables:
+    FPMODEL: SP
+    FAILURE_THRESHOLD: "3.5e-1"
+
+.common:
+  variables:
+    # Make variables:
+    MAKEFLAGS: -j8
+    RRTMGP_ROOT: ${CI_PROJECT_DIR}
+    RRTMGP_DATA: ${CI_PROJECT_DIR}/rrtmgp-data
+    # Convenience variables:
+    RRTMGP_DATA_REPO: https://github.com/earth-system-radiation/rrtmgp-data.git
+    RRTMGP_DATA_TAG:
+  script:
+    #
+    # Build libraries, examples and tests
+    #
+    - ${FC} ${VERSION_FCFLAGS}
+    - make libs
+    #
+    # Check out data
+    #
+    - git clone --depth 1 ${RRTMGP_DATA_TAG:+--branch "${RRTMGP_DATA_TAG}"} "${RRTMGP_DATA_REPO}" "${RRTMGP_DATA}"
+    #
+    # Run examples and tests
+    #
+    - make tests
+    #
+    # Compare the results
+    #
+    - make check

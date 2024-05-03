@@ -5,6 +5,7 @@ workflow:
 include:
   - project: 'anw_dienste/ci-templates'
     file: '.slurm-ci.yml'
+  - local: '.gitlab/common.yml'
 
 variables:
   SCHEDULER_PARAMETERS: >-
@@ -44,17 +45,8 @@ variables:
     NFHOME: /sw/spack-levante/netcdf-fortran-4.5.3-5di6qe
     NCHOME: /sw/spack-levante/netcdf-c-4.8.1-vbnli5
 
-.dp:
-  variables:
-    FPMODEL: DP
-    FAILURE_THRESHOLD: "5.8e-2"
-
-.sp:
-  variables:
-    FPMODEL: SP
-    FAILURE_THRESHOLD: "3.5e-1"
-
-.common:
+.common-levante:
+  extends: .common
   variables:
     PYHOME: /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg
     # Suppress an irrelevant but annoying error message:
@@ -62,8 +54,6 @@ variables:
     # Make variables:
     FCINCLUDE: -I${NFHOME}/include
     LDFLAGS: -L${NFHOME}/lib -L${NCHOME}/lib
-    RRTMGP_ROOT: ${CI_PROJECT_DIR}
-    RRTMGP_DATA: ${CI_PROJECT_DIR}/rrtmgp-data
   before_script:
     - module purge
     - module load git
@@ -72,30 +62,12 @@ variables:
     - export LD_LIBRARY_PATH="${NFHOME}/lib:${NCHOME}/lib:${LD_LIBRARY_PATH-}"
     # Some tests require a large stack:
     - ulimit -s unlimited
-  script:
-    #
-    # Build libraries, examples and tests
-    #
-    - ${FC} ${VERSION_FCFLAGS}
-    - make -j8 libs
-    #
-    # Check out data
-    #
-    - git clone --depth 1 https://github.com/earth-system-radiation/rrtmgp-data.git "${RRTMGP_DATA}"
-    #
-    # Run examples and tests
-    #
-    - make -j8 tests
-    #
-    # Compare the results
-    #
-    - make -j8 check
 
 .nvhpc-gpu-openacc:
   extends:
     - .gpu
     - .nvhpc
-    - .common
+    - .common-levante
   variables:
     # Compiler flags used for ICON model:
     FCFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda11.7 -DRTE_USE_${FPMODEL}
@@ -105,7 +77,7 @@ variables:
   extends:
     - .cpu
     - .nag
-    - .common
+    - .common-levante
   variables:
     # Compiler flags used for ICON model:
     FCFLAGS: -Wc=/sw/spack-levante/gcc-11.2.0-bcn7mb/bin/gcc -f2008 -colour -w=uep -g -gline -O0 -float-store -nan -Wc,-g -Wc,-pipe -Wc,--param,max-vartrack-size=200000000 -Wc,-mno-fma -C=all -DRTE_USE_CBOOL -DRTE_USE_${FPMODEL}
@@ -130,11 +102,6 @@ nvhpc-gpu-openacc-SP:
     - .sp
     - .nvhpc-gpu-openacc
 
-#nag-cpu-default-DP:
-#  extends:
-#    - .dp
-#    - .nag-cpu-default
-
 nag-cpu-default-SP:
   extends:
     - .sp
@@ -144,8 +111,3 @@ nag-cpu-accel-DP:
   extends:
     - .dp
     - .nag-cpu-accel
-
-#nag-cpu-accel-SP:
-#  extends:
-#    - .sp
-#    - .nag-cpu-accel

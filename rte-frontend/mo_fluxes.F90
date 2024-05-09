@@ -12,9 +12,9 @@
 !
 !> ## Compute output quantities from spectrally-resolved flux profiles
 !>
-!>    This module contains an abstract class and a broadband implmentation that sums over all spectral points
+!>    This module contains an abstract class and a broadband implementation that sums over all spectral points
 !>    The abstract base class defines the routines that extenstions must implement: `reduce()` and `are_desired()`
-!>    The intent is for users to extend it as required, using mo_flxues_broadband as an example
+!>    The intent is for users to extend it as required, using mo_fluxes_broadband as an example
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_fluxes
@@ -48,6 +48,7 @@ module mo_fluxes
     real(wp), dimension(:,:), pointer :: flux_up => NULL(), flux_dn => NULL()
     real(wp), dimension(:,:), pointer :: flux_net => NULL()    ! Net (down - up)
     real(wp), dimension(:,:), pointer :: flux_dn_dir => NULL() ! Direct flux down
+    real(wp), dimension(:,:), pointer :: flux_up_Jac => NULL() ! Sfc Temp Jacobian
   contains
     procedure, public :: reduce      => reduce_broadband
     procedure, public :: are_desired => are_desired_broadband
@@ -56,7 +57,7 @@ module mo_fluxes
 
   ! -----------------------------------------------------------------------------------------------
   !
-  ! Abstract interfaces: any implemntation has to provide routines with these interfaces
+  ! Abstract interfaces: any implementation has to provide routines with these interfaces
   !
   abstract interface
     ! -------------------
@@ -64,7 +65,8 @@ module mo_fluxes
     !> This routine takes the fully resolved calculation (detailed in spectral and vertical dimensions) and
     !>   computes desired outputs. Output values will normally be data components of the derived type.
     !
-    function reduce_abstract(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
+    function reduce_abstract(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, &
+        gpt_flux_dn_dir, gpt_flux_up_Jac) result(error_msg)
       import ty_fluxes, ty_optical_props
       import wp
       class(ty_fluxes),                  intent(inout) :: this
@@ -73,7 +75,10 @@ module mo_fluxes
       class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
       logical,                           intent(in   ) :: top_at_1
       real(kind=wp), dimension(:,:,:), optional, &
-                                         intent(in   ) :: gpt_flux_dn_dir! Direct flux down
+                                         intent(in   ) :: gpt_flux_dn_dir ! Direct flux down [W/m2](ncol, nlay+1, ngpt)
+      real(kind=wp), dimension(:,:,:), optional, &
+                                         intent(in   ) :: gpt_flux_up_Jac ! Surface temperature flux Jacobian
+                                                                          ! [W/m2/K](ncol, nlay+1, ngpt)
       character(len=128)                               :: error_msg
     end function reduce_abstract
     ! -------------------
@@ -94,14 +99,18 @@ contains
   !> Broadband fluxes -- simply sum over the spectral dimension and report the whole profile
   !
   ! --------------------------------------------------------------------------------------
-  function reduce_broadband(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
+  function reduce_broadband(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, &
+      gpt_flux_dn_dir, gpt_flux_up_Jac) result(error_msg)
     class(ty_fluxes_broadband),        intent(inout) :: this
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_up ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_dn ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
     logical,                           intent(in   ) :: top_at_1
     real(kind=wp), dimension(:,:,:), optional, &
-                                       intent(in   ) :: gpt_flux_dn_dir! Direct flux down
+                                       intent(in   ) :: gpt_flux_dn_dir ! Direct flux down [W/m2](ncol, nlay+1, ngpt)
+    real(kind=wp), dimension(:,:,:), optional, &
+                                       intent(in   ) :: gpt_flux_up_Jac ! Surface temperature flux Jacobian
+                                                                        ! [W/m2/K](ncol, nlay+1, ngpt)
     character(len=128)                               :: error_msg
     ! ------
     integer :: ncol, nlev, ngpt
@@ -124,6 +133,11 @@ contains
         if(.not. extents_are(gpt_flux_dn_dir, ncol, nlev, ngpt)) &
           error_msg = "reduce: gpt_flux_dn_dir array incorrectly sized"
       end if
+
+      if(present(gpt_flux_up_Jac)) then
+        if(.not. extents_are(gpt_flux_up_Jac, ncol, nlev, ngpt)) &
+          error_msg = "reduce: gpt_flux_up_Jac array incorrectly sized"
+      end if
       !
       ! Output arrays
       !
@@ -143,14 +157,22 @@ contains
         if(.not. extents_are(this%flux_dn_dir, ncol, nlev)) &
           error_msg = 'reduce: flux_dn_dir array incorrectly sized'
       end if
+      if(associated(this%flux_up_Jac)) then
+        if(.not. extents_are(this%flux_up_Jac, ncol, nlev)) &
+          error_msg = 'reduce: flux_up_Jac array incorrectly sized'
+      end if
 
       if(error_msg /= "") return
     end if
     !
-    ! Self-consistency -- shouldn't be asking for direct beam flux if it isn't supplied
+    ! Self-consistency -- shouldn't be asking for output arrays that are optionally not supplied
     !
     if(associated(this%flux_dn_dir) .and. .not. present(gpt_flux_dn_dir)) then
       error_msg = "reduce: requesting direct downward flux but this hasn't been supplied"
+      return
+    end if
+    if(associated(this%flux_up_Jac) .and. .not. present(gpt_flux_up_Jac)) then
+      error_msg = "reduce: requesting surface temperature flux Jacobian but this hasn't been supplied"
       return
     end if
 
@@ -163,6 +185,8 @@ contains
       call sum_broadband(ncol, nlev, ngpt, gpt_flux_dn,     this%flux_dn)
     if(associated(this%flux_dn_dir)) &
       call sum_broadband(ncol, nlev, ngpt, gpt_flux_dn_dir, this%flux_dn_dir)
+    if(associated(this%flux_up_Jac)) &
+      call sum_broadband(ncol, nlev, ngpt, gpt_flux_up_Jac, this%flux_up_Jac)
 
     if(associated(this%flux_net)) then
       !
@@ -188,6 +212,7 @@ contains
     are_desired_broadband = any( [associated(this%flux_up),     &
                                   associated(this%flux_dn),     &
                                   associated(this%flux_dn_dir), &
+                                  associated(this%flux_up_Jac), &
                                   associated(this%flux_net)] )
   end function are_desired_broadband
   ! --------------------------------------------------------------------------------------

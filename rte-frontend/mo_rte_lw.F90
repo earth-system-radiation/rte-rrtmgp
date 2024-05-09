@@ -14,7 +14,7 @@
 !
 !> Compute longwave radiative fluxes
 !>
-!>  Contains a single routine to compute direct and diffuse fluxes of solar radiation given
+!>  Contains a single routine to compute fluxes of terrestrial radiation given
 !>
 !> - atmospheric optical properties, spectrally-resolved via one of the sub-classes of
 !>     [[mo_optical_props(module):ty_optical_props_arry(type)]] in module [[mo_optical_props]]
@@ -55,6 +55,9 @@ module mo_rte_lw
   use mo_source_functions,   &
                         only: ty_source_func_lw
   use mo_fluxes,        only: ty_fluxes, ty_fluxes_broadband
+  use mo_fluxes_byband, only: ty_fluxes_byband
+  use mo_fluxes_bygpoint, &
+                        only: ty_fluxes_bygpoint
   use mo_rte_solver_kernels, &
                         only: lw_solver_noscat, lw_solver_2stream
   implicit none
@@ -71,7 +74,7 @@ contains
                   sources, sfc_emis,       &
                   fluxes,                  &
                   inc_flux, n_gauss_angles, use_2stream, &
-                  lw_Ds, flux_up_Jac) result(error_msg)
+                  lw_Ds) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: optical_props
       !! Set of optical properties as one or more arrays
     logical,                      intent(in   ) :: top_at_1
@@ -94,9 +97,6 @@ contains
     real(wp), dimension(:,:),   &
                       optional,   intent(in   ) :: lw_Ds
       !! User-specifed 1/cos of transport angle per col, g-point
-    real(wp), dimension(:,:), target,  &
-                      optional,   intent(inout) :: flux_up_Jac
-      !! surface temperature flux  Jacobian [W/m2/K] (ncol, nlay+1)
     character(len=128)                          :: error_msg
       !! If empty, calculation was successful
     ! --------------------------------
@@ -109,19 +109,18 @@ contains
     logical(wl)  :: using_2stream, do_Jacobians, do_broadband
     real(wp), dimension(:,:),   allocatable   :: sfc_emis_gpt
     real(wp), dimension(:,:,:), allocatable   :: secants
-    real(wp), dimension(:,:),   pointer       :: jacobian
     real(wp), dimension(optical_props%get_ncol(),           &
                         optical_props%get_nlay()+1), target &
                                             :: decoy2D ! Used for optional outputs - needs to be full size.
     ! Memory needs to be allocated for the full g-point fluxes even if they aren't
     !    used later because a) the GPU kernels use this memory to work in parallel and
     !    b) the fluxes are intent(out) in the solvers
-    ! Shortwave solver takes a different approach since three fields are needed
+    ! Shortwave solver takes a different approach since three fields are needed <--- ??????????????????????
     real(wp), dimension(optical_props%get_ncol(),   &
                         optical_props%get_nlay()+1, &
                         optical_props%get_ngpt())   &
-                                            :: gpt_flux_up, gpt_flux_dn
-    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc
+                                            :: gpt_flux_up, gpt_flux_dn, gpt_flux_up_Jac
+    real(wp), dimension(:,:),   pointer     :: flux_dn_loc, flux_up_loc, flux_up_Jac_loc
     real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse
     ! --------------------------------------------------
     !
@@ -147,7 +146,6 @@ contains
     nlay  = optical_props%get_nlay()
     ngpt  = optical_props%get_ngpt()
     nband = optical_props%get_nband()
-    do_Jacobians = present(flux_up_Jac)
     error_msg = ""
 
     ! ------------------------------------------------------------------------------------
@@ -157,10 +155,15 @@ contains
     if(.not. fluxes%are_desired()) &
       error_msg = "rte_lw: no space allocated for fluxes"
 
-    if (do_Jacobians .and. check_extents) then
-      if( .not. extents_are(flux_up_Jac, ncol, nlay+1)) &
-        error_msg = "rte_lw: flux Jacobian inconsistently sized"
-    endif
+    ! Jacobians needed?
+    select type(fluxes)
+      type is (ty_fluxes_broadband)         
+        do_Jacobians = associated(fluxes%flux_up_Jac)
+      type is (ty_fluxes_byband)         
+        do_Jacobians = associated(fluxes%flux_up_Jac) .or. associated(fluxes%bnd_flux_up_Jac)
+      type is (ty_fluxes_bygpoint)         
+        do_Jacobians = associated(fluxes%gpt_flux_up_Jac)
+    end select
 
     if (check_extents) then
       !
@@ -266,12 +269,6 @@ contains
     end if
 
     ! ------------------------------------------------------------------------------------
-    if(do_Jacobians) then
-      jacobian => flux_up_Jac
-    else
-      jacobian => decoy2D
-    end if
-
     select type(fluxes)
       !
       ! Broadband fluxes are treated as a special case within the solvers; memory
@@ -294,23 +291,29 @@ contains
         else
           allocate(flux_dn_loc(ncol, nlay+1))
         end if
-        !$acc        enter data create(   flux_up_loc, flux_dn_loc)
-        !$omp target enter data map(alloc:flux_up_loc, flux_dn_loc)
+        if(associated(fluxes%flux_up_Jac)) then
+          flux_up_Jac_loc => fluxes%flux_up_Jac
+        else
+          allocate(flux_up_Jac_loc(ncol, nlay+1))
+        end if
+        !$acc        enter data create(   flux_up_loc, flux_dn_loc, flux_up_Jac_loc)
+        !$omp target enter data map(alloc:flux_up_loc, flux_dn_loc, flux_up_Jac_loc)
       class default
         !
         ! If broadband integrals aren't being computed, allocate working space
         !   and decoy addresses for spectrally-integrated fields
         !
         do_broadband = .false._wl
-        flux_up_loc  => decoy2D
-        flux_dn_loc  => decoy2D
+        flux_up_loc     => decoy2D
+        flux_dn_loc     => decoy2D
+        flux_up_Jac_loc => decoy2D
     end select
 
     !
     ! Compute the radiative transfer...
     !
-    !$acc        data create(   sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
-    !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, gpt_flux_up, gpt_flux_dn)
+    !$acc        data create(   sfc_emis_gpt, flux_up_loc, flux_dn_loc, flux_up_Jac_loc, gpt_flux_up, gpt_flux_dn, gpt_flux_up_Jac)
+    !$omp target data map(alloc:sfc_emis_gpt, flux_up_loc, flux_dn_loc, flux_up_Jac_loc, gpt_flux_up, gpt_flux_dn, gpt_flux_up_Jac)
     call expand_and_transpose(optical_props, sfc_emis, sfc_emis_gpt)
     if(check_values) error_msg =  optical_props%validate()
     if(len_trim(error_msg) == 0) then ! Can't do an early return within OpenACC/MP data regions
@@ -359,7 +362,7 @@ contains
                                 inc_flux_diffuse,                  &
                                 gpt_flux_up, gpt_flux_dn,          &
                                 do_broadband, flux_up_loc, flux_dn_loc,     &
-                                logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
+                                logical(do_Jacobians, wl), sources%sfc_source_Jac, flux_up_Jac_loc, gpt_flux_up_Jac, &
                                 logical(.false., wl),  optical_props%tau, optical_props%tau)
                                                       ! The last two arguments won't be used since the
                                                       ! third-to-last is .false. but need valid addresses
@@ -402,7 +405,7 @@ contains
                                   inc_flux_diffuse,                  &
                                   gpt_flux_up, gpt_flux_dn,          &
                                   do_broadband, flux_up_loc, flux_dn_loc,     &
-                                  logical(do_Jacobians, wl), sources%sfc_source_Jac, jacobian, &
+                                  logical(do_Jacobians, wl), sources%sfc_source_Jac, flux_up_Jac_loc, gpt_flux_up_Jac, &
                                   logical(.true., wl),  optical_props%ssa, optical_props%g)
             !$acc        end data
             !$omp end target data
@@ -435,7 +438,8 @@ contains
           !
           ! ...or reduce spectral fluxes to desired output quantities
           !
-          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
+          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1, &
+            gpt_flux_up_Jac = gpt_flux_up_Jac)
       end select
     end if ! no error message from validation
     !$acc        end data
@@ -446,12 +450,14 @@ contains
       !$omp target exit data map(release:inc_flux_diffuse)
       deallocate(inc_flux_diffuse)
     end if
+ 
     select type(fluxes)
       type is (ty_fluxes_broadband)
-        !$acc        exit data copyout( flux_up_loc, flux_dn_loc)
-        !$omp target exit data map(from:flux_up_loc, flux_dn_loc)
+        !$acc        exit data copyout( flux_up_loc, flux_dn_loc, flux_up_Jac_loc)
+        !$omp target exit data map(from:flux_up_loc, flux_dn_loc, flux_up_Jac_loc)
         if(.not. associated(flux_up_loc, fluxes%flux_up)) deallocate(flux_up_loc)
         if(.not. associated(flux_dn_loc, fluxes%flux_dn)) deallocate(flux_dn_loc)
+        if(.not. associated(flux_up_Jac_loc, fluxes%flux_up_Jac)) deallocate(flux_up_Jac_loc)
     end select
   end function rte_lw
   !--------------------------------------------------------------------------------------------------------------------

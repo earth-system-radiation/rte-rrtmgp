@@ -28,10 +28,11 @@ module mo_fluxes_byband
   !   Data components are pointers so results can be written directly into memory
   !   reduce() function accepts spectral flux profiles
   type, extends(ty_fluxes_broadband) :: ty_fluxes_byband
-    real(wp), dimension(:,:,:), pointer :: bnd_flux_up => NULL(), & ! Band-by-band fluxes
-                                           bnd_flux_dn => NULL()    ! (ncol, nlev, nband)
-    real(wp), dimension(:,:,:), pointer :: bnd_flux_net => NULL()   ! Net (down - up)
+    real(wp), dimension(:,:,:), pointer :: bnd_flux_up => NULL(), &  ! Band-by-band fluxes
+                                           bnd_flux_dn => NULL()     ! (ncol, nlev, nband)
+    real(wp), dimension(:,:,:), pointer :: bnd_flux_net => NULL()    ! Net (down - up)
     real(wp), dimension(:,:,:), pointer :: bnd_flux_dn_dir => NULL() ! Direct flux down
+    real(wp), dimension(:,:,:), pointer :: bnd_flux_up_Jac => NULL() ! Sfc Temp Jacobian
   contains
     procedure :: reduce => reduce_byband
     procedure :: are_desired => are_desired_byband
@@ -43,14 +44,18 @@ module mo_fluxes_byband
 
 contains
   ! --------------------------------------------------------------------------------------
-  function reduce_byband(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
+  function reduce_byband(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, &
+      gpt_flux_dn_dir, gpt_flux_up_Jac) result(error_msg)
     class(ty_fluxes_byband),           intent(inout) :: this
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_up ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_dn ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
     logical,                           intent(in   ) :: top_at_1
     real(kind=wp), dimension(:,:,:), optional, &
-                                       intent(in   ) :: gpt_flux_dn_dir! Direct flux down
+                                       intent(in   ) :: gpt_flux_dn_dir ! Direct flux down [W/m2](ncol, nlay+1, ngpt)
+    real(kind=wp), dimension(:,:,:), optional, &
+                                       intent(in   ) :: gpt_flux_up_Jac ! Surface temperature flux Jacobian
+                                                                        ! [W/m2/K](ncol, nlay+1, ngpt)
     character(len=128)                               :: error_msg
     ! ------
     integer :: ncol, nlev, ngpt, nbnd
@@ -65,7 +70,8 @@ contains
     ! Compute broadband fluxes
     !   This also checks that input arrays are consistently sized
     !
-    error_msg = this%ty_fluxes_broadband%reduce(gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir)
+    error_msg = this%ty_fluxes_broadband%reduce(gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, &
+                                                gpt_flux_dn_dir, gpt_flux_up_Jac)
     if(error_msg /= '') return
 
     if(size(gpt_flux_up, 3) /= ngpt) then
@@ -87,6 +93,10 @@ contains
         if(.not. extents_are(this%bnd_flux_dn_dir, ncol, nlev, nbnd)) &
           error_msg = "reduce: bnd_flux_dn_dir array incorrectly sized"
       end if
+      if(associated(this%bnd_flux_up_Jac)) then
+        if(.not. extents_are(this%bnd_flux_up_Jac, ncol, nlev, nbnd)) &
+          error_msg = "reduce: bnd_flux_up_Jac array incorrectly sized"
+      end if
       if(associated(this%bnd_flux_net)) then
         if(.not. extents_are(this%bnd_flux_net, ncol, nlev, nbnd)) &
           error_msg = "reduce: bnd_flux_net array incorrectly sized (can't compute net flux either)"
@@ -94,9 +104,14 @@ contains
       if(error_msg /= "") return
     end if
     !
-    ! Self-consistency -- shouldn't be asking for direct beam flux if it isn't supplied
+    ! Self-consistency -- shouldn't be asking for output arrays that are optionally not supplied
+    !
     if(associated(this%bnd_flux_dn_dir) .and. .not. present(gpt_flux_dn_dir)) then
       error_msg = "reduce: requesting bnd_flux_dn_dir but direct flux hasn't been supplied"
+      return
+    end if
+    if(associated(this%bnd_flux_up_Jac) .and. .not. present(gpt_flux_up_Jac)) then
+      error_msg = "reduce: requesting bnd_flux_up_Jac but sfc temp Jacobian hasn't been supplied"
       return
     end if
 
@@ -107,6 +122,10 @@ contains
     ! Up flux
     if(associated(this%bnd_flux_up)) then
       call sum_byband(ncol, nlev, ngpt, nbnd, band_lims, gpt_flux_up,     this%bnd_flux_up    )
+    end if
+
+    if(associated(this%bnd_flux_up_Jac)) then
+      call sum_byband(ncol, nlev, ngpt, nbnd, band_lims, gpt_flux_up_Jac, this%bnd_flux_up_Jac)
     end if
 
     ! -------
@@ -146,6 +165,7 @@ contains
     are_desired_byband = any([associated(this%bnd_flux_up),     &
                               associated(this%bnd_flux_dn),     &
                               associated(this%bnd_flux_dn_dir), &
+                              associated(this%bnd_flux_up_Jac), &
                               associated(this%bnd_flux_net),    &
                               this%ty_fluxes_broadband%are_desired()])
   end function are_desired_byband

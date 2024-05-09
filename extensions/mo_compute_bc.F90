@@ -39,7 +39,7 @@ module mo_compute_bc
   ! Extend ty_fluxes to report spectrally-resolved downwelling flux at a single layer
   !
   type, extends(ty_fluxes) :: ty_fluxes_1lev
-    real(wp), dimension(:,:), pointer :: gpt_flux_dn => NULL()    ! (ncol, nlev, nband)
+    real(wp), dimension(:,:), pointer :: gpt_flux_dn => NULL()    ! (ncol, nlev, ngpt)
   contains
     procedure :: reduce => reduce_1lev
     procedure :: are_desired => are_desired_1lev
@@ -197,14 +197,19 @@ contains
     endif
   end function
   ! --------------------------------------------------------------------------------------
-  function reduce_1lev(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir) result(error_msg)
+  function reduce_1lev(this, gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, &
+      gpt_flux_dn_dir, gpt_flux_up_Jac) result(error_msg)
     class(ty_fluxes_1lev),             intent(inout) :: this
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_up ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     real(kind=wp), dimension(:,:,:),   intent(in   ) :: gpt_flux_dn ! Fluxes by gpoint [W/m2](ncol, nlay+1, ngpt)
     class(ty_optical_props),           intent(in   ) :: spectral_disc  !< derived type with spectral information
     logical,                           intent(in   ) :: top_at_1
     real(kind=wp), dimension(:,:,:), optional, &
-                                       intent(in   ) :: gpt_flux_dn_dir! Direct flux down
+                                       intent(in   ) :: gpt_flux_dn_dir ! Direct flux down
+                                                                        ! [W/m2](ncol, nlay+1, ngpt)
+    real(kind=wp), dimension(:,:,:), optional, &
+                                       intent(in   ) :: gpt_flux_up_Jac ! Surface temperature flux Jacobian
+                                                                        ! [W/m2/K](ncol, nlay+1, ngpt)
     character(len=128)                               :: error_msg
     ! ------
     integer :: ncol, nlev, ngpt, bottom_lev

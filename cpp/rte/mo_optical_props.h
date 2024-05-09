@@ -366,39 +366,31 @@ public:
   // (upper and lower wavenumber by band) = band_lims_wvn(2,band)
   real2dk get_band_lims_wavenumber() const { return this->band_lims_wvn; }
 
-#if 0 // Not converting these since they are unused
   // Lower and upper wavelength of all bands
-  real2d get_band_lims_wavelength() const {
-    using yakl::intrinsics::size;
-    using yakl::fortran::parallel_for;
-    using yakl::fortran::SimpleBounds;
-
-    real2d ret("band_lim_wavelength",size(band_lims_wvn,1),size(band_lims_wvn,2));
+  real2dk get_band_lims_wavelength() const {
+    real2dk ret("band_lim_wavelength", band_lims_wvn.extent(0), band_lims_wvn.extent(1));
     // for (int j = 1; j <= size(band_lims_wvn,2); j++) {
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
-    YAKL_SCOPE( this_band_lims_wvn , this->band_lims_wvn );
+    auto this_band_lims_wvn = this->band_lims_wvn;
     if (this->is_initialized()) {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
+      Kokkos::parallel_for( conv::get_mdrp<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
         ret(i,j) = 1. / this_band_lims_wvn(i,j);
       });
     } else {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
+      Kokkos::parallel_for( conv::get_mdrp<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
         ret(i,j) = 0.;
       });
     }
     return ret;
   }
-#endif
 
   // Are the bands of two objects the same? (same number, same wavelength limits)
   bool bands_are_equal(OpticalPropsK const &rhs) const {
     // This is working around an issue that arises in E3SM's rrtmgpxx integration.
     // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
     bool ret = true;
-    auto this_band_lims_wvn = Kokkos::create_mirror_view(this->band_lims_wvn);
-    auto rhs_band_lims_wvn  = Kokkos::create_mirror_view(rhs.band_lims_wvn);
-    Kokkos::deep_copy(this_band_lims_wvn, this->band_lims_wvn);
-    Kokkos::deep_copy(rhs_band_lims_wvn, rhs.band_lims_wvn);
+    auto this_band_lims_wvn = Kokkos::create_mirror_view_and_copy(HostDevice(), this->band_lims_wvn);
+    auto rhs_band_lims_wvn  = Kokkos::create_mirror_view_and_copy(HostDevice(), rhs.band_lims_wvn);
     for (int j=0 ; j < this->band_lims_wvn.extent(1); j++) {
       for (int i=0 ; i < this->band_lims_wvn.extent(0); i++) {
         if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*conv::epsilon(this_band_lims_wvn) ) {
@@ -417,10 +409,8 @@ public:
     // This is working around an issue that arises in E3SM's rrtmgpxx integration.
     // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
     bool ret = true;
-    auto this_gpt2band = Kokkos::create_mirror_view(this->gpt2band);
-    auto rhs_gpt2band  = Kokkos::create_mirror_view(rhs.gpt2band);
-    Kokkos::deep_copy(this_gpt2band, this->gpt2band);
-    Kokkos::deep_copy(rhs_gpt2band, rhs.gpt2band);
+    auto this_gpt2band = Kokkos::create_mirror_view_and_copy(HostDevice(), this->gpt2band);
+    auto rhs_gpt2band  = Kokkos::create_mirror_view_and_copy(HostDevice(), rhs.gpt2band);
     for (int i=0; i < this->gpt2band.extent(0); i++) {
       if ( this_gpt2band(i) != rhs_gpt2band(i) ) { ret = false; }
     }

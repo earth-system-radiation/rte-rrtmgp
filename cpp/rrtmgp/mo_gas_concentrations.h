@@ -314,7 +314,7 @@ public:
     bool badVal = false;
     Kokkos::parallel_reduce(w.extent(0), KOKKOS_LAMBDA(int i, bool& is_bad) {
       if (w(i) < 0. || w(i) > 1.) { is_bad = true; }
-      }, Kokkos::BOr<bool>(badVal));
+      }, Kokkos::LOr<bool>(badVal));
       if (badVal) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     auto this_concs = this->concs;

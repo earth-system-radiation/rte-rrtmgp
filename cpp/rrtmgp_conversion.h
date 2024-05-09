@@ -455,9 +455,9 @@ typename KView::non_const_value_type minval(const KView& view)
   scalar_t rv;
   Kokkos::parallel_reduce(
     Kokkos::RangePolicy<exe_space_t>(0, view.size()),
-    KOKKOS_LAMBDA(size_t i, scalar_t& lmax) {
+    KOKKOS_LAMBDA(size_t i, scalar_t& lmin) {
       const scalar_t val = view.data()[i];
-      if (val > lmax) lmax = val;
+      if (val < lmin) lmin = val;
     }, Kokkos::Min<scalar_t>(rv));
   return rv;
 }

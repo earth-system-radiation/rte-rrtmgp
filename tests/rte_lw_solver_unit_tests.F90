@@ -57,8 +57,8 @@ program rte_lw_solver_unit_tests
   !
   ! Longwave tests - gray radiative equilibrium
   !
-  real(wp), parameter :: sigma = 5.670374419e-8_wp, & ! Stefan-Boltzmann constant 
-                         D     = 1.66_wp              ! Diffusivity angle, from single-angle RRTMGP solver
+  real(wp), parameter :: sigma = 5.670374419e-8_wp, &  ! Stefan-Boltzmann constant 
+                         D     = 1._wp/0.6096748751_wp ! Diffusivity angle, from single-angle RRTMGP solver
   real(wp), dimension(  ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
                                                          (310._wp, icol = 1,ncol/2)]
   real(wp), dimension(  ncol), parameter :: total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &

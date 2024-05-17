@@ -31,7 +31,7 @@ jobs:
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RUN_CMD:
-      FAILURE_THRESHOLD: 5.8e-2 # 7.e-4
+      FAILURE_THRESHOLD: 7.e-4
     steps:
     #
     # Relax failure thresholds for single precision
@@ -52,6 +52,7 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
+        ref: feature-lw-quadrature-angles
     #
     # Synchronize the package index
     #

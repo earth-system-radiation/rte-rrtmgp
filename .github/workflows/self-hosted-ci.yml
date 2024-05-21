@@ -48,7 +48,7 @@ jobs:
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RUN_CMD: "srun -C gpu -A d56 -p cscsci -t 15:00"
-      FAILURE_THRESHOLD: 5.8e-2 # 7.e-4
+      FAILURE_THRESHOLD: 7.e-4
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -62,6 +62,7 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
+        ref: v1.8.1
     #
     # Finalize build environment
     #

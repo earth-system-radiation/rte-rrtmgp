@@ -133,7 +133,7 @@ contains
         ! Transport is for intensity
         !   convert flux at top of domain to intensity assuming azimuthal isotropy
         !
-        flux_dn(icol,top_level,igpt) = incident_flux(icol,igpt)/(2._wp * pi * weight)
+        flux_dn(icol,top_level,igpt) = incident_flux(icol,igpt)/(pi * weight)
       end do
     end do
 
@@ -219,16 +219,16 @@ contains
       ! Broadband reduction including
       !   conversion from intensity to flux assuming azimuthal isotropy and quadrature weight
       !
-      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, flux_dn, broadband_dn)
-      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, flux_up, broadband_up)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, pi * weight, flux_dn, broadband_dn)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, pi * weight, flux_up, broadband_up)
       !$acc        exit data delete(     flux_dn,flux_up)
       !$omp target exit data map(release:flux_dn,flux_up)
     else
       !
       ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
       !
-      call apply_factor_3D(ncol, nlay+1, ngpt, 2._wp*pi*weight, flux_dn)
-      call apply_factor_3D(ncol, nlay+1, ngpt, 2._wp*pi*weight, flux_up)
+      call apply_factor_3D(ncol, nlay+1, ngpt, pi * weight, flux_dn)
+      call apply_factor_3D(ncol, nlay+1, ngpt, pi * weight, flux_up)
       !$acc        exit data copyout( flux_dn,flux_up)
       !$omp target exit data map(from:flux_dn,flux_up)
     end if
@@ -236,7 +236,7 @@ contains
     ! Only broadband-integrated Jacobians are provided
     !
     if (do_Jacobians) then
-      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, gpt_Jac, flux_upJac)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, pi * weight, gpt_Jac, flux_upJac)
     end if
 
     !$acc        end data

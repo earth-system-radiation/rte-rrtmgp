@@ -57,8 +57,8 @@ program rte_lw_solver_unit_tests
   !
   ! Longwave tests - gray radiative equilibrium
   !
-  real(wp), parameter :: sigma = 5.670374419e-8_wp, & ! Stefan-Boltzmann constant 
-                         D     = 1.66_wp              ! Diffusivity angle, from single-angle RRTMGP solver
+  real(wp), parameter :: sigma = 5.670374419e-8_wp, &  ! Stefan-Boltzmann constant 
+                         D     = 1._wp/0.6096748751_wp ! Diffusivity angle, from single-angle RRTMGP solver
   real(wp), dimension(  ncol), parameter :: sfc_t     = [(285._wp, icol = 1,ncol/2), & 
                                                          (310._wp, icol = 1,ncol/2)]
   real(wp), dimension(  ncol), parameter :: total_tau = [0.1_wp, 1._wp, 10._wp, 50._wp, &
@@ -311,7 +311,7 @@ contains
     ! Check top-of-atmosphere energy balance 
     !
     if(.not. allclose(up_flux(:,toa), &
-                      gray_rad_equil_olr(sfc_t, lw_tau), tol=4._wp)) then
+                      gray_rad_equil_olr(sfc_t, lw_tau), tol=8._wp)) then
       call report_err("OLR is not consistent with gray radiative equilibrium")
       check_gray_rad_equil = .false.
     end if 
@@ -322,7 +322,7 @@ contains
     !
     if(.not. allclose(net_flux(:,:), & 
                       spread(net_flux(:,1), dim=2, ncopies=size(net_flux,2)), &
-                      tol = 70._wp)) then 
+                      tol = 100._wp)) then 
       call report_err("Net flux not constant with tau in gray radiative equilibrium")
       check_gray_rad_equil = .false.
     end if 

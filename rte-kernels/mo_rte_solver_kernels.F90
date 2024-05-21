@@ -141,7 +141,7 @@ contains
       ! Transport is for intensity
       !   convert flux at top of domain to intensity assuming azimuthal isotropy
       !
-      gpt_flux_dn(:,top_level) = incident_flux(:,igpt)/(2._wp * pi * weight)
+      gpt_flux_dn(:,top_level) = incident_flux(:,igpt)/(pi * weight)
       !
       ! Optical path and transmission, used in source function and transport calculations
       !
@@ -220,8 +220,8 @@ contains
         !
         ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
         !
-        gpt_flux_dn(:,:)    = 2._wp * pi * weight * gpt_flux_dn(:,:)
-        gpt_flux_up(:,:)    = 2._wp * pi * weight * gpt_flux_up(:,:)
+        gpt_flux_dn(:,:)  = pi * weight * gpt_flux_dn(:,:)
+        gpt_flux_up(:,:)  = pi * weight * gpt_flux_up(:,:)
       end if
       !
       ! Only broadband-integrated Jacobians are provided
@@ -231,11 +231,11 @@ contains
     end do  ! g point loop
 
     if(do_broadband) then
-      broadband_up(:,:) = 2._wp * pi * weight* broadband_up(:,:)
-      broadband_dn(:,:) = 2._wp * pi * weight* broadband_dn(:,:)
+      broadband_up(:,:) = pi * weight* broadband_up(:,:)
+      broadband_dn(:,:) = pi * weight* broadband_dn(:,:)
     end if
     if(do_Jacobians) &
-      flux_upJac(:,:)   = 2._wp * pi * weight * flux_upJac(:,:)
+      flux_upJac(:,:)   = pi * weight * flux_upJac(:,:)
 
   end subroutine lw_solver_noscat_oneangle
   ! -------------------------------------------------------------------------------------------------

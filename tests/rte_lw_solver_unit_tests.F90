@@ -200,6 +200,8 @@ program rte_lw_solver_unit_tests
   sw_atmos%tau = lw_atmos%tau
   sw_atmos%ssa = 0._wp
   sw_atmos%g   = 0._wp
+  call sw_atmos%set_top_at_1(lw_atmos%top_is_at_1())
+
 
   call stop_on_err(rte_lw(sw_atmos,        &
                           lw_sources,      &

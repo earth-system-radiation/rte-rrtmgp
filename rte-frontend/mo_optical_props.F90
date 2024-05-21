@@ -110,7 +110,7 @@ module mo_optical_props
   ! -------------------------------------------------------------------------------------------------
   type, extends(ty_optical_props), abstract, public :: ty_optical_props_arry
     real(wp), dimension(:,:,:), allocatable :: tau !! optical depth (ncol, nlay, ngpt)
-    logical,                        private :: top_at_1 ! No default - maybe uninitialized values will get caught? 
+    logical(wl),                    private :: top_at_1 ! No default - maybe uninitialized values will get caught? 
   contains
     procedure, public  :: get_ncol
     procedure, public  :: get_nlay

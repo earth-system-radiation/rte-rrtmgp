@@ -72,7 +72,7 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
-        ref: develop
+        ref: 1.8.1
     #
     # Build libraries, examples and tests (expect success)
     #

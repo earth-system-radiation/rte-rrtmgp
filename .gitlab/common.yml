@@ -16,7 +16,7 @@
     RRTMGP_DATA: ${CI_PROJECT_DIR}/rrtmgp-data
     # Convenience variables:
     RRTMGP_DATA_REPO: https://github.com/earth-system-radiation/rrtmgp-data.git
-    RRTMGP_DATA_TAG: develop
+    RRTMGP_DATA_TAG: v1.8.1
   script:
     #
     # Build libraries, examples and tests

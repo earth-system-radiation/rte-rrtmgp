@@ -52,7 +52,7 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
-        ref: develop
+        ref: v1.8.1
     #
     # Synchronize the package index
     #

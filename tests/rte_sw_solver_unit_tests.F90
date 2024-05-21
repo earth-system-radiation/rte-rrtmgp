@@ -95,6 +95,7 @@ program rte_sw_solver_unit_tests
                               band_lims_gpt = reshape([1,        1        ], shape = [2, 1]), & 
                               name = "Gray atmosphere"))
   call stop_on_err(atmos%alloc_2str(ncol, nlay))
+  call atmos%set_top_at_1(top_at_1)
   call thin_scattering(tau, ssa, g, nlay, atmos)
 
   do imu0 = 1, nmu0

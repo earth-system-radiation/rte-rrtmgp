@@ -69,7 +69,7 @@ program rte_sw_solver_unit_tests
 
   type(ty_optical_props_2str) :: atmos 
   type(ty_fluxes_broadband)   :: fluxes
-  logical                     :: top_at_1
+  logical, parameter          :: top_at_1 = .true. 
   real(wp), dimension(ncol,nlay+1), target :: &
                                  ref_flux_up, ref_flux_dn, ref_flux_dir, ref_flux_net, & 
                                  tst_flux_up, tst_flux_dn, tst_flux_dir, tst_flux_net
@@ -81,8 +81,6 @@ program rte_sw_solver_unit_tests
 
   logical :: passed 
 
-  ! ------------------------------------------------------------------------------------------------------
-  top_at_1 = .true. 
   ! ------------------------------------------------------------------------------------
   !
   ! Shortwave tests - thin atmospheres
@@ -121,7 +119,7 @@ program rte_sw_solver_unit_tests
     !
     ! Check direct beam for correctness with Beer-Lambert-Bouguier
     !
-    if(top_at_1) then 
+    if(atmos%top_is_at_1()) then 
       sfc => ref_flux_dir(:,nlay+1)
     else
       sfc => ref_flux_dir(:,     1)

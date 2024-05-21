@@ -49,14 +49,14 @@
               aria-haspopup="true"
      aria-expanded="false">Contents <span class="caret"></span></a>
         <ul class="dropdown-menu">
-            <li><a href="../sourcefile/mo_gas_optics_rrtmgp_kernels.f90.html">Source File</a></li>
+            <li><a href="../lists/files.html">Source Files</a></li>
             <li><a href="../lists/modules.html">Modules</a></li>
             <li><a href="../lists/procedures.html">Procedures</a></li>
               
             </ul>
         
             </li>
-<li class="visible-xs hidden-sm visible-lg"><a href="../sourcefile/mo_gas_optics_rrtmgp_kernels.f90.html">Source File</a></li>
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
                                        </ul>
@@ -85,7 +85,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="100.0% of total for modules and submodules.">353 statements</a>
+    title="77.3% of total for modules and submodules.">360 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
@@ -283,7 +283,7 @@
     <section>
     <h2>Subroutines</h2>
       <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_planck_source"></span><h3>public subroutine <a href='../proc/compute_planck_source.html'>compute_Planck_source</a>(ncol, nlay, nbnd, ngpt, nflav, neta, npres, ntemp, nPlanckTemp, tlay, tlev, tsfc, sfc_lay, fmajor, jeta, tropo, jtemp, jpress, gpoint_bands, band_lims_gpt, pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, sfc_src, lay_src, lev_src_inc, lev_src_dec, sfc_source_Jac) bind(C, name="0")</h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_planck_source"></span><h3>public subroutine <a href='../proc/compute_planck_source.html'>compute_Planck_source</a>(ncol, nlay, nbnd, ngpt, nflav, neta, npres, ntemp, nPlanckTemp, tlay, tlev, tsfc, sfc_lay, fmajor, jeta, tropo, jtemp, jpress, gpoint_bands, band_lims_gpt, pfracin, temp_ref_min, totplnk_delta, totplnk, gpoint_flavor, sfc_src, lay_src, lev_src, sfc_source_Jac) bind(C, name="0")</h3></div>
   <div class="panel-body">
            
 <h4>Arguments</h4>      <table class="table table-striped varlist">
@@ -442,31 +442,25 @@
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,     ngpt)</td><td>::</td>
-  <td><strong>sfc_src</strong></td><td><p>Planck emssion from the surface </p></td>
+  <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
+  <td><strong>sfc_src</strong></td><td><p>Planck emission from the surface </p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lay_src</strong></td><td><p>Planck emssion from layer centers</p></td>
+  <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
+  <td><strong>lay_src</strong></td><td><p>Planck emission from layer centers</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lev_src_inc</strong></td><td><p>Planck emission at layer boundaries, using spectral mapping in the direction of propagation </p></td>
+  <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
+  <td><strong>lev_src</strong></td><td><p>Planck emission from layer boundaries</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>lev_src_dec</strong></td><td><p>Planck emission at layer boundaries, using spectral mapping in the direction of propagation </p></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(out),</td>
-  <td></td>  <td>dimension(ncol,     ngpt)</td><td>::</td>
+  <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>sfc_source_Jac</strong></td><td><p>Jacobian (derivative) of the surface Planck source with respect to surface temperature </p></td>
 </tr>
 </tbody>

@@ -85,7 +85,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 4.4% of total for procedures.">28 statements</a>
+    title=" 2.7% of total for procedures.">25 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_rte_solver_kernels.F90"> Source File</a></li>
   </ul>
@@ -117,7 +117,7 @@
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public subroutine lw_solver_2stream(ncol, nlay, ngpt, top_at_1, tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, inc_flux, flux_up, flux_dn) bind(C, name="0")</h2>
+    <h2>public subroutine lw_solver_2stream(ncol, nlay, ngpt, top_at_1, tau, ssa, g, lay_source, lev_source, sfc_emis, sfc_src, inc_flux, flux_up, flux_dn) bind(C, name="0")</h2>
     
 
     <p>Longwave two-stream calculation:
@@ -131,19 +131,19 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~25"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~24"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ngpt"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngpt~25"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ngpt</strong></td><td><p>Number of columns, layers, g-points</p></td>
@@ -155,19 +155,19 @@
   <td><strong>top_at_1</strong></td><td><p>ilay = 1 is the top of the atmosphere?</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>tau</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ssa"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-ssa~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>ssa</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-g"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-g~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>g</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
@@ -179,16 +179,10 @@
   <td><strong>lay_source</strong></td><td><p>Planck source at layer average temperature [W/m2]</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lev_source_inc"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lev_source"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
-  <td><strong>lev_source_inc</strong></td><td><p>Planck source at layer edge for radiation in increasing ilay direction [W/m2]</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-lev_source_dec"></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
-  <td><strong>lev_source_dec</strong></td><td><p>Planck source at layer edge for radiation in decreasing ilay direction [W/m2]</p></td>
+  <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
+  <td><strong>lev_source</strong></td><td><p>Planck source at layer edge temperature  [W/m2]</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-sfc_emis"></span>real(kind=wp),</td>

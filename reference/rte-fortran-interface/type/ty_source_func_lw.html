@@ -87,7 +87,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p>13.9% of total for derived types.</p>Including implementation: 294 statements, 12.1% of total for derived types.">16 statements</a>
+    title="<p>13.2% of total for derived types.</p>Including implementation: 287 statements, 11.8% of total for derived types.">15 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_source_functions.F90"> Source File</a></li>
   </ul>
@@ -117,8 +117,7 @@
   <div id="vars-0" class="panel-collapse collapse">
     <div class="list-group">
       <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-lay_source">lay_source</a>
-      <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-lev_source_dec">lev_source_dec</a>
-      <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-lev_source_inc">lev_source_inc</a>
+      <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-lev_source">lev_source</a>
       <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-sfc_source">sfc_source</a>
       <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-sfc_source_jac">sfc_source_Jac</a>
     </div>
@@ -248,8 +247,7 @@
   <div id="vars-1" class="panel-collapse collapse">
     <div class="list-group">
       <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-lay_source">lay_source</a>
-      <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-lev_source_dec">lev_source_dec</a>
-      <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-lev_source_inc">lev_source_inc</a>
+      <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-lev_source">lev_source</a>
       <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-sfc_source">sfc_source</a>
       <a class="list-group-item" href="../type/ty_source_func_lw.html#variable-sfc_source_jac">sfc_source_Jac</a>
     </div>
@@ -298,14 +296,9 @@
   <td><strong>lay_source</strong></td><td></td><td></td><td><p>Planck source at layer average temperature (ncol, nlay, ngpt)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lev_source_dec"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lev_source"></span>real(kind=wp),</td>
 <td>public,</td>  <td>allocatable, dimension(:,:,:)</td><td>::</td>
-  <td><strong>lev_source_dec</strong></td><td></td><td></td><td><p>Planck source at layer edge in decreasing ilay direction (ncol, nlay+1, ngpt)</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" id="variable-lev_source_inc"></span>real(kind=wp),</td>
-<td>public,</td>  <td>allocatable, dimension(:,:,:)</td><td>::</td>
-  <td><strong>lev_source_inc</strong></td><td></td><td></td><td><p>Planck source at layer edge in increasing ilay direction (ncol, nlay+1, ngpt)</p></td>
+  <td><strong>lev_source</strong></td><td></td><td></td><td><p>Planck source at layer edge (ncol, nlay+1, ngpt)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-sfc_source"></span>real(kind=wp),</td>

@@ -93,6 +93,7 @@ program rte_rrtmgp_allsky
 
   integer  :: nbnd, ngpt
   integer  :: icol, ilay, ibnd, iloop, igas
+  logical  :: top_is_at_1 ! CCE OMP workaround 
 
   character(len=8) :: char_input
   integer :: nUserArgs, nloops, ncol, nlay
@@ -248,9 +249,10 @@ program rte_rrtmgp_allsky
     !$acc         enter data create   (t_sfc, emis_sfc)
     !$omp target  enter data map(alloc:t_sfc, emis_sfc)
     ! Surface temperature
+    top_is_at_1 = atmos%top_is_at_1() ! CCE OMP workaround 
     !$acc kernels
     !$omp target
-    t_sfc = t_lev(1, merge(nlay+1, 1, atmos%top_is_at_1()))
+    t_sfc = t_lev(1, merge(nlay+1, 1, top_is_at_1))
     emis_sfc = 0.98_wp
     !$acc end kernels
     !$omp end target

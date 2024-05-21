@@ -252,7 +252,6 @@ contains
     integer,     dimension(2,    size(play,dim=1),size(play,dim=2), get_nflav(this)) :: jeta
 
     integer :: ncol, nlay, ngpt, nband
-    logical :: temp
     ! ----------------------------------------------------------
     ncol  = size(play,dim=1)
     nlay  = size(play,dim=2)

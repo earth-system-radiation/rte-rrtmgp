@@ -25,12 +25,14 @@ authors:
     given-names: Igor N.
   - family-names: Romero
     given-names: Nicols A. 
+  - family-names: Kosukhin
+    given-names: Sergey S.
   - family-names: Wehe
     given-names: Andre
 type: software
 repository-code: "https://github.com/earth-system-radiaton/rte-rrtmgp"
 license: BSD-3-Clause
-date-released: "2023-05-30"
+date-released: "2023-11-27"
 version: 1.7
 
 abstract: "RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. 

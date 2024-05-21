@@ -16,11 +16,10 @@ program test_solar_zenith_angle
 
   use mo_rcemip_profiles,    only: make_rcemip_profiles
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
+  use mo_gas_optics_defs,    only: gas_optics, load_and_init
   use mo_optical_props,      only: ty_optical_props_2str
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_sw,             only: rte_sw
-  use mo_load_coefficients,  only: load_and_init
   use mo_heating_rates,      only: compute_heating_rate
   implicit none
 
@@ -31,7 +30,6 @@ program test_solar_zenith_angle
   real(wp), dimension(ncol, 0:nlay) ::    alt,    mu
 
   type(ty_gas_concs)          :: gas_concs
-  type(ty_gas_optics_rrtmgp)  :: gas_optics
   type(ty_optical_props_2str) :: atmos
   type(ty_fluxes_broadband)   :: fluxes
   real(wp)                    :: p_lay(ncol, nlay), t_lay(ncol, nlay), &

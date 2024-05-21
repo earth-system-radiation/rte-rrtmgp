@@ -1,0 +1,34 @@
+name: Check Fortran API
+on:
+  push:
+    branches:
+    - main
+    - develop
+  pull_request:
+    branches-ignore:
+    - documentation
+  workflow_dispatch:
+
+
+jobs:
+  API:
+    runs-on: ubuntu-22.04
+    env:
+      # Core variables:
+      FC: gfortran-12
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+      RRTMGP_ROOT: ${{ github.workspace }}
+      RTE_KERNELS: extern
+    steps:
+    #
+    # Check out repository under $GITHUB_WORKSPACE
+    #
+    - name: Check out code
+      uses: actions/checkout@v4
+    #
+    # Build libraries
+    #
+    - name: Build libraries
+      run: |
+        $FC --version
+        make -j4 libs

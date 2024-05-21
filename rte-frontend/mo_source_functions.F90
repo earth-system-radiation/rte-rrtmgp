@@ -30,10 +30,8 @@ module mo_source_functions
   type, extends(ty_optical_props), public :: ty_source_func_lw
     real(wp), allocatable, dimension(:,:,:) :: lay_source
         !! Planck source at layer average temperature (ncol, nlay, ngpt)
-    real(wp), allocatable, dimension(:,:,:) :: lev_source_inc
-        !! Planck source at layer edge in increasing ilay direction (ncol, nlay+1, ngpt)
-    real(wp), allocatable, dimension(:,:,:) :: lev_source_dec
-        !! Planck source at layer edge in decreasing ilay direction (ncol, nlay+1, ngpt)
+    real(wp), allocatable, dimension(:,:,:) :: lev_source
+        !! Planck source at layer edge (ncol, nlay+1, ngpt)
     real(wp), allocatable, dimension(:,:  ) :: sfc_source
         !! Planck function at surface temperature
     real(wp), allocatable, dimension(:,:  ) :: sfc_source_Jac
@@ -102,13 +100,11 @@ contains
     if(allocated(this%sfc_source))     deallocate(this%sfc_source)
     if(allocated(this%sfc_source_Jac)) deallocate(this%sfc_source_Jac)
     if(allocated(this%lay_source))     deallocate(this%lay_source)
-    if(allocated(this%lev_source_inc)) deallocate(this%lev_source_inc)
-    if(allocated(this%lev_source_dec)) deallocate(this%lev_source_dec)
+    if(allocated(this%lev_source))     deallocate(this%lev_source)
 
     ngpt = this%get_ngpt()
-    allocate(this%sfc_source    (ncol,     ngpt), this%lay_source    (ncol,nlay,ngpt), &
-             this%lev_source_inc(ncol,nlay,ngpt), this%lev_source_dec(ncol,nlay,ngpt))
-    allocate(this%sfc_source_Jac(ncol,     ngpt))
+    allocate(this%sfc_source    (ncol,       ngpt), this%lay_source    (ncol,nlay,ngpt), &
+             this%lev_source    (ncol,nlay+1,ngpt), this%sfc_source_Jac(ncol,     ngpt))
   end function alloc_lw
   ! --------------------------------------------------------------
   function copy_and_alloc_lw(this, ncol, nlay, spectral_desc) result(err_message)
@@ -181,8 +177,7 @@ contains
     class(ty_source_func_lw),    intent(inout) :: this
 
     if(allocated(this%lay_source    )) deallocate(this%lay_source)
-    if(allocated(this%lev_source_inc)) deallocate(this%lev_source_inc)
-    if(allocated(this%lev_source_dec)) deallocate(this%lev_source_dec)
+    if(allocated(this%lev_source    )) deallocate(this%lev_source)
     if(allocated(this%sfc_source    )) deallocate(this%sfc_source)
     if(allocated(this%sfc_source_Jac)) deallocate(this%sfc_source_Jac)
     call this%ty_optical_props%finalize()
@@ -260,8 +255,7 @@ contains
     subset%sfc_source    (1:n,  :) = full%sfc_source    (start:start+n-1,  :)
     subset%sfc_source_Jac(1:n,  :) = full%sfc_source_Jac(start:start+n-1,  :)
     subset%lay_source    (1:n,:,:) = full%lay_source    (start:start+n-1,:,:)
-    subset%lev_source_inc(1:n,:,:) = full%lev_source_inc(start:start+n-1,:,:)
-    subset%lev_source_dec(1:n,:,:) = full%lev_source_dec(start:start+n-1,:,:)
+    subset%lev_source    (1:n,:,:) = full%lev_source    (start:start+n-1,:,:)
   end function get_subset_range_lw
   ! ------------------------------------------------------------------------------------------
   function get_subset_range_sw(full, start, n, subset) result(err_message)

@@ -310,10 +310,10 @@ program rte_rrtmgp_allsky
       !
       ! Should we allocate these once, rather than once per loop? They're big. 
       ! 
-      !$acc        data create(   lw_sources, lw_sources%lay_source,     lw_sources%lev_source_inc) &
-      !$acc             create(               lw_sources%lev_source_dec, lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
-      !$omp target data map(alloc:            lw_sources%lay_source,     lw_sources%lev_source_inc) &
-      !$omp             map(alloc:            lw_sources%lev_source_dec, lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
+      !$acc        data create(   lw_sources, lw_sources%lay_source,     lw_sources%lev_source) &
+      !$acc             create(               lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
+      !$omp target data map(alloc:            lw_sources%lay_source,     lw_sources%lev_source) &
+      !$omp             map(alloc:            lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
       call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
                                          t_lay, t_sfc, &
                                          gas_concs,    &

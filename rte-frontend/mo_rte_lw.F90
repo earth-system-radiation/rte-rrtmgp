@@ -125,22 +125,25 @@ contains
     real(wp), dimension(:,:),   pointer     :: inc_flux_diffuse
     ! --------------------------------------------------
     !
-    ! Weights and angle secants for first order (k=1) Gaussian quadrature.
-    !   Values from Table 2, Clough et al, 1992, doi:10.1029/92JD01419
-    !   after Abramowitz & Stegun 1972, page 921
+    ! Weights and angle secants for "Gauss-Jacobi-5" quadrature.
+    !   Values from Table 1, R. J. Hogan 2023, doi:10.1002/qj.4598
     !
     integer,  parameter :: max_gauss_pts = 4
     real(wp), parameter,                         &
       dimension(max_gauss_pts, max_gauss_pts) :: &
-        gauss_Ds  = RESHAPE([1.66_wp,               0._wp,         0._wp,         0._wp, &  ! Diffusivity angle, not Gaussian angle
-                             1.18350343_wp, 2.81649655_wp,         0._wp,         0._wp, &
-                             1.09719858_wp, 1.69338507_wp, 4.70941630_wp,         0._wp, &
-                             1.06056257_wp, 1.38282560_wp, 2.40148179_wp, 7.15513024_wp], &
+        ! 
+        ! Values provided are for mu = cos(theta); we require the inverse
+        !
+        gauss_Ds  = 1._wp / & 
+                    RESHAPE([0.6096748751_wp, huge(1._wp)    , huge(1._wp)    , huge(1._wp),      &  
+                             0.2509907356_wp, 0.7908473988_wp, huge(1._wp)    , huge(1._wp),      &
+                             0.1024922169_wp, 0.4417960320_wp, 0.8633751621_wp, huge(1._wp),      &
+                             0.0454586727_wp, 0.2322334416_wp, 0.5740198775_wp, 0.9030775973_wp], &
                             [max_gauss_pts, max_gauss_pts]),              &
-        gauss_wts = RESHAPE([0.5_wp,          0._wp,           0._wp,           0._wp, &
-                             0.3180413817_wp, 0.1819586183_wp, 0._wp,           0._wp, &
-                             0.2009319137_wp, 0.2292411064_wp, 0.0698269799_wp, 0._wp, &
-                             0.1355069134_wp, 0.2034645680_wp, 0.1298475476_wp, 0.0311809710_wp], &
+        gauss_wts = RESHAPE([1._wp,           0._wp,           0._wp,           0._wp, &
+                             0.2300253764_wp, 0.7699746236_wp, 0._wp,           0._wp, &
+                             0.0437820218_wp, 0.3875796738_wp, 0.5686383044_wp, 0._wp, &
+                             0.0092068785_wp, 0.1285704278_wp, 0.4323381850_wp, 0.4298845087_wp], &
                              [max_gauss_pts, max_gauss_pts])
     ! ------------------------------------------------------------------------------------
     ncol  = optical_props%get_ncol()
@@ -353,8 +356,8 @@ contains
                                 logical(top_at_1, wl), n_quad_angs,         &
                                 secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                 optical_props%tau,                 &
-                                sources%lay_source, sources%lev_source_inc, &
-                                sources%lev_source_dec,            &
+                                sources%lay_source,                &
+                                sources%lev_source,                &
                                 sfc_emis_gpt, sources%sfc_source,  &
                                 inc_flux_diffuse,                  &
                                 gpt_flux_up, gpt_flux_dn,          &
@@ -371,8 +374,8 @@ contains
             ! two-stream calculation with scattering
             !
             call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
-                                   optical_props%tau, optical_props%ssa, optical_props%g,              &
-                                   sources%lay_source, sources%lev_source_inc, sources%lev_source_dec, &
+                                   optical_props%tau, optical_props%ssa, optical_props%g, &
+                                   sources%lay_source, sources%lev_source,                &
                                    sfc_emis_gpt, sources%sfc_source,       &
                                    inc_flux_diffuse,                       &
                                    gpt_flux_up, gpt_flux_dn)
@@ -396,8 +399,8 @@ contains
                                   logical(top_at_1, wl), n_quad_angs,         &
                                   secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                   optical_props%tau,                 &
-                                  sources%lay_source, sources%lev_source_inc, &
-                                  sources%lev_source_dec,            &
+                                  sources%lay_source,                &
+                                  sources%lev_source,                &
                                   sfc_emis_gpt, sources%sfc_source,  &
                                   inc_flux_diffuse,                  &
                                   gpt_flux_up, gpt_flux_dn,          &

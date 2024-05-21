@@ -336,7 +336,7 @@ contains
         !
         type is (ty_fluxes_broadband)
           if(associated(fluxes%flux_net)) then
-            !$acc                         parallel loop    collapse(2) copyout(fluxes%flux_net)
+            !$acc                         parallel loop    collapse(2) copyin(fluxes) copyout(fluxes%flux_net)
             !$omp target teams distribute parallel do simd collapse(2)
             do ilev = 1, nlay+1
               do icol = 1, ncol

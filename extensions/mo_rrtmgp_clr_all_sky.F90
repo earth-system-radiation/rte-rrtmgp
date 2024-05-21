@@ -74,7 +74,6 @@ contains
     type(ty_source_func_lw)                   :: sources
 
     integer :: ncol, nlay, ngpt, nband, nstr
-    logical :: top_at_1
     ! --------------------------------
     ! Problem sizes
     !

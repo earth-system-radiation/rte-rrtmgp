@@ -1,3 +1,4 @@
+#!/usr/bin/env make
 #
 # Location of RTE+RRTMGP libraries, module files.
 #
@@ -9,12 +10,11 @@ LDFLAGS   += -L$(RRTMGP_BUILD)
 LIBS      += -lrrtmgp -lrte
 FCINCLUDE += -I$(RRTMGP_BUILD)
 
-#
-# netcdf library, module files
-# Environment variables NCHOME and NFHOME point to root of C and Fortran interfaces respectively -
-#
-FCINCLUDE += -I$(NFHOME)/include
-LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
+# netcdf Fortran module files has to be in the search path or added via environment variable FCINCLUDE e.g. 
+#FCINCLUDE += -I$(NFHOME)/include
+
+# netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
+#LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
 LIBS      += -lnetcdff -lnetcdf
 
 VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend # Needed for cloud_optics and aerosol_optics
@@ -47,14 +47,14 @@ mo_load_coefficients.o:         mo_simple_netcdf.o                              
 mo_load_cloud_coefficients.o:   mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o         mo_load_cloud_coefficients.F90
 mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.F90
 
-tests:
+tests: rrtmgp_allsky
 	$(RUN_CMD) bash all_tests.sh  
 
 check:
-	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
+	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
 	       --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir  \
 	       --file rrtmgp-allsky-lw.nc rrtmgp-allsky-sw.nc
-	python ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
+	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/all-sky \
 	       --var lw_flux_up lw_flux_dn sw_flux_up sw_flux_dn sw_flux_dir  \
 	       --file rrtmgp-allsky-lw-no-aerosols.nc rrtmgp-allsky-sw-no-aerosols.nc
 

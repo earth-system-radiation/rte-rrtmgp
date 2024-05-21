@@ -27,7 +27,7 @@ jobs:
       FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.fpmodel }}"
       # Make variables:
-      NFHOME: /usr
+      FCINCLUDE: -I/usr/include
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RUN_CMD:
@@ -52,6 +52,7 @@ jobs:
       with:
         repository: earth-system-radiation/rrtmgp-data
         path: rrtmgp-data
+        ref: v1.8.1
     #
     # Synchronize the package index
     #
@@ -66,7 +67,7 @@ jobs:
     # Cache Conda packages
     #
     - name: Cache Conda packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/conda_pkgs_dir
         key: conda-pkgs
@@ -79,25 +80,24 @@ jobs:
         miniforge-version: latest
         activate-environment: rte_rrtmgp_test
         environment-file: environment-noplots.yml
-        python-version: 3.9
+        python-version: 3.11
         auto-activate-base: false
         # Use the cache properly:
         use-only-tar-bz2: true
     #
     # Build libraries, examples and tests
     #
-    - name: Build libraries, examples and tests
+    - name: Build libraries
       run: |
         $FC --version
-        make libs
-        make -C build separate-libs
+        make -j4 libs
     #
     # Run examples and tests
     #
-    - name: Run examples and tests
-      run: make tests
+    - name: Build and run examples and tests
+      run: make -j4 tests
     #
     # Compare the results
     #
     - name: Compare the results
-      run: make check
+      run: make -j4 check

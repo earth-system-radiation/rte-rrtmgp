@@ -4,8 +4,8 @@
 name: rte_rrtmgp_test_noplots
 
 dependencies:
-  - conda-forge::python=3.9
-  - conda-forge::netcdf4
-  - conda-forge::xarray
-  - conda-forge::dask
-  - conda-forge::numpy
+  - python=3.11
+  - netcdf4
+  - xarray
+  - dask
+  - numpy

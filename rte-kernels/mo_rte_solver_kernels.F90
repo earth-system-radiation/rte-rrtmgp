@@ -48,12 +48,12 @@ contains
   !>    using user-supplied weights
   !
   ! ---------------------------------------------------------------
-  subroutine lw_solver_noscat_oneangle(ncol, nlay, ngpt, top_at_1, D, weight,                              &
-                              tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+  subroutine lw_solver_noscat_oneangle(ncol, nlay, ngpt, top_at_1, D, weight, &
+                              tau, lay_source, lev_source, sfc_emis, sfc_src, &
                               incident_flux,    &
                               flux_up, flux_dn, &
                               do_broadband, broadband_up, broadband_dn, &
-                              do_Jacobians, sfc_srcJac, flux_upJac,               &
+                              do_Jacobians, sfc_srcJac, flux_upJac,     &
                               do_rescaling, ssa, g)
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
@@ -61,11 +61,7 @@ contains
     real(wp),                              intent(in   ) :: weight       ! quadrature weight
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
-    ! Planck source at layer edge for radiation in increasing/decreasing ilay direction
-    ! lev_source_dec applies the mapping in layer i to the Planck function at layer i
-    ! lev_source_inc applies the mapping in layer i to the Planck function at layer i+1
-    real(wp), dimension(ncol,nlay,  ngpt), target, &
-                                           intent(in   ) :: lev_source_inc, lev_source_dec
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source   ! Planck source at layer edge  [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: incident_flux! Boundary condition for flux [W/m2]
@@ -91,8 +87,6 @@ contains
     real(wp), dimension(ncol,nlay) :: source_dn, source_up
     real(wp), dimension(ncol     ) :: sfc_albedo
 
-    real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
-
     real(wp), parameter :: pi = acos(-1._wp)
     ! loc_fluxes hold a single g-point flux if fluxes are being integrated instead of returned
     !   with spectral detail
@@ -117,19 +111,12 @@ contains
     real(wp), dimension(ncol,nlay+1) :: gpt_flux_Jac
     ! ------------------------------------
     ! Which way is up?
-    ! Level Planck sources for upward and downward radiation
-    ! When top_at_1, lev_source_up => lev_source_dec
-    !                lev_source_dn => lev_source_inc, and vice-versa
     if(top_at_1) then
       top_level = 1
       sfc_level = nlay+1
-      lev_source_up => lev_source_dec
-      lev_source_dn => lev_source_inc
     else
       top_level = nlay+1
       sfc_level = 1
-      lev_source_up => lev_source_inc
-      lev_source_dn => lev_source_dec
     end if
 
     !
@@ -154,7 +141,7 @@ contains
       ! Transport is for intensity
       !   convert flux at top of domain to intensity assuming azimuthal isotropy
       !
-      gpt_flux_dn(:,top_level) = incident_flux(:,igpt)/(2._wp * pi * weight)
+      gpt_flux_dn(:,top_level) = incident_flux(:,igpt)/(pi * weight)
       !
       ! Optical path and transmission, used in source function and transport calculations
       !
@@ -198,8 +185,8 @@ contains
       !
       ! Source function for diffuse radiation
       !
-      call lw_source_noscat(ncol, nlay, &
-                            lay_source(:,:,igpt), lev_source_up(:,:,igpt), lev_source_dn(:,:,igpt), &
+      call lw_source_noscat(ncol, nlay, top_at_1, &
+                            lay_source(:,:,igpt), lev_source(:,:,igpt), &
                             tau_loc, trans, source_dn, source_up)
       !
       ! Transport down
@@ -233,8 +220,8 @@ contains
         !
         ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
         !
-        gpt_flux_dn(:,:)    = 2._wp * pi * weight * gpt_flux_dn(:,:)
-        gpt_flux_up(:,:)    = 2._wp * pi * weight * gpt_flux_up(:,:)
+        gpt_flux_dn(:,:)  = pi * weight * gpt_flux_dn(:,:)
+        gpt_flux_up(:,:)  = pi * weight * gpt_flux_up(:,:)
       end if
       !
       ! Only broadband-integrated Jacobians are provided
@@ -244,11 +231,11 @@ contains
     end do  ! g point loop
 
     if(do_broadband) then
-      broadband_up(:,:) = 2._wp * pi * weight* broadband_up(:,:)
-      broadband_dn(:,:) = 2._wp * pi * weight* broadband_dn(:,:)
+      broadband_up(:,:) = pi * weight* broadband_up(:,:)
+      broadband_dn(:,:) = pi * weight* broadband_dn(:,:)
     end if
     if(do_Jacobians) &
-      flux_upJac(:,:)   = 2._wp * pi * weight * flux_upJac(:,:)
+      flux_upJac(:,:)   = pi * weight * flux_upJac(:,:)
 
   end subroutine lw_solver_noscat_oneangle
   ! -------------------------------------------------------------------------------------------------
@@ -261,7 +248,7 @@ contains
   subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
                               nmus, Ds, weights,          &
                               tau,                        &
-                              lay_source, lev_source_inc, lev_source_dec, &
+                              lay_source, lev_source,     &
                               sfc_emis, sfc_src,          &
                               inc_flux,                   &
                               flux_up, flux_dn,           &
@@ -283,10 +270,8 @@ contains
                                                             !! Absorption optical thickness []
     real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source
                                                             !! Planck source at layer average temperature [W/m2]
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
-                                        !! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
-                                        !! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source
+                                                            !! Planck source at layer edge for radiation[W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
                                                             !! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src
@@ -327,8 +312,8 @@ contains
     ! For the first angle output arrays store total flux
     !
     call lw_solver_noscat_oneangle(ncol, nlay, ngpt, &
-                          top_at_1, Ds(:,:,1), weights(1), tau, &
-                          lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                          top_at_1, Ds(:,:,1), weights(1), tau,      &
+                          lay_source, lev_source, sfc_emis, sfc_src, &
                           inc_flux,         &
                           flux_up, flux_dn, &
                           do_broadband, broadband_up, broadband_dn, &
@@ -358,7 +343,7 @@ contains
     do imu = 2, nmus
       call lw_solver_noscat_oneangle(ncol, nlay, ngpt, &
                             top_at_1, Ds(:,:,imu), weights(imu), tau, &
-                            lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                            lay_source, lev_source, sfc_emis, sfc_src, &
                             inc_flux,         &
                             this_flux_up,  this_flux_dn, &
                             do_broadband, this_broadband_up, this_broadband_dn, &
@@ -391,7 +376,7 @@ contains
   ! -------------------------------------------------------------------------------------------------
    subroutine lw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
                                  tau, ssa, g,                &
-                                 lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                                 lay_source, lev_source, sfc_emis, sfc_src, &
                                  inc_flux,                   &
                                  flux_up, flux_dn) bind(C, name="rte_lw_solver_2stream")
     integer,                               intent(in   ) :: ncol, nlay, ngpt
@@ -402,10 +387,8 @@ contains
                                                             !! Optical thickness, single-scattering albedo, asymmetry parameter []
     real(wp), dimension(ncol,nlay,  ngpt),   intent(in   ) :: lay_source
                                                             !! Planck source at layer average temperature [W/m2]
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
-                                          !! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
-                                          !! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source
+                                                            !! Planck source at layer edge temperature  [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis
                                                             !! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src
@@ -418,20 +401,12 @@ contains
     integer :: igpt, top_level
     real(wp), dimension(ncol,nlay  ) :: Rdif, Tdif, gamma1, gamma2
     real(wp), dimension(ncol       ) :: sfc_albedo
-    real(wp), dimension(ncol,nlay+1) :: lev_source
     real(wp), dimension(ncol,nlay  ) :: source_dn, source_up
     real(wp), dimension(ncol       ) :: source_sfc
     ! ------------------------------------
     top_level = nlay+1
     if(top_at_1) top_level = 1
     do igpt = 1, ngpt
-      !
-      ! RRTMGP provides source functions at each level using the spectral mapping
-      !   of each adjacent layer. Combine these for two-stream calculations
-      !
-      call lw_combine_sources(ncol, nlay, top_at_1, &
-                              lev_source_inc(:,:,igpt), lev_source_dec(:,:,igpt), &
-                              lev_source)
       !
       ! Cell properties: reflection, transmission for diffuse radiation
       !   Coupling coefficients needed for source function
@@ -642,29 +617,37 @@ contains
   ! See Clough et al., 1992, doi: 10.1029/92JD01419, Eq 13
   !
   ! ---------------------------------------------------------------
-  subroutine lw_source_noscat(ncol, nlay, lay_source, lev_source_up, lev_source_dn, tau, trans, &
+  subroutine lw_source_noscat(ncol, nlay, top_at_1, lay_source, lev_source, tau, trans, &
                               source_dn, source_up)
-    integer,                         intent(in) :: ncol, nlay
-    real(wp), dimension(ncol, nlay), intent(in) :: lay_source, & ! Planck source at layer center
-                                                   lev_source_up, & ! Planck source at levels (layer edges),
-                                                   lev_source_dn, & !   increasing/decreasing layer index
-                                                   tau,        & ! Optical path (tau/mu)
-                                                   trans         ! Transmissivity (exp(-tau))
-    real(wp), dimension(ncol, nlay), intent(out):: source_dn, source_up
+    integer,                           intent(in) :: ncol, nlay
+    logical(wl),                       intent(in) :: top_at_1
+    real(wp), dimension(ncol, nlay  ), intent(in) :: lay_source, & ! Planck source at layer center
+                                                     tau,        & ! Optical path (tau/mu)
+                                                     trans         ! Transmissivity (exp(-tau))
+    real(wp), dimension(ncol, nlay+1), intent(in) :: lev_source    ! Planck source at levels (layer edges)
+    real(wp), dimension(ncol, nlay  ), target, & 
+                                       intent(out):: source_dn, source_up
                                                                    ! Source function at layer edges
                                                                    ! Down at the bottom of the layer, up at the top
     ! --------------------------------
+    real(wp), dimension(:,:), pointer :: source_inc, source_dec 
     integer             :: icol, ilay
     real(wp)            :: fact
     real(wp), parameter :: tau_thresh = sqrt(sqrt(epsilon(tau)))
     ! ---------------------------------------------------------------
+    if (top_at_1) then 
+      source_inc => source_dn 
+      source_dec => source_up
+    else
+      source_inc => source_up
+      source_dec => source_dn
+    end if 
     do ilay = 1, nlay
       do icol = 1, ncol
       !
-      ! Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
+      ! Weighting factor. Use 3rd order series expansion when rounding error (~tau^2)
       !   is of order epsilon (smallest difference from 1. in working precision)
-      !   Thanks to Peter Blossey
-      !   Updated to 3rd order series and lower threshold based on suggestion from Dmitry Alexeev (Nvidia)
+      !   Thanks to Peter Blossey (UW) for the idea and Dmitry Alexeev (Nvidia) for suggesting 3rd order
       !
       if(tau(icol, ilay) > tau_thresh) then
         fact = (1._wp - trans(icol,ilay))/tau(icol,ilay) - trans(icol,ilay)
@@ -674,11 +657,20 @@ contains
       !
       ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
       !
-      source_dn(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source_dn(icol,ilay) + &
-                              2._wp * fact * (lay_source(icol,ilay) - lev_source_dn(icol,ilay))
-      source_up(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source_up(icol,ilay  ) + &
-                              2._wp * fact * (lay_source(icol,ilay) - lev_source_up(icol,ilay))
-      end do
+      source_inc(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay+1) + &
+                              2._wp * fact * (lay_source(icol,ilay) - lev_source(icol,ilay+1))
+      source_dec(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay ) + &
+                              2._wp * fact * (lay_source(icol,ilay) - lev_source(icol,ilay  ))
+      !
+      ! Even better - omit the layer Planck source (not working so well)
+      !
+      if(.false.) then 
+        source_inc(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay+1) + &
+                                fact * (lev_source(icol,ilay  ) - lev_source(icol,ilay+1))
+        source_dec(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay ) + &
+                                fact * (lev_source(icol,ilay+1) - lev_source(icol,ilay  ))
+      end if 
+      end do 
     end do
   end subroutine lw_source_noscat
   ! -------------------------------------------------------------------------------------------------
@@ -915,39 +907,6 @@ contains
 
     end do
   end subroutine lw_two_stream
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! Source function combination
-  ! RRTMGP provides two source functions at each level
-  !   using the spectral mapping from each of the adjascent layers.
-  !   Need to combine these for use in two-stream calculation.
-  !
-  ! -------------------------------------------------------------------------------------------------
-  subroutine lw_combine_sources(ncol, nlay, top_at_1, &
-                                lev_src_inc, lev_src_dec, lev_source)
-    integer,                           intent(in ) :: ncol, nlay
-    logical(wl),                       intent(in ) :: top_at_1
-    real(wp), dimension(ncol, nlay  ), intent(in ) :: lev_src_inc, lev_src_dec
-    real(wp), dimension(ncol, nlay+1), intent(out) :: lev_source
-
-    integer :: icol, ilay
-    ! ---------------------------------------------------------------
-    ilay = 1
-    do icol = 1,ncol
-      lev_source(icol, ilay) =        lev_src_dec(icol, ilay)
-    end do
-    do ilay = 2, nlay
-      do icol = 1,ncol
-        lev_source(icol, ilay) = sqrt(lev_src_dec(icol, ilay) * &
-                                      lev_src_inc(icol, ilay-1))
-      end do
-    end do
-    ilay = nlay+1
-    do icol = 1,ncol
-      lev_source(icol, ilay) =        lev_src_inc(icol, ilay-1)
-    end do
-
-  end subroutine lw_combine_sources
   ! ---------------------------------------------------------------
   !
   ! Compute LW source function for upward and downward emission at levels using linear-in-tau assumption
@@ -1044,6 +1003,7 @@ contains
 
     ! Ancillary variables
     real(wp), parameter :: min_k = 1.e4_wp * epsilon(1._wp) ! Suggestion from Chiel van Heerwaarden
+    real(wp), parameter :: min_mu0 = sqrt(epsilon(1._wp))
     real(wp) :: k, exp_minusktau, k_mu, k_gamma3, k_gamma4
     real(wp) :: RT_term, exp_minus2ktau
     real(wp) :: Rdir, Tdir, Tnoscat
@@ -1063,6 +1023,7 @@ contains
         dir_flux_trans => flux_dn_dir(:,lay_index  )
       end if
 
+      !$OMP SIMD
       do i = 1, ncol
         !
         ! Scalars
@@ -1070,7 +1031,6 @@ contains
         tau_s = tau(i, lay_index)
         w0_s  = w0 (i, lay_index)
         g_s   = g  (i, lay_index)
-        mu0_s = mu0(i, lay_index)
         !
         ! Zdunkowski Practical Improved Flux Method "PIFM"
         !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
@@ -1100,63 +1060,69 @@ contains
         !
         ! On a round earth, where mu0 can increase with depth in the atmosphere,
         !   levels with mu0 <= 0 have no direct beam and hence no source for diffuse light
+        !   Compute transmission and reflection using a nominal value but mask out later 
         !
-        if(mu0_s > 0._wp) then
-          k_mu     = k * mu0_s
-          !
-          ! Equation 14, multiplying top and bottom by exp(-k*tau)
-          !   and rearranging to avoid div by 0.
-          !
-          RT_term =  w0_s * RT_term/merge(1._wp - k_mu*k_mu, &
-                                          epsilon(1._wp),    &
-                                          abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
-          !
-          ! Zdunkowski Practical Improved Flux Method "PIFM"
-          !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
-          !
-          gamma3 = (2._wp - 3._wp * mu0_s *         g_s ) * .25_wp
-          gamma4 =  1._wp - gamma3
-          alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
-          alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
+        mu0_s = max(min_mu0, mu0(i, lay_index)) 
+        k_mu     = k * mu0_s
+        !
+        ! Equation 14, multiplying top and bottom by exp(-k*tau)
+        !   and rearranging to avoid div by 0.
+        !
+        RT_term =  w0_s * RT_term/merge(1._wp - k_mu*k_mu, &
+                                        epsilon(1._wp),    &
+                                        abs(1._wp - k_mu*k_mu) >= epsilon(1._wp))
+        !
+        ! Zdunkowski Practical Improved Flux Method "PIFM"
+        !  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
+        !
+        gamma3 = (2._wp - 3._wp * mu0_s *         g_s ) * .25_wp
+        gamma4 =  1._wp - gamma3
+        alpha1 = gamma1 * gamma4 + gamma2 * gamma3           ! Eq. 16
+        alpha2 = gamma1 * gamma3 + gamma2 * gamma4           ! Eq. 17
 
-          !
-          ! Transmittance of direct, unscattered beam.
-          !
-          k_gamma3 = k * gamma3
-          k_gamma4 = k * gamma4
-          Tnoscat = exp(-tau_s/mu0_s)
-          Rdir = RT_term  *                                            &
-              ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
-               (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
-               2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau * Tnoscat)
-          !
-          ! Equation 15, multiplying top and bottom by exp(-k*tau),
-          !   multiplying through by exp(-tau/mu0) to
-          !   prefer underflow to overflow
-          ! Omitting direct transmittance
-          !
-          Tdir = -RT_term *                                                             &
-                ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
-                 (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
-                 2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
-          ! Final check that energy is not spuriously created, by recognizing that
-          ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
-          ! or penetrate through but be scattered on the way - the rest is absorbed
-          ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
-          Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))
-          Tdir    = max(0.0_wp, min(Tdir, (1.0_wp - Tnoscat - Rdir) ))
+        !
+        ! Transmittance of direct, unscattered beam.
+        !
+        k_gamma3 = k * gamma3
+        k_gamma4 = k * gamma4
+        Tnoscat = exp(-tau_s/mu0_s)
+        Rdir = RT_term  *                                            &
+            ((1._wp - k_mu) * (alpha2 + k_gamma3)                  - &
+             (1._wp + k_mu) * (alpha2 - k_gamma3) * exp_minus2ktau - &
+             2.0_wp * (k_gamma3 - alpha2 * k_mu)  * exp_minusktau * Tnoscat)
+        !
+        ! Equation 15, multiplying top and bottom by exp(-k*tau),
+        !   multiplying through by exp(-tau/mu0) to
+        !   prefer underflow to overflow
+        ! Omitting direct transmittance
+        !
+        Tdir = -RT_term *                                                             &
+              ((1._wp + k_mu) * (alpha1 + k_gamma4)                  * Tnoscat - &
+               (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
+               2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
+        ! Final check that energy is not spuriously created, by recognizing that
+        ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
+        ! or penetrate through but be scattered on the way - the rest is absorbed
+        ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
+        Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))
+        Tdir    = max(0.0_wp, min(Tdir, (1.0_wp - Tnoscat - Rdir) ))
 
-          source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
-          source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
-          dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
-        else
-          source_up(i,lay_index) = 0._wp
-          source_dn(i,lay_index) = 0._wp
-          dir_flux_trans(i)      = 0._wp
-        end if
+        source_up(i,lay_index) =    Rdir * dir_flux_inc(i)
+        source_dn(i,lay_index) =    Tdir * dir_flux_inc(i)
+        dir_flux_trans(i)      = Tnoscat * dir_flux_inc(i)
       end do
     end do
-    source_sfc(:) = dir_flux_trans(:)*sfc_albedo(:)
+    !
+    ! T and R for the direct beam are computed using nominal values even when the 
+    !   sun is below the horizon (mu0 < 0); set those values back to zero
+    ! This won't be efficient if many nighttime columns are passed
+    !
+    source_sfc(:) = merge(dir_flux_trans(:)*sfc_albedo(:), & 
+                          0._wp, mu0(:,lay_index) > 0._wp) 
+    where(mu0(:,:) <= 0._wp) 
+      source_up(:,:) = 0._wp
+      source_dn(:,:) = 0._wp
+    end where 
 
   end subroutine sw_dif_and_source
 ! ---------------------------------------------------------------

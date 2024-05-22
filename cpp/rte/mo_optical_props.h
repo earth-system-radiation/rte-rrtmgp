@@ -253,19 +253,27 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
+template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class OpticalPropsK {
 public:
-  int2dk  band2gpt;       // (begin g-point, end g-point) = band2gpt(2,band)
-  int1dk  gpt2band;       // band = gpt2band(g-point)
+
+  template <typename T>
+  using view_t = typename Kokkos::View<T, LayoutT, DeviceT>;
+
+  using self_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
+
+  view_t<int**> band2gpt;       // (begin g-point, end g-point) = band2gpt(2,band)
+  view_t<int*>  gpt2band;       // band = gpt2band(g-point)
   int     ngpt;
-  real2dk band_lims_wvn;  // (upper and lower wavenumber by band) = band_lims_wvn(2,band)
+  view_t<RealT**> band_lims_wvn;  // (upper and lower wavenumber by band) = band_lims_wvn(2,band)
   std::string name;
 
-  void init( real2dk const &band_lims_wvn , int2dk const &band_lims_gpt=int2dk() , std::string name="" ) {
-    int2dk band_lims_gpt_lcl("band_lims_gpt_lcl", 2, band_lims_wvn.extent(1));
+  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**> >
+  void init( BandLimsWvnT const &band_lims_wvn , BandLimsGptT const &band_lims_gpt=view_t<int**>() , std::string name="" ) {
+    view_t<int**> band_lims_gpt_lcl("band_lims_gpt_lcl", 2, band_lims_wvn.extent(1));
     if (band_lims_wvn.extent(0) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-    if (conv::any(band_lims_wvn, conv::LTFunc<real>(0.))) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
+    if (conv::any(band_lims_wvn, conv::LTFunc<RealT>(0.))) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
     #endif
     if (band_lims_gpt.is_allocated()) {
       if (band_lims_gpt.extent(1) != band_lims_wvn.extent(1)) {
@@ -291,7 +299,7 @@ public:
 
     // Make a map between g-points and bands
     //   Efficient only when g-point indexes start at 1 and are contiguous.
-    this->gpt2band = int1dk("gpt2band", this->ngpt);
+    this->gpt2band = view_t<int*>("gpt2band", this->ngpt);
     // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
     auto this_gpt2band = this->gpt2band;
     Kokkos::parallel_for(1, KOKKOS_CLASS_LAMBDA(int dummy) {
@@ -303,7 +311,7 @@ public:
     });
   }
 
-  void init(OpticalPropsK const &in) {
+  void init(self_t const &in) {
     if ( ! in.is_initialized() ) {
       stoprun("optical_props::init(): can't initialize based on un-initialized input");
     } else {
@@ -315,9 +323,9 @@ public:
 
   // Base class: finalize (deallocate memory)
   void finalize() {
-    this->band2gpt      = int2dk();
-    this->gpt2band      = int1dk();
-    this->band_lims_wvn = real2dk();
+    this->band2gpt      = view_t<int**>();
+    this->gpt2band      = view_t<int*>();
+    this->band_lims_wvn = view_t<RealT**>();
     this->name          = "";
   }
 
@@ -336,39 +344,18 @@ public:
   }
 
   // Bands for all the g-points at once;  dimension (ngpt)
-  int1dk get_gpoint_bands() const { return gpt2band; }
-
-#if 0 // Not converting these since they are unused
-  // First and last g-point of a specific band
-  int1d convert_band2gpt(int band) const {
-    int1d ret("band2gpt",2);
-    if (this->is_initialized()) {
-      ret(1) = this->band2gpt(1,band);
-      ret(2) = this->band2gpt(2,band);
-    } else {
-      ret(1) = 0;
-      ret(2) = 0;
-    }
-    return ret;
-  }
-
-  // Band associated with a specific g-point
-  int convert_gpt2band(int gpt) const {
-    if (this->is_initialized()) { return this->gpt2band(gpt); }
-    return 0;
-  }
-#endif
+  view_t<int*> get_gpoint_bands() const { return gpt2band; }
 
   // The first and last g-point of all bands at once;  dimension (2, nbands)
-  int2dk get_band_lims_gpoint() const { return this->band2gpt; }
+  view_t<int**> get_band_lims_gpoint() const { return this->band2gpt; }
 
   // Lower and upper wavenumber of all bands
   // (upper and lower wavenumber by band) = band_lims_wvn(2,band)
-  real2dk get_band_lims_wavenumber() const { return this->band_lims_wvn; }
+  view_t<RealT**> get_band_lims_wavenumber() const { return this->band_lims_wvn; }
 
   // Lower and upper wavelength of all bands
-  real2dk get_band_lims_wavelength() const {
-    real2dk ret("band_lim_wavelength", band_lims_wvn.extent(0), band_lims_wvn.extent(1));
+  view_t<RealT**> get_band_lims_wavelength() const {
+    view_t<RealT**> ret("band_lim_wavelength", band_lims_wvn.extent(0), band_lims_wvn.extent(1));
     // for (int j = 1; j <= size(band_lims_wvn,2); j++) {
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
     auto this_band_lims_wvn = this->band_lims_wvn;
@@ -385,7 +372,7 @@ public:
   }
 
   // Are the bands of two objects the same? (same number, same wavelength limits)
-  bool bands_are_equal(OpticalPropsK const &rhs) const {
+  bool bands_are_equal(self_t const &rhs) const {
     // This is working around an issue that arises in E3SM's rrtmgpxx integration.
     // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
     bool ret = true;
@@ -403,7 +390,7 @@ public:
 
   // Is the g-point structure of two objects the same?
   //   (same bands, same number of g-points, same mapping between bands and g-points)
-  bool gpoints_are_equal(OpticalPropsK const &rhs) const {
+  bool gpoints_are_equal(self_t const &rhs) const {
     if ( ! this->bands_are_equal(rhs) || this->get_ngpt() != rhs.get_ngpt() ) { return false; }
 
     // This is working around an issue that arises in E3SM's rrtmgpxx integration.
@@ -416,25 +403,6 @@ public:
     }
     return ret;
   }
-
-
-  // Expand an array of dimension arr_in(nband) to dimension arr_out(ngpt)
-  // real1d expand(real1d const &arr_in) const {
-  //   real1d ret("arr_out",size(this->gpt2band,1));
-  //   // do iband=1,this->get_nband()
-  //   // TODO: I don't know if this needs to be serialize or not at first glance. Need to look at it more.
-  //   auto &this_band2gpt = this->gpt2band;
-  //   int nband = get_nband();
-  //   parallel_for( YAKL_AUTO_LABEL() , Bounds<1>(1) , YAKL_LAMBDA (int dummy) {
-  //     for (int iband = 1 ; iband <= nband ; iband++) {
-  //       for (int i=this_band2gpt(1,iband) ; i <= this_band2gpt(2,iband) ; i++) {
-  //         ret(i) = arr_in(iband);
-  //       }
-  //     }
-  //   });
-  //   return ret;
-  // }
-
 
   void set_name( std::string name ) { this->name = name; }
 
@@ -463,9 +431,14 @@ public:
 };
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-class OpticalPropsArryK : public OpticalPropsK {
+template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+class OpticalPropsArryK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
 public:
-  real3dk tau; // optical depth (ncol, nlay, ngpt)
+  using parent_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
+  template <typename T>
+  using view_t = typename parent_t::template view_t<T>;
+
+  view_t<RealT***> tau; // optical depth (ncol, nlay, ngpt)
 
   int get_ncol() const { if (tau.is_allocated()) { return this->tau.extent(0); } else { return 0; } }
   int get_nlay() const { if (tau.is_allocated()) { return this->tau.extent(1); } else { return 0; } }
@@ -473,7 +446,7 @@ public:
 #ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const OpticalPropsArry& orig) const
   {
-    OpticalPropsK::validate_kokkos(orig);
+    parent_t::validate_kokkos(orig);
     conv::compare_yakl_to_kokkos(orig.tau, tau);
   }
 #endif
@@ -486,6 +459,7 @@ public:
 class OpticalProps2str;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
+template <typename RealT, typename LayoutT, typename DeviceT>
 class OpticalProps2strK;
 #endif
 
@@ -566,37 +540,44 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-class OpticalProps1sclK : public OpticalPropsArryK {
+template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+class OpticalProps1sclK : public OpticalPropsArryK<RealT, LayoutT, DeviceT> {
 public:
+
+  using parent_t = OpticalPropsArryK<RealT, LayoutT, DeviceT>;
+  template <typename T>
+  using view_t = typename parent_t::template view_t<T>;
+
   void validate() const {
     if (!this->tau.is_allocated()) { stoprun("validate: tau not allocated/initialized"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-    if (conv::any(this->tau, conv::LTFunc<real>(0.))) { stoprun("validate: tau values out of range"); }
+    if (conv::any(this->tau, conv::LTFunc<RealT>(0.))) { stoprun("validate: tau values out of range"); }
     #endif
   }
 
-  void delta_scale(real3dk const &dummy) const { }
+  template <typename DummyT>
+  void delta_scale(DummyT const &dummy) const { }
 
   void alloc_1scl(int ncol, int nlay) {
     if (! this->is_initialized()) { stoprun("OpticalProps1scl::alloc_1scl: spectral discretization hasn't been provided"); }
     if (ncol <= 0 || nlay <= 0) { stoprun("OpticalProps1scl::alloc_1scl: must provide > 0 extents for ncol, nlay"); }
-    this->tau = real3dk("tau",ncol,nlay,this->get_ngpt());
-    Kokkos::deep_copy(tau, 0);
+    this->tau = view_t<RealT***>("tau",ncol,nlay,this->get_ngpt());
   }
 
   // Initialization by specifying band limits and possibly g-point/band mapping
-  void alloc_1scl(int ncol, int nlay, real2dk const &band_lims_wvn, int2dk const &band_lims_gpt=int2dk(), std::string name="") {
+  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**> >
+  void alloc_1scl(int ncol, int nlay, BandLimsWvnT const &band_lims_wvn, BandLimsGptT const &band_lims_gpt=view_t<int**>(), std::string name="") {
     this->init(band_lims_wvn, band_lims_gpt, name);
     this->alloc_1scl(ncol, nlay);
   }
 
-  void alloc_1scl(int ncol, int nlay, OpticalPropsK const &opIn, std::string name="") {
+  void alloc_1scl(int ncol, int nlay, OpticalPropsK<RealT, LayoutT, DeviceT> const &opIn, std::string name="") {
     if (this->is_initialized()) { this->finalize(); }
     this->init(opIn.get_band_lims_wavenumber(), opIn.get_band_lims_gpoint(), name);
     this->alloc_1scl(ncol, nlay);
   }
 
-  void increment(OpticalProps1sclK &that) {
+  void increment(OpticalProps1sclK<RealT, LayoutT, DeviceT> &that) {
     if (! this->bands_are_equal(that)) { stoprun("OpticalProps::increment: optical properties objects have different band structures"); }
     int ncol = that.get_ncol();
     int nlay = that.get_nlay();
@@ -612,15 +593,15 @@ public:
   }
 
   // Implemented later because OpticalProps2str hasn't been created yet
-  inline void increment(OpticalProps2strK &that);
+  inline void increment(OpticalProps2strK<RealT, LayoutT, DeviceT> &that);
 
   void print_norms(const bool print_prefix=false) const {
     std::string prefix = print_prefix ? "JGFK" : "";
-                                        std::cout << prefix << "name         : " << name               << "\n";
-    if (band2gpt.is_allocated()     ) { std::cout << prefix << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
-    if (gpt2band.is_allocated()     ) { std::cout << prefix << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
-    if (band_lims_wvn.is_allocated()) { std::cout << prefix << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
-    if (tau.is_allocated()          ) { std::cout << prefix << "tau          : " << conv::sum(tau          ) << "\n"; }
+                                        std::cout << prefix << "name         : " << this->name               << "\n";
+    if (this->band2gpt.is_allocated()     ) { std::cout << prefix << "band2gpt     : " << conv::sum(this->band2gpt     ) << "\n"; }
+    if (this->gpt2band.is_allocated()     ) { std::cout << prefix << "gpt2band     : " << conv::sum(this->gpt2band     ) << "\n"; }
+    if (this->band_lims_wvn.is_allocated()) { std::cout << prefix << "band_lims_wvn: " << conv::sum(this->band_lims_wvn) << "\n"; }
+    if (this->tau.is_allocated()          ) { std::cout << prefix << "tau          : " << conv::sum(this->tau          ) << "\n"; }
   }
 };
 #endif
@@ -775,11 +756,16 @@ inline void OpticalProps1scl::increment(OpticalProps2str &that) {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-class OpticalProps2strK : public OpticalPropsArryK {
-public:
-  real3dk ssa; // single-scattering albedo (ncol, nlay, ngpt)
-  real3dk g;   // asymmetry parameter (ncol, nlay, ngpt)
+template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+class OpticalProps2strK : public OpticalPropsArryK<RealT, LayoutT, DeviceT> {
+ public:
 
+  using parent_t = OpticalPropsArryK<RealT, LayoutT, DeviceT>;
+  template <typename T>
+  using view_t = typename parent_t::template view_t<T>;
+
+  view_t<RealT***> ssa; // single-scattering albedo (ncol, nlay, ngpt)
+  view_t<RealT***> g;   // asymmetry parameter (ncol, nlay, ngpt)
 
   void validate() const {
     if ( ! this->tau.is_allocated() || ! this->ssa.is_allocated() || ! this->g.is_allocated() ) {
@@ -799,8 +785,8 @@ public:
     #endif
   }
 
-
-  void delta_scale(real3dk const &forward=real3dk()) {
+  template <typename ForwardT=view_t<RealT***> >
+  void delta_scale(ForwardT const &forward=view_t<RealT***>()) {
 
     // Forward scattering fraction; g**2 if not provided
     int ncol = this->get_ncol();
@@ -819,33 +805,27 @@ public:
     }
   }
 
-
   void alloc_2str(int ncol, int nlay) {
     if (! this->is_initialized()) { stoprun("optical_props::alloc: spectral discretization hasn't been provided"); }
     if (ncol <= 0 || nlay <= 0) { stoprun("optical_props::alloc: must provide positive extents for ncol, nlay"); }
     this->tau = real3dk("tau",ncol,nlay,this->get_ngpt());
     this->ssa = real3dk("ssa",ncol,nlay,this->get_ngpt());
     this->g   = real3dk("g  ",ncol,nlay,this->get_ngpt());
-    Kokkos::deep_copy(tau, 0);
-    Kokkos::deep_copy(ssa, 0);
-    Kokkos::deep_copy(g,   0);
   }
 
-
-  void alloc_2str(int ncol, int nlay, real2dk const &band_lims_wvn, int2dk const &band_lims_gpt=int2dk(), std::string name="") {
+  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**> >
+  void alloc_2str(int ncol, int nlay, BandLimsWvnT const &band_lims_wvn, BandLimsGptT const &band_lims_gpt=view_t<int**>(), std::string name="") {
     this->init(band_lims_wvn, band_lims_gpt, name);
     this->alloc_2str(ncol, nlay);
   }
 
-
-  void alloc_2str(int ncol, int nlay, OpticalPropsK const &opIn, std::string name="") {
+  void alloc_2str(int ncol, int nlay, OpticalPropsK<RealT, LayoutT, DeviceT> const &opIn, std::string name="") {
     if (this->is_initialized()) { this->finalize(); }
     this->init(opIn.get_band_lims_wavenumber(), opIn.get_band_lims_gpoint(), name);
     this->alloc_2str(ncol, nlay);
   }
 
-
-  void increment(OpticalProps1sclK &that) {
+  void increment(OpticalProps1sclK<RealT, LayoutT, DeviceT> &that) {
     if (! this->bands_are_equal(that)) { stoprun("OpticalProps::increment: optical properties objects have different band structures"); }
     int ncol = that.get_ncol();
     int nlay = that.get_nlay();
@@ -861,7 +841,7 @@ public:
   }
 
 
-  void increment(OpticalProps2strK &that) {
+  void increment(OpticalProps2strK<RealT, LayoutT, DeviceT> &that) {
     if (! this->bands_are_equal(that)) { stoprun("OpticalProps::increment: optical properties objects have different band structures"); }
     int ncol = that.get_ncol();
     int nlay = that.get_nlay();
@@ -879,19 +859,19 @@ public:
 
   void print_norms(const bool print_prefix=false) const {
     std::string prefix = print_prefix ? "JGFK" : "";
-                                        std::cout << prefix << "name         : " << name                     << "\n";
-    if (band2gpt.is_allocated()     ) { std::cout << prefix << "band2gpt     : " << conv::sum(band2gpt     ) << "\n"; }
-    if (gpt2band.is_allocated()     ) { std::cout << prefix << "gpt2band     : " << conv::sum(gpt2band     ) << "\n"; }
-    if (band_lims_wvn.is_allocated()) { std::cout << prefix << "band_lims_wvn: " << conv::sum(band_lims_wvn) << "\n"; }
-    if (tau.is_allocated()          ) { std::cout << prefix << "tau          : " << conv::sum(tau          ) << "\n"; }
-    if (ssa.is_allocated()          ) { std::cout << prefix << "ssa          : " << conv::sum(ssa          ) << "\n"; }
-    if (g.is_allocated()            ) { std::cout << prefix << "g            : " << conv::sum(g            ) << "\n"; }
+                                        std::cout << prefix << "name         : " << this->name                     << "\n";
+    if (this->band2gpt.is_allocated()     ) { std::cout << prefix << "band2gpt     : " << conv::sum(this->band2gpt     ) << "\n"; }
+    if (this->gpt2band.is_allocated()     ) { std::cout << prefix << "gpt2band     : " << conv::sum(this->gpt2band     ) << "\n"; }
+    if (this->band_lims_wvn.is_allocated()) { std::cout << prefix << "band_lims_wvn: " << conv::sum(this->band_lims_wvn) << "\n"; }
+    if (this->tau.is_allocated()          ) { std::cout << prefix << "tau          : " << conv::sum(this->tau          ) << "\n"; }
+    if (this->ssa.is_allocated()          ) { std::cout << prefix << "ssa          : " << conv::sum(this->ssa          ) << "\n"; }
+    if (this->g.is_allocated()            ) { std::cout << prefix << "g            : " << conv::sum(this->g            ) << "\n"; }
   }
 
 };
 
-
-inline void OpticalProps1sclK::increment(OpticalProps2strK &that) {
+template <typename RealT, typename LayoutT, typename DeviceT>
+inline void OpticalProps1sclK<RealT, LayoutT, DeviceT>::increment(OpticalProps2strK<RealT, LayoutT, DeviceT> &that) {
   if (! this->bands_are_equal(that)) { stoprun("OpticalProps::increment: optical properties objects have different band structures"); }
   int ncol = that.get_ncol();
   int nlay = that.get_nlay();

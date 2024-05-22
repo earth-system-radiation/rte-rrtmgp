@@ -297,6 +297,29 @@ MDRangeP<N> get_mdrp(const IntT (&upper_bounds)[N])
   return MDRangeP<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
 }
 
+template <typename LayoutT, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
+struct MDRP
+{
+  static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+    ? Kokkos::Iterate::Left
+    : Kokkos::Iterate::Right;
+  static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+    ? Kokkos::Iterate::Right
+    : Kokkos::Iterate::Left;
+
+  template <int Rank>
+  using MDRP_t = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank, LeftI, RightI> >;
+
+  template <int N, typename IntT>
+  static inline
+  MDRP_t<N> get(const IntT (&upper_bounds)[N])
+  {
+    assert(N > 1);
+    const IntT lower_bounds[N] = {0};
+    return MDRP_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
+  }
+};
+
 #ifdef RRTMGP_ENABLE_YAKL
 // Compare a yakl array to a kokkos view, checking they are functionally
 // identical (same rank, dims, and values).
@@ -811,7 +834,7 @@ public:
 
     bool isNull() { return ncid == -999; }
 
-    void open( std::string fname , int mode ) {
+    void open( const std::string& fname , int mode ) {
       close();
       if (! (mode == NETCDF_MODE_READ || mode == NETCDF_MODE_WRITE) ) {
         throw std::runtime_error("ERROR: open mode can be NETCDF_MODE_READ or NETCDF_MODE_WRITE");
@@ -819,7 +842,7 @@ public:
       ncwrap( nc_open( fname.c_str() , mode , &ncid ) , __LINE__ );
     }
 
-    void create( std::string fname , int mode ) {
+    void create( const std::string& fname , int mode ) {
       close();
       if (! (mode == NETCDF_MODE_NEW || mode == NETCDF_MODE_REPLACE) ) {
         throw std::runtime_error("ERROR: open mode can be NETCDF_MODE_NEW or NETCDF_MODE_REPLACE");
@@ -910,12 +933,12 @@ public:
 
   /** @brief Open a netcdf file
    * @param mode Can be NETCDF_MODE_READ or NETCDF_MODE_WRITE */
-  void open(std::string fname , int mode = NETCDF_MODE_READ) { file.open(fname,mode); }
+  void open(const std::string& fname , int mode = NETCDF_MODE_READ) { file.open(fname,mode); }
 
 
   /** @brief Create a netcdf file
    * @param mode Can be NETCDF_MODE_CLOBBER or NETCDF_MODE_NOCLOBBER */
-  void create(std::string fname , int mode = NC_CLOBBER) { file.create(fname,mode); }
+  void create(const std::string& fname , int mode = NC_CLOBBER) { file.create(fname,mode); }
 
 
   /** @brief Close the netcdf file */

@@ -23,6 +23,9 @@ template <typename T, typename Device=DefaultDevice>
 using FView = Kokkos::View<T, Kokkos::LayoutLeft, Device>;
 
 template <typename T, typename Device=DefaultDevice>
+using CView = Kokkos::View<T, Kokkos::LayoutRight, Device>;
+
+template <typename T, typename Device=DefaultDevice>
 using FOView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutLeft, Device>;
 
 template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
@@ -181,6 +184,72 @@ typedef FView<char**, HostDevice> charHost2dk;
 // this is useful in a couple situations
 typedef FOView<real***>             realOff3dk;
 typedef FOView<real***, HostDevice> realOffHost3dk;
+
+typedef CView<real*>       real1dkc;
+typedef CView<real**>      real2dkc;
+typedef CView<real***>     real3dkc;
+typedef CView<real****>    real4dkc;
+typedef CView<real*****>   real5dkc;
+typedef CView<real******>  real6dkc;
+typedef CView<real*******> real7dkc;
+
+typedef CView<const real*>       realConst1dkc;
+typedef CView<const real**>      realConst2dkc;
+typedef CView<const real***>     realConst3dkc;
+typedef CView<const real****>    realConst4dkc;
+typedef CView<const real*****>   realConst5dkc;
+typedef CView<const real******>  realConst6dkc;
+typedef CView<const real*******> realConst7dkc;
+
+typedef CView<real*, HostDevice>       realHost1dkc;
+typedef CView<real**, HostDevice>      realHost2dkc;
+typedef CView<real***, HostDevice>     realHost3dkc;
+typedef CView<real****, HostDevice>    realHost4dkc;
+typedef CView<real*****, HostDevice>   realHost5dkc;
+typedef CView<real******, HostDevice>  realHost6dkc;
+typedef CView<real*******, HostDevice> realHost7dkc;
+
+typedef CView<int*>       int1dkc;
+typedef CView<int**>      int2dkc;
+typedef CView<int***>     int3dkc;
+typedef CView<int****>    int4dkc;
+typedef CView<int*****>   int5dkc;
+typedef CView<int******>  int6dkc;
+typedef CView<int*******> int7dkc;
+
+typedef CView<const int*>       intConst1dkc;
+typedef CView<const int**>      intConst2dkc;
+typedef CView<const int***>     intConst3dkc;
+typedef CView<const int****>    intConst4dkc;
+typedef CView<const int*****>   intConst5dkc;
+typedef CView<const int******>  intConst6dkc;
+typedef CView<const int*******> intConst7dkc;
+
+typedef CView<int*, HostDevice>       intHost1dkc;
+typedef CView<int**, HostDevice>      intHost2dkc;
+typedef CView<int***, HostDevice>     intHost3dkc;
+typedef CView<int****, HostDevice>    intHost4dkc;
+typedef CView<int*****, HostDevice>   intHost5dkc;
+typedef CView<int******, HostDevice>  intHost6dkc;
+typedef CView<int*******, HostDevice> intHost7dkc;
+
+typedef CView<bool*>       bool1dkc;
+typedef CView<bool**>      bool2dkc;
+typedef CView<bool***>     bool3dkc;
+typedef CView<bool****>    bool4dkc;
+typedef CView<bool*****>   bool5dkc;
+typedef CView<bool******>  bool6dkc;
+typedef CView<bool*******> bool7dkc;
+
+typedef CView<bool*, HostDevice>       boolHost1dkc;
+typedef CView<bool**, HostDevice>      boolHost2dkc;
+typedef CView<bool***, HostDevice>     boolHost3dkc;
+typedef CView<bool****, HostDevice>    boolHost4dkc;
+typedef CView<bool*****, HostDevice>   boolHost5dkc;
+typedef CView<bool******, HostDevice>  boolHost6dkc;
+typedef CView<bool*******, HostDevice> boolHost7dkc;
+
+typedef CView<char**, HostDevice> charHost2dkc;
 #endif
 
 typedef std::vector<std::string> string1dv;

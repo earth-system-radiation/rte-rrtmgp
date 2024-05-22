@@ -1357,7 +1357,7 @@ public:
 
   // Everything except GasConcs is on the host by default, and the available_gases.gas_name is on the host as well
   // Things will be copied to the GPU outside of this routine and stored into class variables
-  void reduce_minor_arrays(GasConcsK   const &available_gases,
+  void reduce_minor_arrays(GasConcsK<> const &available_gases,
                            string1dv   const &gas_names,
                            string1dv   const &gas_minor,
                            string1dv   const &identifier_minor,
@@ -1568,7 +1568,7 @@ public:
 
   // Initialize absorption coefficient arrays,
   //   including Rayleigh scattering tables if provided (allocated)
-  void init_abs_coeffs(GasConcsK   const &available_gases,
+  void init_abs_coeffs(GasConcsK<> const &available_gases,
                        string1dv   const &gas_names,
                        intHost3dk  const &key_species,
                        intHost2dk  const &band2gpt,
@@ -1784,7 +1784,7 @@ public:
   // Initialize object based on data read from netCDF file however the user desires.
   //  Rayleigh scattering tables may or may not be present; this is indicated with allocation status
   // This interface is for the internal-sources object -- includes Plank functions and fractions
-  void load(GasConcsK   const &available_gases,
+  void load(GasConcsK<> const &available_gases,
             string1dv   const &gas_names,
             intHost3dk  const &key_species,
             intHost2dk  const &band2gpt,
@@ -1837,7 +1837,7 @@ public:
   // Initialize object based on data read from netCDF file however the user desires.
   //  Rayleigh scattering tables may or may not be present; this is indicated with allocation status
   // This interface is for the external-sources object -- includes TOA source function table
-  void load(GasConcsK   const &available_gases,
+  void load(GasConcsK<> const &available_gases,
             string1dv   const &gas_names,
             intHost3dk  const &key_species,
             intHost2dk  const &band2gpt,
@@ -1916,7 +1916,7 @@ public:
   // Function to define names of key and minor gases to be used by gas_optics().
   // The final list gases includes those that are defined in gas_optics_specification
   // and are provided in ty_gas_concs.
-  string1dv get_minor_list(GasConcsK const &gas_desc, int ngas, string1dv const &name_spec) const {
+  string1dv get_minor_list(GasConcsK<> const &gas_desc, int ngas, string1dv const &name_spec) const {
     // List of minor gases to be used in gas_optics()
     string1dv rv;
     for (int igas=0 ; igas < this->get_ngas() ; igas++) {
@@ -1934,7 +1934,7 @@ public:
   bool source_is_external() const { return this->solar_src.is_allocated(); }
 
   // Ensure that every key gas required by the k-distribution is present in the gas concentration object
-  void check_key_species_present(GasConcsK const &gas_desc) const {
+  void check_key_species_present(GasConcsK<> const &gas_desc) const {
     string1dv key_gas_names;
     auto is_key_h = Kokkos::create_mirror_view_and_copy(HostDevice(), this->is_key);
     for (auto i = 0; i < is_key_h.extent(0); ++i) {
@@ -1953,7 +1953,7 @@ public:
   template <class T>
   void gas_optics(const int ncol, const int nlay,
                   bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, real1dk const &tsfc,
-                  GasConcsK const &gas_desc, realOff3dk const& col_gas, T &optical_props, SourceFuncLWK &sources,
+                  GasConcsK<> const &gas_desc, realOff3dk const& col_gas, T &optical_props, SourceFuncLWK &sources,
                   real2dk const &col_dry=real2dk(), real2dk const &tlev=real2dk()) {
     using pool = conv::MemPoolSingleton;
 
@@ -2004,7 +2004,7 @@ public:
   // Compute gas optical depth given temperature, pressure, and composition
   template <class T>
   void gas_optics(const int ncol, const int nlay,
-                  bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, GasConcsK const &gas_desc,
+                  bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, GasConcsK<> const &gas_desc,
                   realOff3dk const& col_gas, T &optical_props, real2dk &toa_src, real2dk const &col_dry=real2dk()) {
     using pool = conv::MemPoolSingleton;
 
@@ -2041,7 +2041,7 @@ public:
   // Returns optical properties and interpolation coefficients
   template <class T>
   void compute_gas_taus(bool top_at_1, int ncol, int nlay, int ngpt, int nband, real2dk const &play, real2dk const &plev, real2dk const &tlay,
-                        GasConcsK const &gas_desc, realOff3dk const& col_gas, T &optical_props, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta,
+                        GasConcsK<> const &gas_desc, realOff3dk const& col_gas, T &optical_props, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta,
                         bool2dk const &tropo, real6dk const &fmajor, real2dk const &col_dry=real2dk() ) {
     // Number of molecules per cm^2
     using pool = conv::MemPoolSingleton;

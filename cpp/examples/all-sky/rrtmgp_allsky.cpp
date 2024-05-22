@@ -24,6 +24,8 @@ int main(int argc , char **argv) {
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
   Kokkos::initialize(argc, argv);
+
+  using MDRP = conv::MDRP<Kokkos::LayoutRight>;
 #endif
 
   {
@@ -75,12 +77,12 @@ int main(int argc , char **argv) {
     real2d col_dry;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-    real2dk p_lay_k;
-    real2dk t_lay_k;
-    real2dk p_lev_k;
-    real2dk t_lev_k;
+    real2dkc p_lay_k;
+    real2dkc t_lay_k;
+    real2dkc p_lev_k;
+    real2dkc t_lev_k;
     GasConcsK gas_concs_k;
-    real2dk col_dry_k;
+    real2dkc col_dry_k;
 #endif
 
     // Read data from the input file
@@ -91,7 +93,7 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_KOKKOS
     read_atmos(input_file, p_lay_k, t_lay_k, p_lev_k, t_lev_k, gas_concs_k, col_dry_k, ncol);
     COMPARE_ALL_WRAP(std::vector<real2d>({p_lay, t_lay, p_lev, t_lev, col_dry}),
-                     std::vector<real2dk>({p_lay_k, t_lay_k, p_lev_k, t_lev_k, col_dry_k}));
+                     std::vector<real2dkc>({p_lay_k, t_lay_k, p_lev_k, t_lev_k, col_dry_k}));
     VALIDATE_KOKKOS(gas_concs, gas_concs_k);
 #endif
 
@@ -188,10 +190,10 @@ int main(int argc , char **argv) {
       mu0         = 0.86;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real2dk toa_flux_k   ("toa_flux"   ,ncol,ngpt);
-      real2dk sfc_alb_dir_k("sfc_alb_dir",nbnd,ncol);
-      real2dk sfc_alb_dif_k("sfc_alb_dif",nbnd,ncol);
-      real1dk mu0_k        ("mu0"        ,ncol);
+      real2dkc toa_flux_k   ("toa_flux"   ,ncol,ngpt);
+      real2dkc sfc_alb_dir_k("sfc_alb_dir",nbnd,ncol);
+      real2dkc sfc_alb_dif_k("sfc_alb_dif",nbnd,ncol);
+      real1dkc mu0_k        ("mu0"        ,ncol);
       // Ocean-ish values for no particular reason
       Kokkos::deep_copy(sfc_alb_dir_k, 0.06);
       Kokkos::deep_copy(sfc_alb_dif_k, 0.06);
@@ -210,14 +212,14 @@ int main(int argc , char **argv) {
       real3d bnd_flux_net("bnd_flux_net",ncol,nlay+1,nbnd);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real2dk flux_up_k ("flux_up" ,ncol,nlay+1);
-      real2dk flux_dn_k ("flux_dn" ,ncol,nlay+1);
-      real2dk flux_dir_k("flux_dir",ncol,nlay+1);
-      real2dk flux_net_k("flux_net",ncol,nlay+1);
-      real3dk bnd_flux_up_k ("bnd_flux_up" ,ncol,nlay+1,nbnd);
-      real3dk bnd_flux_dn_k ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
-      real3dk bnd_flux_dir_k("bnd_flux_dir",ncol,nlay+1,nbnd);
-      real3dk bnd_flux_net_k("bnd_flux_net",ncol,nlay+1,nbnd);
+      real2dkc flux_up_k ("flux_up" ,ncol,nlay+1);
+      real2dkc flux_dn_k ("flux_dn" ,ncol,nlay+1);
+      real2dkc flux_dir_k("flux_dir",ncol,nlay+1);
+      real2dkc flux_net_k("flux_net",ncol,nlay+1);
+      real3dkc bnd_flux_up_k ("bnd_flux_up" ,ncol,nlay+1,nbnd);
+      real3dkc bnd_flux_dn_k ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
+      real3dkc bnd_flux_dir_k("bnd_flux_dir",ncol,nlay+1,nbnd);
+      real3dkc bnd_flux_net_k("bnd_flux_net",ncol,nlay+1,nbnd);
 #endif
 
       // Clouds
@@ -229,11 +231,11 @@ int main(int argc , char **argv) {
       bool2d cloud_mask("cloud_mask",ncol,nlay);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real2dk lwp_k("lwp",ncol,nlay);
-      real2dk iwp_k("iwp",ncol,nlay);
-      real2dk rel_k("rel",ncol,nlay);
-      real2dk rei_k("rei",ncol,nlay);
-      bool2dk cloud_mask_k("cloud_mask",ncol,nlay);
+      real2dkc lwp_k("lwp",ncol,nlay);
+      real2dkc iwp_k("iwp",ncol,nlay);
+      real2dkc rel_k("rel",ncol,nlay);
+      real2dkc rei_k("rei",ncol,nlay);
+      bool2dkc cloud_mask_k("cloud_mask",ncol,nlay);
 #endif
 
       // Restrict clouds to troposphere (> 100 hPa = 100*100 Pa) and not very close to the ground (< 900 hPa), and
@@ -256,7 +258,7 @@ int main(int argc , char **argv) {
       });
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && ((icol+1) % 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);
@@ -266,7 +268,7 @@ int main(int argc , char **argv) {
       });
       COMPARE_WRAP(cloud_mask, cloud_mask_k);
       COMPARE_ALL_WRAP(std::vector<real2d>({lwp, iwp, rel, rei}),
-                       std::vector<real2dk>({lwp_k, iwp_k, rel_k, rei_k}));
+                       std::vector<real2dkc>({lwp_k, iwp_k, rel_k, rei_k}));
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
@@ -555,7 +557,7 @@ int main(int argc , char **argv) {
       });
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && ((icol+1) % 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);

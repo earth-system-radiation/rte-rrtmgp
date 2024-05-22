@@ -11,5 +11,5 @@ void expand_and_transpose(OpticalProps const &ops, real2d const &arr_in, real2d 
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)
-void expand_and_transpose(OpticalPropsK const &ops, real2dk const &arr_in, real2dk const &arr_out);
+void expand_and_transpose(OpticalPropsK<> const &ops, real2dk const &arr_in, real2dk const &arr_out);
 #endif

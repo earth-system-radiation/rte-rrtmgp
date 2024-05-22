@@ -228,16 +228,18 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
+template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class GasConcsK {
 public:
   static int constexpr GAS_NOT_IN_LIST = -1;
 
+  using real3d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
+
   string1dv gas_name;  // List of gas names defined upon init
-  real3dk   concs;
+  real3d_t  concs;
   int       ncol;
   int       nlay;
   int       ngas;
-
 
   GasConcsK() {
     ncol = 0;
@@ -245,20 +247,17 @@ public:
     ngas = 0;
   }
 
-
   ~GasConcsK() {
     reset();
   }
 
-
   void reset() {
     gas_name = string1dv();  // Dealloc
-    concs  = real3dk();
+    concs  = real3d_t();
     ncol = 0;
     nlay = 0;
     ngas = 0;
   }
-
 
   void init(string1dv const &gas_names , int ncol , int nlay) {
     this->reset();
@@ -278,7 +277,7 @@ public:
 
     // Allocate
     this->gas_name = string1dv(ngas);
-    this->concs  = real3dk ("concs"   ,ncol,nlay,ngas);
+    this->concs  = real3d_t("concs"   ,ncol,nlay,ngas);
 
     // Assign gas names
     for (int i=0; i<ngas; i++) {
@@ -288,7 +287,7 @@ public:
 
 
   // Set concentration as a scalar copied to every column and level
-  void set_vmr(std::string gas, real w) {
+  void set_vmr(std::string gas, const RealT w) {
     int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
       stoprun("GasConcs::set_vmr(): trying to set a gas whose name was not provided at initialization");
@@ -302,7 +301,8 @@ public:
 
   // Set concentration as a single column copied to all other columns
   // w is expected to be in device memory
-  void set_vmr(std::string gas, real1dk const &w) {
+  template <typename ViewT, typename std::enable_if<ViewT::rank == 1>::type* = nullptr>
+  void set_vmr(std::string gas, ViewT const &w) {
 
     if (w.extent(0) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)"); }
     int igas = this->find_gas(gas);
@@ -325,7 +325,8 @@ public:
 
   // Set concentration as a 2-D field of columns and levels
   // w is expected to be in device memory
-  void set_vmr(std::string gas, real2dk const &w) {
+  template <typename ViewT, typename std::enable_if<ViewT::rank == 2>::type* = nullptr>
+  void set_vmr(std::string gas, ViewT const &w) {
     if (w.extent(0) != this->ncol) { stoprun("GasConcs::set_vmr: different dimension (ncol)" ); }
     if (w.extent(1) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)" ); }
     int igas = this->find_gas(gas);

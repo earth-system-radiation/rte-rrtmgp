@@ -1233,8 +1233,23 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-class GasOpticsRRTMGPK : public OpticalPropsK {
-public:
+template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
+ public:
+
+  using parent_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
+  template <typename T>
+  using view_t = typename parent_t::template view_t<T>;
+
+  using hparent_t = OpticalPropsK<RealT, LayoutT, HostDevice>;
+  using hview_t = typename hparent_t::template view_t<T>;
+
+  template <typename T>
+  using oview_t = Kokkos::Experimental::OffsetView<T, LayoutT, DeviceT>;
+
+  template <typename T>
+  using hoview_t = Kokkos::Experimental::OffsetView<T, LayoutT, HostDevice>;
+
   // RRTMGP computes absorption in each band arising from
   //   two major species in each band, which are combined to make
   //     a relative mixing ratio eta and a total column amount (col_mix)
@@ -1242,21 +1257,21 @@ public:
   //     may be scaled by other components of the atmosphere
   // Absorption coefficients are interpolated from tables on a pressure/temperature/(eta) grid
   // Interpolation variables: Temperature and pressure grids
-  real1dk press_ref;
-  real1dk press_ref_log;
-  real1dk temp_ref;
+  view_t<RealT*> press_ref;
+  view_t<RealT*> press_ref_log;
+  view_t<RealT*> temp_ref;
 
   // Derived and stored for convenience:
   //   Min and max for temperature and pressure intepolation grids
   //   difference in ln pressure between consecutive reference levels
   //   log of reference pressure separating the lower and upper atmosphere
-  real press_ref_min;
-  real press_ref_max;
-  real temp_ref_min;
-  real temp_ref_max;
-  real press_ref_log_delta;
-  real temp_ref_delta;
-  real press_ref_trop_log;
+  RealT press_ref_min;
+  RealT press_ref_max;
+  RealT temp_ref_min;
+  RealT temp_ref_max;
+  RealT press_ref_log_delta;
+  RealT temp_ref_delta;
+  RealT press_ref_trop_log;
 
   int max_gpt_diff_lower;
   int max_gpt_diff_upper;
@@ -1265,62 +1280,62 @@ public:
   //   Each unique set of major species is called a flavor.
   // Names  and reference volume mixing ratios of major gases
   string1dv gas_names; // gas names
-  realOff3dk vmr_ref;  // vmr_ref(lower or upper atmosphere, gas, temp)
+  oview_t<RealT***> vmr_ref;  // vmr_ref(lower or upper atmosphere, gas, temp)
 
   // Which two gases are in each flavor? By index
-  int2dk flavor;        // major species pair; (2,nflav)
+  view_t<int**> flavor;        // major species pair; (2,nflav)
 
   // Which flavor for each g-point? One each for lower, upper atmosphere
-  int2dk gpoint_flavor; // flavor = gpoint_flavor(2, g-point)
+  view_t<int**> gpoint_flavor; // flavor = gpoint_flavor(2, g-point)
 
   // Major gas absorption coefficients
-  real4dk kmajor;       //  kmajor(g-point,eta,pressure,temperature)
+  view_t<RealT****> kmajor;       //  kmajor(g-point,eta,pressure,temperature)
 
   // Minor species, independently for upper and lower atmospheres
   //   Array extents in the n_minor dimension will differ between upper and lower atmospheres
   //   Each contribution has starting and ending g-points
-  int2dk minor_limits_gpt_lower;
-  int2dk minor_limits_gpt_upper;
+  view_t<int**> minor_limits_gpt_lower;
+  view_t<int**> minor_limits_gpt_upper;
 
   // Minor gas contributions might be scaled by other gas amounts; if so we need to know
   //   the total density and whether the contribution is scaled by the partner gas
   //   or its complement (i.e. all other gases)
   // Water vapor self- and foreign continua work like this, as do
   //   all collision-induced abosption pairs
-  bool1dk minor_scales_with_density_lower;
-  bool1dk minor_scales_with_density_upper;
-  bool1dk scale_by_complement_lower;
-  bool1dk scale_by_complement_upper;
-  int1dk idx_minor_lower;
-  int1dk idx_minor_upper;
-  int1dk idx_minor_scaling_lower;
-  int1dk idx_minor_scaling_upper;
+  view_t<bool*> minor_scales_with_density_lower;
+  view_t<bool*> minor_scales_with_density_upper;
+  view_t<bool*> scale_by_complement_lower;
+  view_t<bool*> scale_by_complement_upper;
+  view_t<int*> idx_minor_lower;
+  view_t<int*> idx_minor_upper;
+  view_t<int*> idx_minor_scaling_lower;
+  view_t<int*> idx_minor_scaling_upper;
 
   // Index into table of absorption coefficients
-  int1dk kminor_start_lower;
-  int1dk kminor_start_upper;
+  view_t<int*> kminor_start_lower;
+  view_t<int*> kminor_start_upper;
 
   // The absorption coefficients themselves
-  real3dk kminor_lower; // kminor_lower(n_minor,eta,temperature)
-  real3dk kminor_upper; // kminor_upper(n_minor,eta,temperature)
+  view_t<RealT***> kminor_lower; // kminor_lower(n_minor,eta,temperature)
+  view_t<RealT***> kminor_upper; // kminor_upper(n_minor,eta,temperature)
 
   // Rayleigh scattering coefficients
-  real4dk krayl; // krayl(g-point,eta,temperature,upper/lower atmosphere)
+  view_t<RealT****> krayl; // krayl(g-point,eta,temperature,upper/lower atmosphere)
 
   // Planck function spectral mapping
   //   Allocated only when gas optics object is internal-source
-  real4dk planck_frac;   // stored fraction of Planck irradiance in band for given g-point
+  view_t<RealT****> planck_frac;   // stored fraction of Planck irradiance in band for given g-point
                         // planck_frac(g-point, eta, pressure, temperature)
-  real2dk totplnk;       // integrated Planck irradiance by band; (Planck temperatures,band)
-  real   totplnk_delta; // temperature steps in totplnk
+  view_t<RealT**> totplnk;       // integrated Planck irradiance by band; (Planck temperatures,band)
+  RealT   totplnk_delta; // temperature steps in totplnk
 
   // Solar source function spectral mapping
   //   Allocated only when gas optics object is external-source
-  real1dk solar_src; // incoming solar irradiance(g-point)
+  view_t<RealT*> solar_src; // incoming solar irradiance(g-point)
 
   // Ancillary
   // Index into %gas_names -- is this a key species in any band?
-  bool1dk is_key;
+  view_t<bool*> is_key;
 
   void finalize () {
       press_ref = decltype(press_ref)();
@@ -1352,33 +1367,36 @@ public:
       is_key = decltype(is_key)();
 
       // Free memory in base class
-      OpticalPropsK::finalize();
+      parent_t::finalize();
   }
 
   // Everything except GasConcs is on the host by default, and the available_gases.gas_name is on the host as well
   // Things will be copied to the GPU outside of this routine and stored into class variables
-  void reduce_minor_arrays(GasConcsK<> const &available_gases,
-                           string1dv   const &gas_names,
-                           string1dv   const &gas_minor,
-                           string1dv   const &identifier_minor,
-                           realHost3dk const &kminor_atm,
-                           string1dv   const &minor_gases_atm,
-                           intHost2dk  const &minor_limits_gpt_atm,
-                           boolHost1dk const &minor_scales_with_density_atm,
-                           string1dv   const &scaling_gas_atm,
-                           boolHost1dk const &scale_by_complement_atm,
-                           intHost1dk  const &kminor_start_atm,
-                           realHost3dk       &kminor_atm_red,
-                           string1dv         &minor_gases_atm_red,
-                           intHost2dk        &minor_limits_gpt_atm_red,
-                           boolHost1dk       &minor_scales_with_density_atm_red,
-                           string1dv         &scaling_gas_atm_red,
-                           boolHost1dk       &scale_by_complement_atm_red,
-                           intHost1dk        &kminor_start_atm_red) {
+  template <typename KminorAtmT, typename MinorLimitsT, typename MinorScalesT, typename ScaleByT,
+            typename KminorStartT, typename KminorAtmRedT, typename MinorLimitsRedT,
+            typename MinorScalesRedT, typename ScaleByRedT, typename KminorStartRedT>
+  void reduce_minor_arrays(GasConcsK<RealT, LayoutT, DeviceT> const &available_gases,
+                           string1dv    const &gas_names,
+                           string1dv    const &gas_minor,
+                           string1dv    const &identifier_minor,
+                           KminorAtmT   const &kminor_atm,
+                           string1dv    const &minor_gases_atm,
+                           MinorLimitsT const &minor_limits_gpt_atm,
+                           MinorScalesT const &minor_scales_with_density_atm,
+                           string1dv    const &scaling_gas_atm,
+                           ScaleByT     const &scale_by_complement_atm,
+                           KminorStartT const &kminor_start_atm,
+                           KminorAtmRedT      &kminor_atm_red,
+                           string1dv          &minor_gases_atm_red,
+                           MinorLimitsRedT    &minor_limits_gpt_atm_red,
+                           MinorScalesRedT    &minor_scales_with_density_atm_red,
+                           string1dv          &scaling_gas_atm_red,
+                           ScaleByRedT        &scale_by_complement_atm_red,
+                           KminorStartRedT    &kminor_start_atm_red) {
     int nm = minor_gases_atm.size();  // Size of the larger list of minor gases
     int tot_g = 0;
     int red_nm = 0;                    // Reduced number of minor gasses (only the ones we need)
-    boolHost1dk gas_is_present("gas_is_present",nm);   // Determines whether a gas in the list is needed
+    hview_t<bool*> gas_is_present("gas_is_present",nm);   // Determines whether a gas in the list is needed
     // Determine the gasses needed
     for (int i=0; i < nm; i++) {
       int idx_mnr = string_loc_in_array(minor_gases_atm[i], identifier_minor);
@@ -1391,12 +1409,12 @@ public:
 
     // Allocate reduced arrays
     minor_gases_atm_red               = string1dv  (red_nm);
-    minor_scales_with_density_atm_red = boolHost1dk("minor_scales_with_density_atm_red"  ,red_nm);
+    minor_scales_with_density_atm_red = hview_t<bool*>("minor_scales_with_density_atm_red"  ,red_nm);
     scaling_gas_atm_red               = string1dv  (red_nm);
-    scale_by_complement_atm_red       = boolHost1dk("scale_by_complement_atm_red      "  ,red_nm);
-    kminor_start_atm_red              = intHost1dk ("kminor_start_atm_red             "  ,red_nm);
-    minor_limits_gpt_atm_red          = intHost2dk ("minor_limits_gpt_atm_red         ",2,red_nm);
-    kminor_atm_red                    = realHost3dk("kminor_atm_red                   ",tot_g , kminor_atm.extent(1), kminor_atm.extent(2));
+    scale_by_complement_atm_red       = hview_t<bool*>("scale_by_complement_atm_red      "  ,red_nm);
+    kminor_start_atm_red              = hview_t<int*> ("kminor_start_atm_red             "  ,red_nm);
+    minor_limits_gpt_atm_red          = hview_t<int**> ("minor_limits_gpt_atm_red         ",2,red_nm);
+    kminor_atm_red                    = hview_t<RealT**>("kminor_atm_red                   ",tot_g , kminor_atm.extent(1), kminor_atm.extent(2));
 
     if (red_nm == nm) {
       // If the gasses listed exactly matches the gasses needed, just copy it
@@ -1446,8 +1464,8 @@ public:
 
   // create index list for extracting col_gas needed for minor gas optical depth calculations
   void create_idx_minor(string1dv const &gas_names, string1dv const &gas_minor, string1dv const &identifier_minor,
-                        string1dv const &minor_gases_atm, intHost1dk &idx_minor_atm) {
-    idx_minor_atm = intHost1dk("idx_minor_atm", minor_gases_atm.size());
+                        string1dv const &minor_gases_atm, hview_t<int*> &idx_minor_atm) {
+    idx_minor_atm = hview_t<int*>("idx_minor_atm", minor_gases_atm.size());
     for (size_t imnr=0 ; imnr < minor_gases_atm.size() ; imnr++) {
       // Find identifying string for minor species in list of possible identifiers (e.g. h2o_slf)
       int idx_mnr     = string_loc_in_array(minor_gases_atm[imnr], identifier_minor);
@@ -1458,21 +1476,22 @@ public:
 
   // create index for special treatment in density scaling of minor gases
   void create_idx_minor_scaling(string1dv const &gas_names, string1dv const &scaling_gas_atm,
-                                intHost1dk &idx_minor_scaling_atm) {
-    idx_minor_scaling_atm = intHost1dk("idx_minor_scaling_atm", scaling_gas_atm.size());
+                                hview_t<int*> &idx_minor_scaling_atm) {
+    idx_minor_scaling_atm = hview_t<int*>("idx_minor_scaling_atm", scaling_gas_atm.size());
     for (auto imnr=0 ; imnr < scaling_gas_atm.size() ; imnr++) {
       // This will be -1 if there's no interacting gas
       idx_minor_scaling_atm(imnr) = string_loc_in_array(scaling_gas_atm[imnr], gas_names);
     }
   }
 
-  void create_key_species_reduce(string1dv const &gas_names, string1dv const &gas_names_red, intHost3dk const &key_species,
-                                 intHost3dk &key_species_red, boolHost1dk &key_species_present_init) {
+  template <typename KeySpeciesT>
+  void create_key_species_reduce(string1dv const &gas_names, string1dv const &gas_names_red, KeySpeciesT const &key_species,
+                                 hview_t<int***> &key_species_red, hview_t<bool*> &key_species_present_init) {
     int np = key_species.extent(0);
     int na = key_species.extent(1);
     int nt = key_species.extent(2);
-    key_species_red = intHost3dk("key_species_red",np,na,nt);
-    key_species_present_init = boolHost1dk("key_species_present_init", gas_names.size());
+    key_species_red = hview_t<int***>("key_species_red",np,na,nt);
+    key_species_present_init = hview_t<bool*>("key_species_present_init", gas_names.size());
     Kokkos::deep_copy(key_species_present_init, true);
 
     for (int ip=0 ; ip < np ; ip++) {
@@ -1493,10 +1512,11 @@ public:
 
   // Create flavor list
   // An unordered array of extent (2,:) containing all possible pairs of key species used in either upper or lower atmos
-  void create_flavor(intHost3dk const &key_species, intHost2dk &flavor) {
+  template <typename KeySpeciesT>
+  void create_flavor(KeySpeciesT const &key_species, hview_t<int**> &flavor) {
     // prepare list of key_species
     int i = 0;
-    intHost2dk key_species_list("key_species_list", 2, key_species.extent(2)*2);
+    hview_t<int**> key_species_list("key_species_list", 2, key_species.extent(2)*2);
     for (int ibnd=0 ; ibnd < key_species.extent(2) ; ibnd++) {
       for (int iatm=0 ; iatm < key_species.extent(0) ; iatm++, i++) {
         key_species_list(0,i) = key_species(0,iatm,ibnd);
@@ -1524,7 +1544,7 @@ public:
       if (unique) { ++iflavor; }
     }
     // fill flavors
-    flavor = intHost2dk("flavor",2,iflavor);
+    flavor = hview_t<int**>("flavor",2,iflavor);
     iflavor = 0;
     for (int i=0 ; i < key_species_list.extent(1) ; i++) {
       bool unique = true;
@@ -1543,10 +1563,11 @@ public:
   }
 
   // create gpoint_flavor list: a map pointing from each g-point to the corresponding entry in the "flavor list"
-  void create_gpoint_flavor(intHost3dk const &key_species, intHost1dk const &gpt2band, intHost2dk const &flavor,
-                            intHost2dk &gpoint_flavor) {
+  template <typename KeySpeciesT, typename Gpt2T, typename FlavorT>
+  void create_gpoint_flavor(KeySpeciesT const &key_species, Gpt2T const &gpt2band, FlavorT const &flavor,
+                            hview_t<int**> &gpoint_flavor) {
     int ngpt = gpt2band.extent(0);
-    gpoint_flavor = intHost2dk("gpoint_flavor",2,ngpt);
+    gpoint_flavor = hview_t<int**>("gpoint_flavor",2,ngpt);
     for (int igpt=0 ; igpt < ngpt ; igpt++) {
       for (int iatm = 0 ; iatm < 2 ; iatm++) {
         int key_species_pair2flavor = -1;
@@ -1568,39 +1589,45 @@ public:
 
   // Initialize absorption coefficient arrays,
   //   including Rayleigh scattering tables if provided (allocated)
-  void init_abs_coeffs(GasConcsK<> const &available_gases,
-                       string1dv   const &gas_names,
-                       intHost3dk  const &key_species,
-                       intHost2dk  const &band2gpt,
-                       realHost2dk const &band_lims_wavenum,
-                       realHost1dk const &press_ref,
-                       realHost1dk const &temp_ref,
-                       real              press_ref_trop,
-                       real              temp_ref_p,
-                       real              temp_ref_t,
-                       realHost3dk const &vmr_ref,
-                       realHost4dk const &kmajor,
-                       realHost3dk const &kminor_lower,
-                       realHost3dk const &kminor_upper,
-                       string1dv   const &gas_minor,
-                       string1dv   const &identifier_minor,
-                       string1dv   const &minor_gases_lower,
-                       string1dv   const &minor_gases_upper,
-                       intHost2dk  const &minor_limits_gpt_lower,
-                       intHost2dk  const &minor_limits_gpt_upper,
-                       boolHost1dk const &minor_scales_with_density_lower,
-                       boolHost1dk const &minor_scales_with_density_upper,
-                       string1dv   const &scaling_gas_lower,
-                       string1dv   const &scaling_gas_upper,
-                       boolHost1dk const &scale_by_complement_lower,
-                       boolHost1dk const &scale_by_complement_upper,
-                       intHost1dk  const &kminor_start_lower,
-                       intHost1dk  const &kminor_start_upper,
-                       realHost3dk const &rayl_lower,
-                       realHost3dk const &rayl_upper) {
-    auto band_lims_wavenum_h = Kokkos::create_mirror_view_and_copy(DefaultDevice(), band_lims_wavenum);
-    auto band2gpt_h = Kokkos::create_mirror_view_and_copy(DefaultDevice(), band2gpt);
-    OpticalPropsK::init(band_lims_wavenum_h, band2gpt_h);
+  template <typename KeySpeciesT, typename Band2gptT, typename BandLimsT, typename PressT,
+            typename TempT, typename VmrT, typename KmajorT, typename KminorLowerT,
+            typename KminorUpperT, typename MinorLimitsLowerT, typename MinorLimitsUpperT,
+            typename MinorScalesLowerT, typename MinorScalesUpperT, typename ScaleCompLowerT,
+            typename ScaleCompUpperT, typename KminorStartLowerT, typename KminorStartUpperT,
+            typename RaylLowerT, typename RaylUpperT>
+  void init_abs_coeffs(GasConcsK<RealT, LayoutT, DeviceT> const &available_gases,
+                       string1dv   const        &gas_names,
+                       KeySpeciesT const        &key_species,
+                       Band2gptT   const        &band2gpt,
+                       BandLimsT   const        &band_lims_wavenum,
+                       PressT      const        &press_ref,
+                       TempT       const        &temp_ref,
+                       RealT                     press_ref_trop,
+                       RealT                     temp_ref_p,
+                       RealT                     temp_ref_t,
+                       VmrT              const &vmr_ref,
+                       KmajorT           const &kmajor,
+                       KminorLowerT      const &kminor_lower,
+                       KminorUpperT      const &kminor_upper,
+                       string1dv         const &gas_minor,
+                       string1dv         const &identifier_minor,
+                       string1dv         const &minor_gases_lower,
+                       string1dv         const &minor_gases_upper,
+                       MinorLimitsLowerT const &minor_limits_gpt_lower,
+                       MinorLimitsUpperT const &minor_limits_gpt_upper,
+                       MinorScalesLowerT const &minor_scales_with_density_lower,
+                       MinorScalesUpperT const &minor_scales_with_density_upper,
+                       string1dv         const &scaling_gas_lower,
+                       string1dv         const &scaling_gas_upper,
+                       ScaleCompLowerT   const &scale_by_complement_lower,
+                       ScaleCompUpperT   const &scale_by_complement_upper,
+                       KminorStartLowerT const &kminor_start_lower,
+                       KminorStartUpperT const &kminor_start_upper,
+                       RaylLowerT        const &rayl_lower,
+                       RaylUpperT        const &rayl_upper) {
+    auto band_lims_wavenum_h = Kokkos::create_mirror_view_and_copy(DeviceT(), band_lims_wavenum);
+    auto band2gpt_h = Kokkos::create_mirror_view_and_copy(DeviceT(), band2gpt);
+    parent_t::init(band_lims_wavenum_h, band2gpt_h);
 
     // Which gases known to the gas optics are present in the host model (available_gases)?
     for (auto item : gas_names) {
@@ -1615,7 +1642,7 @@ public:
     const int vmr_e0 = vmr_ref.extent(0);
     const int vmr_e2 = vmr_ref.extent(2);
 
-    realOffHost3dk vmr_ref_red("vmr_ref_red", std::make_pair(0, vmr_e0-1), std::make_pair(-1, ngas-1), std::make_pair(0, vmr_e2-1));
+    hoview_t<RealT***> vmr_ref_red("vmr_ref_red", std::make_pair(0, vmr_e0-1), std::make_pair(-1, ngas-1), std::make_pair(0, vmr_e2-1));
     // Gas 0 is used in single-key species method, set to 1.0 (col_dry)
     for (int k=0 ; k < vmr_e2 ; k++) {
       for (int j=0 ; j < vmr_e0 ; j++) {
@@ -1631,19 +1658,19 @@ public:
       }
     }
     // Allocate class copy, and deep copy to the class data member
-    this->vmr_ref = Kokkos::create_mirror_view_and_copy(DefaultDevice(), vmr_ref_red);
+    this->vmr_ref = Kokkos::create_mirror_view_and_copy(DeviceT(), vmr_ref_red);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // REDUCE MINOR ARRAYS SO VARIABLES ONLY CONTAIN MINOR GASES THAT ARE AVAILABLE
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOWER MINOR GASSES
-    string1dv   minor_gases_lower_red;
-    string1dv   scaling_gas_lower_red;
-    realHost3dk kminor_lower_red;
-    intHost2dk  minor_limits_gpt_lower_red;
-    boolHost1dk minor_scales_with_density_lower_red;
-    boolHost1dk scale_by_complement_lower_red;
-    intHost1dk  kminor_start_lower_red;
+    string1dv         minor_gases_lower_red;
+    string1dv         scaling_gas_lower_red;
+    hview_t<RealT***> kminor_lower_red;
+    hview_t<int**>    minor_limits_gpt_lower_red;
+    hview_t<bool*>    minor_scales_with_density_lower_red;
+    hview_t<bool*>    scale_by_complement_lower_red;
+    hview_t<int*>     kminor_start_lower_red;
 
     reduce_minor_arrays(available_gases, gas_names, gas_minor, identifier_minor, kminor_lower, minor_gases_lower,
                         minor_limits_gpt_lower, minor_scales_with_density_lower, scaling_gas_lower,
@@ -1651,11 +1678,11 @@ public:
                         minor_limits_gpt_lower_red, minor_scales_with_density_lower_red, scaling_gas_lower_red,
                         scale_by_complement_lower_red, kminor_start_lower_red);
 
-    this->kminor_lower                    = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kminor_lower_red);
-    this->minor_limits_gpt_lower          = Kokkos::create_mirror_view_and_copy(DefaultDevice(), minor_limits_gpt_lower_red);
-    this->minor_scales_with_density_lower = Kokkos::create_mirror_view_and_copy(DefaultDevice(), minor_scales_with_density_lower_red);
-    this->scale_by_complement_lower       = Kokkos::create_mirror_view_and_copy(DefaultDevice(), scale_by_complement_lower_red);
-    this->kminor_start_lower              = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kminor_start_lower_red);
+    this->kminor_lower                    = Kokkos::create_mirror_view_and_copy(DeviceT(), kminor_lower_red);
+    this->minor_limits_gpt_lower          = Kokkos::create_mirror_view_and_copy(DeviceT(), minor_limits_gpt_lower_red);
+    this->minor_scales_with_density_lower = Kokkos::create_mirror_view_and_copy(DeviceT(), minor_scales_with_density_lower_red);
+    this->scale_by_complement_lower       = Kokkos::create_mirror_view_and_copy(DeviceT(), scale_by_complement_lower_red);
+    this->kminor_start_lower              = Kokkos::create_mirror_view_and_copy(DeviceT(), kminor_start_lower_red);
 
     // Find the largest number of g-points per band
     this->max_gpt_diff_lower = std::numeric_limits<int>::lowest();
@@ -1664,13 +1691,13 @@ public:
     }
 
     // UPPER MINOR GASSES
-    string1dv minor_gases_upper_red;
-    string1dv scaling_gas_upper_red;
-    realHost3dk kminor_upper_red;
-    intHost2dk  minor_limits_gpt_upper_red;
-    boolHost1dk minor_scales_with_density_upper_red;
-    boolHost1dk scale_by_complement_upper_red;
-    intHost1dk  kminor_start_upper_red;
+    string1dv         minor_gases_upper_red;
+    string1dv         scaling_gas_upper_red;
+    hview_t<RealT***> kminor_upper_red;
+    hview_t<int**>    minor_limits_gpt_upper_red;
+    hview_t<bool*>    minor_scales_with_density_upper_red;
+    hview_t<bool*>    scale_by_complement_upper_red;
+    hview_t<int*>     kminor_start_upper_red;
 
     reduce_minor_arrays(available_gases, gas_names, gas_minor, identifier_minor, kminor_upper, minor_gases_upper,
                         minor_limits_gpt_upper, minor_scales_with_density_upper, scaling_gas_upper,
@@ -1678,11 +1705,11 @@ public:
                         minor_limits_gpt_upper_red, minor_scales_with_density_upper_red, scaling_gas_upper_red,
                         scale_by_complement_upper_red, kminor_start_upper_red);
 
-    this->kminor_upper                    = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kminor_upper_red);
-    this->minor_limits_gpt_upper          = Kokkos::create_mirror_view_and_copy(DefaultDevice(), minor_limits_gpt_upper_red);
-    this->minor_scales_with_density_upper = Kokkos::create_mirror_view_and_copy(DefaultDevice(), minor_scales_with_density_upper_red);
-    this->scale_by_complement_upper       = Kokkos::create_mirror_view_and_copy(DefaultDevice(), scale_by_complement_upper_red);
-    this->kminor_start_upper              = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kminor_start_upper_red);
+    this->kminor_upper                    = Kokkos::create_mirror_view_and_copy(DeviceT(), kminor_upper_red);
+    this->minor_limits_gpt_upper          = Kokkos::create_mirror_view_and_copy(DeviceT(), minor_limits_gpt_upper_red);
+    this->minor_scales_with_density_upper = Kokkos::create_mirror_view_and_copy(DeviceT(), minor_scales_with_density_upper_red);
+    this->scale_by_complement_upper       = Kokkos::create_mirror_view_and_copy(DeviceT(), scale_by_complement_upper_red);
+    this->kminor_start_upper              = Kokkos::create_mirror_view_and_copy(DeviceT(), kminor_start_upper_red);
 
     // Find the largest number of g-points per band
     this->max_gpt_diff_upper = std::numeric_limits<int>::lowest();
@@ -1693,16 +1720,16 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // HANDLE ARRAYS NOT REDUCED BY THE PRESENCE, OR LACK THEREOF, OF A GAS
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    this->press_ref = Kokkos::create_mirror_view_and_copy(DefaultDevice(), press_ref);
-    this->temp_ref  = Kokkos::create_mirror_view_and_copy(DefaultDevice(), temp_ref);
-    this->kmajor    = Kokkos::create_mirror_view_and_copy(DefaultDevice(), kmajor);
+    this->press_ref = Kokkos::create_mirror_view_and_copy(DeviceT(), press_ref);
+    this->temp_ref  = Kokkos::create_mirror_view_and_copy(DeviceT(), temp_ref);
+    this->kmajor    = Kokkos::create_mirror_view_and_copy(DeviceT(), kmajor);
 
     // Process rayl_lower and rayl_upper into a combined this->krayl
     if (rayl_lower.is_allocated() != rayl_upper.is_allocated()) {
       stoprun("rayl_lower and rayl_upper must have the same allocation status");
     }
     if (rayl_lower.is_allocated()) {
-      realHost4dk krayltmp("krayltmp",rayl_lower.extent(0),rayl_lower.extent(1),rayl_lower.extent(2),2);
+      hview_t<RealT****> krayltmp("krayltmp",rayl_lower.extent(0),rayl_lower.extent(1),rayl_lower.extent(2),2);
       for (int k=0 ; k < rayl_lower.extent(2) ; k++ ) {
         for (int j=0 ; j < rayl_lower.extent(1) ; j++ ) {
           for (int i=0 ; i < rayl_lower.extent(0) ; i++ ) {
@@ -1711,14 +1738,14 @@ public:
           }
         }
       }
-      this->krayl = Kokkos::create_mirror_view_and_copy(DefaultDevice(), krayltmp);
+      this->krayl = Kokkos::create_mirror_view_and_copy(DeviceT(), krayltmp);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // POST PROCESSING
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // creates log reference pressure
-    this->press_ref_log = real1dk("press_ref_log", this->press_ref.extent(0));
+    this->press_ref_log = view_t<RealT*>("press_ref_log", this->press_ref.extent(0));
     // Running a kernel because it's more convenient in this case
     auto this_press_ref_log = this->press_ref_log;
     auto this_press_ref = this->press_ref;
@@ -1730,33 +1757,33 @@ public:
     this->press_ref_trop_log = log(press_ref_trop);
 
     // Get index of gas (if present) for determining col_gas
-    intHost1dk idx_minor_lower_tmp;
-    intHost1dk idx_minor_upper_tmp;
+    hview_t<int*> idx_minor_lower_tmp;
+    hview_t<int*> idx_minor_upper_tmp;
     create_idx_minor(this->gas_names, gas_minor, identifier_minor, minor_gases_lower_red, idx_minor_lower_tmp);
     create_idx_minor(this->gas_names, gas_minor, identifier_minor, minor_gases_upper_red, idx_minor_upper_tmp);
-    this->idx_minor_lower = Kokkos::create_mirror_view_and_copy(DefaultDevice(), idx_minor_lower_tmp);
-    this->idx_minor_upper = Kokkos::create_mirror_view_and_copy(DefaultDevice(), idx_minor_upper_tmp);
+    this->idx_minor_lower = Kokkos::create_mirror_view_and_copy(DeviceT(), idx_minor_lower_tmp);
+    this->idx_minor_upper = Kokkos::create_mirror_view_and_copy(DeviceT(), idx_minor_upper_tmp);
     // Get index of gas (if present) that has special treatment in density scaling
-    intHost1dk idx_minor_scaling_lower_tmp;
-    intHost1dk idx_minor_scaling_upper_tmp;
+    hview_t<int*> idx_minor_scaling_lower_tmp;
+    hview_t<int*> idx_minor_scaling_upper_tmp;
     create_idx_minor_scaling(this->gas_names, scaling_gas_lower_red, idx_minor_scaling_lower_tmp);
     create_idx_minor_scaling(this->gas_names, scaling_gas_upper_red, idx_minor_scaling_upper_tmp);
-    this->idx_minor_scaling_lower = Kokkos::create_mirror_view_and_copy(DefaultDevice(), idx_minor_scaling_lower_tmp);
-    this->idx_minor_scaling_upper = Kokkos::create_mirror_view_and_copy(DefaultDevice(), idx_minor_scaling_upper_tmp);
+    this->idx_minor_scaling_lower = Kokkos::create_mirror_view_and_copy(DeviceT(), idx_minor_scaling_lower_tmp);
+    this->idx_minor_scaling_upper = Kokkos::create_mirror_view_and_copy(DeviceT(), idx_minor_scaling_upper_tmp);
 
     // create flavor list
     // Reduce (remap) key_species list; checks that all key gases are present in incoming
-    boolHost1dk key_species_present_init;
-    intHost3dk  key_species_red;
+    hview_t<bool*> key_species_present_init;
+    hview_t<int***>  key_species_red;
     create_key_species_reduce(gas_names, this->gas_names, key_species, key_species_red, key_species_present_init);
     // create flavor and gpoint_flavor lists
-    intHost2dk flavor_tmp;
-    intHost2dk gpoint_flavor_tmp;
+    hview_t<int**> flavor_tmp;
+    hview_t<int**> gpoint_flavor_tmp;
     auto gpoint_bands_tmp = Kokkos::create_mirror_view_and_copy(HostDevice(), this->get_gpoint_bands());
     create_flavor       (key_species_red, flavor_tmp);
     create_gpoint_flavor(key_species_red, gpoint_bands_tmp, flavor_tmp, gpoint_flavor_tmp);
-    this->flavor        = Kokkos::create_mirror_view_and_copy(DefaultDevice(), flavor_tmp);
-    this->gpoint_flavor = Kokkos::create_mirror_view_and_copy(DefaultDevice(), gpoint_flavor_tmp);
+    this->flavor        = Kokkos::create_mirror_view_and_copy(DeviceT(), flavor_tmp);
+    this->gpoint_flavor = Kokkos::create_mirror_view_and_copy(DeviceT(), gpoint_flavor_tmp);
 
     // minimum, maximum reference temperature, pressure -- assumes low-to-high ordering
     //   for T, high-to-low ordering for p
@@ -1771,7 +1798,7 @@ public:
 
     // Which species are key in one or more bands?
     //   this->flavor is an index into this->gas_names
-    this->is_key = bool1dk("is_key",this->get_ngas());
+    this->is_key = view_t<bool*>("is_key",this->get_ngas());
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
     auto this_flavor = this->flavor;
@@ -1784,38 +1811,44 @@ public:
   // Initialize object based on data read from netCDF file however the user desires.
   //  Rayleigh scattering tables may or may not be present; this is indicated with allocation status
   // This interface is for the internal-sources object -- includes Plank functions and fractions
-  void load(GasConcsK<> const &available_gases,
-            string1dv   const &gas_names,
-            intHost3dk  const &key_species,
-            intHost2dk  const &band2gpt,
-            realHost2dk const &band_lims_wavenum,
-            realHost1dk const &press_ref,
-            real              press_ref_trop,
-            realHost1dk const &temp_ref,
-            real              temp_ref_p,
-            real              temp_ref_t,
-            realHost3dk const &vmr_ref,
-            realHost4dk const &kmajor,
-            realHost3dk const &kminor_lower,
-            realHost3dk const &kminor_upper,
-            string1dv   const &gas_minor,
-            string1dv   const &identifier_minor,
-            string1dv   const &minor_gases_lower,
-            string1dv   const &minor_gases_upper,
-            intHost2dk  const &minor_limits_gpt_lower,
-            intHost2dk  const &minor_limits_gpt_upper,
-            boolHost1dk const &minor_scales_with_density_lower,
-            boolHost1dk const &minor_scales_with_density_upper,
-            string1dv   const &scaling_gas_lower,
-            string1dv   const &scaling_gas_upper,
-            boolHost1dk const &scale_by_complement_lower,
-            boolHost1dk const &scale_by_complement_upper,
-            intHost1dk  const &kminor_start_lower,
-            intHost1dk  const &kminor_start_upper,
-            realHost2dk const &totplnk,
-            realHost4dk const &planck_frac,
-            realHost3dk const &rayl_lower,
-            realHost3dk const &rayl_upper) {
+  template <typename KeySpeciesT, typename Band2gptT, typename BandLimsT, typename PressT,
+            typename TempT, typename VmrT, typename KmajorT, typename KminorLowerT,
+            typename KminorUpperT, typename MinorLimitsLowerT, typename MinorLimitsUpperT,
+            typename MinorScalesLowerT, typename MinorScalesUpperT, typename ScaleCompLowerT,
+            typename ScaleCompUpperT, typename KminorStartLowerT, typename KminorStartUpperT,
+            typename TotplnkT, typename PlanckT, typename RaylLowerT, typename RaylUpperT>
+  void load(GasConcsK<RealT, LayoutT, DeviceT> const &available_gases,
+            string1dv   const        &gas_names,
+            KeySpeciesT  const       &key_species,
+            Band2gptT  const         &band2gpt,
+            BandLimsT const          &band_lims_wavenum,
+            PressT const             &press_ref,
+            RealT                     press_ref_trop,
+            TempT const              &temp_ref,
+            RealT                     temp_ref_p,
+            RealT                     temp_ref_t,
+            VmrT const               &vmr_ref,
+            KmajorT const            &kmajor,
+            KminorLowerT const       &kminor_lower,
+            KminorUpperT const       &kminor_upper,
+            string1dv   const        &gas_minor,
+            string1dv   const        &identifier_minor,
+            string1dv   const        &minor_gases_lower,
+            string1dv   const        &minor_gases_upper,
+            MinorLimitsLowerT  const &minor_limits_gpt_lower,
+            MinorLimitsUpperT  const &minor_limits_gpt_upper,
+            MinorScalesLowerT const  &minor_scales_with_density_lower,
+            MinorScalesUpperT const  &minor_scales_with_density_upper,
+            string1dv   const        &scaling_gas_lower,
+            string1dv   const        &scaling_gas_upper,
+            ScaleCompLowerT const    &scale_by_complement_lower,
+            ScaleCompUpperT const    &scale_by_complement_upper,
+            KminorStartLowerT  const &kminor_start_lower,
+            KminorStartUpperT  const &kminor_start_upper,
+            TotplnkT const           &totplnk,
+            PlanckT const            &planck_frac,
+            RaylLowerT const         &rayl_lower,
+            RaylUpperT const &rayl_upper) {
     init_abs_coeffs(available_gases, gas_names, key_species, band2gpt, band_lims_wavenum, press_ref, temp_ref,
                     press_ref_trop, temp_ref_p, temp_ref_t, vmr_ref, kmajor, kminor_lower, kminor_upper,
                     gas_minor, identifier_minor, minor_gases_lower, minor_gases_upper, minor_limits_gpt_lower,
@@ -1824,50 +1857,54 @@ public:
                     kminor_start_lower, kminor_start_upper, rayl_lower, rayl_upper);
 
     // Planck function tables
-    this->totplnk = Kokkos::create_mirror_view_and_copy(DefaultDevice(), totplnk);
-    this->planck_frac = Kokkos::create_mirror_view_and_copy(DefaultDevice(), planck_frac);
+    this->totplnk = Kokkos::create_mirror_view_and_copy(DeviceT(), totplnk);
+    this->planck_frac = Kokkos::create_mirror_view_and_copy(DeviceT(), planck_frac);
     // Temperature steps for Planck function interpolation
     //   Assumes that temperature minimum and max are the same for the absorption coefficient grid and the
     //   Planck grid and the Planck grid is equally spaced
     this->totplnk_delta = (this->temp_ref_max - this->temp_ref_min) / (this->totplnk.extent(0)-1);
   }
 
-
-
   // Initialize object based on data read from netCDF file however the user desires.
   //  Rayleigh scattering tables may or may not be present; this is indicated with allocation status
   // This interface is for the external-sources object -- includes TOA source function table
-  void load(GasConcsK<> const &available_gases,
-            string1dv   const &gas_names,
-            intHost3dk  const &key_species,
-            intHost2dk  const &band2gpt,
-            realHost2dk const &band_lims_wavenum,
-            realHost1dk const &press_ref,
-            real              press_ref_trop,
-            realHost1dk const &temp_ref,
-            real              temp_ref_p,
-            real              temp_ref_t,
-            realHost3dk const &vmr_ref,
-            realHost4dk const &kmajor,
-            realHost3dk const &kminor_lower,
-            realHost3dk const &kminor_upper,
-            string1dv   const &gas_minor,
-            string1dv   const &identifier_minor,
-            string1dv   const &minor_gases_lower,
-            string1dv   const &minor_gases_upper,
-            intHost2dk  const &minor_limits_gpt_lower,
-            intHost2dk  const &minor_limits_gpt_upper,
-            boolHost1dk const &minor_scales_with_density_lower,
-            boolHost1dk const &minor_scales_with_density_upper,
-            string1dv   const &scaling_gas_lower,
-            string1dv   const &scaling_gas_upper,
-            boolHost1dk const &scale_by_complement_lower,
-            boolHost1dk const &scale_by_complement_upper,
-            intHost1dk  const &kminor_start_lower,
-            intHost1dk  const &kminor_start_upper,
-            realHost1dk const &solar_src,
-            realHost3dk const &rayl_lower,
-            realHost3dk const &rayl_upper) {
+  template <typename KeySpeciesT, typename Band2gptT, typename BandLimsT, typename PressT,
+            typename TempT, typename VmrT, typename KmajorT, typename KminorLowerT,
+            typename KminorUpperT, typename MinorLimitsLowerT, typename MinorLimitsUpperT,
+            typename MinorScalesLowerT, typename MinorScalesUpperT, typename ScaleCompLowerT,
+            typename ScaleCompUpperT, typename KminorStartLowerT, typename KminorStartUpperT,
+            typename SolarT, typename RaylLowerT, typename RaylUpperT>
+  void load(GasConcsK<RealT, LayoutT, DeviceT> const &available_gases,
+            string1dv   const        &gas_names,
+            KeySpeciesT  const       &key_species,
+            Band2gptT  const         &band2gpt,
+            BandLimsT const          &band_lims_wavenum,
+            PressT const             &press_ref,
+            RealT                     press_ref_trop,
+            TempT const              &temp_ref,
+            RealT                     temp_ref_p,
+            RealT                     temp_ref_t,
+            VmrT const               &vmr_ref,
+            KmajorT const            &kmajor,
+            KminorLowerT const       &kminor_lower,
+            KminorUpperT const       &kminor_upper,
+            string1dv   const        &gas_minor,
+            string1dv   const        &identifier_minor,
+            string1dv   const        &minor_gases_lower,
+            string1dv   const        &minor_gases_upper,
+            MinorLimitsLowerT  const &minor_limits_gpt_lower,
+            MinorLimitsUpperT  const &minor_limits_gpt_upper,
+            MinorScalesLowerT const  &minor_scales_with_density_lower,
+            MinorScalesUpperT const  &minor_scales_with_density_upper,
+            string1dv   const        &scaling_gas_lower,
+            string1dv   const        &scaling_gas_upper,
+            ScaleCompLowerT const    &scale_by_complement_lower,
+            ScaleCompUpperT const    &scale_by_complement_upper,
+            KminorStartLowerT  const &kminor_start_lower,
+            KminorStartUpperT  const &kminor_start_upper,
+            SolarT const &solar_src,
+            RaylLowerT const &rayl_lower,
+            RaylUpperT const &rayl_upper) {
     init_abs_coeffs(available_gases,  gas_names, key_species, band2gpt, band_lims_wavenum, press_ref, temp_ref,
                     press_ref_trop, temp_ref_p, temp_ref_t, vmr_ref, kmajor, kminor_lower, kminor_upper,
                     gas_minor, identifier_minor, minor_gases_lower, minor_gases_upper, minor_limits_gpt_lower,
@@ -1876,7 +1913,7 @@ public:
                     kminor_start_lower, kminor_start_upper, rayl_lower, rayl_upper);
 
     // Solar source table init
-    this->solar_src = Kokkos::create_mirror_view_and_copy(DefaultDevice(), solar_src);
+    this->solar_src = Kokkos::create_mirror_view_and_copy(DeviceT(), solar_src);
     this->totplnk_delta = 0.;
   }
 
@@ -1890,16 +1927,16 @@ public:
   string1dv get_gases() const { return this->gas_names; }
 
   // return the minimum pressure on the interpolation grids
-  real get_press_min() const { return this->press_ref_min; }
+  RealT get_press_min() const { return this->press_ref_min; }
 
   // return the maximum pressure on the interpolation grids
-  real get_press_max() const { return this->press_ref_max; }
+  RealT get_press_max() const { return this->press_ref_max; }
 
   // return the minimum temparature on the interpolation grids
-  real get_temp_min()const  { return this->temp_ref_min; }
+  RealT get_temp_min()const  { return this->temp_ref_min; }
 
   // return the maximum temparature on the interpolation grids
-  real get_temp_max() const { return this->temp_ref_max; }
+  RealT get_temp_max() const { return this->temp_ref_max; }
 
   int get_neta() const { return this->kmajor.extent(1); }
 
@@ -1916,7 +1953,7 @@ public:
   // Function to define names of key and minor gases to be used by gas_optics().
   // The final list gases includes those that are defined in gas_optics_specification
   // and are provided in ty_gas_concs.
-  string1dv get_minor_list(GasConcsK<> const &gas_desc, int ngas, string1dv const &name_spec) const {
+  string1dv get_minor_list(GasConcsK<RealT, LayoutT, DeviceT> const &gas_desc, int ngas, string1dv const &name_spec) const {
     // List of minor gases to be used in gas_optics()
     string1dv rv;
     for (int igas=0 ; igas < this->get_ngas() ; igas++) {
@@ -1934,7 +1971,7 @@ public:
   bool source_is_external() const { return this->solar_src.is_allocated(); }
 
   // Ensure that every key gas required by the k-distribution is present in the gas concentration object
-  void check_key_species_present(GasConcsK<> const &gas_desc) const {
+  void check_key_species_present(GasConcsK<RealT, LayoutT, DeviceT> const &gas_desc) const {
     string1dv key_gas_names;
     auto is_key_h = Kokkos::create_mirror_view_and_copy(HostDevice(), this->is_key);
     for (auto i = 0; i < is_key_h.extent(0); ++i) {
@@ -1950,21 +1987,25 @@ public:
   }
 
   // Compute gas optical depth and Planck source functions, given temperature, pressure, and composition
-  template <class T>
+  template <typename PlayT, typename PlevT, typename TlayT, typename TsfcT, typename ColGasT,
+            class OpticalPropsT, typename ColDryT=view_t<RealT**>, typename TlevT=view_t<RealT**> >
   void gas_optics(const int ncol, const int nlay,
-                  bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, real1dk const &tsfc,
-                  GasConcsK<> const &gas_desc, realOff3dk const& col_gas, T &optical_props, SourceFuncLWK &sources,
-                  real2dk const &col_dry=real2dk(), real2dk const &tlev=real2dk()) {
+                  bool top_at_1, PlayT const &play, PlevT const &plev, TlayT const &tlay,
+                  TsfcT const &tsfc,
+                  GasConcsK<RealT, LayoutT, DeviceT> const &gas_desc,
+                  ColGasT const& col_gas, OpticalPropsT &optical_props,
+                  SourceFuncLWK &sources,
+                  ColDryT const &col_dry=ColDryT(), TlevT const &tlev=TlevT()) {
     using pool = conv::MemPoolSingleton;
 
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     // Interpolation coefficients for use in source function
-    int2dk  jtemp  = pool::alloc<int2dk> (ncol, nlay);
-    int2dk  jpress = pool::alloc<int2dk> (ncol, nlay);
-    int4dk  jeta   = pool::alloc<int4dk> (2, this->get_nflav(), ncol, nlay);
-    bool2dk tropo  = pool::alloc<bool2dk>(ncol, nlay);
-    real6dk fmajor = pool::alloc<real6dk>(2,2,2,this->get_nflav(),ncol,nlay);
+    view_t<int**>  jtemp  = pool::alloc<view_t<int**>> (ncol, nlay);
+    view_t<int**>  jpress = pool::alloc<view_t<int**>> (ncol, nlay);
+    view_t<int****>  jeta = pool::alloc<view_t<int****>> (2, this->get_nflav(), ncol, nlay);
+    view_t<bool**> tropo  = pool::alloc<view_t<bool**>>(ncol, nlay);
+    view_t<RealT******> fmajor = pool::alloc<view_t<RealT******>>(2,2,2,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress,
                      jeta, tropo, fmajor, col_dry);
@@ -2002,10 +2043,12 @@ public:
   }
 
   // Compute gas optical depth given temperature, pressure, and composition
-  template <class T>
+  template <typename PlayT, typename PlevT, typename TlayT, typename ColGasT,
+            class OpticalPropsT, typename ToaT, typename ColDryT=view_t<RealT**> >
   void gas_optics(const int ncol, const int nlay,
-                  bool top_at_1, real2dk const &play, real2dk const &plev, real2dk const &tlay, GasConcsK<> const &gas_desc,
-                  realOff3dk const& col_gas, T &optical_props, real2dk &toa_src, real2dk const &col_dry=real2dk()) {
+                  bool top_at_1, PlayT const &play, PlevT const &plev, TlayT const &tlay,
+                  GasConcsK<RealT, LayoutT, DeviceT> const &gas_desc,
+                  ColGasT const& col_gas, OpticalPropsT &optical_props, ToaT &toa_src, ColDryT const &col_dry=ColDryT()) {
     using pool = conv::MemPoolSingleton;
 
     int ngpt  = this->get_ngpt();
@@ -2014,11 +2057,11 @@ public:
     int nflav = get_nflav();
 
     // Interpolation coefficients for use in source function
-    int2dk  jtemp  = pool::alloc<int2dk> (ncol,nlay);
-    int2dk  jpress = pool::alloc<int2dk> (ncol,nlay);
-    bool2dk tropo  = pool::alloc<bool2dk>(ncol,nlay);
-    real6dk fmajor = pool::alloc<real6dk>(2,2,2,this->get_nflav(),ncol,nlay);
-    int4dk  jeta   = pool::alloc<int4dk> (2,this->get_nflav(),ncol,nlay);
+    view_t<int**>  jtemp  = pool::alloc<view_t<int**>> (ncol,nlay);
+    view_t<int**>  jpress = pool::alloc<view_t<int**>> (ncol,nlay);
+    view_t<bool**> tropo  = pool::alloc<view_t<bool**>>(ncol,nlay);
+    view_t<RealT******> fmajor = pool::alloc<view_t<RealT******>>(2,2,2,this->get_nflav(),ncol,nlay);
+    view_t<int****>  jeta   = pool::alloc<view_t<int****>> (2,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress, jeta,
                      tropo, fmajor, col_dry);
@@ -2039,10 +2082,15 @@ public:
   }
 
   // Returns optical properties and interpolation coefficients
-  template <class T>
-  void compute_gas_taus(bool top_at_1, int ncol, int nlay, int ngpt, int nband, real2dk const &play, real2dk const &plev, real2dk const &tlay,
-                        GasConcsK<> const &gas_desc, realOff3dk const& col_gas, T &optical_props, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta,
-                        bool2dk const &tropo, real6dk const &fmajor, real2dk const &col_dry=real2dk() ) {
+  template <typename PlayT, typename PlevT, typename TlayT, typename ColGasT,
+            class OpticalPropsT, typename JtempT, typename JpressT, typename JetaT, typename TropoT,
+            typename FmajorT, typename ColDryT=view_t<RealT**> >
+  void compute_gas_taus(bool top_at_1, int ncol, int nlay, int ngpt, int nband,
+                        PlayT const &play, PlevT const &plev, TlayT const &tlay,
+                        GasConcsK<RealT, LayoutT, DeviceT> const &gas_desc,
+                        ColGasT const& col_gas, OpticalPropsT &optical_props,
+                        JtempT const &jtemp, JpressT const &jpress, JetaT const &jeta,
+                        TropoT const &tropo, FmajorT const &fmajor, ColDryT const &col_dry=ColDryT() ) {
     // Number of molecules per cm^2
     using pool = conv::MemPoolSingleton;
 
@@ -2053,22 +2101,22 @@ public:
     const int size4 = 2*2*this->get_nflav()*ncol*nlay;
     const int size5 = ncol;
     const int size6 = ncol * (nlev-1);
-    real* data = pool::alloc<real>(size1*2 + size2 + size3 + size4 + size5 + size6), *dcurr = data;
-    real3dk tau         (dcurr,ngpt,nlay,ncol); dcurr += size1;
-    real3dk tau_rayleigh(dcurr,ngpt,nlay,ncol); dcurr += size1;
+    RealT* data = pool::alloc<RealT>(size1*2 + size2 + size3 + size4 + size5 + size6), *dcurr = data;
+    view_t<RealT***> tau         (dcurr,ngpt,nlay,ncol); dcurr += size1;
+    view_t<RealT***> tau_rayleigh(dcurr,ngpt,nlay,ncol); dcurr += size1;
     // Interpolation variables used in major gas but not elsewhere, so don't need exporting
-    real3dk vmr         (dcurr,ncol,nlay,this->get_ngas()); dcurr += size2;
-    real4dk col_mix     (dcurr,2,this->get_nflav(),ncol,nlay); dcurr += size3; // combination of major species's column amounts
+    view_t<RealT***> vmr         (dcurr,ncol,nlay,this->get_ngas()); dcurr += size2;
+    view_t<RealT****> col_mix     (dcurr,2,this->get_nflav(),ncol,nlay); dcurr += size3; // combination of major species's column amounts
                                                                                // index(1) : reference temperature level
                                                                                // index(2) : flavor
                                                                                // index(3) : layer
-    real5dk fminor      (dcurr,2,2,this->get_nflav(),ncol,nlay); dcurr += size4; // interpolation fractions for minor species
+    view_t<RealT*****> fminor      (dcurr,2,2,this->get_nflav(),ncol,nlay); dcurr += size4; // interpolation fractions for minor species
                                                                                  // index(1) : reference eta level (temperature dependent)
                                                                                  // index(2) : reference temperature level
                                                                                  // index(3) : flavor
                                                                                  // index(4) : layer
-    real1dk g0(dcurr, ncol); dcurr += size5;
-    real2dk col_dry_tmp(dcurr, ncol, nlev-1); dcurr += size6;
+    view_t<RealT*> g0(dcurr, ncol); dcurr += size5;
+    view_t<RealT**> col_dry_tmp(dcurr, ncol, nlev-1); dcurr += size6;
 
     // Error checking
     // Check for initialization
@@ -2118,7 +2166,7 @@ public:
 
     // Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     int idx_h2o = string_loc_in_array("h2o", this->gas_names);
-    real2dk const* col_dry_wk;
+    view_t<RealT**> const* col_dry_wk;
     if (col_dry.is_allocated()) {
       col_dry_wk = &col_dry;
     } else {
@@ -2165,29 +2213,34 @@ public:
   }
 
   // Compute Planck source functions at layer centers and levels
-  void source(bool top_at_1, int ncol, int nlay, int nbnd, int ngpt, real2dk const &play, real2dk const &plev, real2dk const &tlay,
-              real1dk const &tsfc, int2dk const &jtemp, int2dk const &jpress, int4dk const &jeta, bool2dk const &tropo,
-              real6dk const &fmajor, SourceFuncLWK &sources, real2dk const &tlev=real2dk()) {
+  template <typename PlayT, typename PlevT, typename TlayT, typename TsfcT,
+            typename JtempT, typename JpressT, typename JetaT, typename TropoT,
+            typename FmajorT, typename TlevT=view_t<RealT**> >
+  void source(bool top_at_1, int ncol, int nlay, int nbnd, int ngpt,
+              PlayT const &play, PlevT const &plev, TlayT const &tlay,
+              TsfcT const &tsfc, JtempT const &jtemp, JpressT const &jpress, JetaT const &jeta,
+              TropoT const &tropo, FmajorT const &fmajor, SourceFuncLWK &sources,
+              TlevT const &tlev=Tlev()) {
     using pool = conv::MemPoolSingleton;
     const int dsize1 = ngpt * nlay * ncol;
     const int dsize2 = ngpt * ncol;
     const int dsize3 = ncol * (nlay+1);
-    real* data = pool::alloc<real>(dsize1*3 + dsize2 + dsize3*2), *dcurr = data;
-    real3dk lay_source_t    (dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    real3dk lev_source_inc_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    real3dk lev_source_dec_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    real2dk sfc_source_t    (dcurr,ngpt     ,ncol); dcurr += dsize2;
+    RealT* data = pool::alloc<RealT>(dsize1*3 + dsize2 + dsize3*2), *dcurr = data;
+    view_t<RealT***> lay_source_t    (dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    view_t<RealT***> lev_source_inc_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    view_t<RealT***> lev_source_dec_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    view_t<RealT**> sfc_source_t    (dcurr,ngpt     ,ncol); dcurr += dsize2;
     // Variables for temperature at layer edges [K] (ncol, nlay+1)
-    real2dk tlev_arr(dcurr,ncol,nlay+1); dcurr += dsize3;
+    view_t<RealT**> tlev_arr(dcurr,ncol,nlay+1); dcurr += dsize3;
 
     // Source function needs temperature at interfaces/levels and at layer centers
-    real2dk tlev_wk;
+    view_t<RealT**> tlev_wk;
     if (tlev.is_allocated()) {
       //   Users might have provided these
       tlev_wk = tlev;
       dcurr += dsize3;
     } else {
-      tlev_wk = real2dk(dcurr,ncol,nlay+1); dcurr += dsize3;
+      tlev_wk = view_t<RealT**>(dcurr,ncol,nlay+1); dcurr += dsize3;
       // Interpolate temperature to levels if not provided
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
@@ -2231,13 +2284,13 @@ public:
 
   // Utility function, provided for user convenience
   // computes column amounts of dry air using hydrostatic equation
-  template <typename View>
-  void get_col_dry(View const &vmr_h2o, real2dk const &plev, real1dk const& g0, real2dk const& col_dry, real1dk const &latitude=real1dk()) {
+  template <typename VmrT, typename PlevT, typename G0T, typename ColDryT, typename LatT=view_t<RealT*> >
+  void get_col_dry(VmrT const &vmr_h2o, PlevT const &plev, G0T const& g0, ColDryT const& col_dry, LatT const &latitude=LatT()) {
     using pool = conv::MemPoolSingleton;
 
     // first and second term of Helmert formula
-    real constexpr helmert1 = 9.80665;
-    real constexpr helmert2 = 0.02586;
+    RealT constexpr helmert1 = 9.80665;
+    RealT constexpr helmert2 = 0.02586;
     int ncol = plev.extent(0);
     int nlev = plev.extent(1);
     if (latitude.is_allocated()) {
@@ -2258,26 +2311,30 @@ public:
     //   do icol = 1, ncol
     const auto m_dry = ::m_dry;
     Kokkos::parallel_for( conv::get_mdrp<2>({nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
-      real delta_plev = Kokkos::fabs(plev(icol,ilev) - plev(icol,ilev+1));
+      RealT delta_plev = Kokkos::fabs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
-      real fact = 1. / (1.+vmr_h2o(icol,ilev));
-      real m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
+      RealT fact = 1. / (1.+vmr_h2o(icol,ilev));
+      RealT m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
       col_dry(icol,ilev) = 10. * delta_plev * avogad * fact/(1000.*m_air*100.*g0(icol));
     });
   }
 
- // Utility function to combine optical depths from gas absorption and Rayleigh scattering
- //   (and reorder them for convenience, while we're at it)
- void combine_and_reorder(real3dk const &tau, real3dk const &tau_rayleigh, bool has_rayleigh, OpticalProps1sclK &optical_props) {
+  // Utility function to combine optical depths from gas absorption and Rayleigh scattering
+  //   (and reorder them for convenience, while we're at it)
+  template <typename TauT, typename TauRayT>
+  void combine_and_reorder(TauT const &tau, TauRayT const &tau_rayleigh, bool has_rayleigh,
+                           OpticalProps1sclK<RealT, LayoutT, DeviceT> &optical_props) {
     int ncol = tau.extent(2);
     int nlay = tau.extent(1);
     int ngpt = tau.extent(0);
     reorder123x321(ngpt, nlay, ncol, tau, optical_props.tau);
   }
 
- // Utility function to combine optical depths from gas absorption and Rayleigh scattering
- //   (and reorder them for convenience, while we're at it)
- void combine_and_reorder(real3dk const &tau, real3dk const &tau_rayleigh, bool has_rayleigh, OpticalProps2strK &optical_props) {
+  // Utility function to combine optical depths from gas absorption and Rayleigh scattering
+  //   (and reorder them for convenience, while we're at it)
+  template <typename TauT, typename TauRayT>
+  void combine_and_reorder(TauT const &tau, TauRayT const &tau_rayleigh, bool has_rayleigh,
+                           OpticalProps2strK<RealT, LayoutT, DeviceT> &optical_props) {
     int ncol = tau.extent(2);
     int nlay = tau.extent(1);
     int ngpt = tau.extent(0);
@@ -2294,101 +2351,101 @@ public:
 
   void print_norms(const bool print_prefix=false) const {
     std::string prefix = print_prefix ? "JGFK" : "";
-                                                      std::cout << prefix << "name                                  : " << std::setw(20) << name                                   << "\n";
-                                                      std::cout << prefix << "totplnk_delta                         : " << std::setw(20) << totplnk_delta                          << "\n";
-                                                      std::cout << prefix << "press_ref_min                         : " << std::setw(20) << press_ref_min                          << "\n";
-                                                      std::cout << prefix << "press_ref_max                         : " << std::setw(20) << press_ref_max                          << "\n";
-                                                      std::cout << prefix << "temp_ref_min                          : " << std::setw(20) << temp_ref_min                           << "\n";
-                                                      std::cout << prefix << "temp_ref_max                          : " << std::setw(20) << temp_ref_max                           << "\n";
-                                                      std::cout << prefix << "press_ref_log_delta                   : " << std::setw(20) << press_ref_log_delta                    << "\n";
-                                                      std::cout << prefix << "temp_ref_delta                        : " << std::setw(20) << temp_ref_delta                         << "\n";
-                                                      std::cout << prefix << "press_ref_trop_log                    : " << std::setw(20) << press_ref_trop_log                     << "\n";
-    if (band2gpt.is_allocated()                       ) { std::cout << prefix << "sum(band2gpt     )                    : " << std::setw(20) << conv::sum(band2gpt     )                     << "\n"; }
-    if (gpt2band.is_allocated()                       ) { std::cout << prefix << "sum(gpt2band     )                    : " << std::setw(20) << conv::sum(gpt2band     )                     << "\n"; }
-    if (band_lims_wvn.is_allocated()                  ) { std::cout << prefix << "sum(band_lims_wvn)                    : " << std::setw(20) << conv::sum(band_lims_wvn)                     << "\n"; }
-    if (press_ref.is_allocated()                      ) { std::cout << prefix << "sum(press_ref    )                    : " << std::setw(20) << conv::sum(press_ref    )                     << "\n"; }
-    if (press_ref_log.is_allocated()                  ) { std::cout << prefix << "sum(press_ref_log)                    : " << std::setw(20) << conv::sum(press_ref_log)                     << "\n"; }
-    if (temp_ref.is_allocated()                       ) { std::cout << prefix << "sum(temp_ref     )                    : " << std::setw(20) << conv::sum(temp_ref     )                     << "\n"; }
-    if (vmr_ref.is_allocated()                        ) { std::cout << prefix << "sum(vmr_ref                )          : " << std::setw(20) << conv::sum(vmr_ref                )           << "\n"; }
-    if (flavor.is_allocated()                         ) { std::cout << prefix << "sum(flavor                 )          : " << std::setw(20) << conv::sum(flavor                 )           << "\n"; }
-    if (gpoint_flavor.is_allocated()                  ) { std::cout << prefix << "sum(gpoint_flavor          )          : " << std::setw(20) << conv::sum(gpoint_flavor          )           << "\n"; }
-    if (kmajor.is_allocated()                         ) { std::cout << prefix << "sum(kmajor                 )          : " << std::setw(20) << conv::sum(kmajor                 )           << "\n"; }
-    if (minor_limits_gpt_lower.is_allocated()         ) { std::cout << prefix << "sum(minor_limits_gpt_lower )          : " << std::setw(20) << conv::sum(minor_limits_gpt_lower )           << "\n"; }
-    if (minor_limits_gpt_upper.is_allocated()         ) { std::cout << prefix << "sum(minor_limits_gpt_upper )          : " << std::setw(20) << conv::sum(minor_limits_gpt_upper )           << "\n"; }
-    if (idx_minor_lower.is_allocated()                ) { std::cout << prefix << "sum(idx_minor_lower        )          : " << std::setw(20) << conv::sum(idx_minor_lower        )           << "\n"; }
-    if (idx_minor_upper.is_allocated()                ) { std::cout << prefix << "sum(idx_minor_upper        )          : " << std::setw(20) << conv::sum(idx_minor_upper        )           << "\n"; }
-    if (idx_minor_scaling_lower.is_allocated()        ) { std::cout << prefix << "sum(idx_minor_scaling_lower)          : " << std::setw(20) << conv::sum(idx_minor_scaling_lower)           << "\n"; }
-    if (idx_minor_scaling_upper.is_allocated()        ) { std::cout << prefix << "sum(idx_minor_scaling_upper)          : " << std::setw(20) << conv::sum(idx_minor_scaling_upper)           << "\n"; }
-    if (kminor_start_lower.is_allocated()             ) { std::cout << prefix << "sum(kminor_start_lower     )          : " << std::setw(20) << conv::sum(kminor_start_lower     )           << "\n"; }
-    if (kminor_start_upper.is_allocated()             ) { std::cout << prefix << "sum(kminor_start_upper     )          : " << std::setw(20) << conv::sum(kminor_start_upper     )           << "\n"; }
-    if (kminor_lower.is_allocated()                   ) { std::cout << prefix << "sum(kminor_lower           )          : " << std::setw(20) << conv::sum(kminor_lower           )           << "\n"; }
-    if (kminor_upper.is_allocated()                   ) { std::cout << prefix << "sum(kminor_upper           )          : " << std::setw(20) << conv::sum(kminor_upper           )           << "\n"; }
-    if (krayl.is_allocated()                          ) { std::cout << prefix << "sum(krayl                  )          : " << std::setw(20) << conv::sum(krayl                  )           << "\n"; }
-    if (planck_frac.is_allocated()                    ) { std::cout << prefix << "sum(planck_frac            )          : " << std::setw(20) << conv::sum(planck_frac            )           << "\n"; }
-    if (totplnk.is_allocated()                        ) { std::cout << prefix << "sum(totplnk                )          : " << std::setw(20) << conv::sum(totplnk                )           << "\n"; }
-    if (solar_src.is_allocated()                      ) { std::cout << prefix << "sum(solar_src              )          : " << std::setw(20) << conv::sum(solar_src              )           << "\n"; }
-    if (minor_scales_with_density_lower.is_allocated()) { std::cout << prefix << "count(minor_scales_with_density_lower): " << std::setw(20) << conv::sum(minor_scales_with_density_lower) << "\n"; }
-    if (minor_scales_with_density_upper.is_allocated()) { std::cout << prefix << "count(minor_scales_with_density_upper): " << std::setw(20) << conv::sum(minor_scales_with_density_upper) << "\n"; }
-    if (scale_by_complement_lower.is_allocated()      ) { std::cout << prefix << "count(scale_by_complement_lower      ): " << std::setw(20) << conv::sum(scale_by_complement_lower      ) << "\n"; }
-    if (scale_by_complement_upper.is_allocated()      ) { std::cout << prefix << "count(scale_by_complement_upper      ): " << std::setw(20) << conv::sum(scale_by_complement_upper      ) << "\n"; }
-    if (is_key.is_allocated()                         ) { std::cout << prefix << "count(is_key                         ): " << std::setw(20) << conv::sum(is_key                         ) << "\n"; }
+                                                      std::cout << prefix << "name                                  : " << std::setw(20) << this->name                                   << "\n";
+                                                      std::cout << prefix << "totplnk_delta                         : " << std::setw(20) << this->totplnk_delta                          << "\n";
+                                                      std::cout << prefix << "press_ref_min                         : " << std::setw(20) << this->press_ref_min                          << "\n";
+                                                      std::cout << prefix << "press_ref_max                         : " << std::setw(20) << this->press_ref_max                          << "\n";
+                                                      std::cout << prefix << "temp_ref_min                          : " << std::setw(20) << this->temp_ref_min                           << "\n";
+                                                      std::cout << prefix << "temp_ref_max                          : " << std::setw(20) << this->temp_ref_max                           << "\n";
+                                                      std::cout << prefix << "press_ref_log_delta                   : " << std::setw(20) << this->press_ref_log_delta                    << "\n";
+                                                      std::cout << prefix << "temp_ref_delta                        : " << std::setw(20) << this->temp_ref_delta                         << "\n";
+                                                      std::cout << prefix << "press_ref_trop_log                    : " << std::setw(20) << this->press_ref_trop_log                     << "\n";
+    if (this->band2gpt.is_allocated()                       ) { std::cout << prefix << "sum(band2gpt     )                    : " << std::setw(20) << conv::sum(this->band2gpt     )                     << "\n"; }
+    if (this->gpt2band.is_allocated()                       ) { std::cout << prefix << "sum(gpt2band     )                    : " << std::setw(20) << conv::sum(this->gpt2band     )                     << "\n"; }
+    if (this->band_lims_wvn.is_allocated()                  ) { std::cout << prefix << "sum(band_lims_wvn)                    : " << std::setw(20) << conv::sum(this->band_lims_wvn)                     << "\n"; }
+    if (this->press_ref.is_allocated()                      ) { std::cout << prefix << "sum(press_ref    )                    : " << std::setw(20) << conv::sum(this->press_ref    )                     << "\n"; }
+    if (this->press_ref_log.is_allocated()                  ) { std::cout << prefix << "sum(press_ref_log)                    : " << std::setw(20) << conv::sum(this->press_ref_log)                     << "\n"; }
+    if (this->temp_ref.is_allocated()                       ) { std::cout << prefix << "sum(temp_ref     )                    : " << std::setw(20) << conv::sum(this->temp_ref     )                     << "\n"; }
+    if (this->vmr_ref.is_allocated()                        ) { std::cout << prefix << "sum(vmr_ref                )          : " << std::setw(20) << conv::sum(this->vmr_ref                )           << "\n"; }
+    if (this->flavor.is_allocated()                         ) { std::cout << prefix << "sum(flavor                 )          : " << std::setw(20) << conv::sum(this->flavor                 )           << "\n"; }
+    if (this->gpoint_flavor.is_allocated()                  ) { std::cout << prefix << "sum(gpoint_flavor          )          : " << std::setw(20) << conv::sum(this->gpoint_flavor          )           << "\n"; }
+    if (this->kmajor.is_allocated()                         ) { std::cout << prefix << "sum(kmajor                 )          : " << std::setw(20) << conv::sum(this->kmajor                 )           << "\n"; }
+    if (this->minor_limits_gpt_lower.is_allocated()         ) { std::cout << prefix << "sum(minor_limits_gpt_lower )          : " << std::setw(20) << conv::sum(this->minor_limits_gpt_lower )           << "\n"; }
+    if (this->minor_limits_gpt_upper.is_allocated()         ) { std::cout << prefix << "sum(minor_limits_gpt_upper )          : " << std::setw(20) << conv::sum(this->minor_limits_gpt_upper )           << "\n"; }
+    if (this->idx_minor_lower.is_allocated()                ) { std::cout << prefix << "sum(idx_minor_lower        )          : " << std::setw(20) << conv::sum(this->idx_minor_lower        )           << "\n"; }
+    if (this->idx_minor_upper.is_allocated()                ) { std::cout << prefix << "sum(idx_minor_upper        )          : " << std::setw(20) << conv::sum(this->idx_minor_upper        )           << "\n"; }
+    if (this->idx_minor_scaling_lower.is_allocated()        ) { std::cout << prefix << "sum(idx_minor_scaling_lower)          : " << std::setw(20) << conv::sum(this->idx_minor_scaling_lower)           << "\n"; }
+    if (this->idx_minor_scaling_upper.is_allocated()        ) { std::cout << prefix << "sum(idx_minor_scaling_upper)          : " << std::setw(20) << conv::sum(this->idx_minor_scaling_upper)           << "\n"; }
+    if (this->kminor_start_lower.is_allocated()             ) { std::cout << prefix << "sum(kminor_start_lower     )          : " << std::setw(20) << conv::sum(this->kminor_start_lower     )           << "\n"; }
+    if (this->kminor_start_upper.is_allocated()             ) { std::cout << prefix << "sum(kminor_start_upper     )          : " << std::setw(20) << conv::sum(this->kminor_start_upper     )           << "\n"; }
+    if (this->kminor_lower.is_allocated()                   ) { std::cout << prefix << "sum(kminor_lower           )          : " << std::setw(20) << conv::sum(this->kminor_lower           )           << "\n"; }
+    if (this->kminor_upper.is_allocated()                   ) { std::cout << prefix << "sum(kminor_upper           )          : " << std::setw(20) << conv::sum(this->kminor_upper           )           << "\n"; }
+    if (this->krayl.is_allocated()                          ) { std::cout << prefix << "sum(krayl                  )          : " << std::setw(20) << conv::sum(this->krayl                  )           << "\n"; }
+    if (this->planck_frac.is_allocated()                    ) { std::cout << prefix << "sum(planck_frac            )          : " << std::setw(20) << conv::sum(this->planck_frac            )           << "\n"; }
+    if (this->totplnk.is_allocated()                        ) { std::cout << prefix << "sum(totplnk                )          : " << std::setw(20) << conv::sum(this->totplnk                )           << "\n"; }
+    if (this->solar_src.is_allocated()                      ) { std::cout << prefix << "sum(solar_src              )          : " << std::setw(20) << conv::sum(this->solar_src              )           << "\n"; }
+    if (this->minor_scales_with_density_lower.is_allocated()) { std::cout << prefix << "count(minor_scales_with_density_lower): " << std::setw(20) << conv::sum(this->minor_scales_with_density_lower) << "\n"; }
+    if (this->minor_scales_with_density_upper.is_allocated()) { std::cout << prefix << "count(minor_scales_with_density_upper): " << std::setw(20) << conv::sum(this->minor_scales_with_density_upper) << "\n"; }
+    if (this->scale_by_complement_lower.is_allocated()      ) { std::cout << prefix << "count(scale_by_complement_lower      ): " << std::setw(20) << conv::sum(this->scale_by_complement_lower      ) << "\n"; }
+    if (this->scale_by_complement_upper.is_allocated()      ) { std::cout << prefix << "count(scale_by_complement_upper      ): " << std::setw(20) << conv::sum(this->scale_by_complement_upper      ) << "\n"; }
+    if (this->is_key.is_allocated()                         ) { std::cout << prefix << "count(is_key                         ): " << std::setw(20) << conv::sum(this->is_key                         ) << "\n"; }
   }
 
 #ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const GasOpticsRRTMGP& orig) const
   {
-    OpticalPropsK::validate_kokkos(orig);
+    parent_t::validate_kokkos(orig);
 
-    conv::compare_yakl_to_kokkos(orig.press_ref, press_ref);
-    conv::compare_yakl_to_kokkos(orig.press_ref_log, press_ref_log);
-    conv::compare_yakl_to_kokkos(orig.temp_ref, temp_ref);
+    conv::compare_yakl_to_kokkos(orig.press_ref, this->press_ref);
+    conv::compare_yakl_to_kokkos(orig.press_ref_log, this->press_ref_log);
+    conv::compare_yakl_to_kokkos(orig.temp_ref, this->temp_ref);
 
-    RRT_REQUIRE(orig.press_ref_min == press_ref_min, "Bad press_ref_min");
-    RRT_REQUIRE(orig.press_ref_max == press_ref_max, "Bad press_ref_max");
-    RRT_REQUIRE(orig.temp_ref_min == temp_ref_min, "Bad temp_ref_min");
-    RRT_REQUIRE(orig.temp_ref_max == temp_ref_max, "Bad temp_ref_max");
-    RRT_REQUIRE(orig.press_ref_log_delta == press_ref_log_delta, "Bad press_ref_log_delta");
-    RRT_REQUIRE(orig.temp_ref_delta == temp_ref_delta, "Bad temp_ref_delta");
-    RRT_REQUIRE(orig.press_ref_trop_log == press_ref_trop_log, "Bad press_ref_trop_log");
-    RRT_REQUIRE(orig.totplnk_delta == totplnk_delta, "Bad totplnk_delta");
+    RRT_REQUIRE(orig.press_ref_min == this->press_ref_min, "Bad press_ref_min");
+    RRT_REQUIRE(orig.press_ref_max == this->press_ref_max, "Bad press_ref_max");
+    RRT_REQUIRE(orig.temp_ref_min == this->temp_ref_min, "Bad temp_ref_min");
+    RRT_REQUIRE(orig.temp_ref_max == this->temp_ref_max, "Bad temp_ref_max");
+    RRT_REQUIRE(orig.press_ref_log_delta == this->press_ref_log_delta, "Bad press_ref_log_delta");
+    RRT_REQUIRE(orig.temp_ref_delta == this->temp_ref_delta, "Bad temp_ref_delta");
+    RRT_REQUIRE(orig.press_ref_trop_log == this->press_ref_trop_log, "Bad press_ref_trop_log");
+    RRT_REQUIRE(orig.totplnk_delta == this->totplnk_delta, "Bad totplnk_delta");
 
-    RRT_REQUIRE(orig.max_gpt_diff_lower == max_gpt_diff_lower, "Bad max_gpt_diff_lower");
-    RRT_REQUIRE(orig.max_gpt_diff_upper == max_gpt_diff_upper, "Bad max_gpt_diff_upper");
+    RRT_REQUIRE(orig.max_gpt_diff_lower == this->max_gpt_diff_lower, "Bad max_gpt_diff_lower");
+    RRT_REQUIRE(orig.max_gpt_diff_upper == this->max_gpt_diff_upper, "Bad max_gpt_diff_upper");
 
-    conv::compare_yakl_to_kokkos_str(orig.gas_names, gas_names);
-    conv::compare_yakl_to_kokkos(orig.vmr_ref, vmr_ref);
+    conv::compare_yakl_to_kokkos_str(orig.gas_names, this->gas_names);
+    conv::compare_yakl_to_kokkos(orig.vmr_ref, this->vmr_ref);
 
-    conv::compare_yakl_to_kokkos(orig.flavor, flavor, true);
-    conv::compare_yakl_to_kokkos(orig.gpoint_flavor, gpoint_flavor, true /*idx data*/);
+    conv::compare_yakl_to_kokkos(orig.flavor, this->flavor, true);
+    conv::compare_yakl_to_kokkos(orig.gpoint_flavor, this->gpoint_flavor, true /*idx data*/);
 
-    conv::compare_yakl_to_kokkos(orig.kmajor, kmajor);
+    conv::compare_yakl_to_kokkos(orig.kmajor, this->kmajor);
 
-    conv::compare_yakl_to_kokkos(orig.minor_limits_gpt_lower, minor_limits_gpt_lower, true);
-    conv::compare_yakl_to_kokkos(orig.minor_limits_gpt_upper, minor_limits_gpt_upper, true);
+    conv::compare_yakl_to_kokkos(orig.minor_limits_gpt_lower, this->minor_limits_gpt_lower, true);
+    conv::compare_yakl_to_kokkos(orig.minor_limits_gpt_upper, this->minor_limits_gpt_upper, true);
 
-    conv::compare_yakl_to_kokkos(orig.minor_scales_with_density_lower, minor_scales_with_density_lower);
-    conv::compare_yakl_to_kokkos(orig.minor_scales_with_density_upper, minor_scales_with_density_upper);
-    conv::compare_yakl_to_kokkos(orig.scale_by_complement_lower, scale_by_complement_lower);
-    conv::compare_yakl_to_kokkos(orig.scale_by_complement_upper, scale_by_complement_upper);
-    conv::compare_yakl_to_kokkos(orig.idx_minor_lower, idx_minor_lower, true);
-    conv::compare_yakl_to_kokkos(orig.idx_minor_upper, idx_minor_upper, true);
-    conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_lower, idx_minor_scaling_lower, true);
-    conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_upper, idx_minor_scaling_upper, true);
+    conv::compare_yakl_to_kokkos(orig.minor_scales_with_density_lower, this->minor_scales_with_density_lower);
+    conv::compare_yakl_to_kokkos(orig.minor_scales_with_density_upper, this->minor_scales_with_density_upper);
+    conv::compare_yakl_to_kokkos(orig.scale_by_complement_lower, this->scale_by_complement_lower);
+    conv::compare_yakl_to_kokkos(orig.scale_by_complement_upper, this->scale_by_complement_upper);
+    conv::compare_yakl_to_kokkos(orig.idx_minor_lower, this->idx_minor_lower, true);
+    conv::compare_yakl_to_kokkos(orig.idx_minor_upper, this->idx_minor_upper, true);
+    conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_lower, this->idx_minor_scaling_lower, true);
+    conv::compare_yakl_to_kokkos(orig.idx_minor_scaling_upper, this->idx_minor_scaling_upper, true);
 
-    conv::compare_yakl_to_kokkos(orig.kminor_start_lower, kminor_start_lower, true);
-    conv::compare_yakl_to_kokkos(orig.kminor_start_upper, kminor_start_upper, true);
+    conv::compare_yakl_to_kokkos(orig.kminor_start_lower, this->kminor_start_lower, true);
+    conv::compare_yakl_to_kokkos(orig.kminor_start_upper, this->kminor_start_upper, true);
 
-    conv::compare_yakl_to_kokkos(orig.kminor_lower, kminor_lower);
-    conv::compare_yakl_to_kokkos(orig.kminor_upper, kminor_upper);
+    conv::compare_yakl_to_kokkos(orig.kminor_lower, this->kminor_lower);
+    conv::compare_yakl_to_kokkos(orig.kminor_upper, this->kminor_upper);
 
-    conv::compare_yakl_to_kokkos(orig.krayl, krayl);
-    conv::compare_yakl_to_kokkos(orig.planck_frac, planck_frac);
+    conv::compare_yakl_to_kokkos(orig.krayl, this->krayl);
+    conv::compare_yakl_to_kokkos(orig.planck_frac, this->planck_frac);
 
-    conv::compare_yakl_to_kokkos(orig.totplnk, totplnk);
+    conv::compare_yakl_to_kokkos(orig.totplnk, this->totplnk);
 
-    conv::compare_yakl_to_kokkos(orig.solar_src, solar_src);
+    conv::compare_yakl_to_kokkos(orig.solar_src, this->solar_src);
 
-    conv::compare_yakl_to_kokkos(orig.is_key, is_key);
+    conv::compare_yakl_to_kokkos(orig.is_key, this->is_key);
   }
 #endif
 

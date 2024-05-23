@@ -81,16 +81,22 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
+template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class FluxesBroadbandK {
 public:
-  real2dk flux_up;
-  real2dk flux_dn;
-  real2dk flux_net;
-  real2dk flux_dn_dir;
 
+  using real2d_t = Kokkos::View<RealT**,  LayoutT, DeviceT>;
+  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
 
-  void reduce(real3dk const &gpt_flux_up, const real3dk &gpt_flux_dn, OpticalPropsK const &spectral_disc,
-              bool top_at_1, real3dk const &gpt_flux_dn_dir=real3dk()) {
+  real2d_t flux_up;
+  real2d_t flux_dn;
+  real2d_t flux_net;
+  real2d_t flux_dn_dir;
+
+  template <typename FluxUpT, typename FluxDnT, typename FluxDnDirT = real3d_t>
+  void reduce(real3dk const &gpt_flux_up, const real3dk &gpt_flux_dn,
+              OpticalPropsK<RealT, LayoutT, DeviceT> const &spectral_disc,
+              bool top_at_1, FluxDnDirT const &gpt_flux_dn_dir=FluxDnDirT()) {
     int ncol = gpt_flux_up.extent(0);
     int nlev = gpt_flux_up.extent(1);
     int ngpt = gpt_flux_up.extent(2);
@@ -114,11 +120,9 @@ public:
     }
   }
 
-
   bool are_desired() const {
     return this->flux_up.is_allocated() || this->flux_dn.is_allocated() || this->flux_dn_dir.is_allocated() || this->flux_net.is_allocated();
   }
-
 
   void print_norms(const bool print_prefix=false) const {
     std::string prefix = print_prefix ? "JGFK" : "";

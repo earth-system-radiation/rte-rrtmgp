@@ -233,7 +233,7 @@ class GasConcsK {
 public:
   static int constexpr GAS_NOT_IN_LIST = -1;
 
-  using real3d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
+  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
 
   string1dv gas_name;  // List of gas names defined upon init
   real3d_t  concs;

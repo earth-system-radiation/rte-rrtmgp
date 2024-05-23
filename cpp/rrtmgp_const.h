@@ -28,6 +28,9 @@ using CView = Kokkos::View<T, Kokkos::LayoutRight, Device>;
 template <typename T, typename Device=DefaultDevice>
 using FOView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutLeft, Device>;
 
+template <typename T, typename Device=DefaultDevice>
+using COView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutRight, Device>;
+
 template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
 #ifdef KOKKOS_ENABLE_CUDA
 using MDRangeP = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank, Kokkos::Iterate::Left, Kokkos::Iterate::Right> >;
@@ -250,6 +253,8 @@ typedef CView<bool******, HostDevice>  boolHost6dkc;
 typedef CView<bool*******, HostDevice> boolHost7dkc;
 
 typedef CView<char**, HostDevice> charHost2dkc;
+
+typedef COView<real***>             realOff3dkc;
 #endif
 
 typedef std::vector<std::string> string1dv;

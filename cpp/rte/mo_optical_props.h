@@ -268,7 +268,8 @@ public:
   view_t<RealT**> band_lims_wvn;  // (upper and lower wavenumber by band) = band_lims_wvn(2,band)
   std::string name;
 
-  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**> >
+  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**>,
+            typename std::enable_if<conv::is_view_v<BandLimsWvnT>>::type* = nullptr >
   void init( BandLimsWvnT const &band_lims_wvn , BandLimsGptT const &band_lims_gpt=view_t<int**>() , std::string name="" ) {
     view_t<int**> band_lims_gpt_lcl("band_lims_gpt_lcl", 2, band_lims_wvn.extent(1));
     if (band_lims_wvn.extent(0) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
@@ -565,7 +566,8 @@ public:
   }
 
   // Initialization by specifying band limits and possibly g-point/band mapping
-  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**> >
+  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**>,
+            typename std::enable_if<conv::is_view_v<BandLimsWvnT>>::type* = nullptr >
   void alloc_1scl(int ncol, int nlay, BandLimsWvnT const &band_lims_wvn, BandLimsGptT const &band_lims_gpt=view_t<int**>(), std::string name="") {
     this->init(band_lims_wvn, band_lims_gpt, name);
     this->alloc_1scl(ncol, nlay);
@@ -808,12 +810,13 @@ class OpticalProps2strK : public OpticalPropsArryK<RealT, LayoutT, DeviceT> {
   void alloc_2str(int ncol, int nlay) {
     if (! this->is_initialized()) { stoprun("optical_props::alloc: spectral discretization hasn't been provided"); }
     if (ncol <= 0 || nlay <= 0) { stoprun("optical_props::alloc: must provide positive extents for ncol, nlay"); }
-    this->tau = real3dk("tau",ncol,nlay,this->get_ngpt());
-    this->ssa = real3dk("ssa",ncol,nlay,this->get_ngpt());
-    this->g   = real3dk("g  ",ncol,nlay,this->get_ngpt());
+    this->tau = view_t<RealT***>("tau",ncol,nlay,this->get_ngpt());
+    this->ssa = view_t<RealT***>("ssa",ncol,nlay,this->get_ngpt());
+    this->g   = view_t<RealT***>("g  ",ncol,nlay,this->get_ngpt());
   }
 
-  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**> >
+  template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**>,
+            typename std::enable_if<conv::is_view_v<BandLimsWvnT>>::type* = nullptr>
   void alloc_2str(int ncol, int nlay, BandLimsWvnT const &band_lims_wvn, BandLimsGptT const &band_lims_gpt=view_t<int**>(), std::string name="") {
     this->init(band_lims_wvn, band_lims_gpt, name);
     this->alloc_2str(ncol, nlay);

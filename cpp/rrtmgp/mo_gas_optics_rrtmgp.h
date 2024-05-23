@@ -1238,10 +1238,12 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
  public:
 
   using parent_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
+  using hparent_t = OpticalPropsK<RealT, LayoutT, HostDevice>;
+
   template <typename T>
   using view_t = typename parent_t::template view_t<T>;
 
-  using hparent_t = OpticalPropsK<RealT, LayoutT, HostDevice>;
+  template <typename T>
   using hview_t = typename hparent_t::template view_t<T>;
 
   template <typename T>
@@ -1994,7 +1996,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
                   TsfcT const &tsfc,
                   GasConcsK<RealT, LayoutT, DeviceT> const &gas_desc,
                   ColGasT const& col_gas, OpticalPropsT &optical_props,
-                  SourceFuncLWK &sources,
+                  SourceFuncLWK<RealT, LayoutT, DeviceT> &sources,
                   ColDryT const &col_dry=ColDryT(), TlevT const &tlev=TlevT()) {
     using pool = conv::MemPoolSingleton;
 
@@ -2219,8 +2221,8 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   void source(bool top_at_1, int ncol, int nlay, int nbnd, int ngpt,
               PlayT const &play, PlevT const &plev, TlayT const &tlay,
               TsfcT const &tsfc, JtempT const &jtemp, JpressT const &jpress, JetaT const &jeta,
-              TropoT const &tropo, FmajorT const &fmajor, SourceFuncLWK &sources,
-              TlevT const &tlev=Tlev()) {
+              TropoT const &tropo, FmajorT const &fmajor, SourceFuncLWK<RealT, LayoutT, DeviceT> &sources,
+              TlevT const &tlev=TlevT()) {
     using pool = conv::MemPoolSingleton;
     const int dsize1 = ngpt * nlay * ncol;
     const int dsize2 = ngpt * ncol;

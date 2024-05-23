@@ -74,7 +74,6 @@ contains
     type(ty_source_func_lw)                   :: sources
 
     integer :: ncol, nlay, ngpt, nband, nstr
-    logical :: top_at_1
     ! --------------------------------
     ! Problem sizes
     !
@@ -85,11 +84,6 @@ contains
     ngpt  = k_dist%get_ngpt()
     nband = k_dist%get_nband()
 
-    !$acc kernels copyout(top_at_1)
-    !$omp target map(from:top_at_1)
-    top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
-    !$acc end kernels
-    !$omp end target
 
     ! ------------------------------------------------------------------------------------
     !  Error checking
@@ -161,8 +155,8 @@ contains
     if(present(aer_props)) error_msg = aer_props%increment(optical_props)
     if(error_msg /= '') return
 
-    error_msg = base_rte_lw(optical_props, top_at_1, sources, &
-                            sfc_emis, clrsky_fluxes,          &
+    error_msg = base_rte_lw(optical_props, sources,  &
+                            sfc_emis, clrsky_fluxes, &
                             inc_flux, n_gauss_angles)
     if(error_msg /= '') return
     ! ------------------------------------------------------------------------------------
@@ -171,8 +165,8 @@ contains
     error_msg = cloud_props%increment(optical_props)
     if(error_msg /= '') return
 
-    error_msg = base_rte_lw(optical_props, top_at_1, sources, &
-                            sfc_emis, allsky_fluxes,          &
+    error_msg = base_rte_lw(optical_props, sources,  &
+                            sfc_emis, allsky_fluxes, &
                             inc_flux, n_gauss_angles)
 
     call sources%finalize()
@@ -207,7 +201,6 @@ contains
     class(ty_optical_props_arry), allocatable :: optical_props
     real(wp), dimension(:,:),     allocatable :: toa_flux
     integer :: ncol, nlay, ngpt, nband, nstr
-    logical :: top_at_1
     ! --------------------------------
     ! Problem sizes
     !
@@ -217,12 +210,6 @@ contains
     nlay  = size(p_lay, 2)
     ngpt  = k_dist%get_ngpt()
     nband = k_dist%get_nband()
-
-    !$acc kernels copyout(top_at_1)
-    !$omp target map(from:top_at_1)
-    top_at_1 = p_lay(1, 1) < p_lay(1, nlay)
-    !$acc end kernels
-    !$omp end target
 
     ! ------------------------------------------------------------------------------------
     !  Error checking
@@ -276,7 +263,7 @@ contains
     ! Gas optical depth -- pressure need to be expressed as Pa
     !
     error_msg = k_dist%gas_optics(p_lay, p_lev, t_lay, gas_concs,  &
-                                  optical_props, toa_flux,                          &
+                                  optical_props, toa_flux,         &
                                   col_dry)
     if (error_msg /= '') return
     !
@@ -289,9 +276,8 @@ contains
     if(present(aer_props)) error_msg = aer_props%increment(optical_props)
     if(error_msg /= '') return
 
-    error_msg = base_rte_sw(optical_props, top_at_1, &
-                               mu0, toa_flux,                   &
-                               sfc_alb_dir, sfc_alb_dif,        &
+    error_msg = base_rte_sw(optical_props, mu0, toa_flux, &
+                               sfc_alb_dir, sfc_alb_dif,  &
                                clrsky_fluxes)
 
     if(error_msg /= '') return
@@ -301,9 +287,8 @@ contains
     error_msg = cloud_props%increment(optical_props)
     if(error_msg /= '') return
 
-    error_msg = base_rte_sw(optical_props, top_at_1,  &
-                               mu0, toa_flux,                   &
-                               sfc_alb_dir, sfc_alb_dif,        &
+    error_msg = base_rte_sw(optical_props, mu0, toa_flux, &
+                               sfc_alb_dir, sfc_alb_dif,  &
                                allsky_fluxes)
 
     call optical_props%finalize()

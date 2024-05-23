@@ -95,7 +95,7 @@ program rte_lw_solver_unit_tests
   fluxes%flux_up  => ref_flux_up (:,:)
   fluxes%flux_dn  => ref_flux_dn (:,:)
   fluxes%flux_net => ref_flux_net(:,:)
-  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+  call stop_on_err(rte_lw(lw_atmos,   &
                           lw_sources, &
                           sfc_emis,   &
                           fluxes))
@@ -116,7 +116,7 @@ program rte_lw_solver_unit_tests
   !
   nullify(fluxes%flux_up)
   nullify(fluxes%flux_dn)
-  call stop_on_err(rte_lw(lw_atmos, top_at_1,  &
+  call stop_on_err(rte_lw(lw_atmos,            &
                           lw_sources, sfc_emis,&
                           fluxes))
   call check_fluxes(ref_flux_net, ref_flux_dn-ref_flux_up, &
@@ -126,7 +126,7 @@ program rte_lw_solver_unit_tests
   !
   fluxes%flux_up  => tst_flux_up (:,:)
   fluxes%flux_dn  => tst_flux_dn (:,:)
-  call stop_on_err(rte_lw(lw_atmos,   top_at_1, &
+  call stop_on_err(rte_lw(lw_atmos,             &
                           lw_sources, sfc_emis, &
                           fluxes))
   call check_fluxes(ref_flux_net, tst_flux_dn-tst_flux_up, & 
@@ -149,7 +149,7 @@ program rte_lw_solver_unit_tests
   print *, "  Vertical orientation invariance"
   call gray_rad_equil(sfc_t, total_tau, nlay, top_at_1, lw_atmos, lw_sources)
   call vr(lw_atmos, lw_sources)
-  call stop_on_err(rte_lw(lw_atmos,   .not. top_at_1, &
+  call stop_on_err(rte_lw(lw_atmos,             &
                           lw_sources, sfc_emis, &
                           fluxes))
   !
@@ -168,7 +168,7 @@ program rte_lw_solver_unit_tests
   !
   print *, "  Jacobian"
   call gray_rad_equil(sfc_t, total_tau, nlay, top_at_1, lw_atmos, lw_sources)
-  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+  call stop_on_err(rte_lw(lw_atmos,        &
                           lw_sources,      &
                           sfc_emis,        &
                           fluxes,          &
@@ -180,7 +180,7 @@ program rte_lw_solver_unit_tests
   !
   lw_sources%sfc_source    (:,1) =         sigma/pi * (sfc_t + 1._wp)**4
   lw_sources%sfc_source_Jac(:,1) = 4._wp * sigma/pi * (sfc_t + 1._wp)**3
-  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+  call stop_on_err(rte_lw(lw_atmos,        &
                           lw_sources,      &
                           sfc_emis,        &
                           fluxes))
@@ -200,8 +200,10 @@ program rte_lw_solver_unit_tests
   sw_atmos%tau = lw_atmos%tau
   sw_atmos%ssa = 0._wp
   sw_atmos%g   = 0._wp
+  call sw_atmos%set_top_at_1(lw_atmos%top_is_at_1())
 
-  call stop_on_err(rte_lw(sw_atmos, top_at_1, &
+
+  call stop_on_err(rte_lw(sw_atmos,        &
                           lw_sources,      &
                           sfc_emis,        &
                           fluxes,          &
@@ -214,7 +216,7 @@ program rte_lw_solver_unit_tests
   ! Specifying diffusivity angle
   !
   print *, "  Specified transport angle"
-  call stop_on_err(rte_lw(lw_atmos, top_at_1, &
+  call stop_on_err(rte_lw(lw_atmos,        &
                           lw_sources,      &
                           sfc_emis,        &
                           fluxes,          &
@@ -258,7 +260,7 @@ contains
     ! Divide optical depth evenly among layers 
     !
     atmos%tau(1:ncol,1:nlay,1) = spread(total_tau(1:ncol)/real(nlay, wp), dim=2, ncopies=nlay)
-
+    call atmos%set_top_at_1(top_at_1)
     !
     ! Longwave sources - for broadband these are sigma/pi T^4
     !   (isotropic radiation)
@@ -271,17 +273,17 @@ contains
     !
     ! Calculation with top_at_1
     !
-      ilay = 1
-        sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:)
-      do ilay = 2, nlay+1
-        sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) * & 
-                                           (1._wp + D * sum(atmos%tau(:,:ilay-1,1),dim=2))
-        !
-        ! The source is linear in optical depth so layer source is average of edges
-        !
-        sources%lay_source(:,ilay-1,1) = 0.5_wp * (sources%lev_source(:,ilay,  1) + & 
-                                                   sources%lev_source(:,ilay-1,1))
-      end do
+    ilay = 1
+      sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:)
+    do ilay = 2, nlay+1
+      sources%lev_source(:,ilay,  1) = 0.5_wp/pi * olr(:) * & 
+                                         (1._wp + D * sum(atmos%tau(:,:ilay-1,1),dim=2))
+      !
+      ! The source is linear in optical depth so layer source is average of edges
+      !
+      sources%lay_source(:,ilay-1,1) = 0.5_wp * (sources%lev_source(:,ilay,  1) + & 
+                                                 sources%lev_source(:,ilay-1,1))
+    end do
     if (.not. top_at_1) then
       !
       ! Reverse vertical ordering of source functions
@@ -372,8 +374,8 @@ contains
       colE = i * ncol/2
       call stop_on_err(atmos%get_subset  (colS, ncol/2, atmos_subset))
       call stop_on_err(sources%get_subset(colS, ncol/2, sources_subset))
-      call stop_on_err(rte_lw(atmos_subset, top_at_1,  &
-                              sources_subset,          &
+      call stop_on_err(rte_lw(atmos_subset,          &
+                              sources_subset,        &
                               sfc_emis(:,colS:colE), &
                               fluxes))
       flux_up(colS:colE,:) = up

@@ -25,14 +25,17 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_KOKKOS
   Kokkos::initialize(argc, argv);
 
-  using LayoutT = Kokkos::LayoutRight;
+  using DeviceT = DefaultDevice;
+  using LayoutT = Kokkos::LayoutLeft;
   using MDRP = conv::MDRP<LayoutT>;
-  using real1d_t = Kokkos::View<real*,   LayoutT, DefaultDevice>;
-  using real2d_t = Kokkos::View<real**,  LayoutT, DefaultDevice>;
-  using real3d_t = Kokkos::View<real***, LayoutT, DefaultDevice>;
-  using bool2d_t = Kokkos::View<bool**,  LayoutT, DefaultDevice>;
-  using oreal3d_t = Kokkos::Experimental::OffsetView<real***, LayoutT, DefaultDevice>;
+  using real = double;
+  using real1d_t = Kokkos::View<real*,   LayoutT, DeviceT>;
+  using real2d_t = Kokkos::View<real**,  LayoutT, DeviceT>;
+  using real3d_t = Kokkos::View<real***, LayoutT, DeviceT>;
+  using bool2d_t = Kokkos::View<bool**,  LayoutT, DeviceT>;
+  using oreal3d_t = Kokkos::Experimental::OffsetView<real***, LayoutT, DeviceT>;
   using hreal2d_t = Kokkos::View<real**, LayoutT, HostDevice>;
+  using pool_t = conv::MemPoolSingleton<real, DeviceT>;
 #endif
 
   {
@@ -281,7 +284,7 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_KOKKOS
       const size_t base_ref = 18000;
       const size_t my_size_ref = ncol * nlay * nlev;
-      conv::MemPoolSingleton::init(2e6 * (float(my_size_ref) / base_ref));
+      pool_t::init(2e6 * (float(my_size_ref) / base_ref));
       oreal3d_t col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 
@@ -372,7 +375,7 @@ int main(int argc , char **argv) {
       std::cout << "Shortwave did " << nloops << " loops of " << ncol << " cols and " << nlay << " layers in " <<  duration.count() / 1000000.0 << " s" << std::endl;
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      conv::MemPoolSingleton::finalize();
+      pool_t::finalize();
 #endif
 
       if (verbose) std::cout << "Writing fluxes\n\n";
@@ -582,7 +585,7 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_KOKKOS
       const size_t base_ref = 18000;
       const size_t my_size_ref = ncol * nlay * nlev;
-      conv::MemPoolSingleton::init(2e6 * (float(my_size_ref) / base_ref));
+      pool_t::init(2e6 * (float(my_size_ref) / base_ref));
       oreal3d_t col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 
@@ -662,7 +665,7 @@ int main(int argc , char **argv) {
       std::cout << "Longwave did " << nloops << " loops of " << ncol << " cols and " << nlay << " layers in " <<  duration.count() / 1000000.0 << " s" << std::endl;
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      conv::MemPoolSingleton::finalize();
+      pool_t::finalize();
 #endif
 
       if (verbose) std::cout << "Writing fluxes\n\n";

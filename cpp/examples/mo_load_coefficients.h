@@ -44,9 +44,9 @@ void load_and_init(
   int3dh_t  key_species;
   real2dh_t band_lims;
   int2dh_t  band2gpt;
-  real      press_ref_trop;
-  real      temp_ref_p;
-  real      temp_ref_t;
+  RealT      press_ref_trop;
+  RealT      temp_ref_p;
+  RealT      temp_ref_t;
   real1dh_t press_ref;
   real1dh_t temp_ref;
   real3dh_t vmr_ref;

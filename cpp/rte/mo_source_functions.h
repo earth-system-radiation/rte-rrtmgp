@@ -141,7 +141,7 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class SourceFuncLWK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
 public:
 
@@ -215,7 +215,7 @@ public:
 
 // Type for shortave sources: top-of-domain spectrally-resolved flux
 // Not implementing get_subset because it isn't used
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class SourceFuncSWK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
  public:
 

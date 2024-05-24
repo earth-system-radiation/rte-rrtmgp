@@ -152,7 +152,7 @@ void rte_lw(int max_gauss_pts, GaussDsT const &gauss_Ds, GaussWtsT const &gauss_
             bool top_at_1, SourceFuncLWK<RealT, LayoutT, DeviceT> const &sources, SfcEmisT const &sfc_emis,
             FluxesType &fluxes, IncFluxT const &inc_flux=IncFluxT(), int n_gauss_angles=-1)
 {
-  using pool = conv::MemPoolSingleton;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
   using real1d_t = Kokkos::View<RealT*,   LayoutT, DeviceT>;
   using real2d_t = Kokkos::View<RealT**,  LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
@@ -176,7 +176,7 @@ void rte_lw(int max_gauss_pts, GaussDsT const &gauss_Ds, GaussWtsT const &gauss_
 
   const int dsize1 = ncol * (nlay+1) * ngpt;
   const int dsize2 = ncol * ngpt;
-  RealT* data = pool::alloc<real>(dsize1*2 + dsize2 + 2*n_quad_angs), *dcurr = data;
+  RealT* data = pool::template alloc<RealT>(dsize1*2 + dsize2 + 2*n_quad_angs), *dcurr = data;
   real3d_t gpt_flux_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
   real3d_t gpt_flux_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
   real2d_t sfc_emis_gpt(dcurr,ncol       ,ngpt); dcurr += dsize2;

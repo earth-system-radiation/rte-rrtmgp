@@ -131,7 +131,7 @@ void rte_sw(OpticalProps2strK<RealT, LayoutT, DeviceT> const &atmos, bool top_at
             SfcDirT const &sfc_alb_dir, SfcDifT const &sfc_alb_dif,
             FluxesType &fluxes, IncFluxDifT const &inc_flux_dif=IncFluxDifT())
 {
-  using pool = conv::MemPoolSingleton;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
   using real2d_t = Kokkos::View<RealT**,  LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
 
@@ -142,7 +142,7 @@ void rte_sw(OpticalProps2strK<RealT, LayoutT, DeviceT> const &atmos, bool top_at
 
   const int dsize1 = ncol * (nlay+1) * ngpt;
   const int dsize2 = ncol * ngpt;
-  RealT* data = pool::alloc<real>(dsize1*3 + dsize2*2), *dcurr = data;
+  RealT* data = pool::template alloc<RealT>(dsize1*3 + dsize2*2), *dcurr = data;
   real3d_t gpt_flux_up    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
   real3d_t gpt_flux_dn    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
   real3d_t gpt_flux_dir   (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;

@@ -225,18 +225,20 @@ Layout get_layout(const Container& dims)
 }
 
 // approx eq. Compares values with a tolerance if reals.
-template <typename T>
+template <typename T,
+          typename std::enable_if<std::is_integral_v<T>>::type* = nullptr>
 inline
 bool approx_eq(const T lhs, const T rhs)
 {
   return lhs == rhs;
 }
 
-template <>
+template <typename T,
+          typename std::enable_if<std::is_floating_point_v<T>>::type* = nullptr>
 inline
-bool approx_eq<real>(const real lhs, const real rhs)
+bool approx_eq(const T lhs, const T rhs)
 {
-  constexpr real tol = 1e-12;
+  constexpr T tol = 1e-12;
   if (std::isnan(lhs) && std::isnan(rhs)) {
     return true;
   }
@@ -517,10 +519,12 @@ sum(const KView& view)
 }
 
 // MemPool singleton. Stack allocation pattern only.
+template <typename RealT, typename DeviceT>
 struct MemPoolSingleton
 {
  public:
-  static inline Kokkos::View<real*> s_mem;
+  using view_t = Kokkos::View<RealT*, Kokkos::LayoutRight, DeviceT>;
+  static inline view_t  s_mem;
   static inline int64_t s_curr_used;
   static inline int64_t s_high_water;
 
@@ -528,7 +532,7 @@ struct MemPoolSingleton
   {
     static bool is_init = false;
     RRT_REQUIRE(!is_init, "Multiple MemPoolSingleton inits");
-    s_mem = Kokkos::View<real*>("s_mem", capacity);
+    s_mem = view_t("s_mem", capacity);
     s_curr_used = 0;
     s_high_water = 0;
   }
@@ -537,8 +541,8 @@ struct MemPoolSingleton
   static inline
   T* alloc(const int64_t num) noexcept
   {
-    assert(sizeof(T) <= sizeof(real));
-    const int64_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
+    assert(sizeof(T) <= sizeof(RealT));
+    const int64_t num_reals = (num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT);
     T* rv = reinterpret_cast<T*>(s_mem.data() + s_curr_used);
     s_curr_used += num_reals;
     assert(s_curr_used <= s_mem.size());
@@ -588,7 +592,7 @@ struct MemPoolSingleton
   static inline
   void dealloc(const T*, const int64_t num) noexcept
   {
-    const int64_t num_reals = (num * sizeof(T) + (sizeof(real) - 1)) / sizeof(real);
+    const int64_t num_reals = (num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT);
     s_curr_used -= num_reals;
     assert(s_curr_used >= 0);
   }
@@ -605,7 +609,7 @@ struct MemPoolSingleton
   {
     print_state();
     assert(s_curr_used == 0); // !=0 indicates we may have forgetten a dealloc
-    s_mem = Kokkos::View<real*>();
+    s_mem = view_t();
   }
 
   static inline

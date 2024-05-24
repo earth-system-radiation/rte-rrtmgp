@@ -33,7 +33,7 @@ void load_cld_lutcoeff(CloudOpticsK<RealT, LayoutT, DeviceT> &cloud_spec,
   io.read(band_lims_wvn,"bnd_limits_wavenumber");
 
   // Read LUT constants
-  real radliq_lwr, radliq_upr, radliq_fac, radice_lwr, radice_upr, radice_fac;
+  RealT radliq_lwr, radliq_upr, radliq_fac, radice_lwr, radice_upr, radice_fac;
   io.read(radliq_lwr , "radliq_lwr");
   io.read(radliq_upr , "radliq_upr");
   io.read(radliq_fac , "radliq_fac");

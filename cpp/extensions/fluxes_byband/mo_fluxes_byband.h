@@ -45,7 +45,7 @@ class FluxesByband : public FluxesBroadband {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class FluxesBybandK : public FluxesBroadbandK<RealT, LayoutT, DeviceT> {
 public:
 

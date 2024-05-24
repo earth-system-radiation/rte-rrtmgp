@@ -37,6 +37,8 @@
 #ifdef RRTMGP_ENABLE_YAKL
 class GasOpticsRRTMGP : public OpticalProps {
 public:
+  using const_t = rrtmgp_constants<real>;
+
   // RRTMGP computes absorption in each band arising from
   //   two major species in each band, which are combined to make
   //     a relative mixing ratio eta and a total column amount (col_mix)
@@ -1125,7 +1127,7 @@ public:
       });
     } else {
       // do icol = 1, ncol
-      YAKL_SCOPE( grav , ::grav );
+      YAKL_SCOPE( grav , const_t::grav );
       parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = grav;
       });
@@ -1134,7 +1136,9 @@ public:
     real2d col_dry("col_dry",size(plev,1),size(plev,2)-1);
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
-    YAKL_SCOPE( m_dry , ::m_dry );
+    YAKL_SCOPE( m_dry , const_t::m_dry );
+    YAKL_SCOPE( m_h2o , const_t::m_h2o );
+    YAKL_SCOPE( avogad , const_t::avogad );
     parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
       real delta_plev = std::abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
@@ -1233,12 +1237,14 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
  public:
 
   using parent_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
   using hparent_t = OpticalPropsK<RealT, LayoutT, HostDevice>;
+  using pool_t = conv::MemPoolSingleton<RealT, DeviceT>;
+  using const_t = rrtmgp_constants<RealT>;
 
   template <typename T>
   using view_t = typename parent_t::template view_t<T>;
@@ -1998,16 +2004,14 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
                   ColGasT const& col_gas, OpticalPropsT &optical_props,
                   SourceFuncLWK<RealT, LayoutT, DeviceT> &sources,
                   ColDryT const &col_dry=ColDryT(), TlevT const &tlev=TlevT()) {
-    using pool = conv::MemPoolSingleton;
-
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     // Interpolation coefficients for use in source function
-    view_t<int**>  jtemp  = pool::alloc<view_t<int**>> (ncol, nlay);
-    view_t<int**>  jpress = pool::alloc<view_t<int**>> (ncol, nlay);
-    view_t<int****>  jeta = pool::alloc<view_t<int****>> (2, this->get_nflav(), ncol, nlay);
-    view_t<bool**> tropo  = pool::alloc<view_t<bool**>>(ncol, nlay);
-    view_t<RealT******> fmajor = pool::alloc<view_t<RealT******>>(2,2,2,this->get_nflav(),ncol,nlay);
+    view_t<int**>  jtemp  = pool_t::template alloc<view_t<int**>> (ncol, nlay);
+    view_t<int**>  jpress = pool_t::template alloc<view_t<int**>> (ncol, nlay);
+    view_t<int****>  jeta = pool_t::template alloc<view_t<int****>> (2, this->get_nflav(), ncol, nlay);
+    view_t<bool**> tropo  = pool_t::template alloc<view_t<bool**>>(ncol, nlay);
+    view_t<RealT******> fmajor = pool_t::template alloc<view_t<RealT******>>(2,2,2,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress,
                      jeta, tropo, fmajor, col_dry);
@@ -2037,11 +2041,11 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // Interpolate source function
     this->source(top_at_1, ncol, nlay, nband, ngpt, play, plev, tlay, tsfc, jtemp, jpress, jeta, tropo, fmajor, sources, tlev);
 
-    pool::dealloc(jtemp);
-    pool::dealloc(jpress);
-    pool::dealloc(tropo);
-    pool::dealloc(fmajor);
-    pool::dealloc(jeta);
+    pool_t::dealloc(jtemp);
+    pool_t::dealloc(jpress);
+    pool_t::dealloc(tropo);
+    pool_t::dealloc(fmajor);
+    pool_t::dealloc(jeta);
   }
 
   // Compute gas optical depth given temperature, pressure, and composition
@@ -2051,19 +2055,17 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
                   bool top_at_1, PlayT const &play, PlevT const &plev, TlayT const &tlay,
                   GasConcsK<RealT, LayoutT, DeviceT> const &gas_desc,
                   ColGasT const& col_gas, OpticalPropsT &optical_props, ToaT &toa_src, ColDryT const &col_dry=ColDryT()) {
-    using pool = conv::MemPoolSingleton;
-
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     int ngas  = this->get_ngas();
     int nflav = get_nflav();
 
     // Interpolation coefficients for use in source function
-    view_t<int**>  jtemp  = pool::alloc<view_t<int**>> (ncol,nlay);
-    view_t<int**>  jpress = pool::alloc<view_t<int**>> (ncol,nlay);
-    view_t<bool**> tropo  = pool::alloc<view_t<bool**>>(ncol,nlay);
-    view_t<RealT******> fmajor = pool::alloc<view_t<RealT******>>(2,2,2,this->get_nflav(),ncol,nlay);
-    view_t<int****>  jeta   = pool::alloc<view_t<int****>> (2,this->get_nflav(),ncol,nlay);
+    view_t<int**>  jtemp  = pool_t::template alloc<view_t<int**>> (ncol,nlay);
+    view_t<int**>  jpress = pool_t::template alloc<view_t<int**>> (ncol,nlay);
+    view_t<bool**> tropo  = pool_t::template alloc<view_t<bool**>>(ncol,nlay);
+    view_t<RealT******> fmajor = pool_t::template alloc<view_t<RealT******>>(2,2,2,this->get_nflav(),ncol,nlay);
+    view_t<int****>  jeta   = pool_t::template alloc<view_t<int****>> (2,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress, jeta,
                      tropo, fmajor, col_dry);
@@ -2076,11 +2078,11 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
       toa_src(icol,igpt) = this_solar_src(igpt);
     });
 
-    pool::dealloc(jtemp);
-    pool::dealloc(jpress);
-    pool::dealloc(tropo);
-    pool::dealloc(fmajor);
-    pool::dealloc(jeta);
+    pool_t::dealloc(jtemp);
+    pool_t::dealloc(jpress);
+    pool_t::dealloc(tropo);
+    pool_t::dealloc(fmajor);
+    pool_t::dealloc(jeta);
   }
 
   // Returns optical properties and interpolation coefficients
@@ -2094,8 +2096,6 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
                         JtempT const &jtemp, JpressT const &jpress, JetaT const &jeta,
                         TropoT const &tropo, FmajorT const &fmajor, ColDryT const &col_dry=ColDryT() ) {
     // Number of molecules per cm^2
-    using pool = conv::MemPoolSingleton;
-
     const int nlev = plev.extent(1);
     const int size1 = ngpt*nlay*ncol;
     const int size2 = ncol*nlay*this->get_ngas();
@@ -2103,7 +2103,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     const int size4 = 2*2*this->get_nflav()*ncol*nlay;
     const int size5 = ncol;
     const int size6 = ncol * (nlev-1);
-    RealT* data = pool::alloc<RealT>(size1*2 + size2 + size3 + size4 + size5 + size6), *dcurr = data;
+    RealT* data = pool_t::template alloc<RealT>(size1*2 + size2 + size3 + size4 + size5 + size6), *dcurr = data;
     view_t<RealT***> tau         (dcurr,ngpt,nlay,ncol); dcurr += size1;
     view_t<RealT***> tau_rayleigh(dcurr,ngpt,nlay,ncol); dcurr += size1;
     // Interpolation variables used in major gas but not elsewhere, so don't need exporting
@@ -2211,7 +2211,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     }
     combine_and_reorder(tau, tau_rayleigh, this->krayl.is_allocated(), optical_props);
 
-    pool::dealloc(data, dcurr - data);
+    pool_t::dealloc(data, dcurr - data);
   }
 
   // Compute Planck source functions at layer centers and levels
@@ -2223,11 +2223,10 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
               TsfcT const &tsfc, JtempT const &jtemp, JpressT const &jpress, JetaT const &jeta,
               TropoT const &tropo, FmajorT const &fmajor, SourceFuncLWK<RealT, LayoutT, DeviceT> &sources,
               TlevT const &tlev=TlevT()) {
-    using pool = conv::MemPoolSingleton;
     const int dsize1 = ngpt * nlay * ncol;
     const int dsize2 = ngpt * ncol;
     const int dsize3 = ncol * (nlay+1);
-    RealT* data = pool::alloc<RealT>(dsize1*3 + dsize2 + dsize3*2), *dcurr = data;
+    RealT* data = pool_t::template alloc<RealT>(dsize1*3 + dsize2 + dsize3*2), *dcurr = data;
     view_t<RealT***> lay_source_t    (dcurr,ngpt,nlay,ncol); dcurr += dsize1;
     view_t<RealT***> lev_source_inc_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
     view_t<RealT***> lev_source_dec_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
@@ -2281,15 +2280,13 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     reorder123x321(ngpt, nlay, ncol, lev_source_inc_t, sources.lev_source_inc);
     reorder123x321(ngpt, nlay, ncol, lev_source_dec_t, sources.lev_source_dec);
 
-    pool::dealloc(data, dcurr - data);
+    pool_t::dealloc(data, dcurr - data);
   }
 
   // Utility function, provided for user convenience
   // computes column amounts of dry air using hydrostatic equation
   template <typename VmrT, typename PlevT, typename G0T, typename ColDryT, typename LatT=view_t<RealT*> >
   void get_col_dry(VmrT const &vmr_h2o, PlevT const &plev, G0T const& g0, ColDryT const& col_dry, LatT const &latitude=LatT()) {
-    using pool = conv::MemPoolSingleton;
-
     // first and second term of Helmert formula
     RealT constexpr helmert1 = 9.80665;
     RealT constexpr helmert2 = 0.02586;
@@ -2303,7 +2300,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
       });
     } else {
       // do icol = 1, ncol
-      const auto grav = ::grav;
+      const auto grav = const_t::grav;
       Kokkos::parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
         g0(icol) = grav;
       });
@@ -2311,7 +2308,9 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
 
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
-    const auto m_dry = ::m_dry;
+    const auto m_dry = const_t::m_dry;
+    const auto m_h2o = const_t::m_h2o;
+    const auto avogad = const_t::avogad;
     Kokkos::parallel_for( conv::get_mdrp<2>({nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
       RealT delta_plev = Kokkos::fabs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air

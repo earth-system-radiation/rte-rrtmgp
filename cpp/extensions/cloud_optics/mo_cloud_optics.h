@@ -546,7 +546,7 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
  public:
 
@@ -771,14 +771,14 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   template <typename ClwpT, typename CiwpT, typename ReliqT, typename ReiceT, class OpticalPropsT>
   void cloud_optics(const int ncol, const int nlay,
                     ClwpT const &clwp, CiwpT const &ciwp, ReliqT const &reliq, ReiceT const &reice, OpticalPropsT &optical_props) {
-    using pool = conv::MemPoolSingleton;
+    using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
     int nbnd = this->get_nband();
     // Error checking
     if (! (this->lut_extliq.is_allocated() || this->pade_extliq.is_allocated())) { stoprun("cloud optics: no data has been initialized"); }
     // Array sizes
     const int num_bools = ncol * nlay;
-    bool* bdata         = pool::alloc<bool>(num_bools * 2), *bcurr = bdata;
+    bool* bdata         = pool::template alloc<bool>(num_bools * 2), *bcurr = bdata;
     view_t<bool**> liqmsk(bcurr, ncol, nlay); bcurr += num_bools;
     view_t<bool**> icemsk(bcurr, ncol, nlay); bcurr += num_bools;
 
@@ -817,7 +817,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // We could compute the properties for liquid and ice separately and
     //    use ty_optical_props_arry.increment but this involves substantially more division.
     const int num_tau = clwp.extent(0) *  clwp.extent(1) * this->get_nband();
-    RealT* data        = pool::alloc<RealT>(num_tau * 6), *dcurr = data;
+    RealT* data        = pool::template alloc<RealT>(num_tau * 6), *dcurr = data;
     view_t<RealT***> ltau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
     view_t<RealT***> ltaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
     view_t<RealT***> ltaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
@@ -983,7 +983,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   // Evaluate Pade approximant of order [m/n]
   template <typename PadeT>
   KOKKOS_INLINE_FUNCTION
-  static real pade_eval(int iband, int nbnd, int nrads, int m, int n, int irad, RealT re, PadeT const &pade_coeffs) {
+  static RealT pade_eval(int iband, int nbnd, int nrads, int m, int n, int irad, RealT re, PadeT const &pade_coeffs) {
     RealT denom = pade_coeffs(iband,irad,n+m-1);
     for (int i = n-1+m ; i >= 1+m ; i--) {
       denom = pade_coeffs(iband,irad,i-1)+re*denom;

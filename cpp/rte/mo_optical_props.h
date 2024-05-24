@@ -253,7 +253,7 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class OpticalPropsK {
 public:
 
@@ -432,7 +432,7 @@ public:
 };
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class OpticalPropsArryK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
 public:
   using parent_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
@@ -541,7 +541,7 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class OpticalProps1sclK : public OpticalPropsArryK<RealT, LayoutT, DeviceT> {
 public:
 
@@ -758,7 +758,7 @@ inline void OpticalProps1scl::increment(OpticalProps2str &that) {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <typename RealT=real, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class OpticalProps2strK : public OpticalPropsArryK<RealT, LayoutT, DeviceT> {
  public:
 

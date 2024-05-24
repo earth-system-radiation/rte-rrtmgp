@@ -179,12 +179,12 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   using LayoutT = typename JtempT::array_layout;
   using DeviceT = typename JtempT::device_type;
 
-  using pool = conv::MemPoolSingleton;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
   using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
 
   const int dsize = ncol *nlay;
-  RealT* data = pool::alloc<RealT>(dsize*2), *dcurr = data;
+  RealT* data = pool::template alloc<RealT>(dsize*2), *dcurr = data;
   real2d_t ftemp (dcurr,ncol,nlay); dcurr += dsize;
   real2d_t fpress(dcurr,ncol,nlay); dcurr += dsize;
 
@@ -282,16 +282,16 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
                            RealT totplnk_delta, TotplnkT const &totplnk, GpointFlavorT const &gpoint_flavor, SfcSrcT const &sfc_src,
                            LaySrcT const &lay_src, LevSrcIncT const &lev_src_inc, LevSrcDecT const &lev_src_dec) {
   using conv::merge;
-  using pool = conv::MemPoolSingleton;
 
   using LayoutT = typename JtempT::array_layout;
   using DeviceT = typename JtempT::device_type;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
 
   const int dsize1 = ngpt*nlay*ncol;
   const int dsize2 = ngpt*(nlay+1)*ncol;
-  RealT* data = pool::alloc<RealT>(dsize1 + dsize2), *dcurr = data;
+  RealT* data = pool::template alloc<RealT>(dsize1 + dsize2), *dcurr = data;
   real3d_t pfrac          (dcurr,ngpt,nlay,ncol);   dcurr += dsize1;
   real3d_t planck_function(dcurr,nbnd,nlay+1,ncol); dcurr += dsize2;
 
@@ -543,15 +543,15 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
                             KminorStartUpperT const &kminor_start_upper, TropoT const &tropo, ColMixT const &col_mix, FmajorT const &fmajor,
                             FminorT const &fminor, PlayT const &play, TlayT const &tlay, ColGasT const &col_gas, JetaT const &jeta,
                             JtempT const &jtemp, JpressT const &jpress, TauT const &tau, bool top_at_1) {
-  using pool = conv::MemPoolSingleton;
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
   using int2d_t = Kokkos::View<int**, LayoutT, DeviceT>;
 
   const int dsize = 2*ncol;
-  int* data = pool::alloc<int>(2 * dsize), *icurr = data;
+  int* data = pool::template alloc<int>(2 * dsize), *icurr = data;
   int2d_t itropo_lower(icurr,ncol,2); icurr += dsize;
   int2d_t itropo_upper(icurr,ncol,2); icurr += dsize;
 

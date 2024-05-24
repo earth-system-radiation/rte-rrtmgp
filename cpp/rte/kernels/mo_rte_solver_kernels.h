@@ -499,12 +499,12 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
                           W0T const &w0, GT const &g, RdifT &Rdif, TdifT const &Tdif,
                           RdirT const &Rdir, TdirT const &Tdir, TnoscatT const &Tnoscat) {
   using conv::merge;
-  using pool = conv::MemPoolSingleton;
   using RealT = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
-  Kokkos::View<RealT*> mu0_inv(pool::alloc<real>(ncol), ncol);
+  Kokkos::View<RealT*> mu0_inv(pool::template alloc<RealT>(ncol), ncol);
 
   RealT eps = std::numeric_limits<RealT>::epsilon();
 
@@ -645,15 +645,15 @@ template <typename AlbedoSfcT, typename RdifT, typename TdifT, typename SrcDnT, 
           typename SrcSfcT, typename FluxUpT, typename FluxDnT>
 void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albedo_sfc, RdifT const &rdif, TdifT const &tdif,
             SrcDnT const &src_dn, SrcUpT const &src_up, SrcSfcT const &src_sfc, FluxUpT const &flux_up, FluxDnT const &flux_dn) {
-  using pool    = conv::MemPoolSingleton;
   using RealT   = typename TdifT::non_const_value_type;
   using LayoutT = typename TdifT::array_layout;
   using DeviceT = typename TdifT::device_type;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
+  using pool    = conv::MemPoolSingleton<RealT, DeviceT>;
 
   const int dsize1 = ncol*(nlay+1)*ngpt;
   const int dsize2 = ncol*nlay*ngpt;
-  RealT* data = pool::alloc<RealT>(dsize1*2 + dsize2), *dcurr = data;
+  RealT* data = pool::template alloc<RealT>(dsize1*2 + dsize2), *dcurr = data;
   real3d_t albedo(dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
   real3d_t src   (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
   real3d_t denom (dcurr,ncol,nlay  ,ngpt); dcurr += dsize2;
@@ -749,17 +749,17 @@ template <typename TauT, typename SsaT, typename GT, typename Mu0T, typename Sfc
 void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &tau, SsaT const &ssa, GT const &g,
                        Mu0T const &mu0, SfcDirT const &sfc_alb_dir, SfcDifT const &sfc_alb_dif, FluxUpT const &flux_up,
                        FluxDnT const &flux_dn, FluxDirT const &flux_dir) {
-  using pool = conv::MemPoolSingleton;
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
   using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
 
   const int dsize1 = ncol*nlay*ngpt;
   const int dsize2 = ncol*ngpt;
-  RealT* data = pool::alloc<RealT>(dsize1*7 + dsize2), *dcurr = data;
+  RealT* data = pool::template alloc<RealT>(dsize1*7 + dsize2), *dcurr = data;
   real3d_t Rdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
   real3d_t Tdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
   real3d_t Rdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
@@ -804,17 +804,17 @@ template <typename DT, typename WeightsT, typename TauT, typename LaySourceT, ty
 void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, WeightsT const &weights, int weight_ind, TauT const &tau,
                       LaySourceT const &lay_source, LevIncT const &lev_source_inc, LevDecT const &lev_source_dec,
                       SfcEmisT const &sfc_emis, SfcSrcT const &sfc_src, RadnUpT const &radn_up, RadnDnT const &radn_dn) {
-  using pool = conv::MemPoolSingleton;
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
   using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
 
   const int dsize1 = ncol*nlay*ngpt;
   const int dsize2 = ncol*ngpt;
-  RealT* data = pool::alloc<RealT>(dsize1*4 + dsize2*2), *dcurr=data;
+  RealT* data = pool::template alloc<RealT>(dsize1*4 + dsize2*2), *dcurr=data;
   real3d_t tau_loc   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
   real3d_t trans     (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
   real3d_t source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
@@ -899,17 +899,17 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
                                 TauT const &tau, LaySourceT const &lay_source, LevIncT const &lev_source_inc, LevDecT const &lev_source_dec,
                                 SfcEmisT const &sfc_emis, SfcSrcT const &sfc_src, FluxUpT const &flux_up, FluxDnT const &flux_dn) {
   // Local variables
-  using pool = conv::MemPoolSingleton;
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
   using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
 
   const int dsize1 = ncol*(nlay+1)*ngpt;
   const int dsize2 = ncol*ngpt;
-  RealT* data = pool::alloc<RealT>(dsize1*2 + dsize2*2), *dcurr=data;
+  RealT* data = pool::template alloc<RealT>(dsize1*2 + dsize2*2), *dcurr=data;
   real3d_t radn_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
   real3d_t radn_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
   real2d_t Ds_ncol (dcurr,ncol,       ngpt); dcurr += dsize2;

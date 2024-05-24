@@ -297,6 +297,14 @@ MDRangeP<N> get_mdrp(const IntT (&upper_bounds)[N])
   return MDRangeP<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
 }
 
+template <int N, typename IntT>
+inline
+MDRangeP<N> get_mdrp(const IntT (&lower_bounds)[N], const IntT (&upper_bounds)[N])
+{
+  assert(N > 1);
+  return MDRangeP<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
+}
+
 template <typename LayoutT, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
 struct MDRP
 {

@@ -42,7 +42,8 @@ inline void reorder_123x312_kernel(int d1, int d2, int d3, real3d const &array_i
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-inline void reorder_123x321_kernel(int d1, int d2, int d3, real3dk const &array_in, real3dk const &array_out) {
+template <typename ArrayInT, typename ArrayOutT>
+inline void reorder_123x321_kernel(int d1, int d2, int d3, ArrayInT const &array_in, ArrayOutT const &array_out) {
   int constexpr TILE_SIZE = 8;
   int ntiles1 = (d1-1) / TILE_SIZE + 1;
   int ntiles3 = (d3-1) / TILE_SIZE + 1;
@@ -61,8 +62,8 @@ inline void reorder_123x321_kernel(int d1, int d2, int d3, real3dk const &array_
   });
 }
 
-
-inline void reorder_123x312_kernel(int d1, int d2, int d3, real3dk const &array_in, real3dk const &array_out) {
+template <typename ArrayInT, typename ArrayOutT>
+inline void reorder_123x312_kernel(int d1, int d2, int d3, ArrayInT const &array_in, ArrayOutT const &array_out) {
   // do i3 = 1 , d3
   //   do i2 = 1 , d2
   //     do i1 = 1 , d1

@@ -600,8 +600,10 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   void load(BandLimsT const &band_lims_wvn, RealT radliq_lwr, RealT radliq_upr, RealT radliq_fac, RealT radice_lwr, RealT radice_upr,
            RealT radice_fac, LutExtliqT const &lut_extliq, LutSsaliqT const &lut_ssaliq, LutAsyliqT const &lut_asyliq,
            LutExticeT const &lut_extice, LutSsaiceT const &lut_ssaice, LutAsyiceT const &lut_asyice) {
+    using int2d_t = typename Kokkos::View<int**, LayoutT, DeviceT>;
+
     // Local variables
-    this->init(band_lims_wvn, int2dk(), "RRTMGP cloud optics");
+    this->init(band_lims_wvn, int2d_t(), "RRTMGP cloud optics");
     // LUT coefficient dimensions
     int nsize_liq = lut_extliq.extent(0);
     int nsize_ice = lut_extice.extent(0);
@@ -657,6 +659,8 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
             PadeExticeT const &pade_extice, PadeSsaiceT const &pade_ssaice, PadeAsyiceT const &pade_asyice,
             PadeSizeExtliqT const &pade_sizreg_extliq, PadeSizeSsaliqT const &pade_sizreg_ssaliq, PadeSizeAsyliqT const &pade_sizreg_asyliq,
             PadeSizeExticeT const &pade_sizreg_extice, PadeSizeSsaiceT const &pade_sizreg_ssaice, PadeSizeAsyiceT const &pade_sizreg_asyice) {
+    using int2d_t = typename Kokkos::View<int**, LayoutT, DeviceT>;
+
     // Pade coefficient dimensions
     int nbnd         = pade_extliq.extent(0);
     int nsizereg     = pade_extliq.extent(1);
@@ -668,7 +672,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     if (nsizereg != 3) {
       stoprun("cloud optics: code assumes exactly three size regimes for Pade approximants but data is otherwise");
     }
-    this->init(band_lims_wvn, int2dk(), "RRTMGP cloud optics");
+    this->init(band_lims_wvn, int2d_t(), "RRTMGP cloud optics");
     // Error checking
     if (nbnd != this->get_nband()) {
       stoprun("cloud_optics%init(): number of bands inconsistent between lookup tables, spectral discretization");

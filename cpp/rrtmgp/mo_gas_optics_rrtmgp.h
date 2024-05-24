@@ -1416,7 +1416,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     scale_by_complement_atm_red       = hview_t<bool*>("scale_by_complement_atm_red      "  ,red_nm);
     kminor_start_atm_red              = hview_t<int*> ("kminor_start_atm_red             "  ,red_nm);
     minor_limits_gpt_atm_red          = hview_t<int**> ("minor_limits_gpt_atm_red         ",2,red_nm);
-    kminor_atm_red                    = hview_t<RealT**>("kminor_atm_red                   ",tot_g , kminor_atm.extent(1), kminor_atm.extent(2));
+    kminor_atm_red                    = hview_t<RealT***>("kminor_atm_red                   ",tot_g , kminor_atm.extent(1), kminor_atm.extent(2));
 
     if (red_nm == nm) {
       // If the gasses listed exactly matches the gasses needed, just copy it
@@ -1805,7 +1805,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
     auto this_flavor = this->flavor;
     auto this_is_key = this->is_key;
-    Kokkos::parallel_for( MDRangeP<2>( {0, 0}, {this->flavor.extent(0), this->flavor.extent(1)} ) , KOKKOS_LAMBDA (int i, int j) {
+    Kokkos::parallel_for( conv::get_mdrp<2>({this->flavor.extent(0), this->flavor.extent(1)}) , KOKKOS_LAMBDA (int i, int j) {
       if (this_flavor(i,j) != -1) { this_is_key(this_flavor(i,j)) = true; }
     });
   }

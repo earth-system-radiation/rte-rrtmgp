@@ -1,5 +1,4 @@
 #include "mo_fluxes_broadband_kernels.h"
-#include "rrtmgp_conversion.h"
 
 #ifdef RRTMGP_ENABLE_YAKL
 // Spectral reduction over all points
@@ -80,54 +79,6 @@ void net_broadband(int ncol, int nlev, real2d const &flux_dn, real2d const &flux
   // do ilev = 1, nlev
   //   do icol = 1, ncol
   parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA (int ilev, int icol) {
-     broadband_flux_net(icol,ilev) = flux_dn(icol,ilev) - flux_up(icol,ilev);
-  });
-}
-#endif
-
-#ifdef RRTMGP_ENABLE_KOKKOS
-// Spectral reduction over all points
-void sum_broadband(int ncol, int nlev, int ngpt, real3dk const &spectral_flux, real2dk const &broadband_flux) {
-  // do ilev = 1, nlev
-  //   do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<2>({nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {
-      real bb_flux_s = 0.0;
-      for (int igpt=0; igpt<ngpt; igpt++) {
-        bb_flux_s += spectral_flux(icol, ilev, igpt);
-      }
-      broadband_flux(icol, ilev) = bb_flux_s;
-    });
-}
-
-// Net flux: Spectral reduction over all points
-void net_broadband(int ncol, int nlev, int ngpt, real3dk const &spectral_flux_dn, real3dk const &spectral_flux_up, real2dk const &broadband_flux_net) {
-  // do ilev = 1, nlev
-  //   do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<2>({nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {
-    real diff = spectral_flux_dn(icol, ilev, 0) - spectral_flux_up(icol, ilev, 0);
-    broadband_flux_net(icol, ilev) = diff;
-  });
-
-  // do igpt = 2, ngpt
-  //   do ilev = 1, nlev
-  //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<2>({nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {
-    for (int igpt=1; igpt<ngpt; igpt++) {
-      real diff = spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt);
-      broadband_flux_net(icol,ilev) += diff;
-    }
-  });
-#ifdef RRTMGP_DEBUG
-  std::cout << "WARNING: THIS ISN'T TESTED!\n";
-  std::cout << __FILE__ << ": " << __LINE__ << std::endl;
-#endif
-}
-
-// Net flux when bradband flux up and down are already available
-void net_broadband(int ncol, int nlev, real2dk const &flux_dn, real2dk const &flux_up, real2dk const &broadband_flux_net) {
-  // do ilev = 1, nlev
-  //   do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<2>({nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {
      broadband_flux_net(icol,ilev) = flux_dn(icol,ilev) - flux_up(icol,ilev);
   });
 }

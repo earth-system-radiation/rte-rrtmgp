@@ -94,7 +94,7 @@ public:
   real2d_t flux_dn_dir;
 
   template <typename FluxUpT, typename FluxDnT, typename FluxDnDirT = real3d_t>
-  void reduce(real3dk const &gpt_flux_up, const real3dk &gpt_flux_dn,
+  void reduce(FluxUpT const &gpt_flux_up, const FluxDnT &gpt_flux_dn,
               OpticalPropsK<RealT, LayoutT, DeviceT> const &spectral_disc,
               bool top_at_1, FluxDnDirT const &gpt_flux_dn_dir=FluxDnDirT()) {
     int ncol = gpt_flux_up.extent(0);

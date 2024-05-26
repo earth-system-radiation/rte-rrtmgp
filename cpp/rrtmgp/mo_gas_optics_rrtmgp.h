@@ -1251,6 +1251,9 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   using view_t = typename parent_t::template view_t<T>;
 
   template <typename T>
+  using uview_t = conv::Unmanaged<view_t<T>>;
+
+  template <typename T>
   using hview_t = typename hparent_t::template view_t<T>;
 
   template <typename T>
@@ -2008,11 +2011,11 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     int ngpt  = this->get_ngpt();
     int nband = this->get_nband();
     // Interpolation coefficients for use in source function
-    view_t<int**>  jtemp  = pool_t::template alloc<view_t<int**>> (ncol, nlay);
-    view_t<int**>  jpress = pool_t::template alloc<view_t<int**>> (ncol, nlay);
-    view_t<int****>  jeta = pool_t::template alloc<view_t<int****>> (2, this->get_nflav(), ncol, nlay);
-    view_t<bool**> tropo  = pool_t::template alloc<view_t<bool**>>(ncol, nlay);
-    view_t<RealT******> fmajor = pool_t::template alloc<view_t<RealT******>>(2,2,2,this->get_nflav(),ncol,nlay);
+    auto jtemp  = pool_t::template alloc<int>(ncol, nlay);
+    auto jpress = pool_t::template alloc<int>(ncol, nlay);
+    auto jeta   = pool_t::template alloc<int>(2, this->get_nflav(), ncol, nlay);
+    auto tropo  = pool_t::template alloc<bool>(ncol, nlay);
+    auto fmajor = pool_t::template alloc<RealT>(2,2,2,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress,
                      jeta, tropo, fmajor, col_dry);
@@ -2062,11 +2065,11 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     int nflav = get_nflav();
 
     // Interpolation coefficients for use in source function
-    view_t<int**>  jtemp  = pool_t::template alloc<view_t<int**>> (ncol,nlay);
-    view_t<int**>  jpress = pool_t::template alloc<view_t<int**>> (ncol,nlay);
-    view_t<bool**> tropo  = pool_t::template alloc<view_t<bool**>>(ncol,nlay);
-    view_t<RealT******> fmajor = pool_t::template alloc<view_t<RealT******>>(2,2,2,this->get_nflav(),ncol,nlay);
-    view_t<int****>  jeta   = pool_t::template alloc<view_t<int****>> (2,this->get_nflav(),ncol,nlay);
+    auto jtemp  = pool_t::template alloc<int>(ncol,nlay);
+    auto jpress = pool_t::template alloc<int>(ncol,nlay);
+    auto tropo  = pool_t::template alloc<bool>(ncol,nlay);
+    auto fmajor = pool_t::template alloc<RealT>(2,2,2,this->get_nflav(),ncol,nlay);
+    auto jeta   = pool_t::template alloc<int>(2,this->get_nflav(),ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress, jeta,
                      tropo, fmajor, col_dry);
@@ -2104,22 +2107,22 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     const int size4 = 2*2*this->get_nflav()*ncol*nlay;
     const int size5 = ncol;
     const int size6 = ncol * (nlev-1);
-    RealT* data = pool_t::template alloc<RealT>(size1*2 + size2 + size3 + size4 + size5 + size6), *dcurr = data;
-    view_t<RealT***> tau         (dcurr,ngpt,nlay,ncol); dcurr += size1;
-    view_t<RealT***> tau_rayleigh(dcurr,ngpt,nlay,ncol); dcurr += size1;
+    RealT* data = pool_t::template alloc_raw<RealT>(size1*2 + size2 + size3 + size4 + size5 + size6), *dcurr = data;
+    uview_t<RealT***> tau         (dcurr,ngpt,nlay,ncol); dcurr += size1;
+    uview_t<RealT***> tau_rayleigh(dcurr,ngpt,nlay,ncol); dcurr += size1;
     // Interpolation variables used in major gas but not elsewhere, so don't need exporting
-    view_t<RealT***> vmr         (dcurr,ncol,nlay,this->get_ngas()); dcurr += size2;
-    view_t<RealT****> col_mix     (dcurr,2,this->get_nflav(),ncol,nlay); dcurr += size3; // combination of major species's column amounts
+    uview_t<RealT***> vmr         (dcurr,ncol,nlay,this->get_ngas()); dcurr += size2;
+    uview_t<RealT****> col_mix     (dcurr,2,this->get_nflav(),ncol,nlay); dcurr += size3; // combination of major species's column amounts
                                                                                // index(1) : reference temperature level
                                                                                // index(2) : flavor
                                                                                // index(3) : layer
-    view_t<RealT*****> fminor      (dcurr,2,2,this->get_nflav(),ncol,nlay); dcurr += size4; // interpolation fractions for minor species
+    uview_t<RealT*****> fminor      (dcurr,2,2,this->get_nflav(),ncol,nlay); dcurr += size4; // interpolation fractions for minor species
                                                                                  // index(1) : reference eta level (temperature dependent)
                                                                                  // index(2) : reference temperature level
                                                                                  // index(3) : flavor
                                                                                  // index(4) : layer
-    view_t<RealT*> g0(dcurr, ncol); dcurr += size5;
-    view_t<RealT**> col_dry_tmp(dcurr, ncol, nlev-1); dcurr += size6;
+    uview_t<RealT*> g0(dcurr, ncol); dcurr += size5;
+    uview_t<RealT**> col_dry_tmp(dcurr, ncol, nlev-1); dcurr += size6;
 
     // Error checking
     // Check for initialization
@@ -2169,24 +2172,24 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
 
     // Compute dry air column amounts (number of molecule per cm^2) if user hasn't provided them
     int idx_h2o = string_loc_in_array("h2o", this->gas_names);
-    view_t<RealT**> const* col_dry_wk;
+    uview_t<RealT**> col_dry_wk;
     if (col_dry.is_allocated()) {
-      col_dry_wk = &col_dry;
+      col_dry_wk = col_dry;
     } else {
       this->get_col_dry(Kokkos::subview(vmr, Kokkos::ALL, Kokkos::ALL, idx_h2o),plev,g0,col_dry_tmp); // dry air column amounts computation
-      col_dry_wk = &col_dry_tmp;
+      col_dry_wk = col_dry_tmp;
     }
     // compute column gas amounts [molec/cm^2]
     // do ilay = 1, nlay
     //   do icol = 1, ncol
     Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
-      col_gas(icol,ilay,-1) = (*col_dry_wk)(icol,ilay);
+      col_gas(icol,ilay,-1) = col_dry_wk(icol,ilay);
     });
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
     Kokkos::parallel_for( mdrp_t::template get<3>({ngas,nlay,ncol}) , KOKKOS_LAMBDA (int igas, int ilay, int icol) {
-      col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * (*col_dry_wk)(icol,ilay);
+      col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
     });
     // ---- calculate gas optical depths ----
     Kokkos::deep_copy(tau, 0);
@@ -2207,7 +2210,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
 
     if (this->krayl.is_allocated()) {
       compute_tau_rayleigh( ncol, nlay, nband, ngpt, ngas, nflav, neta, npres, ntemp, this->gpoint_flavor,
-                            this->get_band_lims_gpoint(), this->krayl, idx_h2o, *col_dry_wk, col_gas,
+                            this->get_band_lims_gpoint(), this->krayl, idx_h2o, col_dry_wk, col_gas,
                             fminor, jeta, tropo, jtemp, tau_rayleigh);
     }
     combine_and_reorder(tau, tau_rayleigh, this->krayl.is_allocated(), optical_props);
@@ -2227,16 +2230,16 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     const int dsize1 = ngpt * nlay * ncol;
     const int dsize2 = ngpt * ncol;
     const int dsize3 = ncol * (nlay+1);
-    RealT* data = pool_t::template alloc<RealT>(dsize1*3 + dsize2 + dsize3*2), *dcurr = data;
-    view_t<RealT***> lay_source_t    (dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    view_t<RealT***> lev_source_inc_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    view_t<RealT***> lev_source_dec_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    view_t<RealT**> sfc_source_t    (dcurr,ngpt     ,ncol); dcurr += dsize2;
+    RealT* data = pool_t::template alloc_raw<RealT>(dsize1*3 + dsize2 + dsize3*2), *dcurr = data;
+    uview_t<RealT***> lay_source_t    (dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    uview_t<RealT***> lev_source_inc_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    uview_t<RealT***> lev_source_dec_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
+    uview_t<RealT**> sfc_source_t    (dcurr,ngpt     ,ncol); dcurr += dsize2;
     // Variables for temperature at layer edges [K] (ncol, nlay+1)
-    view_t<RealT**> tlev_arr(dcurr,ncol,nlay+1); dcurr += dsize3;
+    uview_t<RealT**> tlev_arr(dcurr,ncol,nlay+1); dcurr += dsize3;
 
     // Source function needs temperature at interfaces/levels and at layer centers
-    view_t<RealT**> tlev_wk;
+    uview_t<RealT**> tlev_wk;
     if (tlev.is_allocated()) {
       //   Users might have provided these
       tlev_wk = tlev;

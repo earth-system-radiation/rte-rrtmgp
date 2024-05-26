@@ -224,6 +224,32 @@ Layout get_layout(const Container& dims)
   return result;
 }
 
+// Copied from EKAT
+template <typename View>
+struct MemoryTraitsMask {
+  enum : unsigned int {
+    value = ((View::traits::memory_traits::is_random_access ? Kokkos::RandomAccess : 0) |
+             (View::traits::memory_traits::is_atomic ? Kokkos::Atomic : 0) |
+             (View::traits::memory_traits::is_restrict ? Kokkos::Restrict : 0) |
+             (View::traits::memory_traits::is_aligned ? Kokkos::Aligned : 0) |
+             (View::traits::memory_traits::is_unmanaged ? Kokkos::Unmanaged : 0))
+      };
+};
+
+// Copied from EKAT
+template <typename View>
+using Unmanaged =
+  // Provide a full View type specification, augmented with Unmanaged.
+  Kokkos::View<typename View::traits::scalar_array_type,
+               typename View::traits::array_layout,
+               typename View::traits::device_type,
+               Kokkos::MemoryTraits<
+                 // All the current values...
+                 MemoryTraitsMask<View>::value |
+                 // ... |ed with the one we want, whether or not it's
+                 // already there.
+                 Kokkos::Unmanaged> >;
+
 // approx eq. Compares values with a tolerance if reals.
 template <typename T,
           typename std::enable_if<std::is_integral_v<T>>::type* = nullptr>
@@ -516,8 +542,12 @@ template <typename RealT, typename DeviceT>
 struct MemPoolSingleton
 {
  public:
-  using view_t = Kokkos::View<RealT*, Kokkos::LayoutRight, DeviceT>;
-  static inline view_t  s_mem;
+  using memview_t = Kokkos::View<RealT*, Kokkos::LayoutRight, DeviceT>;
+
+  template <typename T>
+  using view_t = Kokkos::View<T, Kokkos::LayoutRight, DeviceT>;
+
+  static inline memview_t  s_mem;
   static inline int64_t s_curr_used;
   static inline int64_t s_high_water;
 
@@ -525,14 +555,18 @@ struct MemPoolSingleton
   {
     static bool is_init = false;
     RRT_REQUIRE(!is_init, "Multiple MemPoolSingleton inits");
-    s_mem = view_t("s_mem", capacity);
+    s_mem = memview_t("s_mem", capacity);
     s_curr_used = 0;
     s_high_water = 0;
   }
 
+  /**
+   * Allocate and return raw memory. This is useful for when you
+   * want to batch several view allocations at once.
+   */
   template <typename T>
   static inline
-  T* alloc(const int64_t num) noexcept
+  T* alloc_raw(const int64_t num) noexcept
   {
     assert(sizeof(T) <= sizeof(RealT));
     const int64_t num_reals = (num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT);
@@ -545,41 +579,53 @@ struct MemPoolSingleton
     return rv;
   }
 
-  template <typename View,
-            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  template <typename T>
   static inline
-  View alloc(const int64_t dim1) noexcept
-  { return View(alloc<typename View::non_const_value_type>(dim1), dim1); }
+  auto alloc(const int64_t dim1) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T*>>;
+    return uview_t(alloc_raw<T>(dim1), dim1);
+  }
 
-  template <typename View,
-            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  template <typename T>
   static inline
-  View alloc(const int64_t dim1, const int64_t dim2) noexcept
-  { return View(alloc<typename View::non_const_value_type>(dim1*dim2), dim1, dim2); }
+  auto alloc(const int64_t dim1, const int64_t dim2) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T**>>;
+    return uview_t(alloc_raw<T>(dim1*dim2), dim1, dim2);
+  }
 
-  template <typename View,
-            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  template <typename T>
   static inline
-  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3) noexcept
-  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3), dim1, dim2, dim3); }
+  auto alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T***>>;
+    return uview_t(alloc_raw<T>(dim1*dim2*dim3), dim1, dim2, dim3);
+  }
 
-  template <typename View,
-            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  template <typename T>
   static inline
-  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4) noexcept
-  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4), dim1, dim2, dim3, dim4); }
+  auto alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T****>>;
+    return uview_t(alloc_raw<T>(dim1*dim2*dim3*dim4), dim1, dim2, dim3, dim4);
+  }
 
-  template <typename View,
-            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  template <typename T>
   static inline
-  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5) noexcept
-  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4*dim5), dim1, dim2, dim3, dim4, dim5); }
+  auto alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T*****>>;
+    return uview_t(alloc_raw<T>(dim1*dim2*dim3*dim4*dim5), dim1, dim2, dim3, dim4, dim5);
+  }
 
-  template <typename View,
-            typename std::enable_if<is_view_v<View>>::type* = nullptr>
+  template <typename T>
   static inline
-  View alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5, const int dim6) noexcept
-  { return View(alloc<typename View::non_const_value_type>(dim1*dim2*dim3*dim4*dim5*dim6), dim1, dim2, dim3, dim4, dim5, dim6); }
+  auto alloc(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5, const int dim6) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T******>>;
+    return uview_t(alloc_raw<T>(dim1*dim2*dim3*dim4*dim5*dim6), dim1, dim2, dim3, dim4, dim5, dim6);
+  }
 
   template <typename T>
   static inline
@@ -602,7 +648,7 @@ struct MemPoolSingleton
   {
     print_state();
     assert(s_curr_used == 0); // !=0 indicates we may have forgetten a dealloc
-    s_mem = view_t();
+    s_mem = memview_t();
   }
 
   static inline

@@ -182,12 +182,12 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
 
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
-  using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
+  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
 
   const int dsize = ncol *nlay;
-  RealT* data = pool::template alloc<RealT>(dsize*2), *dcurr = data;
-  real2d_t ftemp (dcurr,ncol,nlay); dcurr += dsize;
-  real2d_t fpress(dcurr,ncol,nlay); dcurr += dsize;
+  RealT* data = pool::template alloc_raw<RealT>(dsize*2), *dcurr = data;
+  ureal2d_t ftemp (dcurr,ncol,nlay); dcurr += dsize;
+  ureal2d_t fpress(dcurr,ncol,nlay); dcurr += dsize;
 
   RealT tiny = std::numeric_limits<RealT>::min();
 
@@ -292,13 +292,13 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
-  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
+  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 
   const int dsize1 = ngpt*nlay*ncol;
   const int dsize2 = ngpt*(nlay+1)*ncol;
-  RealT* data = pool::template alloc<RealT>(dsize1 + dsize2), *dcurr = data;
-  real3d_t pfrac          (dcurr,ngpt,nlay,ncol);   dcurr += dsize1;
-  real3d_t planck_function(dcurr,nbnd,nlay+1,ncol); dcurr += dsize2;
+  RealT* data = pool::template alloc_raw<RealT>(dsize1 + dsize2), *dcurr = data;
+  ureal3d_t pfrac          (dcurr,ngpt,nlay,ncol);   dcurr += dsize1;
+  ureal3d_t planck_function(dcurr,nbnd,nlay+1,ncol); dcurr += dsize2;
 
   // Calculation of fraction of band's Planck irradiance associated with each g-point
   // for (int icol=1; icol<=ncol; icol++) {
@@ -559,12 +559,12 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
   using DeviceT = typename TauT::device_type;
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
-  using int2d_t = Kokkos::View<int**, LayoutT, DeviceT>;
+  using uint2d_t = conv::Unmanaged<Kokkos::View<int**, LayoutT, DeviceT>>;
 
   const int dsize = 2*ncol;
-  int* data = pool::template alloc<int>(2 * dsize), *icurr = data;
-  int2d_t itropo_lower(icurr,ncol,2); icurr += dsize;
-  int2d_t itropo_upper(icurr,ncol,2); icurr += dsize;
+  int* data = pool::template alloc_raw<int>(2 * dsize), *icurr = data;
+  uint2d_t itropo_lower(icurr,ncol,2); icurr += dsize;
+  uint2d_t itropo_upper(icurr,ncol,2); icurr += dsize;
 
   int huge  = std::numeric_limits<int>::max();
   int small = std::numeric_limits<int>::min();

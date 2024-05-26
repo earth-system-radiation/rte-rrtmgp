@@ -507,7 +507,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
-  Kokkos::View<RealT*> mu0_inv(pool::template alloc<RealT>(ncol), ncol);
+  auto mu0_inv = pool::template alloc<RealT>(ncol);
 
   RealT eps = std::numeric_limits<RealT>::epsilon();
 
@@ -663,16 +663,16 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   using RealT   = typename TdifT::non_const_value_type;
   using LayoutT = typename TdifT::array_layout;
   using DeviceT = typename TdifT::device_type;
-  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
+  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
   using pool    = conv::MemPoolSingleton<RealT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   const int dsize1 = ncol*(nlay+1)*ngpt;
   const int dsize2 = ncol*nlay*ngpt;
-  RealT* data = pool::template alloc<RealT>(dsize1*2 + dsize2), *dcurr = data;
-  real3d_t albedo(dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  real3d_t src   (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  real3d_t denom (dcurr,ncol,nlay  ,ngpt); dcurr += dsize2;
+  RealT* data = pool::template alloc_raw<RealT>(dsize1*2 + dsize2), *dcurr = data;
+  ureal3d_t albedo(dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  ureal3d_t src   (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  ureal3d_t denom (dcurr,ncol,nlay  ,ngpt); dcurr += dsize2;
 
   // Indexing into arrays for upward and downward propagation depends on the vertical
   //   orientation of the arrays (whether the domain top is at the first or last index)
@@ -771,20 +771,20 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
-  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
+  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
+  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 
   const int dsize1 = ncol*nlay*ngpt;
   const int dsize2 = ncol*ngpt;
-  RealT* data = pool::template alloc<RealT>(dsize1*7 + dsize2), *dcurr = data;
-  real3d_t Rdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t Tdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t Rdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t Tdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t Tnoscat   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real2d_t source_srf(dcurr,ncol     ,ngpt); dcurr += dsize2;
+  RealT* data = pool::template alloc_raw<RealT>(dsize1*7 + dsize2), *dcurr = data;
+  ureal3d_t Rdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t Tdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t Rdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t Tdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t Tnoscat   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal2d_t source_srf(dcurr,ncol     ,ngpt); dcurr += dsize2;
 
   // Cell properties: transmittance and reflectance for direct and diffuse radiation
   sw_two_stream(ncol, nlay, ngpt, mu0,
@@ -827,18 +827,19 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
-  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
+  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
+  using real3d_t  = Kokkos::View<RealT***, LayoutT, DeviceT>;
+  using ureal3d_t = conv::Unmanaged<real3d_t>;
 
   const int dsize1 = ncol*nlay*ngpt;
   const int dsize2 = ncol*ngpt;
-  RealT* data = pool::template alloc<RealT>(dsize1*4 + dsize2*2), *dcurr=data;
-  real3d_t tau_loc   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t trans     (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real3d_t source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  real2d_t source_sfc(dcurr,ncol,     ngpt); dcurr += dsize2;
-  real2d_t sfc_albedo(dcurr,ncol,     ngpt); dcurr += dsize2;
+  RealT* data = pool::template alloc_raw<RealT>(dsize1*4 + dsize2*2), *dcurr=data;
+  ureal3d_t tau_loc   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t trans     (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal3d_t source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
+  ureal2d_t source_sfc(dcurr,ncol,     ngpt); dcurr += dsize2;
+  ureal2d_t sfc_albedo(dcurr,ncol,     ngpt); dcurr += dsize2;
 
   RealT tau_thresh = sqrt( std::numeric_limits<RealT>::epsilon() );
 
@@ -923,16 +924,16 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
-  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
+  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
+  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 
   const int dsize1 = ncol*(nlay+1)*ngpt;
   const int dsize2 = ncol*ngpt;
-  RealT* data = pool::template alloc<RealT>(dsize1*2 + dsize2*2), *dcurr=data;
-  real3d_t radn_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  real3d_t radn_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  real2d_t Ds_ncol (dcurr,ncol,       ngpt); dcurr += dsize2;
-  real2d_t flux_top(dcurr,ncol,       ngpt); dcurr += dsize2;
+  RealT* data = pool::template alloc_raw<RealT>(dsize1*2 + dsize2*2), *dcurr=data;
+  ureal3d_t radn_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  ureal3d_t radn_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  ureal2d_t Ds_ncol (dcurr,ncol,       ngpt); dcurr += dsize2;
+  ureal2d_t flux_top(dcurr,ncol,       ngpt); dcurr += dsize2;
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol

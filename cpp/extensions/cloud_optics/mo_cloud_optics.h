@@ -555,6 +555,9 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   template <typename T>
   using view_t = typename parent_t::template view_t<T>;
 
+  template <typename T>
+  using uview_t = conv::Unmanaged<view_t<T>>;
+
   using mdrp_t = conv::MDRP<LayoutT, DeviceT>;
 
   // Ice surface roughness category - needed for Yang (2013) ice optics parameterization
@@ -780,9 +783,9 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     if (! (this->lut_extliq.is_allocated() || this->pade_extliq.is_allocated())) { stoprun("cloud optics: no data has been initialized"); }
     // Array sizes
     const int num_bools = ncol * nlay;
-    bool* bdata         = pool::template alloc<bool>(num_bools * 2), *bcurr = bdata;
-    view_t<bool**> liqmsk(bcurr, ncol, nlay); bcurr += num_bools;
-    view_t<bool**> icemsk(bcurr, ncol, nlay); bcurr += num_bools;
+    bool* bdata         = pool::template alloc_raw<bool>(num_bools * 2), *bcurr = bdata;
+    uview_t<bool**> liqmsk(bcurr, ncol, nlay); bcurr += num_bools;
+    uview_t<bool**> icemsk(bcurr, ncol, nlay); bcurr += num_bools;
 
     // Spectral consistency
     if (! this->bands_are_equal(optical_props)) { stoprun("cloud optics: optical properties don't have the same band structure"); }
@@ -819,13 +822,13 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // We could compute the properties for liquid and ice separately and
     //    use ty_optical_props_arry.increment but this involves substantially more division.
     const int num_tau = clwp.extent(0) *  clwp.extent(1) * this->get_nband();
-    RealT* data        = pool::template alloc<RealT>(num_tau * 6), *dcurr = data;
-    view_t<RealT***> ltau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    view_t<RealT***> ltaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    view_t<RealT***> ltaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    view_t<RealT***> itau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    view_t<RealT***> itaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    view_t<RealT***> itaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    RealT* data        = pool::template alloc_raw<RealT>(num_tau * 6), *dcurr = data;
+    uview_t<RealT***> ltau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    uview_t<RealT***> ltaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    uview_t<RealT***> ltaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    uview_t<RealT***> itau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    uview_t<RealT***> itaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    uview_t<RealT***> itaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
     if (this->lut_extliq.is_allocated()) {
       // Liquid
       compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq, this->liq_nsteps,this->liq_step_size,this->radliq_lwr,

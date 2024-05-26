@@ -13,7 +13,11 @@ template <typename BndLimsT, typename SpectralT, typename BybandT>
 void sum_byband(int ncol, int nlev, int ngpt, int nbnd, BndLimsT const &bnd_lims,
                 SpectralT const &spectral_flux, BybandT &byband_flux) {
   using RealT = typename SpectralT::non_const_value_type;
-  Kokkos::parallel_for( conv::get_mdrp<3>({nbnd,nlev,ncol}) , KOKKOS_LAMBDA (int ibnd, int ilev, int icol) {
+  using DeviceT = typename SpectralT::device_type;
+  using LayoutT = typename SpectralT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
+  Kokkos::parallel_for( mdrp_t::template get<3>({nbnd,nlev,ncol}) , KOKKOS_LAMBDA (int ibnd, int ilev, int icol) {
     RealT bb_flux_s = 0.0;
     for (int igpt=bnd_lims(0,ibnd); igpt<=bnd_lims(1,ibnd); igpt++) {
       bb_flux_s += spectral_flux(icol,ilev,igpt);
@@ -25,7 +29,11 @@ void sum_byband(int ncol, int nlev, int ngpt, int nbnd, BndLimsT const &bnd_lims
 template <typename FluxDnT, typename FluxUpT, typename FluxNetT>
 void net_byband(int ncol, int nlev, int nbnd,
                 FluxDnT const &bnd_flux_dn, FluxUpT const &bnd_flux_up, FluxNetT &bnd_flux_net) {
-  Kokkos::parallel_for( conv::get_mdrp<3>({nbnd,nlev,ncol}) , KOKKOS_LAMBDA (int ibnd, int ilev, int icol) {
+  using DeviceT = typename FluxDnT::device_type;
+  using LayoutT = typename FluxDnT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
+  Kokkos::parallel_for( mdrp_t::template get<3>({nbnd,nlev,ncol}) , KOKKOS_LAMBDA (int ibnd, int ilev, int icol) {
       bnd_flux_net(icol,ilev,ibnd) = bnd_flux_dn(icol,ilev,ibnd) - bnd_flux_up(icol,ilev,ibnd);
   });
 }

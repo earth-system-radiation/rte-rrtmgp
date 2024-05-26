@@ -178,6 +178,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
 
   using LayoutT = typename JtempT::array_layout;
   using DeviceT = typename JtempT::device_type;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
@@ -192,7 +193,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
     // index and factor for temperature interpolation
     jtemp(icol,ilay) = (int) ((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta);
     jtemp(icol,ilay) = Kokkos::fmin(ntemp - 1, Kokkos::fmax(1, jtemp(icol,ilay))) - 1; // limit the index range
@@ -207,7 +208,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     tropo(icol,ilay) = log(play(icol,ilay)) > press_ref_trop_log;
   });
 
-  Kokkos::parallel_for( conv::get_mdrp<4>({nlay,ncol,nflav,2}) , KOKKOS_LAMBDA (int ilay, int icol, int iflav , int itemp) {
+  Kokkos::parallel_for( mdrp_t::template get<4>({nlay,ncol,nflav,2}) , KOKKOS_LAMBDA (int ilay, int icol, int iflav , int itemp) {
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));
     auto igases1 = flavor(0,iflav);
@@ -242,6 +243,9 @@ template <typename TauAbsT, typename TauRayT, typename TauT, typename SsaT, type
 void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_abs, TauRayT const &tau_rayleigh,
                               TauT const &tau, SsaT const &ssa, GT const &g) {
   using RealT   = typename TauT::non_const_value_type;
+  using DeviceT = typename TauT::device_type;
+  using LayoutT = typename TauT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   RealT tiny = std::numeric_limits<RealT>::min();
 
@@ -254,7 +258,7 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
   //     for (int tgpt=1; tgpt<=gptTiles; tgpt++) {
   //       for (int itcol=1; itcol<=TILE_SIZE; itcol++) {
   //         for (int itgpt=1; itgpt<=TILE_SIZE; itgpt++) {
-  Kokkos::parallel_for( conv::get_mdrp<5>({nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
+  Kokkos::parallel_for( mdrp_t::template get<5>({nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
     int icol = tcol*TILE_SIZE + itcol;
     int igpt = tgpt*TILE_SIZE + itgpt;
 
@@ -285,6 +289,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 
   using LayoutT = typename JtempT::array_layout;
   using DeviceT = typename JtempT::device_type;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
@@ -299,7 +304,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::parallel_for( conv::get_mdrp<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
     int iflav = gpoint_flavor(itropo, igpt); //eta interpolation depends on band's flavor
@@ -332,13 +337,13 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   //
   // for (int igpt=1; igpt<=ngpt; igpt++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
     sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 0, icol);
   });
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
-  Kokkos::parallel_for( conv::get_mdrp<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
     // Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
     interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL,ilay,icol),nPlanckTemp,nbnd);
   });
@@ -351,7 +356,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::parallel_for( conv::get_mdrp<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     lay_src(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,icol);
   });
 
@@ -363,7 +368,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=2; ilay<=nlay+1; ilay++) {
-  Kokkos::parallel_for( conv::get_mdrp<2>({0, 1}, {ncol,nlay+1}) , KOKKOS_LAMBDA (int icol, int ilay) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({0, 1}, {ncol,nlay+1}) , KOKKOS_LAMBDA (int icol, int ilay) {
     interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function,Kokkos::ALL,ilay,icol),nPlanckTemp,nbnd);
   });
 
@@ -375,7 +380,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol+=2) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::parallel_for( conv::get_mdrp<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  );
     lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  );
     if (icol < ncol-1) {
@@ -396,11 +401,14 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
                           TropoT const &tropo, JtempT const &jtemp, TauRayT const &tau_rayleigh) {
   using conv::merge;
   using RealT   = typename ColDryT::non_const_value_type;
+  using DeviceT = typename ColDryT::device_type;
+  using LayoutT = typename ColDryT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::parallel_for( conv::get_mdrp<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
     int itropo = merge(0,1,tropo(icol,ilay)); // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int iflav = gpoint_flavor(itropo, igpt);
     // Inlining interpolate2D
@@ -424,7 +432,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
-
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
   RealT constexpr PaTohPa = 0.01;
 
   int extent = scale_by_complement.extent(0);
@@ -432,7 +440,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {
@@ -493,13 +501,16 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
                               JtempT const &jtemp, JpressT const &jpress, TauT const &tau) {
   using conv::merge;
   using RealT   = typename TauT::non_const_value_type;
+  using DeviceT = typename ColMixT::device_type;
+  using LayoutT = typename ColMixT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   // optical depth calculation for major species
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     // optical depth calculation for major species
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::parallel_for( conv::get_mdrp<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
     // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));  // WS: moved inside innermost loop
 

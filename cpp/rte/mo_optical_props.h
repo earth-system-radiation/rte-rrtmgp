@@ -262,6 +262,8 @@ public:
 
   using self_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
 
+  using mdrp_t = typename conv::MDRP<LayoutT, DeviceT>;
+
   view_t<int**> band2gpt;       // (begin g-point, end g-point) = band2gpt(2,band)
   view_t<int*>  gpt2band;       // band = gpt2band(g-point)
   int     ngpt;
@@ -361,11 +363,11 @@ public:
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
     auto this_band_lims_wvn = this->band_lims_wvn;
     if (this->is_initialized()) {
-      Kokkos::parallel_for( conv::get_mdrp<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
+      Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
         ret(i,j) = 1. / this_band_lims_wvn(i,j);
       });
     } else {
-      Kokkos::parallel_for( conv::get_mdrp<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
+      Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
         ret(i,j) = 0.;
       });
     }

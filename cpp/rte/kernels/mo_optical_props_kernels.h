@@ -159,12 +159,16 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
                                   Tau2T const &tau2, Ssa2T const &ssa2, G2T const &g2,
                                   int nbnd, GptLimsT const &gpt_lims) {
   using RealT = typename Tau1T::non_const_value_type;
+  using DeviceT = typename Tau1T::device_type;
+  using LayoutT = typename Tau1T::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
   constexpr RealT eps = 3*std::numeric_limits<RealT>::min();
 
   // do igpt = 1 , ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<4>({nbnd,ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<4>({nbnd,ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
     if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
       // t=tau1 + tau2
       RealT tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -193,10 +197,14 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
 //   resolution (adding properties defined by band to those defined by g-point)
 template <typename Tau1T, typename Tau2T>
 void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, Tau1T const &tau1, Tau2T const &tau2) {
+  using DeviceT = typename Tau1T::device_type;
+  using LayoutT = typename Tau1T::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}), KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}), KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
   });
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -207,10 +215,14 @@ void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, Tau1T const &tau
 template <typename Tau1T, typename Tau2T, typename GptLimsT>
 void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, Tau1T const &tau1, Tau2T const &tau2,
                                   int nbnd, GptLimsT const &gpt_lims) {
+  using DeviceT = typename Tau1T::device_type;
+  using LayoutT = typename Tau1T::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
   // do igpt = 1 , ngpt
   //   do ilay = 1 , nlay
   //     do icol = 1 , ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=0; ibnd<nbnd; ibnd++) {
       if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
         tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);
@@ -224,13 +236,16 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, Tau1T const &tau
 template <typename TauT, typename SsaT, typename GT>
 void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, TauT const &tau, SsaT const &ssa, GT const &g) {
   using RealT = typename TauT::non_const_value_type;
+  using DeviceT = typename TauT::device_type;
+  using LayoutT = typename TauT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   constexpr RealT eps = 3*std::numeric_limits<RealT>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       RealT f  = g  (icol,ilay,igpt) * g  (icol,ilay,igpt);
       RealT wf = ssa(icol,ilay,igpt) * f;
@@ -249,12 +264,15 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, TauT const &tau, SsaT
 template <typename TauT, typename SsaT, typename GT, typename FT>
 void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, TauT const &tau, SsaT const &ssa, GT const &g, FT const &f) {
   using RealT = typename TauT::non_const_value_type;
+  using DeviceT = typename TauT::device_type;
+  using LayoutT = typename TauT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
   constexpr RealT eps = 3*std::numeric_limits<RealT>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       RealT wf = ssa(icol,ilay,igpt) * f(icol,ilay,igpt);
       tau(icol,ilay,igpt) = (1. - wf) * tau(icol,ilay,igpt);
@@ -271,12 +289,15 @@ template <typename Tau1T, typename Ssa1T, typename G1T,
 void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, Tau1T const &tau1, Ssa1T const &ssa1, G1T const &g1,
                                   Tau2T const &tau2, Ssa2T const &ssa2, G2T const &g2) {
   using RealT = typename Tau1T::non_const_value_type;
+  using DeviceT = typename Tau1T::device_type;
+  using LayoutT = typename Tau1T::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
   constexpr RealT eps = 3*std::numeric_limits<RealT>::min();
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     // t=tau1 + tau2
     RealT tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t

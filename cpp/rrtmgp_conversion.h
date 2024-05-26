@@ -290,24 +290,7 @@ template <> struct DefaultTile<5> {
 //    static constexpr int value[] = {OMEGA_TILE_LENGTH, 1, 1, 1, 1};
 // };
 
-template <int N, typename IntT>
-inline
-MDRangeP<N> get_mdrp(const IntT (&upper_bounds)[N])
-{
-  assert(N > 1);
-  const IntT lower_bounds[N] = {0};
-  return MDRangeP<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
-}
-
-template <int N, typename IntT>
-inline
-MDRangeP<N> get_mdrp(const IntT (&lower_bounds)[N], const IntT (&upper_bounds)[N])
-{
-  assert(N > 1);
-  return MDRangeP<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
-}
-
-template <typename LayoutT, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
+template <typename LayoutT, typename DeviceT=DefaultDevice>
 struct MDRP
 {
   static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
@@ -317,8 +300,10 @@ struct MDRP
     ? Kokkos::Iterate::Right
     : Kokkos::Iterate::Left;
 
+  using exe_space_t = typename DeviceT::execution_space;
+
   template <int Rank>
-  using MDRP_t = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<Rank, LeftI, RightI> >;
+  using MDRP_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, LeftI, RightI> >;
 
   template <int N, typename IntT>
   static inline
@@ -326,6 +311,14 @@ struct MDRP
   {
     assert(N > 1);
     const IntT lower_bounds[N] = {0};
+    return MDRP_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
+  }
+
+  template <int N, typename IntT>
+  static inline
+  MDRP_t<N> get(const IntT (&lower_bounds)[N], const IntT (&upper_bounds)[N])
+  {
+    assert(N > 1);
     return MDRP_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
   }
 };

@@ -397,8 +397,6 @@ void lw_source_noscat_stencil(
                               2. * fact * (lay_source(icol,ilay,igpt) - lev_source_up(icol,ilay,igpt));
 }
 
-
-
 // Direct beam source for diffuse radiation in layers and at surface;
 //   report direct beam as a byproduct
 template <typename RdirT, typename TdirT, typename TnoscatT, typename SfcAlbedoT, typename SourceUpT,
@@ -406,10 +404,14 @@ template <typename RdirT, typename TdirT, typename TnoscatT, typename SfcAlbedoT
 inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT const &Rdir, TdirT const &Tdir,
                            TnoscatT const &Tnoscat, SfcAlbedoT const &sfc_albedo, SourceUpT const &source_up,
                            SourceDnT const &source_dn, SourceSfcT const &source_sfc, FluxDnDirT const &flux_dn_dir) {
+  using DeviceT = typename RdirT::device_type;
+  using LayoutT = typename RdirT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       for (int ilev=0; ilev<nlay; ilev++) {
         source_up(icol,ilev,igpt)     =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
         source_dn(icol,ilev,igpt)     =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
@@ -424,7 +426,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
     // previous level is up (+1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
         source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
@@ -437,19 +439,21 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
   }
 }
 
-
-
 // Longwave no-scattering transport
 template <typename TauT, typename TransT, typename SfcAlbedoT, typename SourceDnT, typename SourceUpT,
           typename SourceSfcT, typename RadnUpT, typename RadnDnT>
 inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &tau, TransT const &trans,
                                 SfcAlbedoT const &sfc_albedo, SourceDnT const &source_dn, SourceUpT const &source_up,
                                 SourceSfcT const &source_sfc, RadnUpT const &radn_up, RadnDnT const &radn_dn) {
+  using DeviceT = typename TauT::device_type;
+  using LayoutT = typename TauT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
   if (top_at_1) {
     // Top of domain is index 1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       // Downward propagation
       for (int ilev=1; ilev<nlay+1; ilev++) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev-1,igpt)*radn_dn(icol,ilev-1,igpt) + source_dn(icol,ilev-1,igpt);
@@ -467,7 +471,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, Tau
     // Top of domain is index nlay+1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       // Downward propagation
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
@@ -483,8 +487,6 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, Tau
     });
   }
 }
-
-
 
 //   Lower-level shortwave kernels
 //
@@ -502,6 +504,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
   using RealT = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
 
   Kokkos::View<RealT*> mu0_inv(pool::template alloc<RealT>(ncol), ncol);
@@ -515,7 +518,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     // Zdunkowski Practical Improved Flux Method "PIFM"
     //  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
     RealT gamma1= (8. - w0(icol,ilay,igpt) * (5. + 3. * g(icol,ilay,igpt))) * .25;
@@ -583,17 +586,21 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
 
 template <typename FluxDnT>
 void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, FluxDnT const &flux_dn) {
+  using DeviceT = typename FluxDnT::device_type;
+  using LayoutT = typename FluxDnT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
   //   Upper boundary condition
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      0, igpt)  = 0;
     });
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay, igpt)  = 0;
     });
   }
@@ -601,16 +608,20 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, FluxDnT const &flux_d
 
 template <typename IncFluxT, typename FactorT, typename FluxDnT>
 void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, IncFluxT const &inc_flux, FactorT const &factor, FluxDnT const &flux_dn) {
+  using DeviceT = typename FluxDnT::device_type;
+  using LayoutT = typename FluxDnT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      0, igpt)  = inc_flux(icol,igpt) * factor(icol);
     });
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay, igpt)  = inc_flux(icol,igpt) * factor(icol);
     });
   }
@@ -620,19 +631,23 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, IncFluxT const &inc_f
 // Upper boundary condition
 template <typename IncFluxT, typename FluxDnT>
 void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, IncFluxT const &inc_flux, FluxDnT const &flux_dn) {
+  using DeviceT = typename FluxDnT::device_type;
+  using LayoutT = typename FluxDnT::array_layout;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
   //   Upper boundary condition
   if (top_at_1) {
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      0, igpt)  = inc_flux(icol,igpt);
     });
   } else {
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay, igpt)  = inc_flux(icol,igpt);
     });
   }
@@ -650,6 +665,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   using DeviceT = typename TdifT::device_type;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
   using pool    = conv::MemPoolSingleton<RealT, DeviceT>;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   const int dsize1 = ncol*(nlay+1)*ngpt;
   const int dsize2 = ncol*nlay*ngpt;
@@ -664,7 +680,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       int ilev = nlay;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
@@ -703,7 +719,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       int ilev = 0;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
@@ -753,6 +769,7 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
@@ -787,7 +804,7 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay+1
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
   });
 
@@ -808,6 +825,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
@@ -849,7 +867,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
     // Transport is for intensity
     //   convert flux at top of domain to intensity assuming azimuthal isotropy
     radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2. * pi * weights(weight_ind));
@@ -862,7 +880,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     // Optical path and transmission, used in source function and transport calculations
     tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt);
     trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt));
@@ -882,7 +900,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   // do igpt = 1, ngpt
   //   do ilev = 1, nlay+1
   //     do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilev, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilev, int icol) {
     radn_dn(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
     radn_up(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
   });
@@ -903,6 +921,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
   using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   using real2d_t = Kokkos::View<RealT**, LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
@@ -917,7 +936,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
     Ds_ncol(icol, igpt) = Ds(0);
   });
 
@@ -931,7 +950,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
     flux_top(icol,igpt) = flux_dn(icol,top_level,igpt);
   });
 
@@ -940,7 +959,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
   for (int imu=1; imu<nmus; imu++) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       Ds_ncol(icol, igpt) = Ds(imu);
     });
 
@@ -952,7 +971,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
     // do igpt = 1, ngpt
     //   do ilev = 1, nlay+1
     //     do icol = 1, ncol
-    Kokkos::parallel_for( conv::get_mdrp<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilev, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilev, int icol) {
       flux_up(icol,ilev,ngpt) += radn_up(icol,ilev,ngpt);
       flux_dn(icol,ilev,ngpt) += radn_dn(icol,ilev,ngpt);
     });

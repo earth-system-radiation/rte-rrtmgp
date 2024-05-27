@@ -16,10 +16,11 @@ defaults:
 
 jobs:
   CI:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
         fpmodel: [DP, SP]
     env:

@@ -61,6 +61,11 @@ tests: rrtmgp_rfmip_lw rrtmgp_rfmip_sw \
 	$(RUN_CMD) ./rrtmgp_rfmip_lw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
 	$(RUN_CMD) ./rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
 
+# The default failure threshold:
+FAILURE_THRESHOLD ?= 7.e-4
+# Make it available to the scripts:
+export FAILURE_THRESHOLD
+
 check:
 	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py \
 	       --ref_dir ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir ${RRTMGP_ROOT}/examples/rfmip-clear-sky \

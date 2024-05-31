@@ -79,6 +79,11 @@ rte_sw_solver_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_sw_solver_unit_te
 rte_sw_solver_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_sw_solver_unit_tests.o
 
 
+# The default location of the input data:
+RRTMGP_DATA ?= $(RRTMGP_ROOT)/rrtmgp-data
+# Make it available to the scripts:
+export RRTMGP_DATA
+
 .PHONY: tests
 tests: check_variants check_equivalence test_zenith_angle_spherical_correction rte_sw_solver_unit_tests rte_optic_prop_unit_tests rte_lw_solver_unit_tests
 	cp ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ./test_atmospheres.nc

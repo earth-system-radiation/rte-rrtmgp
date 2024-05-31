@@ -51,6 +51,9 @@ mo_rfmip_io.o:          mo_rfmip_io.F90          mo_simple_netcdf.o
 
 mo_load_coefficients.o: mo_load_coefficients.F90 mo_simple_netcdf.o
 
+# The default location of the input data:
+RRTMGP_DATA ?= $(RRTMGP_ROOT)/rrtmgp-data
+
 tests: rrtmgp_rfmip_lw rrtmgp_rfmip_sw \
        multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc \
        rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \

@@ -16,7 +16,7 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
-LIBS      += -lnetcdff -lnetcdf
+LIBS      += -lnetcdff
 
 VPATH = ../
 

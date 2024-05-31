@@ -16,7 +16,7 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
-LIBS      += -lnetcdff -lnetcdf
+LIBS      += -lnetcdff
 
 VPATH  = $(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
 VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/:$(RRTMGP_ROOT)/extensions/solar_variability

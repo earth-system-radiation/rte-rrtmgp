@@ -2,6 +2,7 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
 #
+RRTMGP_ROOT ?= ..
 RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files

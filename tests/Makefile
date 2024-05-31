@@ -2,6 +2,7 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
 #
+RRTMGP_ROOT ?= ..
 RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
@@ -15,7 +16,7 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
-LIBS      += -lnetcdff -lnetcdf
+LIBS      += -lnetcdff
 
 VPATH  = $(RRTMGP_ROOT)/examples:$(RRTMGP_ROOT)/examples/rfmip-clear-sky:$(RRTMGP_ROOT)/examples/all-sky
 VPATH += $(RRTMGP_ROOT)/rrtmgp-frontend:$(RRTMGP_ROOT)/extensions:$(RRTMGP_ROOT)/:$(RRTMGP_ROOT)/extensions/solar_variability
@@ -77,6 +78,11 @@ rte_lw_solver_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_lw_solver_unit_te
 rte_sw_solver_unit_tests.o: $(LIB_DEPS) mo_testing_utils.o rte_sw_solver_unit_tests.F90
 rte_sw_solver_unit_tests  : $(LIB_DEPS) mo_testing_utils.o rte_sw_solver_unit_tests.o
 
+
+# The default location of the input data:
+RRTMGP_DATA ?= $(RRTMGP_ROOT)/rrtmgp-data
+# Make it available to the scripts:
+export RRTMGP_DATA
 
 .PHONY: tests
 tests: check_variants check_equivalence test_zenith_angle_spherical_correction rte_sw_solver_unit_tests rte_optic_prop_unit_tests rte_lw_solver_unit_tests

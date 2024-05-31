@@ -2,6 +2,7 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
 #
+RRTMGP_ROOT ?= ../..
 RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
@@ -15,7 +16,7 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
-LIBS      += -lnetcdff -lnetcdf
+LIBS      += -lnetcdff
 
 VPATH = ../:$(RRTMGP_ROOT)/rrtmgp-frontend # Needed for cloud_optics and aerosol_optics
 
@@ -46,6 +47,11 @@ mo_aerosol_optics_rrtmgp_merra.o: mo_aerosol_optics_rrtmgp_merra.F90
 mo_load_coefficients.o:         mo_simple_netcdf.o                                  mo_load_coefficients.F90
 mo_load_cloud_coefficients.o:   mo_simple_netcdf.o mo_cloud_optics_rrtmgp.o         mo_load_cloud_coefficients.F90
 mo_load_aerosol_coefficients.o: mo_simple_netcdf.o mo_aerosol_optics_rrtmgp_merra.o mo_load_aerosol_coefficients.F90
+
+# The default location of the input data:
+RRTMGP_DATA ?= $(RRTMGP_ROOT)/rrtmgp-data
+# Make it available to the scripts:
+export RRTMGP_DATA
 
 tests: rrtmgp_allsky
 	$(RUN_CMD) bash all_tests.sh  

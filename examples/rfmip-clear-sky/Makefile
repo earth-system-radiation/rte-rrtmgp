@@ -2,6 +2,7 @@
 #
 # Location of RTE+RRTMGP libraries, module files.
 #
+RRTMGP_ROOT ?= ../..
 RRTMGP_BUILD = $(RRTMGP_ROOT)/build
 #
 # RRTMGP library, module files
@@ -15,7 +16,7 @@ FCINCLUDE += -I$(RRTMGP_BUILD)
 
 # netcdf C and Fortran libraries have to be in the search path or added via environment variable LDFLAGS e.g. 
 #LDFLAGS   += -L$(NFHOME)/lib -L$(NCHOME)/lib
-LIBS      += -lnetcdff -lnetcdf
+LIBS      += -lnetcdff
 
 VPATH = ../
 
@@ -50,12 +51,20 @@ mo_rfmip_io.o:          mo_rfmip_io.F90          mo_simple_netcdf.o
 
 mo_load_coefficients.o: mo_load_coefficients.F90 mo_simple_netcdf.o
 
+# The default location of the input data:
+RRTMGP_DATA ?= $(RRTMGP_ROOT)/rrtmgp-data
+
 tests: rrtmgp_rfmip_lw rrtmgp_rfmip_sw \
        multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc \
        rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc \
        rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
 	$(RUN_CMD) ./rrtmgp_rfmip_lw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
 	$(RUN_CMD) ./rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
+
+# The default failure threshold:
+FAILURE_THRESHOLD ?= 7.e-4
+# Make it available to the scripts:
+export FAILURE_THRESHOLD
 
 check:
 	$${PYTHON-python} ${RRTMGP_ROOT}/examples/compare-to-reference.py \

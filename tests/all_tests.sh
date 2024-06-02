@@ -1,4 +1,10 @@
 set -eux
+if [[ $(uname) == *"NT"* ]]; then
+    # Rename files ending with .exe to the same name without the extension
+    for file in *.exe; do
+        mv "$file" "${file%.exe}"
+    done
+fi
 ./rte_optic_prop_unit_tests
 ./rte_lw_solver_unit_tests
 ./rte_sw_solver_unit_tests

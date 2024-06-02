@@ -1,0 +1,11 @@
+name: rte_rrtmgp_ci
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - numpy
+  - netcdf4
+  - xarray
+  - dask
+  - numpy

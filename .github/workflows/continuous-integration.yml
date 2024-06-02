@@ -9,30 +9,64 @@ on:
     - documentation
   workflow_dispatch:
 
-defaults:
-  run:
-    # Enable Conda environment by using the login shell:
-    shell: bash -leo pipefail {0}
 
 jobs:
   CI:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
+        os: [ubuntu-latest, windows-latest]
         fpmodel: [DP, SP]
+        toolchain:
+          - {compiler: gcc, version: 10}
+          - {compiler: gcc, version: 11}
+          - {compiler: gcc, version: 12}
+        include:
+          - os: ubuntu-latest
+            shell: bash -leo pipefail {0}
+            make: make
+          - os: windows-latest
+            shell: "msys2 -leo pipefail {0}"
+            make: mingw32-make.exe
+        exclude:
+          - os: windows-latest
+            toolchain:
+              compiler: gcc
+              version: 12
+
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+
     env:
       # Core variables:
-      FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.fpmodel }}"
       # Make variables:
-      FCINCLUDE: -I/usr/include
       RRTMGP_ROOT: ${{ github.workspace }}
       RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
       RUN_CMD:
       FAILURE_THRESHOLD: 7.e-4
     steps:
+    #
+    # Setup MSYS2 on Windows
+    #
+    - if: runner.os == 'Windows'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        path-type: inherit
+        install: >-
+          mingw-w64-x86_64-make
+          mingw-w64-x86_64-netcdf-fortran
+    #
+    # Setup Fortran compiler
+    #
+    - uses: fortran-lang/setup-fortran@v1.6.1
+      id: setup-fortran
+      with:
+        compiler: ${{ matrix.toolchain.compiler }}
+        version: ${{ matrix.toolchain.version }}
     #
     # Relax failure thresholds for single precision
     #
@@ -54,23 +88,14 @@ jobs:
         path: rrtmgp-data
         ref: v1.8.1
     #
-    # Synchronize the package index
-    #
-    - name: Synchronize the package index
-      run: sudo apt-get update
-    #
-    # Install NetCDF-Fortran (compatible with all compilers)
-    #
-    - name: Install NetCDF-Fortran
-      run: sudo apt-get install libnetcdff-dev
-    #
     # Cache Conda packages
     #
     - name: Cache Conda packages
       uses: actions/cache@v4
       with:
         path: ~/conda_pkgs_dir
-        key: conda-pkgs
+        key:
+          ${{ runner.os }}-conda-${{ hashFiles('environment-ci.yml') }}
     #
     # Set up Conda
     #
@@ -78,26 +103,52 @@ jobs:
       uses: conda-incubator/setup-miniconda@v3
       with:
         miniforge-version: latest
-        activate-environment: rte_rrtmgp_test
-        environment-file: environment-noplots.yml
-        python-version: 3.11
+        activate-environment: rte_rrtmgp_ci
+        environment-file: environment-ci.yml
         auto-activate-base: false
+        use-mamba: true
         # Use the cache properly:
         use-only-tar-bz2: true
+    #
+    # Install NetCDF-Fortran
+    #
+    - name: Install NetCDF-Fortran via Conda
+      if: runner.os == 'Linux'
+      run: conda install -y -c conda-forge netcdf-fortran
+    #
+    # Setup Linux environment variables
+    #
+    - name: Setup env variables - Linux
+      if: runner.os == 'Linux'
+      run: |
+        echo FCINCLUDE=-I ${CONDA_PREFIX}/include >> $GITHUB_ENV
+        echo LDFLAGS=-L ${CONDA_PREFIX}/lib >> $GITHUB_ENV
+        echo LD_LIBRARY_PATH=${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH} >> $GITHUB_ENV
+    #
+    # Setup Windows environment variables
+    #
+    - name: Setup env variables - Windows
+      if: runner.os == 'Windows'
+      run: |
+        echo FCINCLUDE="-I/mingw64/include" >> $GITHUB_ENV
+        echo LDFLAGS="-L/mingw64/lib" >> $GITHUB_ENV
+        echo LD_LIBRARY_PATH="/mingw64/lib:/mingw64/bin:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
     #
     # Build libraries, examples and tests
     #
     - name: Build libraries
       run: |
         $FC --version
-        make -j4 libs
+        ${{ matrix.make }} -j4 libs
     #
     # Run examples and tests
     #
     - name: Build and run examples and tests
-      run: make -j4 tests
+      run: |
+        ${{ matrix.make }} -j4 tests
     #
     # Compare the results
     #
     - name: Compare the results
-      run: make -j4 check
+      run: |
+        ${{ matrix.make }} -j4 check

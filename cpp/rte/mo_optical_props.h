@@ -270,6 +270,29 @@ public:
   view_t<RealT**> band_lims_wvn;  // (upper and lower wavenumber by band) = band_lims_wvn(2,band)
   std::string name;
 
+  template <typename BandLimsT>
+  static inline void init_band_lims(const BandLimsT& band_lims)
+  {
+    // Assume that values are defined by band, one g-point per band
+    Kokkos::parallel_for( band_lims.extent(1), KOKKOS_LAMBDA (size_t iband) {
+      band_lims(1,iband) = iband;
+      band_lims(0,iband) = iband;
+    });
+  }
+
+  template <typename BandLimsT, typename Gpt2BandT>
+  static inline void set_gpt2band(const BandLimsT& band_lims, const Gpt2BandT& gpt2band)
+  {
+    // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA(int dummy) {
+      for (int iband=0; iband < band_lims.extent(1); iband++) {
+        for (int i=band_lims(0,iband); i <= band_lims(1,iband); i++) {
+          gpt2band(i) = iband;
+        }
+      }
+    });
+  }
+
   template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**>,
             typename std::enable_if<conv::is_view_v<BandLimsWvnT>>::type* = nullptr >
   void init( BandLimsWvnT const &band_lims_wvn , BandLimsGptT const &band_lims_gpt=view_t<int**>() , std::string name="" ) {
@@ -287,12 +310,7 @@ public:
       #endif
       Kokkos::deep_copy(band_lims_gpt_lcl, band_lims_gpt);
     } else {
-      // Assume that values are defined by band, one g-point per band
-      // for (int iband = 1; iband <= size(band_lims_wvn, 2); iband++) {
-      Kokkos::parallel_for( band_lims_wvn.extent(1), KOKKOS_LAMBDA (size_t iband) {
-        band_lims_gpt_lcl(1,iband) = iband;
-        band_lims_gpt_lcl(0,iband) = iband;
-      });
+      init_band_lims(band_lims_gpt_lcl);
     }
     // Assignment
     this->band2gpt       = band_lims_gpt_lcl;
@@ -303,15 +321,7 @@ public:
     // Make a map between g-points and bands
     //   Efficient only when g-point indexes start at 1 and are contiguous.
     this->gpt2band = view_t<int*>("gpt2band", this->ngpt);
-    // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
-    auto this_gpt2band = this->gpt2band;
-    Kokkos::parallel_for(1, KOKKOS_CLASS_LAMBDA(int dummy) {
-      for (int iband=0; iband < band_lims_gpt_lcl.extent(1); iband++) {
-        for (int i=band_lims_gpt_lcl(0,iband); i <= band_lims_gpt_lcl(1,iband); i++) {
-          this_gpt2band(i) = iband;
-        }
-      }
-    });
+    set_gpt2band(band_lims_gpt_lcl, this->gpt2band);
   }
 
   void init(self_t const &in) {

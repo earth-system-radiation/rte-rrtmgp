@@ -16,8 +16,8 @@ void load_cld_padecoeff(CloudOptics &cloud_spec, std::string cld_coeff_file);
 template <typename RealT, typename LayoutT, typename DeviceT>
 void load_cld_lutcoeff(CloudOpticsK<RealT, LayoutT, DeviceT> &cloud_spec,
                        const std::string& cld_coeff_file) {
-  using real2dh_t = Kokkos::View<RealT**,   LayoutT, HostDevice>;
-  using real3dh_t = Kokkos::View<RealT***,  LayoutT, HostDevice>;
+  using real2dk = Kokkos::View<RealT**,   LayoutT, DeviceT>;
+  using real3dk = Kokkos::View<RealT***,  LayoutT, DeviceT>;
 
   conv::SimpleNetCDF io;
   // Open cloud optical property coefficient file
@@ -29,7 +29,7 @@ void load_cld_lutcoeff(CloudOpticsK<RealT, LayoutT, DeviceT> &cloud_spec,
   int nsize_liq = io.getDimSize("nsize_liq");
   int nsize_ice = io.getDimSize("nsize_ice");
 
-  real2dh_t band_lims_wvn("band_lims_wvn",2,nband);
+  real2dk band_lims_wvn("band_lims_wvn",2,nband);
   io.read(band_lims_wvn,"bnd_limits_wavenumber");
 
   // Read LUT constants
@@ -42,12 +42,12 @@ void load_cld_lutcoeff(CloudOpticsK<RealT, LayoutT, DeviceT> &cloud_spec,
   io.read(radice_fac , "radice_fac");
 
   // Allocate cloud property lookup table input arrays
-  real2dh_t lut_extliq("lut_extliq",nsize_liq, nband);
-  real2dh_t lut_ssaliq("lut_ssaliq",nsize_liq, nband);
-  real2dh_t lut_asyliq("lut_asyliq",nsize_liq, nband);
-  real3dh_t lut_extice("lut_extice",nsize_ice, nband, nrghice);
-  real3dh_t lut_ssaice("lut_ssaice",nsize_ice, nband, nrghice);
-  real3dh_t lut_asyice("lut_asyice",nsize_ice, nband, nrghice);
+  real2dk lut_extliq("lut_extliq",nsize_liq, nband);
+  real2dk lut_ssaliq("lut_ssaliq",nsize_liq, nband);
+  real2dk lut_asyliq("lut_asyliq",nsize_liq, nband);
+  real3dk lut_extice("lut_extice",nsize_ice, nband, nrghice);
+  real3dk lut_ssaice("lut_ssaice",nsize_ice, nband, nrghice);
+  real3dk lut_asyice("lut_asyice",nsize_ice, nband, nrghice);
   // Read LUT coefficients
   io.read(lut_extliq , "lut_extliq");
   io.read(lut_ssaliq , "lut_ssaliq");
@@ -66,10 +66,10 @@ void load_cld_lutcoeff(CloudOpticsK<RealT, LayoutT, DeviceT> &cloud_spec,
 template <typename RealT, typename LayoutT, typename DeviceT>
 void load_cld_padecoeff(CloudOpticsK<RealT, LayoutT, DeviceT> &cloud_spec,
                         const std::string& cld_coeff_file) {
-  using real1dh_t = Kokkos::View<RealT*,     LayoutT, HostDevice>;
-  using real2dh_t = Kokkos::View<RealT**,    LayoutT, HostDevice>;
-  using real3dh_t = Kokkos::View<RealT***,   LayoutT, HostDevice>;
-  using real4dh_t = Kokkos::View<RealT****,  LayoutT, HostDevice>;
+  using real1dk = Kokkos::View<RealT*,     LayoutT, DeviceT>;
+  using real2dk = Kokkos::View<RealT**,    LayoutT, DeviceT>;
+  using real3dk = Kokkos::View<RealT***,   LayoutT, DeviceT>;
+  using real4dk = Kokkos::View<RealT****,  LayoutT, DeviceT>;
 
   conv::SimpleNetCDF io;
   // Open cloud optical property coefficient file
@@ -83,16 +83,16 @@ void load_cld_padecoeff(CloudOpticsK<RealT, LayoutT, DeviceT> &cloud_spec,
   int ncoeff_ssa_g = io.getDimSize("ncoeff_ssa_g");
   int nbound       = io.getDimSize("nbound");
 
-  real2dh_t band_lims_wvn("band_lims_wvn",2,nband);
+  real2dk band_lims_wvn("band_lims_wvn",2,nband);
   io.read(band_lims_wvn, "bnd_limits_wavenumber");
 
   // Allocate cloud property Pade coefficient input arrays
-  real3dh_t pade_extliq("pade_extliq",nband, nsizereg, ncoeff_ext);
-  real3dh_t pade_ssaliq("pade_ssaliq",nband, nsizereg, ncoeff_ssa_g);
-  real3dh_t pade_asyliq("pade_asyliq",nband, nsizereg, ncoeff_ssa_g);
-  real4dh_t pade_extice("pade_extice",nband, nsizereg, ncoeff_ext,   nrghice);
-  real4dh_t pade_ssaice("pade_ssaice",nband, nsizereg, ncoeff_ssa_g, nrghice);
-  real4dh_t pade_asyice("pade_asyice",nband, nsizereg, ncoeff_ssa_g, nrghice);
+  real3dk pade_extliq("pade_extliq",nband, nsizereg, ncoeff_ext);
+  real3dk pade_ssaliq("pade_ssaliq",nband, nsizereg, ncoeff_ssa_g);
+  real3dk pade_asyliq("pade_asyliq",nband, nsizereg, ncoeff_ssa_g);
+  real4dk pade_extice("pade_extice",nband, nsizereg, ncoeff_ext,   nrghice);
+  real4dk pade_ssaice("pade_ssaice",nband, nsizereg, ncoeff_ssa_g, nrghice);
+  real4dk pade_asyice("pade_asyice",nband, nsizereg, ncoeff_ssa_g, nrghice);
   io.read(pade_extliq, "pade_extliq");
   io.read(pade_ssaliq, "pade_ssaliq");
   io.read(pade_asyliq, "pade_asyliq");
@@ -101,12 +101,12 @@ void load_cld_padecoeff(CloudOpticsK<RealT, LayoutT, DeviceT> &cloud_spec,
   io.read(pade_asyice, "pade_asyice");
 
   // Allocate cloud property Pade coefficient particle size boundary input arrays
-  real1dh_t pade_sizreg_extliq("pade_sizreg_extliq",nbound);
-  real1dh_t pade_sizreg_ssaliq("pade_sizreg_ssaliq",nbound);
-  real1dh_t pade_sizreg_asyliq("pade_sizreg_asyliq",nbound);
-  real1dh_t pade_sizreg_extice("pade_sizreg_extice",nbound);
-  real1dh_t pade_sizreg_ssaice("pade_sizreg_ssaice",nbound);
-  real1dh_t pade_sizreg_asyice("pade_sizreg_asyice",nbound);
+  real1dk pade_sizreg_extliq("pade_sizreg_extliq",nbound);
+  real1dk pade_sizreg_ssaliq("pade_sizreg_ssaliq",nbound);
+  real1dk pade_sizreg_asyliq("pade_sizreg_asyliq",nbound);
+  real1dk pade_sizreg_extice("pade_sizreg_extice",nbound);
+  real1dk pade_sizreg_ssaice("pade_sizreg_ssaice",nbound);
+  real1dk pade_sizreg_asyice("pade_sizreg_asyice",nbound);
 
   io.read(pade_sizreg_extliq, "pade_sizreg_extliq");
   io.read(pade_sizreg_ssaliq, "pade_sizreg_ssaliq");

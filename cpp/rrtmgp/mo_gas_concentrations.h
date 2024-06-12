@@ -300,13 +300,21 @@ public:
     });
   }
 
+  template <typename ViewT>
+  static void inline set_concs_impl(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
+  {
+    Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+      concs(icol, ilay, igas) = w(ilay);
+    });
+  }
+
   // Set concentration as a single column copied to all other columns
   // w is expected to be in device memory
   template <typename ViewT, typename std::enable_if<ViewT::rank == 1>::type* = nullptr>
   void set_vmr(std::string gas, ViewT const &w) {
 
     if (w.extent(0) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)"); }
-    int igas = this->find_gas(gas);
+    const int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
       stoprun("GasConcs::set_vmr(): trying to set a gas whose name not provided at initialization");
     }
@@ -318,9 +326,14 @@ public:
       }, Kokkos::LOr<bool>(badVal));
       if (badVal) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
-    auto this_concs = this->concs;
+    set_concs_impl(w, this->nlay, this->ncol, igas, this->concs);
+  }
+
+  template <typename ViewT>
+  static void inline set_concs_impl2(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
+  {
     Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
-      this_concs(icol, ilay, igas) = w(ilay);
+      concs(icol, ilay, igas) = w(icol, ilay);
     });
   }
 
@@ -330,7 +343,7 @@ public:
   void set_vmr(std::string gas, ViewT const &w) {
     if (w.extent(0) != this->ncol) { stoprun("GasConcs::set_vmr: different dimension (ncol)" ); }
     if (w.extent(1) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)" ); }
-    int igas = this->find_gas(gas);
+    const int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
       stoprun("GasConcs::set_vmr(): trying to set a gas whose name not provided at initialization" );
     }
@@ -344,10 +357,7 @@ public:
       });
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
-    auto this_concs = this->concs;
-    Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
-      this_concs(icol, ilay, igas) = w(icol, ilay);
-    });
+    set_concs_impl2(w, this->nlay, this->ncol, igas, this->concs);
   }
 
   // Get concentration as a 2-D field of columns and levels
@@ -405,5 +415,3 @@ public:
 
 };
 #endif
-
-

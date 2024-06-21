@@ -6,7 +6,6 @@
 # Add RRTMGP source files.
 set(CXX_SRC
   rrtmgp/kernels/mo_gas_optics_kernels.cpp
-  rrtmgp/mo_rrtmgp_constants.cpp
   rrtmgp/mo_rrtmgp_util_reorder.cpp
   rte/expand_and_transpose.cpp
   rte/kernels/mo_fluxes_broadband_kernels.cpp

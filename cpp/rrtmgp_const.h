@@ -23,7 +23,13 @@ template <typename T, typename Device=DefaultDevice>
 using FView = Kokkos::View<T, Kokkos::LayoutLeft, Device>;
 
 template <typename T, typename Device=DefaultDevice>
+using CView = Kokkos::View<T, Kokkos::LayoutRight, Device>;
+
+template <typename T, typename Device=DefaultDevice>
 using FOView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutLeft, Device>;
+
+template <typename T, typename Device=DefaultDevice>
+using COView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutRight, Device>;
 
 template <int Rank, typename ExecutionSpace=Kokkos::DefaultExecutionSpace>
 #ifdef KOKKOS_ENABLE_CUDA
@@ -109,78 +115,6 @@ typedef FArray<bool,7,yakl::memHost> boolHost7d;
 typedef FArray<char,2,yakl::memHost> charHost2d;
 
 typedef FArray<std::string,1,yakl::memHost> string1d;
-#endif
-
-#ifdef RRTMGP_ENABLE_KOKKOS
-typedef FView<real*>       real1dk;
-typedef FView<real**>      real2dk;
-typedef FView<real***>     real3dk;
-typedef FView<real****>    real4dk;
-typedef FView<real*****>   real5dk;
-typedef FView<real******>  real6dk;
-typedef FView<real*******> real7dk;
-
-typedef FView<const real*>       realConst1dk;
-typedef FView<const real**>      realConst2dk;
-typedef FView<const real***>     realConst3dk;
-typedef FView<const real****>    realConst4dk;
-typedef FView<const real*****>   realConst5dk;
-typedef FView<const real******>  realConst6dk;
-typedef FView<const real*******> realConst7dk;
-
-typedef FView<real*, HostDevice>       realHost1dk;
-typedef FView<real**, HostDevice>      realHost2dk;
-typedef FView<real***, HostDevice>     realHost3dk;
-typedef FView<real****, HostDevice>    realHost4dk;
-typedef FView<real*****, HostDevice>   realHost5dk;
-typedef FView<real******, HostDevice>  realHost6dk;
-typedef FView<real*******, HostDevice> realHost7dk;
-
-typedef FView<int*>       int1dk;
-typedef FView<int**>      int2dk;
-typedef FView<int***>     int3dk;
-typedef FView<int****>    int4dk;
-typedef FView<int*****>   int5dk;
-typedef FView<int******>  int6dk;
-typedef FView<int*******> int7dk;
-
-typedef FView<const int*>       intConst1dk;
-typedef FView<const int**>      intConst2dk;
-typedef FView<const int***>     intConst3dk;
-typedef FView<const int****>    intConst4dk;
-typedef FView<const int*****>   intConst5dk;
-typedef FView<const int******>  intConst6dk;
-typedef FView<const int*******> intConst7dk;
-
-typedef FView<int*, HostDevice>       intHost1dk;
-typedef FView<int**, HostDevice>      intHost2dk;
-typedef FView<int***, HostDevice>     intHost3dk;
-typedef FView<int****, HostDevice>    intHost4dk;
-typedef FView<int*****, HostDevice>   intHost5dk;
-typedef FView<int******, HostDevice>  intHost6dk;
-typedef FView<int*******, HostDevice> intHost7dk;
-
-typedef FView<bool*>       bool1dk;
-typedef FView<bool**>      bool2dk;
-typedef FView<bool***>     bool3dk;
-typedef FView<bool****>    bool4dk;
-typedef FView<bool*****>   bool5dk;
-typedef FView<bool******>  bool6dk;
-typedef FView<bool*******> bool7dk;
-
-typedef FView<bool*, HostDevice>       boolHost1dk;
-typedef FView<bool**, HostDevice>      boolHost2dk;
-typedef FView<bool***, HostDevice>     boolHost3dk;
-typedef FView<bool****, HostDevice>    boolHost4dk;
-typedef FView<bool*****, HostDevice>   boolHost5dk;
-typedef FView<bool******, HostDevice>  boolHost6dk;
-typedef FView<bool*******, HostDevice> boolHost7dk;
-
-typedef FView<char**, HostDevice> charHost2dk;
-
-// this is useful in a couple situations
-typedef FOView<real***>             realOff3dk;
-typedef FOView<real***, HostDevice> realOffHost3dk;
 #endif
 
 typedef std::vector<std::string> string1dv;

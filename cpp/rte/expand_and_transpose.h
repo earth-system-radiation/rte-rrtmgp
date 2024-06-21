@@ -11,5 +11,23 @@ void expand_and_transpose(OpticalProps const &ops, real2d const &arr_in, real2d 
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // Expand from band to g-point dimension, transpose dimensions (nband, ncol) -> (ncol,ngpt)
-void expand_and_transpose(OpticalPropsK const &ops, real2dk const &arr_in, real2dk const &arr_out);
+template <typename RealT, typename LayoutT, typename DeviceT,
+          typename ArrInT, typename ArrOutT>
+void expand_and_transpose(OpticalPropsK<RealT, LayoutT, DeviceT> const &ops,
+                          ArrInT const &arr_in, ArrOutT const &arr_out)
+{
+  using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
+
+  int ncol  = arr_in.extent(1);
+  int nband = ops.get_nband();
+  int ngpt  = ops.get_ngpt();
+  Kokkos::View<int**, LayoutT, DeviceT> limits = ops.get_band_lims_gpoint();
+  // for (int iband=1; iband <= nband; iband++) {
+  //   for (int icol=1; icol <= ncol; icol++) {
+  Kokkos::parallel_for( mdrp_t::template get<2>({nband,ncol}) , KOKKOS_LAMBDA (int iband, int icol) {
+    for (int igpt=limits(0,iband); igpt <= limits(1,iband); igpt++) {
+      arr_out(icol, igpt) = arr_in(iband,icol);
+    }
+  });
+}
 #endif

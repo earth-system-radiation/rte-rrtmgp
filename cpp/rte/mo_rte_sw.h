@@ -123,14 +123,17 @@ void rte_sw(OpticalProps2str const &atmos, bool top_at_1, real1d const &mu0, rea
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-template <class FluxesType>
-void rte_sw(OpticalProps2strK const &atmos, bool top_at_1, real1dk const &mu0, real2dk const &inc_flux,
-            real2dk const &sfc_alb_dir, real2dk const &sfc_alb_dif, FluxesType &fluxes, real2dk const &inc_flux_dif=real2dk());
-
-template <class FluxesType>
-void rte_sw(OpticalProps2strK const &atmos, bool top_at_1, real1dk const &mu0, real2dk const &inc_flux,
-            real2dk const &sfc_alb_dir, real2dk const &sfc_alb_dif, FluxesType &fluxes, real2dk const &inc_flux_dif) {
-  using pool = conv::MemPoolSingleton;
+template <typename RealT, typename LayoutT, typename DeviceT, typename Mu0T, typename IncFluxT,
+          typename SfcDirT, typename SfcDifT, class FluxesType,
+          typename IncFluxDifT = typename Kokkos::View<RealT**, LayoutT, DeviceT> >
+void rte_sw(OpticalProps2strK<RealT, LayoutT, DeviceT> const &atmos, bool top_at_1,
+            Mu0T const &mu0, IncFluxT const &inc_flux,
+            SfcDirT const &sfc_alb_dir, SfcDifT const &sfc_alb_dif,
+            FluxesType &fluxes, IncFluxDifT const &inc_flux_dif=IncFluxDifT())
+{
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**,  LayoutT, DeviceT>>;
+  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 
   const int ncol  = atmos.get_ncol();
   const int nlay  = atmos.get_nlay();
@@ -139,12 +142,12 @@ void rte_sw(OpticalProps2strK const &atmos, bool top_at_1, real1dk const &mu0, r
 
   const int dsize1 = ncol * (nlay+1) * ngpt;
   const int dsize2 = ncol * ngpt;
-  real* data = pool::alloc<real>(dsize1*3 + dsize2*2), *dcurr = data;
-  real3dk gpt_flux_up    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
-  real3dk gpt_flux_dn    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
-  real3dk gpt_flux_dir   (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
-  real2dk sfc_alb_dir_gpt(dcurr,ncol, ngpt);         dcurr += dsize2;
-  real2dk sfc_alb_dif_gpt(dcurr,ncol, ngpt);         dcurr += dsize2;
+  RealT* data = pool::template alloc_raw<RealT>(dsize1*3 + dsize2*2), *dcurr = data;
+  ureal3d_t gpt_flux_up    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
+  ureal3d_t gpt_flux_dn    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
+  ureal3d_t gpt_flux_dir   (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
+  ureal2d_t sfc_alb_dir_gpt(dcurr,ncol, ngpt);         dcurr += dsize2;
+  ureal2d_t sfc_alb_dif_gpt(dcurr,ncol, ngpt);         dcurr += dsize2;
 
   // Error checking -- consistency of sizes and validity of values
   if (! fluxes.are_desired()) { stoprun("rte_sw: no space allocated for fluxes"); }

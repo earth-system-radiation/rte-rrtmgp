@@ -45,22 +45,30 @@ class FluxesByband : public FluxesBroadband {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-class FluxesBybandK : public FluxesBroadbandK {
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
+class FluxesBybandK : public FluxesBroadbandK<RealT, LayoutT, DeviceT> {
 public:
-  real3dk bnd_flux_up;
-  real3dk bnd_flux_dn;
-  real3dk bnd_flux_dn_dir;
-  real3dk bnd_flux_net;
 
-  void reduce(real3dk const &gpt_flux_up, const real3dk &gpt_flux_dn, OpticalPropsK const &spectral_disc,
-              bool top_at_1, real3dk const &gpt_flux_dn_dir=real3dk()) {
+  using parent_t = FluxesBroadbandK<RealT, LayoutT, DeviceT>;
+
+  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
+
+  real3d_t bnd_flux_up;
+  real3d_t bnd_flux_dn;
+  real3d_t bnd_flux_dn_dir;
+  real3d_t bnd_flux_net;
+
+  template <typename FluxUpT, typename FluxDnT, typename FluxDnDirT=real3d_t>
+  void reduce(FluxUpT const &gpt_flux_up, const FluxDnT &gpt_flux_dn,
+              OpticalPropsK<RealT, LayoutT, DeviceT> const &spectral_disc,
+              bool top_at_1, FluxDnDirT const &gpt_flux_dn_dir=FluxDnDirT()) {
     int ncol = gpt_flux_up.extent(0);
     int nlev = gpt_flux_up.extent(1);
     int ngpt = gpt_flux_up.extent(2);
     int nbnd = this->bnd_flux_up.extent(2);
 
     // Base clase reduce
-    FluxesBroadbandK::reduce(gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir);
+    parent_t::reduce(gpt_flux_up, gpt_flux_dn, spectral_disc, top_at_1, gpt_flux_dn_dir);
     // Reduce byband fluxes
     auto band2gpt = spectral_disc.band2gpt;
     if (this->bnd_flux_up.is_allocated()    ) { sum_byband(ncol, nlev, ngpt, nbnd, band2gpt, gpt_flux_up,     this->bnd_flux_up    ); }
@@ -79,7 +87,7 @@ public:
 #ifdef RRTMGP_ENABLE_YAKL
   void validate_kokkos(const FluxesByband& orig)
   {
-    FluxesBroadbandK::validate_kokkos(orig);
+    parent_t::validate_kokkos(orig);
 
     conv::compare_yakl_to_kokkos(orig.bnd_flux_up, bnd_flux_up);
     conv::compare_yakl_to_kokkos(orig.bnd_flux_dn, bnd_flux_dn);

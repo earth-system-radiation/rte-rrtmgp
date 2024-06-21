@@ -145,16 +145,17 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 // Interface using only optical properties and source functions as inputs; fluxes as outputs.
-template <class FluxesType>
-void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts, OpticalProps1sclK const &optical_props,
-            bool top_at_1, SourceFuncLWK const &sources, real2dk const &sfc_emis,
-            FluxesType &fluxes, real2dk const &inc_flux=real2dk(), int n_gauss_angles=-1);
-
-template <class FluxesType>
-void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts, OpticalProps1sclK const &optical_props,
-            bool top_at_1, SourceFuncLWK const &sources, real2dk const &sfc_emis,
-            FluxesType &fluxes, real2dk const &inc_flux, int n_gauss_angles) {
-  using pool = conv::MemPoolSingleton;
+template <typename GaussDsT, typename GaussWtsT, typename RealT, typename LayoutT, typename DeviceT, typename SfcEmisT,
+          class FluxesType, typename IncFluxT=typename Kokkos::View<RealT**, LayoutT, DeviceT> >
+void rte_lw(int max_gauss_pts, GaussDsT const &gauss_Ds, GaussWtsT const &gauss_wts,
+            OpticalProps1sclK<RealT, LayoutT, DeviceT> const &optical_props,
+            bool top_at_1, SourceFuncLWK<RealT, LayoutT, DeviceT> const &sources, SfcEmisT const &sfc_emis,
+            FluxesType &fluxes, IncFluxT const &inc_flux=IncFluxT(), int n_gauss_angles=-1)
+{
+  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using ureal1d_t = conv::Unmanaged<Kokkos::View<RealT*,   LayoutT, DeviceT>>;
+  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**,  LayoutT, DeviceT>>;
+  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 
   const int ncol  = optical_props.get_ncol();
   const int nlay  = optical_props.get_nlay();
@@ -175,12 +176,12 @@ void rte_lw(int max_gauss_pts, real2dk const &gauss_Ds, real2dk const &gauss_wts
 
   const int dsize1 = ncol * (nlay+1) * ngpt;
   const int dsize2 = ncol * ngpt;
-  real* data = pool::alloc<real>(dsize1*2 + dsize2 + 2*n_quad_angs), *dcurr = data;
-  real3dk gpt_flux_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  real3dk gpt_flux_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  real2dk sfc_emis_gpt(dcurr,ncol       ,ngpt); dcurr += dsize2;
-  real1dk tmp_Ds      (dcurr,n_quad_angs); dcurr += n_quad_angs;
-  real1dk tmp_wts     (dcurr,n_quad_angs); dcurr += n_quad_angs;
+  RealT* data = pool::template alloc_raw<RealT>(dsize1*2 + dsize2 + 2*n_quad_angs), *dcurr = data;
+  ureal3d_t gpt_flux_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  ureal3d_t gpt_flux_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
+  ureal2d_t sfc_emis_gpt(dcurr,ncol       ,ngpt); dcurr += dsize2;
+  ureal1d_t tmp_Ds      (dcurr,n_quad_angs); dcurr += n_quad_angs;
+  ureal1d_t tmp_wts     (dcurr,n_quad_angs); dcurr += n_quad_angs;
 
   // Error checking
   //   if inc_flux is present it has the right dimensions, is positive definite

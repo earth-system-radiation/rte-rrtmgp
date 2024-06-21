@@ -24,6 +24,18 @@ int main(int argc , char **argv) {
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
   Kokkos::initialize(argc, argv);
+
+  using DeviceT = DefaultDevice;
+  using LayoutT = Kokkos::LayoutLeft;
+  using MDRP = conv::MDRP<LayoutT>;
+  using real = double;
+  using real1d_t = Kokkos::View<real*,   LayoutT, DeviceT>;
+  using real2d_t = Kokkos::View<real**,  LayoutT, DeviceT>;
+  using real3d_t = Kokkos::View<real***, LayoutT, DeviceT>;
+  using bool2d_t = Kokkos::View<bool**,  LayoutT, DeviceT>;
+  using oreal3d_t = Kokkos::Experimental::OffsetView<real***, LayoutT, DeviceT>;
+  using hreal2d_t = Kokkos::View<real**, LayoutT, HostDevice>;
+  using pool_t = conv::MemPoolSingleton<real, DeviceT>;
 #endif
 
   {
@@ -75,12 +87,12 @@ int main(int argc , char **argv) {
     real2d col_dry;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-    real2dk p_lay_k;
-    real2dk t_lay_k;
-    real2dk p_lev_k;
-    real2dk t_lev_k;
-    GasConcsK gas_concs_k;
-    real2dk col_dry_k;
+    real2d_t p_lay_k;
+    real2d_t t_lay_k;
+    real2d_t p_lev_k;
+    real2d_t t_lev_k;
+    GasConcsK<real, LayoutT> gas_concs_k;
+    real2d_t col_dry_k;
 #endif
 
     // Read data from the input file
@@ -91,7 +103,7 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_KOKKOS
     read_atmos(input_file, p_lay_k, t_lay_k, p_lev_k, t_lev_k, gas_concs_k, col_dry_k, ncol);
     COMPARE_ALL_WRAP(std::vector<real2d>({p_lay, t_lay, p_lev, t_lev, col_dry}),
-                     std::vector<real2dk>({p_lay_k, t_lay_k, p_lev_k, t_lev_k, col_dry_k}));
+                     std::vector<real2d_t>({p_lay_k, t_lay_k, p_lev_k, t_lev_k, col_dry_k}));
     VALIDATE_KOKKOS(gas_concs, gas_concs_k);
 #endif
 
@@ -105,7 +117,7 @@ int main(int argc , char **argv) {
     load_and_init(k_dist, k_dist_file, gas_concs);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-    GasOpticsRRTMGPK k_dist_k;
+    GasOpticsRRTMGPK<real, LayoutT> k_dist_k;
     load_and_init(k_dist_k, k_dist_file, gas_concs_k);
     VALIDATE_KOKKOS(k_dist, k_dist_k);
 #endif
@@ -123,7 +135,7 @@ int main(int argc , char **argv) {
     cloud_optics.set_ice_roughness(2);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-    CloudOpticsK cloud_optics_k;
+    CloudOpticsK<real, LayoutT> cloud_optics_k;
     if (use_luts) {
       load_cld_lutcoeff (cloud_optics_k, cloud_optics_file);
     } else {
@@ -153,8 +165,8 @@ int main(int argc , char **argv) {
       OpticalProps2str clouds;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      OpticalProps2strK atmos_k;
-      OpticalProps2strK clouds_k;
+      OpticalProps2strK<real, LayoutT> atmos_k;
+      OpticalProps2strK<real, LayoutT> clouds_k;
 #endif
 
       // Clouds optical props are defined by band
@@ -188,10 +200,10 @@ int main(int argc , char **argv) {
       mu0         = 0.86;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real2dk toa_flux_k   ("toa_flux"   ,ncol,ngpt);
-      real2dk sfc_alb_dir_k("sfc_alb_dir",nbnd,ncol);
-      real2dk sfc_alb_dif_k("sfc_alb_dif",nbnd,ncol);
-      real1dk mu0_k        ("mu0"        ,ncol);
+      real2d_t toa_flux_k   ("toa_flux"   ,ncol,ngpt);
+      real2d_t sfc_alb_dir_k("sfc_alb_dir",nbnd,ncol);
+      real2d_t sfc_alb_dif_k("sfc_alb_dif",nbnd,ncol);
+      real1d_t mu0_k        ("mu0"        ,ncol);
       // Ocean-ish values for no particular reason
       Kokkos::deep_copy(sfc_alb_dir_k, 0.06);
       Kokkos::deep_copy(sfc_alb_dif_k, 0.06);
@@ -210,14 +222,14 @@ int main(int argc , char **argv) {
       real3d bnd_flux_net("bnd_flux_net",ncol,nlay+1,nbnd);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real2dk flux_up_k ("flux_up" ,ncol,nlay+1);
-      real2dk flux_dn_k ("flux_dn" ,ncol,nlay+1);
-      real2dk flux_dir_k("flux_dir",ncol,nlay+1);
-      real2dk flux_net_k("flux_net",ncol,nlay+1);
-      real3dk bnd_flux_up_k ("bnd_flux_up" ,ncol,nlay+1,nbnd);
-      real3dk bnd_flux_dn_k ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
-      real3dk bnd_flux_dir_k("bnd_flux_dir",ncol,nlay+1,nbnd);
-      real3dk bnd_flux_net_k("bnd_flux_net",ncol,nlay+1,nbnd);
+      real2d_t flux_up_k ("flux_up" ,ncol,nlay+1);
+      real2d_t flux_dn_k ("flux_dn" ,ncol,nlay+1);
+      real2d_t flux_dir_k("flux_dir",ncol,nlay+1);
+      real2d_t flux_net_k("flux_net",ncol,nlay+1);
+      real3d_t bnd_flux_up_k ("bnd_flux_up" ,ncol,nlay+1,nbnd);
+      real3d_t bnd_flux_dn_k ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
+      real3d_t bnd_flux_dir_k("bnd_flux_dir",ncol,nlay+1,nbnd);
+      real3d_t bnd_flux_net_k("bnd_flux_net",ncol,nlay+1,nbnd);
 #endif
 
       // Clouds
@@ -229,11 +241,11 @@ int main(int argc , char **argv) {
       bool2d cloud_mask("cloud_mask",ncol,nlay);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real2dk lwp_k("lwp",ncol,nlay);
-      real2dk iwp_k("iwp",ncol,nlay);
-      real2dk rel_k("rel",ncol,nlay);
-      real2dk rei_k("rei",ncol,nlay);
-      bool2dk cloud_mask_k("cloud_mask",ncol,nlay);
+      real2d_t lwp_k("lwp",ncol,nlay);
+      real2d_t iwp_k("iwp",ncol,nlay);
+      real2d_t rel_k("rel",ncol,nlay);
+      real2d_t rei_k("rei",ncol,nlay);
+      bool2d_t cloud_mask_k("cloud_mask",ncol,nlay);
 #endif
 
       // Restrict clouds to troposphere (> 100 hPa = 100*100 Pa) and not very close to the ground (< 900 hPa), and
@@ -256,7 +268,7 @@ int main(int argc , char **argv) {
       });
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && ((icol+1) % 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);
@@ -266,14 +278,14 @@ int main(int argc , char **argv) {
       });
       COMPARE_WRAP(cloud_mask, cloud_mask_k);
       COMPARE_ALL_WRAP(std::vector<real2d>({lwp, iwp, rel, rei}),
-                       std::vector<real2dk>({lwp_k, iwp_k, rel_k, rei_k}));
+                       std::vector<real2d_t>({lwp_k, iwp_k, rel_k, rei_k}));
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
       const size_t base_ref = 18000;
       const size_t my_size_ref = ncol * nlay * nlev;
-      conv::MemPoolSingleton::init(2e6 * (float(my_size_ref) / base_ref));
-      realOff3dk col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
+      pool_t::init(2e6 * (float(my_size_ref) / base_ref));
+      oreal3d_t col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 
       if (verbose) std::cout << "Running the main loop\n\n";
@@ -303,7 +315,7 @@ int main(int argc , char **argv) {
         fluxes.bnd_flux_net = bnd_flux_net;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-        FluxesBybandK fluxes_k;
+        FluxesBybandK<real, LayoutT> fluxes_k;
         fluxes_k.flux_up     = flux_up_k ;
         fluxes_k.flux_dn     = flux_dn_k ;
         fluxes_k.flux_dn_dir = flux_dir_k;
@@ -363,7 +375,7 @@ int main(int argc , char **argv) {
       std::cout << "Shortwave did " << nloops << " loops of " << ncol << " cols and " << nlay << " layers in " <<  duration.count() / 1000000.0 << " s" << std::endl;
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      conv::MemPoolSingleton::finalize();
+      pool_t::finalize();
 #endif
 
       if (verbose) std::cout << "Writing fluxes\n\n";
@@ -428,27 +440,27 @@ int main(int argc , char **argv) {
       OpticalProps1scl clouds;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      realHost2dk gauss_Ds_host_k ("gauss_Ds" ,max_gauss_pts,max_gauss_pts);
+      hreal2d_t gauss_Ds_host_k ("gauss_Ds" ,max_gauss_pts,max_gauss_pts);
       gauss_Ds_host_k(0,0) = 1.66      ; gauss_Ds_host_k(1,0) =         0.; gauss_Ds_host_k(2,0) =         0.; gauss_Ds_host_k(3,0) =         0.;
       gauss_Ds_host_k(0,1) = 1.18350343; gauss_Ds_host_k(1,1) = 2.81649655; gauss_Ds_host_k(2,1) =         0.; gauss_Ds_host_k(3,1) =         0.;
       gauss_Ds_host_k(0,2) = 1.09719858; gauss_Ds_host_k(1,2) = 1.69338507; gauss_Ds_host_k(2,2) = 4.70941630; gauss_Ds_host_k(3,2) =         0.;
       gauss_Ds_host_k(0,3) = 1.06056257; gauss_Ds_host_k(1,3) = 1.38282560; gauss_Ds_host_k(2,3) = 2.40148179; gauss_Ds_host_k(3,3) = 7.15513024;
 
-      realHost2dk gauss_wts_host_k("gauss_wts",max_gauss_pts,max_gauss_pts);
+      hreal2d_t gauss_wts_host_k("gauss_wts",max_gauss_pts,max_gauss_pts);
       gauss_wts_host_k(0,0) = 0.5         ; gauss_wts_host_k(1,0) = 0.          ; gauss_wts_host_k(2,0) = 0.          ; gauss_wts_host_k(3,0) = 0.          ;
       gauss_wts_host_k(0,1) = 0.3180413817; gauss_wts_host_k(1,1) = 0.1819586183; gauss_wts_host_k(2,1) = 0.          ; gauss_wts_host_k(3,1) = 0.          ;
       gauss_wts_host_k(0,2) = 0.2009319137; gauss_wts_host_k(1,2) = 0.2292411064; gauss_wts_host_k(2,2) = 0.0698269799; gauss_wts_host_k(3,2) = 0.          ;
       gauss_wts_host_k(0,3) = 0.1355069134; gauss_wts_host_k(1,3) = 0.2034645680; gauss_wts_host_k(2,3) = 0.1298475476; gauss_wts_host_k(3,3) = 0.0311809710;
 
-      real2dk gauss_Ds_k ("gauss_Ds" ,max_gauss_pts,max_gauss_pts);
-      real2dk gauss_wts_k("gauss_wts",max_gauss_pts,max_gauss_pts);
+      real2d_t gauss_Ds_k ("gauss_Ds" ,max_gauss_pts,max_gauss_pts);
+      real2d_t gauss_wts_k("gauss_wts",max_gauss_pts,max_gauss_pts);
       Kokkos::deep_copy(gauss_Ds_k, gauss_Ds_host_k);
       Kokkos::deep_copy(gauss_wts_k, gauss_wts_host_k);
       COMPARE_WRAP(gauss_Ds, gauss_Ds_k);
       COMPARE_WRAP(gauss_wts, gauss_wts_k);
 
-      OpticalProps1sclK atmos_k;
-      OpticalProps1sclK clouds_k;
+      OpticalProps1sclK<real, LayoutT> atmos_k;
+      OpticalProps1sclK<real, LayoutT> clouds_k;
 #endif
 
       // Clouds optical props are defined by band
@@ -477,7 +489,7 @@ int main(int argc , char **argv) {
       lw_sources.alloc(ncol, nlay, k_dist);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      SourceFuncLWK lw_sources_k;
+      SourceFuncLWK<real, LayoutT> lw_sources_k;
       lw_sources_k.alloc(ncol, nlay, k_dist_k);
 #endif
 
@@ -490,8 +502,8 @@ int main(int argc , char **argv) {
       emis_sfc = 0.98;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real1dk t_sfc_k   ("t_sfc"        ,ncol);
-      real2dk emis_sfc_k("emis_sfc",nbnd,ncol);
+      real1d_t t_sfc_k   ("t_sfc"        ,ncol);
+      real2d_t emis_sfc_k("emis_sfc",nbnd,ncol);
       // Surface temperature
       auto t_lev_host_k = Kokkos::create_mirror_view_and_copy(HostDevice(), t_lev_k);
       Kokkos::deep_copy(t_sfc_k, t_lev_host_k(0, merge(nlay, 0, top_at_1)));
@@ -509,12 +521,12 @@ int main(int argc , char **argv) {
       real3d bnd_flux_net("bnd_flux_net" ,ncol,nlay+1,nbnd);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real2dk flux_up_k ( "flux_up" ,ncol,nlay+1);
-      real2dk flux_dn_k ( "flux_dn" ,ncol,nlay+1);
-      real2dk flux_net_k("flux_net" ,ncol,nlay+1);
-      real3dk bnd_flux_up_k ("bnd_flux_up" ,ncol,nlay+1,nbnd);
-      real3dk bnd_flux_dn_k ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
-      real3dk bnd_flux_net_k("bnd_flux_net" ,ncol,nlay+1,nbnd);
+      real2d_t flux_up_k ( "flux_up" ,ncol,nlay+1);
+      real2d_t flux_dn_k ( "flux_dn" ,ncol,nlay+1);
+      real2d_t flux_net_k("flux_net" ,ncol,nlay+1);
+      real3d_t bnd_flux_up_k ("bnd_flux_up" ,ncol,nlay+1,nbnd);
+      real3d_t bnd_flux_dn_k ("bnd_flux_dn" ,ncol,nlay+1,nbnd);
+      real3d_t bnd_flux_net_k("bnd_flux_net" ,ncol,nlay+1,nbnd);
 #endif
 
       // Clouds
@@ -526,11 +538,11 @@ int main(int argc , char **argv) {
       bool2d cloud_mask("cloud_mask",ncol,nlay);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      real2dk lwp_k("lwp",ncol,nlay);
-      real2dk iwp_k("iwp",ncol,nlay);
-      real2dk rel_k("rel",ncol,nlay);
-      real2dk rei_k("rei",ncol,nlay);
-      bool2dk cloud_mask_k("cloud_mask",ncol,nlay);
+      real2d_t lwp_k("lwp",ncol,nlay);
+      real2d_t iwp_k("iwp",ncol,nlay);
+      real2d_t rel_k("rel",ncol,nlay);
+      real2d_t rei_k("rei",ncol,nlay);
+      bool2d_t cloud_mask_k("cloud_mask",ncol,nlay);
 #endif
 
       // Restrict clouds to troposphere (> 100 hPa = 100*100 Pa)
@@ -555,7 +567,7 @@ int main(int argc , char **argv) {
       });
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-      Kokkos::parallel_for( conv::get_mdrp<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         cloud_mask_k(icol,ilay) = p_lay_k(icol,ilay) > 100. * 100. && p_lay_k(icol,ilay) < 900. * 100. && ((icol+1) % 3) != 0;
         // Ice and liquid will overlap in a few layers
         lwp_k(icol,ilay) = merge(10.,  0., cloud_mask_k(icol,ilay) && t_lay_k(icol,ilay) > 263.);
@@ -573,8 +585,8 @@ int main(int argc , char **argv) {
 #ifdef RRTMGP_ENABLE_KOKKOS
       const size_t base_ref = 18000;
       const size_t my_size_ref = ncol * nlay * nlev;
-      conv::MemPoolSingleton::init(2e6 * (float(my_size_ref) / base_ref));
-      realOff3dk col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
+      pool_t::init(2e6 * (float(my_size_ref) / base_ref));
+      oreal3d_t col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
 #endif
 
       // Multiple iterations for big problem sizes, and to help identify data movement
@@ -603,7 +615,7 @@ int main(int argc , char **argv) {
         fluxes.bnd_flux_net= bnd_flux_net;
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-        FluxesBybandK fluxes_k;
+        FluxesBybandK<real, LayoutT> fluxes_k;
         fluxes_k.flux_up = flux_up_k;
         fluxes_k.flux_dn = flux_dn_k;
         fluxes_k.flux_net= flux_net_k;
@@ -617,7 +629,7 @@ int main(int argc , char **argv) {
         k_dist.gas_optics(ncol, nlay, top_at_1, p_lay, p_lev, t_lay, t_sfc, gas_concs, atmos, lw_sources, real2d(), t_lev);
 #endif
 #ifdef RRTMGP_ENABLE_KOKKOS
-        k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, t_sfc_k, gas_concs_k, col_gas, atmos_k, lw_sources_k, real2dk(), t_lev_k);
+        k_dist_k.gas_optics(ncol, nlay, top_at_1, p_lay_k, p_lev_k, t_lay_k, t_sfc_k, gas_concs_k, col_gas, atmos_k, lw_sources_k, real2d_t(), t_lev_k);
         VALIDATE_KOKKOS(k_dist, k_dist_k);
         VALIDATE_KOKKOS(gas_concs, gas_concs_k);
         VALIDATE_KOKKOS(atmos, atmos_k);
@@ -653,7 +665,7 @@ int main(int argc , char **argv) {
       std::cout << "Longwave did " << nloops << " loops of " << ncol << " cols and " << nlay << " layers in " <<  duration.count() / 1000000.0 << " s" << std::endl;
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-      conv::MemPoolSingleton::finalize();
+      pool_t::finalize();
 #endif
 
       if (verbose) std::cout << "Writing fluxes\n\n";

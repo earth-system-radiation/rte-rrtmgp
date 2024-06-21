@@ -57,7 +57,8 @@ inline string1d char2d_to_string1d( charHost2d &in , std::string label="") {
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
-inline string1dv char2d_to_string1d( charHost2dk &in , std::string label="") {
+template <typename InT>
+inline string1dv char2d_to_string1d( const InT &in , std::string label="") {
   int nstr  = in.extent(1);
   string1dv out(nstr, "");
   for (int j=0 ; j < nstr ; ++j) {

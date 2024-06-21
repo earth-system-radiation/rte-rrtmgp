@@ -228,16 +228,19 @@ public:
 #endif
 
 #ifdef RRTMGP_ENABLE_KOKKOS
+template <typename RealT=double, typename LayoutT=Kokkos::LayoutLeft, typename DeviceT=DefaultDevice>
 class GasConcsK {
 public:
   static int constexpr GAS_NOT_IN_LIST = -1;
 
+  using real3d_t = Kokkos::View<RealT***, LayoutT, DeviceT>;
+  using mdrp_t = conv::MDRP<LayoutT, DeviceT>;
+
   string1dv gas_name;  // List of gas names defined upon init
-  real3dk   concs;
+  real3d_t  concs;
   int       ncol;
   int       nlay;
   int       ngas;
-
 
   GasConcsK() {
     ncol = 0;
@@ -245,20 +248,17 @@ public:
     ngas = 0;
   }
 
-
   ~GasConcsK() {
     reset();
   }
 
-
   void reset() {
     gas_name = string1dv();  // Dealloc
-    concs  = real3dk();
+    concs  = real3d_t();
     ncol = 0;
     nlay = 0;
     ngas = 0;
   }
-
 
   void init(string1dv const &gas_names , int ncol , int nlay) {
     this->reset();
@@ -278,7 +278,7 @@ public:
 
     // Allocate
     this->gas_name = string1dv(ngas);
-    this->concs  = real3dk ("concs"   ,ncol,nlay,ngas);
+    this->concs  = real3d_t("concs"   ,ncol,nlay,ngas);
 
     // Assign gas names
     for (int i=0; i<ngas; i++) {
@@ -288,24 +288,33 @@ public:
 
 
   // Set concentration as a scalar copied to every column and level
-  void set_vmr(std::string gas, real w) {
+  void set_vmr(std::string gas, const RealT w) {
     int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
       stoprun("GasConcs::set_vmr(): trying to set a gas whose name was not provided at initialization");
     }
     if (w < 0. || w > 1.) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     auto this_concs = this->concs;
-    Kokkos::parallel_for(conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
       this_concs(icol, ilay, igas) = w;
+    });
+  }
+
+  template <typename ViewT>
+  static void inline set_concs_impl(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
+  {
+    Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+      concs(icol, ilay, igas) = w(ilay);
     });
   }
 
   // Set concentration as a single column copied to all other columns
   // w is expected to be in device memory
-  void set_vmr(std::string gas, real1dk const &w) {
+  template <typename ViewT, typename std::enable_if<ViewT::rank == 1>::type* = nullptr>
+  void set_vmr(std::string gas, ViewT const &w) {
 
     if (w.extent(0) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)"); }
-    int igas = this->find_gas(gas);
+    const int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
       stoprun("GasConcs::set_vmr(): trying to set a gas whose name not provided at initialization");
     }
@@ -317,18 +326,24 @@ public:
       }, Kokkos::LOr<bool>(badVal));
       if (badVal) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
-    auto this_concs = this->concs;
-    Kokkos::parallel_for(conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
-      this_concs(icol, ilay, igas) = w(ilay);
+    set_concs_impl(w, this->nlay, this->ncol, igas, this->concs);
+  }
+
+  template <typename ViewT>
+  static void inline set_concs_impl2(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
+  {
+    Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+      concs(icol, ilay, igas) = w(icol, ilay);
     });
   }
 
   // Set concentration as a 2-D field of columns and levels
   // w is expected to be in device memory
-  void set_vmr(std::string gas, real2dk const &w) {
+  template <typename ViewT, typename std::enable_if<ViewT::rank == 2>::type* = nullptr>
+  void set_vmr(std::string gas, ViewT const &w) {
     if (w.extent(0) != this->ncol) { stoprun("GasConcs::set_vmr: different dimension (ncol)" ); }
     if (w.extent(1) != this->nlay) { stoprun("GasConcs::set_vmr: different dimension (nlay)" ); }
-    int igas = this->find_gas(gas);
+    const int igas = this->find_gas(gas);
     if (igas == GAS_NOT_IN_LIST) {
       stoprun("GasConcs::set_vmr(): trying to set a gas whose name not provided at initialization" );
     }
@@ -342,10 +357,7 @@ public:
       });
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
-    auto this_concs = this->concs;
-    Kokkos::parallel_for(conv::get_mdrp<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
-      this_concs(icol, ilay, igas) = w(icol, ilay);
-    });
+    set_concs_impl2(w, this->nlay, this->ncol, igas, this->concs);
   }
 
   // Get concentration as a 2-D field of columns and levels
@@ -359,7 +371,7 @@ public:
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
     auto this_concs = this->concs;
-    Kokkos::parallel_for( conv::get_mdrp<2>({array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
+    Kokkos::parallel_for( mdrp_t::template get<2>({array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
       array(icol,ilay) = this_concs(icol,ilay,igas);
     });
   }
@@ -403,5 +415,3 @@ public:
 
 };
 #endif
-
-

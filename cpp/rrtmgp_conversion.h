@@ -2,11 +2,11 @@
 
 #include "rrtmgp_const.h"
 
-#include <netcdf.h>
 #include <stdexcept>
 
 // Validate if both enabled?
 #ifdef RRTMGP_ENABLE_KOKKOS
+#include <netcdf.h>
 #ifdef RRTMGP_ENABLE_YAKL
 // Both are on, validate
 #define COMPUTE_SWITCH(yimpl, kimpl) \

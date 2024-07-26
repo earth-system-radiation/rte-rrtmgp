@@ -319,12 +319,19 @@ template <> struct DefaultTile<5> {
 template <typename LayoutT, typename DeviceT=DefaultDevice>
 struct MDRP
 {
-  static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
-    ? Kokkos::Iterate::Left
-    : Kokkos::Iterate::Right;
-  static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
-    ? Kokkos::Iterate::Right
-    : Kokkos::Iterate::Left;
+  // static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+  //   ? Kokkos::Iterate::Left
+  //   : Kokkos::Iterate::Right;
+  // static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+  //   ? Kokkos::Iterate::Right
+  //   : Kokkos::Iterate::Left;
+#ifdef KOKKOS_ENABLE_CUDA
+  static constexpr Kokkos::Iterate LeftI = Kokkos::Iterate::Left;
+  static constexpr Kokkos::Iterate RightI = Kokkos::Iterate::Right;
+#else
+  static constexpr Kokkos::Iterate LeftI = Kokkos::Iterate::Default;
+  static constexpr Kokkos::Iterate RightI = Kokkos::Iterate::Default;
+#endif
 
   using exe_space_t = typename DeviceT::execution_space;
 

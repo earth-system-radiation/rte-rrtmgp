@@ -117,6 +117,8 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   using yakl::fortran::SimpleBounds;
   using yakl::fortran::Bounds;
 
+  auto start_t = std::chrono::high_resolution_clock::now();
+
   real3d pfrac          ("pfrac"          ,ngpt,nlay,ncol);
   real3d planck_function("planck_function",nbnd,nlay+1,ncol);
   real1d one            ("one"            ,2);
@@ -209,6 +211,12 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
       lev_src_inc(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay+1,icol+1);
     }
   });
+
+  auto stop_t = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
+  static double total_time = 0.0;
+  total_time += (duration.count() / 1000000.0);
+  std::cout << "Total time spent: " << total_time << std::endl;
 }
 
 

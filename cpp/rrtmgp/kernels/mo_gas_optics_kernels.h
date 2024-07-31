@@ -294,16 +294,23 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 
   using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 
+  auto start_t = std::chrono::high_resolution_clock::now();
+
   const int dsize1 = ngpt*nlay*ncol;
   const int dsize2 = ngpt*(nlay+1)*ncol;
   RealT* data = pool::template alloc_raw<RealT>(dsize1 + dsize2), *dcurr = data;
   ureal3d_t pfrac          (dcurr,ngpt,nlay,ncol);   dcurr += dsize1;
   ureal3d_t planck_function(dcurr,nbnd,nlay+1,ncol); dcurr += dsize2;
 
+  Kokkos::Array<int, 3> dims3_nlay_ncol_ngpt = {nlay,ncol,ngpt};
+  const int dims3_tot = nlay*ncol*ngpt;
   // Calculation of fraction of band's Planck irradiance associated with each g-point
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
+  // Kokkos::parallel_for( dims3_tot, KOKKOS_LAMBDA (int idx) {
+  //   int ilay, icol, igpt;
+  //   conv::unflatten_idx(idx, dims3_nlay_ncol_ngpt, ilay, icol, igpt);
   Kokkos::parallel_for( mdrp_t::template get<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
@@ -337,16 +344,27 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   //
   // for (int igpt=1; igpt<=ngpt; igpt++) {
   //   for (int icol=1; icol<=ncol; icol++) {
+  Kokkos::Array<int, 2> dims2_ngpt_ncol = {ngpt,ncol};
+  const int dims2_ngpt_ncol_tot = ncol*ngpt;
+  // Kokkos::parallel_for( dims2_ngpt_ncol_tot, KOKKOS_LAMBDA (int idx) {
+  //   int igpt, icol;
+  //   conv::unflatten_idx(idx, dims2_ngpt_ncol, igpt, icol);
   Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
     sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 0, icol);
   });
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
+  Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
+  const int dims2_ncol_nlay_tot = ncol*nlay;
+  // Kokkos::parallel_for( dims2_ncol_nlay_tot, KOKKOS_LAMBDA (int idx) {
+  //   int icol, ilay;
+  //   conv::unflatten_idx(idx, dims2_ncol_nlay, icol, ilay);
   Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
     // Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
     interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL,ilay,icol),nPlanckTemp,nbnd);
   });
+
   //
   // Map to g-points
   //
@@ -356,7 +374,11 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
+  Kokkos::Array<int, 3> dims3_ngpt_nlay_ncol = {ngpt,nlay,ncol};
+  // Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
+  //   int igpt, ilay, icol;
+  //   conv::unflatten_idx(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     lay_src(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,icol);
   });
 
@@ -368,8 +390,11 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=2; ilay<=nlay+1; ilay++) {
-  Kokkos::parallel_for( mdrp_t::template get<2>({0, 1}, {ncol,nlay+1}) , KOKKOS_LAMBDA (int icol, int ilay) {
-    interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function,Kokkos::ALL,ilay,icol),nPlanckTemp,nbnd);
+  // Kokkos::parallel_for( dims2_ncol_nlay_tot , KOKKOS_LAMBDA (int idx) {
+  //   int icol, ilay;
+  //   conv::unflatten_idx(idx, dims2_ncol_nlay, icol, ilay);
+  Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
+    interpolate1D(tlev(icol,ilay+1), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function,Kokkos::ALL,ilay+1,icol),nPlanckTemp,nbnd);
   });
 
   //
@@ -380,7 +405,10 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol+=2) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
+  // Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
+  //   int igpt, ilay, icol;
+  //   conv::unflatten_idx(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
+  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  );
     lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  );
     if (icol < ncol-1) {
@@ -390,6 +418,12 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   });
 
   pool::dealloc(data, dcurr - data);
+
+  auto stop_t = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
+  static double total_time = 0.0;
+  total_time += (duration.count() / 1000000.0);
+  std::cout << "Total time spent: " << total_time << std::endl;
 }
 
 // compute Rayleigh scattering optical depths

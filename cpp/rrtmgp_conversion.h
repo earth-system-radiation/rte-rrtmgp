@@ -356,6 +356,26 @@ struct MDRP
   }
 };
 
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx(const int idx, const Kokkos::Array<int, 2>& dims, int& i, int& j)
+{
+  // i = idx / dims[1];
+  // j = idx % dims[1];
+  i = idx % dims[0];
+  j = idx / dims[0];
+}
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
+{
+  // i = (idx / dims[2]) / dims[1];
+  // j = (idx / dims[2]) % dims[1];
+  // k =  idx % dims[2];
+  i = idx % dims[0];
+  j = (idx / dims[0]) % dims[1];
+  k = (idx / dims[0]) / dims[1];
+}
+
 #ifdef RRTMGP_ENABLE_YAKL
 // Compare a yakl array to a kokkos view, checking they are functionally
 // identical (same rank, dims, and values).

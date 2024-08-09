@@ -8,7 +8,7 @@ grepping for TIMING, then redirecting that output to a file. Example:
 % OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > TIME_DATA
 """
 
-import argparse, sys
+import argparse, sys, os
 from pathlib import Path
 
 ###############################################################################
@@ -42,9 +42,10 @@ def rrtmgp_perf_analysis(timing_file):
         line = line.strip()
         if line != "":
             tokens = line.split()
-            assert len(tokens) == 10, r"Bad line '{line}', expected 10 tokens"
-            filename = tokens[3].strip(",").split("../../")[-1]
-            line     = int(tokens[5].strip(","))
+            assert len(tokens) == 11, r"Bad line '{line}', expected 11 tokens"
+            funcname = tokens[3]
+            filename = os.path.splitext("/".join(tokens[5].split("/")[-2:]))[0]
+            line     = int(tokens[7])
             timelen  = float(tokens[-2])
             keystr   = f"{filename}:{line}"
             raw[keystr] = timelen

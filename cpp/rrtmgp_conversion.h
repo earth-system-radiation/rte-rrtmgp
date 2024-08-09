@@ -4,7 +4,6 @@
 
 #include <stdexcept>
 #include <chrono>
-#include <source_location>
 
 // Validate if both enabled?
 #ifdef RRTMGP_ENABLE_KOKKOS
@@ -31,14 +30,13 @@
 #ifdef ENABLE_TIMING
 #define TIMED_KERNEL(kernel)                                            \
 {                                                                       \
-  const auto loc = std::source_location::current();                     \
   auto start_t = std::chrono::high_resolution_clock::now();             \
   kernel;                                                               \
   auto stop_t = std::chrono::high_resolution_clock::now();              \
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t); \
   static double total_s = 0.;                                           \
   total_s += duration.count() / 1000000.0;                              \
-  std::cout << "TIMING For func " << loc.function_name() << " file " << loc.file_name() << " line " << loc.line() << " total " << total_s << " s" << std::endl; \
+  std::cout << "TIMING For func " << __func__ << " file " << __FILE__ << " line " << __LINE__ << " total " << total_s << " s" << std::endl; \
 }
 #else
 #define TIMED_KERNEL(kernel) kernel

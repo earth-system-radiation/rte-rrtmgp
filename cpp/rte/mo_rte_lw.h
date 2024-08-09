@@ -226,10 +226,10 @@ void rte_lw(int max_gauss_pts, GaussDsT const &gauss_Ds, GaussWtsT const &gauss_
   // No scattering two-stream calculation
   optical_props.validate();
   // for (int i=1 ; i <= n_quad_angs ; i++) {
-  Kokkos::parallel_for( n_quad_angs , KOKKOS_LAMBDA (int i) {
+  TIMED_KERNEL(Kokkos::parallel_for( n_quad_angs , KOKKOS_LAMBDA (int i) {
     tmp_Ds (i) = gauss_Ds (i,n_quad_angs - 1);
     tmp_wts(i) = gauss_wts(i,n_quad_angs - 1);
-  });
+  }));
   lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, n_quad_angs, tmp_Ds, tmp_wts, optical_props.tau,
                              sources.lay_source, sources.lev_source_inc, sources.lev_source_dec,
                              sfc_emis_gpt, sources.sfc_source, gpt_flux_up, gpt_flux_dn);

@@ -274,23 +274,23 @@ public:
   static inline void init_band_lims(const BandLimsT& band_lims)
   {
     // Assume that values are defined by band, one g-point per band
-    Kokkos::parallel_for( band_lims.extent(1), KOKKOS_LAMBDA (size_t iband) {
+    TIMED_KERNEL(Kokkos::parallel_for( band_lims.extent(1), KOKKOS_LAMBDA (size_t iband) {
       band_lims(1,iband) = iband;
       band_lims(0,iband) = iband;
-    });
+    }));
   }
 
   template <typename BandLimsT, typename Gpt2BandT>
   static inline void set_gpt2band(const BandLimsT& band_lims, const Gpt2BandT& gpt2band)
   {
     // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(int dummy) {
+    TIMED_KERNEL(Kokkos::parallel_for(1, KOKKOS_LAMBDA(int dummy) {
       for (int iband=0; iband < band_lims.extent(1); iband++) {
         for (int i=band_lims(0,iband); i <= band_lims(1,iband); i++) {
           gpt2band(i) = iband;
         }
       }
-    });
+    }));
   }
 
   template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**>,
@@ -373,13 +373,13 @@ public:
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
     auto this_band_lims_wvn = this->band_lims_wvn;
     if (this->is_initialized()) {
-      Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
+      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
         ret(i,j) = 1. / this_band_lims_wvn(i,j);
-      });
+      }));
     } else {
-      Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
+      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
         ret(i,j) = 0.;
-      });
+      }));
     }
     return ret;
   }

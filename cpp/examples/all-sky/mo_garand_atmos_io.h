@@ -39,24 +39,24 @@ void read_atmos(const std::string& input_file, ViewT &p_lay, ViewT &t_lay, ViewT
   ViewT tmp2d;
   // p_lay
   io.read(tmp2d,"p_lay");
-  Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
     p_lay(icol,ilay) = tmp2d(0,ilay);
-  });
+  }));
   // t_lay
   io.read(tmp2d,"t_lay");
-  Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
     t_lay(icol,ilay) = tmp2d(0,ilay);
-  });
+  }));
   // p_lev
   io.read(tmp2d,"p_lev");
-  Kokkos::parallel_for( MDRP::template get<2>({nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
     p_lev(icol,ilev) = tmp2d(0,ilev);
-  });
+  }));
   // t_lev
   io.read(tmp2d,"t_lev");
-  Kokkos::parallel_for( MDRP::template get<2>({nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
     t_lev(icol,ilev) = tmp2d(0,ilev);
-  });
+  }));
 
   std::vector<std::string> gas_names = {
     "h2o", "co2", "o3", "n2o", "co", "ch4", "o2", "n2"
@@ -73,9 +73,9 @@ void read_atmos(const std::string& input_file, ViewT &p_lay, ViewT &t_lay, ViewT
     io.read(tmp2d,vmr_name);
     // Create 1-D variable with just the first column
     Kokkos::View<RealT*, LayoutT, DeviceT> tmp1d("tmp1d",nlay);
-    Kokkos::parallel_for( nlay, KOKKOS_LAMBDA (int i) {
+    TIMED_KERNEL(Kokkos::parallel_for( nlay, KOKKOS_LAMBDA (int i) {
       tmp1d(i) = tmp2d(0,i);
-    });
+    }));
     // Call set_vmr with only the first column from the data file copied among all of the model columns
     gas_concs.set_vmr( gas_name , tmp1d );
   }
@@ -84,9 +84,9 @@ void read_atmos(const std::string& input_file, ViewT &p_lay, ViewT &t_lay, ViewT
     col_dry = ViewT("col_dry",ncol,nlay);
     tmp2d = ViewT();     // Reset the tmp2d variable
     io.read(tmp2d,"col_dry");
-    Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
       col_dry(icol,ilay) = tmp2d(0,ilay);
-    });
+    }));
   }
 
   io.close();

@@ -57,13 +57,13 @@ inline void reorder_123x321_kernel(int d1, int d2, int d3, ArrayInT const &array
   //     for (int t1=1; t1<=ntiles1; t1++) {
   //       for (int it3=1; it3<=TILE_SIZE; it3++) {
   //         for (int it1=1; it1<=TILE_SIZE; it1++) {
-  Kokkos::parallel_for( mdrp_t::template get<5>({d2,ntiles1,ntiles3,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int i2, int t1, int t3, int it1, int it3) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<5>({d2,ntiles1,ntiles3,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int i2, int t1, int t3, int it1, int it3) {
     int i3 = t3*TILE_SIZE + it3;
     int i1 = t1*TILE_SIZE + it1;
     if (i3 < d3 && i1 < d1) {
       array_out(i3,i2,i1) = array_in(i1,i2,i3);
     }
-  });
+  }));
 }
 
 template <typename ArrayInT, typename ArrayOutT>
@@ -75,8 +75,8 @@ inline void reorder_123x312_kernel(int d1, int d2, int d3, ArrayInT const &array
   // do i3 = 1 , d3
   //   do i2 = 1 , d2
   //     do i1 = 1 , d1
-  Kokkos::parallel_for( mdrp_t::template get<3>({d3,d2,d1}) , KOKKOS_LAMBDA (int i3, int i2, int i1) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({d3,d2,d1}) , KOKKOS_LAMBDA (int i3, int i2, int i1) {
     array_out(i3,i1,i2) = array_in(i1,i2,i3);
-  });
+  }));
 }
 #endif

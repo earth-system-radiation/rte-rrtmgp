@@ -3,6 +3,7 @@
 #include "rrtmgp_const.h"
 
 #include <stdexcept>
+#include <chrono>
 
 // Validate if both enabled?
 #ifdef RRTMGP_ENABLE_KOKKOS
@@ -22,6 +23,23 @@
 #define GENERIC_INLINE KOKKOS_INLINE_FUNCTION
 #else
 #define GENERIC_INLINE YAKL_INLINE
+#endif
+
+//#define ENABLE_TIMING
+// Macro for timing kernels
+#ifdef ENABLE_TIMING
+#define TIMED_KERNEL(kernel)                                            \
+{                                                                       \
+  auto start_t = std::chrono::high_resolution_clock::now();             \
+  kernel;                                                               \
+  auto stop_t = std::chrono::high_resolution_clock::now();              \
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t); \
+  static double total_s = 0.;                                           \
+  total_s += duration.count() / 1000000.0;                              \
+  std::cout << "For file " << __FILE__ << ", line " << __LINE__ << ", total is: " << total_s << " s" << std::endl; \
+}
+#else
+#define TIMED_KERNEL(kernel) kernel
 #endif
 
 /**

@@ -1761,9 +1761,9 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // Running a kernel because it's more convenient in this case
     auto this_press_ref_log = this->press_ref_log;
     auto this_press_ref = this->press_ref;
-    Kokkos::parallel_for( this->press_ref.extent(0) , KOKKOS_LAMBDA (int i) {
+    TIMED_KERNEL(Kokkos::parallel_for( this->press_ref.extent(0) , KOKKOS_LAMBDA (int i) {
        this_press_ref_log(i) = log(this_press_ref(i));
-    });
+    }));
 
     // log scale of reference pressure (this is a scalar, not an array)
     this->press_ref_trop_log = log(press_ref_trop);
@@ -1815,9 +1815,9 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
     auto this_flavor = this->flavor;
     auto this_is_key = this->is_key;
-    Kokkos::parallel_for( mdrp_t::template get<2>({this->flavor.extent(0), this->flavor.extent(1)}) , KOKKOS_LAMBDA (int i, int j) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({this->flavor.extent(0), this->flavor.extent(1)}) , KOKKOS_LAMBDA (int i, int j) {
       if (this_flavor(i,j) != -1) { this_is_key(this_flavor(i,j)) = true; }
-    });
+    }));
   }
 
   // Initialize object based on data read from netCDF file however the user desires.
@@ -2078,9 +2078,9 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     if (toa_src.extent(0) != ncol || toa_src.extent(1) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
     auto this_solar_src = this->solar_src;
-    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       toa_src(icol,igpt) = this_solar_src(igpt);
-    });
+    }));
 
     pool_t::dealloc(jtemp);
     pool_t::dealloc(jpress);
@@ -2182,15 +2182,15 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // compute column gas amounts [molec/cm^2]
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
       col_gas(icol,ilay,-1) = col_dry_wk(icol,ilay);
-    });
+    }));
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    Kokkos::parallel_for( mdrp_t::template get<3>({ngas,nlay,ncol}) , KOKKOS_LAMBDA (int igas, int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngas,nlay,ncol}) , KOKKOS_LAMBDA (int igas, int ilay, int icol) {
       col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
-    });
+    }));
     // ---- calculate gas optical depths ----
     Kokkos::deep_copy(tau, 0);
 
@@ -2250,7 +2250,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
       //   do icol = 1, ncol
-      Kokkos::parallel_for( mdrp_t::template get<2>({nlay+1,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay+1,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
         if (ilay == 0) {
           tlev_wk(icol,0) = tlay(icol,0) + (plev(icol,0)-play(icol,0))*(tlay(icol,1)-tlay(icol,0)) / (play(icol,1)-play(icol,0));
         }
@@ -2263,7 +2263,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
                                  play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay)) ) /
             (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)));
         }
-      });
+      }));
     }
     // Compute internal (Planck) source functions at layers and levels,
     //  which depend on mapping from spectral space that creates k-distribution.
@@ -2277,9 +2277,9 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     auto &sources_sfc_source = sources.sfc_source;
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
       sources_sfc_source(icol,igpt) = sfc_source_t(igpt,icol);
-    });
+    }));
     reorder123x321(ngpt, nlay, ncol, lay_source_t    , sources.lay_source    );
     reorder123x321(ngpt, nlay, ncol, lev_source_inc_t, sources.lev_source_inc);
     reorder123x321(ngpt, nlay, ncol, lev_source_dec_t, sources.lev_source_dec);
@@ -2299,15 +2299,15 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     if (latitude.is_allocated()) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
-      Kokkos::parallel_for( ncol , KOKKOS_LAMBDA (int icol) {
+      TIMED_KERNEL(Kokkos::parallel_for( ncol , KOKKOS_LAMBDA (int icol) {
         g0(icol) = helmert1 - helmert2 * cos(2.0 * M_PI * latitude(icol) / 180.0); // acceleration due to gravity [m/s^2]
-      });
+      }));
     } else {
       // do icol = 1, ncol
       const auto grav = const_t::grav;
-      Kokkos::parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
+      TIMED_KERNEL(Kokkos::parallel_for( ncol, KOKKOS_LAMBDA (int icol) {
         g0(icol) = grav;
-      });
+      }));
     }
 
     // do ilev = 1, nlev-1
@@ -2315,13 +2315,13 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     const auto m_dry = const_t::m_dry;
     const auto m_h2o = const_t::m_h2o;
     const auto avogad = const_t::avogad;
-    Kokkos::parallel_for( mdrp_t::template get<2>({nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
       RealT delta_plev = Kokkos::fabs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       RealT fact = 1. / (1.+vmr_h2o(icol,ilev));
       RealT m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
       col_dry(icol,ilev) = 10. * delta_plev * avogad * fact/(1000.*m_air*100.*g0(icol));
-    });
+    }));
   }
 
   // Utility function to combine optical depths from gas absorption and Rayleigh scattering

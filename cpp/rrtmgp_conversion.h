@@ -36,7 +36,7 @@
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t); \
   static double total_s = 0.;                                           \
   total_s += duration.count() / 1000000.0;                              \
-  std::cout << "For file " << __FILE__ << ", line " << __LINE__ << ", total is: " << total_s << " s" << std::endl; \
+  std::cout << "TIMING For file " << __FILE__ << ", line " << __LINE__ << ", total is: " << total_s << " s" << std::endl; \
 }
 #else
 #define TIMED_KERNEL(kernel) kernel

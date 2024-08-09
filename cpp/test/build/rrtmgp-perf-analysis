@@ -1,0 +1,81 @@
+#! /usr/bin/env python3
+
+"""
+Given a data file, produce info. The data file can be obtained by enabling
+in rrtmgp_conversion.h then running one of the test_XX_perf.sh programs,
+grepping for TIMING, then redirecting that output to a file. Example:
+
+% OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > TIME_DATA
+"""
+
+import argparse, sys
+from pathlib import Path
+
+###############################################################################
+def parse_command_line(args, description):
+###############################################################################
+    parser = argparse.ArgumentParser(
+        usage="""\n{0} <TIMING_FILE>
+OR
+{0} --help
+
+\033[1mEXAMPLES:\033[0m
+    \033[1;32m# Analyze TIMING_FILE \033[0m
+    > {0} TIMING_FILE
+""".format(Path(args[0]).name),
+        description=description,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    parser.add_argument("timing_file", help="The timing file to analyze")
+
+    args = parser.parse_args(args[1:])
+
+    return args
+
+###############################################################################
+def rrtmgp_perf_analysis(timing_file):
+###############################################################################
+    raw = {}
+    lines = open(timing_file, "r").readlines()
+    for line in lines:
+        line = line.strip()
+        if line != "":
+            tokens = line.split()
+            assert len(tokens) == 10, r"Bad line '{line}', expected 10 tokens"
+            filename = tokens[3].strip(",").split("../../")[-1]
+            line     = int(tokens[5].strip(","))
+            timelen  = float(tokens[-2])
+            keystr   = f"{filename}:{line}"
+            raw[keystr] = timelen
+
+    # Inverse raw and resolve potential time collisions
+    inverse_dict = {}
+    for keystr, timelen in raw.items():
+        while timelen in inverse_dict:
+            timelen += 0.000000001
+
+        inverse_dict[timelen] = keystr
+
+    assert len(inverse_dict) == len(raw), f"Num entries should have matched, {len(inverse_dict)} != {len(raw)}"
+
+    total_time = 0.0
+    for timelen, keystr in reversed(sorted(inverse_dict.items())):
+        print(f"{keystr} => {timelen}")
+        total_time += timelen
+
+    print(f"Total time spent in kernels: {total_time}")
+
+    return True
+
+###############################################################################
+def _main_func(description):
+###############################################################################
+    success = rrtmgp_perf_analysis(**vars(parse_command_line(sys.argv, description)))
+
+    sys.exit(0 if success else 1)
+
+###############################################################################
+
+if __name__ == "__main__":
+    _main_func(__doc__)

@@ -131,10 +131,10 @@ void rte_lw(int max_gauss_pts, real2d const &gauss_Ds, real2d const &gauss_wts, 
   real1d tmp_Ds ("tmp_Ds" ,n_quad_angs);
   real1d tmp_wts("tmp_wts",n_quad_angs);
   // for (int i=1 ; i <= n_quad_angs ; i++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(n_quad_angs) , YAKL_LAMBDA (int i) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(n_quad_angs) , YAKL_LAMBDA (int i) {
     tmp_Ds (i) = gauss_Ds (i,n_quad_angs);
     tmp_wts(i) = gauss_wts(i,n_quad_angs);
-  });
+  }));
   lw_solver_noscat_GaussQuad(ncol, nlay, ngpt, top_at_1, n_quad_angs, tmp_Ds, tmp_wts, optical_props.tau,
                              sources.lay_source, sources.lev_source_inc, sources.lev_source_dec,
                              sfc_emis_gpt, sources.sfc_source, gpt_flux_up, gpt_flux_dn);

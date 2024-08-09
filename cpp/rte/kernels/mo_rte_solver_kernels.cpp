@@ -11,15 +11,15 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real3d const &flux_dn
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      1, igpt)  = 0;
-    });
+    }));
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay+1, igpt)  = 0;
-    });
+    }));
   }
 }
 
@@ -32,15 +32,15 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flu
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt) * factor(icol);
-    });
+    }));
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt) * factor(icol);
-    });
+    }));
   }
 }
 
@@ -56,16 +56,16 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &inc_flu
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol,      1, igpt)  = inc_flux(icol,igpt);
-    });
+    }));
   } else {
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       flux_dn(icol, nlay+1, igpt)  = inc_flux(icol,igpt);
-    });
+    }));
   }
 }
 
@@ -89,7 +89,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       int ilev = nlay + 1;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
@@ -123,7 +123,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
         flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // Equation 12
                                   src(icol,ilev,igpt);
       }
-    });
+    }));
 
   } else {
 
@@ -185,7 +185,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
     #else
       // do igpt = 1, ngpt
       //   do icol = 1, ncol
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
         int ilev = 1;
         // Albedo of lowest level is the surface albedo...
         albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
@@ -220,7 +220,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &albedo_sf
                                     src(icol,ilev,igpt);
 
         }
-      });
+      }));
     #endif
   }
 }
@@ -260,9 +260,9 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay+1
   //     do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
-  });
+  }));
 }
 
 
@@ -310,7 +310,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     // Transport is for intensity
     //   convert flux at top of domain to intensity assuming azimuthal isotropy
     radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2. * pi * weights(weight_ind));
@@ -318,14 +318,14 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
     // Surface albedo, surface source function
     sfc_albedo(icol,igpt) = 1. - sfc_emis(icol,igpt);
     source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt);
-  });
+  }));
 
   real3d source_dn ("source_dn ",ncol,nlay,ngpt);
   real3d source_up ("source_up ",ncol,nlay,ngpt);
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // Optical path and transmission, used in source function and transport calculations
     tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt);
     trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt));
@@ -334,7 +334,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
                              lay_source, lev_source_up, lev_source_dn,
                              tau_loc, trans,
                              source_dn, source_up, tau_thresh);
-  });
+  }));
 
   // Transport
   lw_transport_noscat(ncol, nlay, ngpt, top_at_1,
@@ -345,10 +345,10 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real2d const 
   // do igpt = 1, ngpt
   //   do ilev = 1, nlay+1
   //     do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
     radn_dn(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
     radn_up(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
-  });
+  }));
 }
 
 
@@ -371,9 +371,9 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     Ds_ncol(icol, igpt) = Ds(1);
-  });
+  }));
 
   lw_solver_noscat(ncol, nlay, ngpt,
                    top_at_1, Ds_ncol, weights, 1, tau,
@@ -385,18 +385,18 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     flux_top(icol,igpt) = flux_dn(icol,top_level,igpt);
-  });
+  }));
 
   apply_BC(ncol, nlay, ngpt, top_at_1, flux_top, radn_dn);
 
   for (int imu=2; imu<=nmus; imu++) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       Ds_ncol(icol, igpt) = Ds(imu);
-    });
+    }));
 
     lw_solver_noscat(ncol, nlay, ngpt,
                      top_at_1, Ds_ncol, weights, imu, tau,
@@ -406,10 +406,10 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
     // do igpt = 1, ngpt
     //   do ilev = 1, nlay+1
     //     do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilev, int icol) {
       flux_up(icol,ilev,ngpt) = flux_up(icol,ilev,ngpt) + radn_up(icol,ilev,ngpt);
       flux_dn(icol,ilev,ngpt) = flux_dn(icol,ilev,ngpt) + radn_dn(icol,ilev,ngpt);
-    });
+    }));
 
   } // imu
 }
@@ -431,7 +431,7 @@ void lw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &s
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     if ( tau(icol,ilay,ngpt) > 1.0e-8 ) {
       real lev_source_top, lev_source_bot;
       if (top_at_1) {
@@ -456,7 +456,7 @@ void lw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real2d const &s
     if(ilay == 1) {
       source_sfc(icol,igpt) = pi * sfc_emis(icol,igpt) * sfc_src(icol,igpt);
     }
-  });
+  }));
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
@@ -474,7 +474,7 @@ void lw_combine_sources(int ncol, int nlay, int ngpt, bool top_at_1, real3d cons
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay+1
   //     do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay+1,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     if (ilay == 1) {
       lev_source(icol, ilay, igpt) =      lev_src_dec(icol, ilay,   igpt);
     } else if (ilay == nlay+1) {
@@ -483,7 +483,7 @@ void lw_combine_sources(int ncol, int nlay, int ngpt, bool top_at_1, real3d cons
       lev_source(icol, ilay, igpt) = sqrt(lev_src_dec(icol, ilay, igpt) *
                                           lev_src_inc(icol, ilay-1, igpt));
     }
-  });
+  }));
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
@@ -503,7 +503,7 @@ void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // Coefficients differ from SW implementation because the phase function is more isotropic
     //   Here we follow Fu et al. 1997, doi:10.1175/1520-0469(1997)054<2799:MSPITI>2.0.CO;2
     //   and use a diffusivity sec of 1.66
@@ -530,7 +530,7 @@ void lw_two_stream(int ncol, int nlay, int ngpt, real3d const &tau, real3d const
 
     // Equation 26
     Tdif(icol,ilay,igpt) = RT_term * 2. * k * exp_minusktau;
-  });
+  }));
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
@@ -545,9 +545,9 @@ void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const 
 
   real1d mu0_inv("mu0_inv",ncol);
 
-  parallel_for( YAKL_AUTO_LABEL() , ncol , YAKL_LAMBDA (int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , ncol , YAKL_LAMBDA (int icol) {
     mu0_inv(icol) = 1./mu0(icol);
-  });
+  }));
 
   // Indexing into arrays for upward and downward propagation depends on the vertical
   //   orientation of the arrays (whether the domain top is at the first or last index)
@@ -560,21 +560,21 @@ void sw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, real3d const 
     // previous level is up (-1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       for (int ilev=2; ilev<=nlay+1; ilev++) {
         flux_dir(icol,ilev,igpt) = flux_dir(icol,ilev-1,igpt) * exp(-tau(icol,ilev,igpt)*mu0_inv(icol));
       }
-    });
+    }));
   } else {
     // layer index = level index
     // previous level is up (+1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       for (int ilev=nlay; ilev>=1; ilev--) {
         flux_dir(icol,ilev,igpt) = flux_dir(icol,ilev+1,igpt) * exp(-tau(icol,ilev,igpt)*mu0_inv(icol));
       }
-    });
+    }));
   }
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
@@ -623,9 +623,9 @@ void lw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, real3d const
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
     sfc_albedo(icol,igpt) = 1. - sfc_emis(icol,igpt);
-  });
+  }));
 
   // Transport
   adding(ncol, nlay, ngpt, top_at_1,

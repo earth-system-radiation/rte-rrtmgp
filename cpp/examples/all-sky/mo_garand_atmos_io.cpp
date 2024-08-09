@@ -24,31 +24,31 @@ void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_
   io.read(tmp2d,"p_lay");
   // for (int ilay=1 ; ilay <= nlay ; ilay++) {
   //   for (int icol=1 ; icol <= ncol ; icol++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
     p_lay(icol,ilay) = tmp2d(1,ilay);
-  });
+  }));
   // t_lay
   io.read(tmp2d,"t_lay");
   // for (int ilay=1 ; ilay <= nlay ; ilay++) {
   //   for (int icol=1 ; icol <= ncol ; icol++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA ( int ilay, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA ( int ilay, int icol) {
     t_lay(icol,ilay) = tmp2d(1,ilay);
-  });
+  }));
   // p_lev
   tmp2d = real2d();  // Reset tmp2d to avoid warnings about reallocating during file read
   io.read(tmp2d,"p_lev");
   // for (int ilev=1 ; ilev <= nlev ; ilev++) {
   //   for (int icol=1 ; icol <= ncol ; icol++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA ( int ilev, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA ( int ilev, int icol) {
     p_lev(icol,ilev) = tmp2d(1,ilev);
-  });
+  }));
   // t_lev
   io.read(tmp2d,"t_lev");
   // for (int ilev=1 ; ilev <= nlev ; ilev++) {
   //   for (int icol=1 ; icol <= ncol ; icol++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA( int ilev, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev,ncol) , YAKL_LAMBDA( int ilev, int icol) {
     t_lev(icol,ilev) = tmp2d(1,ilev);
-  });
+  }));
 
   std::vector<std::string> gas_names = {
     "h2o", "co2", "o3", "n2o", "co", "ch4", "o2", "n2"
@@ -66,9 +66,9 @@ void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_
     // Create 1-D variable with just the first column
     real1d tmp1d("tmp1d",nlay);
     // for (int i=1 ; i <= nlay ; i++) {
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(nlay) , YAKL_LAMBDA (int i) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(nlay) , YAKL_LAMBDA (int i) {
       tmp1d(i) = tmp2d(1,i);
-    });
+    }));
     // Call set_vmr with only the first column from the data file copied among all of the model columns
     gas_concs.set_vmr( gas_name , tmp1d );
   }
@@ -79,9 +79,9 @@ void read_atmos(std::string input_file, real2d &p_lay, real2d &t_lay, real2d &p_
     io.read(tmp2d,"col_dry");
     // for (int ilay=1 ; ilay <= nlay ; ilay++) {
     //   for (int icol=1 ; icol <= ncol ; icol++) {
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA( int ilay, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA( int ilay, int icol) {
       col_dry(icol,ilay) = tmp2d(1,ilay);
-    });
+    }));
   }
 
   io.close();

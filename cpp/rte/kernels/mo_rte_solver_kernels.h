@@ -45,7 +45,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d c
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       for (int ilev=1; ilev<=nlay; ilev++) {
         source_up(icol,ilev,igpt)     =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
         source_dn(icol,ilev,igpt)     =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
@@ -54,7 +54,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d c
           source_sfc(icol,igpt) = flux_dn_dir(icol,nlay+1,igpt)*sfc_albedo(icol,igpt);
         }
       }
-    });
+    }));
   } else {
     #ifdef RRTMGP_CPU_KERNELS
       #ifdef YAKL_AUTO_PROFILE
@@ -84,7 +84,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d c
       // previous level is up (+1)
       // do igpt = 1, ngpt
       //   do icol = 1, ncol
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
         for (int ilev=nlay; ilev>=1; ilev--) {
           source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
           source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
@@ -93,7 +93,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, real3d c
             source_sfc(icol,igpt) = flux_dn_dir(icol,    1,igpt)*sfc_albedo(icol,igpt);
           }
         }
-      });
+      }));
     #endif
   }
 }
@@ -111,7 +111,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
     // Top of domain is index 1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       // Downward propagation
       for (int ilev=2; ilev<=nlay+1; ilev++) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev-1,igpt)*radn_dn(icol,ilev-1,igpt) + source_dn(icol,ilev-1,igpt);
@@ -124,7 +124,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
       for (int ilev=nlay; ilev>=1; ilev--) {
         radn_up(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_up(icol,ilev+1,igpt) + source_up(icol,ilev,igpt);
       }
-    });
+    }));
   } else {
     // Top of domain is index nlay+1
     #ifdef RRTMGP_CPU_KERNELS
@@ -159,7 +159,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
     #else
       // do igpt = 1, ngpt
       //   do icol = 1, ncol
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
         // Downward propagation
         for (int ilev=nlay; ilev>=1; ilev--) {
           radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
@@ -172,7 +172,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, rea
         for (int ilev=2; ilev<=nlay+1; ilev++) {
           radn_up(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up(icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt);
         }
-      });
+      }));
     #endif
   }
 }
@@ -197,14 +197,14 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
 
   real eps = std::numeric_limits<real>::epsilon();
 
-  parallel_for( YAKL_AUTO_LABEL() , ncol , YAKL_LAMBDA (int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , ncol , YAKL_LAMBDA (int icol) {
     mu0_inv(icol) = 1./mu0(icol);
-  });
+  }));
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngpt,nlay,ncol) , YAKL_LAMBDA (int igpt, int ilay, int icol) {
     // Zdunkowski Practical Improved Flux Method "PIFM"
     //  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
     real gamma1= (8. - w0(icol,ilay,igpt) * (5. + 3. * g(icol,ilay,igpt))) * .25;
@@ -265,7 +265,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, real1d const &mu0, real3
                          (1. - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat(icol,ilay,igpt) -
                           2.0 * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau );
 
-  });
+  }));
 }
 
 

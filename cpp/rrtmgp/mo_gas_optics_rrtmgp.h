@@ -561,9 +561,9 @@ public:
     YAKL_SCOPE( press_ref_loc     , this->press_ref     );
     YAKL_SCOPE( press_ref_log_loc , this->press_ref_log );
     // Running a kernel because it's more convenient in this case
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>( size(this->press_ref,1) ) , YAKL_LAMBDA (int i) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>( size(this->press_ref,1) ) , YAKL_LAMBDA (int i) {
       press_ref_log_loc(i) = log(press_ref_loc(i));
-    });
+    }));
 
     // log scale of reference pressure (this is a scalar, not an array)
     this->press_ref_trop_log = log(press_ref_trop);
@@ -614,14 +614,14 @@ public:
     this->is_key = bool1d("is_key",this->get_ngas());
     YAKL_SCOPE( is_key_loc , this->is_key );
     YAKL_SCOPE( flavor_loc , this->flavor );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>( this->get_ngas() ) , YAKL_LAMBDA (int i) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>( this->get_ngas() ) , YAKL_LAMBDA (int i) {
       is_key_loc(i) = false;
-    });
+    }));
     // do j = 1, size(this%flavor, 2)
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(this->flavor,2) , size(this->flavor,1) ) , YAKL_LAMBDA (int j, int i) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(this->flavor,2) , size(this->flavor,1) ) , YAKL_LAMBDA (int j, int i) {
       if (flavor_loc(i,j) != 0) { is_key_loc(flavor_loc(i,j)) = true; }
-    });
+    }));
   }
 
 
@@ -909,9 +909,9 @@ public:
     if (size(toa_src,1) != ncol || size(toa_src,2) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
     YAKL_SCOPE( solar_src_loc , this->solar_src );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       toa_src(icol,igpt) = solar_src_loc(igpt);
-    });
+    }));
   }
 
 
@@ -1005,15 +1005,15 @@ public:
     // compute column gas amounts [molec/cm^2]
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       col_gas(icol,ilay,0) = col_dry_wk(icol,ilay);
-    });
+    }));
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngas,nlay,ncol) , YAKL_LAMBDA (int igas, int ilay, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<3>(ngas,nlay,ncol) , YAKL_LAMBDA (int igas, int ilay, int icol) {
       col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
-    });
+    }));
     // ---- calculate gas optical depths ----
     tau = 0;
 
@@ -1068,7 +1068,7 @@ public:
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
       //   do icol = 1, ncol
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay+1,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay+1,ncol) , YAKL_LAMBDA (int ilay, int icol) {
         if (ilay == 1) {
           tlev_wk(icol,1) = tlay(icol,1) + (plev(icol,1)-play(icol,1))*(tlay(icol,2)-tlay(icol,1)) / (play(icol,2)-play(icol,1));
         }
@@ -1081,7 +1081,7 @@ public:
                                  play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay)) ) /
                              (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)));
         }
-      });
+      }));
     }
     // Compute internal (Planck) source functions at layers and levels,
     //  which depend on mapping from spectral space that creates k-distribution.
@@ -1095,9 +1095,9 @@ public:
     auto &sources_sfc_source = sources.sfc_source;
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(ngpt,ncol) , YAKL_LAMBDA (int igpt, int icol) {
       sources_sfc_source(icol,igpt) = sfc_source_t(igpt,icol);
-    });
+    }));
     reorder123x321(ngpt, nlay, ncol, lay_source_t    , sources.lay_source    );
     reorder123x321(ngpt, nlay, ncol, lev_source_inc_t, sources.lev_source_inc);
     reorder123x321(ngpt, nlay, ncol, lev_source_dec_t, sources.lev_source_dec);
@@ -1122,15 +1122,15 @@ public:
     if (allocated(latitude)) {
       // A purely OpenACC implementation would probably compute g0 within the kernel below
       // do icol = 1, ncol
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = helmert1 - helmert2 * cos(2.0 * M_PI * latitude(icol) / 180.0); // acceleration due to gravity [m/s^2]
-      });
+      }));
     } else {
       // do icol = 1, ncol
       YAKL_SCOPE( grav , const_t::grav );
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = grav;
-      });
+      }));
     }
 
     real2d col_dry("col_dry",size(plev,1),size(plev,2)-1);
@@ -1139,13 +1139,13 @@ public:
     YAKL_SCOPE( m_dry , const_t::m_dry );
     YAKL_SCOPE( m_h2o , const_t::m_h2o );
     YAKL_SCOPE( avogad , const_t::avogad );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
       real delta_plev = std::abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       real fact = 1. / (1.+vmr_h2o(icol,ilev));
       real m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
       col_dry(icol,ilev) = 10. * delta_plev * avogad * fact/(1000.*m_air*100.*g0(icol));
-    });
+    }));
     return col_dry;
   }
 

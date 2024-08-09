@@ -42,16 +42,16 @@ public:
       #endif
       // for (int j=1; j <= size(band_lims_gpt,2); j++) {
       //   for (int i=1; i <= size(band_lims_gpt,1); i++) {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(band_lims_gpt,2),size(band_lims_gpt,1)) , YAKL_LAMBDA (int j, int i) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(band_lims_gpt,2),size(band_lims_gpt,1)) , YAKL_LAMBDA (int j, int i) {
         band_lims_gpt_lcl(i,j) = band_lims_gpt(i,j);
-      });
+      }));
     } else {
       // Assume that values are defined by band, one g-point per band
       // for (int iband = 1; iband <= size(band_lims_wvn, 2); iband++) {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(size(band_lims_wvn, 2)) , YAKL_LAMBDA (int iband) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(size(band_lims_wvn, 2)) , YAKL_LAMBDA (int iband) {
         band_lims_gpt_lcl(2,iband) = iband;
         band_lims_gpt_lcl(1,iband) = iband;
-      });
+      }));
     }
     // Assignment
     this->band2gpt      = band_lims_gpt_lcl;
@@ -64,13 +64,13 @@ public:
     this->gpt2band = int1d("gpt2band",maxval(band_lims_gpt_lcl));
     // TODO: I didn't want to bother with race conditions at the moment, so it's an entirely serialized kernel for now
     YAKL_SCOPE( this_gpt2band , this->gpt2band );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(1) , YAKL_LAMBDA (int dummy) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(1) , YAKL_LAMBDA (int dummy) {
       for (int iband=1; iband <= size(band_lims_gpt_lcl,2); iband++) {
         for (int i=band_lims_gpt_lcl(1,iband); i <= band_lims_gpt_lcl(2,iband); i++) {
           this_gpt2band(i) = iband;
         }
       }
-    });
+    }));
   }
 
   void init(OpticalProps const &in) {
@@ -148,13 +148,13 @@ public:
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
     YAKL_SCOPE( this_band_lims_wvn , this->band_lims_wvn );
     if (this->is_initialized()) {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
         ret(i,j) = 1. / this_band_lims_wvn(i,j);
-      });
+      }));
     } else {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>( size(band_lims_wvn,2) , size(band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
         ret(i,j) = 0.;
-      });
+      }));
     }
     return ret;
   }
@@ -172,11 +172,11 @@ public:
     // //   for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
     // auto &this_band_lims_wvn = this->band_lims_wvn;
     // auto &rhs_band_lims_wvn  = rhs.band_lims_wvn;
-    // parallel_for( YAKL_AUTO_LABEL() , Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
+    // TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
     //   if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
     //     ret = false;
     //   }
-    // });
+    // }));
     // return ret.hostRead();
 
 
@@ -208,9 +208,9 @@ public:
     // // for (int i=1; i <= size(this->gpt2bnd,1); i++) {
     // auto &this_gpt2band = this->gpt2band;
     // auto &rhs_gpt2band  = rhs.gpt2band;
-    // parallel_for( YAKL_AUTO_LABEL() , Bounds<1>(size(this->gpt2band,1)) , YAKL_LAMBDA (int i) {
+    // TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , Bounds<1>(size(this->gpt2band,1)) , YAKL_LAMBDA (int i) {
     //   if ( this_gpt2band(i) != rhs_gpt2band(i) ) { ret = false; }
-    // });
+    // }));
     // return ret.hostRead();
 
 
@@ -233,13 +233,13 @@ public:
   //   // TODO: I don't know if this needs to be serialize or not at first glance. Need to look at it more.
   //   auto &this_band2gpt = this->gpt2band;
   //   int nband = get_nband();
-  //   parallel_for( YAKL_AUTO_LABEL() , Bounds<1>(1) , YAKL_LAMBDA (int dummy) {
+  //   TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , Bounds<1>(1) , YAKL_LAMBDA (int dummy) {
   //     for (int iband = 1 ; iband <= nband ; iband++) {
   //       for (int i=this_band2gpt(1,iband) ; i <= this_band2gpt(2,iband) ; i++) {
   //         ret(i) = arr_in(iband);
   //       }
   //     }
-  //   });
+  //   }));
   //   return ret;
   // }
 

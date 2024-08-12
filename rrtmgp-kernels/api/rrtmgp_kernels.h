@@ -139,7 +139,7 @@ extern "C"
         Float* tau_rayleigh  // [inout] (ncol,nlay.ngpt)
     );
 
-    void rrtmgp_compute_all_from_table(
+    void rrtmgp_compute_cld_from_table(
         const int& ncol, int& nlay, int& nbnd, int& nsteps,
         const Bool*  mask, // (ncol,nlay)
         const Float* lwp,  // (ncol,nlay)
@@ -154,7 +154,7 @@ extern "C"
         Float* taussag  // (ncol,nlay,nbnd)
     );
 
-    void rrtmgp_compute_all_from_pade(
+    void rrtmgp_compute_cld_from_pade(
         const int& ncol, int& nlay, int& nbnd, int& nsizes,
         const Bool*  mask, // (ncol,nlay)
         const Float* lwp,  // (ncol,nlay)

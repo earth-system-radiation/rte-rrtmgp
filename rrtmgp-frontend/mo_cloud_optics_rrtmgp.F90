@@ -29,7 +29,7 @@ module mo_cloud_optics_rrtmgp
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
   use mo_cloud_optics_rrtmgp_kernels, only: & 
-                              compute_all_from_table, compute_all_from_pade
+                              compute_cld_from_table, compute_cld_from_pade
   implicit none
   private
   ! -----------------------------------------------------------------------------------
@@ -485,14 +485,14 @@ contains
         !
         ! Liquid
         !
-        call compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq,               &
+        call compute_cld_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq,               &
                                     this%liq_nsteps,this%liq_step_size,this%radliq_lwr,  &
                                     this%lut_extliq, this%lut_ssaliq, this%lut_asyliq,   &
                                     ltau, ltaussa, ltaussag)
         !
         ! Ice
         !
-        call compute_all_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, &
+        call compute_cld_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, &
                                     this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
                                     this%lut_extice(:,:,this%icergh),      &
                                     this%lut_ssaice(:,:,this%icergh),      &
@@ -504,13 +504,13 @@ contains
         !   Hard coded assumptions: order of approximants, three size regimes
         !
         nsizereg = size(this%pade_extliq,2)
-        call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
+        call compute_cld_from_pade(ncol, nlay, nbnd, nsizereg, &
                                   liqmsk, clwp, reliq,        &
                                   2, 3, this%pade_sizreg_extliq, this%pade_extliq, &
                                   2, 2, this%pade_sizreg_ssaliq, this%pade_ssaliq, &
                                   2, 2, this%pade_sizreg_asyliq, this%pade_asyliq, &
                                   ltau, ltaussa, ltaussag)
-        call compute_all_from_pade(ncol, nlay, nbnd, nsizereg, &
+        call compute_cld_from_pade(ncol, nlay, nbnd, nsizereg, &
                                   icemsk, ciwp, reice,        &
                                   2, 3, this%pade_sizreg_extice, this%pade_extice(:,:,:,this%icergh), &
                                   2, 2, this%pade_sizreg_ssaice, this%pade_ssaice(:,:,:,this%icergh), &

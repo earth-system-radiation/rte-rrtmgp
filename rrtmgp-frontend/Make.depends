@@ -38,3 +38,10 @@ mo_gas_optics_rrtmgp.o: \
   mo_gas_concentrations.o \
   mo_gas_optics.o \
   mo_gas_optics_rrtmgp_kernels.o mo_gas_optics_rrtmgp.F90
+
+#
+# RRTMGP cloud optics
+# 
+mo_cloud_optics_rrtmgp.o: \
+  $(RTE_FORTRAN_INTERFACE) \
+  mo_cloud_optics_rrtmgp_kernels.o mo_cloud_optics_rrtmgp.F90

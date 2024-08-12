@@ -11,21 +11,22 @@ module mo_cloud_optics_rrtmgp_kernels
   use mo_rte_kind,      only : wp, wl
   implicit none
   private
-  public :: compute_all_from_table, compute_all_from_pade
+  public :: compute_cld_from_table, compute_cld_from_pade
   interface pade_eval
     module procedure pade_eval_nbnd, pade_eval_1
   end interface pade_eval
 contains
+  !---------------------------------------------------------------------------
   !
   ! Linearly interpolate values from a lookup table with "nsteps" evenly-spaced
   !   elements starting at "offset." The table's second dimension is band.
   ! Returns 0 where the mask is false.
   ! We could also try gather/scatter for efficiency
   !
-  subroutine compute_all_from_table(ncol, nlay, nbnd, mask, lwp, re, &
+  subroutine compute_cld_from_table(ncol, nlay, nbnd, mask, lwp, re, &
                                     nsteps, step_size, offset,       &
                                     tau_table, ssa_table, asy_table, &
-                                    tau, taussa, taussag) bind(C, name="rrtmgp_compute_all_from_table")
+                                    tau, taussa, taussag) bind(C, name="rrtmgp_compute_cld_from_table")
     integer,                                intent(in) :: ncol, nlay, nbnd, nsteps
     logical(wl), dimension(ncol,nlay),      intent(in) :: mask
     real(wp),    dimension(ncol,nlay),      intent(in) :: lwp, re
@@ -63,17 +64,18 @@ contains
         end do
       end do
     end do
-  end subroutine compute_all_from_table
+  end subroutine compute_cld_from_table
+  !---------------------------------------------------------------------------
   !
   ! Pade functions
   !
   !---------------------------------------------------------------------------
-  subroutine compute_all_from_pade(ncol, nlay, nbnd, nsizes, &
+  subroutine compute_cld_from_pade(ncol, nlay, nbnd, nsizes, &
                                    mask, lwp, re,            &
                                    m_ext, n_ext, re_bounds_ext, coeffs_ext, &
                                    m_ssa, n_ssa, re_bounds_ssa, coeffs_ssa, &
                                    m_asy, n_asy, re_bounds_asy, coeffs_asy, &
-                                   tau, taussa, taussag) bind(C, name="rrtmgp_compute_all_from_pade")
+                                   tau, taussa, taussag) bind(C, name="rrtmgp_compute_cld_from_pade")
     integer,                        intent(in) :: ncol, nlay, nbnd, nsizes
     logical(wl),  &
               dimension(ncol,nlay), intent(in) :: mask
@@ -129,7 +131,7 @@ contains
       end do
     end do
 
-  end subroutine compute_all_from_pade
+  end subroutine compute_cld_from_pade
   !---------------------------------------------------------------------------
   !
   ! Evaluate Pade approximant of order [m/n]

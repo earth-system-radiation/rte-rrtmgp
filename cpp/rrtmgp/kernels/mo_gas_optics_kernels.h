@@ -311,7 +311,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // TIMED_KERNEL(Kokkos::parallel_for( dims3_tot, KOKKOS_LAMBDA (int idx) {
   //   int ilay, icol, igpt;
   //   conv::unflatten_idx(idx, dims3_nlay_ncol_ngpt, ilay, icol, igpt);
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,ncol,nlay}) , KOKKOS_LAMBDA (int igpt, int icol, int ilay) {
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
     int iflav = gpoint_flavor(itropo, igpt); //eta interpolation depends on band's flavor
@@ -405,10 +405,10 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol+=2) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  // TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
-  //   int igpt, ilay, icol;
-  //   conv::unflatten_idx(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
+    int igpt, ilay, icol;
+    conv::unflatten_idx_left(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
+  // TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  );
     lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  );
     if (icol < ncol-1) {

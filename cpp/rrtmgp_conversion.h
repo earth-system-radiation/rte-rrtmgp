@@ -356,6 +356,12 @@ struct MDRP
   template <int Rank>
   using MDRP_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, LeftI, RightI> >;
 
+  template <int Rank>
+  using MDRPLR_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Left, Kokkos::Iterate::Right> >;
+
+  template <int Rank>
+  using MDRPRL_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
+
   template <int N, typename IntT>
   static inline
   MDRP_t<N> get(const IntT (&upper_bounds)[N])
@@ -363,6 +369,25 @@ struct MDRP
     assert(N > 1);
     const IntT lower_bounds[N] = {0};
     return MDRP_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
+  }
+
+  template <int N, typename IntT>
+  static inline
+  MDRPLR_t<N> getlr(const IntT (&upper_bounds)[N])
+  {
+    assert(N > 1);
+    const IntT lower_bounds[N] = {0};
+    return MDRPLR_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
+  }
+
+
+  template <int N, typename IntT>
+  static inline
+  MDRPRL_t<N> getrl(const IntT (&upper_bounds)[N])
+  {
+    assert(N > 1);
+    const IntT lower_bounds[N] = {0};
+    return MDRPRL_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
   }
 
   template <int N, typename IntT>
@@ -375,24 +400,35 @@ struct MDRP
 };
 
 KOKKOS_INLINE_FUNCTION
-void unflatten_idx(const int idx, const Kokkos::Array<int, 2>& dims, int& i, int& j)
+void unflatten_idx_left(const int idx, const Kokkos::Array<int, 2>& dims, int& i, int& j)
 {
-  // i = idx / dims[1];
-  // j = idx % dims[1];
   i = idx % dims[0];
   j = idx / dims[0];
 }
 
 KOKKOS_INLINE_FUNCTION
-void unflatten_idx(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
+void unflatten_idx_left(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
 {
-  // i = (idx / dims[2]) / dims[1];
-  // j = (idx / dims[2]) % dims[1];
-  // k =  idx % dims[2];
   i = idx % dims[0];
   j = (idx / dims[0]) % dims[1];
   k = (idx / dims[0]) / dims[1];
 }
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx_right(const int idx, const Kokkos::Array<int, 2>& dims, int& i, int& j)
+{
+  i = idx / dims[1];
+  j = idx % dims[1];
+}
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx_right(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
+{
+  i = (idx / dims[2]) / dims[1];
+  j = (idx / dims[2]) % dims[1];
+  k =  idx % dims[2];
+}
+
 
 #ifdef RRTMGP_ENABLE_YAKL
 // Compare a yakl array to a kokkos view, checking they are functionally

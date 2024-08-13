@@ -881,7 +881,12 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  Kokkos::Array<int, 3> dims3_ngpt_nlay_ncol = {ncol,nlay,ngpt};
+  const int dims3_ngpt_nlay_ncol_tot = ngpt * nlay * ncol;
+  //TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( dims3_ngpt_nlay_ncol_tot , KOKKOS_LAMBDA (int idx) {
+    int icol, ilay, igpt;
+    conv::unflatten_idx_left(idx, dims3_ngpt_nlay_ncol, icol, ilay, igpt);
     // Optical path and transmission, used in source function and transport calculations
     tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt);
     trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt));

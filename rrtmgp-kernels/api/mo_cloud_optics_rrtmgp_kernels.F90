@@ -15,6 +15,7 @@ module mo_cloud_optics_rrtmgp_kernels
                                       nsteps, step_size, offset,       &
                                       tau_table, ssa_table, asy_table, &
                                       tau, taussa, taussag) bind(C, name="rrtmgp_compute_cld_from_table")
+      use mo_rte_kind, only : wp, wl
       integer,                                intent(in) :: ncol, nlay, nbnd, nsteps
       logical(wl), dimension(ncol,nlay),      intent(in) :: mask
       real(wp),    dimension(ncol,nlay),      intent(in) :: lwp, re
@@ -34,6 +35,7 @@ module mo_cloud_optics_rrtmgp_kernels
                                      m_ssa, n_ssa, re_bounds_ssa, coeffs_ssa, &
                                      m_asy, n_asy, re_bounds_asy, coeffs_asy, &
                                      tau, taussa, taussag) bind(C, name="rrtmgp_compute_cld_from_pade")
+      use mo_rte_kind, only : wp, wl
       integer,                        intent(in) :: ncol, nlay, nbnd, nsizes
       logical(wl),  &
                 dimension(ncol,nlay), intent(in) :: mask
@@ -52,5 +54,5 @@ module mo_cloud_optics_rrtmgp_kernels
     end subroutine compute_cld_from_pade
   end interface
   !---------------------------------------------------------------------------
-end module module mo_cloud_optics_rrtmgp_kernels
+end module mo_cloud_optics_rrtmgp_kernels
 

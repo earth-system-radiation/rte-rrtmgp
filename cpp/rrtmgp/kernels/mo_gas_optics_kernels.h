@@ -471,10 +471,16 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
 
   int extent = scale_by_complement.extent(0);
 
+  Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
+  const int dims2_ncol_nlay_tot = ncol * nlay;
+
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+  //TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
+  TIMED_KERNEL(Kokkos::parallel_for( dims2_ncol_nlay_tot , KOKKOS_LAMBDA (int idx) {
+    int icol, ilay;
+    conv::unflatten_idx_right(idx, dims2_ncol_nlay, icol, ilay);
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {

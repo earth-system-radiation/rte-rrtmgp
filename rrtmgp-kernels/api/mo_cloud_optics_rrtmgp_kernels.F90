@@ -3,7 +3,6 @@ module mo_cloud_optics_rrtmgp_kernels
   implicit none
   private
   public :: compute_cld_from_table, compute_cld_from_pade
-contains
   interface 
     !---------------------------------------------------------------------------
     !
@@ -52,5 +51,6 @@ contains
       real(wp), dimension(ncol,nlay,nbnd)        :: tau, taussa, taussag
     end subroutine compute_cld_from_pade
   end interface
+  !---------------------------------------------------------------------------
 end module module mo_cloud_optics_rrtmgp_kernels
 

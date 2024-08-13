@@ -146,6 +146,11 @@ def get_kernel_by_id(filename, funcname, kernel_id, id_map):
 ###############################################################################
 def compare_analyses(file1, file2):
 ###############################################################################
+    CEND      = '\33[0m'
+    CBOLD     = '\33[1m'
+    CRED      = '\33[31m'
+    CGREEN    = '\33[32m'
+
     analysis1_raw = parse_analysis(file1)
     analysis2_raw = parse_analysis(file2)
 
@@ -158,7 +163,14 @@ def compare_analyses(file1, file2):
         if other_kernel is not None:
             other_lineno, other_timelen = other_kernel
             changepct = (timelen / other_timelen) * 100
-            print(f"{filename}:{funcname}:{lineno} => {timelen} (changepct={changepct:.2f}) (other lineno={other_lineno})")
+            output_style = ""
+            if changepct > 125:
+                output_style = CBOLD + CRED
+            elif changepct < 75:
+                output_style = CBOLD + CGREEN
+
+            style_end = "" if output_style == "" else CEND
+            print(f"{filename}:{funcname}:{lineno} => {timelen} (changepct={output_style}{changepct:.2f}{style_end}) (other lineno={other_lineno})")
 
     return True
 

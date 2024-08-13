@@ -405,10 +405,10 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol+=2) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
-    int igpt, ilay, icol;
-    conv::unflatten_idx_left(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
-  // TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  // TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
+  //   int igpt, ilay, icol;
+  //   conv::unflatten_idx_right(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  );
     lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  );
     if (icol < ncol-1) {
@@ -478,9 +478,6 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
-        //TIMED_KERNEL(Kokkos::parallel_for( dims2_ncol_nlay_tot , KOKKOS_LAMBDA (int idx) {
-        //int icol, ilay;
-        //conv::unflatten_idx_right(idx, dims2_ncol_nlay, icol, ilay);
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {

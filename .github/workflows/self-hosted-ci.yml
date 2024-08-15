@@ -13,6 +13,10 @@ defaults:
   run:
     shell: bash
 
+# A workaround for the old runtime:
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
 jobs:
   CI:
     if: github.repository == 'earth-system-radiation/rte-rrtmgp'

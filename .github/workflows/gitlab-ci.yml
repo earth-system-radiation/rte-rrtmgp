@@ -25,6 +25,7 @@ jobs:
             github.event.pull_request.user.login != 'dependabot[bot]' ))
     runs-on: ubuntu-latest
     outputs:
+      ref-type: ${{ steps.g-push-rev.outputs.ref-type }}
       ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
       pipeline-id: ${{ steps.gl-trigger-pipeline.outputs.pipeline-id }}
     steps:
@@ -94,7 +95,7 @@ jobs:
       with:
         remote-url: ${{ vars.DKRZ_GITLAB_SERVER }}/${{ vars.DKRZ_GITLAB_PROJECT }}.git
         password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
-        ref-type: tag
+        ref-type: ${{ needs.levante-init.outputs.ref-type }}
         ref-name: ${{ needs.levante-init.outputs.ref-name }}
         force: true
   #
@@ -108,6 +109,7 @@ jobs:
             github.event.pull_request.user.login != 'dependabot[bot]' ))
     runs-on: ubuntu-latest
     outputs:
+      ref-type: ${{ steps.g-push-rev.outputs.ref-type }}
       ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
       pipeline-id: ${{ steps.gl-create-pipeline.outputs.pipeline-id }}
     steps:
@@ -130,8 +132,7 @@ jobs:
         rev-id: ${{ github.sha }}
         rev-signing-format: ssh
         rev-signing-key: ${{ secrets.GITLAB_SIGNING_KEY }}
-        ref-type: tag
-        ref-message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        ref-type: branch
         force-push: true
     #
     # Create GitLab CI/CD Pipeline
@@ -189,11 +190,12 @@ jobs:
         project-name: ${{ vars.GITLAB_PROJECT }}
         token: ${{ secrets.GITLAB_TOKEN }}
         pipeline-id: ${{ needs.lumi-init.outputs.pipeline-id }}
+        force: true
     - uses: "skosukhin/git-ci-hub-lab/gl-delete-ref@v1"
       with:
         server-url: ${{ vars.GITLAB_SERVER }}
         project-name: ${{ vars.GITLAB_PROJECT }}
         token: ${{ secrets.GITLAB_TOKEN }}
-        ref-type: tag
+        ref-type: ${{ needs.lumi-init.outputs.ref-type }}
         ref-name: ${{ needs.lumi-init.outputs.ref-name }}
         force: true

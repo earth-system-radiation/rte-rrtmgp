@@ -190,6 +190,7 @@ jobs:
         project-name: ${{ vars.GITLAB_PROJECT }}
         token: ${{ secrets.GITLAB_TOKEN }}
         pipeline-id: ${{ needs.lumi-init.outputs.pipeline-id }}
+        force: true
     - uses: "skosukhin/git-ci-hub-lab/gl-delete-ref@v1"
       with:
         server-url: ${{ vars.GITLAB_SERVER }}

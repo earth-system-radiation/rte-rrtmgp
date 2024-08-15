@@ -130,8 +130,7 @@ jobs:
         rev-id: ${{ github.sha }}
         rev-signing-format: ssh
         rev-signing-key: ${{ secrets.GITLAB_SIGNING_KEY }}
-        ref-type: tag
-        ref-message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        ref-type: branch
         force-push: true
     #
     # Create GitLab CI/CD Pipeline
@@ -194,6 +193,6 @@ jobs:
         server-url: ${{ vars.GITLAB_SERVER }}
         project-name: ${{ vars.GITLAB_PROJECT }}
         token: ${{ secrets.GITLAB_TOKEN }}
-        ref-type: tag
+        ref-type: branch
         ref-name: ${{ needs.lumi-init.outputs.ref-name }}
         force: true

@@ -471,7 +471,11 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, Tau
     // Top of domain is index nlay+1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
+    const int dims2_tot = ncol*ngpt;
+    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
+      int icol, igpt;
+      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
       // Downward propagation
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);

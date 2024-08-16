@@ -480,7 +480,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {
@@ -490,43 +490,41 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
       RealT mycol_gas_h2o = col_gas(icol,ilay,idx_h2o);
       RealT mycol_gas_0   = col_gas(icol,ilay,-1);
 
-      for (int imnr=0; imnr<extent; imnr++) {
-        RealT scaling = col_gas(icol,ilay,idx_minor(imnr));
-        if (minor_scales_with_density(imnr)) {
-          // NOTE: P needed in hPa to properly handle density scaling.
-          scaling = scaling * (PaTohPa * myplay/mytlay);
+      RealT scaling = col_gas(icol,ilay,idx_minor(imnr));
+      if (minor_scales_with_density(imnr)) {
+        // NOTE: P needed in hPa to properly handle density scaling.
+        scaling = scaling * (PaTohPa * myplay/mytlay);
 
-          if (idx_minor_scaling(imnr) > -1) {  // there is a second gas that affects this gas's absorption
-            RealT mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr));
-            RealT vmr_fact = 1. / mycol_gas_0;
-            RealT dry_fact = 1. / (1. + mycol_gas_h2o * vmr_fact);
-            // scale by density of special gas
-            if (scale_by_complement(imnr)) { // scale by densities of all gases but the special one
-              scaling = scaling * (1. - mycol_gas_imnr * vmr_fact * dry_fact);
-            } else {
-              scaling = scaling *       mycol_gas_imnr * vmr_fact * dry_fact;
-            }
+        if (idx_minor_scaling(imnr) > -1) {  // there is a second gas that affects this gas's absorption
+          RealT mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr));
+          RealT vmr_fact = 1. / mycol_gas_0;
+          RealT dry_fact = 1. / (1. + mycol_gas_h2o * vmr_fact);
+          // scale by density of special gas
+          if (scale_by_complement(imnr)) { // scale by densities of all gases but the special one
+            scaling = scaling * (1. - mycol_gas_imnr * vmr_fact * dry_fact);
+          } else {
+            scaling = scaling *       mycol_gas_imnr * vmr_fact * dry_fact;
           }
-        } // minor_scalse_with_density(imnr)
-
-        // What is the starting point in the stored array of minor absorption coefficients?
-        int minor_start = kminor_start(imnr);
-        // Which gpoint range does this minor gas affect?
-        int gptS = minor_limits_gpt(0,imnr);
-        int gptE = minor_limits_gpt(1,imnr);
-        for (int igpt=gptS; igpt<=gptE; igpt++) {
-          // Interpolation of absorption coefficient and calculation of optical depth
-          int iflav = gpt_flv(idx_tropo,igpt); // eta interpolation depends on flavor
-          int minor_loc = minor_start + (igpt - gptS); // add offset to starting point
-          // Inlined interpolate2D
-          RealT kminor_loc =
-            fminor(0,0,iflav,icol,ilay) * kminor(minor_loc, jeta(0,iflav,icol,ilay)  , myjtemp  ) +
-            fminor(1,0,iflav,icol,ilay) * kminor(minor_loc, jeta(0,iflav,icol,ilay)+1, myjtemp  ) +
-            fminor(0,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp+1) +
-            fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp+1);
-          RealT tau_minor = kminor_loc * scaling;
-          tau(igpt,ilay,icol) += tau_minor;
         }
+      } // minor_scalse_with_density(imnr)
+
+      // What is the starting point in the stored array of minor absorption coefficients?
+      int minor_start = kminor_start(imnr);
+      // Which gpoint range does this minor gas affect?
+      int gptS = minor_limits_gpt(0,imnr);
+      int gptE = minor_limits_gpt(1,imnr);
+      for (int igpt=gptS; igpt<=gptE; igpt++) {
+        // Interpolation of absorption coefficient and calculation of optical depth
+        int iflav = gpt_flv(idx_tropo,igpt); // eta interpolation depends on flavor
+        int minor_loc = minor_start + (igpt - gptS); // add offset to starting point
+        // Inlined interpolate2D
+        RealT kminor_loc =
+          fminor(0,0,iflav,icol,ilay) * kminor(minor_loc, jeta(0,iflav,icol,ilay)  , myjtemp  ) +
+          fminor(1,0,iflav,icol,ilay) * kminor(minor_loc, jeta(0,iflav,icol,ilay)+1, myjtemp  ) +
+          fminor(0,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp+1) +
+          fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp+1);
+        RealT tau_minor = kminor_loc * scaling;
+        Kokkos::atomic_add(&tau(igpt,ilay,icol), tau_minor);
       }
     }
   }));

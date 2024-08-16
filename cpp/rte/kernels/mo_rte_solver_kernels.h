@@ -910,7 +910,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   // do igpt = 1, ngpt
   //   do ilev = 1, nlay+1
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay+1,ngpt}) , KOKKOS_LAMBDA (int icol, int ilev, int igpt) {
     radn_dn(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
     radn_up(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
   }));

@@ -562,8 +562,11 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
   //   for (int icol=1; icol<=ncol; icol++) {
   //     // optical depth calculation for major species
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
-    // itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+  Kokkos::Array<int, 3> dims3_ngpt_ncol_nlay = {ngpt,ncol,nlay};
+  const int dims3_tot = ngpt*ncol*nlay;;
+  TIMED_KERNEL(Kokkos::parallel_for(dims3_tot, KOKKOS_LAMBDA (int idx) {
+    int igpt, icol, ilay;
+    conv::unflatten_idx_left(idx, dims3_ngpt_ncol_nlay, igpt, icol, ilay);
     int itropo = merge(0,1,tropo(icol,ilay));  // WS: moved inside innermost loop
 
     // binary species parameter (eta) and col_mix depend on band flavor

@@ -208,7 +208,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     tropo(icol,ilay) = log(play(icol,ilay)) > press_ref_trop_log;
   }));
 
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<4>({nlay,ncol,nflav,2}) , KOKKOS_LAMBDA (int ilay, int icol, int iflav , int itemp) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<4>({2,nflav,ncol,nlay}) , KOKKOS_LAMBDA (int itemp, int iflav, int icol , int ilay) {
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));
     auto igases1 = flavor(0,iflav);

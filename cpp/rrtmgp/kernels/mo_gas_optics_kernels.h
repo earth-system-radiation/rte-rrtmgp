@@ -443,7 +443,7 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({nlay,ncol,ngpt}) , KOKKOS_LAMBDA (int ilay, int icol, int igpt) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ngpt,ncol,nlay}) , KOKKOS_LAMBDA (int igpt, int icol, int ilay) {
     int itropo = merge(0,1,tropo(icol,ilay)); // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int iflav = gpoint_flavor(itropo, igpt);
     // Inlining interpolate2D

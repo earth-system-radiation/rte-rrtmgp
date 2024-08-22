@@ -411,7 +411,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<2>({ncol, ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       for (int ilev=0; ilev<nlay; ilev++) {
         source_up(icol,ilev,igpt)     =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
         source_dn(icol,ilev,igpt)     =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
@@ -426,7 +426,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
     // previous level is up (+1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
         source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
@@ -522,7 +522,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     // Zdunkowski Practical Improved Flux Method "PIFM"
     //  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
     RealT gamma1= (8. - w0(icol,ilay,igpt) * (5. + 3. * g(icol,ilay,igpt))) * .25;

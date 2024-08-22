@@ -292,8 +292,6 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 
   using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 
-  auto start_t = std::chrono::high_resolution_clock::now();
-
   const int dsize1 = ngpt*nlay*ncol;
   const int dsize2 = ngpt*(nlay+1)*ncol;
   RealT* data = pool::template alloc_raw<RealT>(dsize1 + dsize2), *dcurr = data;
@@ -419,12 +417,6 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   }));
 
   pool::dealloc(data, dcurr - data);
-
-  auto stop_t = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t);
-  static double total_time = 0.0;
-  total_time += (duration.count() / 1000000.0);
-  std::cout << "Total time spent: " << total_time << std::endl;
 }
 
 // compute Rayleigh scattering optical depths

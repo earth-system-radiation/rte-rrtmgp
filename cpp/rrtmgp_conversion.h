@@ -25,7 +25,7 @@
 #define GENERIC_INLINE YAKL_INLINE
 #endif
 
-#define ENABLE_TIMING
+//#define ENABLE_TIMING
 // Macro for timing kernels
 #ifdef ENABLE_TIMING
 #define TIMED_KERNEL(kernel)                                            \

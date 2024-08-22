@@ -6,6 +6,15 @@ in rrtmgp_conversion.h then running one of the test_XX_perf.sh programs,
 grepping for TIMING, then redirecting that output to a file. Example:
 
 % OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > TIME_DATA
+% rrtmgp_perf_analysis TIME_DATA
+
+To compare against baseline results:
+% OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > BASELINE_DATA
+% rrtmgp_perf_analysis BASELINE_DATA > BASELINE_ANALYSIS
+* Make changes *
+% OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > NEW_DATA
+% rrtmgp_perf_analysis NEW_DATA > NEW_ANALYSIS
+% rrtmgp_perf_analysis NEW_DATA BASELINE_DATA
 """
 
 import argparse, sys, os
@@ -27,7 +36,7 @@ OR
     > {0} KANALYZED YANALYZED
 """.format(Path(args[0]).name),
         description=description,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     parser.add_argument("timing_file", help="The timing file to analyze (or analysis file if 2 args)")

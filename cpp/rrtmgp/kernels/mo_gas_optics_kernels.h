@@ -258,19 +258,17 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
   //     for (int tgpt=1; tgpt<=gptTiles; tgpt++) {
   //       for (int itcol=1; itcol<=TILE_SIZE; itcol++) {
   //         for (int itgpt=1; itgpt<=TILE_SIZE; itgpt++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<5>({nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
-    int icol = tcol*TILE_SIZE + itcol;
-    int igpt = tgpt*TILE_SIZE + itgpt;
-
-    if ( icol < ncol && igpt < ngpt ) {
-      RealT t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
-      tau(icol,ilay,igpt) = t;
-      g  (icol,ilay,igpt) = 0.;
-      if(t > 2. * tiny) {
-        ssa(icol,ilay,igpt) = tau_rayleigh(igpt,ilay,icol) / t;
-      } else {
-        ssa(icol,ilay,igpt) = 0.;
-      }
+  // TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<5>({nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
+  //   int icol = tcol*TILE_SIZE + itcol;
+  //   int igpt = tgpt*TILE_SIZE + itgpt;
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+    RealT t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
+    tau(icol,ilay,igpt) = t;
+    g  (icol,ilay,igpt) = 0.;
+    if(t > 2. * tiny) {
+      ssa(icol,ilay,igpt) = tau_rayleigh(igpt,ilay,icol) / t;
+    } else {
+      ssa(icol,ilay,igpt) = 0.;
     }
   }));
 }

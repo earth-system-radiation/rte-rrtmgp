@@ -8,7 +8,7 @@ make -j20
 # remove prior files
 /bin/rm -f *JGF*
 
-OMP_NUM_THREADS=64 $this_dir/test_lw_perf.sh 100 | grep TIMING > TIME_DATA_JGF
+OMP_NUM_THREADS=64 $this_dir/test_sw_perf.sh 100 | grep TIMING > TIME_DATA_JGF
 
 $this_dir/rrtmgp-perf-analysis TIME_DATA_JGF > ANALYSIS_JGF
 

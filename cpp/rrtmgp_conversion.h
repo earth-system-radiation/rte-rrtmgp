@@ -1306,7 +1306,9 @@ public:
         for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] -= 1; }
       }
     }
-    Kokkos::deep_copy(arr, read_data);
+    auto arr_mirror = Kokkos::create_mirror_view(arr);
+    Kokkos::deep_copy(arr_mirror, read_data);
+    Kokkos::deep_copy(arr, arr_mirror);
   }
 
 

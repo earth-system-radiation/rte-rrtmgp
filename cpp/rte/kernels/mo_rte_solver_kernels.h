@@ -723,7 +723,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       int ilev = 0;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);

@@ -102,9 +102,9 @@ public:
     YAKL_SCOPE( this_concs , this->concs );
     // for (int ilay=1; ilay<=this->nlay; ilay++) {
     //   for (int icol=1; icol<=this->ncol; icol++) {
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w;
-    });
+    }));
   }
 
 
@@ -124,17 +124,17 @@ public:
     #ifdef RRTMGP_EXPENSIVE_CHECKS
       yakl::ScalarLiveOut<bool> badVal(false); // Scalar that must exist in device memory (equiv: bool badVal = false;)
       // for (int i=1; i<=size(w,1); i++) {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(size(w,1)) , YAKL_LAMBDA (int i) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(size(w,1)) , YAKL_LAMBDA (int i) {
         if (w(i) < 0. || w(i) > 1.) { badVal = true; }
-      });
+      }));
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     YAKL_SCOPE( this_concs , this->concs );
     // for (int ilay=1; ilay<=this->nlay; ilay++) {
     //   for (int icol=1; icol<=this->ncol; icol++) {
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w(ilay);
-    });
+    }));
   }
 
   // Set concentration as a 2-D field of columns and levels
@@ -155,17 +155,17 @@ public:
       yakl::ScalarLiveOut<bool> badVal(false); // Scalar that must exist in device memory (equiv: bool badVal = false;)
       // for (int j=1; j<=size(w,2); j++) {
       //   for (int i=1; i<=size(w,1); i++) {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(w,2),size(w,1)) , YAKL_LAMBDA (int j, int i) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(w,2),size(w,1)) , YAKL_LAMBDA (int j, int i) {
         if (w(i,j) < 0. || w(i,j) > 1.) { badVal = true;}
-      });
+      }));
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     YAKL_SCOPE( this_concs , this->concs );
     // for (int ilay=1; ilay<=this->nlay; ilay++) {
     //   for (int icol=1; icol<=this->ncol; icol++) {
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlay,ncol) , YAKL_LAMBDA (int ilay, int icol) {
       this_concs(icol,ilay,igas) = w(icol,ilay);
-    });
+    }));
   }
 
 
@@ -183,9 +183,9 @@ public:
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
     YAKL_SCOPE( this_concs , this->concs );
-    parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(array,2),size(array,1)) , YAKL_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(array,2),size(array,1)) , YAKL_LAMBDA (int ilay, int icol) {
       array(icol,ilay) = this_concs(icol,ilay,igas);
-    });
+    }));
   }
 
   int get_num_gases() const { return gas_name.size(); }
@@ -295,17 +295,17 @@ public:
     }
     if (w < 0. || w > 1.) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     auto this_concs = this->concs;
-    Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
       this_concs(icol, ilay, igas) = w;
-    });
+    }));
   }
 
   template <typename ViewT>
   static void inline set_concs_impl(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
   {
-    Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
       concs(icol, ilay, igas) = w(ilay);
-    });
+    }));
   }
 
   // Set concentration as a single column copied to all other columns
@@ -332,9 +332,9 @@ public:
   template <typename ViewT>
   static void inline set_concs_impl2(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
   {
-    Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
       concs(icol, ilay, igas) = w(icol, ilay);
-    });
+    }));
   }
 
   // Set concentration as a 2-D field of columns and levels
@@ -352,9 +352,9 @@ public:
       yakl::ScalarLiveOut<bool> badVal(false); // Scalar that must exist in device memory (equiv: bool badVal = false;)
       // for (int j=1; j<=size(w,2); j++) {
       //   for (int i=1; i<=size(w,1); i++) {
-      parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(w,2),size(w,1)) , YAKL_LAMBDA (int j, int i) {
+      TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(size(w,2),size(w,1)) , YAKL_LAMBDA (int j, int i) {
         if (w(i,j) < 0. || w(i,j) > 1.) { badVal = true;}
-      });
+      }));
       if (badVal.hostRead()) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     #endif
     set_concs_impl2(w, this->nlay, this->ncol, igas, this->concs);
@@ -371,9 +371,9 @@ public:
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
     auto this_concs = this->concs;
-    Kokkos::parallel_for( mdrp_t::template get<2>({array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
       array(icol,ilay) = this_concs(icol,ilay,igas);
-    });
+    }));
   }
 
   int get_num_gases() const { return gas_name.size(); }

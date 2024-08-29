@@ -1,0 +1,204 @@
+#! /usr/bin/env python3
+
+"""
+Given a data file, produce info. The data file can be obtained by enabling
+in rrtmgp_conversion.h then running one of the test_XX_perf.sh programs,
+grepping for TIMING, then redirecting that output to a file. Example:
+
+% OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > TIME_DATA
+% rrtmgp_perf_analysis TIME_DATA
+
+To compare against baseline results:
+% OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > BASELINE_DATA
+% rrtmgp_perf_analysis BASELINE_DATA > BASELINE_ANALYSIS
+* Make changes *
+% OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > NEW_DATA
+% rrtmgp_perf_analysis NEW_DATA > NEW_ANALYSIS
+% rrtmgp_perf_analysis NEW_DATA BASELINE_DATA
+"""
+
+import argparse, sys, os
+from pathlib import Path
+
+###############################################################################
+def parse_command_line(args, description):
+###############################################################################
+    parser = argparse.ArgumentParser(
+        usage="""\n{0} <TIMING_FILE>
+OR
+{0} --help
+
+\033[1mEXAMPLES:\033[0m
+    \033[1;32m# Analyze TIMING_FILE \033[0m
+    > {0} TIMING_FILE
+
+    \033[1;32m# Compare two analyzed files \033[0m
+    > {0} KANALYZED YANALYZED
+""".format(Path(args[0]).name),
+        description=description,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.add_argument("timing_file", help="The timing file to analyze (or analysis file if 2 args)")
+
+    parser.add_argument("compare_file", nargs="?", help="The second analysis file")
+
+    args = parser.parse_args(args[1:])
+
+    return args
+
+###############################################################################
+def rrtmgp_perf_analysis(timing_file):
+###############################################################################
+    raw = {}
+    lines = open(timing_file, "r").readlines()
+    for line in lines:
+        line = line.strip()
+        if line != "":
+            tokens = line.split()
+            assert len(tokens) == 11, r"Bad line '{line}', expected 11 tokens"
+            funcname = tokens[3]
+            filename = os.path.splitext("/".join(tokens[5].split("/")[-2:]))[0]
+            line     = int(tokens[7])
+            timelen  = float(tokens[-2])
+            keystr   = f"{filename}:{funcname}:{line}"
+            raw[keystr] = timelen
+
+    # Inverse raw and resolve potential time collisions
+    inverse_dict = {}
+    for keystr, timelen in raw.items():
+        while timelen in inverse_dict:
+            timelen += 0.000000001
+
+        inverse_dict[timelen] = keystr
+
+    assert len(inverse_dict) == len(raw), f"Num entries should have matched, {len(inverse_dict)} != {len(raw)}"
+
+    total_time = 0.0
+    for timelen, keystr in reversed(sorted(inverse_dict.items())):
+        print(f"{keystr} => {timelen}")
+        total_time += timelen
+
+    print(f"Total time spent in kernels: {total_time}")
+
+    return True
+
+###############################################################################
+def parse_analysis(analysis_file):
+###############################################################################
+    lines = open(analysis_file, "r").readlines()
+    result = []
+    for line in lines:
+        line = line.strip()
+        if line != "" and "Total time" not in line:
+            megatokens = line.split(" => ")
+            assert len(megatokens) == 2, f"Bad line, expected 2 megatokens: {line}"
+            location, timelen = megatokens
+            timelen = float(timelen)
+            tokens = location.split(":")
+            assert len(tokens) == 3, f"Bad location, expected 3 tokens: {location}"
+            filename, funcname, lineno = tokens
+            lineno = int(lineno)
+            result.append((filename, funcname, lineno, timelen))
+
+    return result
+
+###############################################################################
+def get_id_map(analysis_raw):
+###############################################################################
+    """
+    Returns {filename+funcname => {lineno => timelen}} where the inner dict
+    is sorted by lineno. This will be used to give kernels IDs based on their
+    location. The ID will be N where N is the Nth-kernel of a function (ordered
+    by line number).
+    """
+    result = {}
+    for filename, funcname, lineno, timelen in analysis_raw:
+        outer_key = f"{filename}:{funcname}"
+        if outer_key not in result:
+            result[outer_key] = {}
+
+        inner_dict = result[outer_key]
+        assert lineno not in inner_dict, f"{lineno} appears twice in {outer_key}"
+        inner_dict[lineno] = timelen
+
+        # Make sure it stays sorted
+        result[outer_key] = dict(sorted(inner_dict.items()))
+
+    return result
+
+###############################################################################
+def get_id(filename, funcname, lineno, id_map):
+###############################################################################
+    outer_key = f"{filename}:{funcname}"
+    inner_dict = id_map[outer_key]
+    for idx, curr_lineno in enumerate(inner_dict.keys()):
+        if curr_lineno == lineno:
+            return idx
+
+    assert False, f"Failed to find kernel {filename} {funcname} {lineno}"
+    return None
+
+###############################################################################
+def get_kernel_by_id(filename, funcname, kernel_id, id_map):
+###############################################################################
+    outer_key = f"{filename}:{funcname}"
+    if outer_key in id_map:
+        inner_dict = id_map[outer_key]
+        for idx, dpair in enumerate(inner_dict.items()):
+            if idx == kernel_id:
+                return dpair
+
+    print(f"WARNING: Failed to find comparison kernel for {filename} {funcname} {kernel_id}")
+    return None
+
+###############################################################################
+def compare_analyses(file1, file2):
+###############################################################################
+    CEND      = '\33[0m'
+    CBOLD     = '\33[1m'
+    CRED      = '\33[31m'
+    CGREEN    = '\33[32m'
+
+    analysis1_raw = parse_analysis(file1)
+    analysis2_raw = parse_analysis(file2)
+
+    id_map1 = get_id_map(analysis1_raw)
+    id_map2 = get_id_map(analysis2_raw)
+
+    for filename, funcname, lineno, timelen in analysis1_raw:
+        kernel_id = get_id(filename, funcname, lineno, id_map1)
+        other_kernel = get_kernel_by_id(filename, funcname, kernel_id, id_map2)
+        if other_kernel is not None:
+            other_lineno, other_timelen = other_kernel
+            changepct = (timelen / other_timelen) * 100
+            output_style = ""
+            if changepct > 125:
+                output_style = CBOLD + CRED
+            elif changepct < 75:
+                output_style = CBOLD + CGREEN
+
+            style_end = "" if output_style == "" else CEND
+            print(f"{filename}:{funcname}:{lineno} => {timelen} (changepct={output_style}{changepct:.2f}{style_end}) (other lineno={other_lineno})")
+
+    return True
+
+###############################################################################
+def dispatch(timing_file, compare_file):
+###############################################################################
+    if compare_file is None:
+        return rrtmgp_perf_analysis(timing_file)
+    else:
+        return compare_analyses(timing_file, compare_file)
+
+###############################################################################
+def _main_func(description):
+###############################################################################
+    success = dispatch(**vars(parse_command_line(sys.argv, description)))
+
+    sys.exit(0 if success else 1)
+
+###############################################################################
+
+if __name__ == "__main__":
+    _main_func(__doc__)

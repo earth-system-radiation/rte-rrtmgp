@@ -3,6 +3,7 @@
 #include "rrtmgp_const.h"
 
 #include <stdexcept>
+#include <chrono>
 
 // Validate if both enabled?
 #ifdef RRTMGP_ENABLE_KOKKOS
@@ -22,6 +23,23 @@
 #define GENERIC_INLINE KOKKOS_INLINE_FUNCTION
 #else
 #define GENERIC_INLINE YAKL_INLINE
+#endif
+
+//#define ENABLE_TIMING
+// Macro for timing kernels
+#ifdef ENABLE_TIMING
+#define TIMED_KERNEL(kernel)                                            \
+{                                                                       \
+  auto start_t = std::chrono::high_resolution_clock::now();             \
+  kernel;                                                               \
+  auto stop_t = std::chrono::high_resolution_clock::now();              \
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t); \
+  static double total_s = 0.;                                           \
+  total_s += duration.count() / 1000000.0;                              \
+  std::cout << "TIMING For func " << __func__ << " file " << __FILE__ << " line " << __LINE__ << " total " << total_s << " s" << std::endl; \
+}
+#else
+#define TIMED_KERNEL(kernel) kernel
 #endif
 
 /**
@@ -319,17 +337,30 @@ template <> struct DefaultTile<5> {
 template <typename LayoutT, typename DeviceT=DefaultDevice>
 struct MDRP
 {
-  static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
-    ? Kokkos::Iterate::Left
-    : Kokkos::Iterate::Right;
-  static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
-    ? Kokkos::Iterate::Right
-    : Kokkos::Iterate::Left;
+  // static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+  //   ? Kokkos::Iterate::Left
+  //   : Kokkos::Iterate::Right;
+  // static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+  //   ? Kokkos::Iterate::Right
+  //   : Kokkos::Iterate::Left;
+#ifdef KOKKOS_ENABLE_CUDA
+  static constexpr Kokkos::Iterate LeftI = Kokkos::Iterate::Left;
+  static constexpr Kokkos::Iterate RightI = Kokkos::Iterate::Right;
+#else
+  static constexpr Kokkos::Iterate LeftI = Kokkos::Iterate::Default;
+  static constexpr Kokkos::Iterate RightI = Kokkos::Iterate::Default;
+#endif
 
   using exe_space_t = typename DeviceT::execution_space;
 
   template <int Rank>
   using MDRP_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, LeftI, RightI> >;
+
+  template <int Rank>
+  using MDRPLR_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Left, Kokkos::Iterate::Right> >;
+
+  template <int Rank>
+  using MDRPRL_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
 
   template <int N, typename IntT>
   static inline
@@ -342,12 +373,62 @@ struct MDRP
 
   template <int N, typename IntT>
   static inline
+  MDRPLR_t<N> getlr(const IntT (&upper_bounds)[N])
+  {
+    assert(N > 1);
+    const IntT lower_bounds[N] = {0};
+    return MDRPLR_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
+  }
+
+
+  template <int N, typename IntT>
+  static inline
+  MDRPRL_t<N> getrl(const IntT (&upper_bounds)[N])
+  {
+    assert(N > 1);
+    const IntT lower_bounds[N] = {0};
+    return MDRPRL_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
+  }
+
+  template <int N, typename IntT>
+  static inline
   MDRP_t<N> get(const IntT (&lower_bounds)[N], const IntT (&upper_bounds)[N])
   {
     assert(N > 1);
     return MDRP_t<N>(lower_bounds, upper_bounds); //, DefaultTile<N>::value);
   }
 };
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx_left(const int idx, const Kokkos::Array<int, 2>& dims, int& i, int& j)
+{
+  i = idx % dims[0];
+  j = idx / dims[0];
+}
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx_left(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
+{
+  i = idx % dims[0];
+  j = (idx / dims[0]) % dims[1];
+  k = (idx / dims[0]) / dims[1];
+}
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx_right(const int idx, const Kokkos::Array<int, 2>& dims, int& i, int& j)
+{
+  i = idx / dims[1];
+  j = idx % dims[1];
+}
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx_right(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
+{
+  i = (idx / dims[2]) / dims[1];
+  j = (idx / dims[2]) % dims[1];
+  k =  idx % dims[2];
+}
+
 
 #ifdef RRTMGP_ENABLE_YAKL
 // Compare a yakl array to a kokkos view, checking they are functionally
@@ -1225,7 +1306,9 @@ public:
         for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] -= 1; }
       }
     }
-    Kokkos::deep_copy(arr, read_data);
+    auto arr_mirror = Kokkos::create_mirror_view(arr);
+    Kokkos::deep_copy(arr_mirror, read_data);
+    Kokkos::deep_copy(arr, arr_mirror);
   }
 
 

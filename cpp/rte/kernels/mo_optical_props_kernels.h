@@ -168,7 +168,7 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
   // do igpt = 1 , ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( mdrp_t::template get<4>({nbnd,ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<4>({nbnd,ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
     if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
       // t=tau1 + tau2
       RealT tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -180,7 +180,7 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
       ssa1(icol,ilay,igpt) = tauscat12 / Kokkos::fmax(eps,tau12);
       tau1(icol,ilay,igpt) = tau12;
     }
-  });
+  }));
 }
 
 // Addition of optical properties: the first set are incremented by the second set.
@@ -204,9 +204,9 @@ void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, Tau1T const &tau
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}), KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}), KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
-  });
+  }));
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
@@ -222,13 +222,13 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, Tau1T const &tau
   // do igpt = 1 , ngpt
   //   do ilay = 1 , nlay
   //     do icol = 1 , ncol
-  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     for (int ibnd=0; ibnd<nbnd; ibnd++) {
       if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
         tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);
       }
     }
-  });
+  }));
 }
 
 // Delta-scale
@@ -245,7 +245,7 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, TauT const &tau, SsaT
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       RealT f  = g  (icol,ilay,igpt) * g  (icol,ilay,igpt);
       RealT wf = ssa(icol,ilay,igpt) * f;
@@ -253,7 +253,7 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, TauT const &tau, SsaT
       ssa(icol,ilay,igpt) = (ssa(icol,ilay,igpt) - wf) / (1.0 - wf);
       g  (icol,ilay,igpt) = (g  (icol,ilay,igpt) -  f) / (1.0 -  f);
     }
-  });
+  }));
 }
 
 
@@ -272,14 +272,14 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, TauT const &tau, SsaT
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     if (tau(icol,ilay,igpt) > eps) {
       RealT wf = ssa(icol,ilay,igpt) * f(icol,ilay,igpt);
       tau(icol,ilay,igpt) = (1. - wf) * tau(icol,ilay,igpt);
       ssa(icol,ilay,igpt) = (ssa(icol,ilay,igpt) - wf) /  (1.0 - wf);
       g  (icol,ilay,igpt) = (g  (icol,ilay,igpt) - f(icol,ilay,igpt)) / (1. - f(icol,ilay,igpt));
     }
-  });
+  }));
   std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 
@@ -297,7 +297,7 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, Tau1T const &tau
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
     // t=tau1 + tau2
     RealT tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t
@@ -308,7 +308,7 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, Tau1T const &tau
                            / Kokkos::fmax(eps,tauscat12);
     ssa1(icol,ilay,igpt) = tauscat12 / Kokkos::fmax(eps,tau12);
     tau1(icol,ilay,igpt) = tau12;
-  });
+  }));
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
 }
 

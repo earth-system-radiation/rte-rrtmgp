@@ -14,10 +14,10 @@ void expand_and_transpose(OpticalProps const &ops, real2d const &arr_in, real2d 
   int2d limits = ops.get_band_lims_gpoint();
   // for (int iband=1; iband <= nband; iband++) {
   //   for (int icol=1; icol <= ncol; icol++) {
-  parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nband,ncol) , YAKL_LAMBDA (int iband, int icol) {
+  TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nband,ncol) , YAKL_LAMBDA (int iband, int icol) {
     for (int igpt=limits(1,iband); igpt <= limits(2,iband); igpt++) {
       arr_out(icol, igpt) = arr_in(iband,icol);
     }
-  });
+  }));
 }
 #endif

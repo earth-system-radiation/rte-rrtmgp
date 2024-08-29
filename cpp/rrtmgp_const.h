@@ -18,18 +18,6 @@ using DefaultDevice =
   Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space>;
 using HostDevice =
   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::DefaultHostExecutionSpace::memory_space>;
-
-template <typename T, typename Device=DefaultDevice>
-using FView = Kokkos::View<T, Kokkos::LayoutLeft, Device>;
-
-template <typename T, typename Device=DefaultDevice>
-using CView = Kokkos::View<T, Kokkos::LayoutRight, Device>;
-
-template <typename T, typename Device=DefaultDevice>
-using FOView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutLeft, Device>;
-
-template <typename T, typename Device=DefaultDevice>
-using COView = Kokkos::Experimental::OffsetView<T, Kokkos::LayoutRight, Device>;
 #endif
 
 typedef double real;

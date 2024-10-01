@@ -470,11 +470,13 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-#ifdef KOKKOS_ENABLE_CUDA
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
-#else
+  // The CUDA optimizations below perform a lot better than the original
+  // code but yield non-deterministic results.
+// #ifdef KOKKOS_ENABLE_CUDA
+//   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
+// #else
   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
-#endif
+//#endif
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {
@@ -484,9 +486,9 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
       RealT mycol_gas_h2o = col_gas(icol,ilay,idx_h2o);
       RealT mycol_gas_0   = col_gas(icol,ilay,-1);
 
-#ifndef KOKKOS_ENABLE_CUDA
+// #ifndef KOKKOS_ENABLE_CUDA
       for (int imnr=0; imnr<extent; imnr++) {
-#endif
+// #endif
       RealT scaling = col_gas(icol,ilay,idx_minor(imnr));
       if (minor_scales_with_density(imnr)) {
         // NOTE: P needed in hPa to properly handle density scaling.
@@ -521,15 +523,15 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
           fminor(0,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp+1) +
           fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp+1);
         RealT tau_minor = kminor_loc * scaling;
-#ifdef KOKKOS_ENABLE_CUDA
-        Kokkos::atomic_add(&tau(igpt,ilay,icol), tau_minor);
-#else
+// #ifdef KOKKOS_ENABLE_CUDA
+//         Kokkos::atomic_add(&tau(igpt,ilay,icol), tau_minor);
+// #else
         tau(igpt,ilay,icol) += tau_minor;
-#endif
+//#endif
       }
-#ifndef KOKKOS_ENABLE_CUDA
+// #ifndef KOKKOS_ENABLE_CUDA
       }
-#endif
+//#endif
     }
   }));
 }

@@ -12,7 +12,6 @@
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <Kokkos_OffsetView.hpp>
 
 using DefaultDevice =
   Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space>;

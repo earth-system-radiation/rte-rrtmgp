@@ -1256,12 +1256,6 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   template <typename T>
   using hview_t = typename hparent_t::template view_t<T>;
 
-  template <typename T>
-  using oview_t = Kokkos::Experimental::OffsetView<T, LayoutT, DeviceT>;
-
-  template <typename T>
-  using hoview_t = Kokkos::Experimental::OffsetView<T, LayoutT, HostDevice>;
-
   // RRTMGP computes absorption in each band arising from
   //   two major species in each band, which are combined to make
   //     a relative mixing ratio eta and a total column amount (col_mix)
@@ -1292,7 +1286,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   //   Each unique set of major species is called a flavor.
   // Names  and reference volume mixing ratios of major gases
   string1dv gas_names; // gas names
-  oview_t<RealT***> vmr_ref;  // vmr_ref(lower or upper atmosphere, gas, temp)
+  view_t<RealT***> vmr_ref;  // vmr_ref(lower or upper atmosphere, gas, temp)
 
   // Which two gases are in each flavor? By index
   view_t<int**> flavor;        // major species pair; (2,nflav)
@@ -1654,18 +1648,18 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     const int vmr_e0 = vmr_ref.extent(0);
     const int vmr_e2 = vmr_ref.extent(2);
 
-    hoview_t<RealT***> vmr_ref_red("vmr_ref_red", std::make_pair(0, vmr_e0-1), std::make_pair(-1, ngas-1), std::make_pair(0, vmr_e2-1));
+    hview_t<RealT***> vmr_ref_red("vmr_ref_red", vmr_e0, ngas+1, vmr_e2);
     // Gas 0 is used in single-key species method, set to 1.0 (col_dry)
     for (int k=0 ; k < vmr_e2 ; k++) {
       for (int j=0 ; j < vmr_e0 ; j++) {
-        vmr_ref_red(j,-1,k) = vmr_ref(j,0,k);
+        vmr_ref_red(j,0,k) = vmr_ref(j,0,k);
       }
     }
     for (int i=0 ; i < ngas ; i++) {
       int idx = string_loc_in_array(this->gas_names[i], gas_names);
       for (int k=0 ; k < vmr_e2 ; k++) {
         for (int j=0 ; j < vmr_e0 ; j++) {
-          vmr_ref_red(j,i,k) = vmr_ref(j,idx+1,k);
+          vmr_ref_red(j,i+1,k) = vmr_ref(j,idx+1,k);
         }
       }
     }
@@ -2183,13 +2177,13 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ilay = 1, nlay
     //   do icol = 1, ncol
     TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
-      col_gas(icol,ilay,-1) = col_dry_wk(icol,ilay);
+      col_gas(icol,ilay,0) = col_dry_wk(icol,ilay);
     }));
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
     TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngas,nlay,ncol}) , KOKKOS_LAMBDA (int igas, int ilay, int icol) {
-      col_gas(icol,ilay,igas) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
+      col_gas(icol,ilay,igas+1) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
     }));
     // ---- calculate gas optical depths ----
     Kokkos::deep_copy(tau, 0);

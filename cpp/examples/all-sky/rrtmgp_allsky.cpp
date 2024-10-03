@@ -33,7 +33,6 @@ int main(int argc , char **argv) {
   using real2d_t = Kokkos::View<real**,  LayoutT, DeviceT>;
   using real3d_t = Kokkos::View<real***, LayoutT, DeviceT>;
   using bool2d_t = Kokkos::View<bool**,  LayoutT, DeviceT>;
-  using oreal3d_t = Kokkos::Experimental::OffsetView<real***, LayoutT, DeviceT>;
   using hreal2d_t = Kokkos::View<real**, LayoutT, HostDevice>;
   using pool_t = conv::MemPoolSingleton<real, DeviceT>;
 #endif
@@ -285,7 +284,7 @@ int main(int argc , char **argv) {
       const size_t base_ref = 18000;
       const size_t my_size_ref = ncol * nlay * nlev;
       pool_t::init(2e6 * (float(my_size_ref) / base_ref));
-      oreal3d_t col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
+      real3d_t col_gas("col_gas", ncol, nlay, k_dist_k.get_ngas()+1);
 #endif
 
       if (verbose) std::cout << "Running the main loop\n\n";
@@ -586,7 +585,7 @@ int main(int argc , char **argv) {
       const size_t base_ref = 18000;
       const size_t my_size_ref = ncol * nlay * nlev;
       pool_t::init(2e6 * (float(my_size_ref) / base_ref));
-      oreal3d_t col_gas("col_gas", std::make_pair(0, ncol-1), std::make_pair(0, nlay-1), std::make_pair(-1, k_dist_k.get_ngas()-1));
+      real3d_t col_gas("col_gas", ncol, nlay, k_dist_k.get_ngas()+1);
 #endif
 
       // Multiple iterations for big problem sizes, and to help identify data movement

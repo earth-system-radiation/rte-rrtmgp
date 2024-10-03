@@ -217,10 +217,10 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     // compute interpolation fractions needed for lower, then upper reference temperature level
     // compute binary species parameter (eta) for flavor and temperature and
     //  associated interpolation index and factors
-    RealT ratio_eta_half = vmr_ref(itropo,igases1,(jtemp(icol,ilay)+itemp)) /
-                          vmr_ref(itropo,igases2,(jtemp(icol,ilay)+itemp));
-    col_mix(itemp,iflav,icol,ilay) = col_gas(icol,ilay,igases1) + ratio_eta_half * col_gas(icol,ilay,igases2);
-    RealT eta = merge(col_gas(icol,ilay,igases1) / col_mix(itemp,iflav,icol,ilay), 0.5,
+    RealT ratio_eta_half = vmr_ref(itropo,igases1+1,(jtemp(icol,ilay)+itemp)) /
+                          vmr_ref(itropo,igases2+1,(jtemp(icol,ilay)+itemp));
+    col_mix(itemp,iflav,icol,ilay) = col_gas(icol,ilay,igases1+1) + ratio_eta_half * col_gas(icol,ilay,igases2+1);
+    RealT eta = merge(col_gas(icol,ilay,igases1+1) / col_mix(itemp,iflav,icol,ilay), 0.5,
                      col_mix(itemp,iflav,icol,ilay) > 2. * tiny);
     RealT loceta = eta * (neta-1.0);
     jeta(itemp,iflav,icol,ilay) = Kokkos::fmin((int)(loceta)+1, neta-1) - 1;
@@ -443,7 +443,7 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
              fminor(1,0,iflav,icol,ilay) * krayl(igpt, jeta(0,iflav,icol,ilay)+1, jtemp(icol,ilay)  ,itropo) +
              fminor(0,1,iflav,icol,ilay) * krayl(igpt, jeta(1,iflav,icol,ilay)  , jtemp(icol,ilay)+1,itropo) +
              fminor(1,1,iflav,icol,ilay) * krayl(igpt, jeta(1,iflav,icol,ilay)+1, jtemp(icol,ilay)+1,itropo);
-    tau_rayleigh(igpt,ilay,icol) =  k * (col_gas(icol,ilay,idx_h2o)+col_dry(icol,ilay));
+    tau_rayleigh(igpt,ilay,icol) =  k * (col_gas(icol,ilay,idx_h2o+1)+col_dry(icol,ilay));
   }));
 }
 
@@ -470,30 +470,32 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-#ifdef KOKKOS_ENABLE_CUDA
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
-#else
+  // The CUDA optimizations below perform a lot better than the original
+  // code but yield non-deterministic results.
+// #ifdef KOKKOS_ENABLE_CUDA
+//   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
+// #else
   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
-#endif
+//#endif
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {
       RealT myplay  = play (icol,ilay);
       RealT mytlay  = tlay (icol,ilay);
       int  myjtemp = jtemp(icol,ilay);
-      RealT mycol_gas_h2o = col_gas(icol,ilay,idx_h2o);
-      RealT mycol_gas_0   = col_gas(icol,ilay,-1);
+      RealT mycol_gas_h2o = col_gas(icol,ilay,idx_h2o+1);
+      RealT mycol_gas_0   = col_gas(icol,ilay,0);
 
-#ifndef KOKKOS_ENABLE_CUDA
+// #ifndef KOKKOS_ENABLE_CUDA
       for (int imnr=0; imnr<extent; imnr++) {
-#endif
-      RealT scaling = col_gas(icol,ilay,idx_minor(imnr));
+// #endif
+      RealT scaling = col_gas(icol,ilay,idx_minor(imnr)+1);
       if (minor_scales_with_density(imnr)) {
         // NOTE: P needed in hPa to properly handle density scaling.
         scaling = scaling * (PaTohPa * myplay/mytlay);
 
         if (idx_minor_scaling(imnr) > -1) {  // there is a second gas that affects this gas's absorption
-          RealT mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr));
+          RealT mycol_gas_imnr = col_gas(icol,ilay,idx_minor_scaling(imnr)+1);
           RealT vmr_fact = 1. / mycol_gas_0;
           RealT dry_fact = 1. / (1. + mycol_gas_h2o * vmr_fact);
           // scale by density of special gas
@@ -521,15 +523,15 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
           fminor(0,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)  , myjtemp+1) +
           fminor(1,1,iflav,icol,ilay) * kminor(minor_loc, jeta(1,iflav,icol,ilay)+1, myjtemp+1);
         RealT tau_minor = kminor_loc * scaling;
-#ifdef KOKKOS_ENABLE_CUDA
-        Kokkos::atomic_add(&tau(igpt,ilay,icol), tau_minor);
-#else
+// #ifdef KOKKOS_ENABLE_CUDA
+//         Kokkos::atomic_add(&tau(igpt,ilay,icol), tau_minor);
+// #else
         tau(igpt,ilay,icol) += tau_minor;
-#endif
+//#endif
       }
-#ifndef KOKKOS_ENABLE_CUDA
+// #ifndef KOKKOS_ENABLE_CUDA
       }
-#endif
+//#endif
     }
   }));
 }

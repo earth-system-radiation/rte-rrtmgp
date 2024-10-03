@@ -71,13 +71,12 @@ template <class T1, class T2,
           typename std::enable_if<std::is_arithmetic<T1>::value && std::is_arithmetic<T2>::value,bool>::type=false>
 GENERIC_INLINE decltype(T1()+T2()) merge(T1 const t, T2 const f, bool cond) noexcept { return cond ? t : f; }
 
-// A meta function that will return true if T is either a Kokkos::View or a
-// Kokkos::OffsetView (we use these in a couple places).
+// A meta function that will return true if T is a Kokkos::View
 template <typename T>
 struct is_view
 {
 #ifdef RRTMGP_ENABLE_KOKKOS
-  static constexpr bool value = Kokkos::is_view<T>::value || Kokkos::Experimental::is_offset_view<T>::value;
+  static constexpr bool value = Kokkos::is_view<T>::value;
 #else
   static constexpr bool value = false;
 #endif

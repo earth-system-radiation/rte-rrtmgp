@@ -1127,7 +1127,7 @@ public:
       }));
     } else {
       // do icol = 1, ncol
-      YAKL_SCOPE( grav , const_t::grav );
+      const auto grav = const_t::grav;
       TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<1>(ncol) , YAKL_LAMBDA (int icol) {
         g0(icol) = grav;
       }));
@@ -1136,9 +1136,9 @@ public:
     real2d col_dry("col_dry",size(plev,1),size(plev,2)-1);
     // do ilev = 1, nlev-1
     //   do icol = 1, ncol
-    YAKL_SCOPE( m_dry , const_t::m_dry );
-    YAKL_SCOPE( m_h2o , const_t::m_h2o );
-    YAKL_SCOPE( avogad , const_t::avogad );
+    const auto m_dry = const_t::m_dry;
+    const auto m_h2o = const_t::m_h2o;
+    const auto avogad = const_t::avogad;
     TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , SimpleBounds<2>(nlev-1,ncol) , YAKL_LAMBDA (int ilev , int icol) {
       real delta_plev = std::abs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air

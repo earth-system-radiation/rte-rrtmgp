@@ -713,6 +713,8 @@ struct MemPoolSingleton
   {
     using uview_t = Unmanaged<view_t<T*>>;
     uview_t rv(alloc_raw<T>(dim1), dim1);
+    Kokkos::deep_copy(rv, 0);
+    return rv;
   }
 
   template <typename T>

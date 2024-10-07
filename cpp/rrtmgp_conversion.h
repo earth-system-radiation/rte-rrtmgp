@@ -709,6 +709,64 @@ struct MemPoolSingleton
 
   template <typename T>
   static inline
+  auto alloc_and_init(const int64_t dim1) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T*>>;
+    uview_t rv(alloc_raw<T>(dim1), dim1);
+  }
+
+  template <typename T>
+  static inline
+  auto alloc_and_init(const int64_t dim1, const int64_t dim2) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T**>>;
+    uview_t rv(alloc_raw<T>(dim1*dim2), dim1, dim2);
+    Kokkos::deep_copy(rv, 0);
+    return rv;
+  }
+
+  template <typename T>
+  static inline
+  auto alloc_and_init(const int64_t dim1, const int64_t dim2, const int64_t dim3) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T***>>;
+    uview_t rv(alloc_raw<T>(dim1*dim2*dim3), dim1, dim2, dim3);
+    Kokkos::deep_copy(rv, 0);
+    return rv;
+  }
+
+  template <typename T>
+  static inline
+  auto alloc_and_init(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T****>>;
+    uview_t rv(alloc_raw<T>(dim1*dim2*dim3*dim4), dim1, dim2, dim3, dim4);
+    Kokkos::deep_copy(rv, 0);
+    return rv;
+  }
+
+  template <typename T>
+  static inline
+  auto alloc_and_init(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T*****>>;
+    uview_t rv(alloc_raw<T>(dim1*dim2*dim3*dim4*dim5), dim1, dim2, dim3, dim4, dim5);
+    Kokkos::deep_copy(rv, 0);
+    return rv;
+  }
+
+  template <typename T>
+  static inline
+  auto alloc_and_init(const int64_t dim1, const int64_t dim2, const int64_t dim3, const int64_t dim4, const int dim5, const int dim6) noexcept
+  {
+    using uview_t = Unmanaged<view_t<T******>>;
+    uview_t rv(alloc_raw<T>(dim1*dim2*dim3*dim4*dim5*dim6), dim1, dim2, dim3, dim4, dim5, dim6);
+    Kokkos::deep_copy(rv, 0);
+    return rv;
+  }
+
+  template <typename T>
+  static inline
   void dealloc(const T*, const int64_t num) noexcept
   {
     const int64_t num_reals = (num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT);

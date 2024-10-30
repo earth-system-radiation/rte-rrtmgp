@@ -86,8 +86,8 @@ program rrtmgp_rfmip_sw
   !
   ! Local variables
   !
-  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc', &
-                        kdist_file = 'coefficients_sw.nc'
+  character(len=256) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc'
+  character(len=132) :: kdist_file = 'coefficients_sw.nc'
   character(len=132) :: flxdn_file, flxup_file
   integer            :: nargs, ncol, nlay, nbnd, ngpt, nexp, nblocks, block_size, forcing_index
   logical            :: top_at_1
@@ -124,6 +124,7 @@ program rrtmgp_rfmip_sw
   !
   print *, "Usage: rrtmgp_rfmip_sw [block_size] [rfmip_file] [k-distribution_file] [forcing_index (1,2,3)]"
   nargs = command_argument_count()
+  if(nargs >= 2) call get_command_argument(2, rfmip_file)
   call read_size(rfmip_file, ncol, nlay, nexp)
   if(nargs >= 1) then
     call get_command_argument(1, block_size_char)
@@ -131,7 +132,6 @@ program rrtmgp_rfmip_sw
   else
     block_size = ncol
   end if
-  if(nargs >= 2) call get_command_argument(2, rfmip_file)
   if(nargs >= 3) call get_command_argument(3, kdist_file)
   if(nargs >= 4) then
     call get_command_argument(4, forcing_index_char)

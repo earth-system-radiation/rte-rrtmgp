@@ -86,8 +86,8 @@ program rrtmgp_rfmip_lw
   !
   ! Local variables
   !
-  character(len=132) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc', &
-                        kdist_file = 'coefficients_lw.nc'
+  character(len=256) :: rfmip_file = 'multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc'
+  character(len=132) :: kdist_file = 'coefficients_lw.nc'
   character(len=132) :: flxdn_file, flxup_file
   integer            :: nargs, ncol, nlay, nbnd, nexp, nblocks, block_size, forcing_index, physics_index, n_quad_angles = 1
   logical            :: top_at_1
@@ -121,6 +121,7 @@ program rrtmgp_rfmip_lw
   !
   print *, "Usage: rrtmgp_rfmip_lw [block_size] [rfmip_file] [k-distribution_file] [forcing_index (1,2,3)] [physics_index (1,2)]"
   nargs = command_argument_count()
+  if(nargs >= 2) call get_command_argument(2, rfmip_file)
   call read_size(rfmip_file, ncol, nlay, nexp)
   if(nargs >= 1) then
     call get_command_argument(1, block_size_char)
@@ -128,7 +129,6 @@ program rrtmgp_rfmip_lw
   else
     block_size = ncol
   end if
-  if(nargs >= 2) call get_command_argument(2, rfmip_file)
   if(nargs >= 3) call get_command_argument(3, kdist_file)
   if(nargs >= 4) call get_command_argument(4, forcing_index_char)
   if(nargs >= 5) call get_command_argument(5, physics_index_char)
@@ -219,8 +219,8 @@ program rrtmgp_rfmip_lw
   !$omp target enter data map(alloc:sfc_emis_spec)
   !$acc enter data create(optical_props, optical_props%tau)
   !$omp target enter data map(alloc:optical_props%tau)
-  !$acc enter data create(source, source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
-  !$omp target enter data map(alloc:source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !$acc enter        data create(source, source%lay_source, source%lev_source, source%sfc_source)
+  !$omp target enter data map(alloc:source%lay_source, source%lev_source, source%sfc_source)
   ! --------------------------------------------------
   !
   ! Loop over blocks
@@ -265,8 +265,8 @@ program rrtmgp_rfmip_lw
   !$omp target exit data map(release:sfc_emis_spec)
   !$acc exit data delete(optical_props%tau, optical_props)
   !$omp target exit data map(release:optical_props%tau)
-  !$acc exit data delete(source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
-  !$omp target exit data map(release:source%lay_source, source%lev_source_inc, source%lev_source_dec, source%sfc_source)
+  !$acc exit data delete(source%lay_source, source%lev_source, source%sfc_source)
+  !$omp target exit data map(release:source%lay_source, source%lev_source, source%sfc_source)
   !$acc exit data delete(source)
   ! --------------------------------------------------m
   call unblock_and_write(trim(flxup_file), 'rlu', flux_up)

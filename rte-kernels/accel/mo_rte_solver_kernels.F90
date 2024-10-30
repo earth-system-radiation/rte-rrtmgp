@@ -52,8 +52,8 @@ contains
   !   using user-supplied weights
   !
   ! ---------------------------------------------------------------
-  subroutine lw_solver_noscat_oneangle(ncol, nlay, ngpt, top_at_1, D, weight,                              &
-                              tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+  subroutine lw_solver_noscat_oneangle(ncol, nlay, ngpt, top_at_1, D, weight, &
+                              tau, lay_source, lev_source, sfc_emis, sfc_src, &
                               incident_flux,    &
                               flux_up, flux_dn, &
                               do_broadband, broadband_up, broadband_dn, &
@@ -68,8 +68,8 @@ contains
     ! Planck source at layer edge for radiation in increasing/decreasing ilay direction
     ! lev_source_dec applies the mapping in layer i to the Planck function at layer i
     ! lev_source_inc applies the mapping in layer i to the Planck function at layer i+1
-    real(wp), dimension(ncol,nlay,  ngpt), target, &
-                                           intent(in   ) :: lev_source_inc, lev_source_dec
+    real(wp), dimension(ncol,nlay+1,ngpt), target, &
+                                           intent(in   ) :: lev_source
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
     real(wp), dimension(ncol,       ngpt), intent(in   ) :: incident_flux! Boundary condition for flux [W/m2]
@@ -95,8 +95,6 @@ contains
                                            trans       ! transmissivity  = exp(-tau)
     real(wp), dimension(ncol,nlay,ngpt) :: source_dn, source_up
 
-    real(wp), dimension(:,:,:), pointer :: lev_source_up, lev_source_dn ! Mapping increasing/decreasing indicies to up/down
-
     real(wp), parameter :: pi = acos(-1._wp)
 
     !
@@ -111,25 +109,18 @@ contains
     ! ------------------------------------
     ! Which way is up?
     ! Level Planck sources for upward and downward radiation
-    ! When top_at_1, lev_source_up => lev_source_dec
-    !                lev_source_dn => lev_source_inc, and vice-versa
-
     if(top_at_1) then
       top_level = 1
       sfc_level = nlay+1
-      lev_source_up => lev_source_dec
-      lev_source_dn => lev_source_inc
     else
       top_level = nlay+1
       sfc_level = 1
-      lev_source_up => lev_source_inc
-      lev_source_dn => lev_source_dec
     end if
 
     !$acc        data create(   tau_loc,trans,source_dn,source_up ) &
-    !$acc             copyin(   D, tau,lev_source_up,lev_source_dn)
+    !$acc             copyin(   D, tau, lev_source)
     !$omp target data map(alloc:tau_loc,trans,source_dn,source_up ) &
-    !$omp             map(to:   D, tau,lev_source_up,lev_source_dn)
+    !$omp             map(to:   D, tau, lev_source)
 
     !$acc        enter data create(   flux_dn,flux_up)
     !$omp target enter data map(alloc:flux_dn,flux_up)
@@ -142,7 +133,7 @@ contains
         ! Transport is for intensity
         !   convert flux at top of domain to intensity assuming azimuthal isotropy
         !
-        flux_dn(icol,top_level,igpt) = incident_flux(icol,igpt)/(2._wp * pi * weight)
+        flux_dn(icol,top_level,igpt) = incident_flux(icol,igpt)/(pi * weight)
       end do
     end do
 
@@ -151,11 +142,7 @@ contains
     !$acc        data copyin(sfc_srcJac) create(   gpt_Jac) if(do_Jacobians)
     !$omp target data map(to:sfc_srcJac) map(alloc:gpt_Jac) if(do_Jacobians)
 
-#ifdef _CRAYFTN
-    !$acc parallel loop present(An, Cn, gpt_Jac, g) collapse(3)
-#else
     !$acc parallel loop no_create(An, Cn, gpt_Jac, g) collapse(3)
-#endif
     !$omp target teams distribute parallel do simd collapse(3)
     do igpt = 1, ngpt
       do ilay = 1, nlay
@@ -186,10 +173,11 @@ contains
             tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt)
             trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt))
           end if
-          call lw_source_noscat(lay_source   (icol,ilay,igpt), &
-                                lev_source_up(icol,ilay,igpt), lev_source_dn(icol,ilay,igpt),  &
-                                tau_loc      (icol,ilay,igpt), trans        (icol,ilay,igpt),  &
-                                source_dn    (icol,ilay,igpt), source_up    (icol,ilay,igpt))
+          call lw_source_noscat(top_at_1, & 
+                                lay_source(icol,ilay,igpt), lev_source(icol,ilay,igpt), & 
+                                lev_source(icol,ilay+1,igpt),                           &
+                                tau_loc   (icol,ilay,igpt), trans     (icol,ilay,igpt), &
+                                source_dn (icol,ilay,igpt), source_up (icol,ilay,igpt))
         end do
       end do
     end do
@@ -200,11 +188,7 @@ contains
     !
     ! Surface reflection and emission
     !
-#ifdef _CRAYFTN
-    !$acc                         parallel loop    collapse(2) present(gpt_Jac, sfc_srcJac)
-#else
     !$acc                         parallel loop    collapse(2) no_create(gpt_Jac, sfc_srcJac)
-#endif
     !$omp target teams distribute parallel do simd collapse(2)
     do igpt = 1, ngpt
       do icol = 1, ncol
@@ -235,16 +219,16 @@ contains
       ! Broadband reduction including
       !   conversion from intensity to flux assuming azimuthal isotropy and quadrature weight
       !
-      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, flux_dn, broadband_dn)
-      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, flux_up, broadband_up)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, pi * weight, flux_dn, broadband_dn)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, pi * weight, flux_up, broadband_up)
       !$acc        exit data delete(     flux_dn,flux_up)
       !$omp target exit data map(release:flux_dn,flux_up)
     else
       !
       ! Convert intensity to flux assuming azimuthal isotropy and quadrature weight
       !
-      call apply_factor_3D(ncol, nlay+1, ngpt, 2._wp*pi*weight, flux_dn)
-      call apply_factor_3D(ncol, nlay+1, ngpt, 2._wp*pi*weight, flux_up)
+      call apply_factor_3D(ncol, nlay+1, ngpt, pi * weight, flux_dn)
+      call apply_factor_3D(ncol, nlay+1, ngpt, pi * weight, flux_up)
       !$acc        exit data copyout( flux_dn,flux_up)
       !$omp target exit data map(from:flux_dn,flux_up)
     end if
@@ -252,7 +236,7 @@ contains
     ! Only broadband-integrated Jacobians are provided
     !
     if (do_Jacobians) then
-      call sum_broadband_factor(ncol, nlay+1, ngpt, 2._wp * pi * weight, gpt_Jac, flux_upJac)
+      call sum_broadband_factor(ncol, nlay+1, ngpt, pi * weight, gpt_Jac, flux_upJac)
     end if
 
     !$acc        end data
@@ -272,7 +256,7 @@ contains
   subroutine lw_solver_noscat(ncol, nlay, ngpt, top_at_1, &
                                         nmus, Ds, weights,          &
                                         tau,                        &
-                                        lay_source, lev_source_inc, lev_source_dec,         &
+                                        lay_source, lev_source,     &
                                         sfc_emis, sfc_src,          &
                                         inc_flux,                   &
                                         flux_up, flux_dn,           &
@@ -281,20 +265,16 @@ contains
                                         do_rescaling, ssa, g) bind(C, name="rte_lw_solver_noscat")
     integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
     logical(wl),                           intent(in   ) :: top_at_1
-    integer,                               intent(in   ) :: nmus         ! number of quadrature angles
+    integer,                               intent(in   ) :: nmus       ! number of quadrature angles
     real(wp), dimension (ncol,      ngpt, &
                                     nmus), intent(in   ) :: Ds
-    real(wp), dimension(nmus),             intent(in   ) :: weights  ! quadrature secants, weights
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau          ! Absorption optical thickness []
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source   ! Planck source at layer average temperature [W/m2]
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_inc
-                                        ! Planck source at layer edge for radiation in increasing ilay direction [W/m2]
-                                        ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
-    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lev_source_dec
-                                        ! Planck source at layer edge for radiation in decreasing ilay direction [W/m2]
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis     ! Surface emissivity      []
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src      ! Surface source function [W/m2]
-    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux     ! Incident diffuse flux, probably 0 [W/m2]
+    real(wp), dimension(nmus),             intent(in   ) :: weights    ! quadrature secants, weights
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau        ! Absorption optical thickness []
+    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source ! Planck source at layer average temperature [W/m2]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source ! Planck source at layer edge [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis   ! Surface emissivity      []
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src    ! Surface source function [W/m2]
+    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux   ! Incident diffuse flux, probably 0 [W/m2]
     real(wp), dimension(ncol,nlay+1,ngpt), target, &
                                            intent(  out) :: flux_up, flux_dn ! Fluxes [W/m2]
     !
@@ -321,8 +301,8 @@ contains
     integer :: icol, ilev, igpt, imu
     ! ------------------------------------
 
-    !$acc        data copyin(Ds, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
-    !$omp target data map(to:Ds, tau, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
+    !$acc        data copyin(Ds, tau, lay_source, lev_source, sfc_emis, sfc_src)
+    !$omp target data map(to:Ds, tau, lay_source, lev_source, sfc_emis, sfc_src)
     !$acc        data copyout( flux_up, flux_dn)             if (.not. do_broadband)
     !$omp target data map(from:flux_up, flux_dn)             if (.not. do_broadband)
     !$acc        data copyout( broadband_up, broadband_dn)   if (      do_broadband)
@@ -345,7 +325,7 @@ contains
     !$omp target data map(alloc:this_broadband_up, this_broadband_dn, this_flux_up, this_flux_dn)
     call lw_solver_noscat_oneangle(ncol, nlay, ngpt, &
                           top_at_1, Ds(:,:,1), weights(1), tau, &
-                          lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                          lay_source, lev_source, sfc_emis, sfc_src, &
                           inc_flux,         &
                           this_flux_up, this_flux_dn, &
                           do_broadband, this_broadband_up, this_broadband_dn, &
@@ -379,7 +359,7 @@ contains
       do imu = 2, nmus
         call lw_solver_noscat_oneangle(ncol, nlay, ngpt, &
                               top_at_1, Ds(:,:,imu), weights(imu), tau, &
-                              lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                              lay_source, lev_source, sfc_emis, sfc_src, &
                               inc_flux,         &
                               this_flux_up,  this_flux_dn, &
                               do_broadband, this_broadband_up, this_broadband_dn, &
@@ -431,7 +411,7 @@ contains
   ! -------------------------------------------------------------------------------------------------
   subroutine lw_solver_2stream (ncol, nlay, ngpt, top_at_1, &
                                 tau, ssa, g,                &
-                                lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, &
+                                lay_source, lev_source, sfc_emis, sfc_src, &
                                 inc_flux,                   &
                                 flux_up, flux_dn) bind(C, name="rte_lw_solver_2stream")
    integer,                               intent(in   ) :: ncol, nlay, ngpt ! Number of columns, layers, g-points
@@ -439,11 +419,8 @@ contains
    real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: tau, &     ! Optical thickness,
                                                            ssa, &     ! single-scattering albedo,
                                                            g          ! asymmetry parameter []
-   real(wp), dimension(ncol,nlay,ngpt),   intent(in   ) :: lay_source ! Planck source at layer average temperature [W/m2]
-   real(wp), dimension(ncol,nlay,ngpt), target, &
-                                          intent(in   ) :: lev_source_inc, lev_source_dec
-                                       ! Planck source at layer edge for radiation in increasing/decreasing ilay direction [W/m2]
-                                       ! Includes spectral weighting that accounts for state-dependent frequency to g-space mapping
+   real(wp), dimension(ncol,nlay,  ngpt), intent(in   ) :: lay_source ! Planck source at layer average temperature [W/m2]
+   real(wp), dimension(ncol,nlay+1,ngpt), intent(in   ) :: lev_source ! Planck source at layer edge  [W/m2]
    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_emis   ! Surface emissivity      []
    real(wp), dimension(ncol,       ngpt), intent(in   ) :: sfc_src    ! Surface source function [W/m2]
    real(wp), dimension(ncol,       ngpt), intent(in   ) :: inc_flux   ! Incident diffuse flux, probably 0 [W/m2]
@@ -452,24 +429,20 @@ contains
     integer :: icol, igpt, top_level
     real(wp), dimension(ncol,nlay  ,ngpt) :: Rdif, Tdif, gamma1, gamma2
     real(wp), dimension(ncol       ,ngpt) :: sfc_albedo
-    real(wp), dimension(ncol,nlay+1,ngpt) :: lev_source
     real(wp), dimension(ncol,nlay  ,ngpt) :: source_dn, source_up
     real(wp), dimension(ncol       ,ngpt) :: source_sfc
     ! ------------------------------------
     ! ------------------------------------
-    !$acc enter data copyin(tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_dn)
-    !$omp target enter data map(to:tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src, flux_dn)
-    !$acc enter data create(flux_up, Rdif, Tdif, gamma1, gamma2, sfc_albedo, lev_source, source_dn, source_up, source_sfc)
-    !$omp target enter data map(alloc:flux_up, Rdif, Tdif, gamma1, gamma2, sfc_albedo, lev_source, source_dn, source_up, source_sfc)
+    !$acc enter        data copyin(tau, ssa, g, lay_source, lev_source, sfc_emis, sfc_src, flux_dn)
+    !$omp target enter data map(to:tau, ssa, g, lay_source, lev_source, sfc_emis, sfc_src, flux_dn)
+    !$acc enter        data create(   flux_up, Rdif, Tdif, gamma1, gamma2, sfc_albedo, source_dn, source_up, source_sfc)
+    !$omp target enter data map(alloc:flux_up, Rdif, Tdif, gamma1, gamma2, sfc_albedo, source_dn, source_up, source_sfc)
     !
     ! RRTMGP provides source functions at each level using the spectral mapping
     !   of each adjacent layer. Combine these for two-stream calculations
     !
     top_level = nlay+1
     if(top_at_1) top_level = 1
-    call lw_combine_sources(ncol, nlay, ngpt, top_at_1, &
-                            lev_source_inc, lev_source_dec, &
-                            lev_source)
     !
     ! Cell properties: reflection, transmission for diffuse radiation
     !   Coupling coefficients needed for source function
@@ -477,7 +450,6 @@ contains
     call lw_two_stream(ncol, nlay, ngpt, &
                        tau , ssa, g,     &
                        gamma1, gamma2, Rdif, Tdif)
-
     !
     ! Source function for diffuse radiation
     !
@@ -503,10 +475,10 @@ contains
                 Rdif, Tdif,                        &
                 source_dn, source_up, source_sfc,  &
                 flux_up, flux_dn)
-    !$acc exit data delete(tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
-    !$omp target exit data map(release:tau, ssa, g, lay_source, lev_source_inc, lev_source_dec, sfc_emis, sfc_src)
-    !$acc exit data delete(Rdif, Tdif, gamma1, gamma2, sfc_albedo, lev_source, source_dn, source_up, source_sfc)
-    !$omp target exit data map(release:Rdif, Tdif, gamma1, gamma2, sfc_albedo, lev_source, source_dn, source_up, source_sfc)
+    !$acc        exit data delete(     tau, ssa, g, lay_source, lev_source, sfc_emis, sfc_src)
+    !$omp target exit data map(release:tau, ssa, g, lay_source, lev_source, sfc_emis, sfc_src)
+    !$acc        exit data delete(     Rdif, Tdif, gamma1, gamma2, sfc_albedo, source_dn, source_up, source_sfc)
+    !$omp target exit data map(release:Rdif, Tdif, gamma1, gamma2, sfc_albedo, source_dn, source_up, source_sfc)
     !$acc exit data copyout(flux_up, flux_dn)
     !$omp target exit data map(from:flux_up, flux_dn)
   end subroutine lw_solver_2stream
@@ -670,7 +642,7 @@ contains
     !
     !$acc        data create(   Rdif, Tdif, source_up, source_dn, source_srf)
     !$omp target data map(alloc:Rdif, Tdif, source_up, source_dn, source_srf)
-    call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dif, &
+    call sw_dif_and_source(ncol, nlay, ngpt, top_at_1, mu0, sfc_alb_dir, &
                            tau, ssa, g,                                  &
                            Rdif, Tdif, source_dn, source_up, source_srf, gpt_flux_dir)
 
@@ -722,28 +694,28 @@ contains
   ! This routine implements point-wise stencil, and has to be called in a loop
   !
   ! ---------------------------------------------------------------
-  subroutine lw_source_noscat(lay_source, lev_source_up, lev_source_dn, tau, trans, &
+  subroutine lw_source_noscat(top_at_1, lay_source, lev_source, levp1_source, tau, trans, &
                               source_dn, source_up)
     !$acc routine seq
     !$omp declare target
     !
-    real(wp), intent(in)   :: lay_source,    & ! Planck source at layer center
-                              lev_source_up, & ! Planck source at levels (layer edges),
-                              lev_source_dn, & !   increasing/decreasing layer index
-                              tau,           & ! Optical path (tau/mu)
-                              trans            ! Transmissivity (exp(-tau))
+    logical(wl), intent(in) :: top_at_1
+    real(wp),    intent(in) :: lay_source,   & ! Planck source at layer center
+                               lev_source,   & ! Planck source at levels (layer edges),
+                               levp1_source, & ! Planck source at level +1 (layer edges),
+                               tau,          & ! Optical path (tau/mu)
+                               trans           ! Transmissivity (exp(-tau))
     real(wp), intent(inout):: source_dn, source_up
                                                ! Source function at layer edges
                                                ! Down at the bottom of the layer, up at the top
     ! --------------------------------
     real(wp), parameter  :: tau_thresh = sqrt(sqrt(epsilon(tau)))
-    real(wp)             :: fact
+    real(wp)             :: fact, source_inc, source_dec 
     ! ---------------------------------------------------------------
     !
-    ! Weighting factor. Use 2nd order series expansion when rounding error (~tau^2)
+    ! Weighting factor. Use 3rd order series expansion when rounding error (~tau^2)
     !   is of order epsilon (smallest difference from 1. in working precision)
-    !   Thanks to Peter Blossey
-    !   Updated to 3rd order series and lower threshold based on suggestion from Dmitry Alexeev (Nvidia)
+    !   Thanks to Peter Blossey (UW) for the idea and Dmitry Alexeev (Nvidia) for suggesting 3rd order
     !
     if(tau > tau_thresh) then
       fact = (1._wp - trans)/tau - trans
@@ -753,11 +725,15 @@ contains
     !
     ! Equation below is developed in Clough et al., 1992, doi:10.1029/92JD01419, Eq 13
     !
-    source_dn = (1._wp - trans) * lev_source_dn + &
-            2._wp * fact * (lay_source - lev_source_dn)
-    source_up = (1._wp - trans) * lev_source_up + &
-            2._wp * fact * (lay_source - lev_source_up)
-
+    source_inc = (1._wp - trans) * levp1_source + 2._wp * fact * (lay_source - levp1_source)
+    source_dec = (1._wp - trans) * lev_source   + 2._wp * fact * (lay_source - lev_source)
+    if (top_at_1) then 
+      source_dn = source_inc
+      source_up = source_dec
+    else
+      source_up = source_inc
+      source_dn = source_dec
+    end if 
   end subroutine lw_source_noscat
   ! ---------------------------------------------------------------
   !
@@ -814,7 +790,7 @@ contains
     logical(wl),                           intent(in   ) :: top_at_1   !
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: trans      ! transmissivity = exp(-tau)
     real(wp), dimension(ncol,nlay  ,ngpt), intent(in   ) :: source_up  ! Diffuse radiation emitted by the layer
-    real(wp), dimension(ncol,nlay+1,ngpt), intent(  out) :: radn_up    ! Radiances [W/m2-str]
+    real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_up    ! Radiances [W/m2-str]
     logical(wl),                           intent(in   ) :: do_Jacobians
     real(wp), dimension(ncol,nlay+1,ngpt), intent(inout) :: radn_upJac    ! surface temperature Jacobian of Radiances [W/m2-str / K]
     ! Local variables
@@ -825,11 +801,7 @@ contains
       !
       ! Top of domain is index 1
       !
-#ifdef _CRAYFTN
-      !$acc  parallel loop collapse(2) present(radn_upJac)
-#else
       !$acc  parallel loop collapse(2) no_create(radn_upJac)
-#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -848,11 +820,7 @@ contains
       !
       ! Top of domain is index nlay+1
       !
-#ifdef _CRAYFTN
-      !$acc  parallel loop collapse(2) present(radn_upJac)
-#else
       !$acc  parallel loop collapse(2) no_create(radn_upJac)
-#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -946,50 +914,6 @@ contains
     !$acc exit data copyout(gamma1, gamma2, Rdif, Tdif)
     !$omp target exit data map(from:gamma1, gamma2, Rdif, Tdif)
   end subroutine lw_two_stream
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! Source function combination
-  ! RRTMGP provides two source functions at each level
-  !   using the spectral mapping from each of the adjascent layers.
-  !   Need to combine these for use in two-stream calculation.
-  !
-  ! -------------------------------------------------------------------------------------------------
-  subroutine lw_combine_sources(ncol, nlay, ngpt, top_at_1, &
-                                lev_src_inc, lev_src_dec, lev_source)
-    integer,                                 intent(in ) :: ncol, nlay, ngpt
-    logical(wl),                             intent(in ) :: top_at_1
-    real(wp), dimension(ncol, nlay  , ngpt), intent(in ) :: lev_src_inc, lev_src_dec
-    real(wp), dimension(ncol, nlay+1, ngpt), intent(out) :: lev_source
-
-    integer :: icol, ilay, igpt
-    ! ---------------------------------------------------------------
-    ! ---------------------------------
-    !$acc enter data copyin(lev_src_inc, lev_src_dec)
-    !$omp target enter data map(to:lev_src_inc, lev_src_dec)
-    !$acc enter data create(lev_source)
-    !$omp target enter data map(alloc:lev_source)
-
-    !$acc  parallel loop collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do igpt = 1, ngpt
-      do ilay = 1, nlay+1
-        do icol = 1,ncol
-          if(ilay == 1) then
-            lev_source(icol, ilay, igpt) =      lev_src_dec(icol, ilay,   igpt)
-          else if (ilay == nlay+1) then
-            lev_source(icol, ilay, igpt) =      lev_src_inc(icol, ilay-1, igpt)
-          else
-            lev_source(icol, ilay, igpt) = sqrt(lev_src_dec(icol, ilay, igpt) * &
-                                                lev_src_inc(icol, ilay-1, igpt))
-          end if
-        end do
-      end do
-    end do
-    !$acc exit data delete (lev_src_inc, lev_src_dec)
-    !$omp target exit data map(release:lev_src_inc, lev_src_dec)
-    !$acc exit data copyout(lev_source)
-    !$omp target exit data map(from:lev_source)
-  end subroutine lw_combine_sources
   ! ---------------------------------------------------------------
   !
   ! Compute LW source function for upward and downward emission at levels using linear-in-tau assumption
@@ -1400,11 +1324,7 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
       ! Top of domain is index 1
       !
       ! Downward propagation
-#ifdef _CRAYFTN
-      !$acc                         parallel loop    collapse(2) present(radn_up_Jac)
-#else
       !$acc                         parallel loop    collapse(2) no_create(radn_up_Jac)
-#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol
@@ -1439,11 +1359,7 @@ subroutine lw_transport_1rescl(ncol, nlay, ngpt, top_at_1, &
         enddo
       enddo
     else
-#ifdef _CRAYFTN
-      !$acc  parallel loop collapse(2) present(radn_up_Jac)
-#else
       !$acc  parallel loop collapse(2) no_create(radn_up_Jac)
-#endif
       !$omp target teams distribute parallel do simd collapse(2)
       do igpt = 1, ngpt
         do icol = 1, ncol

@@ -204,7 +204,7 @@ contains
     if(allocated(this%merra_aero_bin_lims)) then
       deallocate(this%merra_aero_bin_lims, this%aero_rh)
       !$acc        exit data delete(     this%merra_aero_bin_lims, this%aero_rh) 
-      !$omp target exit data map(release:this%merra_aero_bin_lims, this%aero_rh) &
+      !$omp target exit data map(release:this%merra_aero_bin_lims, this%aero_rh)
     end if
 
     ! Lookup table aerosol optics coefficients
@@ -329,7 +329,7 @@ contains
     !
     !$acc data           create(aeromsk)
     !$omp target data map(alloc:aeromsk) 
-    !$acc              parallel loop default(none) collapse(2)
+    !$acc              parallel loop default(present) collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
@@ -384,7 +384,7 @@ contains
       !
       select type(optical_props)
       type is (ty_optical_props_1scl)
-        !$acc parallel loop gang vector default(none) collapse(3) &
+        !$acc parallel loop gang vector default(present) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau)
@@ -397,7 +397,7 @@ contains
           end do
         end do
       type is (ty_optical_props_2str)
-        !$acc parallel loop gang vector default(none) collapse(3) &
+        !$acc parallel loop gang vector default(present) collapse(3) &
         !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau, optical_props%ssa, optical_props%g)

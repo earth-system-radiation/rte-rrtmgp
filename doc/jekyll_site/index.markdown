@@ -7,7 +7,10 @@ title: "RTE+RRTMGP documentation"
 This is the documentation for RTE+RRTMGP, a set of codes for computing radiative
 fluxes in planetary atmospheres. RTE+RRTMGP is described in a
 [paper](https://doi.org/10.1029/2019MS001621) in
-[Journal of Advances in Modeling Earth Systems](http://james.agu.org).
+[Journal of Advances in Modeling Earth Systems](http://james.agu.org). 
+The code itself can be sited as 
+doi:[10.5281/zenodo.3403172](https://doi.org/10.5281/zenodo.3403172) or via the 
+DOI attached to each release.
 
 RRTMGP uses a k-distribution to provide an optical description (absorption and
   possibly Rayleigh optical depth) of the gaseous atmosphere, along with the
@@ -30,3 +33,6 @@ and produce [tutorials](./tutorials/index.html), [how-to guides](./how-tos/index
 We are starting with the [reference documentation](./reference/index.html),
 auto-generated from the code itself. This is provided separately for
 RTE and RRTMGP and for the user-facing classes and underlying computational kernels.
+
+We welcome contributions to the documentation via pull requests to the `documentation` branch 
+of the Github repository. 

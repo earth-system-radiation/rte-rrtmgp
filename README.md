@@ -18,15 +18,24 @@ RTE computes fluxes given spectrally-resolved optical descriptions and source fu
 
 ## Building the libraries, examples, and unit-testing codes.
 
-1. Set environment variables `FC` (the Fortran 2003 compiler) and `FCFLAGS` (compiler flags). Examples are provided in the `Compiler-flags.md` file.
-2. Set environment variables `RRTMGP_ROOT` to the top-level RTE+RRTMGP directory and `RTE_KERNELS` to `accel` if you want the OpenACC/OpenMP kernels rather than the default.
-3. `make libs` in the top-level directory will make the RTE and RRTMGP libraries.
-4. The examples and testing codes use netCDF. Set the variables `NCHOME` and `NFHOME` to the roots of the C and Fortran netCDF installations. 
-5. Download the RRTMGP data either by cloning the [data repository](https://github.com/earth-system-radiation/rrtmgp-data) or from the [Zenodo archive](https://doi.org/10.5281/zenodo.7988260). Set the environment variable `RRTMGP_DATA` to the root of this directory. 
-6. `make tests` to will build and run the test. 
-7. Evaluating the results of the tests requires `Python` and the packages described in `environment.yml`. Comparisons can be made with `make check` in the top level directory. 
-8. `make` invoked without a target in the top level attempts all three steps.
+A description of building RTE+RRTMGP with an ad hoc homemade system is described in the [documentation](https://earth-system-radiation.github.io/rte-rrtmgp/how-tos/).
+
+See also the `autoconf` branch for a Gnu autotools build system. 
 
 ## Examples
 
 Two examples are provided in `examples/`, one for clear skies and one including clouds. Directory `tests/` contains regression testing (e.g. to ensure that answers are independent of orientation) and unit testing (to be sure all the code paths are tested). See the README file and codes in each directory for further information.
+
+## Citing the code 
+
+Code releases are archived at Zenodo. All releases are available at 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3403172.svg)](https://doi.org/10.5281/zenodo.3403172). 
+The current release is available at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7521518.svg)](https://doi.org/10.5281/zenodo.10211873)
+
+Please cite the code using these DOIs and the information in the `CITATION.cff` file in addition to the reference [paper](https://doi.org/10.1029/2019MS001621)
+
+## Acknowledgements
+
+The development of RTE+RRTMGP has been funded in the US by the Office of Naval Research, NASA, NOAA, and the Department of Energy. We 
+are grateful for contributions from a range of collaborators at institutions including the Swiss Supercomputing Center, 
+the German Climate Computing Center, and Nvidia. 

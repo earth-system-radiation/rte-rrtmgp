@@ -71,7 +71,7 @@ variables:
     - .common-levante
   variables:
     # Compiler flags used for ICON model:
-    FCFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda11.7 -DRTE_USE_${FPMODEL}
+    FCFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda11.8 -DRTE_USE_${FPMODEL}
     RTE_KERNELS: accel
 
 .nag-cpu:

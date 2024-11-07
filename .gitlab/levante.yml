@@ -30,7 +30,8 @@ variables:
 .nvhpc:
   variables:
     # Core variables:
-    FC: /sw/spack-levante/nvhpc-22.5-v4oky3/Linux_x86_64/22.5/compilers/bin/nvfortran
+    # FC: /sw/spack-levante/nvhpc-22.5-v4oky3/Linux_x86_64/22.5/compilers/bin/nvfortran
+    FC: /sw/spack-levante/nvhpc-24.9-p7iohv/Linux_x86_64/24.9/compilers/bin/nvfortran
     # Convenience variables:
     VERSION_FCFLAGS: --version
     NFHOME: /sw/spack-levante/netcdf-fortran-4.5.4-syv4qr

@@ -1,12 +1,5 @@
 name: Self-hosted CI
 on:
-  push:
-    branches:
-    - main
-    - develop
-  pull_request:
-    branches-ignore:
-    - documentation
   workflow_dispatch:
 
 defaults:

@@ -1,4 +1,4 @@
-SET(SOURCES
+set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/mo_rte_config.F90
     ${CMAKE_CURRENT_SOURCE_DIR}/mo_rte_util_array_validation.F90
 

@@ -1,0 +1,3 @@
+add_executable(rte_optic_prop_unit_tests)
+target_sources(rte_optic_prop_unit_tests PRIVATE mo_testing_utils.F90 rte_optic_prop_unit_tests.F90)
+target_link_libraries(rte_optic_prop_unit_tests PRIVATE rtekernels rtef)

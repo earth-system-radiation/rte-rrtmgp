@@ -77,10 +77,10 @@ add_subdirectory(rte-frontend)    # Build library: rte.a
 add_subdirectory(rrtmgp-kernels)  # Build library: rrtmgpkernels.a
 add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp.a
 
-# Enable testing with CTest
-enable_testing()
-
 if(ENABLE_TESTS)
+    # Enable testing with CTest
+    enable_testing()
+
     message(STATUS "Tests enabled")
 
     # Manually locate the directory containing netcdf.mod

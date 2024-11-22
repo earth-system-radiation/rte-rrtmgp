@@ -90,12 +90,16 @@ jobs:
     - name: Build libraries
       run: |
         $FC --version
-        make -j4 libs
+        mkdir build_libs
+        cmake -S . -B build_libs -DCMAKE_Fortran_COMPILER=$FC
     #
     # Run examples and tests
     #
     - name: Build and run examples and tests
-      run: make -j4 tests
+        mkdir build_tests
+        cd build_tests
+        cmake .. -DENABLE_TESTS=ON -DCMAKE_Fortran_COMPILER=$FC
+        ctest -v
     #
     # Compare the results
     #

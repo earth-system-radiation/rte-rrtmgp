@@ -20,7 +20,6 @@ if(NOT FORTRAN_COMPILER_FOUND)
     message(FATAL_ERROR "No suitable Fortran compiler found. Please install one of the following: ${PREFERRED_FC_COMPILERS}")
 endif()
 
-
 message(STATUS "RTE_KERNEL_MODE: ${RTE_KERNEL_MODE}")
 message(STATUS "PRECISION: ${PRECISION} (double = 64-bits, single = 32-bits float)")
 message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
@@ -43,4 +42,4 @@ add_subdirectory(${RTE_KERNEL_DIR})    # Build lib: rtekernels.a
 add_subdirectory(${RTE_DIR})           # Build lib: rte.a
 add_subdirectory(${RRTMGP_KERNEL_DIR}) # Build lib: rrtmgpkernels.a
 add_subdirectory(${RRTMGP_DIR})        # Build lib: rrtmgp.a
-# add_subdirectory(${TESTS_DIR})         # Test & Check
+add_subdirectory(${TESTS_DIR})         # Test & Check

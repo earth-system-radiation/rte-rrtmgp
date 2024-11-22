@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.4...3.18)
 
 project(rte-rrtmgp Fortran)
 
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 # Compiler settings.
 
 if (NOT USESP)
@@ -21,7 +22,7 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "AppleClang")
     set(USER_Fortran_FLAGS_DEBUG "-g -O0")
     set(INCLUDE_DIRS "/usr/local/include")
 elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-    set(USER_Fortran_FLAGS "-Wall -fopenmp -fPIC")
+    set(USER_Fortran_FLAGS "-Wall -fPIC")
     set(USER_Fortran_FLAGS_RELEASE "-DNDEBUG -O3 -march=native")
     set(USER_Fortran_FLAGS_DEBUG "-g -O0")
     set(INCLUDE_DIRS "/usr/local/include")
@@ -56,3 +57,5 @@ endif()
 
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
+add_subdirectory(rrtmgp-kernels)
+add_subdirectory(rrtmgp-frontend)

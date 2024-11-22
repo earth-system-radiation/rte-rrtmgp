@@ -8,6 +8,4 @@ file(GLOB sourcefiles
     "mo_rte_config.F90"
     "mo_source_functions.F90")
 
-add_library(rte-frontend STATIC ${sourcefiles})
-# target_include_directories(microhh_core PRIVATE "../include" "../include_kernels" "../extern/pybind11/include" SYSTEM ${INCLUDE_DIRS})
-# target_link_libraries(microhh_core PRIVATE pybind11::embed ${LIBS})
+add_library(rtef STATIC ${sourcefiles})

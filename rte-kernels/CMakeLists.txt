@@ -1,11 +1,7 @@
 file(GLOB sourcefiles
-    "../rte-frontend/mo_rte_kind.F90"
     "mo_rte_solver_kernels.F90"
     "mo_fluxes_broadband_kernels.F90"
     "mo_rte_util_array.F90"
     "mo_optical_props_kernels.F90")
 
-add_library(rte-kernels STATIC ${sourcefiles})
-
-# target_include_directories(microhh_core PRIVATE "../include" "../include_kernels" "../extern/pybind11/include" SYSTEM ${INCLUDE_DIRS})
-# target_link_libraries(microhh_core PRIVATE pybind11::embed ${LIBS})
+add_library(rtekernels STATIC ${sourcefiles})

@@ -13,7 +13,7 @@ function(check_valid_option variable_name value valid_options)
 endfunction()
 
 set(VALID_RTE_KERNELS "ACCEL" "EXTERN" "DEFAULT")
-set(RTE_KERNELS "DEFAULT")
+set(RTE_KERNELS "${RTE_KERNELS}" CACHE STRING "Choose the kernel implementation for RTE")
 
 # Set the RTE_KERNELS value to upper case only
 string(TOUPPER "${RTE_KERNELS}" RTE_KERNELS)
@@ -28,6 +28,10 @@ SET(RTE_KERNEL_DIR    ${CMAKE_SOURCE_DIR}/rte-kernels)
 SET(RRTMGP_DIR        ${CMAKE_SOURCE_DIR}/rrtmgp-frontend)
 SET(RRTMGP_KERNEL_DIR ${CMAKE_SOURCE_DIR}/rrtmgp-kernels)
 SET(TESTS_DIR         ${CMAKE_SOURCE_DIR}/tests)
+
+
+SET(RRTMGP_DATA ${CMAKE_SOURCE_DIR}/rrtmgp-data)
+SET(LIBS rrtmgp rte netcdff)
 
 SET(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 

@@ -1,33 +1,29 @@
 cmake_minimum_required(VERSION 3.4...3.18)
 project(rte-rrtmgp LANGUAGES Fortran)
 
-set(RTE_KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
+SET(PREFERRED_FC_COMPILERS "gfortran" "ifort" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
+
+SET(RTE_KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
 set_property(CACHE RTE_KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
 
 set(PRECISION "double" CACHE STRING "Select the kernel mode: double or single")
 set_property(CACHE PRECISION PROPERTY STRINGS "double" "single")
 
+SET(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
+set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
+
 string(TOUPPER ${PRECISION} TMP_PRECISION)
 add_definitions("-DUSE_${TMP_PRECISION}_PRECISION")
 
+find_program(FORTRAN_COMPILER_FOUND ${CMAKE_Fortran_COMPILER})
+if(NOT FORTRAN_COMPILER_FOUND)
+    message(FATAL_ERROR "No suitable Fortran compiler found. Please install one of the following: ${PREFERRED_FC_COMPILERS}")
+endif()
+
+
 message(STATUS "RTE_KERNEL_MODE: ${RTE_KERNEL_MODE}")
 message(STATUS "PRECISION: ${PRECISION} (double = 64-bits, single = 32-bits float)")
-
-# Fortran compiler selection
-set(PREFERRED_FC_COMPILERS gfortran ifort gfortran-10 gfortran-11 gfortran-12 f77)
-
-foreach(compiler IN LISTS PREFERRED_FC_COMPILERS)
-    find_program(FOUND_COMPILER NAMES ${compiler})
-    if(FOUND_COMPILER)
-        set(CMAKE_Fortran_COMPILER ${FOUND_COMPILER})
-        message(STATUS "Using Fortran compiler: ${FOUND_COMPILER}")
-        break()
-    endif()
-endforeach()
-
-if(NOT CMAKE_Fortran_COMPILER)
-    message(FATAL_ERROR "No suitable Fortran compiler found")
-endif()
+message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 
 SET(RTE_DIR           ${CMAKE_SOURCE_DIR}/rte-frontend)
 SET(RTE_KERNEL_DIR    ${CMAKE_SOURCE_DIR}/rte-kernels)

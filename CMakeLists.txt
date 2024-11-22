@@ -20,16 +20,30 @@ if(NOT FORTRAN_COMPILER_FOUND)
     message(FATAL_ERROR "No suitable Fortran compiler found. Please install one of the following: ${PREFERRED_FC_COMPILERS}")
 endif()
 
-message(STATUS "RTE_KERNEL_MODE: ${RTE_KERNEL_MODE}")
-message(STATUS "PRECISION: ${PRECISION} (double = 64-bits, single = 32-bits float)")
-message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
-
 SET(RTE_DIR           ${CMAKE_SOURCE_DIR}/rte-frontend)
 SET(RTE_KERNEL_DIR    ${CMAKE_SOURCE_DIR}/rte-kernels)
 SET(RRTMGP_DIR        ${CMAKE_SOURCE_DIR}/rrtmgp-frontend)
 SET(RRTMGP_KERNEL_DIR ${CMAKE_SOURCE_DIR}/rrtmgp-kernels)
 SET(TESTS_DIR         ${CMAKE_SOURCE_DIR}/tests)
 SET(RRTMGP_DATA       ${CMAKE_SOURCE_DIR}/rrtmgp-data)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    rrtmgp-data
+    GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
+    GIT_TAG origin/main
+    SOURCE_DIR ${RRTMGP_DATA}
+)
+FetchContent_GetProperties(rrtmgp-data)
+
+if (NOT rrtmgp-data_POPULATED)
+    FetchContent_Populate(rrtmgp-data)
+endif()
+
+message(STATUS "RTE_KERNEL_MODE: ${RTE_KERNEL_MODE}")
+message(STATUS "PRECISION: ${PRECISION} (double = 64-bits, single = 32-bits float)")
+message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 
 SET(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 

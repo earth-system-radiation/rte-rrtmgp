@@ -1,5 +1,4 @@
 file(GLOB sourcefiles
-    "mo_rte_kind.F90"
     "mo_optical_props.F90"
     "mo_rte_lw.F90"
     "mo_fluxes.F90"

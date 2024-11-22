@@ -1,4 +1,5 @@
 file(GLOB sourcefiles
+    "../rte-frontend/mo_rte_kind.F90"
     "mo_rte_solver_kernels.F90"
     "mo_fluxes_broadband_kernels.F90"
     "mo_rte_util_array.F90"

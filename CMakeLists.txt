@@ -19,8 +19,15 @@ option(ENABLE_TESTS "Enable tests" OFF)
 set(RTE_KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
 set_property(CACHE RTE_KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
 
-set(PRECISION "double" CACHE STRING "Select the kernel mode: double or single")
-set_property(CACHE PRECISION PROPERTY STRINGS "double" "single")
+if ("${FP_MODEL}" STREQUAL "SP")
+    set(PRECISION "SP" CACHE STRING "Select the floating point precision: double or single" FORCE)
+elseif("${FP_MODEL}" STREQUAL "DP")
+    set(PRECISION "DP" CACHE STRING "Select the floating point precision: double or single" FORCE)
+else()
+    set(PRECISION "DP" CACHE STRING "Select the floating point precision: double or single")
+endif()
+
+set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
 
 if (NOT WINDOWS)
     set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
@@ -28,8 +35,8 @@ if (NOT WINDOWS)
     set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
 endif()
 
-string(TOUPPER ${PRECISION} TMP_PRECISION)
-add_definitions("-DUSE_${TMP_PRECISION}_PRECISION")
+add_definitions("-DRTE_USE_${PRECISION}")
+message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
 
 find_program(FORTRAN_COMPILER_FOUND ${CMAKE_Fortran_COMPILER})
 if(NOT FORTRAN_COMPILER_FOUND)
@@ -58,7 +65,7 @@ if (NOT rrtmgp-data_POPULATED)
 endif()
 
 message(STATUS "RTE_KERNEL_MODE: ${RTE_KERNEL_MODE}")
-message(STATUS "PRECISION: ${PRECISION} (double = 64-bits, single = 32-bits float)")
+message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
 message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)

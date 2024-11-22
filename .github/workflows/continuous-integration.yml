@@ -91,7 +91,7 @@ jobs:
       run: |
         $FC --version
         mkdir -p build_libs
-        cmake -S . -B build_libs -DENABLE_TESTS=ON -DCMAKE_Fortran_COMPILER=$FC
+        cmake -S . -B build_libs -DENABLE_TESTS=ON -DCMAKE_Fortran_COMPILER=$FC -DFP_MODEL=${{ matrix.fpmodel }}
         cmake --build build_libs --config Release -- -j8
     #
     # Run examples and tests

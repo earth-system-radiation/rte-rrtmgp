@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.4...3.18)
-project(rte-rrtmgp LANGUAGES Fortran)
+project(rte-rrtmgp LANGUAGES)
 
 # Define flags to identify the operating system
 set(LINUX     FALSE)
@@ -42,6 +42,15 @@ if(NOT WINDOWS)
     set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
     set(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
     set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
+else()
+    message(STATUS "Conda Environment: $ENV{CONDA_PREFIX}")
+    set(CMAKE_Fortran_COMPILER "$ENV{CONDA_PREFIX}/Library/bin/gfortran.exe" CACHE STRING "Select the Fortran compiler")
+    set(CMAKE_AR "$ENV{CONDA_PREFIX}/Library/x86_64-w64-mingw32/bin/ar.exe" CACHE STRING "Select archiver")
+    set(CMAKE_RANLIB "$ENV{CONDA_PREFIX}/Library/x86_64-w64-mingw32/bin/ranlib.exe" CACHE STRING "Select ranlib executable")
+
+    file(TO_CMAKE_PATH ${CMAKE_AR} CMAKE_AR)
+    file(TO_CMAKE_PATH ${CMAKE_RANLIB} CMAKE_RANLIB)
+    file(TO_CMAKE_PATH ${CMAKE_Fortran_COMPILER} CMAKE_Fortran_COMPILER)
 endif()
 
 # Check if the Fortran compiler is available
@@ -49,6 +58,8 @@ find_program(FORTRAN_COMPILER_FOUND ${CMAKE_Fortran_COMPILER})
 if(NOT FORTRAN_COMPILER_FOUND)
     message(FATAL_ERROR "No suitable Fortran compiler found. Please install one of the following: ${PREFERRED_FC_COMPILERS}")
 endif()
+
+enable_language(Fortran)
 
 include(FetchContent)
 
@@ -61,7 +72,7 @@ FetchContent_Declare(
 FetchContent_GetProperties(rrtmgp-data)
 
 if(NOT rrtmgp-data_POPULATED)
-    FetchContent_Populate(rrtmgp-data)
+    FetchContent_MakeAvailable(rrtmgp-data)
 endif()
 
 message(STATUS "RTE_KERNEL_MODE: ${RTE_KERNEL_MODE}")
@@ -89,11 +100,12 @@ if(ENABLE_TESTS)
 
     # Manually locate the directory containing netcdf.mod
     # and the NetCDF Fortran library
-    if(NOT WIN32)
+    if (NOT WIN32)
         find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS /usr/include)
         find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS /usr/lib)
     else()
-        message(ERROR "Windows is not yet supported.")
+        find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS $ENV{CONDA_PREFIX}/include)
+        find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS $ENV{CONDA_PREFIX}/lib)
     endif()
 
     if(NOT NETCDF_Fortran_INCLUDE_DIR OR NOT NETCDF_Fortran_LIBRARY)
@@ -103,7 +115,7 @@ if(ENABLE_TESTS)
         elseif(APPLE_ARM)
             message(FATAL_ERROR "You can install it using: `brew install netcdf`")
         else()
-            message(FATAL_ERROR "You can install it using: `choco install netcdf-fortran`")
+            message(FATAL_ERROR "You can install it using: `conda install -c conda-forge netcdf-fortran`")
         endif()
     else()
         message(STATUS "Found NetCDF module include dir: ${NETCDF_Fortran_INCLUDE_DIR}")

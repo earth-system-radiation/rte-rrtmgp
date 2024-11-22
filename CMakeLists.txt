@@ -15,6 +15,9 @@ elseif(WIN32)
     set(WINDOWS TRUE)
 endif()
 
+set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
+
+
 # Define the option for enabling/disabling tests
 option(ENABLE_TESTS "Enable tests" OFF)
 
@@ -30,6 +33,11 @@ else()
 endif()
 set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
 
+add_definitions("-DRTE_USE_${PRECISION}")
+message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
+
+set(CMAKE_Fortran_FLAGS "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL" CACHE STRING "Select Fortran compile flags")
+
 if(NOT WINDOWS)
     set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
     set(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
@@ -41,10 +49,6 @@ find_program(FORTRAN_COMPILER_FOUND ${CMAKE_Fortran_COMPILER})
 if(NOT FORTRAN_COMPILER_FOUND)
     message(FATAL_ERROR "No suitable Fortran compiler found. Please install one of the following: ${PREFERRED_FC_COMPILERS}")
 endif()
-
-set(CMAKE_Fortran_FLAGS "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${PRECISION}" CACHE STRING "Select Fortran compile flags")
-
-set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
 
 include(FetchContent)
 

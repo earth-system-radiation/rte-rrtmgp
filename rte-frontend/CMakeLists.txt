@@ -12,9 +12,14 @@ SET(SOURCES
     ${CMAKE_SOURCE_DIR}/rte-frontend/mo_source_functions.F90
 )
 
-add_library(rtef_objects OBJECT ${SOURCES})
-add_library(rtekind_object OBJECT ${RTE_KIND_SRC})
+add_library(rtef_kind STATIC ${RTE_KIND_SRC})
 
-add_library(rtef STATIC $<TARGET_OBJECTS:rtekind_object> $<TARGET_OBJECTS:rtef_objects>)
+message("-- Building rtef_kind.a")
+
+add_library(rtef STATIC ${SOURCES})
+target_link_libraries(rtef
+    PRIVATE
+        rtef_kind
+)
 
 message("-- Building rtef.a")

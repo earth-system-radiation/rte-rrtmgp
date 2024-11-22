@@ -69,13 +69,20 @@ add_subdirectory(${RTE_DIR})
 add_subdirectory(${RRTMGP_KERNEL_DIR})
 add_subdirectory(${RRTMGP_DIR})
 
-add_library(librte    STATIC $<TARGET_OBJECTS:rtef_objects>    $<TARGET_OBJECTS:rtekernels_objects>)
-add_library(librrtmgp STATIC $<TARGET_OBJECTS:rrtmgpf_objects> $<TARGET_OBJECTS:rrtmgpkernels_objects>)
-
-# Clean target
-add_custom_target(clean-all1
-    COMMAND ${CMAKE_COMMAND} -E remove -f *.optrpt *.mod *.o lib*.a
-    COMMENT "Cleaning all generated files"
+add_library(rte STATIC)
+target_link_libraries(rte PRIVATE
+    rtef
+    rtekernels
 )
+
+message("-- Building rte.a")
+
+add_library(rrtmgp STATIC)
+target_link_libraries(rte PRIVATE
+    rrtmgpf
+    rrtmgpkernels
+)
+
+message("-- Building rrtmgp.a")
 
 # add_subdirectory(${TESTS_DIR})

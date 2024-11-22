@@ -9,7 +9,6 @@ SET(SOURCES
     ${CMAKE_SOURCE_DIR}/rrtmgp-frontend/mo_gas_optics_rrtmgp.F90
 )
 
-add_library(rrtmgpf_objects OBJECT ${SOURCES})
-add_library(rrtmgpf STATIC $<TARGET_OBJECTS:rrtmgpf_objects>)
+add_library(rrtmgpf STATIC ${SOURCES})
 
 message("-- Building rrtmgpf.a")

@@ -5,7 +5,6 @@ SET(SOURCES
     ${CMAKE_SOURCE_DIR}/rte-kernels/mo_optical_props_kernels.F90
 )
 
-add_library(rtekernels_objects OBJECT ${SOURCES})
-add_library(rtekernels STATIC $<TARGET_OBJECTS:rtekind_object> $<TARGET_OBJECTS:rtekernels_objects>)
+add_library(rtekernels STATIC ${SOURCES})
 
 message("-- Building rtekernels.a")

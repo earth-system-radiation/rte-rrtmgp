@@ -47,49 +47,44 @@ SET(SOURCES
     ${CMAKE_SOURCE_DIR}/extensions/solar_variability/mo_solar_variability.F90
 )
 
-# Check if netcdf.mod exists in /usr/local/include, then copy it
-# TODO: Find a better way to use netcdf.mod
+add_library(test_utils STATIC ${SOURCES})
 
-find_package(NetCDF COMPONENTS C Fortran REQUIRED)
-message(STATUS "=============================== NETCDF")
-# List the available targets
-message(STATUS "Available NetCDF targets:")
-message(STATUS "  NetCDF::NetCDF -> ${NetCDF_LIBRARIES}")
-message(STATUS "  NetCDF::NetCDF_Fortran -> ${NetCDF_Fortran_LIBRARIES}")
-message(STATUS "=============================== NETCDF")
-
+# Manually locate the directory containing netcdf.mod
+# and the NetCDF Fortran library
 if (NOT WIN32)
-    set(NETCDF_DIR /usr/include)
-    # Check if netcdf.mod exists in the specified directory
-    if(EXISTS "${NETCDF_DIR}/netcdf.mod")
-        # Copy netcdf.mod to the Fortran module directory
-        file(COPY "${NETCDF_DIR}/netcdf.mod" DESTINATION ${CMAKE_Fortran_MODULE_DIRECTORY})
-    else()
-        message(SEND_ERROR "netcdf.mod not found in ${NETCDF_DIR}.")
-
-        if(LINUX)
-            message(FATAL_ERROR "On Linux, you can install it using: `sudo apt-get install libnetcdff-dev`")
-        elseif(APPLE_ARM)
-            message(FATAL_ERROR "On macOS ARM (Apple Silicon), you can install it using: `brew install netcdf`")
-        else()
-            message(FATAL_ERROR "Please ensure NetCDF Fortran is installed and netcdf.mod is in ${NETCDF_DIR}.")
-        endif()
-    endif()
+    find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS /usr/include)
+    find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS /usr/lib)
+else()
+    message(ERROR "Windows is not yet supported.")
 endif()
 
-add_library(test_utils STATIC ${SOURCES})
+if (NOT NETCDF_Fortran_INCLUDE_DIR OR NOT NETCDF_Fortran_LIBRARY)
+    message(SEND_ERROR "NetCDF Fortran not found.")
+    if(LINUX)
+        message(FATAL_ERROR "You can install it using: `sudo apt-get install libnetcdff-dev`")
+    elseif(APPLE_ARM)
+        message(FATAL_ERROR "You can install it using: `brew install netcdf`")
+    else()
+        message(FATAL_ERROR "You can install it using: `choco install netcdf-fortran`")
+    endif()
+else()
+    message(STATUS "Found NetCDF module include dir: ${NETCDF_Fortran_INCLUDE_DIR}")
+    message(STATUS "Found NetCDF module library dir: ${NETCDF_Fortran_LIBRARY}")
+endif()
 
 # Link necessary libraries to the test utility library
 target_link_libraries(test_utils PUBLIC
     rte
     rrtmgp
-    netCDF::netcdf
+    ${NETCDF_Fortran_LIBRARY}
 )
 
 # Set the directory for Fortran module files
 set_target_properties(test_utils PROPERTIES Fortran_MODULE_DIRECTORY
     ${CMAKE_Fortran_MODULE_DIRECTORY}
 )
+
+target_include_directories(test_utils PRIVATE ${NETCDF_Fortran_INCLUDE_DIR})
 
 # Build tests
 build_test(rte_optic_prop_unit_tests)

@@ -87,22 +87,19 @@ jobs:
     #
     # Build libraries, examples and tests
     #
-    - name: Build libraries
+    - name: Build libraries and tests
       run: |
         $FC --version
-        mkdir build_libs
-        cmake -S . -B build_libs -DCMAKE_Fortran_COMPILER=$FC
+        mkdir -p build_libs
+        cmake -S . -B build_libs -DENABLE_TESTS=ON -DCMAKE_Fortran_COMPILER=$FC
         cmake --build build_libs --config Release -- -j8
     #
     # Run examples and tests
     #
-    - name: Build and run examples and tests
+    - name: Run examples and tests
       run: |
-        mkdir build_tests
-        cd build_tests
-        cmake .. -DENABLE_TESTS=ON -DCMAKE_Fortran_COMPILER=$FC
-        cmake --build . --config Release -- -j8
-        ctest -v
+        cd build_libs
+        ctest --verbose
     #
     # Compare the results
     #

@@ -1,11 +1,12 @@
 set(TEST_INPUTS
+    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
 )
 
-# Define a custom target for test inputs (ensure they're available)
+# Copy required test inputs to the build directory
 add_custom_target(rfmip_clear_sky_test_inputs ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${TEST_INPUTS} ${CMAKE_CURRENT_BINARY_DIR}/
     COMMENT "Copying required .nc test files to build directory"
@@ -25,7 +26,6 @@ target_link_libraries(rfmip_clear_utils PRIVATE
 message(STATUS "Building lib rfmip_clear_utils.a")
 
 # Path to the test atmospheres file
-set(TEST_ATMOSPHERES ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc)
 
 # Build tests
 build_test(rrtmgp_rfmip_lw rfmip_clear_utils examples_utils)
@@ -34,6 +34,19 @@ build_test(rrtmgp_rfmip_sw rfmip_clear_utils examples_utils)
 add_dependencies(rrtmgp_rfmip_lw rfmip_clear_sky_test_inputs)
 add_dependencies(rrtmgp_rfmip_sw rfmip_clear_sky_test_inputs)
 
-# Add rfmip test
-add_custom_test(rrtmgp_rfmip_test_lw rrtmgp_rfmip_lw 8 ${TEST_ATMOSPHERES} ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc)
-add_custom_test(rrtmgp_rfmip_test_sw rrtmgp_rfmip_sw 8 ${TEST_ATMOSPHERES} ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc)
+# Add rfmip tests
+add_custom_test(rrtmgp_rfmip_test_lw rrtmgp_rfmip_lw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc)
+add_custom_test(rrtmgp_rfmip_test_sw rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc)
+
+# Add a custom command to run the Python check
+add_custom_target(rrtmgp_rfmip_check
+    COMMAND ${CMAKE_COMMAND} -E env ${Python_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py
+        --ref_dir ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference
+        --tst_dir ${CMAKE_CURRENT_BINARY_DIR}
+        --variables rld rlu rsd rsu
+        --file_names r??_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+        --failure_threshold ${FAILURE_THRESHOLD}
+    COMMENT "Running Python check script with FAILURE_THRESHOLD=${FAILURE_THRESHOLD}"
+    VERBATIM
+)

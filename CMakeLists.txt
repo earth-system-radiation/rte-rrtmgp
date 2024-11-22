@@ -17,7 +17,6 @@ endif()
 
 set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
 
-
 # Define the option for enabling/disabling tests
 option(ENABLE_TESTS "Enable tests" OFF)
 

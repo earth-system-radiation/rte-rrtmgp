@@ -1,12 +1,12 @@
 SET(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-if (RTE_KERNELS STREQUAL "ACCEL")
+if (RTE_KERNEL_MODE STREQUAL "accel")
     SET(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/accel)
-elseif(RTE_KERNELS STREQUAL "EXTERN")
+elseif(RTE_KERNEL_MODE STREQUAL "extern")
     SET(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/api)
 endif()
 
-if (RTE_KERNELS STREQUAL "ACCEL")
+if (RTE_KERNEL_MODE STREQUAL "accel")
     SET(FLUX_REDUCTION  ${CMAKE_CURRENT_SOURCE_DIR}/mo_fluxes_broadband_kernels.F90)
     SET(ARRAY_UTILITIES ${CMAKE_CURRENT_SOURCE_DIR}/mo_rte_util_array.F90)
 else()
@@ -25,9 +25,6 @@ SET(SOURCES
 )
 
 add_library(rtekernels STATIC ${SOURCES})
-target_include_directories(rtekernels PUBLIC
-    ${LOCAL_SOURCE_DIR}
-)
 target_link_libraries(rtekernels PRIVATE
     rtef_kind
 )

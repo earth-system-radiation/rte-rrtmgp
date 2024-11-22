@@ -1,8 +1,8 @@
 SET(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-if (RTE_KERNELS STREQUAL "ACCEL")
+if (RTE_KERNELS STREQUAL "accel")
     SET(LOCAL_SOURCE_DIR ${LOCAL_SOURCE_DIR}/accel)
-elseif(RTE_KERNELS STREQUAL "EXTERN")
+elseif(RTE_KERNELS STREQUAL "extern")
     SET(LOCAL_SOURCE_DIR ${LOCAL_SOURCE_DIR}/api)
 endif()
 
@@ -11,9 +11,6 @@ SET(SOURCES
 )
 
 add_library(rrtmgpkernels STATIC ${SOURCES})
-target_include_directories(rrtmgpkernels PUBLIC
-    ${LOCAL_SOURCE_DIR}
-)
 target_link_libraries(rrtmgpkernels PRIVATE
     rtekernels
 )

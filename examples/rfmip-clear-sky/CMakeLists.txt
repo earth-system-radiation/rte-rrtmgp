@@ -28,8 +28,8 @@ message(STATUS "Building lib rfmip_clear_utils.a")
 set(TEST_ATMOSPHERES ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc)
 
 # Build tests
-build_test(rrtmgp_rfmip_lw rfmip_clear_utils)
-build_test(rrtmgp_rfmip_sw rfmip_clear_utils)
+build_test(rrtmgp_rfmip_lw rfmip_clear_utils examples_utils)
+build_test(rrtmgp_rfmip_sw rfmip_clear_utils examples_utils)
 
 add_dependencies(rrtmgp_rfmip_lw rfmip_clear_sky_test_inputs)
 add_dependencies(rrtmgp_rfmip_sw rfmip_clear_sky_test_inputs)

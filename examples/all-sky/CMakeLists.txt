@@ -18,7 +18,7 @@ set(TEST_ALLSKY_LW_NO_AEROSOLS ${RRTMGP_DATA}/examples/all-sky/reference/rrtmgp-
 set(TEST_ALLSKY_SW_NO_AEROSOLS ${RRTMGP_DATA}/examples/all-sky/reference/rrtmgp-allsky-sw-no-aerosols.nc)
 
 # Build tests
-build_test(rrtmgp_allsky all_sky_utils)
+build_test(rrtmgp_allsky all_sky_utils examples_utils)
 
 # Add aerosols tests
 add_custom_test(rrtmgp_allsky_test_lw rrtmgp_allsky 24 72 1 ${TEST_ALLSKY_LW} ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc ${RRTMGP_DATA}/rrtmgp-aerosols-merra-lw.nc)

@@ -109,11 +109,12 @@ if(ENABLE_TESTS)
     # Function to define a custom test for CTest
     # Arguments:
     #   TEST_NAME - The name of the test in CTest
-    #   TEST_LIBS - The libraries that are going to be linked
-    function(build_test TEST_NAME TEST_LIBS)
+    #   ARGN      - The libraries that are going to be linked
+    function(build_test TEST_NAME)
         set(TEST_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/${TEST_NAME}.F90)
+        set(TEST_LIBS ${ARGN})
 
-        add_executable(${TEST_NAME} ${TEST_SOURCE} ${ARGN})
+        add_executable(${TEST_NAME} ${TEST_SOURCE})
         target_link_libraries(${TEST_NAME} PRIVATE ${TEST_LIBS})
 
         message(STATUS "Building test ${TEST_NAME}.so")

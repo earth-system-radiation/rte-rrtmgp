@@ -19,5 +19,5 @@ target_link_libraries(examples_utils PUBLIC
 message(STATUS "Building lib examples_utils.a")
 
 # TODO: Fix all-sky
-# add_subdirectory(all-sky)
+add_subdirectory(all-sky)
 add_subdirectory(rfmip-clear-sky)

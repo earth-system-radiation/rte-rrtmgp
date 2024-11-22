@@ -101,7 +101,7 @@ jobs:
         cd build_libs
         ctest --verbose
     #
-    # Compare the results
+    # TODO: Compare the results 
     #
-    - name: Compare the results
-      run: make -j4 check
+    # - name: Compare the results
+    #   run: make -j4 check

@@ -31,4 +31,6 @@ jobs:
     - name: Build libraries
       run: |
         $FC --version
-        make -j4 libs
+        mkdir -p build_libs
+        cmake -S . -B build_libs -DCMAKE_Fortran_COMPILER=$FC
+        cmake --build build_libs --config Release -- -j8

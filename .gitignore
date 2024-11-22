@@ -33,6 +33,9 @@ examples/*/*/*.nc
 *.html
 *.gif
 
+# Python virtual environments
+.venv*/
+
 # gh-pages directory
 public
 

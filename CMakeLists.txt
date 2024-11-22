@@ -20,6 +20,9 @@ set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
 # Define the option for enabling/disabling tests
 option(ENABLE_TESTS "Enable tests" OFF)
 
+set(RRTMGP_DATA_VERSION "v1.8.2" CACHE STRING "Select what version to clone for rrtmgp-data")
+set(RRTMGP_DATA_REPO https://github.com/earth-system-radiation/rrtmgp-data.git)
+
 set(RTE_KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
 set_property(CACHE RTE_KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
 
@@ -62,10 +65,12 @@ enable_language(Fortran)
 
 include(FetchContent)
 
+message(STATUS "Fetching ${RRTMGP_DATA_REPO} version: ${RRTMGP_DATA_VERSION}")
+
 FetchContent_Declare(
     rrtmgp-data
-    GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
-    GIT_TAG origin/main
+    GIT_REPOSITORY ${RRTMGP_DATA_REPO}
+    GIT_TAG ${RRTMGP_DATA_VERSION}
     SOURCE_DIR ${RRTMGP_DATA}
 )
 FetchContent_GetProperties(rrtmgp-data)

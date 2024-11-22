@@ -1,44 +1,9 @@
-SET(TEST_DIR ${CMAKE_SOURCE_DIR}/tests)
-SET(CTEST_TEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
-# Path to the test atmospheres file used for equivalence and variant tests
-SET(TEST_ATMOSPHERES ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc)
-
-# Function to build a test
-# Arguments:
-#   TEST_NAME - The name of the test executable to create
-function(build_test TEST_NAME)
-    set(TEST_SOURCE ${TEST_DIR}/${TEST_NAME}.F90)
-
-    add_executable(${TEST_NAME} ${TEST_SOURCE} ${ARGN})
-    target_link_libraries(${TEST_NAME} PRIVATE test_utils)
-
-    message(STATUS "Building test ${TEST_NAME}.so")
-endfunction()
-
-# Function to define a custom test for CTest
-# Arguments:
-#   TEST_NAME    - The name of the test in CTest
-#   COMMAND_NAME - The command to execute the test
-function(add_custom_test TEST_NAME COMMAND_NAME)
-    # Add the test to CTest with a specific command and working directory
-    add_test(NAME ${TEST_NAME}
-        COMMAND ${COMMAND_NAME} ${ARGN}
-        WORKING_DIRECTORY ${CTEST_TEST_DIR}
-    )
-
-    message(STATUS "Added test ${TEST_NAME} with command ${COMMAND_NAME}")
-endfunction()
-
 # List of additional source files shared across tests
-SET(SOURCES
-    ${TEST_DIR}/mo_testing_io.F90
-    ${TEST_DIR}/mo_testing_utils.F90
-    ${TEST_DIR}/mo_rcemip_profiles.F90
-    ${TEST_DIR}/mo_gas_optics_defs_rrtmgp.F90
-
-    ${CMAKE_SOURCE_DIR}/examples/mo_simple_netcdf.F90
-    ${CMAKE_SOURCE_DIR}/examples/rfmip-clear-sky/mo_rfmip_io.F90
+set(SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/mo_testing_io.F90
+    ${CMAKE_CURRENT_SOURCE_DIR}/mo_testing_utils.F90
+    ${CMAKE_CURRENT_SOURCE_DIR}/mo_rcemip_profiles.F90
+    ${CMAKE_CURRENT_SOURCE_DIR}/mo_gas_optics_defs_rrtmgp.F90
 
     ${CMAKE_SOURCE_DIR}/extensions/mo_compute_bc.F90
     ${CMAKE_SOURCE_DIR}/extensions/mo_heating_rates.F90
@@ -49,33 +14,13 @@ SET(SOURCES
 
 add_library(test_utils STATIC ${SOURCES})
 
-# Manually locate the directory containing netcdf.mod
-# and the NetCDF Fortran library
-if (NOT WIN32)
-    find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS /usr/include)
-    find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS /usr/lib)
-else()
-    message(ERROR "Windows is not yet supported.")
-endif()
+target_include_directories(test_utils PRIVATE ${NETCDF_Fortran_INCLUDE_DIR})
 
-if (NOT NETCDF_Fortran_INCLUDE_DIR OR NOT NETCDF_Fortran_LIBRARY)
-    message(SEND_ERROR "NetCDF Fortran not found.")
-    if(LINUX)
-        message(FATAL_ERROR "You can install it using: `sudo apt-get install libnetcdff-dev`")
-    elseif(APPLE_ARM)
-        message(FATAL_ERROR "You can install it using: `brew install netcdf`")
-    else()
-        message(FATAL_ERROR "You can install it using: `choco install netcdf-fortran`")
-    endif()
-else()
-    message(STATUS "Found NetCDF module include dir: ${NETCDF_Fortran_INCLUDE_DIR}")
-    message(STATUS "Found NetCDF module library dir: ${NETCDF_Fortran_LIBRARY}")
-endif()
-
-# Link necessary libraries to the test utility library
 target_link_libraries(test_utils PUBLIC
     rte
     rrtmgp
+    examples_utils
+    rfmip_clear_utils
     ${NETCDF_Fortran_LIBRARY}
 )
 
@@ -84,18 +29,19 @@ set_target_properties(test_utils PROPERTIES Fortran_MODULE_DIRECTORY
     ${CMAKE_Fortran_MODULE_DIRECTORY}
 )
 
-target_include_directories(test_utils PRIVATE ${NETCDF_Fortran_INCLUDE_DIR})
+# Path to the test atmospheres file
+set(TEST_ATMOSPHERES ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc)
 
 # Build tests
-build_test(rte_optic_prop_unit_tests)
-build_test(rte_lw_solver_unit_tests)
-build_test(rte_sw_solver_unit_tests)
+build_test(rte_optic_prop_unit_tests test_utils)
+build_test(rte_lw_solver_unit_tests  test_utils)
+build_test(rte_sw_solver_unit_tests  test_utils)
 
-build_test(check_equivalence)
-build_test(check_variants)
+build_test(check_equivalence test_utils)
+build_test(check_variants    test_utils)
 
 # No tests are provided at the moment
-build_test(test_zenith_angle_spherical_correction)
+build_test(test_zenith_angle_spherical_correction test_utils)
 
 # Add unit tests
 add_custom_test(rte_optic_prop_unit_tests rte_optic_prop_unit_tests)

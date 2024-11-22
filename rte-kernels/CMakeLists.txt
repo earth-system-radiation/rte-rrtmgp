@@ -20,13 +20,14 @@ SET(RADIATIVE_TRANSFER ${LOCAL_SOURCE_DIR}/mo_rte_solver_kernels.F90)
 SET(SOURCES
     ${FLUX_REDUCTION}
     ${ARRAY_UTILITIES}
-    # OPTICAL PROPERTIES
-    ${LOCAL_SOURCE_DIR}/mo_optical_props_kernels.F90
-    # RADIATIVE TRANSFER
-    ${LOCAL_SOURCE_DIR}/mo_rte_solver_kernels.F90
+    ${OPTICAL_PROPERTIES}
+    ${RADIATIVE_TRANSFER}
 )
 
 add_library(rtekernels STATIC ${SOURCES})
+target_include_directories(rtekernels PUBLIC
+    ${LOCAL_SOURCE_DIR}
+)
 target_link_libraries(rtekernels PRIVATE
     rtef_kind
 )

@@ -13,7 +13,7 @@ SET(SOURCES
 )
 
 add_library(rrtmgp STATIC ${SOURCES})
-target_link_libraries(rrtmgp PRIVATE
+target_link_libraries(rrtmgp PUBLIC
     rrtmgpkernels
     rte
 )

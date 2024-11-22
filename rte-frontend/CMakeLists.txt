@@ -14,7 +14,7 @@ SET(SOURCES
 )
 
 add_library(rte STATIC ${SOURCES})
-target_link_libraries(rte PRIVATE
+target_link_libraries(rte PUBLIC
     rtef_kind
     rtekernels
 )

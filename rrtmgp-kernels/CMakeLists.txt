@@ -11,6 +11,9 @@ SET(SOURCES
 )
 
 add_library(rrtmgpkernels STATIC ${SOURCES})
+target_include_directories(rrtmgpkernels PUBLIC
+    ${LOCAL_SOURCE_DIR}
+)
 target_link_libraries(rrtmgpkernels PRIVATE
     rtekernels
 )

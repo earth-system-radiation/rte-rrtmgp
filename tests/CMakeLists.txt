@@ -37,19 +37,26 @@ else()
 endif()
 
 # Define each test
-# foreach(TEST rte_optic_prop_unit_tests rte_lw_solver_unit_tests rte_sw_solver_unit_tests check_equivalence check_variants)
-#     add_executable(${TEST} ${TEST_DIR}/${TEST}.F90 $<TARGET_OBJECTS:sources_objects>)
-#     target_link_libraries(${TEST} PRIVATE ${LIBS})
-#     message("-- Building test ${TEST}.so")
-# endforeach()
+foreach(TEST rte_optic_prop_unit_tests rte_lw_solver_unit_tests rte_sw_solver_unit_tests check_equivalence check_variants)
+    add_executable(${TEST} ${TEST_DIR}/${TEST}.F90 $<TARGET_OBJECTS:sources_objects>)
+    target_link_libraries(${TEST} PRIVATE
+        rrtmgp
+        rte
+        netcdff
+    )
+    message(STATUS "Building test ${TEST}.so")
+endforeach()
 
 add_executable(test_zenith_angle_spherical_correction
     ${CMAKE_SOURCE_DIR}/extensions/mo_zenith_angle_spherical_correction.F90
     $<TARGET_OBJECTS:sources_objects>
 )
-target_link_libraries(
-    test_zenith_angle_spherical_correction PRIVATE ${LIBS})
-message("-- Building test test_zenith_angle_spherical_correction.so")
+target_link_libraries(test_zenith_angle_spherical_correction PRIVATE
+    rrtmgp
+    rte
+    netcdff
+)
+message(STATUS "Building test test_zenith_angle_spherical_correction.so")
 
 # Copy the necessary input file for the tests
 # add_custom_command(

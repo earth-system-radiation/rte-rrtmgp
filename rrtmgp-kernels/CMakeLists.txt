@@ -1,8 +1,18 @@
+SET(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+if (RTE_KERNELS STREQUAL "ACCEL")
+    SET(LOCAL_SOURCE_DIR ${LOCAL_SOURCE_DIR}/accel)
+elseif(RTE_KERNELS STREQUAL "EXTERN")
+    SET(LOCAL_SOURCE_DIR ${LOCAL_SOURCE_DIR}/api)
+endif()
+
 SET(SOURCES
-    # "../rte-frontend/mo_rte_kind.F90"
-    ${CMAKE_SOURCE_DIR}/rrtmgp-kernels/mo_gas_optics_rrtmgp_kernels.F90
+    ${LOCAL_SOURCE_DIR}/mo_gas_optics_rrtmgp_kernels.F90
 )
 
 add_library(rrtmgpkernels STATIC ${SOURCES})
+target_link_libraries(rrtmgpkernels PRIVATE
+    rtekernels
+)
 
-message("-- Building rrtmgpkernels.a")
+message(STATUS "Building lib rrtmgpkernels.a")

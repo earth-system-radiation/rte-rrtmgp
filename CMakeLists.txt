@@ -2,16 +2,34 @@ cmake_minimum_required(VERSION 3.4...3.18)
 
 project(rte-rrtmgp Fortran)
 
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
+# Helper function to check if a value is in a list
+function(check_valid_option variable_name value valid_options)
+    list(FIND ${valid_options} ${value} index)
+    if (index EQUAL -1)
+        message(FATAL_ERROR
+            "${variable_name} has an invalid value: '${value}'.\n"
+            "Valid options are: ${${valid_options}}.")
+    endif()
+endfunction()
+
+set(VALID_RTE_KERNELS "ACCEL" "EXTERN" "DEFAULT")
+set(RTE_KERNELS "DEFAULT")
+
+# Set the RTE_KERNELS value to upper case only
+string(TOUPPER "${RTE_KERNELS}" RTE_KERNELS)
+
+# Validate RTE_KERNELS
+check_valid_option("RTE_KERNELS" "${RTE_KERNELS}" "VALID_RTE_KERNELS")
+
+message(STATUS "RTE_KERNELS: ${RTE_KERNELS}")
 
 SET(RTE_DIR           ${CMAKE_SOURCE_DIR}/rte-frontend)
-SET(GAS_OPTICS_DIR    ${CMAKE_SOURCE_DIR}/gas-optics)
-SET(RRTMGP_DIR        ${CMAKE_SOURCE_DIR}/rrtmgp-frontend)
 SET(RTE_KERNEL_DIR    ${CMAKE_SOURCE_DIR}/rte-kernels)
+SET(RRTMGP_DIR        ${CMAKE_SOURCE_DIR}/rrtmgp-frontend)
 SET(RRTMGP_KERNEL_DIR ${CMAKE_SOURCE_DIR}/rrtmgp-kernels)
+SET(TESTS_DIR         ${CMAKE_SOURCE_DIR}/tests)
 
-SET(TESTS_DIR ${CMAKE_SOURCE_DIR}/tests)
-SET(CHECK_DIR ${CMAKE_SOURCE_DIR}/examples)
+SET(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 
 # Compiler settings
 if (NOT USESP)
@@ -61,28 +79,13 @@ if (NOT HAS_CACHE)
     mark_as_advanced(HAS_CACHE)
 endif()
 
-# Include directories
-include_directories(${RTE_KERNEL_DIR} ${RTE_DIR} ${RRTMGP_KERNEL_DIR} ${RRTMGP_DIR} ${GAS_OPTICS_DIR})
+set(RTE_KIND_SRC ${CMAKE_SOURCE_DIR}/rte-frontend/mo_rte_kind.F90)
+add_library(rtef_kind STATIC ${RTE_KIND_SRC})
 
-add_subdirectory(${RTE_KERNEL_DIR})
-add_subdirectory(${RTE_DIR})
-add_subdirectory(${RRTMGP_KERNEL_DIR})
-add_subdirectory(${RRTMGP_DIR})
+message(STATUS "Building lib rtef_kind.a")
 
-add_library(rte STATIC)
-target_link_libraries(rte PRIVATE
-    rtef
-    rtekernels
-)
-
-message("-- Building rte.a")
-
-add_library(rrtmgp STATIC)
-target_link_libraries(rte PRIVATE
-    rrtmgpf
-    rrtmgpkernels
-)
-
-message("-- Building rrtmgp.a")
-
-# add_subdirectory(${TESTS_DIR})
+add_subdirectory(${RTE_KERNEL_DIR})    # Build lib: rtekernels.a
+add_subdirectory(${RTE_DIR})           # Build lib: rte.a
+add_subdirectory(${RRTMGP_KERNEL_DIR}) # Build lib: rrtmgpkernels.a
+add_subdirectory(${RRTMGP_DIR})        # Build lib: rrtmgp.a
+# add_subdirectory(${TESTS_DIR})         # Test & Check

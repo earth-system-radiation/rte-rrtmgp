@@ -1,14 +1,21 @@
-SET(SOURCES
-    ${CMAKE_SOURCE_DIR}/gas-optics/mo_gas_concentrations.F90
-    ${CMAKE_SOURCE_DIR}/gas-optics/mo_gas_optics_constants.F90
-    ${CMAKE_SOURCE_DIR}/gas-optics/mo_gas_optics_util_string.F90
-    ${CMAKE_SOURCE_DIR}/gas-optics/mo_gas_optics.F90
+SET(GAS_OPTICS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/gas-optics)
 
-    ${CMAKE_SOURCE_DIR}/rrtmgp-frontend/mo_aerosol_optics_rrtmgp_merra.F90
-    ${CMAKE_SOURCE_DIR}/rrtmgp-frontend/mo_cloud_optics_rrtmgp.F90
-    ${CMAKE_SOURCE_DIR}/rrtmgp-frontend/mo_gas_optics_rrtmgp.F90
+SET(SOURCES
+    # PHYSICAL CONSTANTS
+    ${GAS_OPTICS_SOURCE_DIR}/mo_gas_optics_constants.F90
+    # UTILITY
+    ${GAS_OPTICS_SOURCE_DIR}/mo_gas_optics_util_string.F90
+    # GAS CONCENTRATIONS
+    ${GAS_OPTICS_SOURCE_DIR}/mo_gas_concentrations.F90
+    # GAS OPTICS
+    ${GAS_OPTICS_SOURCE_DIR}/mo_gas_optics.F90
+    ${CMAKE_CURRENT_SOURCE_DIR}/mo_gas_optics_rrtmgp.F90
 )
 
-add_library(rrtmgpf STATIC ${SOURCES})
+add_library(rrtmgp STATIC ${SOURCES})
+target_link_libraries(rrtmgp PRIVATE
+    rrtmgpkernels
+    rte
+)
 
-message("-- Building rrtmgpf.a")
+message(STATUS "Building lib rrtmgp.a")

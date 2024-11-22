@@ -3,8 +3,17 @@ cmake_minimum_required(VERSION 3.4...3.18)
 project(rte-rrtmgp Fortran)
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
-# Compiler settings.
 
+SET(RTE_DIR           ${CMAKE_SOURCE_DIR}/rte-frontend)
+SET(GAS_OPTICS_DIR    ${CMAKE_SOURCE_DIR}/gas-optics)
+SET(RRTMGP_DIR        ${CMAKE_SOURCE_DIR}/rrtmgp-frontend)
+SET(RTE_KERNEL_DIR    ${CMAKE_SOURCE_DIR}/rte-kernels)
+SET(RRTMGP_KERNEL_DIR ${CMAKE_SOURCE_DIR}/rrtmgp-kernels)
+
+SET(TESTS_DIR ${CMAKE_SOURCE_DIR}/tests)
+SET(CHECK_DIR ${CMAKE_SOURCE_DIR}/examples)
+
+# Compiler settings
 if (NOT USESP)
     set(USESP FALSE)
 endif()
@@ -20,17 +29,15 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "AppleClang")
     set(USER_Fortran_FLAGS "-Wall -fPIC")
     set(USER_Fortran_FLAGS_RELEASE "-DNDEBUG -O3 -march=native")
     set(USER_Fortran_FLAGS_DEBUG "-g -O0")
-    set(INCLUDE_DIRS "/usr/local/include")
-elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU") 
-    set(USER_Fortran_FLAGS "-ffree-line-length-none -m64  -march=native  -DRTE_USE_CBOOL")
-    set(USER_Fortran_FLAGS_RELEASE "-std=f2008 -fbounds-check -fmodule-private  -fimplicit-none -finit-real=nan -g")
-    set(USER_Fortran_FLAGS_DEBUG "-std=f2008 -fbounds-check -fmodule-private  -fimplicit-none -finit-real=nan -g")
-    set(INCLUDE_DIRS "/usr/local/include")
+    set(USER_Fortran_INCLUDE_DIRS "/usr/local/include")
+elseif (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    set(USER_Fortran_FLAGS "-ffree-line-length-none -m64 -march=native -DRTE_USE_CBOOL")
+    set(USER_Fortran_FLAGS_RELEASE "-std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g")
+    set(USER_Fortran_FLAGS_DEBUG "-std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g")
+    set(USER_Fortran_INCLUDE_DIRS "/usr/local/include")
 endif()
 
-# find_package(Python REQUIRED COMPONENTS Interpreter Development)
-
-# Set the default build type to RELEASE.
+# Set default build type to RELEASE
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RELEASE CACHE STRING
         "Choose the type of build, options are: None Debug Release." FORCE)
@@ -40,6 +47,7 @@ else()
         "Choose the type of build, options are: None Debug Release." FORCE)
 endif()
 
+# Set Fortran compiler flags if not already cached
 if (NOT HAS_CACHE)
     set(CMAKE_Fortran_FLAGS ${USER_Fortran_FLAGS} CACHE STRING
         "Flags used by the Fortran-compiler during all build types." FORCE)
@@ -50,13 +58,24 @@ if (NOT HAS_CACHE)
 
     message(STATUS "Build Type: " ${CMAKE_BUILD_TYPE})
     set(HAS_CACHE TRUE CACHE BOOL "CMakeCache.txt created." FORCE)
-
-    # Make sure that ccmake only contains build type.
     mark_as_advanced(HAS_CACHE)
 endif()
 
-add_subdirectory(rte-kernels)
-add_subdirectory(rte-frontend)
-add_subdirectory(rrtmgp-kernels)
-add_subdirectory(rrtmgp-frontend)
-add_subdirectory(tests)
+# Include directories
+include_directories(${RTE_KERNEL_DIR} ${RTE_DIR} ${RRTMGP_KERNEL_DIR} ${RRTMGP_DIR} ${GAS_OPTICS_DIR})
+
+add_subdirectory(${RTE_KERNEL_DIR})
+add_subdirectory(${RTE_DIR})
+add_subdirectory(${RRTMGP_KERNEL_DIR})
+add_subdirectory(${RRTMGP_DIR})
+
+add_library(librte    STATIC $<TARGET_OBJECTS:rtef_objects>    $<TARGET_OBJECTS:rtekernels_objects>)
+add_library(librrtmgp STATIC $<TARGET_OBJECTS:rrtmgpf_objects> $<TARGET_OBJECTS:rrtmgpkernels_objects>)
+
+# Clean target
+add_custom_target(clean-all1
+    COMMAND ${CMAKE_COMMAND} -E remove -f *.optrpt *.mod *.o lib*.a
+    COMMENT "Cleaning all generated files"
+)
+
+# add_subdirectory(${TESTS_DIR})

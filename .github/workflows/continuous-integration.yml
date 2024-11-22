@@ -96,6 +96,7 @@ jobs:
     # Run examples and tests
     #
     - name: Build and run examples and tests
+      run: |
         mkdir build_tests
         cd build_tests
         cmake .. -DENABLE_TESTS=ON -DCMAKE_Fortran_COMPILER=$FC

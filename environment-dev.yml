@@ -19,6 +19,7 @@ dependencies:
   - colorcet
   - gfortran
   - netcdf-fortran
+  - cmake
 variables:
   FC: gfortran
   # Debugging flags below

@@ -49,21 +49,31 @@ SET(SOURCES
 
 # Check if netcdf.mod exists in /usr/local/include, then copy it
 # TODO: Find a better way to use netcdf.mod
-set(NETCDF_DIR /usr/include)
 
-# Check if netcdf.mod exists in the specified directory
-if(EXISTS "${NETCDF_DIR}/netcdf.mod")
-    # Copy netcdf.mod to the Fortran module directory
-    file(COPY "${NETCDF_DIR}/netcdf.mod" DESTINATION ${CMAKE_Fortran_MODULE_DIRECTORY})
-else()
-    message(SEND_ERROR "netcdf.mod not found in ${NETCDF_DIR}.")
+find_package(NetCDF COMPONENTS C Fortran REQUIRED)
+message(STATUS "=============================== NETCDF")
+# List the available targets
+message(STATUS "Available NetCDF targets:")
+message(STATUS "  NetCDF::NetCDF -> ${NetCDF_LIBRARIES}")
+message(STATUS "  NetCDF::NetCDF_Fortran -> ${NetCDF_Fortran_LIBRARIES}")
+message(STATUS "=============================== NETCDF")
 
-    if(LINUX)
-        message(FATAL_ERROR "On Linux, you can install it using: `sudo apt-get install libnetcdff-dev`")
-    elseif(APPLE_ARM)
-        message(FATAL_ERROR "On macOS ARM (Apple Silicon), you can install it using: `brew install netcdf`")
+if (NOT WIN32)
+    set(NETCDF_DIR /usr/include)
+    # Check if netcdf.mod exists in the specified directory
+    if(EXISTS "${NETCDF_DIR}/netcdf.mod")
+        # Copy netcdf.mod to the Fortran module directory
+        file(COPY "${NETCDF_DIR}/netcdf.mod" DESTINATION ${CMAKE_Fortran_MODULE_DIRECTORY})
     else()
-        message(FATAL_ERROR "Please ensure NetCDF Fortran is installed and netcdf.mod is in ${NETCDF_DIR}.")
+        message(SEND_ERROR "netcdf.mod not found in ${NETCDF_DIR}.")
+
+        if(LINUX)
+            message(FATAL_ERROR "On Linux, you can install it using: `sudo apt-get install libnetcdff-dev`")
+        elseif(APPLE_ARM)
+            message(FATAL_ERROR "On macOS ARM (Apple Silicon), you can install it using: `brew install netcdf`")
+        else()
+            message(FATAL_ERROR "Please ensure NetCDF Fortran is installed and netcdf.mod is in ${NETCDF_DIR}.")
+        endif()
     endif()
 endif()
 
@@ -73,7 +83,7 @@ add_library(test_utils STATIC ${SOURCES})
 target_link_libraries(test_utils PUBLIC
     rte
     rrtmgp
-    netcdff
+    netCDF::netcdf
 )
 
 # Set the directory for Fortran module files

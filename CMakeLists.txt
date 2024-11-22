@@ -3,14 +3,18 @@ project(rte-rrtmgp LANGUAGES Fortran)
 
 set(LINUX     FALSE)
 set(APPLE_ARM FALSE)
+set(WINDOWS   FALSE)
 
 if (UNIX AND NOT APPLE)
     set(LINUX TRUE)
 elseif (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
     set(APPLE_ARM TRUE)
+elseif (WIN32)
+    set(WINDOWS TRUE)
 endif()
 
-set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
+# Define the option for enabling/disabling tests
+option(ENABLE_TESTS "Enable tests" OFF)
 
 set(RTE_KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
 set_property(CACHE RTE_KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
@@ -18,8 +22,11 @@ set_property(CACHE RTE_KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
 set(PRECISION "double" CACHE STRING "Select the kernel mode: double or single")
 set_property(CACHE PRECISION PROPERTY STRINGS "double" "single")
 
-set(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
-set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
+if (NOT WINDOWS)
+    set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
+    set(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
+    set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
+endif()
 
 string(TOUPPER ${PRECISION} TMP_PRECISION)
 add_definitions("-DUSE_${TMP_PRECISION}_PRECISION")
@@ -69,4 +76,7 @@ add_subdirectory(${RRTMGP_DIR})        # Build lib: rrtmgp.a
 # Enable testing with CTest
 enable_testing()
 
-add_subdirectory(${TESTS_DIR})         # Test & Check
+if (ENABLE_TESTS)
+    message(STATUS "Tests enabled")
+    add_subdirectory(${TESTS_DIR})     # Test & Check
+endif()

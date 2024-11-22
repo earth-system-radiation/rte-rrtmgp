@@ -1,5 +1,5 @@
 SET(TEST_DIR ${CMAKE_SOURCE_DIR}/tests)
-SET(CTEST_TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/)
+SET(CTEST_TEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 # Path to the test atmospheres file used for equivalence and variant tests
 SET(TEST_ATMOSPHERES ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc)
@@ -49,11 +49,22 @@ SET(SOURCES
 
 # Check if netcdf.mod exists in /usr/local/include, then copy it
 # TODO: Find a better way to use netcdf.mod
-SET(NETCDF_DIR /usr/include)
+set(NETCDF_DIR /usr/include)
+
+# Check if netcdf.mod exists in the specified directory
 if(EXISTS "${NETCDF_DIR}/netcdf.mod")
+    # Copy netcdf.mod to the Fortran module directory
     file(COPY "${NETCDF_DIR}/netcdf.mod" DESTINATION ${CMAKE_Fortran_MODULE_DIRECTORY})
 else()
-    message(FATAL_ERROR "netcdf.mod not found in ${NETCDF_DIR}")
+    message(SEND_ERROR "netcdf.mod not found in ${NETCDF_DIR}.")
+
+    if(LINUX)
+        message(FATAL_ERROR "On Linux, you can install it using: `sudo apt-get install libnetcdff-dev`")
+    elseif(APPLE_ARM)
+        message(FATAL_ERROR "On macOS ARM (Apple Silicon), you can install it using: `brew install netcdf`")
+    else()
+        message(FATAL_ERROR "Please ensure NetCDF Fortran is installed and netcdf.mod is in ${NETCDF_DIR}.")
+    endif()
 endif()
 
 add_library(test_utils STATIC ${SOURCES})
@@ -81,13 +92,10 @@ build_test(check_variants)
 # No tests are provided at the moment
 build_test(test_zenith_angle_spherical_correction)
 
-# Enable testing with CTest
-enable_testing()
-
 # Add unit tests
-add_custom_test(rte_optic_prop_unit_tests ${CTEST_TEST_DIR}/rte_optic_prop_unit_tests)
-add_custom_test(rte_lw_solver_unit_tests  ${CTEST_TEST_DIR}/rte_lw_solver_unit_tests)
-add_custom_test(rte_sw_solver_unit_tests  ${CTEST_TEST_DIR}/rte_sw_solver_unit_tests)
+add_custom_test(rte_optic_prop_unit_tests rte_optic_prop_unit_tests)
+add_custom_test(rte_lw_solver_unit_tests  rte_lw_solver_unit_tests)
+add_custom_test(rte_sw_solver_unit_tests  rte_sw_solver_unit_tests)
 
 # Add equivalence tests
 add_custom_test(check_equivalence_lw_g256 check_equivalence ${TEST_ATMOSPHERES} ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc)

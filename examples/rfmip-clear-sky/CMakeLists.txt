@@ -35,18 +35,16 @@ add_dependencies(rrtmgp_rfmip_lw rfmip_clear_sky_test_inputs)
 add_dependencies(rrtmgp_rfmip_sw rfmip_clear_sky_test_inputs)
 
 # Add rfmip tests
-add_custom_test(rrtmgp_rfmip_test_lw rrtmgp_rfmip_lw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc)
-add_custom_test(rrtmgp_rfmip_test_sw rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc)
+add_custom_test(rfmip_test_lw rrtmgp_rfmip_lw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc)
+add_custom_test(rfmip_test_sw rrtmgp_rfmip_sw 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc)
 
-# Add a custom command to run the Python check
-add_custom_target(rrtmgp_rfmip_check
-    COMMAND ${CMAKE_COMMAND} -E env ${Python_EXECUTABLE}
+# Add rfmip check test
+add_custom_test(check_rfmip_lw_sw
+    ${CMAKE_COMMAND} -E env ${Python_EXECUTABLE}
         ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py
         --ref_dir ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference
         --tst_dir ${CMAKE_CURRENT_BINARY_DIR}
         --variables rld rlu rsd rsu
-        --file_names r??_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+        --file_names rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
         --failure_threshold ${FAILURE_THRESHOLD}
-    COMMENT "Running Python check script with FAILURE_THRESHOLD=${FAILURE_THRESHOLD}"
-    VERBATIM
 )

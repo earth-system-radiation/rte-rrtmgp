@@ -36,7 +36,7 @@ set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
 add_definitions("-DRTE_USE_${PRECISION}")
 message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
 
-set(CMAKE_Fortran_FLAGS "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL" CACHE STRING "Select Fortran compile flags")
+set(CMAKE_Fortran_FLAGS "" CACHE STRING "Select Fortran compile flags")
 
 if(NOT WINDOWS)
     set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "gfortran-10" "gfortran-11" "gfortran-12" "f77")

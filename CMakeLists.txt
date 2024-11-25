@@ -41,7 +41,7 @@ message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
 set(CMAKE_Fortran_FLAGS "" CACHE STRING "Select Fortran compile flags")
 
 if(NOT WINDOWS)
-    set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
+    set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "ifx" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
     set(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
     set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
 else()

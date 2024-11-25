@@ -41,7 +41,7 @@ message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
 set(CMAKE_Fortran_FLAGS "" CACHE STRING "Select Fortran compile flags")
 
 if(NOT WINDOWS)
-    set(PREFERRED_FC_COMPILERS "gfortran" "ifort" "ifx" "gfortran-10" "gfortran-11" "gfortran-12" "f77")
+    set(PREFERRED_FC_COMPILERS "gfortran" "gfortran-10" "gfortran-11" "gfortran-12" "ifort" "ifx" "nvfortran" "f77")
     set(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
     set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
 else()
@@ -97,6 +97,11 @@ add_subdirectory(rrtmgp-kernels)  # Build library: rrtmgpkernels.a
 add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp.a
 
 if(ENABLE_TESTS)
+    find_package(Python REQUIRED COMPONENTS Interpreter)
+
+    # Define failure threshold as an environment variable
+    set(FAILURE_THRESHOLD 7.e-4 CACHE STRING "Default failure threshold for tests")
+
     # Enable testing with CTest
     enable_testing()
 

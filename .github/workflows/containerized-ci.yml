@@ -73,6 +73,12 @@ jobs:
         apt-get update
         apt-get install -y git cmake
     #
+    # Update Failure threshold if single precision
+    #
+    - name: Failure threshold
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
+    #
     # Build libraries, examples and tests (expect success)
     #
     - name: Build libraries, examples and tests (expect success)
@@ -96,13 +102,6 @@ jobs:
       if: steps.build-success.outcome != 'skipped'
       run: |
         ctest -V --test-dir build
-    #
-    # Relax failure thresholds for single precision
-    #
-    - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP' && steps.build-success.outcome != 'skipped'
-      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
-    #
     # Generate validation plots
     #
     - name: Generate validation plots

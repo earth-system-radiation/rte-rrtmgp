@@ -18,11 +18,6 @@ target_link_libraries(examples_utils PUBLIC
 
 message(STATUS "Building lib examples_utils.a")
 
-find_package(Python REQUIRED COMPONENTS Interpreter)
-
-# Define failure threshold as an environment variable
-set(FAILURE_THRESHOLD 7.e-4 CACHE STRING "Default failure threshold for tests")
-
 # TODO: Fix all-sky
 add_subdirectory(all-sky)
 add_subdirectory(rfmip-clear-sky)

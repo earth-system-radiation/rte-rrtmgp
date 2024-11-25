@@ -19,6 +19,7 @@ jobs:
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
       RRTMGP_ROOT: ${{ github.workspace }}
       RTE_KERNELS: extern
+      RRTMGP_DATA_VERSION: v1.8.2
     steps:
     #
     # Check out repository under $GITHUB_WORKSPACE
@@ -31,6 +32,9 @@ jobs:
     - name: Build libraries
       run: |
         $FC --version
-        mkdir -p build_libs
-        cmake -S . -B build_libs -DCMAKE_Fortran_COMPILER=$FC
-        cmake --build build_libs --config Release -- -j8
+        cmake -S . -B build \
+            -DCMAKE_Fortran_COMPILER=$FC \
+            -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
+            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
+            -DRTE_KERNEL_MODE=$RTE_KERNELS
+        cmake --build build --config Release -- -j8

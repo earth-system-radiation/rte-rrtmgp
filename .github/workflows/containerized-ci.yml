@@ -61,6 +61,18 @@ jobs:
 
     steps:
     #
+    # Check out repository under $GITHUB_WORKSPACE
+    #
+    - name: Check out code
+      uses: actions/checkout@v4
+    #
+    # Install required tools
+    #
+    - name: Install Required Tools
+      run: |
+        apt-get update
+        apt-get install -y git cmake libnetcdff-dev
+    #
     # Build libraries, examples and tests (expect success)
     #
     - name: Build libraries, examples and tests (expect success)
@@ -83,7 +95,7 @@ jobs:
     - name: Run examples and tests
       if: steps.build-success.outcome != 'skipped'
       run: |
-        ctest -v --test-dir build
+        ctest -V --test-dir build
     #
     # Relax failure thresholds for single precision
     #

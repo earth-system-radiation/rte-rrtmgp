@@ -48,13 +48,6 @@ jobs:
     #
     # Check out data
     #
-    - name: Check out data
-      uses: actions/checkout@v4
-      with:
-        repository: earth-system-radiation/rrtmgp-data
-        path: rrtmgp-data
-        ref: v1.8.2
-    #
     # Synchronize the package index
     #
     - name: Synchronize the package index

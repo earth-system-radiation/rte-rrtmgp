@@ -9,3 +9,4 @@ dependencies:
   - xarray
   - dask
   - numpy
+  - cmake

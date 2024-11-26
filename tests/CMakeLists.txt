@@ -1,5 +1,5 @@
 set(TEST_INPUTS
-    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${TEST_ATMOSPHERES}
 )
 
 # Copy required test inputs to the build directory
@@ -67,3 +67,12 @@ add_custom_test(check_equivalence_sw_g112 check_equivalence multiple_input4MIPs_
 # Add variant tests
 add_custom_test(check_variants_lw check_variants multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc)
 add_custom_test(check_variants_sw check_variants multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc)
+
+# Add a custom target to generate validation plots
+add_custom_target(validation-plots
+    COMMAND ${CMAKE_COMMAND} -E env ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/validation-plots.py
+        --input_file multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating validation plots using validation-plots.py"
+)

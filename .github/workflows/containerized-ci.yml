@@ -106,8 +106,8 @@ jobs:
     #
     - name: Generate validation plots
       if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
-      working-directory: tests
-      run: python validation-plots.py
+      run: |
+        cmake --build build --target validation-plots
     #
     # Upload validation plots
     #
@@ -116,4 +116,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: valdiation-plot
-        path: tests/validation-figures.pdf
+        path: build/tests/validation-figures.pdf

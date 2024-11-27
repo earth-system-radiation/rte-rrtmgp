@@ -16,9 +16,10 @@ jobs:
     env:
       # Core variables:
       FC: gfortran-12
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
       RRTMGP_ROOT: ${{ github.workspace }}
       RTE_KERNELS: extern
+      RTE_BOOL: C
       RRTMGP_DATA_VERSION: v1.8.2
     steps:
     #
@@ -36,5 +37,6 @@ jobs:
             -DCMAKE_Fortran_COMPILER=$FC \
             -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
             -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
-            -DRTE_KERNEL_MODE=$RTE_KERNELS
+            -DBOOL_TYPE=$RTE_BOOL \
+            -DKERNEL_MODE=$RTE_KERNELS
         cmake --build build --config Release -- -j8

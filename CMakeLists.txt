@@ -23,20 +23,20 @@ option(ENABLE_TESTS "Enable tests" OFF)
 set(RRTMGP_DATA_VERSION "v1.8.2" CACHE STRING "Select what version to clone for rrtmgp-data")
 set(RRTMGP_DATA_REPO https://github.com/earth-system-radiation/rrtmgp-data.git)
 
-set(RTE_KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
-set_property(CACHE RTE_KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
+set(KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
+set_property(CACHE KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
 
-if("${FP_MODEL}" STREQUAL "SP")
-    set(PRECISION "SP" CACHE STRING "Select the floating point precision: double or single" FORCE)
-elseif("${FP_MODEL}" STREQUAL "DP")
-    set(PRECISION "DP" CACHE STRING "Select the floating point precision: double or single" FORCE)
-else()
-    set(PRECISION "DP" CACHE STRING "Select the floating point precision: double or single")
-endif()
+set(PRECISION "DP" CACHE STRING "Select the floating point precision: double or single")
 set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
 
 add_definitions("-DRTE_USE_${PRECISION}")
 message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
+
+set(BOOL_TYPE "C" CACHE STRING "Select the bool type: C, Fortran")
+set_property(CACHE BOOL_TYPE PROPERTY STRINGS "C" "Fortran")
+
+add_definitions("-DRTE_USE_${BOOL_TYPE}BOOL")
+message(STATUS "Adding compiler definition -DRTE_USE_${BOOL_TYPE}BOOL")
 
 set(CMAKE_Fortran_FLAGS "" CACHE STRING "Select Fortran compile flags")
 
@@ -79,7 +79,7 @@ if(NOT rrtmgp-data_POPULATED)
     FetchContent_MakeAvailable(rrtmgp-data)
 endif()
 
-message(STATUS "RTE_KERNEL_MODE: ${RTE_KERNEL_MODE}")
+message(STATUS "KERNEL_MODE: ${KERNEL_MODE}")
 message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
 message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 

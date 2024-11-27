@@ -90,8 +90,8 @@ jobs:
             -DCMAKE_Fortran_COMPILER=$FC \
             -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
             -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
-            -DFP_MODEL=$FP_MODEL \
-            -DRTE_KERNEL_MODE=$RTE_KERNELS \
+            -DPRECISION=$FP_MODEL \
+            -DKERNEL_MODE=$RTE_KERNELS \
             -DENABLE_TESTS=ON \
             -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
         cmake --build build --config Release -- -j8

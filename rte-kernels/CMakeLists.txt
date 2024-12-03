@@ -1,0 +1,32 @@
+set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+if (KERNEL_MODE STREQUAL "accel")
+    set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/accel)
+elseif(KERNEL_MODE STREQUAL "extern")
+    set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/api)
+endif()
+
+if (KERNEL_MODE STREQUAL "accel")
+    set(FLUX_REDUCTION  ${CMAKE_CURRENT_SOURCE_DIR}/mo_fluxes_broadband_kernels.F90)
+    set(ARRAY_UTILITIES ${CMAKE_CURRENT_SOURCE_DIR}/mo_rte_util_array.F90)
+else()
+    set(FLUX_REDUCTION  ${LOCAL_SOURCE_DIR}/mo_fluxes_broadband_kernels.F90)
+    set(ARRAY_UTILITIES ${LOCAL_SOURCE_DIR}/mo_rte_util_array.F90)
+endif()
+
+set(OPTICAL_PROPERTIES ${LOCAL_SOURCE_DIR}/mo_optical_props_kernels.F90)
+set(RADIATIVE_TRANSFER ${LOCAL_SOURCE_DIR}/mo_rte_solver_kernels.F90)
+
+set(SOURCES
+    ${FLUX_REDUCTION}
+    ${ARRAY_UTILITIES}
+    ${OPTICAL_PROPERTIES}
+    ${RADIATIVE_TRANSFER}
+)
+
+add_library(rtekernels STATIC ${SOURCES})
+target_link_libraries(rtekernels PRIVATE
+    rtef_kind
+)
+
+message(STATUS "Building lib rtekernels.a")

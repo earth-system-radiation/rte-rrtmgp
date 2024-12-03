@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import colorcet as cc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -7,6 +9,7 @@ import warnings
 import xarray as xr
 from matplotlib.backends.backend_pdf import PdfPages
 
+import argparse
 
 def mae(diff, col_dim):
     #
@@ -62,6 +65,21 @@ def construct_lbl_esgf_root(var, esgf_node="llnl"):
 
 ########################################################################
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--input_file",
+        help="Path to the input NetCDF file (test_atmosphere.nc)."
+    )
+    parser.add_argument(
+        "--output_pdf",
+        help="Path to the output PDF file for validation plots.",
+        default="validation-figures.pdf"
+    )
+    args = parser.parse_args()
+
+    input_file = args.input_file
+    output_pdf = args.output_pdf
+
     warnings.simplefilter("ignore", xr.SerializationWarning)
     #
     # Reference values from LBLRTM - download locally, since OpenDAP access is
@@ -87,7 +105,7 @@ def main():
     #
     # Open the test results
     #
-    gp = xr.open_dataset("test_atmospheres.nc")
+    gp = xr.open_dataset(input_file)
     #
     # Does the flux plus the Jacobian equal a calculation with perturbed surface
     # temperature?
@@ -120,7 +138,7 @@ def main():
     plev.load()
     gpi.load()
     lbli.load()
-    with PdfPages('validation-figures.pdf') as pdf:
+    with PdfPages(output_pdf) as pdf:
         ########################################################################
         # Longwave
         ########################################################################

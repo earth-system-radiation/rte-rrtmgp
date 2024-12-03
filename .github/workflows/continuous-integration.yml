@@ -25,11 +25,13 @@ jobs:
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.fpmodel }}"
-      # Make variables:
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
+      # CMake variables:
       FCINCLUDE: -I/usr/include
-      RRTMGP_ROOT: ${{ github.workspace }}
-      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
+      FP_MODEL: ${{ matrix.fpmodel }}
+      RTE_KERNELS: default
+      RTE_BOOL: C
+      RRTMGP_DATA_VERSION: v1.8.2
       RUN_CMD:
       FAILURE_THRESHOLD: 7.e-4
     steps:
@@ -46,13 +48,6 @@ jobs:
       uses: actions/checkout@v4
     #
     # Check out data
-    #
-    - name: Check out data
-      uses: actions/checkout@v4
-      with:
-        repository: earth-system-radiation/rrtmgp-data
-        path: rrtmgp-data
-        ref: v1.8.2
     #
     # Synchronize the package index
     #
@@ -87,17 +82,22 @@ jobs:
     #
     # Build libraries, examples and tests
     #
-    - name: Build libraries
+    - name: Build libraries and tests
       run: |
         $FC --version
-        make -j4 libs
+        cmake -S . -B build \
+            -DCMAKE_Fortran_COMPILER=$FC \
+            -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
+            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
+            -DPRECISION=$FP_MODEL \
+            -DBOOL_TYPE=$RTE_BOOL \
+            -DKERNEL_MODE=$RTE_KERNELS \
+            -DENABLE_TESTS=ON \
+            -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
+        cmake --build build --config Release -- -j8
     #
-    # Run examples and tests
+    # Run examples, tests and checks
     #
-    - name: Build and run examples and tests
-      run: make -j4 tests
-    #
-    # Compare the results
-    #
-    - name: Compare the results
-      run: make -j4 check
+    - name: Run examples, tests and checks
+      run: |
+        ctest -V --test-dir build

@@ -48,12 +48,12 @@ jobs:
     env:
       # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: ${{ matrix.fcflags }} -DRTE_USE_${{ matrix.fpmodel}}
-      # Make variables:
+      FCFLAGS: ${{ matrix.fcflags }}
+      # CMake variables:
       NFHOME: /opt/netcdf-fortran
-      RRTMGP_ROOT: ${{ github.workspace }}
-      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
+      FP_MODEL: ${{ matrix.fpmodel }}
       RTE_KERNELS: ${{ matrix.rte-kernels }}
+      RRTMGP_DATA_VERSION: v1.8.2
       RUN_CMD:
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
       OMP_TARGET_OFFLOAD: DISABLED
@@ -61,18 +61,23 @@ jobs:
 
     steps:
     #
-    # Checks-out repository under $GITHUB_WORKSPACE
+    # Check out repository under $GITHUB_WORKSPACE
     #
-    - uses: actions/checkout@v4
-    #
-    # Check out data
-    #
-    - name: Check out data
+    - name: Check out code
       uses: actions/checkout@v4
-      with:
-        repository: earth-system-radiation/rrtmgp-data
-        path: rrtmgp-data
-        ref: v1.8.2
+    #
+    # Install required tools
+    #
+    - name: Install Required Tools
+      run: |
+        apt-get update
+        apt-get install -y git cmake
+    #
+    # Update Failure threshold if single precision
+    #
+    - name: Failure threshold
+      if: matrix.fpmodel == 'SP'
+      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
     #
     # Build libraries, examples and tests (expect success)
     #
@@ -81,51 +86,28 @@ jobs:
       if: matrix.fortran-compiler != 'ifx' || matrix.rte-kernels != 'accel'
       run: |
         $FC --version
-        make -j4 libs
-    #
-    # Build libraries, examples and tests (expect failure)
-    #
-    - name: Build libraries, examples and tests (expect failure)
-      if: steps.build-success.outcome == 'skipped'
-      shell: bash
-      run: |
-        $FC --version
-        make -j4 libs 2> >(tee make.err >&2) && {
-          echo "Unexpected success"
-          exit 1
-        } || {
-          grep make.err -e 'Internal compiler error' && {
-            echo "Expected failure"
-          } || {
-            echo "Unexpected failure"
-            exit 1
-          }
-        }
+        cmake -S . -B build \
+            -DCMAKE_Fortran_COMPILER=$FC \
+            -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
+            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
+            -DPRECISION=$FP_MODEL \
+            -DKERNEL_MODE=$RTE_KERNELS \
+            -DENABLE_TESTS=ON \
+            -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
+        cmake --build build --config Release -- -j8
     #
     # Run examples and tests
     #
     - name: Run examples and tests
       if: steps.build-success.outcome != 'skipped'
-      run: make -j4 tests
-    #
-    # Relax failure thresholds for single precision
-    #
-    - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP' && steps.build-success.outcome != 'skipped'
-      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
-    #
-    # Compare the results
-    #
-    - name: Compare the results
-      if: steps.build-success.outcome != 'skipped'
-      run: make -j4 check
-    #
+      run: |
+        ctest -V --test-dir build
     # Generate validation plots
     #
     - name: Generate validation plots
       if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
-      working-directory: tests
-      run: python validation-plots.py
+      run: |
+        cmake --build build --target validation-plots
     #
     # Upload validation plots
     #
@@ -134,4 +116,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: valdiation-plot
-        path: tests/validation-figures.pdf
+        path: build/tests/validation-figures.pdf

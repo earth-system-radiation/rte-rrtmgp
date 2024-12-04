@@ -20,8 +20,8 @@
     #
     - name: Build libraries and tests
       run: |
-        $FC --version
-        cmake -S . -B build \
+        - $FC --version
+        - cmake -S . -B build \
             -DCMAKE_Fortran_COMPILER=$FC \
             -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
             -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_TAG \
@@ -30,7 +30,7 @@
             -DKERNEL_MODE=$RTE_KERNELS \
             -DENABLE_TESTS=ON \
             -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
-        cmake --build build --config Release -- -j8
+        - cmake --build build --config Release -- -j8
     #
     # Run examples, tests and checks
     #

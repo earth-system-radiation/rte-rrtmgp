@@ -21,17 +21,22 @@
     #
     # Build libraries, examples and tests
     #
-    - ${FC} ${VERSION_FCFLAGS}
-    - make libs
+    - name: Build libraries and tests
+      run: |
+        $FC --version
+        cmake -S . -B build \
+            -DCMAKE_Fortran_COMPILER=$FC \
+            -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
+            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
+            -DPRECISION=$FP_MODEL \
+            -DBOOL_TYPE=$RTE_BOOL \
+            -DKERNEL_MODE=$RTE_KERNELS \
+            -DENABLE_TESTS=ON \
+            -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
+        cmake --build build --config Release -- -j8
     #
-    # Check out data
+    # Run examples, tests and checks
     #
-    - git clone --depth 1 ${RRTMGP_DATA_TAG:+--branch "${RRTMGP_DATA_TAG}"} "${RRTMGP_DATA_REPO}" "${RRTMGP_DATA}"
-    #
-    # Run examples and tests
-    #
-    - make tests
-    #
-    # Compare the results
-    #
-    - make check
+    - name: Run examples, tests and checks
+      run: |
+        ctest -V --test-dir build

@@ -110,8 +110,8 @@ if(ENABLE_TESTS)
     # Manually locate the directory containing netcdf.mod
     # and the NetCDF Fortran library
     if (NOT WIN32)
-        find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS /usr/include)
-        find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS /usr/lib)
+        find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS /usr/include $ENV{NFHOME}/include)
+        find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS /usr/lib $ENV{NFHOME}/lib)
     else()
         find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS $ENV{CONDA_PREFIX}/include)
         find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS $ENV{CONDA_PREFIX}/lib)

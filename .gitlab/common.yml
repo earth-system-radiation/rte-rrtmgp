@@ -13,9 +13,6 @@
     # Make variables:
     MAKEFLAGS: -j8
     RRTMGP_ROOT: ${CI_PROJECT_DIR}
-    RRTMGP_DATA: ${CI_PROJECT_DIR}/rrtmgp-data
-    # Convenience variables:
-    RRTMGP_DATA_REPO: https://github.com/earth-system-radiation/rrtmgp-data.git
     RRTMGP_DATA_TAG: v1.8.2
   script:
     #
@@ -27,8 +24,8 @@
         cmake -S . -B build \
             -DCMAKE_Fortran_COMPILER=$FC \
             -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
-            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
-            -DPRECISION=$FP_MODEL \
+            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_TAG \
+            -DPRECISION=$FPMODEL \
             -DBOOL_TYPE=$RTE_BOOL \
             -DKERNEL_MODE=$RTE_KERNELS \
             -DENABLE_TESTS=ON \

@@ -24,6 +24,8 @@ jobs:
         fpmodel: [DP, SP]
     env:
       # Core variables:
+      CMAKE_Fortran_COMPILER: ${{ matrix.fortran-compiler }}
+      CMAKE_Fortran_FLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
       FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
       # CMake variables:
@@ -86,8 +88,6 @@ jobs:
       run: |
         $FC --version
         cmake -S . -B build \
-            -DCMAKE_Fortran_COMPILER=$FC \
-            -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
             -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
             -DPRECISION=$FP_MODEL \
             -DBOOL_TYPE=$RTE_BOOL \

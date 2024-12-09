@@ -52,7 +52,7 @@ jobs:
       # Release        - works with conda gfortran
       # RelWithDebInfo - works
       # MinSizeRel     - works
-      BUILD_TYPE: MinSizeRel
+      BUILD_TYPE: Debug
     runs-on: ${{ matrix.os }}
     steps:
       #

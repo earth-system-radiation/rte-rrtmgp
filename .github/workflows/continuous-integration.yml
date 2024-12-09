@@ -79,7 +79,7 @@ jobs:
           FC_VERSION="${FC_VERSION##*-}"
           echo "FC version: $FC_VERSION"
 
-          conda install -c conda-forge gfortran=$FC_VERSION gcc=$FC_VERSION netcdf-fortran ninja -y
+          conda install -c conda-forge gfortran=$FC_VERSION netcdf-fortran ninja -y
       #
       # Build libraries, examples, and tests
       #

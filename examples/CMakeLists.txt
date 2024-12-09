@@ -18,6 +18,5 @@ target_link_libraries(examples_utils PUBLIC
     ${NETCDF_Fortran_LIBRARY}
 )
 
-# TODO: Fix all-sky
 add_subdirectory(all-sky)
 add_subdirectory(rfmip-clear-sky)

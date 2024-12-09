@@ -34,8 +34,10 @@ option(ENABLE_TESTS "Enable tests" OFF)
 set(RRTMGP_DATA_VERSION "v1.8.2" CACHE STRING "Select what version to clone for rrtmgp-data")
 set(RRTMGP_DATA_REPO https://github.com/earth-system-radiation/rrtmgp-data.git)
 
-set(KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
-set_property(CACHE KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
+set(PREFERRED_KERNEL_MODES "default" "accel" "extern")
+
+set(KERNEL_MODE "default" CACHE STRING "Select the kernel mode: ${PREFERRED_KERNEL_MODES}")
+set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
 
 set(PRECISION "DP" CACHE STRING "Select the floating point precision: double or single")
 set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
@@ -51,8 +53,9 @@ message(STATUS "Adding compiler definition -DRTE_USE_${BOOL_TYPE}BOOL")
 
 set(CMAKE_Fortran_FLAGS "" CACHE STRING "Select Fortran compile flags")
 
+set(PREFERRED_FC_COMPILERS "gfortran" "gfortran-10" "gfortran-11" "gfortran-12" "ifort" "ifx" "nvfortran" "f77")
+
 if(NOT WINDOWS)
-    set(PREFERRED_FC_COMPILERS "gfortran" "gfortran-10" "gfortran-11" "gfortran-12" "ifort" "ifx" "nvfortran" "f77")
     set(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
     set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
 else()
@@ -90,12 +93,14 @@ if(NOT rrtmgp-data_POPULATED)
     FetchContent_MakeAvailable(rrtmgp-data)
 endif()
 
-message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (default, accel, or extern)")
+message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (${PREFERRED_KERNEL_MODES})")
 message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
 message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 
 # Set the directory for Fortran module files
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
+
+include(common.cmake)
 
 add_subdirectory(rte-kernels)     # Build library: rtekernels
 add_subdirectory(rte-frontend)    # Build library: rte
@@ -104,4 +109,8 @@ add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp
 
 if(ENABLE_TESTS)
     include(tests.cmake)
+
+    # Add the tests subdirectory for building and running tests
+    add_subdirectory(examples) # Build: Test & Check
+    add_subdirectory(tests)    # Build: Test & Check
 endif()

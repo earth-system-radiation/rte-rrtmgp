@@ -60,8 +60,4 @@ if(ENABLE_TESTS)
     endfunction()
 
     set(TEST_ATMOSPHERES ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc)
-
-    # Add the tests subdirectory for building and running tests
-    add_subdirectory(examples) # Build: Test & Check
-    add_subdirectory(tests)    # Build: Test & Check
 endif()

@@ -79,7 +79,7 @@ if(NOT rrtmgp-data_POPULATED)
     FetchContent_MakeAvailable(rrtmgp-data)
 endif()
 
-message(STATUS "KERNEL_MODE: ${KERNEL_MODE}")
+message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (default, accel, or extern)")
 message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
 message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 
@@ -92,15 +92,10 @@ add_subdirectory(rrtmgp-kernels)  # Build library: rrtmgpkernels
 add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp
 
 if(ENABLE_TESTS)
-    find_package(Python REQUIRED COMPONENTS Interpreter)
-
-    # Define failure threshold as an environment variable
-    set(FAILURE_THRESHOLD 7.e-4 CACHE STRING "Default failure threshold for tests")
-
-    # Enable testing with CTest
-    enable_testing()
 
     message(STATUS "Tests enabled")
+
+    find_package(Python REQUIRED COMPONENTS Interpreter)
 
     # Manually locate the directory containing netcdf.mod
     # and the NetCDF Fortran library
@@ -121,6 +116,14 @@ if(ENABLE_TESTS)
         message(STATUS "Found NetCDF module library dir: ${NETCDF_Fortran_LIBRARY}")
     endif()
 
+    # Define failure threshold for python tests to use
+    set(FAILURE_THRESHOLD 7.e-4 CACHE STRING "Default failure threshold for tests")
+
+    # Enable testing with CTest
+    enable_testing()
+
+    message(STATUS "CTest failure threshold: ${FAILURE_THRESHOLD}")
+    
     # Function to define a custom test for CTest
     # Arguments:
     #   TEST_NAME - The name of the test in CTest

@@ -95,6 +95,12 @@ jobs:
           RANLIB_PATH="$(which ranlib)"
           FC_PATH="$(which gfortran)"
 
+          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+            AR_PATH="$AR_PATH.exe"
+            RANLIB_PATH="$RANLIB_PATH.exe"
+            FC_PATH="$FC_PATH.exe"
+          fi
+
           echo "Using AR: $AR_PATH"
           echo "Using RANLIB: $RANLIB_PATH"
           echo "Using FC: $FC_PATH"

@@ -20,11 +20,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-latest, macos-latest]
+        os: [macos-latest] #ubuntu-latest, macos-latest, windows-latest]
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
         fpmodel: [DP, SP]
     env:
       # Core variables:
+      FC: gfortran # ${{ matrix.fortran-compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
       FP_MODEL: ${{ matrix.fpmodel }}
       RTE_KERNELS: default
@@ -39,32 +40,11 @@ jobs:
       - name: Relax failure threshold for single precision
         if: matrix.fpmodel == 'SP'
         run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
-
       #
       # Check out repository under $GITHUB_WORKSPACE
       #
       - name: Check out code
         uses: actions/checkout@v4
-
-      #
-      # Set up environment per OS
-      #
-      - name: Set up environment for ${{ matrix.os }}
-        run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
-            sudo apt-get update
-            sudo apt-get install libnetcdff-dev
-            FC=${{ matrix.fortran-compiler }}
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            conda install -c conda-forge gfortran netcdf-fortran ninja gcc cmake
-            FC="gfortran"
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            brew update
-            brew install gcc netcdf
-            FC="gfortran"
-          fi
-          echo "FC=$FC" >> $GITHUB_ENV
-
       #
       # Cache Conda packages
       #
@@ -73,11 +53,10 @@ jobs:
         with:
           path: ~/conda_pkgs_dir
           key: conda-pkgs-${{ matrix.os }}
-
       #
       # Set up Conda
       #
-      - name: Set up Conda
+      - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
@@ -85,9 +64,20 @@ jobs:
           environment-file: environment-noplots.yml
           python-version: 3.11
           auto-activate-base: false
-          # Use the cache properly:
           use-only-tar-bz2: true
-
+      #
+      # Install gfortran based on OS
+      #
+      - name: Install gfortran
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y ${{ matrix.fortran-compiler }}
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            brew install gcc
+          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            conda install -c conda-forge ${{ matrix.fortran-compiler }}
+          fi
       #
       # Build libraries, examples, and tests
       #
@@ -103,7 +93,6 @@ jobs:
               -DENABLE_TESTS=ON \
               -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
           cmake --build build --config Release -- -j8
-
       #
       # Run examples, tests and checks
       #

@@ -18,8 +18,9 @@ cmake -S . -B build -G "Ninja" \
         -DBOOL_TYPE=$RTE_BOOL \
         -DKERNEL_MODE=$RTE_KERNELS \
         -DENABLE_TESTS=ON \
-        -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
+        -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD \
+        -DCMAKE_BUILD_TYPE=Release
 
-# cmake --build build --config Release --target all --parallel
+# cmake --build build --target all --parallel
 
 # ctest --test-dir build/ -V

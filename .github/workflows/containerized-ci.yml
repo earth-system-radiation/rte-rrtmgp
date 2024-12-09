@@ -51,7 +51,6 @@ jobs:
       FCFLAGS: ${{ matrix.fcflags }}
       # CMake variables:
       NFHOME: /opt/netcdf-fortran
-      RTE_BOOL: C
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RRTMGP_DATA_VERSION: v1.8.2
       BUILD_TYPE: Debug
@@ -93,7 +92,6 @@ jobs:
               -DCMAKE_Fortran_FLAGS="${{ env.FCFLAGS }}" \
               -DRRTMGP_DATA_VERSION=${{ env.RRTMGP_DATA_VERSION }} \
               -DPRECISION=${{ matrix.fpmodel }} \
-              -DBOOL_TYPE=${{ env.RTE_BOOL }} \
               -DKERNEL_MODE=${{ env.RTE_KERNELS }} \
               -DENABLE_TESTS=ON \
               -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}

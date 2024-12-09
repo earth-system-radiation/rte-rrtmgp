@@ -45,7 +45,7 @@ jobs:
       FC: ${{ matrix.compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
       RTE_KERNELS: default
-      RTE_BOOL: C
+      RTE_CBOOL: ON
       RRTMGP_DATA_VERSION: v1.8.2
       FAILURE_THRESHOLD: 7.e-4
       # Debug          - works
@@ -134,7 +134,7 @@ jobs:
               -DCMAKE_RANLIB="$RANLIB_PATH" \
               -DRRTMGP_DATA_VERSION=${{ env.RRTMGP_DATA_VERSION }} \
               -DPRECISION=${{ matrix.fpmodel }} \
-              -DBOOL_TYPE=${{ env.RTE_BOOL }} \
+              -DUSE_C_BOOL=${{ env.RTE_CBOOL }} \
               -DKERNEL_MODE=${{ env.RTE_KERNELS }} \
               -DENABLE_TESTS=ON \
               -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}

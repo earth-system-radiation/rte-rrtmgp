@@ -34,13 +34,13 @@ jobs:
             toolchain: {compiler: gcc, version: 11}
         include:
           - toolchain: {compiler: gcc, version: 10}
-            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
           - toolchain: {compiler: gcc, version: 11}
-            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
           - toolchain: {compiler: gcc, version: 12}
-            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
           - toolchain: {compiler: gcc, version: 13}
-            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
     env:
       RTE_KERNELS: default
       RTE_BOOL: C
@@ -113,8 +113,9 @@ jobs:
               -DCMAKE_AR="$AR_PATH" \
               -DCMAKE_RANLIB="$RANLIB_PATH" \
               -DRRTMGP_DATA_VERSION=${{ env.RRTMGP_DATA_VERSION }} \
-              -DFP_MODEL=${{ matrix.fpmodel }} \
-              -DRTE_KERNEL_MODE=${{ env.RTE_KERNELS }} \
+              -DPRECISION=${{ matrix.fpmodel }} \
+              -DBOOL_TYPE=${{ env.RTE_BOOL }} \
+              -DKERNEL_MODE=${{ env.RTE_KERNELS }} \
               -DENABLE_TESTS=ON \
               -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}
 

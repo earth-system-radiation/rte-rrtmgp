@@ -25,6 +25,8 @@ target_link_libraries(all_sky_utils PRIVATE
     examples_utils
 )
 
+message(STATUS "Configuring lib all_sky_utils")
+
 # Build tests
 build_test(rrtmgp_allsky all_sky_utils examples_utils)
 

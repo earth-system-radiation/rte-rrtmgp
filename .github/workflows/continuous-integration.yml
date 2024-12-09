@@ -21,13 +21,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, macos-13, windows-2022]
-        compiler: [gfortran-10, gfortran-11, gfortran-12, gfortran-13]
+        compiler: [gfortran-10, gfortran-11, gfortran-12, gfortran-13, gfortran-14]
         fpmodel: [DP, SP]
         exclude:
           - os: windows-2022
             compiler: gfortran-10
           - os: windows-2022
             compiler: gfortran-11
+          - os: windows-2022
+            compiler: gfortran-12
     env:
       FC: ${{ matrix.compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
@@ -91,6 +93,9 @@ jobs:
 
           echo "Using AR: $AR_PATH"
           echo "Using RANLIB: $RANLIB_PATH"
+
+          # Show FC version
+          ${{ env.FC }} --version
 
           # Run CMake
           cmake -S . -B build -G "Ninja" \

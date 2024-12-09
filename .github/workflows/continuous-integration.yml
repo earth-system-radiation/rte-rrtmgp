@@ -22,6 +22,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04, macos-13, windows-2022]
         compiler: [gfortran-10, gfortran-11, gfortran-12, gfortran-13, gfortran-14]
+        use-conda-compiler: [true, false]
         fpmodel: [DP, SP]
         # Conda does not contain gfortran-10/11/12 for windows and gfortran-14 for macos
         exclude:
@@ -31,7 +32,21 @@ jobs:
             compiler: gfortran-11
           - os: windows-2022
             compiler: gfortran-12
+          - os: windows-2022
+            compiler: gfortran-14
+          - os: windows-2022
+            use-conda-compiler: false
+
           - os: macos-13
+            compiler: gfortran-14
+          - os: macos-13
+            use-conda-compiler: false
+
+          - os: ubuntu-22.04
+            use-conda-compiler: false
+            compiler: gfortran-13
+          - os: ubuntu-22.04
+            use-conda-compiler: false
             compiler: gfortran-14
     env:
       FC: ${{ matrix.compiler }}
@@ -84,13 +99,16 @@ jobs:
           FC_VERSION="${FC_VERSION##*-}"
           echo "FC version: $FC_VERSION"
 
-          conda install -c conda-forge gfortran=$FC_VERSION netcdf-fortran ninja -y
+          conda install -c conda-forge netcdf-fortran ninja -y
+
+          if ${{ matrix.use-conda-compiler }}; then
+            conda install -c conda-forge gfortran=$FC_VERSION -y
+          fi
       #
       # Build libraries, examples, and tests
       #
       - name: Build libraries and tests
         run: |
-          # Set platform-specific variables
           AR_PATH="$(which ar)"
           RANLIB_PATH="$(which ranlib)"
           FC_PATH="$(which gfortran)"
@@ -99,6 +117,11 @@ jobs:
             AR_PATH="$AR_PATH.exe"
             RANLIB_PATH="$RANLIB_PATH.exe"
             FC_PATH="$FC_PATH.exe"
+          fi
+
+          # If not using conda, use the environment's FC variable instead of which gfortran
+          if ! ${{ matrix.use-conda-compiler }}; then
+            FC_PATH=${{ env.FC }}
           fi
 
           echo "Using AR: $AR_PATH"

@@ -22,12 +22,26 @@ jobs:
       matrix:
         os: [ubuntu-22.04, macos-13, windows-2022]
         toolchain:
+          - {compiler: gcc, version: 10}
           - {compiler: gcc, version: 11}
           - {compiler: gcc, version: 12}
           - {compiler: gcc, version: 13}
         fpmodel: [DP, SP]
+        exclude:
+          - os: windows-2022
+            toolchain: {compiler: gcc, version: 10}
+          - os: windows-2022
+            toolchain: {compiler: gcc, version: 11}
+        include:
+          - toolchain: {compiler: gcc, version: 10}
+            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+          - toolchain: {compiler: gcc, version: 11}
+            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+          - toolchain: {compiler: gcc, version: 12}
+            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
+          - toolchain: {compiler: gcc, version: 13}
+            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
     env:
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
       RTE_KERNELS: default
       RTE_BOOL: C
       RRTMGP_DATA_VERSION: v1.8.2
@@ -95,7 +109,7 @@ jobs:
           # Run CMake
           cmake -S . -B build -G "Ninja" \
               -DCMAKE_Fortran_COMPILER="${{ env.FC }}" \
-              -DCMAKE_Fortran_FLAGS="${{ env.FCFLAGS }}" \
+              -DCMAKE_Fortran_FLAGS="${{ matrix.FCFLAGS }}" \
               -DCMAKE_AR="$AR_PATH" \
               -DCMAKE_RANLIB="$RANLIB_PATH" \
               -DRRTMGP_DATA_VERSION=${{ env.RRTMGP_DATA_VERSION }} \
@@ -110,5 +124,6 @@ jobs:
       # Run examples, tests and checks
       #
       - name: Run examples, tests and checks
+        working-directory: build
         run: |
-          ctest -V --test-dir build --rerun-failed --output-on-failure
+          ctest -V --output-on-failure

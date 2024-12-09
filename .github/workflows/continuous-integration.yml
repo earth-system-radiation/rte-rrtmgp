@@ -20,12 +20,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest] #, windows-latest]
-        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
+        os: [ubuntu-22.04, macos-13] #, windows-latest]
+        toolchain:
+          - {compiler: gcc, version: 10}
+          - {compiler: gcc, version: 11}
+          - {compiler: gcc, version: 12}
         fpmodel: [DP, SP]
     env:
       # Core variables:
-      FC: ${{ matrix.fortran-compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
       FP_MODEL: ${{ matrix.fpmodel }}
       RTE_KERNELS: default
@@ -34,6 +36,11 @@ jobs:
       FAILURE_THRESHOLD: 7.e-4
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: fortran-lang/setup-fortran@v1
+        id: setup-fortran
+        with:
+          compiler: ${{ matrix.toolchain.compiler }}
+          version: ${{ matrix.toolchain.version }}
       #
       # Relax failure thresholds for single precision
       #
@@ -50,12 +57,11 @@ jobs:
       #
       - name: Install dependencies
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             sudo apt-get update
             sudo apt-get install -y libnetcdff-dev
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            brew install gcc netcdf-fortran
-            echo "FC=$(brew --prefix gcc)/bin/gfortran" >> $GITHUB_ENV
+          elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
+            brew install netcdf-fortran
           fi
       #
       # Cache Conda packages
@@ -83,9 +89,9 @@ jobs:
       #
       - name: Build libraries and tests
         run: |
-          $FC --version
+          ${{ env.FC }} --version
           cmake -S . -B build \
-              -DCMAKE_Fortran_COMPILER=$FC \
+              -DCMAKE_Fortran_COMPILER="${{ env.FC }}" \
               -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
               -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
               -DFP_MODEL=$FP_MODEL \

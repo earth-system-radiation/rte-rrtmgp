@@ -21,41 +21,23 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, macos-13, windows-2022]
-        toolchain:
-          - {compiler: gcc, version: 10}
-          - {compiler: gcc, version: 11}
-          - {compiler: gcc, version: 12}
-          - {compiler: gcc, version: 13}
+        compiler: [gfortran-10, gfortran-11, gfortran-12, gfortran-13]
         fpmodel: [DP, SP]
         exclude:
           - os: windows-2022
-            toolchain: {compiler: gcc, version: 10}
+            compiler: gfortran-10
           - os: windows-2022
-            toolchain: {compiler: gcc, version: 11}
-        include:
-          - toolchain: {compiler: gcc, version: 10}
-            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
-          - toolchain: {compiler: gcc, version: 11}
-            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
-          - toolchain: {compiler: gcc, version: 12}
-            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
-          - toolchain: {compiler: gcc, version: 13}
-            FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
+            compiler: gfortran-11
     env:
+      FC: ${{ matrix.compiler }}
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
       RTE_KERNELS: default
       RTE_BOOL: C
       RRTMGP_DATA_VERSION: v1.8.2
       FAILURE_THRESHOLD: 7.e-4
+      BUILD_TYPE: Debug # Debug, Release. RelWithDebInfo, MinSizeRel
     runs-on: ${{ matrix.os }}
     steps:
-      #
-      # Set up Fortran compilers
-      #
-      - uses: fortran-lang/setup-fortran@v1
-        id: setup-fortran
-        with:
-          compiler: ${{ matrix.toolchain.compiler }}
-          version: ${{ matrix.toolchain.version }}
       #
       # Relax failure thresholds for single precision
       #
@@ -93,7 +75,11 @@ jobs:
       #
       - name: Install dependencies
         run: |
-          conda install -c conda-forge netcdf-fortran ninja -y
+          FC_VERSION="${{ env.FC }}"
+          FC_VERSION="${FC_VERSION##*-}"
+          echo "FC version: $FC_VERSION"
+
+          conda install -c conda-forge gfortran=$FC_VERSION gcc=$FC_VERSION netcdf-fortran ninja -y
       #
       # Build libraries, examples, and tests
       #
@@ -108,8 +94,9 @@ jobs:
 
           # Run CMake
           cmake -S . -B build -G "Ninja" \
-              -DCMAKE_Fortran_COMPILER="${{ env.FC }}" \
-              -DCMAKE_Fortran_FLAGS="${{ matrix.FCFLAGS }}" \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DCMAKE_Fortran_COMPILER=${{ env.FC }} \
+              -DCMAKE_Fortran_FLAGS="${{ env.FCFLAGS }}" \
               -DCMAKE_AR="$AR_PATH" \
               -DCMAKE_RANLIB="$RANLIB_PATH" \
               -DRRTMGP_DATA_VERSION=${{ env.RRTMGP_DATA_VERSION }} \
@@ -120,7 +107,7 @@ jobs:
               -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}
 
           # Build the project
-          cmake --build build --config Release -- -j8
+          cmake --build build -- -j8
       #
       # Run examples, tests and checks
       #

@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13] #, windows-latest]
+        os: [ubuntu-22.04, macos-13, windows-2022]
         toolchain:
           - {compiler: gcc, version: 10}
           - {compiler: gcc, version: 11}
@@ -36,6 +36,9 @@ jobs:
       FAILURE_THRESHOLD: 7.e-4
     runs-on: ${{ matrix.os }}
     steps:
+      #
+      # Set up Fortran compilers
+      #
       - uses: fortran-lang/setup-fortran@v1
         id: setup-fortran
         with:
@@ -52,17 +55,6 @@ jobs:
       #
       - name: Check out code
         uses: actions/checkout@v4
-      #
-      # Install dependencies (OS-specific)
-      #
-      - name: Install dependencies
-        run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
-            sudo apt-get update
-            sudo apt-get install -y libnetcdff-dev
-          elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
-            brew install netcdf-fortran
-          fi
       #
       # Cache Conda packages
       #
@@ -83,13 +75,19 @@ jobs:
           python-version: 3.11
           auto-activate-base: false
           # Use the cache properly:
-          use-only-tar-bz2: true
+          use-only-tar-bz2: false
+      #
+      # Install dependencies (OS-specific)
+      #
+      - name: Install dependencies
+        run: |
+          conda install -c conda-forge netcdf-fortran -y
       #
       # Build libraries, examples, and tests
       #
       - name: Build libraries and tests
         run: |
-          ${{ env.FC }} --version
+          echo "${{ env.FC }}" >> $GITHUB_PATH
           cmake -S . -B build \
               -DCMAKE_Fortran_COMPILER="${{ env.FC }}" \
               -DCMAKE_Fortran_FLAGS="$FCFLAGS" \

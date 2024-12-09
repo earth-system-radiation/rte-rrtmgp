@@ -44,6 +44,14 @@ jobs:
         with:
           compiler: ${{ matrix.toolchain.compiler }}
           version: ${{ matrix.toolchain.version }}
+
+      - name: Add gfortran to PATH
+        run: |
+          # Locate gfortran (example assumes MinGW installation)
+          GFORTRAN_PATH=$(dirname "$(which gfortran)")
+          echo "Adding gfortran path: $GFORTRAN_PATH"
+          echo "$GFORTRAN_PATH" >> $GITHUB_PATH
+          gfortran --version
       #
       # Relax failure thresholds for single precision
       #

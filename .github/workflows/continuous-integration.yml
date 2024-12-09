@@ -43,16 +43,16 @@ jobs:
             compiler: gfortran-13
     env:
       FC: ${{ matrix.compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
       RTE_KERNELS: default
       RTE_BOOL: C
       RRTMGP_DATA_VERSION: v1.8.2
       FAILURE_THRESHOLD: 7.e-4
       # Debug          - works
-      # Release        - ?
+      # Release        - works with conda gfortran
       # RelWithDebInfo - works
       # MinSizeRel     - works
-      BUILD_TYPE: Release # Debug, Release, RelWithDebInfo, MinSizeRel
+      BUILD_TYPE: MinSizeRel
     runs-on: ${{ matrix.os }}
     steps:
       #

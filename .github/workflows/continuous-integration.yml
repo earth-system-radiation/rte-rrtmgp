@@ -21,10 +21,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, macos-13, windows-2022]
-        compiler: [gfortran-10, gfortran-11, gfortran-12, gfortran-13, gfortran-14]
+        compiler: [gfortran-10, gfortran-11, gfortran-12, gfortran-13]
         use-conda-compiler: [true, false]
         fpmodel: [DP, SP]
-        # Conda does not contain gfortran-10/11/12 for windows and gfortran-14 for macos
+        # Conda does not contain gfortran-10/11/12 for windows
         exclude:
           - os: windows-2022
             compiler: gfortran-10
@@ -33,21 +33,14 @@ jobs:
           - os: windows-2022
             compiler: gfortran-12
           - os: windows-2022
-            compiler: gfortran-14
-          - os: windows-2022
             use-conda-compiler: false
 
-          - os: macos-13
-            compiler: gfortran-14
           - os: macos-13
             use-conda-compiler: false
 
           - os: ubuntu-22.04
             use-conda-compiler: false
             compiler: gfortran-13
-          - os: ubuntu-22.04
-            use-conda-compiler: false
-            compiler: gfortran-14
     env:
       FC: ${{ matrix.compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
@@ -55,7 +48,11 @@ jobs:
       RTE_BOOL: C
       RRTMGP_DATA_VERSION: v1.8.2
       FAILURE_THRESHOLD: 7.e-4
-      BUILD_TYPE: Debug # Debug, Release, RelWithDebInfo, MinSizeRel
+      # Debug          - works
+      # Release        - ?
+      # RelWithDebInfo - works
+      # MinSizeRel     - works
+      BUILD_TYPE: Release # Debug, Release, RelWithDebInfo, MinSizeRel
     runs-on: ${{ matrix.os }}
     steps:
       #

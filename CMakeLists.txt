@@ -45,11 +45,12 @@ set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
 add_definitions("-DRTE_USE_${PRECISION}")
 message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
 
-set(BOOL_TYPE "C" CACHE STRING "Select the bool type: C, Fortran")
-set_property(CACHE BOOL_TYPE PROPERTY STRINGS "C" "Fortran")
+option(USE_C_BOOL "Use C bool" OFF)
 
-add_definitions("-DRTE_USE_${BOOL_TYPE}BOOL")
-message(STATUS "Adding compiler definition -DRTE_USE_${BOOL_TYPE}BOOL")
+if(USE_C_BOOL)
+    add_definitions("-DRTE_USE_CBOOL")
+    message(STATUS "Adding compiler definition -DRTE_USE_CBOOL")
+endif()
 
 set(CMAKE_Fortran_FLAGS "" CACHE STRING "Select Fortran compile flags")
 

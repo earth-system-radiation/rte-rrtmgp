@@ -1,3 +1,5 @@
+message(STATUS "Configuring lib rrtmgpkernels")
+
 set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (KERNEL_MODE STREQUAL "accel")
@@ -20,8 +22,4 @@ set(SOURCES
 )
 
 add_library(rrtmgpkernels STATIC ${SOURCES})
-target_link_libraries(rrtmgpkernels PRIVATE
-    rtekernels
-)
-
-message(STATUS "Building lib rrtmgpkernels.a")
+target_link_libraries(rrtmgpkernels PRIVATE rtekernels)

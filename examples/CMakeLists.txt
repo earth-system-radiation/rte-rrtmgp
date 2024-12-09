@@ -1,3 +1,5 @@
+message(STATUS "Configuring lib examples_utils")
+
 set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/mo_garand_atmos_io.F90
     ${CMAKE_CURRENT_SOURCE_DIR}/mo_load_coefficients.F90
@@ -15,8 +17,6 @@ target_link_libraries(examples_utils PUBLIC
     rrtmgp
     ${NETCDF_Fortran_LIBRARY}
 )
-
-message(STATUS "Building lib examples_utils.a")
 
 # TODO: Fix all-sky
 add_subdirectory(all-sky)

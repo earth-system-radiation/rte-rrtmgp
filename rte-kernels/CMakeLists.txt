@@ -1,3 +1,5 @@
+message(STATUS "Configuring lib rtekernels")
+
 set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (KERNEL_MODE STREQUAL "accel")
@@ -22,11 +24,9 @@ set(SOURCES
     ${ARRAY_UTILITIES}
     ${OPTICAL_PROPERTIES}
     ${RADIATIVE_TRANSFER}
+
+    ${CMAKE_SOURCE_DIR}/rte-frontend/mo_rte_kind.F90
 )
 
 add_library(rtekernels STATIC ${SOURCES})
-target_link_libraries(rtekernels PRIVATE
-    rtef_kind
-)
 
-message(STATUS "Building lib rtekernels.a")

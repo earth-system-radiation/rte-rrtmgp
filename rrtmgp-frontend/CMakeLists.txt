@@ -1,3 +1,5 @@
+message(STATUS "Configuring lib rrtmgp")
+
 set(GAS_OPTICS_SOURCE_DIR ${CMAKE_SOURCE_DIR}/gas-optics)
 set(SOURCES
     # PHYSICAL CONSTANTS
@@ -19,5 +21,3 @@ target_link_libraries(rrtmgp PUBLIC
     rrtmgpkernels
     rte
 )
-
-message(STATUS "Building lib rrtmgp.a")

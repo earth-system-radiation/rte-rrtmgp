@@ -86,15 +86,10 @@ message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 # Set the directory for Fortran module files
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 
-set(RTE_KIND_SRC ${CMAKE_SOURCE_DIR}/rte-frontend/mo_rte_kind.F90)
-add_library(rtef_kind STATIC ${RTE_KIND_SRC})
-
-message(STATUS "Building lib rtef_kind.a")
-
-add_subdirectory(rte-kernels)     # Build library: rtekernels.a
-add_subdirectory(rte-frontend)    # Build library: rte.a
-add_subdirectory(rrtmgp-kernels)  # Build library: rrtmgpkernels.a
-add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp.a
+add_subdirectory(rte-kernels)     # Build library: rtekernels
+add_subdirectory(rte-frontend)    # Build library: rte
+add_subdirectory(rrtmgp-kernels)  # Build library: rrtmgpkernels
+add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp
 
 if(ENABLE_TESTS)
     find_package(Python REQUIRED COMPONENTS Interpreter)
@@ -109,17 +104,12 @@ if(ENABLE_TESTS)
 
     # Manually locate the directory containing netcdf.mod
     # and the NetCDF Fortran library
-    if (NOT WIN32)
-        find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS /usr/include $ENV{NFHOME}/include)
-        find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS /usr/lib $ENV{NFHOME}/lib)
-    else()
-        find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS $ENV{CONDA_PREFIX}/include)
-        find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS $ENV{CONDA_PREFIX}/lib)
-    endif()
+    find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS /usr/include $ENV{NFHOME}/include $ENV{CONDA_PREFIX}/include)
+    find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS /usr/lib $ENV{NFHOME}/lib $ENV{CONDA_PREFIX}/lib)
 
     if(NOT NETCDF_Fortran_INCLUDE_DIR OR NOT NETCDF_Fortran_LIBRARY)
         message(SEND_ERROR "NetCDF Fortran not found.")
-        if(LINUX)
+        if(LINUX AND NOT DEFINED ENV{CONDA_PREFIX})
             message(FATAL_ERROR "You can install it using: `sudo apt-get install libnetcdff-dev`")
         elseif(APPLE_ARM)
             message(FATAL_ERROR "You can install it using: `brew install netcdf`")
@@ -142,7 +132,7 @@ if(ENABLE_TESTS)
         add_executable(${TEST_NAME} ${TEST_SOURCE})
         target_link_libraries(${TEST_NAME} PRIVATE ${TEST_LIBS})
 
-        message(STATUS "Building test ${TEST_NAME}.so")
+        message(STATUS "Configuring test ${TEST_NAME}")
     endfunction()
 
     # Function to define a custom test for CTest

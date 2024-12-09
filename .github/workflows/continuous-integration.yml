@@ -1,12 +1,13 @@
 name: Continuous Integration
+
 on:
   push:
     branches:
-    - main
-    - develop
+      - main
+      - develop
   pull_request:
     branches-ignore:
-    - documentation
+      - documentation
   workflow_dispatch:
 
 defaults:
@@ -16,88 +17,96 @@ defaults:
 
 jobs:
   CI:
-    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-22.04, windows-latest, macos-latest]
         fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
         fpmodel: [DP, SP]
     env:
       # Core variables:
-      FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
-      # CMake variables:
-      FCINCLUDE: -I/usr/include
+      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL"
       FP_MODEL: ${{ matrix.fpmodel }}
       RTE_KERNELS: default
       RTE_BOOL: C
       RRTMGP_DATA_VERSION: v1.8.2
-      RUN_CMD:
       FAILURE_THRESHOLD: 7.e-4
+    runs-on: ${{ matrix.os }}
     steps:
-    #
-    # Relax failure thresholds for single precision
-    #
-    - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP'
-      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
-    #
-    # Check out repository under $GITHUB_WORKSPACE
-    #
-    - name: Check out code
-      uses: actions/checkout@v4
-    #
-    # Check out data
-    #
-    # Synchronize the package index
-    #
-    - name: Synchronize the package index
-      run: sudo apt-get update
-    #
-    # Install NetCDF-Fortran (compatible with all compilers)
-    #
-    - name: Install NetCDF-Fortran
-      run: sudo apt-get install libnetcdff-dev
-    #
-    # Cache Conda packages
-    #
-    - name: Cache Conda packages
-      uses: actions/cache@v4
-      with:
-        path: ~/conda_pkgs_dir
-        key: conda-pkgs
-    #
-    # Set up Conda
-    #
-    - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        miniforge-version: latest
-        activate-environment: rte_rrtmgp_test
-        environment-file: environment-noplots.yml
-        python-version: 3.11
-        auto-activate-base: false
-        # Use the cache properly:
-        use-only-tar-bz2: true
-    #
-    # Build libraries, examples and tests
-    #
-    - name: Build libraries and tests
-      run: |
-        $FC --version
-        cmake -S . -B build \
-            -DCMAKE_Fortran_COMPILER=$FC \
-            -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
-            -DPRECISION=$FP_MODEL \
-            -DBOOL_TYPE=$RTE_BOOL \
-            -DKERNEL_MODE=$RTE_KERNELS \
-            -DENABLE_TESTS=ON \
-            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
-            -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
-        cmake --build build --config Release -- -j8
-    #
-    # Run examples, tests and checks
-    #
-    - name: Run examples, tests and checks
-      run: |
-        ctest -V --test-dir build
+      #
+      # Relax failure thresholds for single precision
+      #
+      - name: Relax failure threshold for single precision
+        if: matrix.fpmodel == 'SP'
+        run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
+
+      #
+      # Check out repository under $GITHUB_WORKSPACE
+      #
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      #
+      # Set up environment per OS
+      #
+      - name: Set up environment for ${{ matrix.os }}
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
+            sudo apt-get update
+            sudo apt-get install libnetcdff-dev
+            FC=${{ matrix.fortran-compiler }}
+          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            conda install -c conda-forge gfortran netcdf-fortran ninja gcc cmake
+            FC="gfortran"
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            brew update
+            brew install gcc netcdf
+            FC="gfortran"
+          fi
+          echo "FC=$FC" >> $GITHUB_ENV
+
+      #
+      # Cache Conda packages
+      #
+      - name: Cache Conda packages
+        uses: actions/cache@v4
+        with:
+          path: ~/conda_pkgs_dir
+          key: conda-pkgs-${{ matrix.os }}
+
+      #
+      # Set up Conda
+      #
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          activate-environment: rte_rrtmgp_test
+          environment-file: environment-noplots.yml
+          python-version: 3.11
+          auto-activate-base: false
+          # Use the cache properly:
+          use-only-tar-bz2: true
+
+      #
+      # Build libraries, examples, and tests
+      #
+      - name: Build libraries and tests
+        run: |
+          $FC --version
+          cmake -S . -B build \
+              -DCMAKE_Fortran_COMPILER=$FC \
+              -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
+              -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
+              -DFP_MODEL=$FP_MODEL \
+              -DRTE_KERNEL_MODE=$RTE_KERNELS \
+              -DENABLE_TESTS=ON \
+              -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
+          cmake --build build --config Release -- -j8
+
+      #
+      # Run examples, tests and checks
+      #
+      - name: Run examples, tests and checks
+        run: |
+          ctest -V --test-dir build

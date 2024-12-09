@@ -99,9 +99,10 @@ jobs:
     # Run examples and tests
     #
     - name: Run examples and tests
+      working-directory: build
       if: steps.build-success.outcome != 'skipped'
       run: |
-        ctest -V --test-dir build
+        ctest -V
     # Generate validation plots
     #
     - name: Generate validation plots
@@ -112,8 +113,9 @@ jobs:
     # Upload validation plots
     #
     - name: Upload validation plots
+      working-directory: build
       if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       uses: actions/upload-artifact@v4
       with:
         name: valdiation-plot
-        path: build/tests/validation-figures.pdf
+        path: tests/validation-figures.pdf

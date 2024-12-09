@@ -86,13 +86,8 @@ jobs:
       - name: Build libraries and tests
         run: |
           # Set platform-specific variables
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            AR_PATH="C:/mingw64/bin/ar.exe"
-            RANLIB_PATH="C:/mingw64/bin/ranlib.exe"
-          else
-            AR_PATH="$(which ar)"
-            RANLIB_PATH="$(which ranlib)"
-          fi
+          AR_PATH="$(which ar)"
+          RANLIB_PATH="$(which ranlib)"
 
           echo "Using AR: $AR_PATH"
           echo "Using RANLIB: $RANLIB_PATH"
@@ -116,4 +111,4 @@ jobs:
       #
       - name: Run examples, tests and checks
         run: |
-          ctest -V --test-dir build
+          ctest -V --test-dir build --rerun-failed --output-on-failure

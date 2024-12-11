@@ -15,6 +15,17 @@ elseif(WIN32)
     set(WINDOWS TRUE)
 endif()
 
+# Check if CMAKE_BUILD_TYPE is defined; if not, set a default
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type: Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
+endif()
+
+# Provide the list of valid build types
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+
+# Inform the user about the selected build type
+message(STATUS "Using build type: ${CMAKE_BUILD_TYPE}")
+
 set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
 
 # Define the option for enabling/disabling tests
@@ -23,8 +34,10 @@ option(ENABLE_TESTS "Enable tests" OFF)
 set(RRTMGP_DATA_VERSION "v1.8.2" CACHE STRING "Select what version to clone for rrtmgp-data")
 set(RRTMGP_DATA_REPO https://github.com/earth-system-radiation/rrtmgp-data.git)
 
-set(KERNEL_MODE "default" CACHE STRING "Select the kernel mode: default, accel, or extern")
-set_property(CACHE KERNEL_MODE PROPERTY STRINGS "default" "accel" "extern")
+set(PREFERRED_KERNEL_MODES "default" "accel" "extern")
+
+set(KERNEL_MODE "default" CACHE STRING "Select the kernel mode: ${PREFERRED_KERNEL_MODES}")
+set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
 
 set(PRECISION "DP" CACHE STRING "Select the floating point precision: double or single")
 set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
@@ -32,16 +45,18 @@ set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
 add_definitions("-DRTE_USE_${PRECISION}")
 message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
 
-set(BOOL_TYPE "C" CACHE STRING "Select the bool type: C, Fortran")
-set_property(CACHE BOOL_TYPE PROPERTY STRINGS "C" "Fortran")
+option(USE_C_BOOL "Use C bool" OFF)
 
-add_definitions("-DRTE_USE_${BOOL_TYPE}BOOL")
-message(STATUS "Adding compiler definition -DRTE_USE_${BOOL_TYPE}BOOL")
+if(USE_C_BOOL)
+    add_definitions("-DRTE_USE_CBOOL")
+    message(STATUS "Adding compiler definition -DRTE_USE_CBOOL")
+endif()
 
 set(CMAKE_Fortran_FLAGS "" CACHE STRING "Select Fortran compile flags")
 
+set(PREFERRED_FC_COMPILERS "gfortran" "gfortran-10" "gfortran-11" "gfortran-12" "gfortran-13" "ifort" "ifx" "nvfortran" "f77")
+
 if(NOT WINDOWS)
-    set(PREFERRED_FC_COMPILERS "gfortran" "gfortran-10" "gfortran-11" "gfortran-12" "ifort" "ifx" "nvfortran" "f77")
     set(CMAKE_Fortran_COMPILER "gfortran" CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}")
     set_property(CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS})
 else()
@@ -79,87 +94,22 @@ if(NOT rrtmgp-data_POPULATED)
     FetchContent_MakeAvailable(rrtmgp-data)
 endif()
 
-message(STATUS "KERNEL_MODE: ${KERNEL_MODE}")
+message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (${PREFERRED_KERNEL_MODES})")
 message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
 message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 
 # Set the directory for Fortran module files
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 
-set(RTE_KIND_SRC ${CMAKE_SOURCE_DIR}/rte-frontend/mo_rte_kind.F90)
-add_library(rtef_kind STATIC ${RTE_KIND_SRC})
+include(common.cmake)
 
-message(STATUS "Building lib rtef_kind.a")
-
-add_subdirectory(rte-kernels)     # Build library: rtekernels.a
-add_subdirectory(rte-frontend)    # Build library: rte.a
-add_subdirectory(rrtmgp-kernels)  # Build library: rrtmgpkernels.a
-add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp.a
+add_subdirectory(rte-kernels)     # Build library: rtekernels
+add_subdirectory(rte-frontend)    # Build library: rte
+add_subdirectory(rrtmgp-kernels)  # Build library: rrtmgpkernels
+add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp
 
 if(ENABLE_TESTS)
-    find_package(Python REQUIRED COMPONENTS Interpreter)
-
-    # Define failure threshold as an environment variable
-    set(FAILURE_THRESHOLD 7.e-4 CACHE STRING "Default failure threshold for tests")
-
-    # Enable testing with CTest
-    enable_testing()
-
-    message(STATUS "Tests enabled")
-
-    # Manually locate the directory containing netcdf.mod
-    # and the NetCDF Fortran library
-    if (NOT WIN32)
-        find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS /usr/include $ENV{NFHOME}/include)
-        find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS /usr/lib $ENV{NFHOME}/lib)
-    else()
-        find_path(NETCDF_Fortran_INCLUDE_DIR netcdf.mod HINTS $ENV{CONDA_PREFIX}/include)
-        find_library(NETCDF_Fortran_LIBRARY NAMES netcdff HINTS $ENV{CONDA_PREFIX}/lib)
-    endif()
-
-    if(NOT NETCDF_Fortran_INCLUDE_DIR OR NOT NETCDF_Fortran_LIBRARY)
-        message(SEND_ERROR "NetCDF Fortran not found.")
-        if(LINUX)
-            message(FATAL_ERROR "You can install it using: `sudo apt-get install libnetcdff-dev`")
-        elseif(APPLE_ARM)
-            message(FATAL_ERROR "You can install it using: `brew install netcdf`")
-        else()
-            message(FATAL_ERROR "You can install it using: `conda install -c conda-forge netcdf-fortran`")
-        endif()
-    else()
-        message(STATUS "Found NetCDF module include dir: ${NETCDF_Fortran_INCLUDE_DIR}")
-        message(STATUS "Found NetCDF module library dir: ${NETCDF_Fortran_LIBRARY}")
-    endif()
-
-    # Function to define a custom test for CTest
-    # Arguments:
-    #   TEST_NAME - The name of the test in CTest
-    #   ARGN      - The libraries that are going to be linked
-    function(build_test TEST_NAME)
-        set(TEST_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/${TEST_NAME}.F90)
-        set(TEST_LIBS ${ARGN})
-
-        add_executable(${TEST_NAME} ${TEST_SOURCE})
-        target_link_libraries(${TEST_NAME} PRIVATE ${TEST_LIBS})
-
-        message(STATUS "Building test ${TEST_NAME}.so")
-    endfunction()
-
-    # Function to define a custom test for CTest
-    # Arguments:
-    #   TEST_NAME    - The name of the test in CTest
-    #   COMMAND_NAME - The command to execute the test
-    function(add_custom_test TEST_NAME COMMAND_NAME)
-        # Add the test to CTest with a specific command and working directory
-        add_test(NAME ${TEST_NAME}
-            COMMAND ${COMMAND_NAME} ${ARGN}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
-
-        message(STATUS "Added test ${TEST_NAME}")
-    endfunction()
-
-    set(TEST_ATMOSPHERES ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc)
+    include(tests.cmake)
 
     # Add the tests subdirectory for building and running tests
     add_subdirectory(examples) # Build: Test & Check

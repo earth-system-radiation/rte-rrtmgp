@@ -20,6 +20,7 @@ dependencies:
   - gfortran
   - netcdf-fortran
   - cmake
+  - ninja
 variables:
   FC: gfortran
   # Debugging flags below

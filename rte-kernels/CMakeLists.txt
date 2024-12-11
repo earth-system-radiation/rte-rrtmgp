@@ -1,32 +1,19 @@
-set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+message(STATUS "Configuring lib rtekernels for '${KERNEL_MODE}' usacase")
 
-if (KERNEL_MODE STREQUAL "accel")
-    set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/accel)
-elseif(KERNEL_MODE STREQUAL "extern")
-    set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/api)
-endif()
-
-if (KERNEL_MODE STREQUAL "accel")
-    set(FLUX_REDUCTION  ${CMAKE_CURRENT_SOURCE_DIR}/mo_fluxes_broadband_kernels.F90)
-    set(ARRAY_UTILITIES ${CMAKE_CURRENT_SOURCE_DIR}/mo_rte_util_array.F90)
-else()
-    set(FLUX_REDUCTION  ${LOCAL_SOURCE_DIR}/mo_fluxes_broadband_kernels.F90)
-    set(ARRAY_UTILITIES ${LOCAL_SOURCE_DIR}/mo_rte_util_array.F90)
-endif()
-
-set(OPTICAL_PROPERTIES ${LOCAL_SOURCE_DIR}/mo_optical_props_kernels.F90)
-set(RADIATIVE_TRANSFER ${LOCAL_SOURCE_DIR}/mo_rte_solver_kernels.F90)
-
-set(SOURCES
-    ${FLUX_REDUCTION}
-    ${ARRAY_UTILITIES}
-    ${OPTICAL_PROPERTIES}
-    ${RADIATIVE_TRANSFER}
+# List of default files to compile.
+# If KERNEL_MODE is accel or extern, then we try to compile
+# accel versions or extern.
+# If accel/extern versions of the files are not available, we fall back to the default
+set(RTE_FORTRAN_KERNELS 
+    mo_fluxes_broadband_kernels.F90
+    mo_optical_props_kernels.F90
+    mo_rte_solver_kernels.F90
+    mo_rte_util_array.F90
 )
 
-add_library(rtekernels STATIC ${SOURCES})
-target_link_libraries(rtekernels PRIVATE
-    rtef_kind
-)
+find_files_in_folders(SOURCES "${RTE_FORTRAN_KERNELS}" "${KERNEL_MODE}")
 
-message(STATUS "Building lib rtekernels.a")
+add_library(rtekernels STATIC 
+    ${SOURCES}
+    ${CMAKE_SOURCE_DIR}/rte-frontend/mo_rte_kind.F90
+)

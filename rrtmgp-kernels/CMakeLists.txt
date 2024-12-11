@@ -1,27 +1,15 @@
-set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+message(STATUS "Configuring lib rrtmgpkernels")
 
-if (KERNEL_MODE STREQUAL "accel")
-    set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/accel)
-elseif(KERNEL_MODE STREQUAL "extern")
-    set(LOCAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/api)
-endif()
-
-if (KERNEL_MODE STREQUAL "accel")
-    set(CLOUD_OPTICS ${CMAKE_CURRENT_SOURCE_DIR}/mo_cloud_optics_rrtmgp_kernels.F90)
-else()
-    set(CLOUD_OPTICS ${LOCAL_SOURCE_DIR}/mo_cloud_optics_rrtmgp_kernels.F90)
-endif()
-
-set(GAS_OPTICS ${LOCAL_SOURCE_DIR}/mo_gas_optics_rrtmgp_kernels.F90)
-
-set(SOURCES
-    ${CLOUD_OPTICS}
-    ${GAS_OPTICS}
+# List of default files to compile.
+# If KERNEL_MODE is accel or extern, then we try to compile
+# accel versions or extern.
+# If accel/extern versions of the files are not available, we fall back to the default
+set(RTE_FORTRAN_KERNELS 
+    mo_cloud_optics_rrtmgp_kernels.F90
+    mo_gas_optics_rrtmgp_kernels.F90
 )
+
+find_files_in_folders(SOURCES "${RTE_FORTRAN_KERNELS}" "${KERNEL_MODE}")
 
 add_library(rrtmgpkernels STATIC ${SOURCES})
-target_link_libraries(rrtmgpkernels PRIVATE
-    rtekernels
-)
-
-message(STATUS "Building lib rrtmgpkernels.a")
+target_link_libraries(rrtmgpkernels PRIVATE rtekernels)

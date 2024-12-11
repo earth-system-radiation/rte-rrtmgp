@@ -1,3 +1,5 @@
+message(STATUS "Configuring lib rte")
+
 set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/mo_rte_config.F90
     ${CMAKE_CURRENT_SOURCE_DIR}/mo_rte_util_array_validation.F90
@@ -14,9 +16,4 @@ set(SOURCES
 )
 
 add_library(rte STATIC ${SOURCES})
-target_link_libraries(rte PUBLIC
-    rtef_kind
-    rtekernels
-)
-
-message(STATUS "Building lib rte.a")
+target_link_libraries(rte PUBLIC rtekernels)

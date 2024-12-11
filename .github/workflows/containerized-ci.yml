@@ -51,9 +51,9 @@ jobs:
       FCFLAGS: ${{ matrix.fcflags }}
       # CMake variables:
       NFHOME: /opt/netcdf-fortran
-      FP_MODEL: ${{ matrix.fpmodel }}
       RTE_KERNELS: ${{ matrix.rte-kernels }}
       RRTMGP_DATA_VERSION: v1.8.2
+      BUILD_TYPE: Debug
       RUN_CMD:
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
       OMP_TARGET_OFFLOAD: DISABLED
@@ -71,7 +71,7 @@ jobs:
     - name: Install Required Tools
       run: |
         apt-get update
-        apt-get install -y git cmake
+        apt-get install -y git cmake ninja-build
     #
     # Update Failure threshold if single precision
     #
@@ -85,23 +85,27 @@ jobs:
       id: build-success
       if: matrix.fortran-compiler != 'ifx' || matrix.rte-kernels != 'accel'
       run: |
-        $FC --version
-        cmake -S . -B build \
-            -DCMAKE_Fortran_COMPILER=$FC \
-            -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
-            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
-            -DPRECISION=$FP_MODEL \
-            -DKERNEL_MODE=$RTE_KERNELS \
-            -DENABLE_TESTS=ON \
-            -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
-        cmake --build build --config Release -- -j8
+          # Run CMake
+          cmake -S . -B build -G "Ninja" \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DCMAKE_Fortran_COMPILER=${{ env.FC }} \
+              -DCMAKE_Fortran_FLAGS="${{ env.FCFLAGS }}" \
+              -DRRTMGP_DATA_VERSION=${{ env.RRTMGP_DATA_VERSION }} \
+              -DPRECISION=${{ matrix.fpmodel }} \
+              -DKERNEL_MODE=${{ env.RTE_KERNELS }} \
+              -DENABLE_TESTS=ON \
+              -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}
+
+          # Build the project
+          cmake --build build -- -j8
     #
     # Run examples and tests
     #
     - name: Run examples and tests
+      working-directory: build
       if: steps.build-success.outcome != 'skipped'
       run: |
-        ctest -V --test-dir build
+        ctest -V
     # Generate validation plots
     #
     - name: Generate validation plots

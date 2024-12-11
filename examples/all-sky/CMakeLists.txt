@@ -1,3 +1,5 @@
+message(STATUS "Configuring lib all_sky_utils")
+
 set(TEST_INPUTS
     ${RRTMGP_DATA}/examples/all-sky/reference/rrtmgp-allsky-lw.nc
     ${RRTMGP_DATA}/examples/all-sky/reference/rrtmgp-allsky-sw.nc
@@ -23,7 +25,7 @@ target_link_libraries(all_sky_utils PRIVATE
     examples_utils
 )
 
-message(STATUS "Building lib all_sky_utils.a")
+message(STATUS "Configuring lib all_sky_utils")
 
 # Build tests
 build_test(rrtmgp_allsky all_sky_utils examples_utils)

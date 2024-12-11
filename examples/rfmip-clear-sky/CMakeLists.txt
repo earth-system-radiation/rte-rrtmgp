@@ -23,7 +23,7 @@ target_link_libraries(rfmip_clear_utils PRIVATE
     examples_utils
 )
 
-message(STATUS "Building lib rfmip_clear_utils.a")
+message(STATUS "Configuring lib rfmip_clear_utils")
 
 # Path to the test atmospheres file
 

@@ -27,17 +27,12 @@ jobs:
         # Most combinations will only be tested on Linux
         exclude: 
           - os: windows-2022
-          - os: macos-latest
-
-        include: 
+            use-conda-compiler: false
           # Conda does not contain gfortran-10/11/12 for windows
           - os: windows-2022
-            compiler: gfortran-13
-            use-conda-compiler: true
-
+            compiler: gfortran-12
           - os: macos-latest
-            compiler: gfortran-13
-            use-conda-compiler: true
+            use-conda-compiler: false
 
     env:
       FC: ${{ matrix.compiler }}

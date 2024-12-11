@@ -20,7 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-latest, windows-2022]
+        os: [ubuntu-24.04, macos-13, macos-latest, windows-2022]
+        # macos-13 is Intel, macos-latest is ARM/Apple Silicon 
         compiler: [gfortran-12, gfortran-13, gfortran-14]
         use-conda-compiler: [false, true]
         fpmodel: [DP, SP]
@@ -28,11 +29,19 @@ jobs:
         exclude: 
           - os: windows-2022
             use-conda-compiler: false
-          # Conda does not contain gfortran-10/11/12 for windows
           - os: windows-2022
-            compiler: gfortran-12
+            compiler: gfortran-12 
+            # Not available in conda
+          - os: macos-13
+            use-conda-compiler: false
+          - os: macos-13
+            compiler: gfortran-14
+            # Not available in conda
           - os: macos-latest
             use-conda-compiler: false
+          - os: macos-latest
+            compiler: gfortran-14
+            # Not available in conda
 
     env:
       FC: ${{ matrix.compiler }}

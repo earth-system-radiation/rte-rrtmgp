@@ -27,6 +27,8 @@ jobs:
         fpmodel: [DP, SP]
         # Most combinations will only be tested on Linux
         exclude: 
+          - os: ubuntu-24.04
+            use-conda-compiler: true
           - os: windows-2022
             use-conda-compiler: false
           - os: windows-2022
@@ -42,6 +44,11 @@ jobs:
           - os: macos-latest
             compiler: gfortran-14
             # Not available in conda
+        include: 
+          # Something like the conda-build environment 
+          - os: ubuntu-24.04
+            use-conda-compiler: true
+            compiler: gfortran-13 
 
     env:
       FC: ${{ matrix.compiler }}

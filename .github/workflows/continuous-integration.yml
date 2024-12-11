@@ -21,21 +21,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-latest, windows-2022]
-        compiler: [gfortran-10, gfortran-11, gfortran-12, gfortran-13]
+        compiler: [gfortran-12, gfortran-13]
         use-conda-compiler: [true, false]
         fpmodel: [DP, SP]
         # Conda does not contain gfortran-10/11/12 for windows
         exclude:
           - os: windows-2022
-            compiler: gfortran-10
-          - os: windows-2022
-            compiler: gfortran-11
-          - os: windows-2022
             compiler: gfortran-12
           - os: windows-2022
             use-conda-compiler: false
 
-          - os: macos-13
+          - os: macos-latest
             use-conda-compiler: false
 
           - os: ubuntu-22.04

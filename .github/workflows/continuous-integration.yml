@@ -27,8 +27,7 @@ jobs:
           - os: ubuntu-24.04
             use-conda-compiler: false
             compiler: [gfortran-12, gfortran-13]
-            use-conda-compiler: [true, false]
-
+ 
           - os: windows-2022
             compiler: gfortran-13
             use-conda-compiler: true
@@ -36,11 +35,6 @@ jobs:
           - os: macos-latest
             compiler: gfortran-13
             use-conda-compiler: true
-
-        exclude:
-          - os: ubuntu-24.04
-            use-conda-compiler: false
-            compiler: gfortran-13
     env:
       FC: ${{ matrix.compiler }}
       FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"

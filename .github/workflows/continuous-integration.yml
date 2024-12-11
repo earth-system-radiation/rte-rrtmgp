@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-2022]
+        os: [ubuntu-24.04, macos-latest, windows-2022]
         compiler: [gfortran-10, gfortran-11, gfortran-12, gfortran-13]
         use-conda-compiler: [true, false]
         fpmodel: [DP, SP]

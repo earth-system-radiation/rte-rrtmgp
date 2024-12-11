@@ -27,15 +27,15 @@ jobs:
           - os: ubuntu-24.04
             use-conda-compiler: false
             compiler: gfortran-12
-            name: Ubuntu ${{ matrix.compiler }} ${{ matrix.fmodel }}
+            name: Ubuntu 12
           - os: ubuntu-24.04
             use-conda-compiler: false
             compiler: gfortran-13
-            name: Ubuntu ${{ matrix.compiler }} ${{ matrix.fmodel }}
+            name: Ubuntu 13
           - os: ubuntu-24.04
             use-conda-compiler: true
             compiler: gfortran-13
-            name: Ubuntu+conda ${{ matrix.compiler }} ${{ matrix.fmodel }}
+            name: Ubuntu+conda 13
  
           - os: windows-2022
             compiler: gfortran-13

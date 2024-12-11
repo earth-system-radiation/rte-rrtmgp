@@ -24,14 +24,13 @@ jobs:
         compiler: [gfortran-12, gfortran-13, gfortran-14]
         use-conda-compiler: [false, true]
         fpmodel: [DP, SP]
-        # Conda does not contain gfortran-10/11/12 for windows
+        # Most combinations will only be tested on Linux
+        exclude: 
+          - os: windows-2022
+          - os: macos-latest
+
         include: 
-          - os: ubuntu-24.04
-            use-conda-compiler: false
-          - os: ubuntu-24.04
-            use-conda-compiler: true
-            compiler: gfortran-13
- 
+          # Conda does not contain gfortran-10/11/12 for windows
           - os: windows-2022
             compiler: gfortran-13
             use-conda-compiler: true

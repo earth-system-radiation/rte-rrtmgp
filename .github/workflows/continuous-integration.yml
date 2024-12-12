@@ -47,13 +47,13 @@ jobs:
             compiler: gfortran-13 
             use-conda-compiler: true
           - os: windows-2022
-            use-conda-compiler: true
             compiler: gfortran-12 
+            use-conda-compiler: true
             # Not available in conda 
           - os: windows-2022
-            use-conda-compiler: true
             compiler: gfortran-14
-            fpmodel: true
+            use-conda-compiler: true
+            fpmodel: DP
             # Fails unit tests in double precision! 
 
     env:

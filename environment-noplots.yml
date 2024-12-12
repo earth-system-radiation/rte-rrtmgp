@@ -2,7 +2,9 @@
 # Python modules below are needed to run tests and check results
 #
 name: rte_rrtmgp_test_noplots
-
+channels:
+  - conda-forge
+  - nodefaults
 dependencies:
   - python=3.11
   - netcdf4

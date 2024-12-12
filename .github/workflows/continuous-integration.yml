@@ -25,15 +25,12 @@ jobs:
         compiler: [gfortran-12, gfortran-13, gfortran-14]
         use-conda-compiler: [false, true]
         fpmodel: [DP, SP]
-        # Most combinations will only be tested on Linux
+        # Most combinations will only be tested on Linux with system compilers
         exclude: 
           - os: ubuntu-24.04
             use-conda-compiler: true
           - os: windows-2022
-            use-conda-compiler: false
-          - os: windows-2022
-            compiler: gfortran-12 
-            # Not available in conda
+            # A few configurations are added below
           - os: macos-13
             use-conda-compiler: false
           - os: macos-13
@@ -47,8 +44,17 @@ jobs:
         include: 
           # Something like the conda-build environment 
           - os: ubuntu-24.04
-            use-conda-compiler: true
             compiler: gfortran-13 
+            use-conda-compiler: true
+          - os: windows-2022
+            use-conda-compiler: true
+            compiler: gfortran-12 
+            # Not available in conda 
+          - os: windows-2022
+            use-conda-compiler: true
+            compiler: gfortran-14
+            fpmodel: true
+            # Fails unit tests in double precision! 
 
     env:
       FC: ${{ matrix.compiler }}

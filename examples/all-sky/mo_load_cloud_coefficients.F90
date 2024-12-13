@@ -33,9 +33,9 @@ contains
     real(wp) :: radliq_lwr          ! liquid particle size lower bound for interpolation
     real(wp) :: radliq_upr          ! liquid particle size upper bound for interpolation
     real(wp) :: radliq_fac          ! constant for calculating interpolation indices for liquid
-    real(wp) :: radice_lwr          ! ice particle size lower bound for interpolation
-    real(wp) :: radice_upr          ! ice particle size upper bound for interpolation
-    real(wp) :: radice_fac          ! constant for calculating interpolation indices for ice
+    real(wp) :: diamice_lwr          ! ice particle size lower bound for interpolation
+    real(wp) :: diamice_upr          ! ice particle size upper bound for interpolation
+    real(wp) :: diamice_fac          ! constant for calculating interpolation indices for ice
     ! LUT coefficients
     real(wp), dimension(:,:),   allocatable :: lut_extliq   ! extinction: liquid
     real(wp), dimension(:,:),   allocatable :: lut_ssaliq   ! single scattering albedo: liquid
@@ -60,8 +60,8 @@ contains
     ! Read LUT constants
     radliq_lwr = read_field(ncid, 'radliq_lwr')
     radliq_upr = read_field(ncid, 'radliq_upr')
-    radice_lwr = read_field(ncid, 'radice_lwr')
-    radice_upr = read_field(ncid, 'radice_upr')
+    diamice_lwr = read_field(ncid, 'diamice_lwr')
+    diamice_upr = read_field(ncid, 'diamice_upr')
 
     ! Allocate cloud property lookup table input arrays
     allocate(lut_extliq(nsize_liq, nband), &
@@ -82,7 +82,7 @@ contains
     ncid = nf90_close(ncid)
     call stop_on_err(cloud_spec%load(band_lims_wvn,                      &
                                      radliq_lwr, radliq_upr,             &
-                                     radice_lwr, radice_upr,             &
+                                     diamice_lwr, diamice_upr,             &
                                      lut_extliq, lut_ssaliq, lut_asyliq, &
                                      lut_extice, lut_ssaice, lut_asyice))
   end subroutine load_cld_lutcoeff

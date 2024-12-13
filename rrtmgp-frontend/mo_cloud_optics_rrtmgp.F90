@@ -9,7 +9,8 @@
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
-! Provides cloud optical properties as a function of effective radius for the RRTMGP bands
+! Provides cloud optical properties as a function of size for the RRTMGP bands
+!   Specified in terms of effective radius (liquid) and effective diameter (ice) 
 !   Based on Mie calculations for liquid
 !     and results from doi:10.1175/JAS-D-12-039.1 for ice with variable surface roughness
 !   Can use either look-up tables or Pade approximates according to which data has been loaded
@@ -44,7 +45,7 @@ module mo_cloud_optics_rrtmgp
     !
     ! Upper and lower limits of the tables
     real(wp) :: radliq_lwr = 0._wp, radliq_upr = 0._wp
-    real(wp) :: radice_lwr = 0._wp, radice_upr = 0._wp
+    real(wp) :: diamice_lwr = 0._wp, diamice_upr = 0._wp
     ! How many steps in the table? (for convenience)
     integer  :: liq_nsteps = 0,        ice_nsteps = 0
     ! How big is each step in the table?
@@ -90,7 +91,7 @@ contains
   ! ------------------------------------------------------------------------------
   function load_lut(this, band_lims_wvn, &
                     radliq_lwr, radliq_upr, &
-                    radice_lwr, radice_upr, &
+                    diamice_lwr, diamice_upr, &
                     lut_extliq, lut_ssaliq, lut_asyliq, &
                     lut_extice, lut_ssaice, lut_asyice) result(error_msg)
     class(ty_cloud_optics_rrtmgp),     intent(inout) :: this
@@ -98,7 +99,7 @@ contains
     ! Lookup table interpolation constants
     ! Lower and upper bounds of the tables; also the constant for calculating interpolation indices for liquid
     real(wp),                   intent(in   ) :: radliq_lwr, radliq_upr
-    real(wp),                   intent(in   ) :: radice_lwr, radice_upr
+    real(wp),                   intent(in   ) :: diamice_lwr, diamice_upr
     ! LUT coefficients
     ! Extinction, single-scattering albedo, and asymmetry parameter for liquid and ice respectively
     real(wp), dimension(:,:),   intent(in)    :: lut_extliq, lut_ssaliq, lut_asyliq
@@ -139,7 +140,7 @@ contains
     this%liq_nsteps = nsize_liq
     this%ice_nsteps = nsize_ice
     this%liq_step_size = (radliq_upr - radliq_lwr)/real(nsize_liq-1,wp)
-    this%ice_step_size = (radice_upr - radice_lwr)/real(nsize_ice-1,wp)
+    this%ice_step_size = (diamice_upr - diamice_lwr)/real(nsize_ice-1,wp)
     ! Allocate LUT coefficients
     allocate(this%lut_extliq(nsize_liq, nbnd), &
              this%lut_ssaliq(nsize_liq, nbnd), &
@@ -157,8 +158,8 @@ contains
     ! Load LUT constants
     this%radliq_lwr = radliq_lwr
     this%radliq_upr = radliq_upr
-    this%radice_lwr = radice_lwr
-    this%radice_upr = radice_upr
+    this%diamice_lwr = diamice_lwr
+    this%diamice_upr = diamice_upr
 
     ! Load LUT coefficients
     !$acc kernels
@@ -245,19 +246,19 @@ contains
     !
     this%radliq_lwr = pade_sizreg_extliq(1)
     this%radliq_upr = pade_sizreg_extliq(nbound)
-    this%radice_lwr = pade_sizreg_extice(1)
-    this%radice_upr = pade_sizreg_extice(nbound)
+    this%diamice_lwr = pade_sizreg_extice(1)
+    this%diamice_upr = pade_sizreg_extice(nbound)
     if(error_msg /= "") return
 
     if(any([pade_sizreg_ssaliq(1), pade_sizreg_asyliq(1)] < this%radliq_lwr)) &
       error_msg = "cloud_optics%init(): one or more Pade size regimes have inconsistent lowest values"
-    if(any([pade_sizreg_ssaice(1), pade_sizreg_asyice(1)] < this%radice_lwr)) &
+    if(any([pade_sizreg_ssaice(1), pade_sizreg_asyice(1)] < this%diamice_lwr)) &
       error_msg = "cloud_optics%init(): one or more Pade size regimes have inconsistent lower values"
 
     if(any([pade_sizreg_ssaliq(nbound), pade_sizreg_asyliq(nbound)] > this%radliq_upr)) &
       error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radliq_upr"
-    if(any([pade_sizreg_ssaice(nbound), pade_sizreg_asyice(nbound)] > this%radice_upr)) &
-      error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than radice_upr"
+    if(any([pade_sizreg_ssaice(nbound), pade_sizreg_asyice(nbound)] > this%diamice_upr)) &
+      error_msg = "cloud_optics%init(): one or more Pade size regimes have lowest value less than diamice_upr"
     if(error_msg /= "") return
     !
     ! Allocate Pade coefficients
@@ -321,8 +322,8 @@ contains
 
     this%radliq_lwr = 0._wp
     this%radliq_upr = 0._wp
-    this%radice_lwr = 0._wp
-    this%radice_upr = 0._wp
+    this%diamice_lwr = 0._wp
+    this%diamice_upr = 0._wp
 
     ! Lookup table cloud optics coefficients
     if(allocated(this%lut_extliq)) then
@@ -463,7 +464,7 @@ contains
     if(check_values) then
       if(any_vals_outside(reliq, liqmsk, this%radliq_lwr, this%radliq_upr)) &
         error_msg = 'cloud optics: liquid effective radius is out of bounds'
-      if(any_vals_outside(reice, icemsk, this%radice_lwr, this%radice_upr)) &
+      if(any_vals_outside(reice, icemsk, this%diamice_lwr, this%diamice_upr)) &
         error_msg = 'cloud optics: ice effective radius is out of bounds'
       if(any_vals_less_than(clwp, liqmsk, 0._wp) .or. any_vals_less_than(ciwp, icemsk, 0._wp)) &
         error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
@@ -493,7 +494,7 @@ contains
         ! Ice
         !
         call compute_cld_from_table(ncol, nlay, nbnd, icemsk, ciwp, reice, &
-                                    this%ice_nsteps,this%ice_step_size,this%radice_lwr, &
+                                    this%ice_nsteps,this%ice_step_size,this%diamice_lwr, &
                                     this%lut_extice(:,:,this%icergh),      &
                                     this%lut_ssaice(:,:,this%icergh),      &
                                     this%lut_asyice(:,:,this%icergh),      &
@@ -609,13 +610,13 @@ contains
     class(ty_cloud_optics_rrtmgp), intent(in   ) :: this
     real(wp)                              :: r
 
-    r = this%radice_lwr
+    r = this%diamice_lwr
   end function get_min_radius_ice
   !-----------------------------------------------
   function get_max_radius_ice(this) result(r)
     class(ty_cloud_optics_rrtmgp), intent(in   ) :: this
     real(wp)                              :: r
 
-    r = this%radice_upr
+    r = this%diamice_upr
   end function get_max_radius_ice
 end module mo_cloud_optics_rrtmgp

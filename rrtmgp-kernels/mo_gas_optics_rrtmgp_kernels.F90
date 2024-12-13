@@ -90,6 +90,7 @@ contains
     real(wp) :: press_ref_trop
     real(wp) :: temp_ref_delta_inv
     real(wp) :: press_ref_log_1
+    real(wp) :: press_ref_log_delta_inv
     ! -----------------
     ! local indexes
     integer :: icol, ilay, iflav, igases_1, igases_2, itropo, itemp, jtemp_
@@ -97,6 +98,7 @@ contains
     press_ref_trop = exp(press_ref_trop_log)
     temp_ref_delta_inv = 1.0_wp / temp_ref_delta
     press_ref_log_1 = press_ref_log(1)
+    press_ref_log_delta_inv = 1.0_wp / press_ref_log_delta
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -105,7 +107,7 @@ contains
         ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp_)) * temp_ref_delta_inv
 
         ! index and factor for pressure interpolation
-        locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log_1) / press_ref_log_delta
+        locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log_1) * press_ref_log_delta_inv
         jpress(icol,ilay) = min(npres-1, max(1, int(locpress)))
         fpress(icol,ilay) = locpress - float(jpress(icol,ilay))
 

@@ -87,10 +87,12 @@ contains
     real(wp) :: eta, feta      ! binary_species_parameter, interpolation variable for eta
     real(wp) :: loceta         ! needed to find location in eta grid
     real(wp) :: ftemp_term
+    real(wp) :: press_ref_trop
     ! -----------------
     ! local indexes
     integer :: icol, ilay, iflav, igases_1, igases_2, itropo, itemp, jtemp_
 
+    press_ref_trop = exp(press_ref_trop_log)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
@@ -104,7 +106,7 @@ contains
         fpress(icol,ilay) = locpress - float(jpress(icol,ilay))
 
         ! determine if in lower or upper part of atmosphere
-        tropo(icol,ilay) = log(play(icol,ilay)) > press_ref_trop_log
+        tropo(icol,ilay) = play(icol,ilay) > press_ref_trop
       end do
     end do
 

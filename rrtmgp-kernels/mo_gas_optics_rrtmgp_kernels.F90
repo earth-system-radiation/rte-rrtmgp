@@ -149,7 +149,7 @@ contains
             else
               eta = 0.5_wp
             endif
-            loceta = eta * float(neta-1)
+            loceta = eta * real(neta-1, wp)
             jeta(itemp,icol,ilay,iflav) = min(int(loceta)+1, neta-1)
             feta = loceta - aint(loceta)
             ! compute interpolation fractions needed for minor species

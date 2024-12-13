@@ -91,6 +91,7 @@ contains
     real(wp) :: temp_ref_delta_inv
     real(wp) :: press_ref_log_1
     real(wp) :: press_ref_log_delta_inv
+    real(wp) :: jpress_aint
     ! -----------------
     ! local indexes
     integer :: icol, ilay, iflav, igases_1, igases_2, itropo, itemp, jtemp_
@@ -108,8 +109,9 @@ contains
 
         ! index and factor for pressure interpolation
         locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log_1) * press_ref_log_delta_inv
-        jpress(icol,ilay) = min(npres-1, max(1, int(locpress)))
-        fpress(icol,ilay) = locpress - float(jpress(icol,ilay))
+        jpress_aint = min(real(npres-1, wp), max(1.0_wp, aint(locpress)))
+        jpress(icol,ilay) = int(jpress_aint)
+        fpress(icol,ilay) = locpress - jpress_aint
 
         ! determine if in lower or upper part of atmosphere
         tropo(icol,ilay) = play(icol,ilay) > press_ref_trop

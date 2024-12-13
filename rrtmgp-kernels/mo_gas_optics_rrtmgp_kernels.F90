@@ -71,22 +71,9 @@ contains
     logical(wl), dimension(ncol,nlay), intent(out) :: tropo
       !! use lower (or upper) atmosphere tables 
     integer,     dimension(2,    ncol,nlay,nflav), intent(out) :: jeta
-      !! Index for binary species interpolation 
-#if !defined(__INTEL_LLVM_COMPILER) && __INTEL_COMPILER >= 1910
-    ! A performance-hitting workaround for the vectorization problem reported in
-    ! https://github.com/earth-system-radiation/rte-rrtmgp/issues/159
-    ! The known affected compilers are Intel Fortran Compiler Classic
-    ! 2021.4, 2021.5 and 2022.1. We do not limit the workaround to these
-    ! versions because it is not clear when the compiler bug will be fixed, see
-    ! https://community.intel.com/t5/Intel-Fortran-Compiler/Compiler-vectorization-bug/m-p/1362591.
-    ! We, however, limit the workaround to the Classic versions only since the
-    ! problem is not confirmed for the Intel Fortran Compiler oneAPI (a.k.a
-    ! 'ifx'), which does not mean there is none though.
-    real(wp),    dimension(:,       :,   :,    :), intent(out) :: col_mix
-#else
+      !! Index for binary species interpolation
     real(wp),    dimension(2,    ncol,nlay,nflav), intent(out) :: col_mix
       !! combination of major species's column amounts (first index is strat/trop)
-#endif
     real(wp),    dimension(2,2,2,ncol,nlay,nflav), intent(out) :: fmajor
       !! Interpolation weights in pressure, eta, strat/trop 
     real(wp),    dimension(2,2,  ncol,nlay,nflav), intent(out) :: fminor
@@ -102,14 +89,14 @@ contains
     real(wp) :: ftemp_term
     ! -----------------
     ! local indexes
-    integer :: icol, ilay, iflav, igases(2), itropo, itemp
+    integer :: icol, ilay, iflav, igases_1, igases_2, itropo, itemp, jtemp_
 
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
-        jtemp(icol,ilay) = int((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta)
-        jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp(icol,ilay))) ! limit the index range
-        ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta
+        jtemp_ = int((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta)
+        jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp_)) ! limit the index range
+        ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp_)) / temp_ref_delta
 
         ! index and factor for pressure interpolation
         locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log(1)) / press_ref_log_delta
@@ -122,7 +109,8 @@ contains
     end do
 
     do iflav = 1, nflav
-      igases(:) = flavor(:,iflav)
+      igases_1 = flavor(1,iflav)
+      igases_2 = flavor(2,iflav)
       do ilay = 1, nlay
         do icol = 1, ncol
         ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
@@ -132,9 +120,9 @@ contains
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors
-            ratio_eta_half = vmr_ref(itropo,igases(1),(jtemp(icol,ilay)+itemp-1)) / &
-                             vmr_ref(itropo,igases(2),(jtemp(icol,ilay)+itemp-1))
-            col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igases(1)) + ratio_eta_half * col_gas(icol,ilay,igases(2))
+            ratio_eta_half = vmr_ref(itropo,igases_1,(jtemp(icol,ilay)+itemp-1)) / &
+                             vmr_ref(itropo,igases_2,(jtemp(icol,ilay)+itemp-1))
+            col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igases_1) + ratio_eta_half * col_gas(icol,ilay,igases_2)
             ! Keep this commented lines. Fortran does allow for
             ! substantial optimizations and in this merge cases may
             ! happen that all expressions are evaluated and so create
@@ -142,18 +130,18 @@ contains
             ! save. Merge is the way to do it in general inside of
             ! loops, but sometimes it may not work.
             !
-            ! eta = merge(col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
+            ! eta = merge(col_gas(icol,ilay,igases_1) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
             !             col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix))
             !
             ! In essence: do not turn it back to merge(...)!
             if (col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix)) then
-              eta = col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav)
+              eta = col_gas(icol,ilay,igases_1) / col_mix(itemp,icol,ilay,iflav)
             else
               eta = 0.5_wp
             endif
             loceta = eta * float(neta-1)
             jeta(itemp,icol,ilay,iflav) = min(int(loceta)+1, neta-1)
-            feta = mod(loceta, 1.0_wp)
+            feta = loceta - aint(loceta)
             ! compute interpolation fractions needed for minor species
             ! ftemp_term = (1._wp-ftemp(icol,ilay)) for itemp = 1, ftemp(icol,ilay) for itemp=2
             ftemp_term = (real(2-itemp, wp) + real(2*itemp-3, wp) * ftemp(icol,ilay))

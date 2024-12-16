@@ -21,17 +21,21 @@
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 #define GENERIC_INLINE KOKKOS_INLINE_FUNCTION
+#define KERNEL_FENCE Kokkos::fence()
 #else
 #define GENERIC_INLINE YAKL_INLINE
+#define KERNEL_FENCE yakl::fence()
 #endif
 
-//#define ENABLE_TIMING
+#define ENABLE_TIMING
 // Macro for timing kernels
 #ifdef ENABLE_TIMING
 #define TIMED_KERNEL(kernel)                                            \
 {                                                                       \
+  KERNEL_FENCE;                                                         \
   auto start_t = std::chrono::high_resolution_clock::now();             \
   kernel;                                                               \
+  KERNEL_FENCE;                                                         \
   auto stop_t = std::chrono::high_resolution_clock::now();              \
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t); \
   static double total_s = 0.;                                           \

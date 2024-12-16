@@ -453,7 +453,11 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, Tau
     // Top of domain is index 1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
+    const int dims2_tot = ncol*ngpt;
+    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
+      int icol, igpt;
+      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
       // Downward propagation
       for (int ilev=1; ilev<nlay+1; ilev++) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev-1,igpt)*radn_dn(icol,ilev-1,igpt) + source_dn(icol,ilev-1,igpt);
@@ -674,9 +678,9 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   const int dsize1 = ncol*(nlay+1)*ngpt;
   const int dsize2 = ncol*nlay*ngpt;
   RealT* data = pool::template alloc_raw<RealT>(dsize1*2 + dsize2), *dcurr = data;
-  ureal3d_t albedo(dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  ureal3d_t src   (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  ureal3d_t denom (dcurr,ncol,nlay  ,ngpt); dcurr += dsize2;
+  ureal3d_t albedo(dcurr,ncol,ngpt,nlay+1); dcurr += dsize1;
+  ureal3d_t src   (dcurr,ncol,ngpt,nlay+1); dcurr += dsize1;
+  ureal3d_t denom (dcurr,ncol,ngpt,nlay); dcurr += dsize2;
 
   // Indexing into arrays for upward and downward propagation depends on the vertical
   //   orientation of the arrays (whether the domain top is at the first or last index)
@@ -684,39 +688,44 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
+    const int dims2_tot = ncol*ngpt;
+    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
+      int icol, igpt;
+      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
+    //TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       int ilev = nlay;
       // Albedo of lowest level is the surface albedo...
-      albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
+      albedo(icol,igpt,ilev)  = albedo_sfc(icol,igpt);
       // ... and source of diffuse radiation is surface emission
-      src(icol,ilev,igpt) = src_sfc(icol,igpt);
+      src(icol,igpt,ilev) = src_sfc(icol,igpt);
 
       // From bottom to top of atmosphere --
       //   compute albedo and source of upward radiation
       for (ilev=nlay-1; ilev>=0; ilev--) {
-        denom(icol,ilev,igpt) = 1./(1. - rdif(icol,ilev,igpt)*albedo(icol,ilev+1,igpt));    // Eq 10
-        albedo(icol,ilev,igpt) = rdif(icol,ilev,igpt) +
-                                 tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev+1,igpt) * denom(icol,ilev,igpt); // Equation 9
+        denom(icol,igpt,ilev) = 1./(1. - rdif(icol,ilev,igpt)*albedo(icol,igpt,ilev+1));    // Eq 10
+        albedo(icol,igpt,ilev) = rdif(icol,ilev,igpt) +
+          tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,igpt,ilev+1) * denom(icol,igpt,ilev); // Equation 9
         // Equation 11 -- source is emitted upward radiation at top of layer plus
         //   radiation emitted at bottom of layer,
         //   transmitted through the layer and reflected from layers below (tdiff*src*albedo)
-        src(icol,ilev,igpt) =  src_up(icol, ilev, igpt) +
-                               tdif(icol,ilev,igpt) * denom(icol,ilev,igpt) *
-                               (src(icol,ilev+1,igpt) + albedo(icol,ilev+1,igpt)*src_dn(icol,ilev,igpt));
+        src(icol,igpt,ilev) =  src_up(icol, ilev, igpt) +
+          tdif(icol,ilev,igpt) * denom(icol,igpt,ilev) *
+          (src(icol,igpt,ilev+1) + albedo(icol,igpt,ilev+1)*src_dn(icol,ilev,igpt));
       }
 
       // Eq 12, at the top of the domain upwelling diffuse is due to ...
       ilev = 0;
-      flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // ... reflection of incident diffuse and
-                                src(icol,ilev,igpt);                                  // emission from below
+      flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,igpt,ilev) +  // ... reflection of incident diffuse and
+        src(icol,igpt,ilev);                                  // emission from below
 
       // From the top of the atmosphere downward -- compute fluxes
       for (ilev = 1; ilev <= nlay; ilev++) {
         flux_dn(icol,ilev,igpt) = (tdif(icol,ilev-1,igpt)*flux_dn(icol,ilev-1,igpt) +   // Equation 13
-                                  rdif(icol,ilev-1,igpt)*src(icol,ilev,igpt) +
-                                  src_dn(icol,ilev-1,igpt)) * denom(icol,ilev-1,igpt);
-        flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // Equation 12
-                                  src(icol,ilev,igpt);
+                                   rdif(icol,ilev-1,igpt)*src(icol,igpt,ilev) +
+                                   src_dn(icol,ilev-1,igpt)) * denom(icol,igpt,ilev-1);
+        flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,igpt,ilev) +  // Equation 12
+                                  src(icol,igpt,ilev);
       }
     }));
 
@@ -808,7 +817,7 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay+1
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay+1,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
   }));
 

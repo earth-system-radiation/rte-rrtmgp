@@ -168,7 +168,7 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
   // do igpt = 1 , ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<4>({nbnd,ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int ibnd, int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<4>({ncol,nlay,ngpt,nbnd}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt, int ibnd) {
     if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
       // t=tau1 + tau2
       RealT tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);
@@ -297,7 +297,7 @@ void increment_2stream_by_2stream(int ncol, int nlay, int ngpt, Tau1T const &tau
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     // t=tau1 + tau2
     RealT tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
     // w=(tau1*ssa1 + tau2*ssa2) / t

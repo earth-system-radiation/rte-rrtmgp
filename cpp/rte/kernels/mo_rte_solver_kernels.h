@@ -681,6 +681,8 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   ureal3d_t albedo(dcurr,ncol,ngpt,nlay+1); dcurr += dsize1;
   ureal3d_t src   (dcurr,ncol,ngpt,nlay+1); dcurr += dsize1;
   ureal3d_t denom (dcurr,ncol,ngpt,nlay); dcurr += dsize2;
+  Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
+  const int dims2_tot = ncol*ngpt;
 
   // Indexing into arrays for upward and downward propagation depends on the vertical
   //   orientation of the arrays (whether the domain top is at the first or last index)
@@ -688,8 +690,6 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
-    const int dims2_tot = ncol*ngpt;
     TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
       int icol, igpt;
       conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
@@ -732,39 +732,42 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
+      int icol, igpt;
+      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
+
       int ilev = 0;
       // Albedo of lowest level is the surface albedo...
-      albedo(icol,ilev,igpt)  = albedo_sfc(icol,igpt);
+      albedo(icol,igpt,ilev)  = albedo_sfc(icol,igpt);
       // ... and source of diffuse radiation is surface emission
-      src(icol,ilev,igpt) = src_sfc(icol,igpt);
+      src(icol,igpt,ilev) = src_sfc(icol,igpt);
 
       // From bottom to top of atmosphere --
       //   compute albedo and source of upward radiation
       for (ilev = 0; ilev < nlay; ilev++) {
-        denom (icol,ilev  ,igpt) = 1./(1. - rdif(icol,ilev,igpt)*albedo(icol,ilev,igpt));                // Eq 10
-        albedo(icol,ilev+1,igpt) = rdif(icol,ilev,igpt) +
-          tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,ilev,igpt) * denom(icol,ilev,igpt); // Equation 9
+        denom (icol,igpt,ilev) = 1./(1. - rdif(icol,ilev,igpt)*albedo(icol,igpt,ilev));                // Eq 10
+        albedo(icol,igpt,ilev+1) = rdif(icol,ilev,igpt) +
+          tdif(icol,ilev,igpt)*tdif(icol,ilev,igpt) * albedo(icol,igpt,ilev) * denom(icol,igpt,ilev); // Equation 9
         // Equation 11 -- source is emitted upward radiation at top of layer plus
         //   radiation emitted at bottom of layer,
         //   transmitted through the layer and reflected from layers below (tdiff*src*albedo)
-        src(icol,ilev+1,igpt) =  src_up(icol, ilev, igpt) +
-          tdif(icol,ilev,igpt) * denom(icol,ilev,igpt) *
-          (src(icol,ilev,igpt) + albedo(icol,ilev,igpt)*src_dn(icol,ilev,igpt));
+        src(icol,igpt,ilev+1) =  src_up(icol, ilev, igpt) +
+          tdif(icol,ilev,igpt) * denom(icol,igpt,ilev) *
+          (src(icol,igpt,ilev) + albedo(icol,igpt,ilev)*src_dn(icol,ilev,igpt));
       }
 
       // Eq 12, at the top of the domain upwelling diffuse is due to ...
       ilev = nlay;
-      flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // ... reflection of incident diffuse and
-        src(icol,ilev,igpt);                          // scattering by the direct beam below
+      flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,igpt,ilev) +  // ... reflection of incident diffuse and
+        src(icol,igpt,ilev);                          // scattering by the direct beam below
 
       // From the top of the atmosphere downward -- compute fluxes
       for (ilev=nlay-1; ilev >= 0; ilev--) {
         flux_dn(icol,ilev,igpt) = (tdif(icol,ilev,igpt)*flux_dn(icol,ilev+1,igpt) +   // Equation 13
-                                   rdif(icol,ilev,igpt)*src(icol,ilev,igpt) +
-                                   src_dn(icol, ilev, igpt)) * denom(icol,ilev,igpt);
-        flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,ilev,igpt) +  // Equation 12
-                                  src(icol,ilev,igpt);
+                                   rdif(icol,ilev,igpt)*src(icol,igpt,ilev) +
+                                   src_dn(icol, ilev, igpt)) * denom(icol,igpt,ilev);
+        flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,igpt,ilev) +  // Equation 12
+                                  src(icol,igpt,ilev);
 
       }
     }));

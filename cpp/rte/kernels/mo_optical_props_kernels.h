@@ -204,7 +204,7 @@ void increment_1scalar_by_1scalar(int ncol, int nlay, int ngpt, Tau1T const &tau
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}), KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,ngpt}), KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     tau1(icol,ilay,igpt) = tau1(icol,ilay,igpt) + tau2(icol,ilay,igpt);
   }));
   //std::cout << "WARNING: THIS ISN'T TESTED: " << __FILE__ << ": " << __LINE__ << "\n";
@@ -245,7 +245,7 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, TauT const &tau, SsaT
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     if (tau(icol,ilay,igpt) > eps) {
       RealT f  = g  (icol,ilay,igpt) * g  (icol,ilay,igpt);
       RealT wf = ssa(icol,ilay,igpt) * f;

@@ -261,7 +261,7 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
   // TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<5>({nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
   //   int icol = tcol*TILE_SIZE + itcol;
   //   int igpt = tgpt*TILE_SIZE + itgpt;
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     RealT t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
     tau(icol,ilay,igpt) = t;
     g  (icol,ilay,igpt) = 0.;
@@ -549,7 +549,7 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
   //     // optical depth calculation for major species
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
   Kokkos::Array<int, 3> dims3_ngpt_ncol_nlay = {ngpt,ncol,nlay};
-  const int dims3_tot = ngpt*ncol*nlay;;
+  const int dims3_tot = ngpt*ncol*nlay;
   TIMED_KERNEL(Kokkos::parallel_for(dims3_tot, KOKKOS_LAMBDA (int idx) {
     int igpt, icol, ilay;
     conv::unflatten_idx_left(idx, dims3_ngpt_ncol_nlay, igpt, icol, ilay);

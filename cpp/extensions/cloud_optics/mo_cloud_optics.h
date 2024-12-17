@@ -871,7 +871,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,nbnd}), KOKKOS_LAMBDA (int icol, int ilay, int ibnd) {
       // Absorption optical depth  = (1-ssa) * tau = tau - taussa
       optical_props_tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) +
                                           (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd));
@@ -888,7 +888,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,nbnd}), KOKKOS_LAMBDA (int icol, int ilay, int ibnd) {
       RealT tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd);
       RealT taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd);
       optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / Kokkos::fmax(conv::epsilon(tau), taussa);
@@ -931,7 +931,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,nbnd}), KOKKOS_LAMBDA (int icol, int ilay, int ibnd) {
       if (mask(icol,ilay)) {
         int index = Kokkos::fmin( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.) - 1;
         RealT fint = (re(icol,ilay) - offset)/step_size - index;

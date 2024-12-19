@@ -36,11 +36,10 @@ if(RTE_ENABLE_SP)
   add_definitions("-DRTE_USE_SP")
 endif()
 
-option(USE_C_BOOL "Use C bool" OFF)
-
+include(CheckFortranNeedsCBool)
+check_fortran_needs_cbool(USE_C_BOOL)
 if(USE_C_BOOL)
   add_definitions("-DRTE_USE_CBOOL")
-  message(STATUS "Adding compiler definition -DRTE_USE_CBOOL")
 endif()
 
 include(FetchContent)

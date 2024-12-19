@@ -43,3 +43,9 @@ target_compile_definitions(
   PRIVATE $<$<BOOL:${RTE_ENABLE_SP}>:RTE_USE_SP>
           $<$<BOOL:${RTE_USE_C_BOOL}>:RTE_USE_CBOOL>
 )
+
+target_include_directories(
+  rtekernels
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+)

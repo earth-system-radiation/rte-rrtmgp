@@ -26,7 +26,7 @@ add_library(
 target_include_directories(test_utils PRIVATE ${NetCDF_Fortran_INCLUDE_DIR})
 target_link_libraries(
   test_utils
-  PRIVATE rte rrtmgp examples_utils rfmip_clear_utils ${NetCDF_Fortran_LIBRARY}
+  PUBLIC rte rrtmgp examples_utils rfmip_clear_utils ${NetCDF_Fortran_LIBRARY}
 )
 
 set_target_properties(

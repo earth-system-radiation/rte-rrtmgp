@@ -15,23 +15,19 @@ add_custom_target(
   COMMENT "Copying required .nc test files to build directory"
 )
 
-# Add executable and additional sources
-set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/mo_rfmip_io.F90)
-
-add_library(rfmip_clear_utils STATIC ${SOURCES})
-
+add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
 target_link_libraries(rfmip_clear_utils PRIVATE examples_utils)
 
-message(STATUS "Configuring lib rfmip_clear_utils")
-
-# Path to the test atmospheres file
-
-# Build tests
-build_test(rrtmgp_rfmip_lw rfmip_clear_utils examples_utils)
-build_test(rrtmgp_rfmip_sw rfmip_clear_utils examples_utils)
-
-add_dependencies(rrtmgp_rfmip_lw rfmip_clear_sky_test_inputs)
-add_dependencies(rrtmgp_rfmip_sw rfmip_clear_sky_test_inputs)
+foreach(
+  test_executable IN
+  ITEMS # cmake-format: sort
+        rrtmgp_rfmip_lw
+        rrtmgp_rfmip_sw
+)
+  add_executable(${test_executable} ${test_executable}.F90)
+  target_link_libraries(${test_executable} rfmip_clear_utils examples_utils)
+  add_dependencies(${test_executable} rfmip_clear_sky_test_inputs)
+endforeach()
 
 # Add rfmip tests
 add_custom_test(

@@ -1,5 +1,3 @@
-message(STATUS "Configuring lib all_sky_utils")
-
 set(TEST_INPUTS
     ${RRTMGP_DATA}/examples/all-sky/reference/rrtmgp-allsky-lw.nc
     ${RRTMGP_DATA}/examples/all-sky/reference/rrtmgp-allsky-sw.nc
@@ -16,21 +14,15 @@ add_custom_target(
   COMMENT "Copying required .nc test files to build directory"
 )
 
-# Add executable and additional sources
-set(SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/mo_load_aerosol_coefficients.F90
-    ${CMAKE_CURRENT_SOURCE_DIR}/mo_load_cloud_coefficients.F90
+add_library(
+  all_sky_utils STATIC # cmake-format: sort
+  mo_load_aerosol_coefficients.F90 mo_load_cloud_coefficients.F90
 )
-
-add_library(all_sky_utils STATIC ${SOURCES})
 
 target_link_libraries(all_sky_utils PRIVATE examples_utils)
 
-message(STATUS "Configuring lib all_sky_utils")
-
-# Build tests
-build_test(rrtmgp_allsky all_sky_utils examples_utils)
-
+add_executable(rrtmgp_allsky rrtmgp_allsky.F90)
+target_link_libraries(rrtmgp_allsky PRIVATE all_sky_utils examples_utils)
 add_dependencies(rrtmgp_allsky all_sky_test_inputs)
 
 # Add aerosols tests

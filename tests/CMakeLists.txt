@@ -51,60 +51,63 @@ endforeach()
 add_dependencies(check_equivalence tests_test_inputs)
 add_dependencies(check_variants tests_test_inputs)
 
-# Add unit tests
-add_custom_test(rte_optic_prop_unit_tests rte_optic_prop_unit_tests)
-add_custom_test(rte_lw_solver_unit_tests rte_lw_solver_unit_tests)
-add_custom_test(rte_sw_solver_unit_tests rte_sw_solver_unit_tests)
+add_test(NAME rte_optic_prop_unit_tests COMMAND rte_optic_prop_unit_tests)
+add_test(NAME rte_lw_solver_unit_tests COMMAND rte_lw_solver_unit_tests)
+add_test(NAME rte_sw_solver_unit_tests COMMAND rte_sw_solver_unit_tests)
 
-# Add equivalence tests
-add_custom_test(
-  check_equivalence_lw_g256
-  check_equivalence
-  multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
-)
-add_custom_test(
-  check_equivalence_lw_g128
-  check_equivalence
-  multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
-)
-add_custom_test(
-  check_equivalence_sw_g224
-  check_equivalence
-  multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
-)
-add_custom_test(
-  check_equivalence_sw_g112
-  check_equivalence
-  multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
+add_test(
+  NAME check_equivalence_lw_g256
+  COMMAND
+    check_equivalence
+    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
 )
 
-# Add variant tests
-add_custom_test(
-  check_variants_lw
-  check_variants
-  multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
-)
-add_custom_test(
-  check_variants_sw
-  check_variants
-  multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
+add_test(
+  NAME check_equivalence_lw_g128
+  COMMAND
+    check_equivalence
+    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
 )
 
-# Add a custom target to generate validation plots
+add_test(
+  NAME check_equivalence_sw_g224
+  COMMAND
+    check_equivalence
+    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
+)
+
+add_test(
+  NAME check_equivalence_sw_g112
+  COMMAND
+    check_equivalence
+    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
+)
+
+add_test(
+  NAME check_variants_lw
+  COMMAND
+    check_variants
+    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
+)
+
+add_test(
+  NAME check_variants_sw
+  COMMAND
+    check_variants
+    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
+)
+
 add_custom_target(
   validation-plots
   COMMAND
     ${CMAKE_COMMAND} -E env ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/validation-plots.py --input_file
     multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating validation plots using validation-plots.py"
 )

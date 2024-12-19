@@ -29,44 +29,32 @@ foreach(
   add_dependencies(${test_executable} rfmip_clear_sky_test_inputs)
 endforeach()
 
-# Add rfmip tests
-add_custom_test(
-  rfmip_test_lw
-  rrtmgp_rfmip_lw
-  8
-  multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
-)
-add_custom_test(
-  rfmip_test_sw
-  rrtmgp_rfmip_sw
-  8
-  multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
+add_test(
+  NAME rfmip_test_lw
+  COMMAND
+    rrtmgp_rfmip_lw 8
+    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
 )
 
-# Add rfmip check test
-add_custom_test(
-  check_rfmip_lw_sw
-  ${CMAKE_COMMAND}
-  -E
-  env
-  ${Python_EXECUTABLE}
-  ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py
-  --ref_dir
-  ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference
-  --tst_dir
-  ${CMAKE_CURRENT_BINARY_DIR}
-  --variables
-  rld
-  rlu
-  rsd
-  rsu
-  --file_names
-  rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
-  rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
-  rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
-  rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
-  --failure_threshold
-  ${FAILURE_THRESHOLD}
+add_test(
+  NAME rfmip_test_sw
+  COMMAND
+    rrtmgp_rfmip_sw 8
+    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
+)
+
+add_test(
+  NAME check_rfmip_lw_sw
+  COMMAND
+    ${CMAKE_COMMAND} -E env ${Python_EXECUTABLE}
+    ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
+    ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir
+    ${CMAKE_CURRENT_BINARY_DIR} --variables rld rlu rsd rsu --file_names
+    rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+    rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+    rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+    rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc --failure_threshold
+    ${FAILURE_THRESHOLD}
 )

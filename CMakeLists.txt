@@ -2,25 +2,6 @@ cmake_minimum_required(VERSION 3.18)
 
 project(rte-rrtmgp LANGUAGES)
 
-# Check if CMAKE_BUILD_TYPE is defined; if not, set a default
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE
-      "Release"
-      CACHE STRING
-            "Build type: Debug, Release, RelWithDebInfo, or MinSizeRel"
-            FORCE
-  )
-endif()
-
-# Provide the list of valid build types
-set_property(
-  CACHE CMAKE_BUILD_TYPE
-  PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel"
-)
-
-# Inform the user about the selected build type
-message(STATUS "Using build type: ${CMAKE_BUILD_TYPE}")
-
 set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
 
 # Define the option for enabling/disabling tests

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(rte-rrtmgp LANGUAGES)
+project(rte-rrtmgp LANGUAGES Fortran)
 
 set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
 
@@ -42,57 +42,6 @@ set(CMAKE_Fortran_FLAGS
     CACHE STRING "Select Fortran compile flags"
 )
 
-set(PREFERRED_FC_COMPILERS
-    "gfortran"
-    "gfortran-10"
-    "gfortran-11"
-    "gfortran-12"
-    "gfortran-13"
-    "ifort"
-    "ifx"
-    "nvfortran"
-    "f77"
-)
-
-if(NOT WIN32)
-  set(CMAKE_Fortran_COMPILER
-      "gfortran"
-      CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}"
-  )
-  set_property(
-    CACHE CMAKE_Fortran_COMPILER PROPERTY STRINGS ${PREFERRED_FC_COMPILERS}
-  )
-else()
-  message(STATUS "Conda Environment: $ENV{CONDA_PREFIX}")
-  set(CMAKE_Fortran_COMPILER
-      "$ENV{CONDA_PREFIX}/Library/bin/gfortran.exe"
-      CACHE STRING "Select the Fortran compiler"
-  )
-  set(CMAKE_AR
-      "$ENV{CONDA_PREFIX}/Library/x86_64-w64-mingw32/bin/ar.exe"
-      CACHE STRING "Select archiver"
-  )
-  set(CMAKE_RANLIB
-      "$ENV{CONDA_PREFIX}/Library/x86_64-w64-mingw32/bin/ranlib.exe"
-      CACHE STRING "Select ranlib executable"
-  )
-
-  file(TO_CMAKE_PATH ${CMAKE_AR} CMAKE_AR)
-  file(TO_CMAKE_PATH ${CMAKE_RANLIB} CMAKE_RANLIB)
-  file(TO_CMAKE_PATH ${CMAKE_Fortran_COMPILER} CMAKE_Fortran_COMPILER)
-endif()
-
-# Check if the Fortran compiler is available
-find_program(FORTRAN_COMPILER_FOUND ${CMAKE_Fortran_COMPILER})
-if(NOT FORTRAN_COMPILER_FOUND)
-  message(
-    FATAL_ERROR
-      "No suitable Fortran compiler found. Please install one of the following: ${PREFERRED_FC_COMPILERS}"
-  )
-endif()
-
-enable_language(Fortran)
-
 include(FetchContent)
 
 message(STATUS "Fetching ${RRTMGP_DATA_REPO} version: ${RRTMGP_DATA_VERSION}")
@@ -111,7 +60,6 @@ endif()
 
 message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (${PREFERRED_KERNEL_MODES})")
 message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
-message(STATUS "FORTRAN COMPILER: ${CMAKE_Fortran_COMPILER}")
 
 # Set the directory for Fortran module files
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)

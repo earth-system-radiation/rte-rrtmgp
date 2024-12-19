@@ -46,6 +46,25 @@
 #define TIMED_KERNEL(kernel) kernel
 #endif
 
+// Macro for timing kernels that does not make a code block. Requires
+// a name to disambiguate variable names. Useful when code block defines
+// variables that need to persist.
+#ifdef ENABLE_TIMING
+#define TIMED_INLINE_KERNEL(name, kernel)                               \
+  KERNEL_FENCE;                                                         \
+  auto start_t##name = std::chrono::high_resolution_clock::now();       \
+  kernel;                                                               \
+  KERNEL_FENCE;                                                         \
+  auto stop_t##name = std::chrono::high_resolution_clock::now();        \
+  auto duration##name = std::chrono::duration_cast<std::chrono::microseconds>(stop_t##name - start_t##name); \
+  static double total_s##name = 0.;                                     \
+  total_s##name += duration##name.count() / 1000000.0;                  \
+  std::cout << "TIMING For func " << __func__ << " file " << __FILE__ << " line " << __LINE__ << " total " << total_s##name << " s" << std::endl
+#else
+#define TIMED_KERNEL(kernel) kernel
+#endif
+
+
 /**
  * Helper functions for the conversion to Kokkos
  */

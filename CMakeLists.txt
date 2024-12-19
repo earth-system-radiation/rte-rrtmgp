@@ -4,8 +4,7 @@ project(rte-rrtmgp LANGUAGES Fortran)
 
 set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
 
-# Define the option for enabling/disabling tests
-option(ENABLE_TESTS "Enable tests" OFF)
+option(BUILD_TESTING "Build tests" OFF)
 
 set(RRTMGP_DATA_VERSION
     "v1.8.2"
@@ -66,10 +65,12 @@ add_subdirectory(rte-frontend) # Build library: rte
 add_subdirectory(rrtmgp-kernels) # Build library: rrtmgpkernels
 add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp
 
-if(ENABLE_TESTS)
+include(CTest)
+if(BUILD_TESTING)
   include(tests.cmake)
-
-  # Add the tests subdirectory for building and running tests
-  add_subdirectory(examples) # Build: Test & Check
-  add_subdirectory(tests) # Build: Test & Check
+  add_subdirectory(examples)
+  add_subdirectory(tests)
+else()
+  # Allow for 'make test' even if the tests are disabled:
+  enable_testing()
 endif()

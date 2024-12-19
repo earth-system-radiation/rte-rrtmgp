@@ -37,11 +37,6 @@ if(USE_C_BOOL)
   message(STATUS "Adding compiler definition -DRTE_USE_CBOOL")
 endif()
 
-set(CMAKE_Fortran_FLAGS
-    ""
-    CACHE STRING "Select Fortran compile flags"
-)
-
 include(FetchContent)
 
 message(STATUS "Fetching ${RRTMGP_DATA_REPO} version: ${RRTMGP_DATA_VERSION}")

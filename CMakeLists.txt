@@ -32,16 +32,6 @@ set(KERNEL_MODE
 )
 set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
 
-if(RTE_ENABLE_SP)
-  add_definitions("-DRTE_USE_SP")
-endif()
-
-include(CheckFortranNeedsCBool)
-check_fortran_needs_cbool(USE_C_BOOL)
-if(USE_C_BOOL)
-  add_definitions("-DRTE_USE_CBOOL")
-endif()
-
 include(FetchContent)
 
 message(STATUS "Fetching ${RRTMGP_DATA_REPO} version: ${RRTMGP_DATA_VERSION}")

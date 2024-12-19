@@ -34,3 +34,12 @@ else()
     )
   endif()
 endif()
+
+include(CheckFortranNeedsCBool)
+check_fortran_needs_cbool(RTE_USE_C_BOOL)
+
+target_compile_definitions(
+  rtekernels
+  PRIVATE $<$<BOOL:${RTE_ENABLE_SP}>:RTE_USE_SP>
+          $<$<BOOL:${RTE_USE_C_BOOL}>:RTE_USE_CBOOL>
+)

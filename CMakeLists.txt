@@ -60,8 +60,6 @@ message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
 # Set the directory for Fortran module files
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
-include(common.cmake)
-
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
 add_subdirectory(rrtmgp-kernels)

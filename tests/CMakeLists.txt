@@ -1,4 +1,6 @@
-set(TEST_INPUTS ${TEST_ATMOSPHERES})
+set(TEST_INPUTS
+    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+)
 
 # Copy required test inputs to the build directory
 add_custom_target(

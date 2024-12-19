@@ -1,5 +1,6 @@
 set(TEST_INPUTS
-    ${TEST_ATMOSPHERES}
+    # cmake-format: sort
+    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc

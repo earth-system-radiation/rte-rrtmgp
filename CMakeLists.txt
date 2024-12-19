@@ -65,7 +65,7 @@ include(common.cmake)
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
 add_subdirectory(rrtmgp-kernels)
-add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp
+add_subdirectory(rrtmgp-frontend)
 
 include(CTest)
 if(BUILD_TESTING)

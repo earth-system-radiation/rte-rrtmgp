@@ -6,6 +6,8 @@ set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)
 
 option(BUILD_TESTING "Build tests" OFF)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 set(RRTMGP_DATA_VERSION
     "v1.8.2"
     CACHE STRING "Select what version to clone for rrtmgp-data"

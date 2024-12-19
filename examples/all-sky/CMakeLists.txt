@@ -19,10 +19,10 @@ add_library(
   mo_load_aerosol_coefficients.F90 mo_load_cloud_coefficients.F90
 )
 
-target_link_libraries(all_sky_utils PRIVATE examples_utils)
+target_link_libraries(all_sky_utils PUBLIC examples_utils)
 
 add_executable(rrtmgp_allsky rrtmgp_allsky.F90)
-target_link_libraries(rrtmgp_allsky PRIVATE all_sky_utils examples_utils)
+target_link_libraries(rrtmgp_allsky PRIVATE all_sky_utils)
 add_dependencies(rrtmgp_allsky all_sky_test_inputs)
 
 add_test(

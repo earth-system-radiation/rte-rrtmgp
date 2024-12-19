@@ -9,4 +9,10 @@ add_library(
   mo_source_functions.F90
 )
 
+target_include_directories(
+  rte
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+)
+
 target_link_libraries(rte PUBLIC rtekernels)

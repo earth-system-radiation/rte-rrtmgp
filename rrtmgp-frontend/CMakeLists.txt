@@ -11,4 +11,14 @@ add_library(
   mo_gas_optics_rrtmgp.F90
 )
 
-target_link_libraries(rrtmgp PUBLIC rrtmgpkernels rte)
+target_include_directories(
+  rrtmgp
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+)
+
+target_link_libraries(
+  rrtmgp
+  PUBLIC rrtmgpkernels
+  PRIVATE rte
+)

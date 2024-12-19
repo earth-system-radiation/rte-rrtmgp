@@ -9,6 +9,8 @@ add_custom_target(
   COMMENT "Copying required .nc test files to build directory"
 )
 
+set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
+
 set(extensions_source_dir ${PROJECT_SOURCE_DIR}/extensions)
 
 add_library(
@@ -23,16 +25,15 @@ add_library(
   mo_testing_io.F90
   mo_testing_utils.F90
 )
-target_include_directories(test_utils PRIVATE ${NetCDF_Fortran_INCLUDE_DIR})
-target_link_libraries(
+
+target_include_directories(
   test_utils
-  PUBLIC rte rrtmgp examples_utils rfmip_clear_utils ${NetCDF_Fortran_LIBRARY}
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+    ${NetCDF_Fortran_INCLUDE_DIR}
 )
 
-set_target_properties(
-  test_utils
-  PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}
-)
+target_link_libraries(test_utils PUBLIC rfmip_clear_utils)
 
 foreach(
   test_executable IN
@@ -45,7 +46,7 @@ foreach(
         test_zenith_angle_spherical_correction
 )
   add_executable(${test_executable} ${test_executable}.F90)
-  target_link_libraries(${test_executable} test_utils)
+  target_link_libraries(${test_executable} PRIVATE test_utils)
 endforeach()
 
 add_dependencies(check_equivalence tests_test_inputs)

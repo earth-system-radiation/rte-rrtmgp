@@ -1,4 +1,4 @@
-add_library(rtekernels STATIC mo_rte_kind.F90)
+add_library(rtekernels OBJECT mo_rte_kind.F90)
 
 if(KERNEL_MODE STREQUAL "extern")
   target_sources(

@@ -16,7 +16,7 @@ add_custom_target(
 )
 
 add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
-target_link_libraries(rfmip_clear_utils PRIVATE examples_utils)
+target_link_libraries(rfmip_clear_utils PUBLIC examples_utils)
 
 foreach(
   test_executable IN
@@ -25,7 +25,7 @@ foreach(
         rrtmgp_rfmip_sw
 )
   add_executable(${test_executable} ${test_executable}.F90)
-  target_link_libraries(${test_executable} rfmip_clear_utils examples_utils)
+  target_link_libraries(${test_executable} PRIVATE rfmip_clear_utils)
   add_dependencies(${test_executable} rfmip_clear_sky_test_inputs)
 endforeach()
 

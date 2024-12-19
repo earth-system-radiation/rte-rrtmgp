@@ -50,7 +50,6 @@ endif()
 
 message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (${PREFERRED_KERNEL_MODES})")
 
-# Set the directory for Fortran module files
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
 add_subdirectory(rte-kernels)

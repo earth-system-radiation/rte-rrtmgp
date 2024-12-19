@@ -1,4 +1,4 @@
-add_library(rrtmgpkernels STATIC)
+add_library(rrtmgpkernels OBJECT)
 
 if(KERNEL_MODE STREQUAL "extern")
   target_sources(
@@ -29,4 +29,10 @@ else()
   endif()
 endif()
 
-target_link_libraries(rrtmgpkernels PRIVATE rtekernels)
+target_include_directories(
+  rrtmgpkernels
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+)
+
+target_link_libraries(rrtmgpkernels PRIVATE rte)

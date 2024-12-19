@@ -1,9 +1,3 @@
-message(STATUS "[Tests enabled]")
-message(STATUS "Configuring tests and examples")
-
-find_package(Python REQUIRED COMPONENTS Interpreter)
-find_package(NetCDF_Fortran REQUIRED)
-
 # Define failure threshold for python tests to use
 set(FAILURE_THRESHOLD
     7.e-4

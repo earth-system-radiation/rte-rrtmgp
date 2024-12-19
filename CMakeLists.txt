@@ -67,6 +67,8 @@ add_subdirectory(rrtmgp-frontend)
 
 include(CTest)
 if(BUILD_TESTING)
+  find_package(Python REQUIRED COMPONENTS Interpreter)
+  find_package(NetCDF_Fortran REQUIRED)
   include(tests.cmake)
   add_subdirectory(examples)
   add_subdirectory(tests)

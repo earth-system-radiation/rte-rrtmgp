@@ -6,6 +6,8 @@ set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)
 
 option(BUILD_TESTING "Build tests" OFF)
 
+option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 add_compile_options(
@@ -26,14 +28,9 @@ set(KERNEL_MODE
 )
 set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
 
-set(PRECISION
-    "DP"
-    CACHE STRING "Select the floating point precision: double or single"
-)
-set_property(CACHE PRECISION PROPERTY STRINGS "DP" "SP")
-
-add_definitions("-DRTE_USE_${PRECISION}")
-message(STATUS "Adding compiler definition -DRTE_USE_${PRECISION}")
+if(RTE_ENABLE_SP)
+  add_definitions("-DRTE_USE_SP")
+endif()
 
 option(USE_C_BOOL "Use C bool" OFF)
 
@@ -59,7 +56,6 @@ if(NOT rrtmgp-data_POPULATED)
 endif()
 
 message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (${PREFERRED_KERNEL_MODES})")
-message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
 
 # Set the directory for Fortran module files
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 project(rte-rrtmgp LANGUAGES Fortran)
 
-set(RRTMGP_DATA ${CMAKE_BINARY_DIR}/rrtmgp-data)
+set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)
 
 option(BUILD_TESTING "Build tests" OFF)
 
@@ -56,7 +56,7 @@ message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (${PREFERRED_KERNEL_MODES})")
 message(STATUS "PRECISION: ${PRECISION} (DP = 64-bits, SP = 32-bits float)")
 
 # Set the directory for Fortran module files
-set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
+set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
 include(common.cmake)
 

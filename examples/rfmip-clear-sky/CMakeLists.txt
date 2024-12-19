@@ -7,13 +7,12 @@ set(TEST_INPUTS
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
 )
 
-# Copy required test inputs to the build directory
 add_custom_target(
   rfmip_clear_sky_test_inputs ALL
   COMMAND
     ${CMAKE_COMMAND} -E copy_if_different ${TEST_INPUTS}
     ${CMAKE_CURRENT_BINARY_DIR}/
-  COMMENT "Copying required .nc test files to build directory"
+  COMMENT "Copying required test input files"
 )
 
 add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)

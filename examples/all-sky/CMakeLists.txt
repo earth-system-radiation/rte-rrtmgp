@@ -5,13 +5,12 @@ set(TEST_INPUTS
     ${RRTMGP_DATA}/examples/all-sky/reference/rrtmgp-allsky-sw-no-aerosols.nc
 )
 
-# Copy required test inputs to the build directory
 add_custom_target(
   all_sky_test_inputs ALL
   COMMAND
     ${CMAKE_COMMAND} -E copy_if_different ${TEST_INPUTS}
     ${CMAKE_CURRENT_BINARY_DIR}/
-  COMMENT "Copying required .nc test files to build directory"
+  COMMENT "Copying required test input files"
 )
 
 add_library(

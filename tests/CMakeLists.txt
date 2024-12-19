@@ -2,13 +2,12 @@ set(TEST_INPUTS
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
 )
 
-# Copy required test inputs to the build directory
 add_custom_target(
   tests_test_inputs ALL
   COMMAND
     ${CMAKE_COMMAND} -E copy_if_different ${TEST_INPUTS}
     ${CMAKE_CURRENT_BINARY_DIR}/
-  COMMENT "Copying required .nc test files to build directory"
+  COMMENT "Copying required test input files"
 )
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
@@ -111,5 +110,5 @@ add_custom_target(
   COMMAND
     ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/validation-plots.py
     --input_file multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-  COMMENT "Generating validation plots using validation-plots.py"
+  COMMENT "Generating validation plots"
 )

@@ -34,7 +34,7 @@ int main(int argc , char **argv) {
   using real3d_t = Kokkos::View<real***, LayoutT, DeviceT>;
   using bool2d_t = Kokkos::View<bool**,  LayoutT, DeviceT>;
   using hreal2d_t = Kokkos::View<real**, LayoutT, HostDevice>;
-  using pool_t = conv::MemPoolSingleton<real, DeviceT>;
+  using pool_t = conv::MemPoolSingleton<real, LayoutT, DeviceT>;
 #endif
 
   {

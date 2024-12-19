@@ -513,7 +513,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
   auto mu0_inv = pool::template alloc<RealT>(ncol);
 
@@ -672,7 +672,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   using LayoutT = typename TdifT::array_layout;
   using DeviceT = typename TdifT::device_type;
   using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
-  using pool    = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool    = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   const int dsize1 = ncol*(nlay+1)*ngpt;
@@ -784,7 +784,7 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
@@ -840,7 +840,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
@@ -942,7 +942,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
   using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;

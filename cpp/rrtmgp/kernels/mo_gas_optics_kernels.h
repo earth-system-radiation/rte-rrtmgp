@@ -180,7 +180,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   using DeviceT = typename JtempT::device_type;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
   using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
 
@@ -288,7 +288,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   using LayoutT = typename JtempT::array_layout;
   using DeviceT = typename JtempT::device_type;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
   using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 
@@ -598,7 +598,7 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
   using uint2d_t = conv::Unmanaged<Kokkos::View<int**, LayoutT, DeviceT>>;
 

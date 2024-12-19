@@ -776,7 +776,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
   template <typename ClwpT, typename CiwpT, typename ReliqT, typename ReiceT, class OpticalPropsT>
   void cloud_optics(const int ncol, const int nlay,
                     ClwpT const &clwp, CiwpT const &ciwp, ReliqT const &reliq, ReiceT const &reice, OpticalPropsT &optical_props) {
-    using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+    using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
     int nbnd = this->get_nband();
     // Error checking

@@ -1243,7 +1243,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
 
   using parent_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
   using hparent_t = OpticalPropsK<RealT, LayoutT, HostDevice>;
-  using pool_t = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool_t = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using const_t = rrtmgp_constants<RealT>;
   using mdrp_t = typename conv::MDRP<LayoutT, DeviceT>;
 

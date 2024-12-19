@@ -152,7 +152,7 @@ void rte_lw(int max_gauss_pts, GaussDsT const &gauss_Ds, GaussWtsT const &gauss_
             bool top_at_1, SourceFuncLWK<RealT, LayoutT, DeviceT> const &sources, SfcEmisT const &sfc_emis,
             FluxesType &fluxes, IncFluxT const &inc_flux=IncFluxT(), int n_gauss_angles=-1)
 {
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using ureal1d_t = conv::Unmanaged<Kokkos::View<RealT*,   LayoutT, DeviceT>>;
   using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**,  LayoutT, DeviceT>>;
   using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;

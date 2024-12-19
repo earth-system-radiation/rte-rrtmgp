@@ -131,7 +131,7 @@ void rte_sw(OpticalProps2strK<RealT, LayoutT, DeviceT> const &atmos, bool top_at
             SfcDirT const &sfc_alb_dir, SfcDifT const &sfc_alb_dif,
             FluxesType &fluxes, IncFluxDifT const &inc_flux_dif=IncFluxDifT())
 {
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**,  LayoutT, DeviceT>>;
   using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
 

@@ -622,14 +622,14 @@ sum(const KView& view)
 }
 
 // MemPool singleton. Stack allocation pattern only.
-template <typename RealT, typename DeviceT>
+template <typename RealT, typename LayoutT, typename DeviceT>
 struct MemPoolSingleton
 {
  public:
-  using memview_t = Kokkos::View<RealT*, Kokkos::LayoutRight, DeviceT>;
+  using memview_t = Kokkos::View<RealT*, LayoutT, DeviceT>;
 
   template <typename T>
-  using view_t = Kokkos::View<T, Kokkos::LayoutRight, DeviceT>;
+  using view_t = Kokkos::View<T, LayoutT, DeviceT>;
 
   static inline memview_t  s_mem;
   static inline int64_t s_curr_used;

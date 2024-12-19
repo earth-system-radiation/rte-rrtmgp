@@ -6,8 +6,6 @@ project(
   LANGUAGES Fortran
 )
 
-set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)
-
 option(BUILD_TESTING "Build tests" OFF)
 
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
@@ -18,37 +16,12 @@ add_compile_options(
   $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>
 )
 
-set(RRTMGP_DATA_VERSION
-    "v1.8.2"
-    CACHE STRING "Select what version to clone for rrtmgp-data"
-)
-set(RRTMGP_DATA_REPO https://github.com/earth-system-radiation/rrtmgp-data.git)
-
 set(PREFERRED_KERNEL_MODES "default" "accel" "extern")
-
 set(KERNEL_MODE
     "default"
     CACHE STRING "Select the kernel mode: ${PREFERRED_KERNEL_MODES}"
 )
 set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
-
-include(FetchContent)
-
-message(STATUS "Fetching ${RRTMGP_DATA_REPO} version: ${RRTMGP_DATA_VERSION}")
-
-FetchContent_Declare(
-  rrtmgp-data
-  GIT_REPOSITORY ${RRTMGP_DATA_REPO}
-  GIT_TAG ${RRTMGP_DATA_VERSION}
-  SOURCE_DIR ${RRTMGP_DATA}
-)
-FetchContent_GetProperties(rrtmgp-data)
-
-if(NOT rrtmgp-data_POPULATED)
-  FetchContent_MakeAvailable(rrtmgp-data)
-endif()
-
-message(STATUS "KERNEL_MODE: ${KERNEL_MODE} (${PREFERRED_KERNEL_MODES})")
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
@@ -61,6 +34,19 @@ include(CTest)
 if(BUILD_TESTING)
   find_package(Python REQUIRED COMPONENTS Interpreter)
   find_package(NetCDF_Fortran REQUIRED)
+
+  set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)
+  set(RRTMGP_DATA_VERSION "v1.8.2")
+  include(FetchContent)
+  message(CHECK_START "Fetching RRTMGP data ${RRTMGP_DATA_VERSION}")
+  FetchContent_Declare(
+    rrtmgp-data
+    GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
+    GIT_TAG ${RRTMGP_DATA_VERSION}
+    SOURCE_DIR ${RRTMGP_DATA}
+  )
+  FetchContent_MakeAvailable(rrtmgp-data)
+  message(CHECK_PASS "done")
   set(FAILURE_THRESHOLD
       7.e-4
       CACHE STRING "Default failure threshold for tests"

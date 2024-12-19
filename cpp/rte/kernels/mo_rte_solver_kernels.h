@@ -408,10 +408,15 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
   using LayoutT = typename RdirT::array_layout;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
+  Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
+  const int dims2_tot = ncol*ngpt;
+
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<2>({ncol, ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot, KOKKOS_LAMBDA (int idx) {
+      int icol, igpt;
+      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
       for (int ilev=0; ilev<nlay; ilev++) {
         source_up(icol,ilev,igpt)     =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
         source_dn(icol,ilev,igpt)     =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
@@ -426,7 +431,9 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
     // previous level is up (+1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot, KOKKOS_LAMBDA (int idx) {
+      int icol, igpt;
+      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
         source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
@@ -526,7 +533,11 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
+  Kokkos::Array<int, 3> dims3_ncol_nlay_ngpt = {ncol,nlay,ngpt};
+  const int dims3_tot = ncol*nlay*ngpt;
+  TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
+    int icol, ilay, igpt;
+    conv::unflatten_idx_left(idx, dims3_ncol_nlay_ngpt, icol, ilay, igpt);
     // Zdunkowski Practical Improved Flux Method "PIFM"
     //  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
     RealT gamma1= (8. - w0(icol,ilay,igpt) * (5. + 3. * g(icol,ilay,igpt))) * .25;

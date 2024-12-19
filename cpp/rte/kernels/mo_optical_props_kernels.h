@@ -222,7 +222,7 @@ void inc_1scalar_by_1scalar_bybnd(int ncol, int nlay, int ngpt, Tau1T const &tau
   // do igpt = 1 , ngpt
   //   do ilay = 1 , nlay
   //     do icol = 1 , ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     for (int ibnd=0; ibnd<nbnd; ibnd++) {
       if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
         tau1(icol,ilay,igpt) += tau2(icol,ilay,ibnd);

@@ -62,7 +62,7 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
 include(common.cmake)
 
-add_subdirectory(rte-kernels) # Build library: rtekernels
+add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend) # Build library: rte
 add_subdirectory(rrtmgp-kernels) # Build library: rrtmgpkernels
 add_subdirectory(rrtmgp-frontend) # Build library: rrtmgp

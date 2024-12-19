@@ -18,19 +18,6 @@ if(ENABLE_TESTS)
 
   if(NOT NETCDF_Fortran_INCLUDE_DIR OR NOT NETCDF_Fortran_LIBRARY)
     message(SEND_ERROR "NetCDF Fortran not found.")
-    if(LINUX AND NOT DEFINED ENV{CONDA_PREFIX})
-      message(
-        FATAL_ERROR
-          "You can install it using: `sudo apt-get install libnetcdff-dev`"
-      )
-    elseif(APPLE_ARM)
-      message(FATAL_ERROR "You can install it using: `brew install netcdf`")
-    else()
-      message(
-        FATAL_ERROR
-          "You can install it using: `conda install -c conda-forge netcdf-fortran`"
-      )
-    endif()
   else()
     message(
       STATUS "Found NetCDF module include dir: ${NETCDF_Fortran_INCLUDE_DIR}"

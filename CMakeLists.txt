@@ -2,20 +2,6 @@ cmake_minimum_required(VERSION 3.18)
 
 project(rte-rrtmgp LANGUAGES)
 
-# Define flags to identify the operating system
-set(LINUX FALSE)
-set(APPLE_ARM FALSE)
-set(WINDOWS FALSE)
-
-# Determine the operating system and architecture
-if(UNIX AND NOT APPLE)
-  set(LINUX TRUE)
-elseif(APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
-  set(APPLE_ARM TRUE)
-elseif(WIN32)
-  set(WINDOWS TRUE)
-endif()
-
 # Check if CMAKE_BUILD_TYPE is defined; if not, set a default
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE
@@ -87,7 +73,7 @@ set(PREFERRED_FC_COMPILERS
     "f77"
 )
 
-if(NOT WINDOWS)
+if(NOT WIN32)
   set(CMAKE_Fortran_COMPILER
       "gfortran"
       CACHE STRING "Select the Fortran compiler: ${PREFERRED_FC_COMPILERS}"

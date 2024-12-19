@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(rte-rrtmgp LANGUAGES Fortran)
+project(
+  rte-rrtmgp
+  VERSION 1.8
+  LANGUAGES Fortran
+)
 
 set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)
 

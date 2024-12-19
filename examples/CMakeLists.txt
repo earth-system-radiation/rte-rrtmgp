@@ -1,3 +1,8 @@
+set(FAILURE_THRESHOLD
+    7.e-4
+    CACHE STRING "Default failure threshold for tests"
+)
+
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
 
 add_library(

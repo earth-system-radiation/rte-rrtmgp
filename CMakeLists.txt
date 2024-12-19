@@ -47,10 +47,6 @@ if(BUILD_TESTING)
   )
   FetchContent_MakeAvailable(rrtmgp-data)
   message(CHECK_PASS "done")
-  set(FAILURE_THRESHOLD
-      7.e-4
-      CACHE STRING "Default failure threshold for tests"
-  )
   add_subdirectory(examples)
   add_subdirectory(tests)
 else()

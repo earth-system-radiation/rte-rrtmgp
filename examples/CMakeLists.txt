@@ -8,10 +8,10 @@ set(SOURCES
 
 add_library(examples_utils STATIC ${SOURCES})
 
-target_include_directories(examples_utils PUBLIC ${NETCDF_Fortran_INCLUDE_DIR})
+target_include_directories(examples_utils PUBLIC ${NetCDF_Fortran_INCLUDE_DIR})
 
 target_link_libraries(
-  examples_utils PUBLIC rte rrtmgp ${NETCDF_Fortran_LIBRARY}
+  examples_utils PUBLIC rte rrtmgp ${NetCDF_Fortran_LIBRARY}
 )
 
 add_subdirectory(all-sky)

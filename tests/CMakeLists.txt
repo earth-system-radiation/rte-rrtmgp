@@ -24,11 +24,11 @@ set(SOURCES
 
 add_library(test_utils STATIC ${SOURCES})
 
-target_include_directories(test_utils PRIVATE ${NETCDF_Fortran_INCLUDE_DIR})
+target_include_directories(test_utils PRIVATE ${NetCDF_Fortran_INCLUDE_DIR})
 
 target_link_libraries(
   test_utils
-  PRIVATE rte rrtmgp examples_utils rfmip_clear_utils ${NETCDF_Fortran_LIBRARY}
+  PRIVATE rte rrtmgp examples_utils rfmip_clear_utils ${NetCDF_Fortran_LIBRARY}
 )
 
 # Set the directory for Fortran module files

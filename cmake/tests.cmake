@@ -2,27 +2,7 @@ message(STATUS "[Tests enabled]")
 message(STATUS "Configuring tests and examples")
 
 find_package(Python REQUIRED COMPONENTS Interpreter)
-
-# Manually locate the directory containing netcdf.mod and the NetCDF Fortran
-# library
-find_path(
-  NETCDF_Fortran_INCLUDE_DIR netcdf.mod
-  HINTS /usr/include $ENV{NFHOME}/include $ENV{CONDA_PREFIX}/include
-)
-find_library(
-  NETCDF_Fortran_LIBRARY
-  NAMES netcdff
-  HINTS /usr/lib $ENV{NFHOME}/lib $ENV{CONDA_PREFIX}/lib
-)
-
-if(NOT NETCDF_Fortran_INCLUDE_DIR OR NOT NETCDF_Fortran_LIBRARY)
-  message(SEND_ERROR "NetCDF Fortran not found.")
-else()
-  message(
-    STATUS "Found NetCDF module include dir: ${NETCDF_Fortran_INCLUDE_DIR}"
-  )
-  message(STATUS "Found NetCDF module library dir: ${NETCDF_Fortran_LIBRARY}")
-endif()
+find_package(NetCDF_Fortran REQUIRED)
 
 # Define failure threshold for python tests to use
 set(FAILURE_THRESHOLD

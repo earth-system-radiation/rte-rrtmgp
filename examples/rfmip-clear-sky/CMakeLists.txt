@@ -49,9 +49,8 @@ add_test(
 add_test(
   NAME check_rfmip_lw_sw
   COMMAND
-    ${CMAKE_COMMAND} -E env ${Python_EXECUTABLE}
-    ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
-    ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir
+    ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py
+    --ref_dir ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir
     ${CMAKE_CURRENT_BINARY_DIR} --variables rld rlu rsd rsu --file_names
     rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc

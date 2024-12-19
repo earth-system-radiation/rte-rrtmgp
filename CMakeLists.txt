@@ -32,7 +32,7 @@ add_subdirectory(rrtmgp-frontend)
 
 include(CTest)
 if(BUILD_TESTING)
-  find_package(Python REQUIRED COMPONENTS Interpreter)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
   find_package(NetCDF_Fortran REQUIRED)
 
   set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)

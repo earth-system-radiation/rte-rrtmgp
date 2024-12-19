@@ -109,8 +109,7 @@ add_test(
 add_custom_target(
   validation-plots
   COMMAND
-    ${CMAKE_COMMAND} -E env ${Python3_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/validation-plots.py --input_file
-    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/validation-plots.py
+    --input_file multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
   COMMENT "Generating validation plots using validation-plots.py"
 )

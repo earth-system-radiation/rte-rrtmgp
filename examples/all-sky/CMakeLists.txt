@@ -58,9 +58,8 @@ add_test(
 add_test(
   NAME check_allsky_lw_sw
   COMMAND
-    ${CMAKE_COMMAND} -E env ${Python_EXECUTABLE}
-    ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
-    ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir
+    ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py
+    --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir
     ${CMAKE_CURRENT_BINARY_DIR} --variables lw_flux_up lw_flux_dn sw_flux_up
     sw_flux_dn sw_flux_dir --file_names rrtmgp-allsky-lw.nc rrtmgp-allsky-sw.nc
     --failure_threshold ${FAILURE_THRESHOLD}
@@ -69,9 +68,8 @@ add_test(
 add_test(
   NAME check_allsky_no_aerosols_lw_sw
   COMMAND
-    ${CMAKE_COMMAND} -E env ${Python_EXECUTABLE}
-    ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
-    ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir
+    ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py
+    --ref_dir ${RRTMGP_DATA}/examples/all-sky/reference --tst_dir
     ${CMAKE_CURRENT_BINARY_DIR} --variables lw_flux_up lw_flux_dn sw_flux_up
     sw_flux_dn sw_flux_dir --file_names rrtmgp-allsky-lw-no-aerosols.nc
     rrtmgp-allsky-sw-no-aerosols.nc --failure_threshold ${FAILURE_THRESHOLD}

@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.4...3.18)
+cmake_minimum_required(VERSION 3.18)
+
 project(rte-rrtmgp LANGUAGES)
 
 # Define flags to identify the operating system

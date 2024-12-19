@@ -69,7 +69,13 @@ include(CTest)
 if(BUILD_TESTING)
   find_package(Python REQUIRED COMPONENTS Interpreter)
   find_package(NetCDF_Fortran REQUIRED)
-  include(tests.cmake)
+  set(FAILURE_THRESHOLD
+      7.e-4
+      CACHE STRING "Default failure threshold for tests"
+  )
+  set(TEST_ATMOSPHERES
+      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+  )
   add_subdirectory(examples)
   add_subdirectory(tests)
 else()

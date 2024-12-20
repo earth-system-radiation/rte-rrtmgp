@@ -359,30 +359,26 @@ template <> struct DefaultTile<5> {
 template <typename LayoutT, typename DeviceT=DefaultDevice>
 struct MDRP
 {
-  // static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
-  //   ? Kokkos::Iterate::Left
-  //   : Kokkos::Iterate::Right;
-  // static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
-  //   ? Kokkos::Iterate::Right
-  //   : Kokkos::Iterate::Left;
-#ifdef KOKKOS_ENABLE_CUDA
-  static constexpr Kokkos::Iterate LeftI = Kokkos::Iterate::Left;
-  static constexpr Kokkos::Iterate RightI = Kokkos::Iterate::Right;
-#else
-  static constexpr Kokkos::Iterate LeftI = Kokkos::Iterate::Default;
-  static constexpr Kokkos::Iterate RightI = Kokkos::Iterate::Default;
-#endif
+  // By default, follow the Layout's fast index
+  static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+    ? Kokkos::Iterate::Left
+    : Kokkos::Iterate::Right;
+  static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+    ? Kokkos::Iterate::Right
+    : Kokkos::Iterate::Left;
 
   using exe_space_t = typename DeviceT::execution_space;
 
   template <int Rank>
   using MDRP_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, LeftI, RightI> >;
 
+  // Force a right to left (right fast index) loop order
   template <int Rank>
-  using MDRPLR_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Left, Kokkos::Iterate::Right> >;
+  using MDRPRL_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Left, Kokkos::Iterate::Right> >;
 
+  // Force a left to right (left fast index) loop order
   template <int Rank>
-  using MDRPRL_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
+  using MDRPLR_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
 
   template <int N, typename IntT>
   static inline
@@ -437,7 +433,7 @@ void unflatten_idx_left(const int idx, const Kokkos::Array<int, 3>& dims, int& i
 }
 
 KOKKOS_INLINE_FUNCTION
-void unflatten_idx_rev(const int idx, const Kokkos::Array<int, 4>& dims, int& i, int& j, int& k, int& l)
+void unflatten_idx_left(const int idx, const Kokkos::Array<int, 4>& dims, int& i, int& j, int& k, int& l)
 {
   i = idx % dims[0];
   j = (idx / dims[0]) % dims[1];

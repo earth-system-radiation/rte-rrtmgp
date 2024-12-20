@@ -53,18 +53,23 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
 
   find_package(NetCDF_Fortran REQUIRED)
 
-  set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)
-  set(RRTMGP_DATA_VERSION "v1.8.2")
-  include(FetchContent)
-  message(CHECK_START "Fetching RRTMGP data ${RRTMGP_DATA_VERSION}")
-  FetchContent_Declare(
-    rrtmgp-data
-    GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
-    GIT_TAG ${RRTMGP_DATA_VERSION}
-    SOURCE_DIR ${RRTMGP_DATA}
-  )
-  FetchContent_MakeAvailable(rrtmgp-data)
-  message(CHECK_PASS "done")
+  if(NOT RRTMGP_DATA)
+    set(RRTMGP_DATA
+        "${PROJECT_BINARY_DIR}/rrtmgp-data"
+        CACHE PATH "Path to the RRTMGP data" FORCE
+    )
+    set(RRTMGP_DATA_VERSION "v1.8.2")
+    include(FetchContent)
+    message(CHECK_START "Fetching RRTMGP data ${RRTMGP_DATA_VERSION}")
+    FetchContent_Declare(
+      rrtmgp-data
+      GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
+      GIT_TAG ${RRTMGP_DATA_VERSION}
+      SOURCE_DIR ${RRTMGP_DATA}
+    )
+    FetchContent_MakeAvailable(rrtmgp-data)
+    message(CHECK_PASS "done")
+  endif()
 
   add_subdirectory(examples)
   add_subdirectory(tests)

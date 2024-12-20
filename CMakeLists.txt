@@ -10,18 +10,18 @@ option(BUILD_TESTING "Build tests" OFF)
 
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
-add_compile_options(
-  $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>
-)
-
 set(PREFERRED_KERNEL_MODES "default" "accel" "extern")
 set(KERNEL_MODE
     "default"
     CACHE STRING "Select the kernel mode: ${PREFERRED_KERNEL_MODES}"
 )
 set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
+add_compile_options(
+  $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>
+)
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 

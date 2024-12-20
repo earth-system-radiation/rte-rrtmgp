@@ -21,58 +21,53 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-13, macos-latest, windows-2022]
-        # macos-13 is Intel, macos-latest is ARM/Apple Silicon 
-        compiler: [gfortran-12, gfortran-13, gfortran-14]
-        use-conda-compiler: [false, true]
+        gfortran-version: [12, 13, 14]
+        gfortran-from: [system, conda]
         fpmodel: [DP, SP]
-        # Most combinations will only be tested on Linux with system compilers
         exclude: 
           - os: ubuntu-24.04
-            use-conda-compiler: true
+            gfortran-from: conda
+          - os: macos-13
+            gfortran-from: system
+          - os: macos-13
+            gfortran-version: 14
+            gfortran-from: conda
+          - os: macos-latest
+            gfortran-from: system
+          - os: macos-latest
+            gfortran-version: 14
+            gfortran-from: conda
           - os: windows-2022
-            # A few configurations are added below
-          - os: macos-13
-            use-conda-compiler: false
-          - os: macos-13
-            compiler: gfortran-14
-            # Not available in conda
-          - os: macos-latest
-            use-conda-compiler: false
-          - os: macos-latest
-            compiler: gfortran-14
-            # Not available in conda
         include: 
-          # Something like the conda-build environment 
           - os: ubuntu-24.04
-            compiler: gfortran-13 
-            use-conda-compiler: true
-          - os: windows-2022
-            compiler: gfortran-13 
-            use-conda-compiler: true
+            gfortran-version: 13
+            gfortran-from: conda
             fpmodel: DP
           - os: windows-2022
-            compiler: gfortran-13 
-            use-conda-compiler: true
-            fpmodel: SP
-            # -12 not available in conda 
+            gfortran-version: 13
+            gfortran-from: conda
+            fpmodel: DP
           - os: windows-2022
-            compiler: gfortran-14
-            use-conda-compiler: true
+            gfortran-version: 13
+            gfortran-from: conda
             fpmodel: SP
-            # Fails unit tests in double precision! 
-
+          - os: windows-2022
+            gfortran-version: 14
+            gfortran-from: conda
+            fpmodel: DP
+          - os: windows-2022
+            gfortran-version: 14
+            gfortran-from: conda
+            fpmodel: SP
     env:
-      FC: ${{ matrix.compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
-      RTE_KERNELS: default
-      RTE_CBOOL: ON
-      RRTMGP_DATA_VERSION: v1.8.2
+      FC: gfortran-${{ matrix.gfortran-version }}
+      FFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
+      CMAKE_BUILD_PARALLEL_LEVEL: 8
+      VERBOSE:
+      # TODO: add missing test dependencies and run them in parallel:
+      # CTEST_PARALLEL_LEVEL: 8
+      CTEST_OUTPUT_ON_FAILURE: 1
       FAILURE_THRESHOLD: 7.e-4
-      # Debug          - works
-      # Release        - works with conda gfortran
-      # RelWithDebInfo - works
-      # MinSizeRel     - works
-      BUILD_TYPE: Debug
     runs-on: ${{ matrix.os }}
     steps:
       #
@@ -108,63 +103,38 @@ jobs:
           # Use the cache properly:
           use-only-tar-bz2: false
       #
+      # Install compiler
+      #
+      - name: Install compiler
+        if: matrix.gfortran-from == 'conda'
+        run: |
+          conda install -c conda-forge gfortran=${{ matrix.gfortran-version }} -y
+          echo "FC=gfortran" >> $GITHUB_ENV
+      #
       # Install dependencies
       #
       - name: Install dependencies
-        run: |
-          FC_VERSION="${{ env.FC }}"
-          FC_VERSION="${FC_VERSION##*-}"
-          echo "FC version: $FC_VERSION"
-
-          conda install -c conda-forge netcdf-fortran ninja -y
-
-          if ${{ matrix.use-conda-compiler }}; then
-            conda install -c conda-forge gfortran=$FC_VERSION -y
-          fi
+        run: conda install -c conda-forge netcdf-fortran ninja -y
+      #
+      # Adjust toolchain
+      #
+      - name: Adjust toolchain
+        if: matrix.os == 'windows-2022'
+        run: echo "FC=${FC}.exe" >> $GITHUB_ENV
       #
       # Build libraries, examples, and tests
       #
       - name: Build libraries and tests
         run: |
-          AR_PATH="$(which ar)"
-          RANLIB_PATH="$(which ranlib)"
-          FC_PATH="$(which gfortran)"
-
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            AR_PATH="$AR_PATH.exe"
-            RANLIB_PATH="$RANLIB_PATH.exe"
-            FC_PATH="$FC_PATH.exe"
-          fi
-
-          # If not using conda, use the environment's FC variable instead of which gfortran
-          if ! ${{ matrix.use-conda-compiler }}; then
-            FC_PATH=${{ env.FC }}
-          fi
-
-          echo "Using AR: $AR_PATH"
-          echo "Using RANLIB: $RANLIB_PATH"
-          echo "Using FC: $FC_PATH"
-
-          # Run CMake
           cmake -S . -B build -G "Ninja" \
-              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-              -DCMAKE_Fortran_COMPILER="$FC_PATH" \
-              -DCMAKE_Fortran_FLAGS="${{ env.FCFLAGS }}" \
-              -DCMAKE_AR="$AR_PATH" \
-              -DCMAKE_RANLIB="$RANLIB_PATH" \
-              -DRRTMGP_DATA_VERSION=${{ env.RRTMGP_DATA_VERSION }} \
-              -DPRECISION=${{ matrix.fpmodel }} \
-              -DUSE_C_BOOL=${{ env.RTE_CBOOL }} \
-              -DKERNEL_MODE=${{ env.RTE_KERNELS }} \
-              -DENABLE_TESTS=ON \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DRTE_ENABLE_SP=`test 'x${{ matrix.fpmodel }}' = xSP && echo ON || echo OFF` \
+              -DBUILD_TESTING=ON \
               -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}
-
-          # Build the project
-          cmake --build build -- -j8
+          cmake --build build
       #
       # Run examples, tests and checks
       #
       - name: Run examples, tests and checks
         working-directory: build
-        run: |
-          ctest -V --output-on-failure
+        run: ctest

@@ -168,7 +168,12 @@ void inc_2stream_by_2stream_bybnd(int ncol, int nlay, int ngpt,
   // do igpt = 1 , ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<4>({ncol,nlay,ngpt,nbnd}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt, int ibnd) {
+  Kokkos::Array<int, 4> dims4 = {ncol,nlay,ngpt,nbnd};
+  const int dims4_tot = ncol*nlay*ngpt*nbnd;
+  //TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<4>({ncol,nlay,ngpt,nbnd}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt, int ibnd) {
+  TIMED_KERNEL(Kokkos::parallel_for( dims4_tot, KOKKOS_LAMBDA (int idx) {
+    int icol, ilay, igpt, ibnd;
+    conv::unflatten_idx_left(idx, dims4, icol, ilay, igpt, ibnd);
     if (igpt >= gpt_lims(0,ibnd) && igpt <= gpt_lims(1,ibnd) ) {
       // t=tau1 + tau2
       RealT tau12 = tau1(icol,ilay,igpt) + tau2(icol,ilay,ibnd);

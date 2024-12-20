@@ -431,9 +431,9 @@ program rte_check_equivalence
     if(.not. allclose(tst_flux_up, ref_flux_up, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) then 
-       print *, allclose(tst_flux_up, ref_flux_up, tol = 10._wp), & 
-                allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp), & 
-                allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)
+       print *, allclose(tst_flux_up, ref_flux_up, tol = 8._wp), & 
+                allclose(tst_flux_dn, ref_flux_dn, tol = 12._wp), & 
+                allclose(tst_flux_dir,ref_flux_dir,tol = 12._wp)
       call report_err("  halving/doubling fails")
     end if 
 

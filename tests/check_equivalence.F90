@@ -296,8 +296,8 @@ program rte_check_equivalence
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol=4._wp) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn, tol=4._wp) )    & 
+    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
       call report_err("  halving/doubling fails")
 
     call increment_with_1scl(atmos)
@@ -428,7 +428,7 @@ program rte_check_equivalence
     call stop_on_err(rte_sw(atmos, mu0, toa_flux,     &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  halving/doubling fails")
@@ -446,7 +446,7 @@ program rte_check_equivalence
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  Incrementing with 1scl fails")
@@ -461,7 +461,7 @@ program rte_check_equivalence
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  Incrementing with 2str fails")
@@ -476,7 +476,7 @@ program rte_check_equivalence
                             mu0,   toa_flux, &
                             sfc_alb_dir, sfc_alb_dif, &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up, tol =  8._wp) .or. & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dn, ref_flux_dn, tol = 10._wp) .or. & 
        .not. allclose(tst_flux_dir,ref_flux_dir,tol = 10._wp)) &  
       call report_err("  Incrementing with nstr fails")

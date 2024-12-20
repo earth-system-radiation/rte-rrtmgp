@@ -14,13 +14,11 @@ jobs:
   API:
     runs-on: ubuntu-22.04
     env:
-      # Core variables:
       FC: gfortran-12
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g"
-      RRTMGP_ROOT: ${{ github.workspace }}
+      FFLAGS: "-m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
       RTE_KERNELS: extern
-      RTE_CBOOL: ON
-      RRTMGP_DATA_VERSION: v1.8.2
+      CMAKE_BUILD_PARALLEL_LEVEL: 8
+      VERBOSE:
     steps:
     #
     # Check out repository under $GITHUB_WORKSPACE
@@ -34,9 +32,6 @@ jobs:
       run: |
         $FC --version
         cmake -S . -B build \
-            -DCMAKE_Fortran_COMPILER=$FC \
-            -DCMAKE_Fortran_FLAGS="$FCFLAGS" \
-            -DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
-            -DUSE_C_BOOL=$RTE_CBOOL \
-            -DKERNEL_MODE=$RTE_KERNELS
-        cmake --build build --config Release -- -j8
+         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+         -DKERNEL_MODE=$RTE_KERNELS
+        cmake --build build

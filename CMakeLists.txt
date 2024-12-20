@@ -33,6 +33,24 @@ add_subdirectory(rrtmgp-frontend)
 include(CTest)
 if(BUILD_TESTING)
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  include(CheckPython3Package)
+  check_python3_package(numpy)
+  check_python3_package(
+    "netCDF4 or h5netcdf+scipy"
+    CODE "try:
+    import netCDF4
+except:
+    import h5netcdf
+    import scipy
+"
+  )
+  check_python3_package(
+    "xarray>=0.12.2"
+    CODE "import xarray
+exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
+  )
+  check_python3_package(dask.array)
+
   find_package(NetCDF_Fortran REQUIRED)
 
   set(RRTMGP_DATA ${PROJECT_BINARY_DIR}/rrtmgp-data)
@@ -47,6 +65,7 @@ if(BUILD_TESTING)
   )
   FetchContent_MakeAvailable(rrtmgp-data)
   message(CHECK_PASS "done")
+
   add_subdirectory(examples)
   add_subdirectory(tests)
 else()

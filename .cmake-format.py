@@ -1,3 +1,6 @@
+with section("parse"):
+    additional_commands = {"check_python3_package": {"pargs": 1, "kwargs": {"CODE": 1}}}
+
 with section("format"):
     dangle_parens = True
     max_lines_hwrap = 0

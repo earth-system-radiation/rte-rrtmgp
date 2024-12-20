@@ -39,22 +39,22 @@ void read_atmos(const std::string& input_file, ViewT &p_lay, ViewT &t_lay, ViewT
   ViewT tmp2d;
   // p_lay
   io.read(tmp2d,"p_lay");
-  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlay}), KOKKOS_LAMBDA (int icol, int ilay) {
     p_lay(icol,ilay) = tmp2d(0,ilay);
   }));
   // t_lay
   io.read(tmp2d,"t_lay");
-  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlay}), KOKKOS_LAMBDA (int icol, int ilay) {
     t_lay(icol,ilay) = tmp2d(0,ilay);
   }));
   // p_lev
   io.read(tmp2d,"p_lev");
-  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlev}), KOKKOS_LAMBDA (int icol, int ilev) {
     p_lev(icol,ilev) = tmp2d(0,ilev);
   }));
   // t_lev
   io.read(tmp2d,"t_lev");
-  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlev,ncol}), KOKKOS_LAMBDA (int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlev}), KOKKOS_LAMBDA (int icol, int ilev) {
     t_lev(icol,ilev) = tmp2d(0,ilev);
   }));
 
@@ -84,7 +84,7 @@ void read_atmos(const std::string& input_file, ViewT &p_lay, ViewT &t_lay, ViewT
     col_dry = ViewT("col_dry",ncol,nlay);
     tmp2d = ViewT();     // Reset the tmp2d variable
     io.read(tmp2d,"col_dry");
-    TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlay}), KOKKOS_LAMBDA (int icol, int ilay) {
       col_dry(icol,ilay) = tmp2d(0,ilay);
     }));
   }

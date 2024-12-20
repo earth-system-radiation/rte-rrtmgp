@@ -295,7 +295,7 @@ public:
     }
     if (w < 0. || w > 1.) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     auto this_concs = this->concs;
-    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({ncol, nlay}), KOKKOS_LAMBDA(int icol, int ilay) {
       this_concs(icol, ilay, igas) = w;
     }));
   }
@@ -303,7 +303,7 @@ public:
   template <typename ViewT>
   static void inline set_concs_impl(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
   {
-    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({ncol, nlay}), KOKKOS_LAMBDA(int icol, int ilay) {
       concs(icol, ilay, igas) = w(ilay);
     }));
   }
@@ -332,7 +332,7 @@ public:
   template <typename ViewT>
   static void inline set_concs_impl2(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
   {
-    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({ncol, nlay}), KOKKOS_LAMBDA(int icol, int ilay) {
       concs(icol, ilay, igas) = w(icol, ilay);
     }));
   }
@@ -371,7 +371,7 @@ public:
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
     auto this_concs = this->concs;
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({array.extent(0), array.extent(1)}) , KOKKOS_LAMBDA (int icol, int ilay) {
       array(icol,ilay) = this_concs(icol,ilay,igas);
     }));
   }

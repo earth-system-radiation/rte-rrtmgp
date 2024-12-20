@@ -25,7 +25,7 @@ void sum_broadband(int ncol, int nlev, int ngpt, SpectralT const &spectral_flux,
 
   // do ilev = 1, nlev
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, nlev}) , KOKKOS_LAMBDA (int icol, int ilev) {
     RealT bb_flux_s = 0.0;
     for (int igpt=0; igpt<ngpt; igpt++) {
       bb_flux_s += spectral_flux(icol, ilev, igpt);
@@ -44,7 +44,7 @@ void net_broadband(int ncol, int nlev, int ngpt, SpectralDnT const &spectral_flu
 
   // do ilev = 1, nlev
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, nlev}) , KOKKOS_LAMBDA (int icol, int ilev) {
     RealT diff = spectral_flux_dn(icol, ilev, 0) - spectral_flux_up(icol, ilev, 0);
     broadband_flux_net(icol, ilev) = diff;
   }));
@@ -52,7 +52,7 @@ void net_broadband(int ncol, int nlev, int ngpt, SpectralDnT const &spectral_flu
   // do igpt = 2, ngpt
   //   do ilev = 1, nlev
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, nlev}) , KOKKOS_LAMBDA (int icol, int ilev) {
     for (int igpt=1; igpt<ngpt; igpt++) {
       RealT diff = spectral_flux_dn(icol, ilev, igpt) - spectral_flux_up(icol, ilev, igpt);
       broadband_flux_net(icol,ilev) += diff;
@@ -73,7 +73,7 @@ void net_broadband(int ncol, int nlev, FluxDnT const &flux_dn, FluxUpT const &fl
 
   // do ilev = 1, nlev
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlev,ncol}) , KOKKOS_LAMBDA (int ilev, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, nlev}) , KOKKOS_LAMBDA (int icol, int ilev) {
      broadband_flux_net(icol,ilev) = flux_dn(icol,ilev) - flux_up(icol,ilev);
   }));
 }

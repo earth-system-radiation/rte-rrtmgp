@@ -193,7 +193,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
     // index and factor for temperature interpolation
     jtemp(icol,ilay) = (int) ((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta);
     jtemp(icol,ilay) = Kokkos::fmin(ntemp - 1, Kokkos::fmax(1, jtemp(icol,ilay))) - 1; // limit the index range

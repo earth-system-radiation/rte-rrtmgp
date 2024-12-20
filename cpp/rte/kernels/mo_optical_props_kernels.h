@@ -276,7 +276,7 @@ void delta_scale_2str_kernel(int ncol, int nlay, int ngpt, TauT const &tau, SsaT
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol, nlay, ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     if (tau(icol,ilay,igpt) > eps) {
       RealT wf = ssa(icol,ilay,igpt) * f(icol,ilay,igpt);
       tau(icol,ilay,igpt) = (1. - wf) * tau(icol,ilay,igpt);

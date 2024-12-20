@@ -796,7 +796,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // Cloud masks; don't need value re values if there's no cloud
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, nlay}), KOKKOS_LAMBDA (int icol, int ilay) {
       liqmsk(icol,ilay) = clwp(icol,ilay) > 0.;
       icemsk(icol,ilay) = ciwp(icol,ilay) > 0.;
     }));
@@ -959,7 +959,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({nbnd,nlay,ncol}), KOKKOS_LAMBDA (int ibnd, int ilay, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol, nlay, nbnd}), KOKKOS_LAMBDA (int icol, int ilay, int ibnd) {
       if (mask(icol,ilay)) {
         int irad;
         // Finds index into size regime table

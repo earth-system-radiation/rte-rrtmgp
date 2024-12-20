@@ -894,7 +894,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
     // Transport is for intensity
     //   convert flux at top of domain to intensity assuming azimuthal isotropy
     radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2. * pi * weights(weight_ind));
@@ -909,7 +909,6 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   //     do icol = 1, ncol
   Kokkos::Array<int, 3> dims3_ngpt_nlay_ncol = {ncol,nlay,ngpt};
   const int dims3_ngpt_nlay_ncol_tot = ngpt * nlay * ncol;
-  //TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
   TIMED_KERNEL(Kokkos::parallel_for( dims3_ngpt_nlay_ncol_tot , KOKKOS_LAMBDA (int idx) {
     int icol, ilay, igpt;
     conv::unflatten_idx_left(idx, dims3_ngpt_nlay_ncol, icol, ilay, igpt);
@@ -968,7 +967,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
     Ds_ncol(icol, igpt) = Ds(0);
   }));
 
@@ -982,7 +981,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
     flux_top(icol,igpt) = flux_dn(icol,top_level,igpt);
   }));
 
@@ -991,7 +990,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
   for (int imu=1; imu<nmus; imu++) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       Ds_ncol(icol, igpt) = Ds(imu);
     }));
 
@@ -1003,7 +1002,7 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
     // do igpt = 1, ngpt
     //   do ilev = 1, nlay+1
     //     do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay+1,ncol}) , KOKKOS_LAMBDA (int igpt, int ilev, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol, nlay+1, ngpt}) , KOKKOS_LAMBDA (int icol, int ilev, int igpt) {
       flux_up(icol,ilev,ngpt) += radn_up(icol,ilev,ngpt);
       flux_dn(icol,ilev,ngpt) += radn_dn(icol,ilev,ngpt);
     }));

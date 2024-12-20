@@ -94,7 +94,7 @@ contains
     real(wp) :: jpress_aint
     ! -----------------
     ! local indexes
-    integer :: icol, ilay, iflav, igases_1, igases_2, itropo, itemp, jtemp_
+    integer :: icol, ilay, iflav, igas_1, igas_2, itropo, itemp, jtemp_
 
     press_ref_trop = exp(press_ref_trop_log)
     temp_ref_delta_inv = 1.0_wp / temp_ref_delta
@@ -119,8 +119,8 @@ contains
     end do
 
     do iflav = 1, nflav
-      igases_1 = flavor(1,iflav)
-      igases_2 = flavor(2,iflav)
+      igas_1 = flavor(1,iflav)
+      igas_2 = flavor(2,iflav)
       do ilay = 1, nlay
         do icol = 1, ncol
         ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
@@ -130,9 +130,9 @@ contains
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors
-            ratio_eta_half = vmr_ref(itropo,igases_1,(jtemp(icol,ilay)+itemp-1)) / &
-                             vmr_ref(itropo,igases_2,(jtemp(icol,ilay)+itemp-1))
-            col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igases_1) + ratio_eta_half * col_gas(icol,ilay,igases_2)
+            ratio_eta_half = vmr_ref(itropo,igas_1,(jtemp(icol,ilay)+itemp-1)) / &
+                             vmr_ref(itropo,igas_2,(jtemp(icol,ilay)+itemp-1))
+            col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igas_1) + ratio_eta_half * col_gas(icol,ilay,igas_2)
             ! Keep this commented lines. Fortran does allow for
             ! substantial optimizations and in this merge cases may
             ! happen that all expressions are evaluated and so create
@@ -140,12 +140,12 @@ contains
             ! save. Merge is the way to do it in general inside of
             ! loops, but sometimes it may not work.
             !
-            ! eta = merge(col_gas(icol,ilay,igases_1) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
+            ! eta = merge(col_gas(icol,ilay,igas_1) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
             !             col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix))
             !
             ! In essence: do not turn it back to merge(...)!
             if (col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix)) then
-              eta = col_gas(icol,ilay,igases_1) / col_mix(itemp,icol,ilay,iflav)
+              eta = col_gas(icol,ilay,igas_1) / col_mix(itemp,icol,ilay,iflav)
             else
               eta = 0.5_wp
             endif

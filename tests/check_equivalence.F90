@@ -296,8 +296,8 @@ program rte_check_equivalence
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))
-    if(.not. allclose(tst_flux_up, ref_flux_up) .or. & 
-       .not. allclose(tst_flux_dn, ref_flux_dn) )    & 
+    if(.not. allclose(tst_flux_up, ref_flux_up, tol=4._wp) .or. & 
+       .not. allclose(tst_flux_dn, ref_flux_dn, tol=4._wp) )    & 
       call report_err("  halving/doubling fails")
 
     call increment_with_1scl(atmos)

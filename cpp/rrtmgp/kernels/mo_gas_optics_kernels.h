@@ -208,7 +208,7 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     tropo(icol,ilay) = log(play(icol,ilay)) > press_ref_trop_log;
   }));
 
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<4>({2,nflav,ncol,nlay}) , KOKKOS_LAMBDA (int itemp, int iflav, int icol , int ilay) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<4>({2,nflav,ncol,nlay}) , KOKKOS_LAMBDA (int itemp, int iflav, int icol , int ilay) {
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));
     auto igases1 = flavor(0,iflav);
@@ -261,7 +261,7 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
   // TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<5>({nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
   //   int icol = tcol*TILE_SIZE + itcol;
   //   int igpt = tgpt*TILE_SIZE + itgpt;
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     RealT t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
     tau(icol,ilay,igpt) = t;
     g  (icol,ilay,igpt) = 0.;
@@ -467,7 +467,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // The CUDA optimizations below perform a lot better than the original
   // code but yield non-deterministic results.
 // #ifdef KOKKOS_ENABLE_CUDA
-//   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
+//   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
 // #else
   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
 //#endif

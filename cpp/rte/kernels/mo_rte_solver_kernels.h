@@ -613,13 +613,13 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, FluxDnT const &flux_d
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       flux_dn(icol,      0, igpt)  = 0;
     }));
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       flux_dn(icol, nlay, igpt)  = 0;
     }));
   }
@@ -634,13 +634,13 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, IncFluxT const &inc_f
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       flux_dn(icol,      0, igpt)  = inc_flux(icol,igpt) * factor(icol);
     }));
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       flux_dn(icol, nlay, igpt)  = inc_flux(icol,igpt) * factor(icol);
     }));
   }
@@ -659,14 +659,14 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, IncFluxT const &inc_f
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       flux_dn(icol,      0, igpt)  = inc_flux(icol,igpt);
     }));
   } else {
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       flux_dn(icol, nlay, igpt)  = inc_flux(icol,igpt);
     }));
   }

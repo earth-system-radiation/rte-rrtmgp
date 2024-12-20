@@ -373,11 +373,11 @@ public:
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
     auto this_band_lims_wvn = this->band_lims_wvn;
     if (this->is_initialized()) {
-      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
+      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(0) , band_lims_wvn.extent(1)}) , KOKKOS_LAMBDA (int i, int j) {
         ret(i,j) = 1. / this_band_lims_wvn(i,j);
       }));
     } else {
-      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
+      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(0) , band_lims_wvn.extent(1)}) , KOKKOS_LAMBDA (int i, int j) {
         ret(i,j) = 0.;
       }));
     }

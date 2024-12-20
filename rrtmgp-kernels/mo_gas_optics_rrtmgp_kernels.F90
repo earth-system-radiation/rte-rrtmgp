@@ -71,22 +71,9 @@ contains
     logical(wl), dimension(ncol,nlay), intent(out) :: tropo
       !! use lower (or upper) atmosphere tables 
     integer,     dimension(2,    ncol,nlay,nflav), intent(out) :: jeta
-      !! Index for binary species interpolation 
-#if !defined(__INTEL_LLVM_COMPILER) && __INTEL_COMPILER >= 1910
-    ! A performance-hitting workaround for the vectorization problem reported in
-    ! https://github.com/earth-system-radiation/rte-rrtmgp/issues/159
-    ! The known affected compilers are Intel Fortran Compiler Classic
-    ! 2021.4, 2021.5 and 2022.1. We do not limit the workaround to these
-    ! versions because it is not clear when the compiler bug will be fixed, see
-    ! https://community.intel.com/t5/Intel-Fortran-Compiler/Compiler-vectorization-bug/m-p/1362591.
-    ! We, however, limit the workaround to the Classic versions only since the
-    ! problem is not confirmed for the Intel Fortran Compiler oneAPI (a.k.a
-    ! 'ifx'), which does not mean there is none though.
-    real(wp),    dimension(:,       :,   :,    :), intent(out) :: col_mix
-#else
+      !! Index for binary species interpolation
     real(wp),    dimension(2,    ncol,nlay,nflav), intent(out) :: col_mix
       !! combination of major species's column amounts (first index is strat/trop)
-#endif
     real(wp),    dimension(2,2,2,ncol,nlay,nflav), intent(out) :: fmajor
       !! Interpolation weights in pressure, eta, strat/trop 
     real(wp),    dimension(2,2,  ncol,nlay,nflav), intent(out) :: fminor
@@ -100,29 +87,40 @@ contains
     real(wp) :: eta, feta      ! binary_species_parameter, interpolation variable for eta
     real(wp) :: loceta         ! needed to find location in eta grid
     real(wp) :: ftemp_term
+    real(wp) :: press_ref_trop
+    real(wp) :: temp_ref_delta_inv
+    real(wp) :: press_ref_log_1
+    real(wp) :: press_ref_log_delta_inv
+    real(wp) :: jpress_aint
     ! -----------------
     ! local indexes
-    integer :: icol, ilay, iflav, igases(2), itropo, itemp
+    integer :: icol, ilay, iflav, igas_1, igas_2, itropo, itemp, jtemp_
 
+    press_ref_trop = exp(press_ref_trop_log)
+    temp_ref_delta_inv = 1.0_wp / temp_ref_delta
+    press_ref_log_1 = press_ref_log(1)
+    press_ref_log_delta_inv = 1.0_wp / press_ref_log_delta
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
-        jtemp(icol,ilay) = int((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta)
-        jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp(icol,ilay))) ! limit the index range
-        ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta
+        jtemp_ = INT((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) * temp_ref_delta_inv)
+        jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp_)) ! limit the index range
+        ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp_)) * temp_ref_delta_inv
 
         ! index and factor for pressure interpolation
-        locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log(1)) / press_ref_log_delta
-        jpress(icol,ilay) = min(npres-1, max(1, int(locpress)))
-        fpress(icol,ilay) = locpress - float(jpress(icol,ilay))
+        locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log_1) * press_ref_log_delta_inv
+        jpress_aint = min(real(npres-1, wp), max(1.0_wp, aint(locpress)))
+        jpress(icol,ilay) = int(jpress_aint)
+        fpress(icol,ilay) = locpress - jpress_aint
 
         ! determine if in lower or upper part of atmosphere
-        tropo(icol,ilay) = log(play(icol,ilay)) > press_ref_trop_log
+        tropo(icol,ilay) = play(icol,ilay) > press_ref_trop
       end do
     end do
 
     do iflav = 1, nflav
-      igases(:) = flavor(:,iflav)
+      igas_1 = flavor(1,iflav)
+      igas_2 = flavor(2,iflav)
       do ilay = 1, nlay
         do icol = 1, ncol
         ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
@@ -132,9 +130,9 @@ contains
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors
-            ratio_eta_half = vmr_ref(itropo,igases(1),(jtemp(icol,ilay)+itemp-1)) / &
-                             vmr_ref(itropo,igases(2),(jtemp(icol,ilay)+itemp-1))
-            col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igases(1)) + ratio_eta_half * col_gas(icol,ilay,igases(2))
+            ratio_eta_half = vmr_ref(itropo,igas_1,(jtemp(icol,ilay)+itemp-1)) / &
+                             vmr_ref(itropo,igas_2,(jtemp(icol,ilay)+itemp-1))
+            col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igas_1) + ratio_eta_half * col_gas(icol,ilay,igas_2)
             ! Keep this commented lines. Fortran does allow for
             ! substantial optimizations and in this merge cases may
             ! happen that all expressions are evaluated and so create
@@ -142,18 +140,18 @@ contains
             ! save. Merge is the way to do it in general inside of
             ! loops, but sometimes it may not work.
             !
-            ! eta = merge(col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
+            ! eta = merge(col_gas(icol,ilay,igas_1) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
             !             col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix))
             !
             ! In essence: do not turn it back to merge(...)!
             if (col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix)) then
-              eta = col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav)
+              eta = col_gas(icol,ilay,igas_1) / col_mix(itemp,icol,ilay,iflav)
             else
               eta = 0.5_wp
             endif
-            loceta = eta * float(neta-1)
+            loceta = eta * real(neta-1, wp)
             jeta(itemp,icol,ilay,iflav) = min(int(loceta)+1, neta-1)
-            feta = mod(loceta, 1.0_wp)
+            feta = loceta - aint(loceta)
             ! compute interpolation fractions needed for minor species
             ! ftemp_term = (1._wp-ftemp(icol,ilay)) for itemp = 1, ftemp(icol,ilay) for itemp=2
             ftemp_term = (real(2-itemp, wp) + real(2*itemp-3, wp) * ftemp(icol,ilay))

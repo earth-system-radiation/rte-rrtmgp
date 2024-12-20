@@ -1,0 +1,53 @@
+{% set name = "rte_rrtmgp" %}
+{% set version = "cmake.dev" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+conda_build:
+  pkg_format: "conda"
+
+source:
+  # TODO: Make makepath-cmake to {{ version }} when we have real version
+  url: https://github.com/earth-system-radiation/rte-rrtmgp/archive/refs/heads/makepath-cmake.zip
+  sha256: c79a6d076c8061d36dc63770a540d05423633c975b07a3ad95fc824099e6992f
+
+requirements:
+  build:
+    # General
+    - cmake                                  # CMake to configure the project
+    - ninja                                  # Ninja to run the build
+    - python >=3.10                          # Python required for testing/building
+    # - conda-forge::netcdf-fortran >=4.5,<5.0 # Fortran NetCDF library (pinned version)
+    # Unix
+    - {{ compiler('fortran') }}  # [unix]
+    # # Win
+    # - {{ compiler('m2w64_fortran') }}  # [win]
+
+  host:
+    # General
+    - cmake                                  # CMake to configure the project
+    - python >=3.10                          # Python required for running tests/building
+    # - conda-forge::netcdf-fortran >=4.5,<5.0 # Required runtime library for Fortran-NetCDF bindings
+    # Unix
+    - {{ compiler('fortran') }}  # [unix]
+    # # Win
+    # - {{ compiler('m2w64_fortran') }}  # [win]
+
+  run:
+    # General
+    - python >=3.10                          # Python required for running tests/building
+    # - conda-forge::netcdf-fortran >=4.5,<5.0 # NetCDF shared library required at runtime
+
+about:
+  home: https://github.com/earth-system-radiation/rte-rrtmgp
+  summary: Fortran codes for computing radiative fluxes in planetary atmospheres.
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE.txt
+  doc_url: https://earth-system-radiation.github.io/rte-rrtmgp/how-tos/
+
+extra:
+  recipe-maintainers:
+    - RobertPincus

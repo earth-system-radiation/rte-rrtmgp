@@ -21,21 +21,26 @@ jobs:
         include:
         # Set flags for Intel Fortran Compiler Classic
         - fortran-compiler: ifort
-          fcflags: -m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08 -diag-disable=10448
+          fcflags: -m64 -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08 -diag-disable=10448
+          build-type: RelWithDebInfo
         # Set flags for Intel Fortran Compiler
         - fortran-compiler: ifx
           rte-kernels: default
           fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08
+          build-type: None
         - fortran-compiler: ifx
           rte-kernels: accel
           fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64
+          build-type: None
         # Set flags for NVIDIA Fortran compiler
         - fortran-compiler: nvfortran
           rte-kernels: default
           fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk
+          build-type: None
         - fortran-compiler: nvfortran
           rte-kernels: accel
           fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc
+          build-type: None
         # Set container images
         - fortran-compiler: ifort
           image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:oneapi
@@ -46,15 +51,14 @@ jobs:
     container:
       image: ${{ matrix.image }}
     env:
-      # Core variables:
       FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: ${{ matrix.fcflags }}
-      # CMake variables:
-      NFHOME: /opt/netcdf-fortran
-      RTE_KERNELS: ${{ matrix.rte-kernels }}
-      RRTMGP_DATA_VERSION: v1.8.2
-      BUILD_TYPE: Debug
-      RUN_CMD:
+      FFLAGS: ${{ matrix.fcflags }}
+      NetCDF_Fortran_ROOT: /opt/netcdf-fortran
+      CMAKE_BUILD_PARALLEL_LEVEL: 8
+      VERBOSE:
+      # TODO: add missing test dependencies and run them in parallel:
+      # CTEST_PARALLEL_LEVEL: 8
+      CTEST_OUTPUT_ON_FAILURE: 1
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
       OMP_TARGET_OFFLOAD: DISABLED
       FAILURE_THRESHOLD: 7.e-4
@@ -85,27 +89,21 @@ jobs:
       id: build-success
       if: matrix.fortran-compiler != 'ifx' || matrix.rte-kernels != 'accel'
       run: |
-          # Run CMake
           cmake -S . -B build -G "Ninja" \
-              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-              -DCMAKE_Fortran_COMPILER=${{ env.FC }} \
-              -DCMAKE_Fortran_FLAGS="${{ env.FCFLAGS }}" \
-              -DRRTMGP_DATA_VERSION=${{ env.RRTMGP_DATA_VERSION }} \
-              -DPRECISION=${{ matrix.fpmodel }} \
-              -DKERNEL_MODE=${{ env.RTE_KERNELS }} \
-              -DENABLE_TESTS=ON \
+              -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+              -DRTE_ENABLE_SP=`test 'x${{ matrix.fpmodel }}' = xSP && echo ON || echo OFF` \
+              -DKERNEL_MODE=${{ matrix.rte-kernels }} \
+              -DBUILD_TESTING=ON \
               -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}
-
-          # Build the project
-          cmake --build build -- -j8
+          cmake --build build
     #
     # Run examples and tests
     #
     - name: Run examples and tests
       working-directory: build
       if: steps.build-success.outcome != 'skipped'
-      run: |
-        ctest -V
+      run: ctest
+    #
     # Generate validation plots
     #
     - name: Generate validation plots

@@ -1,5 +1,11 @@
+if(RTE_ENABLE_SP)
+  set(default_FAILURE_THRESHOLD "3.5e-1")
+else()
+  set(default_FAILURE_THRESHOLD "7.e-4")
+endif()
+
 set(FAILURE_THRESHOLD
-    7.e-4
+    "${default_FAILURE_THRESHOLD}"
     CACHE STRING "Default failure threshold for tests"
 )
 

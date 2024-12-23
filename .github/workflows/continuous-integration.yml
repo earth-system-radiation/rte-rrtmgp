@@ -67,15 +67,8 @@ jobs:
       # TODO: add missing test dependencies and run them in parallel:
       # CTEST_PARALLEL_LEVEL: 8
       CTEST_OUTPUT_ON_FAILURE: 1
-      FAILURE_THRESHOLD: 7.e-4
     runs-on: ${{ matrix.os }}
     steps:
-      #
-      # Relax failure thresholds for single precision
-      #
-      - name: Relax failure threshold for single precision
-        if: matrix.fpmodel == 'SP'
-        run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
       #
       # Check out repository under $GITHUB_WORKSPACE
       #
@@ -129,8 +122,7 @@ jobs:
           cmake -S . -B build -G "Ninja" \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               -DRTE_ENABLE_SP=`test 'x${{ matrix.fpmodel }}' = xSP && echo ON || echo OFF` \
-              -DBUILD_TESTING=ON \
-              -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}
+              -DBUILD_TESTING=ON
           cmake --build build
       #
       # Run examples, tests and checks

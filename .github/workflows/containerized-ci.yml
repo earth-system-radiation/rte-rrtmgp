@@ -61,7 +61,6 @@ jobs:
       CTEST_OUTPUT_ON_FAILURE: 1
       # https://github.com/earth-system-radiation/rte-rrtmgp/issues/194
       OMP_TARGET_OFFLOAD: DISABLED
-      FAILURE_THRESHOLD: 7.e-4
 
     steps:
     #
@@ -77,12 +76,6 @@ jobs:
         apt-get update
         apt-get install -y git cmake ninja-build
     #
-    # Update Failure threshold if single precision
-    #
-    - name: Failure threshold
-      if: matrix.fpmodel == 'SP'
-      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
-    #
     # Build libraries, examples and tests (expect success)
     #
     - name: Build libraries, examples and tests (expect success)
@@ -93,8 +86,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
               -DRTE_ENABLE_SP=`test 'x${{ matrix.fpmodel }}' = xSP && echo ON || echo OFF` \
               -DKERNEL_MODE=${{ matrix.rte-kernels }} \
-              -DBUILD_TESTING=ON \
-              -DFAILURE_THRESHOLD=${{ env.FAILURE_THRESHOLD }}
+              -DBUILD_TESTING=ON
           cmake --build build
     #
     # Run examples and tests

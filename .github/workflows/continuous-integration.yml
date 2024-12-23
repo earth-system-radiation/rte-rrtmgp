@@ -1,12 +1,13 @@
 name: Continuous Integration
+
 on:
   push:
     branches:
-    - main
-    - develop
+      - main
+      - develop
   pull_request:
     branches-ignore:
-    - documentation
+      - documentation
   workflow_dispatch:
 
 defaults:
@@ -16,88 +17,116 @@ defaults:
 
 jobs:
   CI:
-    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        fortran-compiler: [gfortran-10, gfortran-11, gfortran-12]
+        os: [ubuntu-24.04, macos-13, macos-latest, windows-2022]
+        gfortran-version: [12, 13, 14]
+        gfortran-from: [system, conda]
         fpmodel: [DP, SP]
+        exclude: 
+          - os: ubuntu-24.04
+            gfortran-from: conda
+          - os: macos-13
+            gfortran-from: system
+          - os: macos-13
+            gfortran-version: 14
+            gfortran-from: conda
+          - os: macos-latest
+            gfortran-from: system
+          - os: macos-latest
+            gfortran-version: 14
+            gfortran-from: conda
+          - os: windows-2022
+        include: 
+          - os: ubuntu-24.04
+            gfortran-version: 13
+            gfortran-from: conda
+            fpmodel: DP
+          - os: windows-2022
+            gfortran-version: 13
+            gfortran-from: conda
+            fpmodel: DP
+          - os: windows-2022
+            gfortran-version: 13
+            gfortran-from: conda
+            fpmodel: SP
+          - os: windows-2022
+            gfortran-version: 14
+            gfortran-from: conda
+            fpmodel: DP
+          - os: windows-2022
+            gfortran-version: 14
+            gfortran-from: conda
+            fpmodel: SP
     env:
-      # Core variables:
-      FC: ${{ matrix.fortran-compiler }}
-      FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan -g -DRTE_USE_CBOOL -DRTE_USE_${{ matrix.fpmodel }}"
-      # Make variables:
-      FCINCLUDE: -I/usr/include
-      RRTMGP_ROOT: ${{ github.workspace }}
-      RRTMGP_DATA: ${{ github.workspace }}/rrtmgp-data
-      RUN_CMD:
-      FAILURE_THRESHOLD: 7.e-4
+      FC: gfortran-${{ matrix.gfortran-version }}
+      FFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
+      CMAKE_BUILD_PARALLEL_LEVEL: 8
+      VERBOSE:
+      # TODO: add missing test dependencies and run them in parallel:
+      # CTEST_PARALLEL_LEVEL: 8
+      CTEST_OUTPUT_ON_FAILURE: 1
+    runs-on: ${{ matrix.os }}
     steps:
-    #
-    # Relax failure thresholds for single precision
-    #
-    - name: Relax failure threshold for single precision
-      if: matrix.fpmodel == 'SP'
-      run: echo "FAILURE_THRESHOLD=3.5e-1" >> $GITHUB_ENV
-    #
-    # Check out repository under $GITHUB_WORKSPACE
-    #
-    - name: Check out code
-      uses: actions/checkout@v4
-    #
-    # Check out data
-    #
-    - name: Check out data
-      uses: actions/checkout@v4
-      with:
-        repository: earth-system-radiation/rrtmgp-data
-        path: rrtmgp-data
-        ref: v1.8.2
-    #
-    # Synchronize the package index
-    #
-    - name: Synchronize the package index
-      run: sudo apt-get update
-    #
-    # Install NetCDF-Fortran (compatible with all compilers)
-    #
-    - name: Install NetCDF-Fortran
-      run: sudo apt-get install libnetcdff-dev
-    #
-    # Cache Conda packages
-    #
-    - name: Cache Conda packages
-      uses: actions/cache@v4
-      with:
-        path: ~/conda_pkgs_dir
-        key: conda-pkgs
-    #
-    # Set up Conda
-    #
-    - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        miniforge-version: latest
-        activate-environment: rte_rrtmgp_test
-        environment-file: environment-noplots.yml
-        python-version: 3.11
-        auto-activate-base: false
-        # Use the cache properly:
-        use-only-tar-bz2: true
-    #
-    # Build libraries, examples and tests
-    #
-    - name: Build libraries
-      run: |
-        $FC --version
-        make -j4 libs
-    #
-    # Run examples and tests
-    #
-    - name: Build and run examples and tests
-      run: make -j4 tests
-    #
-    # Compare the results
-    #
-    - name: Compare the results
-      run: make -j4 check
+      #
+      # Check out repository under $GITHUB_WORKSPACE
+      #
+      - name: Check out code
+        uses: actions/checkout@v4
+      #
+      # Cache Conda packages
+      #
+      - name: Cache Conda packages
+        uses: actions/cache@v4
+        with:
+          path: ~/conda_pkgs_dir
+          key: conda-pkgs-${{ matrix.os }}
+      #
+      # Set up Conda
+      #
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          activate-environment: rte_rrtmgp_test
+          environment-file: environment-noplots.yml
+          python-version: 3.11
+          auto-activate-base: false
+          # Use the cache properly:
+          use-only-tar-bz2: false
+      #
+      # Install compiler
+      #
+      - name: Install compiler
+        if: matrix.gfortran-from == 'conda'
+        run: |
+          conda install -c conda-forge gfortran=${{ matrix.gfortran-version }} -y
+          echo "FC=gfortran" >> $GITHUB_ENV
+      #
+      # Install dependencies
+      #
+      - name: Install dependencies
+        run: conda install -c conda-forge netcdf-fortran ninja -y
+      #
+      # Adjust toolchain
+      #
+      - name: Adjust toolchain
+        if: matrix.os == 'windows-2022'
+        run: echo "FC=${FC}.exe" >> $GITHUB_ENV
+      #
+      # Build libraries, examples, and tests
+      #
+      - name: Build libraries and tests
+        run: |
+          cmake -S . -B build -G "Ninja" \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DRTE_ENABLE_SP=`test 'x${{ matrix.fpmodel }}' = xSP && echo ON || echo OFF` \
+              -DBUILD_TESTING=ON
+          cmake --build build
+      #
+      # Run examples, tests and checks
+      #
+      - name: Run examples, tests and checks
+        working-directory: build
+        run: ctest

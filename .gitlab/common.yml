@@ -1,37 +1,33 @@
 .dp:
   variables:
-    FPMODEL: DP
+    RTE_ENABLE_SP: OFF
     FAILURE_THRESHOLD: "7.e-4"
 
 .sp:
   variables:
-    FPMODEL: SP
+    RTE_ENABLE_SP: ON
     FAILURE_THRESHOLD: "3.5e-1"
 
 .common:
   variables:
-    # Make variables:
-    MAKEFLAGS: -j8
-    RRTMGP_ROOT: ${CI_PROJECT_DIR}
-    RRTMGP_DATA: ${CI_PROJECT_DIR}/rrtmgp-data
-    # Convenience variables:
-    RRTMGP_DATA_REPO: https://github.com/earth-system-radiation/rrtmgp-data.git
-    RRTMGP_DATA_TAG: v1.8.2
+    CMAKE_BUILD_PARALLEL_LEVEL: 8
+    VERBOSE:
+    # TODO: add missing test dependencies and run them in parallel:
+    # CTEST_PARALLEL_LEVEL: 8
+    CTEST_OUTPUT_ON_FAILURE: 1
   script:
     #
     # Build libraries, examples and tests
     #
-    - ${FC} ${VERSION_FCFLAGS}
-    - make libs
+    - |
+      cmake -S . -B build \
+          -DCMAKE_BUILD_TYPE=None \
+          -DRTE_ENABLE_SP=$RTE_ENABLE_SP \
+          -DKERNEL_MODE=$KERNEL_MODE \
+          -DBUILD_TESTING=ON \
+          -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
+    - cmake --build build
     #
-    # Check out data
+    # Run examples, tests and checks
     #
-    - git clone --depth 1 ${RRTMGP_DATA_TAG:+--branch "${RRTMGP_DATA_TAG}"} "${RRTMGP_DATA_REPO}" "${RRTMGP_DATA}"
-    #
-    # Run examples and tests
-    #
-    - make tests
-    #
-    # Compare the results
-    #
-    - make check
+    - ctest --test-dir build

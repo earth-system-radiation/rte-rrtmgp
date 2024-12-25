@@ -57,7 +57,7 @@ inline void reorder_123x321_kernel(int d1, int d2, int d3, ArrayInT const &array
   //     for (int t1=1; t1<=ntiles1; t1++) {
   //       for (int it3=1; it3<=TILE_SIZE; it3++) {
   //         for (int it1=1; it1<=TILE_SIZE; it1++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<3>({d1,d2,d3}) , KOKKOS_LAMBDA (int i1, int i2, int i3) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({d1,d2,d3}) , KOKKOS_LAMBDA (int i1, int i2, int i3) {
     array_out(i3,i2,i1) = array_in(i1,i2,i3);
   }));
 }

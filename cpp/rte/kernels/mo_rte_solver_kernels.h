@@ -704,7 +704,6 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
     TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
       int icol, igpt;
       conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
-    //TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
       int ilev = nlay;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,igpt,ilev)  = albedo_sfc(icol,igpt);
@@ -831,7 +830,7 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay+1
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay+1,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay+1,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
   }));
 
@@ -933,7 +932,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   // do igpt = 1, ngpt
   //   do ilev = 1, nlay+1
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay+1,ngpt}) , KOKKOS_LAMBDA (int icol, int ilev, int igpt) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay+1,ngpt}) , KOKKOS_LAMBDA (int icol, int ilev, int igpt) {
     radn_dn(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
     radn_up(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
   }));

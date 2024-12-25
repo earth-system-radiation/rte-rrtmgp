@@ -17,7 +17,7 @@ void sum_byband(int ncol, int nlev, int ngpt, int nbnd, BndLimsT const &bnd_lims
   using LayoutT = typename SpectralT::array_layout;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlev,nbnd}) , KOKKOS_LAMBDA (int icol, int ilev, int ibnd) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlev,nbnd}) , KOKKOS_LAMBDA (int icol, int ilev, int ibnd) {
     RealT bb_flux_s = 0.0;
     for (int igpt=bnd_lims(0,ibnd); igpt<=bnd_lims(1,ibnd); igpt++) {
       bb_flux_s += spectral_flux(icol,ilev,igpt);
@@ -33,7 +33,7 @@ void net_byband(int ncol, int nlev, int nbnd,
   using LayoutT = typename FluxDnT::array_layout;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlev,nbnd}) , KOKKOS_LAMBDA (int icol, int ilev, int ibnd) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlev,nbnd}) , KOKKOS_LAMBDA (int icol, int ilev, int ibnd) {
     bnd_flux_net(icol,ilev,ibnd) = bnd_flux_dn(icol,ilev,ibnd) - bnd_flux_up(icol,ilev,ibnd);
   }));
 }

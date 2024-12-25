@@ -61,7 +61,7 @@
   total_s##name += duration##name.count() / 1000000.0;                  \
   std::cout << "TIMING For func " << __func__ << " file " << __FILE__ << " line " << __LINE__ << " total " << total_s##name << " s" << std::endl
 #else
-#define TIMED_KERNEL(kernel) kernel
+#define TIMED_INLINE_KERNEL(kernel) kernel
 #endif
 
 

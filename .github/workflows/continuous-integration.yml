@@ -61,7 +61,7 @@ jobs:
             fpmodel: SP
     env:
       FC: gfortran-${{ matrix.gfortran-version }}
-      FFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
+      FFLAGS: "-m64 -std=f2008 -march=native -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
       CMAKE_BUILD_PARALLEL_LEVEL: 8
       VERBOSE:
       # TODO: add missing test dependencies and run them in parallel:

@@ -7,7 +7,7 @@ set(TEST_INPUTS
 )
 
 add_custom_target(
-  rfmip_clear_sky_test_inputs ALL
+  copy_rrtmgp_rfmip_inputs ALL
   COMMAND
     ${CMAKE_COMMAND} -E copy_if_different ${TEST_INPUTS}
     ${CMAKE_CURRENT_BINARY_DIR}/
@@ -25,23 +25,29 @@ foreach(
 )
   add_executable(${test_executable} ${test_executable}.F90)
   target_link_libraries(${test_executable} PRIVATE rfmip_clear_utils)
-  add_dependencies(${test_executable} rfmip_clear_sky_test_inputs)
+  add_dependencies(${test_executable} copy_rrtmgp_rfmip_inputs)
 endforeach()
 
 add_test(
-  NAME rfmip_test_lw
+  NAME run_rrtmgp_rfmip_lw
   COMMAND
     rrtmgp_rfmip_lw 8
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
     ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
 )
+set_tests_properties(
+  run_rrtmgp_rfmip_lw PROPERTIES FIXTURES_SETUP run_rrtmgp_rfmip_lw
+)
 
 add_test(
-  NAME rfmip_test_sw
+  NAME run_rrtmgp_rfmip_sw
   COMMAND
     rrtmgp_rfmip_sw 8
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
     ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
+)
+set_tests_properties(
+  run_rrtmgp_rfmip_sw PROPERTIES FIXTURES_SETUP run_rrtmgp_rfmip_sw
 )
 
 add_test(
@@ -55,4 +61,8 @@ add_test(
     rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc --failure_threshold
     ${FAILURE_THRESHOLD}
+)
+set_tests_properties(
+  check_rfmip_lw_sw
+  PROPERTIES FIXTURES_REQUIRED "run_rrtmgp_rfmip_lw;run_rrtmgp_rfmip_sw"
 )

@@ -10,8 +10,7 @@
   variables:
     CMAKE_BUILD_PARALLEL_LEVEL: 8
     VERBOSE:
-    # TODO: add missing test dependencies and run them in parallel:
-    # CTEST_PARALLEL_LEVEL: 8
+    CTEST_PARALLEL_LEVEL: 8
     CTEST_OUTPUT_ON_FAILURE: 1
   script:
     #

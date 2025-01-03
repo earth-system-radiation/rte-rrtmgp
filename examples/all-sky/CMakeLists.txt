@@ -15,7 +15,10 @@ add_test(
     ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc
     ${RRTMGP_DATA}/rrtmgp-aerosols-merra-lw.nc
 )
-set_tests_properties(run_allsky_lw PROPERTIES FIXTURES_SETUP run_allsky_lw)
+set_tests_properties(
+  run_allsky_lw
+  PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data FIXTURES_SETUP run_allsky
+)
 
 add_test(
   NAME run_allsky_sw
@@ -24,7 +27,10 @@ add_test(
     ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc
     ${RRTMGP_DATA}/rrtmgp-aerosols-merra-sw.nc
 )
-set_tests_properties(run_allsky_sw PROPERTIES FIXTURES_SETUP run_allsky_sw)
+set_tests_properties(
+  run_allsky_sw
+  PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data FIXTURES_SETUP run_allsky
+)
 
 add_test(
   NAME check_allsky_lw_sw
@@ -36,7 +42,8 @@ add_test(
     --failure_threshold ${FAILURE_THRESHOLD}
 )
 set_tests_properties(
-  check_allsky_lw_sw PROPERTIES FIXTURES_REQUIRED "run_allsky_lw;run_allsky_sw"
+  check_allsky_lw_sw
+  PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_allsky"
 )
 
 add_test(
@@ -46,7 +53,11 @@ add_test(
     ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc
 )
 set_tests_properties(
-  run_allsky_no_aerosols_lw PROPERTIES FIXTURES_SETUP run_allsky_no_aerosols_lw
+  run_allsky_no_aerosols_lw
+  PROPERTIES FIXTURES_REQUIRED
+             fetch_rrtmgp_data
+             FIXTURES_SETUP
+             run_allsky_no_aerosols
 )
 
 add_test(
@@ -56,7 +67,11 @@ add_test(
     ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc
 )
 set_tests_properties(
-  run_allsky_no_aerosols_sw PROPERTIES FIXTURES_SETUP run_allsky_no_aerosols_sw
+  run_allsky_no_aerosols_sw
+  PROPERTIES FIXTURES_REQUIRED
+             fetch_rrtmgp_data
+             FIXTURES_SETUP
+             run_allsky_no_aerosols
 )
 
 add_test(
@@ -70,6 +85,5 @@ add_test(
 )
 set_tests_properties(
   check_allsky_no_aerosols_lw_sw
-  PROPERTIES FIXTURES_REQUIRED
-             "run_allsky_no_aerosols_lw;run_allsky_no_aerosols_sw"
+  PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_allsky_no_aerosols"
 )

@@ -32,7 +32,11 @@ add_test(
     ${CMAKE_CURRENT_BINARY_DIR}/
 )
 set_tests_properties(
-  copy_rrtmgp_rfmip_inputs PROPERTIES FIXTURES_SETUP copy_rrtmgp_rfmip_inputs
+  copy_rrtmgp_rfmip_inputs
+  PROPERTIES FIXTURES_REQUIRED
+             fetch_rrtmgp_data
+             FIXTURES_SETUP
+             copy_rrtmgp_rfmip_inputs
 )
 
 add_test(
@@ -45,9 +49,9 @@ add_test(
 set_tests_properties(
   run_rrtmgp_rfmip_lw
   PROPERTIES FIXTURES_REQUIRED
-             copy_rrtmgp_rfmip_inputs
+             "fetch_rrtmgp_data;copy_rrtmgp_rfmip_inputs"
              FIXTURES_SETUP
-             run_rrtmgp_rfmip_lw
+             run_rrtmgp_rfmip
 )
 
 add_test(
@@ -60,9 +64,9 @@ add_test(
 set_tests_properties(
   run_rrtmgp_rfmip_sw
   PROPERTIES FIXTURES_REQUIRED
-             copy_rrtmgp_rfmip_inputs
+             "fetch_rrtmgp_data;copy_rrtmgp_rfmip_inputs"
              FIXTURES_SETUP
-             run_rrtmgp_rfmip_sw
+             run_rrtmgp_rfmip
 )
 
 add_test(
@@ -75,5 +79,5 @@ add_test(
 )
 set_tests_properties(
   check_rfmip_lw_sw
-  PROPERTIES FIXTURES_REQUIRED "run_rrtmgp_rfmip_lw;run_rrtmgp_rfmip_sw"
+  PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
 )

@@ -53,23 +53,35 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
 
   find_package(NetCDF_Fortran REQUIRED)
 
-  if(NOT RRTMGP_DATA)
-    set(RRTMGP_DATA
-        "${PROJECT_BINARY_DIR}/rrtmgp-data"
-        CACHE PATH "Path to the RRTMGP data" FORCE
-    )
-    set(RRTMGP_DATA_VERSION "v1.8.2")
-    include(FetchContent)
-    message(CHECK_START "Fetching RRTMGP data ${RRTMGP_DATA_VERSION}")
-    FetchContent_Declare(
+  if(RRTMGP_DATA)
+    add_test(NAME fetch_rrtmgp_data COMMAND ${CMAKE_COMMAND} -E true)
+  else()
+    set(RRTMGP_DATA "${PROJECT_BINARY_DIR}/rrtmgp-data")
+
+    include(ExternalProject)
+    ExternalProject_Add(
       rrtmgp-data
       GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
-      GIT_TAG ${RRTMGP_DATA_VERSION}
+      GIT_TAG "v1.8.2"
+      GIT_SHALLOW True
+      EXCLUDE_FROM_ALL True
+      PREFIX rrtmgp-data-cmake
       SOURCE_DIR ${RRTMGP_DATA}
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
     )
-    FetchContent_MakeAvailable(rrtmgp-data)
-    message(CHECK_PASS "done")
+    add_test(
+      NAME fetch_rrtmgp_data
+      COMMAND
+        ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR} --config
+        "$<CONFIG>" --target rrtmgp-data
+    )
   endif()
+
+  set_tests_properties(
+    fetch_rrtmgp_data PROPERTIES FIXTURES_SETUP fetch_rrtmgp_data
+  )
 
   add_subdirectory(examples)
   add_subdirectory(tests)

@@ -38,41 +38,43 @@ foreach(
   target_link_libraries(${test_executable} PRIVATE test_utils)
 endforeach()
 
-add_test(NAME rte_optic_prop_unit_tests COMMAND rte_optic_prop_unit_tests)
-add_test(NAME rte_lw_solver_unit_tests COMMAND rte_lw_solver_unit_tests)
-add_test(NAME rte_sw_solver_unit_tests COMMAND rte_sw_solver_unit_tests)
-
-add_test(
-  NAME check_equivalence_lw_g256
-  COMMAND
-    check_equivalence
-    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
+foreach(
+  test_executable IN
+  ITEMS # cmake-format: sort
+        rte_lw_solver_unit_tests
+        rte_optic_prop_unit_tests
+        rte_sw_solver_unit_tests
 )
+  add_test(NAME ${test_executable} COMMAND ${test_executable})
+endforeach()
 
-add_test(
-  NAME check_equivalence_lw_g128
-  COMMAND
-    check_equivalence
-    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-    ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
-)
+foreach(g_value IN ITEMS 256 128)
+  add_test(
+    NAME check_equivalence_lw_g${g_value}
+    COMMAND
+      check_equivalence
+      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+      ${RRTMGP_DATA}/rrtmgp-gas-lw-g${g_value}.nc
+  )
+  set_tests_properties(
+    check_equivalence_lw_g${g_value}
+    PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data
+  )
+endforeach()
 
-add_test(
-  NAME check_equivalence_sw_g224
-  COMMAND
-    check_equivalence
-    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
-)
-
-add_test(
-  NAME check_equivalence_sw_g112
-  COMMAND
-    check_equivalence
-    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-    ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
-)
+foreach(g_value IN ITEMS 224 112)
+  add_test(
+    NAME check_equivalence_sw_g${g_value}
+    COMMAND
+      check_equivalence
+      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+      ${RRTMGP_DATA}/rrtmgp-gas-sw-g${g_value}.nc
+  )
+  set_tests_properties(
+    check_equivalence_sw_g${g_value}
+    PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data
+  )
+endforeach()
 
 # The tests write to the input file, therefore we copy it:
 add_test(
@@ -83,7 +85,11 @@ add_test(
     ${CMAKE_CURRENT_BINARY_DIR}/
 )
 set_tests_properties(
-  copy_check_variants_input PROPERTIES FIXTURES_SETUP copy_check_variants_input
+  copy_check_variants_input
+  PROPERTIES FIXTURES_REQUIRED
+             fetch_rrtmgp_data
+             FIXTURES_SETUP
+             copy_check_variants_input
 )
 
 add_test(
@@ -95,10 +101,7 @@ add_test(
 )
 set_tests_properties(
   check_variants_lw
-  PROPERTIES FIXTURES_REQUIRED
-             copy_check_variants_input
-             FIXTURES_SETUP
-             check_variants_lw
+  PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;copy_check_variants_input"
 )
 
 add_test(
@@ -110,9 +113,12 @@ add_test(
 )
 set_tests_properties(
   check_variants_sw
-  # The test writes to the same file as check_variants_lw, therefore we must not
-  # run them in parallel:
-  PROPERTIES FIXTURES_REQUIRED check_variants_lw
+  PROPERTIES FIXTURES_REQUIRED
+             "fetch_rrtmgp_data;copy_check_variants_input"
+             # The test writes to the same file as check_variants_lw, therefore
+             # we cannot run them in parallel:
+             DEPENDS
+             check_variants_lw
 )
 
 add_custom_target(

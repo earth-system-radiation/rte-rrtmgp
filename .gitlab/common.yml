@@ -1,19 +1,16 @@
 .dp:
   variables:
     RTE_ENABLE_SP: OFF
-    FAILURE_THRESHOLD: "7.e-4"
 
 .sp:
   variables:
     RTE_ENABLE_SP: ON
-    FAILURE_THRESHOLD: "3.5e-1"
 
 .common:
   variables:
     CMAKE_BUILD_PARALLEL_LEVEL: 8
     VERBOSE:
-    # TODO: add missing test dependencies and run them in parallel:
-    # CTEST_PARALLEL_LEVEL: 8
+    CTEST_PARALLEL_LEVEL: 8
     CTEST_OUTPUT_ON_FAILURE: 1
   script:
     #
@@ -24,8 +21,7 @@
           -DCMAKE_BUILD_TYPE=None \
           -DRTE_ENABLE_SP=$RTE_ENABLE_SP \
           -DKERNEL_MODE=$KERNEL_MODE \
-          -DBUILD_TESTING=ON \
-          -DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
+          -DBUILD_TESTING=ON
     - cmake --build build
     #
     # Run examples, tests and checks

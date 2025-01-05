@@ -92,6 +92,13 @@ add_test(
     test_atmospheres.nc
     ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
 )
+set_tests_properties(
+  check_variants_sw
+  PROPERTIES # The test writes to the same file as check_variants_lw, therefore
+             # we cannot run them in parallel:
+             DEPENDS
+             check_variants_lw
+)
 
 add_custom_target(
   validation-plots

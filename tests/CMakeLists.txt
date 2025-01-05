@@ -11,7 +11,6 @@ add_library(
   ${extensions_source_dir}/solar_variability/mo_solar_variability.F90
   mo_gas_optics_defs_rrtmgp.F90
   mo_rcemip_profiles.F90
-  mo_testing_io.F90
   mo_testing_utils.F90
 )
 
@@ -76,49 +75,22 @@ foreach(g_value IN ITEMS 224 112)
   )
 endforeach()
 
-# The tests write to the input file, therefore we copy it:
-add_test(
-  NAME copy_check_variants_input
-  COMMAND
-    ${CMAKE_COMMAND} -E copy_if_different
-    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-    ${CMAKE_CURRENT_BINARY_DIR}/
-)
-set_tests_properties(
-  copy_check_variants_input
-  PROPERTIES FIXTURES_REQUIRED
-             fetch_rrtmgp_data
-             FIXTURES_SETUP
-             copy_check_variants_input
-)
-
 add_test(
   NAME check_variants_lw
   COMMAND
     check_variants
-    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    test_atmospheres.nc
     ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
-)
-set_tests_properties(
-  check_variants_lw
-  PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;copy_check_variants_input"
 )
 
 add_test(
   NAME check_variants_sw
   COMMAND
     check_variants
-    multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    test_atmospheres.nc
     ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
-)
-set_tests_properties(
-  check_variants_sw
-  PROPERTIES FIXTURES_REQUIRED
-             "fetch_rrtmgp_data;copy_check_variants_input"
-             # The test writes to the same file as check_variants_lw, therefore
-             # we cannot run them in parallel:
-             DEPENDS
-             check_variants_lw
 )
 
 add_custom_target(

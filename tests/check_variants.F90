@@ -47,7 +47,8 @@ program rte_clear_sky_regression
                                    read_and_block_lw_bc, read_and_block_sw_bc, determine_gas_names
   use mo_simple_netcdf,      only: get_dim_size, read_field
   use mo_heating_rates,      only: compute_heating_rate
-  use mo_testing_io,         only: write_broadband_field
+  use netcdf
+  use mo_simple_netcdf
   implicit none
   ! ----------------------------------------------------------------------------------
   ! Variables
@@ -110,7 +111,8 @@ program rte_clear_sky_regression
   character(len=32 ), &
             dimension(:), allocatable :: kdist_gas_names, rfmip_gas_games
 
-  character(len=256) :: input_file = "", gas_optics_file = "", gas_optics_file_2 = ""
+  character(len=256) :: input_file = "", output_file = "", gas_optics_file = "", gas_optics_file_2 = ""
+  integer            :: ncid, dimid
   ! ----------------------------------------------------------------------------------
   ! Code
   ! ----------------------------------------------------------------------------------
@@ -118,11 +120,12 @@ program rte_clear_sky_regression
   ! Parse command line for any file names, block size
   !
   nUserArgs = command_argument_count()
-  if (nUserArgs <  2) call stop_on_err("Need to supply input_file gas_optics_file [gas_optics_file_2]")
+  if (nUserArgs <  3) call stop_on_err("Need to supply input_file output_file gas_optics_file [gas_optics_file_2]")
   if (nUserArgs >= 1) call get_command_argument(1,input_file)
-  if (nUserArgs >= 2) call get_command_argument(2,gas_optics_file)
-  if (nUserArgs >= 3) call get_command_argument(3,gas_optics_file_2)
-  if (nUserArgs >  4) print *, "Ignoring command line arguments beyond the first four..."
+  if (nUserArgs >= 2) call get_command_argument(2,output_file)
+  if (nUserArgs >= 3) call get_command_argument(3,gas_optics_file)
+  if (nUserArgs >= 4) call get_command_argument(4,gas_optics_file_2)
+  if (nUserArgs >  5) print *, "Ignoring command line arguments beyond the first four..."
   if(trim(input_file) == '-h' .or. trim(input_file) == "--help") then
     call stop_on_err("clear_sky_regression input_file absorption_coefficients_file")
   end if
@@ -203,6 +206,21 @@ program rte_clear_sky_regression
   allocate(flux_up(ncol,nlay+1), flux_dn(ncol,nlay+1), flux_dir(ncol,nlay+1))
   ! ----------------------------------------------------------------------------
   !
+  ! Create output file and site, level, layer dimensions 
+  ! 
+  if(nf90_create(trim(output_file), NF90_CLOBBER, ncid) /= NF90_NOERR) &
+    call stop_on_err("write_fluxes: can't create file " // trim(output_file))
+  if(nf90_def_dim(ncid, "site", ncol, dimid) /= NF90_NOERR) &
+    call stop_on_err("fail to create 'site' dimension")
+  if(nf90_def_dim(ncid, "level", nlay+1, dimid) /= NF90_NOERR) &
+    call stop_on_err("fail to create 'level' dimension")
+  if(nf90_def_dim(ncid, "layer", nlay, dimid) /= NF90_NOERR) &
+    call stop_on_err("fail to create 'layer' dimension")
+  if(nf90_enddef(ncid) /= NF90_NOERR) &
+    call stop_on_err("fail to to end redefinition??")
+
+  ! ----------------------------------------------------------------------------
+  !
   ! Solvers
   !
   fluxes%flux_up => flux_up(:,:)
@@ -244,6 +262,7 @@ program rte_clear_sky_regression
       call sw_clear_sky_alt
     end if
   end if
+  ncid = nf90_close(ncid)
 contains
   ! ----------------------------------------------------------------------------
   !
@@ -264,12 +283,12 @@ contains
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))
-    call write_broadband_field(input_file, flux_up,  "lw_flux_up",  "LW flux up")
-    call write_broadband_field(input_file, flux_dn,  "lw_flux_dn",  "LW flux dn")
-    call write_broadband_field(input_file, flux_net, "lw_flux_net", "LW flux net")
+    call write_broadband_field(flux_up,  "lw_flux_up",  "LW flux up")
+    call write_broadband_field(flux_dn,  "lw_flux_dn",  "LW flux dn")
+    call write_broadband_field(flux_net, "lw_flux_net", "LW flux net")
 
     call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
-    call write_broadband_field(input_file, heating_rate,  &
+    call write_broadband_field(heating_rate,  &
                                                      "lw_flux_hr_default",  "LW heating rate", vert_dim_name = "layer")
     !
     ! Test for mo_fluxes_broadband for computing only net flux
@@ -280,7 +299,7 @@ contains
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))
-    call write_broadband_field(input_file, flux_net, "lw_flux_net_2", "LW flux net, direct")
+    call write_broadband_field(flux_net, "lw_flux_net_2", "LW flux net, direct")
     fluxes%flux_up => flux_up
     fluxes%flux_dn => flux_dn
     nullify(fluxes%flux_net)
@@ -300,8 +319,8 @@ contains
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))
-    call write_broadband_field(input_file, flux_up, "lw_flux_up_notlev", "LW flux up, no level temperatures")
-    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_notlev", "LW flux dn, no level temperatures")
+    call write_broadband_field(flux_up, "lw_flux_up_notlev", "LW flux up, no level temperatures")
+    call write_broadband_field(flux_dn, "lw_flux_dn_notlev", "LW flux dn, no level temperatures")
   end subroutine lw_clear_sky_notlev
   ! ----------------------------------------------------------------------------
   !
@@ -318,8 +337,8 @@ contains
                             lw_sources, &
                             sfc_emis,  &
                             fluxes, n_gauss_angles=3))
-    call write_broadband_field(input_file, flux_up, "lw_flux_up_3ang", "LW flux up, three quadrature angles")
-    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_3ang", "LW flux dn, three quadrature angles")
+    call write_broadband_field(flux_up, "lw_flux_up_3ang", "LW flux up, three quadrature angles")
+    call write_broadband_field(flux_dn, "lw_flux_dn_3ang", "LW flux dn, three quadrature angles")
   end subroutine lw_clear_sky_3ang
   ! ----------------------------------------------------------------------------
   !
@@ -338,8 +357,8 @@ contains
                             lw_sources, &
                             sfc_emis,   &
                             fluxes, lw_Ds=lw_Ds))
-    call write_broadband_field(input_file, flux_up, "lw_flux_up_optang", "LW flux up, single optimal angles")
-    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_optang", "LW flux dn, single optimal angles")
+    call write_broadband_field(flux_up, "lw_flux_up_optang", "LW flux up, single optimal angles")
+    call write_broadband_field(flux_dn, "lw_flux_dn_optang", "LW flux dn, single optimal angles")
   end subroutine lw_clear_sky_optangle
   ! ----------------------------------------------------------------------------
   !
@@ -359,9 +378,9 @@ contains
                             sfc_emis,   &
                             fluxes,     &
                             flux_up_Jac = jFluxUp))
-    call write_broadband_field(input_file, flux_up, "lw_flux_up_jaco", "LW flux up, computing Jaobians")
-    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_jaco", "LW flux dn, computing Jaobians")
-    call write_broadband_field(input_file, jFluxUp, "lw_jaco_up"     , "Jacobian of LW flux up to surface temperature")
+    call write_broadband_field(flux_up, "lw_flux_up_jaco", "LW flux up, computing Jaobians")
+    call write_broadband_field(flux_dn, "lw_flux_dn_jaco", "LW flux dn, computing Jaobians")
+    call write_broadband_field(jFluxUp, "lw_jaco_up"     , "Jacobian of LW flux up to surface temperature")
 
     call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                        t_lay, sfc_t + 1._wp, &
@@ -373,8 +392,8 @@ contains
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))
-    call write_broadband_field(input_file, flux_up, "lw_flux_up_stp1", "LW flux up, surface T+1K")
-    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_stp1", "LW flux dn, surface T+1K")
+    call write_broadband_field(flux_up, "lw_flux_up_stp1", "LW flux up, surface T+1K")
+    call write_broadband_field(flux_dn, "lw_flux_dn_stp1", "LW flux dn, surface T+1K")
   end subroutine lw_clear_sky_jaco
   ! ----------------------------------------------------------------------------
   !
@@ -394,15 +413,15 @@ contains
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))
-    call write_broadband_field(input_file, flux_up, "lw_flux_up_1rescl", "LW flux up, clear-sky _1rescl")
-    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_1rescl", "LW flux dn, clear-sky _1rescl")
+    call write_broadband_field(flux_up, "lw_flux_up_1rescl", "LW flux up, clear-sky _1rescl")
+    call write_broadband_field(flux_dn, "lw_flux_dn_1rescl", "LW flux dn, clear-sky _1rescl")
 
     call stop_on_err(rte_lw(atmos,      &
                             lw_sources, &
                             sfc_emis,   &
                             fluxes, use_2stream=.true.))
-    call write_broadband_field(input_file, flux_up, "lw_flux_up_2str", "LW flux up, clear-sky _2str")
-    call write_broadband_field(input_file, flux_dn, "lw_flux_dn_2str", "LW flux dn, clear-sky _2str")
+    call write_broadband_field(flux_up, "lw_flux_up_2str", "LW flux up, clear-sky _2str")
+    call write_broadband_field(flux_dn, "lw_flux_dn_2str", "LW flux dn, clear-sky _2str")
 
   end subroutine lw_clear_sky_2str
   ! ----------------------------------------------------------------------------
@@ -422,11 +441,11 @@ contains
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))
-    call write_broadband_field(input_file, flux_up,  "lw_flux_up_alt",  "LW flux up, fewer g-points")
-    call write_broadband_field(input_file, flux_dn,  "lw_flux_dn_alt",  "LW flux dn, fewer g-points")
-    call write_broadband_field(input_file, flux_net, "lw_flux_net_alt", "LW flux ne, fewer g-pointst")
+    call write_broadband_field(flux_up,  "lw_flux_up_alt",  "LW flux up, fewer g-points")
+    call write_broadband_field(flux_dn,  "lw_flux_dn_alt",  "LW flux dn, fewer g-points")
+    call write_broadband_field(flux_net, "lw_flux_net_alt", "LW flux ne, fewer g-pointst")
     call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
-    call write_broadband_field(input_file, heating_rate,  &
+    call write_broadband_field(heating_rate,  &
                                                      "lw_flux_hr_alt",  "LW heating rate, fewer g-points", &
                                                      vert_dim_name = "layer")
 
@@ -435,11 +454,11 @@ contains
                             lw_sources, &
                             sfc_emis,   &
                             fluxes, lw_Ds=lw_Ds))
-    call write_broadband_field(input_file, flux_up,  "lw_flux_up_alt_oa",  "LW flux up, fewer g-points, opt. angle")
-    call write_broadband_field(input_file, flux_dn,  "lw_flux_dn_alt_oa",  "LW flux dn, fewer g-points, opt. angle")
-    call write_broadband_field(input_file, flux_net, "lw_flux_net_alt_oa", "LW flux ne, fewer g-points, opt. angle")
+    call write_broadband_field(flux_up,  "lw_flux_up_alt_oa",  "LW flux up, fewer g-points, opt. angle")
+    call write_broadband_field(flux_dn,  "lw_flux_dn_alt_oa",  "LW flux dn, fewer g-points, opt. angle")
+    call write_broadband_field(flux_net, "lw_flux_net_alt_oa", "LW flux ne, fewer g-points, opt. angle")
     call stop_on_err(compute_heating_rate(flux_up, flux_dn, p_lev, heating_rate))
-    call write_broadband_field(input_file, heating_rate,  &
+    call write_broadband_field(heating_rate,  &
                                                      "lw_flux_hr_alt_oa",  "LW heating rate, fewer g-points, opt. angle", &
                                                      vert_dim_name = "layer")
     call gas_optics%finalize()
@@ -479,8 +498,8 @@ contains
       flux_up  = 0._wp
       flux_dn  = 0._wp
     end where
-    call write_broadband_field(input_file, flux_up,  "sw_flux_up",  "SW flux up")
-    call write_broadband_field(input_file, flux_dn,  "sw_flux_dn",  "SW flux dn")
+    call write_broadband_field(flux_up,  "sw_flux_up",  "SW flux up")
+    call write_broadband_field(flux_dn,  "sw_flux_dn",  "SW flux dn")
   end subroutine sw_clear_sky_default
   ! ----------------------------------------------------------------------------
   subroutine sw_clear_sky_alt
@@ -509,8 +528,8 @@ contains
       flux_up  = 0._wp
       flux_dn  = 0._wp
     end where
-    call write_broadband_field(input_file, flux_up,  "sw_flux_up_alt",  "SW flux up, fewer g-points")
-    call write_broadband_field(input_file, flux_dn,  "sw_flux_dn_alt",  "SW flux dn, fewer g-points")
+    call write_broadband_field(flux_up,  "sw_flux_up_alt",  "SW flux up, fewer g-points")
+    call write_broadband_field(flux_dn,  "sw_flux_dn_alt",  "SW flux dn, fewer g-points")
   end subroutine sw_clear_sky_alt
     ! ----------------------------------------------------------------------------
   subroutine make_optical_props_1scl(gas_optics)
@@ -552,4 +571,44 @@ contains
     end select
   end subroutine make_optical_props_2str
   ! ----------------------------------------------------------------------------
-end program rte_clear_sky_regression
+  subroutine write_broadband_field(field, field_name, field_description, col_dim_name, vert_dim_name)
+    !
+    ! Write a field defined by column and some vertical dimension (lev or lay))
+    !
+    real(wp), dimension(:,:), intent(in) :: field
+    character(len=*),         intent(in) :: field_name, field_description
+    character(len=*), optional, &
+                              intent(in) ::col_dim_name, vert_dim_name
+    ! -------------------
+    integer           :: varid, ncol, nlev
+    !
+    ! Names of column (first) and vertical (second) dimension.
+    !   Because they are used in an array constuctor the need to have the same number of characters
+    !
+    character(len=32) :: cdim, vdim
+    ! -------------------
+    cdim = "site "
+    vdim = "level"
+    if(present(col_dim_name))  cdim = col_dim_name
+    if(present(vert_dim_name)) vdim = vert_dim_name
+
+    ncol  = size(field, dim=1)
+    nlev  = size(field, dim=2)
+
+    call create_var(ncid, trim(field_name),  [cdim, vdim], [ncol, nlev])
+    call stop_on_err(write_field(ncid, trim(field_name),  field))
+    !
+    ! Adding descriptive text as an attribute means knowing the varid
+    !
+    if(nf90_inq_varid(ncid, trim(field_name), varid) /= NF90_NOERR) &
+      call stop_on_err("Can't find variable " // trim(field_name))
+    if(nf90_redef(ncid) /= NF90_NOERR) &
+      call stop_on_err("write_broadband_field: can't put file into redefine mode")
+    if(nf90_put_att(ncid, varid, "description", trim(field_description)) /= NF90_NOERR) &
+      call stop_on_err("Can't write 'description' attribute to variable " // trim(field_name))
+    if(nf90_enddef(ncid) /= NF90_NOERR) &
+      call stop_on_err("write_broadband_field: fail to to end redefinition??")
+
+  end subroutine write_broadband_field
+  ! ----------------------------------------------------------------------------
+end program

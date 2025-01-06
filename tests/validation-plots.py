@@ -67,8 +67,21 @@ def construct_lbl_esgf_root(var, esgf_node="llnl"):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--input_file",
-        help="Path to the input NetCDF file (test_atmosphere.nc)."
+        "--state_file",
+        help="Path to the state information NetCDF file.",
+        default="multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
+    )
+    parser.add_argument(
+        "--lw_vars_file",
+        help="Path to the LW results file", 
+        default="lw_flux_variants.nc"
+
+    )
+    parser.add_argument(
+        "--sw_vars_file",
+        help="Path to the SW results file", 
+        default="sw_flux_variants.nc"
+
     )
     parser.add_argument(
         "--output_pdf",
@@ -77,7 +90,9 @@ def main():
     )
     args = parser.parse_args()
 
-    input_file = args.input_file
+    state_file = args.state_file
+    lw_vars_file = args.lw_vars_file
+    sw_vars_file = args.sw_vars_file
     output_pdf = args.output_pdf
 
     warnings.simplefilter("ignore", xr.SerializationWarning)
@@ -105,7 +120,7 @@ def main():
     #
     # Open the test results
     #
-    gp = xr.open_dataset(input_file)
+    gp = xr.open_mfdataset([state_file, lw_vars_file, sw_vars_file])
     #
     # Does the flux plus the Jacobian equal a calculation with perturbed surface
     # temperature?

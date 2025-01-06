@@ -19,6 +19,14 @@ set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+# GNUInstallDirs issues a warning if CMAKE_SIZEOF_VOID_P is not defined, which
+# is the case with NAG. One way to circumvent that is to enable C language for
+# the project:
+if(CMAKE_Fortran_COMPILER_ID STREQUAL NAG)
+  enable_language(C)
+endif()
+include(GNUInstallDirs)
+
 add_compile_options(
   $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>
 )
@@ -97,3 +105,34 @@ else()
   # Allow for 'make test' even if the tests are disabled:
   enable_testing()
 endif()
+
+export(
+  EXPORT rte-rrtmgp-targets FILE ${PROJECT_BINARY_DIR}/rte-rrtmgp-targets.cmake
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  ${PROJECT_SOURCE_DIR}/cmake/config.cmake.in
+  ${PROJECT_BINARY_DIR}/rte-rrtmgp-config.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/rte-rrtmgp/cmake
+  NO_SET_AND_CHECK_MACRO NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+
+write_basic_package_version_file(
+  ${PROJECT_BINARY_DIR}/rte-rrtmgp-config-version.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMinorVersion
+)
+
+install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ TYPE INCLUDE)
+
+install(
+  EXPORT rte-rrtmgp-targets
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/rte-rrtmgp/cmake
+)
+
+install(
+  FILES ${PROJECT_BINARY_DIR}/rte-rrtmgp-config.cmake
+        ${PROJECT_BINARY_DIR}/rte-rrtmgp-config-version.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/rte-rrtmgp/cmake
+)

@@ -30,9 +30,7 @@ else()
 endif()
 
 target_include_directories(
-  rrtmgpkernels
-  PUBLIC
-    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+  rrtmgpkernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY}
 )
 
 target_link_libraries(rrtmgpkernels PRIVATE rte)

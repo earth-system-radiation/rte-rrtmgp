@@ -1,0 +1,6 @@
+@PACKAGE_INIT@
+
+include(${CMAKE_CURRENT_LIST_DIR}/rte-rrtmgp-targets.cmake)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(rte-rrtmgp REQUIRED_VARS rte-rrtmgp_DIR)

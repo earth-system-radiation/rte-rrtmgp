@@ -24,7 +24,8 @@ target_include_directories(
 )
 
 target_link_libraries(
-  examples_utils PUBLIC rrtmgp rte ${NetCDF_Fortran_LIBRARY}
+  examples_utils
+  PUBLIC rte-rrtmgp::rrtmgp rte-rrtmgp::rte ${NetCDF_Fortran_LIBRARY}
 )
 
 add_subdirectory(all-sky)

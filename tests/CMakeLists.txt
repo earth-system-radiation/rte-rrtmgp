@@ -80,7 +80,7 @@ add_test(
   COMMAND
     check_variants
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-    test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
+    lw_flux_variants.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
     ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
 )
 set_tests_properties(
@@ -92,23 +92,18 @@ add_test(
   COMMAND
     check_variants
     ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-    test_atmospheres.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
+    sw_flux_variants.nc ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc
     ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
 )
 set_tests_properties(
   check_variants_sw
-  PROPERTIES FIXTURES_REQUIRED
-             fetch_rrtmgp_data
-             # The test writes to the same file as check_variants_lw, therefore
-             # we cannot run them in parallel:
-             DEPENDS
-             check_variants_lw
+  PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data
 )
 
 add_custom_target(
   validation-plots
   COMMAND
     ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/validation-plots.py
-    --input_file multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    --state_file ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
   COMMENT "Generating validation plots"
 )

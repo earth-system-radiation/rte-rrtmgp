@@ -83,6 +83,9 @@ add_test(
     test_atmospheres.nc
     ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
 )
+set_tests_properties(
+  check_variants_lw PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data
+)
 
 add_test(
   NAME check_variants_sw
@@ -94,7 +97,8 @@ add_test(
 )
 set_tests_properties(
   check_variants_sw
-  PROPERTIES # The test writes to the same file as check_variants_lw, therefore
+  PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data
+             # The test writes to the same file as check_variants_lw, therefore
              # we cannot run them in parallel:
              DEPENDS
              check_variants_lw

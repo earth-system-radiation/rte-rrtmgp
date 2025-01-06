@@ -111,11 +111,11 @@ def main():
         try:
             try:
                 urllib.request.urlretrieve(construct_lbl_esgf_root(v), v + lbl_suffix)
-            except:
+            except Exception:
                 urllib.request.urlretrieve(
                     construct_lbl_esgf_root(v, esgf_node="dkrz"), v + lbl_suffix
                 )
-        except:
+        except Exception:
             raise Exception("Failed to download {0}".format(v + lbl_suffix))
 
     lbl = xr.open_mfdataset([v + lbl_suffix for v in fluxes], combine="by_coords").sel(

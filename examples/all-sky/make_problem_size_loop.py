@@ -76,10 +76,10 @@ if __name__ == "__main__":
         raise AssertionError("Need to supply cloud optics if providing aerosol optics")
 
     # Every combo of ncol, nlay
-    for l in args.nlay:
-        for i in args.ncol:
+    for ll in args.nlay:
+        for ii in args.ncol:
             print(
-                f"{args.executable} {i:6d} {l:4d} {args.nloops:3d} "
+                f"{args.executable} {ii:6d} {ll:4d} {args.nloops:3d} "
                 + f"{args.output_file} {args.k_distribution} "
                 + f"{args.cloud_optics} {args.aerosol_optics} "
             )

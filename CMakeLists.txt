@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 project(
   rte-rrtmgp
-  VERSION 1.8
+  VERSION 1.9.0
   LANGUAGES Fortran
 )
 

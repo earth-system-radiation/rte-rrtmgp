@@ -12,6 +12,8 @@ add_library(
   mo_gas_optics_rrtmgp.F90
 )
 
+add_library(rte-rrtmgp::rrtmgp ALIAS rrtmgp)
+
 set_target_properties(rrtmgp PROPERTIES EXPORT_NAME rte-rrtmgp::rrtmgp)
 
 target_include_directories(

@@ -10,6 +10,8 @@ add_library(
   mo_source_functions.F90
 )
 
+add_library(rte-rrtmgp::rte ALIAS rte)
+
 set_target_properties(rte PROPERTIES EXPORT_NAME rte-rrtmgp::rte)
 
 target_include_directories(

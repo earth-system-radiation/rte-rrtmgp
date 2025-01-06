@@ -22,3 +22,5 @@ target_link_libraries(
   PUBLIC rrtmgpkernels
   PRIVATE rte
 )
+
+install(TARGETS rrtmgp EXPORT rte-rrtmgp-targets)

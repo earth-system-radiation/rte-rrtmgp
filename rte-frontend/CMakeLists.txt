@@ -16,3 +16,5 @@ target_include_directories(
 )
 
 target_link_libraries(rte PUBLIC rtekernels)
+
+install(TARGETS rte EXPORT rte-rrtmgp-targets)

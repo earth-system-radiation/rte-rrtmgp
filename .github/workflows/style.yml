@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  FIND_CMAKE_FILES_CMD: "find '${{ github.workspace }}' -name 'CMakeLists.txt' -o -name '*.cmake'"
+  FIND_CMAKE_FILES_CMD: "find '${{ github.workspace }}' -name 'CMakeLists.txt' -o -name '*.cmake' -o -name '*.cmake.in'"
 
 jobs:
   Format:

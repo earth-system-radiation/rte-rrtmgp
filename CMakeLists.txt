@@ -106,6 +106,10 @@ else()
   enable_testing()
 endif()
 
+export(
+  EXPORT rte-rrtmgp-targets FILE ${PROJECT_BINARY_DIR}/rte-rrtmgp-targets.cmake
+)
+
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
   ${PROJECT_SOURCE_DIR}/cmake/config.cmake.in

@@ -21,6 +21,9 @@ dependencies:
   - netcdf-fortran
   - cmake
   - ninja
+  - isort
+  - black
+  - flake8
 variables:
   FC: gfortran
   # Debugging flags below

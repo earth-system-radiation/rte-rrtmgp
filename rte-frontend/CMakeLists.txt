@@ -1,5 +1,6 @@
 add_library(
   rte STATIC # cmake-format: sort
+  $<TARGET_OBJECTS:rtekernels>
   mo_fluxes.F90
   mo_optical_props.F90
   mo_rte_config.F90
@@ -16,7 +17,5 @@ target_include_directories(
   PUBLIC
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
 )
-
-target_link_libraries(rte PUBLIC $<BUILD_INTERFACE:rtekernels>)
 
 install(TARGETS rte EXPORT rte-rrtmgp-targets)

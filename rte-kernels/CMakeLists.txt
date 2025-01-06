@@ -44,8 +44,4 @@ target_compile_definitions(
           $<$<BOOL:${RTE_USE_C_BOOL}>:RTE_USE_CBOOL>
 )
 
-target_include_directories(
-  rtekernels
-  PUBLIC
-    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
-)
+target_include_directories(rtekernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})

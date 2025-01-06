@@ -96,14 +96,14 @@ add_test(
     ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc
 )
 set_tests_properties(
-  check_variants_sw
-  PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data
+  check_variants_sw PROPERTIES FIXTURES_REQUIRED fetch_rrtmgp_data
 )
 
 add_custom_target(
   validation-plots
   COMMAND
     ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/validation-plots.py
-    --state_file ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+    --state_file
+    ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
   COMMENT "Generating validation plots"
 )

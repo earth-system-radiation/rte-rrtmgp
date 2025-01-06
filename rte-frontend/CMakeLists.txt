@@ -9,12 +9,14 @@ add_library(
   mo_source_functions.F90
 )
 
+set_target_properties(rte PROPERTIES EXPORT_NAME rte-rrtmgp::rte)
+
 target_include_directories(
   rte
   PUBLIC
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
 )
 
-target_link_libraries(rte PUBLIC rtekernels)
+target_link_libraries(rte PUBLIC $<BUILD_INTERFACE:rtekernels>)
 
 install(TARGETS rte EXPORT rte-rrtmgp-targets)

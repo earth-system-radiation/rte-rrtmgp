@@ -11,6 +11,8 @@ add_library(
   mo_gas_optics_rrtmgp.F90
 )
 
+set_target_properties(rrtmgp PROPERTIES EXPORT_NAME rte-rrtmgp::rrtmgp)
+
 target_include_directories(
   rrtmgp
   PUBLIC
@@ -19,7 +21,7 @@ target_include_directories(
 
 target_link_libraries(
   rrtmgp
-  PUBLIC rrtmgpkernels
+  PUBLIC $<BUILD_INTERFACE:rrtmgpkernels>
   PRIVATE rte
 )
 

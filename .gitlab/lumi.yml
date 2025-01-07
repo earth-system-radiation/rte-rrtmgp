@@ -8,9 +8,6 @@ include:
 .default:
   tags:
     - lumi
-  id_tokens:
-    CI_JOB_JWT:
-      aud: https://gitlab.com
 
 variables:
   TIME_LIMIT: "05:00"

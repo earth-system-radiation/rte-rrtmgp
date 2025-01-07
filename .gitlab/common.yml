@@ -1,10 +1,10 @@
 .dp:
   variables:
-    RTE_ENABLE_SP: OFF
+    RTE_ENABLE_SP: "OFF"
 
 .sp:
   variables:
-    RTE_ENABLE_SP: ON
+    RTE_ENABLE_SP: "ON"
 
 .common:
   variables:

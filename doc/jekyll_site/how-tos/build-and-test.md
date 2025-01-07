@@ -8,21 +8,15 @@ How to build the libraries, tests, and examples, run the tests, and verify the r
 RTE+RRTMGP uses `CMake`. In the root directory: 
 `cmake -S . -B build` will guide you through configuration options. 
 
-Environment variables can also be set and passed to `CMake` as in this example, which 
-builds and runs the tests: 
+Or use: 
+```
+cmake -S . -B build -G "Ninja" \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo|None \
+  -DRTE_ENABLE_SP=ON|OFF \
+  -DKERNEL_MODE=default|accel\
+  -DBUILD_TESTING=ON|OFF
 
-`
-cmake -S . -B build \
-	-DCMAKE_Fortran_COMPILER=$FC \
-	-DCMAKE_Fortran_FLAGS=$FCFLAGS \
-	-DRRTMGP_DATA_VERSION=$RRTMGP_DATA_VERSION \
-	-DPRECISION=$FP_MODEL \
-	-DUSE_C_BOOL=$RTE_CBOOL \
-	-DKERNEL_MODE=$RTE_KERNELS \
-	-DENABLE_TESTS=ON \
-	-DFAILURE_THRESHOLD=$FAILURE_THRESHOLD
-`
-
+```
 Evaluating the results of the tests requires `Python` and the packages described in `environment*.yml`.
 
 

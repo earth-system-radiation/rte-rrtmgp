@@ -69,7 +69,7 @@ program rte_sw_solver_unit_tests
 
   type(ty_optical_props_2str) :: atmos 
   type(ty_fluxes_broadband)   :: fluxes
-  logical                     :: top_at_1
+  logical, parameter          :: top_at_1 = .true. 
   real(wp), dimension(ncol,nlay+1), target :: &
                                  ref_flux_up, ref_flux_dn, ref_flux_dir, ref_flux_net, & 
                                  tst_flux_up, tst_flux_dn, tst_flux_dir, tst_flux_net
@@ -81,8 +81,6 @@ program rte_sw_solver_unit_tests
 
   logical :: passed 
 
-  ! ------------------------------------------------------------------------------------------------------
-  top_at_1 = .true. 
   ! ------------------------------------------------------------------------------------
   !
   ! Shortwave tests - thin atmospheres
@@ -95,6 +93,7 @@ program rte_sw_solver_unit_tests
                               band_lims_gpt = reshape([1,        1        ], shape = [2, 1]), & 
                               name = "Gray atmosphere"))
   call stop_on_err(atmos%alloc_2str(ncol, nlay))
+  call atmos%set_top_at_1(top_at_1)
   call thin_scattering(tau, ssa, g, nlay, atmos)
 
   do imu0 = 1, nmu0
@@ -104,7 +103,7 @@ program rte_sw_solver_unit_tests
     fluxes%flux_dn  => ref_flux_dn (:,:)
     fluxes%flux_dn_dir => ref_flux_dir(:,:)
     fluxes%flux_net => ref_flux_net(:,:)
-    call stop_on_err(rte_sw(atmos, top_at_1, &
+    call stop_on_err(rte_sw(atmos,   &
                             mu0_arr, & 
                             toa_flux,          &
                             sfc_albedo, sfc_albedo, &
@@ -120,7 +119,7 @@ program rte_sw_solver_unit_tests
     !
     ! Check direct beam for correctness with Beer-Lambert-Bouguier
     !
-    if(top_at_1) then 
+    if(atmos%top_is_at_1()) then 
       sfc => ref_flux_dir(:,nlay+1)
     else
       sfc => ref_flux_dir(:,     1)
@@ -143,7 +142,7 @@ program rte_sw_solver_unit_tests
     !
     nullify(fluxes%flux_up)
     nullify(fluxes%flux_dn)
-    call stop_on_err(rte_sw(atmos, top_at_1, &
+    call stop_on_err(rte_sw(atmos,   &
                             mu0_arr, & 
                             toa_flux,          &
                             sfc_albedo, sfc_albedo, &
@@ -155,7 +154,7 @@ program rte_sw_solver_unit_tests
     !
     fluxes%flux_up  => tst_flux_up (:,:)
     fluxes%flux_dn  => tst_flux_dn (:,:)
-    call stop_on_err(rte_sw(atmos, top_at_1, &
+    call stop_on_err(rte_sw(atmos,   &
                             mu0_arr, & 
                             toa_flux,          &
                             sfc_albedo, sfc_albedo, &
@@ -178,7 +177,7 @@ program rte_sw_solver_unit_tests
     print *, "  Vertical orientation invariance"
     call thin_scattering(tau, ssa, g, nlay, atmos)
     call vr(atmos)
-    call stop_on_err(rte_sw(atmos, .not. top_at_1, &
+    call stop_on_err(rte_sw(atmos, &
                             mu0_arr, & 
                             toa_flux,          &
                             sfc_albedo, sfc_albedo, &
@@ -201,7 +200,7 @@ program rte_sw_solver_unit_tests
     !
     print *, "  Linear in TOA flux"
     call thin_scattering(tau, ssa, g, nlay, atmos)
-    call stop_on_err(rte_sw(atmos, top_at_1, &
+    call stop_on_err(rte_sw(atmos,   &
                             mu0_arr, & 
                             toa_flux * factor,      &
                             sfc_albedo, sfc_albedo, &
@@ -332,7 +331,7 @@ contains
       colS = ((i-1) * ncol/2) + 1
       colE = i * ncol/2
       call stop_on_err(atmos%get_subset(colS, ncol/2, atmos_subset))
-      call stop_on_err(rte_sw(atmos_subset, top_at_1, &
+      call stop_on_err(rte_sw(atmos_subset,           &
                               mu0(colS:colE),         & 
                               toa_flux(colS:colE,:),  &
                               sfc_albedo(:,colS:colE), sfc_albedo(:,colS:colE), &

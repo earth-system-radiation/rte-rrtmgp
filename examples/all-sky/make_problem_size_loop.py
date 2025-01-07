@@ -60,5 +60,5 @@ if __name__ == '__main__':
     for l in args.nlay:
         for i in args.ncol:
             print(f"{args.executable} {i:6d} {l:4d} {args.nloops:3d} " +
-                  f"{args.output_file} {args.k_distribution}" +
-                  f"{args.cloud_optics} {args.aerosol_optics}")
+                  f"{args.output_file} {args.k_distribution} " +
+                  f"{args.cloud_optics} {args.aerosol_optics} ")

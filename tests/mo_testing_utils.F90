@@ -256,6 +256,7 @@ contains
     ! -----------------------
     nlay = atmos%get_nlay()
 
+    call atmos%set_top_at_1(.not. atmos%top_is_at_1())
     atmos%tau(:,:,:) = atmos%tau(:,nlay:1:-1,:)
 
     select type (atmos)

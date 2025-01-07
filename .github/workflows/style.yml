@@ -1,0 +1,72 @@
+name: Check Style
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches-ignore:
+      - documentation
+  workflow_dispatch:
+
+env:
+  FIND_CMAKE_FILES_CMD: "find '${{ github.workspace }}' -name 'CMakeLists.txt' -o -name '*.cmake' -o -name '*.cmake.in'"
+
+jobs:
+  Format:
+    runs-on: ubuntu-22.04
+    env:
+      DEFAULT: '\033[0m'
+      RED: '\033[0;31m'
+      GREEN: '\033[0;32m'
+      FORMAT_PATCH: '${{ github.workspace }}/format.patch'
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '>=3.8'
+      - name: Install required tools
+        run: python -m pip install cmake-format
+      - name: Format CMake
+        run: cmake-format -i $(eval "${FIND_CMAKE_FILES_CMD}")
+      - name: Check if patching is required
+        id: patch-required
+        run: |
+          git -C '${{ github.workspace }}' diff --patch-with-raw > "${FORMAT_PATCH}"
+          test -s "${FORMAT_PATCH}" && {
+            printf "${RED}The source code does not meet the format requirements. \
+          Please, apply the patch (see artifacts).${DEFAULT}\n"
+
+            printf "${RED}Note that the result of the formatting might depend \
+          on the versions of the formatting tools. In this project, whatever \
+          formatting this CI job produces if the correct one. If it expects \
+          you to reformat parts of the source code that you did not modify, do \
+          so in a separate commit, which must not be squashed, and list the \
+          commit in the '.git-blame-ignore-revs' file.${DEFAULT}\n"
+
+            exit 1
+          } || {
+            printf "${GREEN}The source code meets the format requirements.${DEFAULT}\n"
+            rm -rf "${FORMAT_PATCH}"
+          }
+      - name: Upload the patch file
+        if: always() && steps.patch-required.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: format-patch
+          path: ${{ env.FORMAT_PATCH }}
+  Lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '>=3.8'
+      - name: Install required tools
+        run: python -m pip install cmake-format
+      - name: Lint CMake
+        run: cmake-lint $(eval "${FIND_CMAKE_FILES_CMD}")

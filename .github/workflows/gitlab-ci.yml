@@ -66,10 +66,8 @@ jobs:
         config-name:
           - nvhpc-gpu-openacc-DP
           - nvhpc-gpu-openacc-SP
-          #- nag-cpu-default-DP
           - nag-cpu-default-SP
           - nag-cpu-accel-DP
-          #- nag-cpu-accel-SP
     steps:
     #
     # Build, run and check (fetch the log)

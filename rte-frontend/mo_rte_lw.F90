@@ -67,15 +67,13 @@ contains
   ! Interface using only optical properties and source functions as inputs; fluxes as outputs.
   !
   ! --------------------------------------------------
-  function rte_lw(optical_props, top_at_1, &
-                  sources, sfc_emis,       &
-                  fluxes,                  &
+  function rte_lw(optical_props,     &
+                  sources, sfc_emis, &
+                  fluxes,            &
                   inc_flux, n_gauss_angles, use_2stream, &
                   lw_Ds, flux_up_Jac) result(error_msg)
     class(ty_optical_props_arry), intent(in   ) :: optical_props
       !! Set of optical properties as one or more arrays
-    logical,                      intent(in   ) :: top_at_1
-      !! Is the top of the domain at index 1? (if not, ordering is bottom-to-top)
     type(ty_source_func_lw),      intent(in   ) :: sources
       !! Derived type with Planck source functions
     real(wp), dimension(:,:),     intent(in   ) :: sfc_emis
@@ -353,8 +351,8 @@ contains
             end do
           end if
           call lw_solver_noscat(ncol, nlay, ngpt,                 &
-                                logical(top_at_1, wl), n_quad_angs,         &
-                                secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
+                                logical(optical_props%top_is_at_1(), wl), & 
+                                n_quad_angs, secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                 optical_props%tau,                 &
                                 sources%lay_source,                &
                                 sources%lev_source,                &
@@ -373,7 +371,8 @@ contains
             !
             ! two-stream calculation with scattering
             !
-            call lw_solver_2stream(ncol, nlay, ngpt, logical(top_at_1, wl), &
+            call lw_solver_2stream(ncol, nlay, ngpt,                         & 
+                                   logical(optical_props%top_is_at_1(), wl), &
                                    optical_props%tau, optical_props%ssa, optical_props%g, &
                                    sources%lay_source, sources%lev_source,                &
                                    sfc_emis_gpt, sources%sfc_source,       &
@@ -396,7 +395,8 @@ contains
             ! Re-scaled solution to account for scattering
             !
             call lw_solver_noscat(ncol, nlay, ngpt,                 &
-                                  logical(top_at_1, wl), n_quad_angs,         &
+                                  logical(optical_props%top_is_at_1(), wl), & 
+                                  n_quad_angs,                       &
                                   secants, gauss_wts(1:n_quad_angs,n_quad_angs), &
                                   optical_props%tau,                 &
                                   sources%lay_source,                &
@@ -438,7 +438,7 @@ contains
           !
           ! ...or reduce spectral fluxes to desired output quantities
           !
-          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1)
+          error_msg = fluxes%reduce(gpt_flux_up, gpt_flux_dn, optical_props, optical_props%top_is_at_1())
       end select
     end if ! no error message from validation
     !$acc        end data

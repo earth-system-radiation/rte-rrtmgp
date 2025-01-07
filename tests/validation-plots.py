@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import colorcet as cc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -7,6 +9,7 @@ import warnings
 import xarray as xr
 from matplotlib.backends.backend_pdf import PdfPages
 
+import argparse
 
 def mae(diff, col_dim):
     #
@@ -62,6 +65,36 @@ def construct_lbl_esgf_root(var, esgf_node="llnl"):
 
 ########################################################################
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--state_file",
+        help="Path to the state information NetCDF file.",
+        default="multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
+    )
+    parser.add_argument(
+        "--lw_vars_file",
+        help="Path to the LW results file", 
+        default="lw_flux_variants.nc"
+
+    )
+    parser.add_argument(
+        "--sw_vars_file",
+        help="Path to the SW results file", 
+        default="sw_flux_variants.nc"
+
+    )
+    parser.add_argument(
+        "--output_pdf",
+        help="Path to the output PDF file for validation plots.",
+        default="validation-figures.pdf"
+    )
+    args = parser.parse_args()
+
+    state_file = args.state_file
+    lw_vars_file = args.lw_vars_file
+    sw_vars_file = args.sw_vars_file
+    output_pdf = args.output_pdf
+
     warnings.simplefilter("ignore", xr.SerializationWarning)
     #
     # Reference values from LBLRTM - download locally, since OpenDAP access is
@@ -87,7 +120,7 @@ def main():
     #
     # Open the test results
     #
-    gp = xr.open_dataset("test_atmospheres.nc")
+    gp = xr.open_mfdataset([state_file, lw_vars_file, sw_vars_file])
     #
     # Does the flux plus the Jacobian equal a calculation with perturbed surface
     # temperature?
@@ -120,7 +153,7 @@ def main():
     plev.load()
     gpi.load()
     lbli.load()
-    with PdfPages('validation-figures.pdf') as pdf:
+    with PdfPages(output_pdf) as pdf:
         ########################################################################
         # Longwave
         ########################################################################

@@ -71,7 +71,6 @@ contains
     ! ---------
     integer :: ncol, nlay, icol, ilay
     integer :: last_sunlight_layer(size(mu0, 1))
-    logical(wl) :: top_at_1
     ! ---------
     error_msg = ""
     !

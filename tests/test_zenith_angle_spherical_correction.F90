@@ -38,7 +38,6 @@ program test_solar_zenith_angle
                                  p_lev(ncol, nlay+1)
   real(wp), dimension(ncol, nlay+1), target &
                               :: flux_up, flux_dn, flux_dir
-  logical                     :: top_at_1
   character(len=128)          :: k_dist_file = "rrtmgp-gas-sw-g112.nc"
   real(wp), dimension(:,:), allocatable &
                               :: toa_flux, sfc_alb_dir, sfc_alb_dif
@@ -95,9 +94,7 @@ program test_solar_zenith_angle
   ! Set small solar zenith angles, varying by column; compute fluxes and heating rates
   !
   call stop_on_err(zenith_angle_with_height(z_lay(:,1), 3 * [0.01_wp, 0.02_wp, 0.03_wp, 0.04_wp], z_lay, mu0))
-  top_at_1 = p_lay(1, 1) < p_lay(1,nlay)
-  call stop_on_err(rte_sw(atmos, top_at_1, &
-                          mu0,   toa_flux, &
+  call stop_on_err(rte_sw(atmos, mu0, toa_flux,     &
                           sfc_alb_dir, sfc_alb_dif, &
                           fluxes))
   call stop_on_err(compute_heating_rate(flux_up, flux_dn, flux_dir, p_lev, mu0, heating_rate))

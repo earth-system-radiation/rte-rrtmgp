@@ -70,7 +70,7 @@ jobs:
     # Deploy documentation
     #
     - name: Deploy API Documentation
-      uses: JamesIves/github-pages-deploy-action@v4.6.1
+      uses: JamesIves/github-pages-deploy-action@v4.7.2
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/documentation' }}
       with:
         branch: gh-pages

@@ -87,7 +87,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p>11.4% of total for derived types.</p>Including implementation: 448 statements, 18.4% of total for derived types.">13 statements</a>
+    title="<p>11.1% of total for derived types.</p>Including implementation: 459 statements, 18.5% of total for derived types.">13 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_optical_props.F90"> Source File</a></li>
   </ul>
@@ -149,6 +149,8 @@
       <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-init~5">init</a>
       <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-is_initialized">is_initialized</a>
       <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-set_name">set_name</a>
+      <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-set_top_at_1">set_top_at_1</a>
+      <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-top_is_at_1">top_is_at_1</a>
       <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-validate~3">validate</a>
     </div>
   </div>
@@ -294,6 +296,8 @@
       <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-init~5">init</a>
       <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-is_initialized">is_initialized</a>
       <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-set_name">set_name</a>
+      <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-set_top_at_1">set_top_at_1</a>
+      <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-top_is_at_1">top_is_at_1</a>
       <a class="list-group-item" href="../type/ty_optical_props_2str.html#boundprocedure-validate~3">validate</a>
     </div>
   </div>
@@ -1094,6 +1098,58 @@
 </div>
 
      <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-set_top_at_1"></span><h3>procedure, public :: <strong>set_top_at_1</strong>    </h3></div>
+  <ul class="list-group">
+      <li class="list-group-item">
+          <h3>private subroutine set_top_at_1(this, top_at_1)</h3>    
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
+<td>intent(inout)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>this</strong></td><td><p>Set vertical orientation of class - .true. if array index 1 is top of atmosphere </p></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>logical,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>top_at_1</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+
+      </li>
+  </ul>
+</div>
+
+     <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-top_is_at_1"></span><h3>procedure, public :: <strong>top_is_at_1</strong>    </h3></div>
+  <ul class="list-group">
+      <li class="list-group-item">
+          <h3>private pure function top_is_at_1(this)</h3><p>Routines for array classes: vertical orientation</p>
+    
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>class(<a href='../type/ty_optical_props_arry.html'>ty_optical_props_arry</a>),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>this</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+<h4>Return Value <small>logical</small></h4>  
+
+      </li>
+  </ul>
+</div>
+
+     <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-validate~3"></span><h3>procedure, public :: <strong>validate</strong>  => validate_2stream   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
@@ -1127,7 +1183,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2024 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2025 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

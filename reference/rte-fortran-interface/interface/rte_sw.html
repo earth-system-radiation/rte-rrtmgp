@@ -87,7 +87,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p> 1.6% of total for procedures.</p>Including implementation: 150 statements, 79.8% of total for procedures.">3 statements</a>
+    title="<p> 1.6% of total for procedures.</p>Including implementation: 148 statements, 79.1% of total for procedures.">3 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_rte_sw.F90"> Source File</a></li>
   </ul>
@@ -150,7 +150,7 @@
 
    <h2>Module Procedures</h2>
       <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-rte_sw_mu0_bycol"></span><h3>private function rte_sw_mu0_bycol(atmos, top_at_1, mu0, inc_flux, sfc_alb_dir, sfc_alb_dif, fluxes, inc_flux_dif) result(error_msg)</h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="proc-rte_sw_mu0_bycol"></span><h3>private function rte_sw_mu0_bycol(atmos, mu0, inc_flux, sfc_alb_dir, sfc_alb_dif, fluxes, inc_flux_dif) result(error_msg)</h3></div>
   <div class="panel-body">
            
 <h4>Arguments</h4>      <table class="table table-striped varlist">
@@ -161,12 +161,6 @@
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>atmos</strong></td><td><p>Optical properties provided as arrays</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>logical,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>top_at_1</strong></td><td><p>Is the top of the domain at index 1? (if not, ordering is bottom-to-top)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
@@ -213,7 +207,7 @@
   </div>
 
       <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-rte_sw_mu0_full"></span><h3>private function rte_sw_mu0_full(atmos, top_at_1, mu0, inc_flux, sfc_alb_dir, sfc_alb_dif, fluxes, inc_flux_dif) result(error_msg)</h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="proc-rte_sw_mu0_full"></span><h3>private function rte_sw_mu0_full(atmos, mu0, inc_flux, sfc_alb_dir, sfc_alb_dif, fluxes, inc_flux_dif) result(error_msg)</h3></div>
   <div class="panel-body">
            
 <h4>Arguments</h4>      <table class="table table-striped varlist">
@@ -224,12 +218,6 @@
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>atmos</strong></td><td><p>Optical properties provided as arrays</p></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>logical,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>top_at_1</strong></td><td><p>Is the top of the domain at index 1? (if not, ordering is bottom-to-top)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
@@ -284,7 +272,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2024 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2025 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

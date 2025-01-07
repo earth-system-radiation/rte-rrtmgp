@@ -43,7 +43,7 @@ jobs:
       id: g-push-rev
       uses: "skosukhin/git-ci-hub-lab/g-push-rev@v1"
       with:
-        remote-url: ${{ vars.DKRZ_GITLAB_SERVER }}/${{ vars.DKRZ_GITLAB_PROJECT }}.git
+        remote-url: https://gitlab.dkrz.de/icon-libraries/librte-rrtmgp.git
         password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
         ref-type: tag
         ref-message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -55,8 +55,8 @@ jobs:
       id: gl-trigger-pipeline
       uses: "skosukhin/git-ci-hub-lab/gl-trigger-pipeline@v1"
       with:
-        server-url: ${{ vars.DKRZ_GITLAB_SERVER }}
-        project-name: ${{ vars.DKRZ_GITLAB_PROJECT }}
+        server-url: https://gitlab.dkrz.de
+        project-name: 953
         token: ${{ secrets.DKRZ_GITLAB_TRIGGER_TOKEN }}
         ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
         expected-sha: ${{ github.sha }}
@@ -78,8 +78,8 @@ jobs:
     - name: Build, run and check (fetch the log)
       uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
       with:
-        server-url: ${{ vars.DKRZ_GITLAB_SERVER }}
-        project-name: ${{ vars.DKRZ_GITLAB_PROJECT }}
+        server-url: https://gitlab.dkrz.de
+        project-name: 953
         token: ${{ secrets.DKRZ_GITLAB_TOKEN }}
         pipeline-id: ${{ needs.levante-init.outputs.pipeline-id }}
         job-name: ${{ matrix.config-name }}
@@ -91,7 +91,7 @@ jobs:
     steps:
     - uses: "skosukhin/git-ci-hub-lab/g-delete-ref@v1"
       with:
-        remote-url: ${{ vars.DKRZ_GITLAB_SERVER }}/${{ vars.DKRZ_GITLAB_PROJECT }}.git
+        remote-url: https://gitlab.dkrz.de/icon-libraries/librte-rrtmgp.git
         password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
         ref-type: ${{ needs.levante-init.outputs.ref-type }}
         ref-name: ${{ needs.levante-init.outputs.ref-name }}

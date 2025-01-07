@@ -103,7 +103,6 @@ jobs:
   #
   lumi-init:
     if: |
-      false &&
       github.repository_owner == 'earth-system-radiation' &&
         ( github.event_name != 'pull_request' ||
           ( github.event.pull_request.head.repo.owner.login == github.repository_owner &&

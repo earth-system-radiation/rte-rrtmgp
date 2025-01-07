@@ -122,8 +122,8 @@ jobs:
       id: g-push-rev
       uses: "skosukhin/git-ci-hub-lab/g-push-rev@v1"
       with:
-        remote-url: ${{ vars.GITLAB_SERVER }}/${{ vars.GITLAB_PROJECT }}.git
-        password: ${{ secrets.GITLAB_TOKEN }}
+        remote-url: https://earth.bsc.es/gitlab/utigerstedt/rte-rrtmgp-lumi-cicd.git
+        password: ${{ secrets.BSC_GITLAB_TOKEN }}
         rev-id: ${{ github.sha }}
         rev-signing-format: ssh
         rev-signing-key: ${{ secrets.GITLAB_SIGNING_KEY }}
@@ -136,9 +136,9 @@ jobs:
       id: gl-create-pipeline
       uses: "skosukhin/git-ci-hub-lab/gl-create-pipeline@v1"
       with:
-        server-url: ${{ vars.GITLAB_SERVER }}
-        project-name: ${{ vars.GITLAB_PROJECT }}
-        token: ${{ secrets.GITLAB_TOKEN }}
+        server-url: https://earth.bsc.es/gitlab
+        project-name: 1817
+        token: ${{ secrets.BSC_GITLAB_TOKEN }}
         ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
         expected-sha: ${{ steps.g-push-rev.outputs.ref-commit }}
     #
@@ -147,9 +147,9 @@ jobs:
     - name: Set up Python virtual environment (fetch the log)
       uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
       with:
-        server-url: ${{ vars.GITLAB_SERVER }}
-        project-name: ${{ vars.GITLAB_PROJECT }}
-        token: ${{ secrets.GITLAB_TOKEN }}
+        server-url: https://earth.bsc.es/gitlab
+        project-name: 1817
+        token: ${{ secrets.BSC_GITLAB_TOKEN }}
         pipeline-id: ${{ steps.gl-create-pipeline.outputs.pipeline-id }}
         job-name: setup-python
   lumi:
@@ -168,9 +168,9 @@ jobs:
     - name: Build, run and check (fetch the log)
       uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
       with:
-        server-url: ${{ vars.GITLAB_SERVER }}
-        project-name: ${{ vars.GITLAB_PROJECT }}
-        token: ${{ secrets.GITLAB_TOKEN }}
+        server-url: https://earth.bsc.es/gitlab
+        project-name: 1817
+        token: ${{ secrets.BSC_GITLAB_TOKEN }}
         pipeline-id: ${{ needs.lumi-init.outputs.pipeline-id }}
         job-name: ${{ matrix.config-name }}
   lumi-cleanup:
@@ -181,16 +181,16 @@ jobs:
     steps:
     - uses: "skosukhin/git-ci-hub-lab/gl-cancel-pipeline@v1"
       with:
-        server-url: ${{ vars.GITLAB_SERVER }}
-        project-name: ${{ vars.GITLAB_PROJECT }}
-        token: ${{ secrets.GITLAB_TOKEN }}
+        server-url: https://earth.bsc.es/gitlab
+        project-name: 1817
+        token: ${{ secrets.BSC_GITLAB_TOKEN }}
         pipeline-id: ${{ needs.lumi-init.outputs.pipeline-id }}
         force: true
     - uses: "skosukhin/git-ci-hub-lab/gl-delete-ref@v1"
       with:
-        server-url: ${{ vars.GITLAB_SERVER }}
-        project-name: ${{ vars.GITLAB_PROJECT }}
-        token: ${{ secrets.GITLAB_TOKEN }}
+        server-url: https://earth.bsc.es/gitlab
+        project-name: 1817
+        token: ${{ secrets.BSC_GITLAB_TOKEN }}
         ref-type: ${{ needs.lumi-init.outputs.ref-type }}
         ref-name: ${{ needs.lumi-init.outputs.ref-name }}
         force: true

@@ -13,13 +13,14 @@ include:
       aud: https://gitlab.com
 
 variables:
+  TIME_LIMIT: "05:00"
   SCHEDULER_PARAMETERS: >-
     --account=project_465000454
     --nodes=1
     --ntasks=1
     --cpus-per-task=4
     --mem-per-cpu=1G
-    --time=05:00
+    --time=${TIME_LIMIT}
     ${EXTRA_SCHEDULER_PARAMETERS}
   EXTRA_SCHEDULER_PARAMETERS:
 

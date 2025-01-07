@@ -8,9 +8,10 @@ include:
   - local: '.gitlab/common.yml'
 
 variables:
+  TIME_LIMIT: "05:00"
   SCHEDULER_PARAMETERS: >-
     --account=mh0287
-    --time=05:00
+    --time=${TIME_LIMIT}
     ${EXTRA_SCHEDULER_PARAMETERS}
   EXTRA_SCHEDULER_PARAMETERS:
 

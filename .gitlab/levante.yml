@@ -3,22 +3,6 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "trigger"
     - if: $CI_PIPELINE_SOURCE == "web"
 
-.build-and-test:
-  variables:
-    CMAKE_BUILD_PARALLEL_LEVEL: 8
-    VERBOSE:
-    CTEST_PARALLEL_LEVEL: 8
-    CTEST_OUTPUT_ON_FAILURE: 1
-  script:
-    - >
-      cmake -S . -B build
-      -DCMAKE_BUILD_TYPE=None
-      -DRTE_ENABLE_SP=${RTE_ENABLE_SP}
-      -DKERNEL_MODE=${KERNEL_MODE}
-      -DBUILD_TESTING=ON
-    - cmake --build build
-    - ctest --test-dir build
-
 include:
   - project: 'anw_dienste/ci-templates'
     file: '.slurm-ci.yml'
@@ -41,6 +25,47 @@ include:
     PARTITION: gpu
     EXTRA_SCHEDULER_PARAMETERS: --gpus=1
 
+.scheduler-lumi-cpu:
+  variables:
+    TIME_LIMIT: "05:00"
+    SCHEDULER_PARAMETERS: >-
+      --account=project_465000454
+      --nodes=1
+      --ntasks=1
+      --cpus-per-task=4
+      --mem-per-cpu=1G
+      --time=${TIME_LIMIT}
+      --partition=debug
+      ${EXTRA_SCHEDULER_PARAMETERS}
+    EXTRA_SCHEDULER_PARAMETERS:
+  id_tokens:
+    CI_JOB_JWT:
+      aud: https://gitlab.dkrz.de
+  tags:
+    - lumi
+
+.scheduler-lumi-gpu:
+  extends: .scheduler-lumi-cpu
+  variables:
+    PARTITION: dev-g
+    EXTRA_SCHEDULER_PARAMETERS: --gpus=1
+
+.build-and-test:
+  variables:
+    CMAKE_BUILD_PARALLEL_LEVEL: 8
+    VERBOSE:
+    CTEST_PARALLEL_LEVEL: 8
+    CTEST_OUTPUT_ON_FAILURE: 1
+  script:
+    - >
+      cmake -S . -B build
+      -DCMAKE_BUILD_TYPE=None
+      -DRTE_ENABLE_SP=${RTE_ENABLE_SP}
+      -DKERNEL_MODE=${KERNEL_MODE}
+      -DBUILD_TESTING=ON
+    - cmake --build build
+    - ctest --test-dir build
+
 .build-and-test-levante:
   extends: .build-and-test
   variables:
@@ -54,6 +79,23 @@ include:
     - export PATH="${PYHOME}/bin:${PATH}"
     # Some tests require a large stack:
     - ulimit -s unlimited
+
+.python-lumi:
+  variables:
+    PYHOME: ${CI_PROJECT_DIR}/python-venv
+    FF_USE_FASTZIP: 1
+
+.build-and-test-lumi:
+  extends:
+    - .python-lumi
+    - .build-and-test
+  needs:
+    - setup-python
+  before_script:
+    - module --force purge
+    - module load ${COMPILER_MODULES} cray-hdf5 cray-netcdf
+    # Extend the existing environment variables:
+    - export PATH="${PYHOME}/bin:${PATH}"
 
 nvhpc-gpu-openacc-DP:
   extends:
@@ -93,36 +135,6 @@ nag-cpu-default-SP:
     KERNEL_MODE: default
     RTE_ENABLE_SP: "ON"
 
-.scheduler-lumi-cpu:
-  variables:
-    TIME_LIMIT: "05:00"
-    SCHEDULER_PARAMETERS: >-
-      --account=project_465000454
-      --nodes=1
-      --ntasks=1
-      --cpus-per-task=4
-      --mem-per-cpu=1G
-      --time=${TIME_LIMIT}
-      --partition=debug
-      ${EXTRA_SCHEDULER_PARAMETERS}
-    EXTRA_SCHEDULER_PARAMETERS:
-  id_tokens:
-    CI_JOB_JWT:
-      aud: https://gitlab.dkrz.de
-  tags:
-    - lumi
-
-.scheduler-lumi-gpu:
-  extends: .scheduler-lumi-cpu
-  variables:
-    PARTITION: dev-g
-    EXTRA_SCHEDULER_PARAMETERS: --gpus=1
-
-.python-lumi:
-  variables:
-    PYHOME: ${CI_PROJECT_DIR}/python-venv
-    FF_USE_FASTZIP: 1
-
 setup-python:
   extends:
     - .scheduler-lumi-cpu
@@ -142,18 +154,6 @@ setup-python:
     paths:
       - ${PYHOME}
     expire_in: 60 minutes
-
-.build-and-test-lumi:
-  extends:
-    - .python-lumi
-    - .build-and-test
-  needs:
-    - setup-python
-  before_script:
-    - module --force purge
-    - module load ${COMPILER_MODULES} cray-hdf5 cray-netcdf
-    # Extend the existing environment variables:
-    - export PATH="${PYHOME}/bin:${PATH}"
 
 cce-gpu-openacc-DP:
   extends:

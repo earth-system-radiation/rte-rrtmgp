@@ -110,7 +110,7 @@ program rte_check_equivalence
   character(len=32 ), &
             dimension(:), allocatable :: kdist_gas_names, rfmip_gas_games
 
-  character(len=256) :: input_file = "", gas_optics_file = ""
+  character(len=512) :: input_file = "", gas_optics_file = ""
   ! ----------------------------------------------------------------------------------
   ! Code
   ! ----------------------------------------------------------------------------------

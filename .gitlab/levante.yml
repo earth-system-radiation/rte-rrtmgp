@@ -8,33 +8,35 @@ include:
     file: '.slurm-ci.yml'
   - local: '.gitlab/common.yml'
 
-variables:
-  TIME_LIMIT: "05:00"
-  SCHEDULER_PARAMETERS: >-
-    --account=mh0287
-    --time=${TIME_LIMIT}
-    ${EXTRA_SCHEDULER_PARAMETERS}
-  EXTRA_SCHEDULER_PARAMETERS:
-
-.gpu:
+.default-levante:
   extends: .default
+  variables:
+    TIME_LIMIT: "05:00"
+    SCHEDULER_PARAMETERS: >-
+      --account=mh0287
+      --time=${TIME_LIMIT}
+      ${EXTRA_SCHEDULER_PARAMETERS}
+    EXTRA_SCHEDULER_PARAMETERS:
+
+.gpu-levante:
+  extends: .default-levante
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=gpu
       --gpus=1
 
-.cpu:
-  extends: .default
+.cpu-levante:
+  extends: .default-levante
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=shared
 
-.nvhpc:
+.nvhpc-levante:
   variables:
     FC: /sw/spack-levante/nvhpc-24.9-p7iohv/Linux_x86_64/24.9/compilers/bin/nvfortran
     NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.6.1-4wu5wt
 
-.nag:
+.nag-levante:
   variables:
     FC: /sw/spack-levante/nag-7.1-lqjbej/bin/nagfor
     NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-5di6qe
@@ -55,8 +57,8 @@ variables:
 
 .nvhpc-gpu-openacc:
   extends:
-    - .gpu
-    - .nvhpc
+    - .gpu-levante
+    - .nvhpc-levante
     - .common-levante
   variables:
     # Compiler flags used for ICON model:
@@ -65,8 +67,8 @@ variables:
 
 .nag-cpu:
   extends:
-    - .cpu
-    - .nag
+    - .cpu-levante
+    - .nag-levante
     - .common-levante
   variables:
     # Test executables produced in this configuration are too slow to run within

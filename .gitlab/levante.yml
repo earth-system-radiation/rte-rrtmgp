@@ -148,6 +148,9 @@ nag-cpu-accel-DP:
       --time=${TIME_LIMIT}
       ${EXTRA_SCHEDULER_PARAMETERS}
     EXTRA_SCHEDULER_PARAMETERS:
+  id_tokens:
+    CI_JOB_JWT:
+      aud: https://gitlab.dkrz.de
   tags:
     - lumi
 

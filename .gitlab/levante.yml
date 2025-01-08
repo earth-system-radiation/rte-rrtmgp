@@ -11,7 +11,7 @@ workflow:
   variables:
     RTE_ENABLE_SP: "ON"
 
-.common:
+.build-and-test:
   variables:
     CMAKE_BUILD_PARALLEL_LEVEL: 8
     VERBOSE:
@@ -64,8 +64,8 @@ include:
     FC: /sw/spack-levante/nag-7.1-lqjbej/bin/nagfor
     NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-5di6qe
 
-.common-levante:
-  extends: .common
+.build-and-test-levante:
+  extends: .build-and-test
   variables:
     PYHOME: /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg
     # Suppress an irrelevant but annoying error message:
@@ -82,7 +82,7 @@ include:
   extends:
     - .gpu-levante
     - .nvhpc-levante
-    - .common-levante
+    - .build-and-test-levante
   variables:
     # Compiler flags used for ICON model:
     FFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda12.6
@@ -92,7 +92,7 @@ include:
   extends:
     - .cpu-levante
     - .nag-levante
-    - .common-levante
+    - .build-and-test-levante
   variables:
     # Test executables produced in this configuration are too slow to run within
     # the default time limit:
@@ -166,10 +166,7 @@ nag-cpu-accel-DP:
     FC: ftn
     COMPILER_MODULES: PrgEnv-cray cce/16.0.1 craype-x86-milan
 
-#
-# Set up Python virtual environment
-#
-.python-common-lumi:
+.python-lumi:
   variables:
     PYHOME: ${CI_PROJECT_DIR}/python-venv
     FF_USE_FASTZIP: 1
@@ -177,7 +174,7 @@ nag-cpu-accel-DP:
 setup-python:
   extends:
     - .cpu-lumi
-    - .python-common-lumi
+    - .python-lumi
   script:
     - test ! -d "${PYHOME}" || exit 0
     - module load cray-python
@@ -194,10 +191,10 @@ setup-python:
       - ${PYHOME}
     expire_in: 60 minutes
 
-.common-lumi:
+.build-and-test-lumi:
   extends:
-    - .python-common-lumi
-    - .common
+    - .python-lumi
+    - .build-and-test
   needs:
     - setup-python
   before_script:
@@ -210,7 +207,7 @@ setup-python:
   extends:
     - .gpu-lumi
     - .cce-lumi
-    - .common-lumi
+    - .build-and-test-lumi
   variables:
     # Compiler flags used for ICON model:
     FFLAGS: -hacc -hadd_paren -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -g

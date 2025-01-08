@@ -25,9 +25,10 @@ include:
     PARTITION: gpu
     EXTRA_SCHEDULER_PARAMETERS: --gpus=1
 
-.scheduler-lumi-cpu:
+.scheduler-lumi-gpu:
   variables:
     TIME_LIMIT: "05:00"
+    PARTITION: dev-g
     SCHEDULER_PARAMETERS: >-
       --account=project_465000454
       --nodes=1
@@ -35,20 +36,14 @@ include:
       --cpus-per-task=4
       --mem-per-cpu=1G
       --time=${TIME_LIMIT}
-      --partition=debug
+      --partition=${PARTITION}
       ${EXTRA_SCHEDULER_PARAMETERS}
-    EXTRA_SCHEDULER_PARAMETERS:
+    EXTRA_SCHEDULER_PARAMETERS: --gpus=1
   id_tokens:
     CI_JOB_JWT:
       aud: https://gitlab.dkrz.de
   tags:
     - lumi
-
-.scheduler-lumi-gpu:
-  extends: .scheduler-lumi-cpu
-  variables:
-    PARTITION: dev-g
-    EXTRA_SCHEDULER_PARAMETERS: --gpus=1
 
 .build-and-test:
   variables:
@@ -80,22 +75,29 @@ include:
     # Some tests require a large stack:
     - ulimit -s unlimited
 
-.python-lumi:
+.build-and-test-lumi:
+  extends: .build-and-test
   variables:
     PYHOME: ${CI_PROJECT_DIR}/python-venv
-    FF_USE_FASTZIP: 1
-
-.build-and-test-lumi:
-  extends:
-    - .python-lumi
-    - .build-and-test
-  needs:
-    - setup-python
   before_script:
     - module --force purge
+    - |
+      # Set up Python environment
+      test -d "${PYHOME}" || {
+        set -x
+        module load cray-python
+        python -m venv ${PYHOME}
+        ${PYHOME}/bin/python -m pip install \
+          --verbose --no-cache-dir --upgrade \
+          pip dask[array] netCDF4 numpy xarray
+      }
+      export PATH="${PYHOME}/bin:${PATH}"
     - module load ${COMPILER_MODULES} cray-hdf5 cray-netcdf
-    # Extend the existing environment variables:
-    - export PATH="${PYHOME}/bin:${PATH}"
+  cache:
+    # Update the key to regenerate the virtual environment:
+    key: python-venv-version-1
+    paths:
+      - ${PYHOME}
 
 nvhpc-gpu-openacc-DP:
   extends:
@@ -134,26 +136,6 @@ nag-cpu-default-SP:
   variables:
     KERNEL_MODE: default
     RTE_ENABLE_SP: "ON"
-
-setup-python:
-  extends:
-    - .scheduler-lumi-cpu
-    - .python-lumi
-  script:
-    - test ! -d "${PYHOME}" || exit 0
-    - module load cray-python
-    - python -m venv ${PYHOME}
-    - ${PYHOME}/bin/python -m pip install --upgrade pip
-    - ${PYHOME}/bin/python -m pip install dask[array] netCDF4 numpy xarray
-  cache:
-    # Update the key to regenerate the virtual environment:
-    key: python-venv-version-1
-    paths:
-      - ${PYHOME}
-  artifacts:
-    paths:
-      - ${PYHOME}
-    expire_in: 60 minutes
 
 cce-gpu-openacc-DP:
   extends:

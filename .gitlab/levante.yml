@@ -11,7 +11,7 @@ include:
   variables:
     ACCOUNT:
     PARTITION:
-    TIME_LIMIT: "05:00"
+    TIME_LIMIT: "10:00"
     EXTRA_SCHEDULER_PARAMETERS:
     SCHEDULER_PARAMETERS: >-
       --account=${ACCOUNT}
@@ -126,9 +126,6 @@ nag-cpu-accel-DP:
     - .scheduler-levante-cpu
     - .build-and-test-levante
   variables:
-    # Test executables produced in this configuration are too slow to run within
-    # the default time limit:
-    TIME_LIMIT: "10:00"
     FC: /sw/spack-levante/nag-7.1-lqjbej/bin/nagfor
     NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-5di6qe
     # Compiler flags used for ICON model:

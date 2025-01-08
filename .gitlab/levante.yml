@@ -91,12 +91,13 @@ include:
     - |
       # Set up Python environment
       test -d "${PYHOME}" || {
-        set -x
         module load cray-python
+        set -x
         python -m venv ${PYHOME}
         ${PYHOME}/bin/python -m pip install \
           --verbose --no-cache-dir --upgrade \
           pip dask[array] netCDF4 numpy xarray
+        set +x
       }
       export PATH="${PYHOME}/bin:${PATH}"
     - module load PrgEnv-cray cce/16.0.1 craype-x86-milan craype-accel-amd-gfx90a rocm cray-hdf5 cray-netcdf

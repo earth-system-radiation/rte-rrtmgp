@@ -12,11 +12,14 @@ include:
     ACCOUNT:
     PARTITION:
     TIME_LIMIT: "10:00"
+    NTASKS: 8
     EXTRA_SCHEDULER_PARAMETERS:
     SCHEDULER_PARAMETERS: >-
       --account=${ACCOUNT}
       --partition=${PARTITION}
       --time=${TIME_LIMIT}
+      --ntasks=${NTASKS}
+      --nodes=1
       ${EXTRA_SCHEDULER_PARAMETERS}
 
 .scheduler-levante-cpu:
@@ -41,9 +44,7 @@ include:
     ACCOUNT: project_465000454
     PARTITION: dev-g
     EXTRA_SCHEDULER_PARAMETERS: >-
-      --nodes=1
-      --ntasks=1
-      --cpus-per-task=4
+      --cpus-per-task=1
       --mem-per-cpu=1G
       --gpus=1
   id_tokens:
@@ -56,9 +57,9 @@ include:
   variables:
     KERNEL_MODE: accel
     RTE_ENABLE_SP: "OFF"
-    CMAKE_BUILD_PARALLEL_LEVEL: 8
+    CMAKE_BUILD_PARALLEL_LEVEL: ${NTASKS}
     VERBOSE:
-    CTEST_PARALLEL_LEVEL: 8
+    CTEST_PARALLEL_LEVEL: ${NTASKS}
     CTEST_OUTPUT_ON_FAILURE: 1
   script:
     - >

@@ -3,10 +3,39 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "trigger"
     - if: $CI_PIPELINE_SOURCE == "web"
 
+.dp:
+  variables:
+    RTE_ENABLE_SP: "OFF"
+
+.sp:
+  variables:
+    RTE_ENABLE_SP: "ON"
+
+.common:
+  variables:
+    CMAKE_BUILD_PARALLEL_LEVEL: 8
+    VERBOSE:
+    CTEST_PARALLEL_LEVEL: 8
+    CTEST_OUTPUT_ON_FAILURE: 1
+  script:
+    #
+    # Build libraries, examples and tests
+    #
+    - |
+      cmake -S . -B build \
+          -DCMAKE_BUILD_TYPE=None \
+          -DRTE_ENABLE_SP=$RTE_ENABLE_SP \
+          -DKERNEL_MODE=$KERNEL_MODE \
+          -DBUILD_TESTING=ON
+    - cmake --build build
+    #
+    # Run examples, tests and checks
+    #
+    - ctest --test-dir build
+
 include:
   - project: 'anw_dienste/ci-templates'
     file: '.slurm-ci.yml'
-  - local: '.gitlab/common.yml'
 
 .default-levante:
   extends: .default
@@ -106,3 +135,98 @@ nag-cpu-accel-DP:
   extends:
     - .dp
     - .nag-cpu-accel
+
+.default-lumi:
+  variables:
+    TIME_LIMIT: "05:00"
+    SCHEDULER_PARAMETERS: >-
+      --account=project_465000454
+      --nodes=1
+      --ntasks=1
+      --cpus-per-task=4
+      --mem-per-cpu=1G
+      --time=${TIME_LIMIT}
+      ${EXTRA_SCHEDULER_PARAMETERS}
+    EXTRA_SCHEDULER_PARAMETERS:
+  tags:
+    - lumi
+
+.gpu-lumi:
+  extends: .default-lumi
+  variables:
+    EXTRA_SCHEDULER_PARAMETERS: >-
+      --partition=dev-g
+      --gpus=1
+
+.cpu-lumi:
+  extends: .default-lumi
+  variables:
+    EXTRA_SCHEDULER_PARAMETERS: >-
+      --partition=debug
+
+.cce-lumi:
+  variables:
+    FC: ftn
+    COMPILER_MODULES: PrgEnv-cray cce/16.0.1 craype-x86-milan
+
+#
+# Set up Python virtual environment
+#
+.python-common-lumi:
+  variables:
+    PYHOME: ${CI_PROJECT_DIR}/python-venv
+    FF_USE_FASTZIP: 1
+
+setup-python:
+  extends:
+    - .cpu-lumi
+    - .python-common-lumi
+  script:
+    - test ! -d "${PYHOME}" || exit 0
+    - module load cray-python
+    - python -m venv ${PYHOME}
+    - ${PYHOME}/bin/python -m pip install --upgrade pip
+    - ${PYHOME}/bin/python -m pip install dask[array] netCDF4 numpy xarray
+  cache:
+    # Update the key to regenerate the virtual environment:
+    key: python-venv-version-1
+    paths:
+      - ${PYHOME}
+  artifacts:
+    paths:
+      - ${PYHOME}
+    expire_in: 60 minutes
+
+.common-lumi:
+  extends:
+    - .python-common-lumi
+    - .common
+  needs:
+    - setup-python
+  before_script:
+    - module --force purge
+    - module load ${COMPILER_MODULES} ${EXTRA_COMPILER_MODULES} cray-hdf5 cray-netcdf
+    # Extend the existing environment variables:
+    - export PATH="${PYHOME}/bin:${PATH}"
+
+.cce-gpu-openacc:
+  extends:
+    - .gpu-lumi
+    - .cce-lumi
+    - .common-lumi
+  variables:
+    # Compiler flags used for ICON model:
+    FFLAGS: -hacc -hadd_paren -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -g
+    KERNEL_MODE: accel
+    # Convenience variables:
+    EXTRA_COMPILER_MODULES: craype-accel-amd-gfx90a rocm
+
+cce-gpu-openacc-DP:
+  extends:
+    - .dp
+    - .cce-gpu-openacc
+
+cce-gpu-openacc-SP:
+  extends:
+    - .sp
+    - .cce-gpu-openacc

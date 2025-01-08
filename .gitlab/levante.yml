@@ -84,6 +84,7 @@ include:
   extends: .build-and-test
   variables:
     Python3_ROOT_DIR: ${CI_PROJECT_DIR}/python-venv
+    REQUIREMENT_FILE: ${CI_PROJECT_DIR}/.gitlab/lumi-python-requirement.txt
   before_script:
     - module --force purge
     - |
@@ -92,15 +93,16 @@ include:
         module load cray-python
         set -x
         python -m venv ${Python3_ROOT_DIR}
-        ${Python3_ROOT_DIR}/bin/python -m pip install \
-          --verbose --no-cache-dir --upgrade \
-          pip dask[array] netCDF4 numpy xarray
+        ${Python3_ROOT_DIR}/bin/python -m pip install --upgrade pip
+        ${Python3_ROOT_DIR}/bin/python -m pip install --no-cache-dir --requirement ${REQUIREMENT_FILE}
         set +x
       }
     - module load PrgEnv-cray cce/16.0.1 craype-x86-milan craype-accel-amd-gfx90a rocm cray-hdf5 cray-netcdf
   cache:
     # Update the key to regenerate the virtual environment:
-    key: python-venv-version-1
+    key:
+      files:
+        - ${REQUIREMENT_FILE}
     paths:
       - ${Python3_ROOT_DIR}
 
@@ -148,9 +150,11 @@ cce-gpu-openacc-DP:
     # Compiler flags used for ICON model:
     FFLAGS: -hacc -hadd_paren -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -g
     KERNEL_MODE: accel
-    RTE_ENABLE_SP: "OFF"
 
 cce-gpu-openacc-SP:
   extends: cce-gpu-openacc-DP
   variables:
     RTE_ENABLE_SP: "ON"
+  cache:
+    # Let the other job update the cache:
+    policy: pull

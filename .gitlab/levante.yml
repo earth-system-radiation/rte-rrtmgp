@@ -7,17 +7,25 @@ include:
   - project: 'anw_dienste/ci-templates'
     file: '.slurm-ci.yml'
 
-.scheduler-levante-cpu:
-  extends: .default
+.scheduler:
   variables:
+    ACCOUNT:
+    PARTITION:
     TIME_LIMIT: "05:00"
-    PARTITION: shared
-    SCHEDULER_PARAMETERS: >-
-      --account=mh0287
-      --time=${TIME_LIMIT}
-      --partition=${PARTITION}
-      ${EXTRA_SCHEDULER_PARAMETERS}
     EXTRA_SCHEDULER_PARAMETERS:
+    SCHEDULER_PARAMETERS: >-
+      --account=${ACCOUNT}
+      --partition=${PARTITION}
+      --time=${TIME_LIMIT}
+      ${EXTRA_SCHEDULER_PARAMETERS}
+
+.scheduler-levante-cpu:
+  extends:
+    - .default  # from anw_dienste/ci-templates/.slurm-ci.yml
+    - .scheduler
+  variables:
+    ACCOUNT: mh0287
+    PARTITION: shared
 
 .scheduler-levante-gpu:
   extends: .scheduler-levante-cpu
@@ -26,24 +34,21 @@ include:
     EXTRA_SCHEDULER_PARAMETERS: --gpus=1
 
 .scheduler-lumi-gpu:
+  extends: .scheduler
   variables:
-    TIME_LIMIT: "05:00"
+    ACCOUNT: project_465000454
     PARTITION: dev-g
-    SCHEDULER_PARAMETERS: >-
-      --account=project_465000454
+    EXTRA_SCHEDULER_PARAMETERS: >-
       --nodes=1
       --ntasks=1
       --cpus-per-task=4
       --mem-per-cpu=1G
-      --time=${TIME_LIMIT}
-      --partition=${PARTITION}
-      ${EXTRA_SCHEDULER_PARAMETERS}
-    EXTRA_SCHEDULER_PARAMETERS: --gpus=1
+      --gpus=1
   id_tokens:
     CI_JOB_JWT:
       aud: https://gitlab.dkrz.de
   tags:
-    - lumi
+    - lumi, hpc, csc
 
 .build-and-test:
   variables:

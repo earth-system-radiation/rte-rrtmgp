@@ -12,9 +12,9 @@ defaults:
 
 jobs:
   #
-  # Deferred GitLab pipelines on Levante at DKRZ (see .gitlab/levante.yml):
+  # Deferred GitLab pipelines at gitlab.dkrz.de (see .gitlab/levante.yml):
   #
-  levante-init:
+  trigger:
     if: |
       github.repository_owner == 'earth-system-radiation' &&
         ( github.event_name != 'pull_request' ||
@@ -26,171 +26,60 @@ jobs:
       ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
       pipeline-id: ${{ steps.gl-trigger-pipeline.outputs.pipeline-id }}
     steps:
-    #
-    # Check out GitHub repository
-    #
-    - name: Check out GitHub repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    #
-    # Push to GitLab repository
-    #
-    - name: Push to GitLab repository
-      id: g-push-rev
-      uses: "skosukhin/git-ci-hub-lab/g-push-rev@v1"
-      with:
-        remote-url: https://gitlab.dkrz.de/icon-libraries/librte-rrtmgp.git
-        password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
-        ref-type: tag
-        ref-message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        force-push: true
-    #
-    # Trigger GitLab CI/CD Pipeline
-    #
-    - name: Trigger GitLab CI/CD Pipeline
-      id: gl-trigger-pipeline
-      uses: "skosukhin/git-ci-hub-lab/gl-trigger-pipeline@v1"
-      with:
-        server-url: https://gitlab.dkrz.de
-        project-name: 953
-        token: ${{ secrets.DKRZ_GITLAB_TRIGGER_TOKEN }}
-        ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
-        expected-sha: ${{ github.sha }}
-  levante:
+      - name: Check out GitHub repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push to GitLab repository
+        id: g-push-rev
+        uses: "skosukhin/git-ci-hub-lab/g-push-rev@v1"
+        with:
+          remote-url: ${{ vars.DKRZ_GITLAB_SERVER }}/${{ vars.DKRZ_GITLAB_PROJECT }}.git
+          password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
+          ref-type: tag
+          ref-message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          force-push: true
+      - name: Trigger GitLab CI/CD Pipeline
+        id: gl-trigger-pipeline
+        uses: "skosukhin/git-ci-hub-lab/gl-trigger-pipeline@v1"
+        with:
+          server-url: ${{ vars.DKRZ_GITLAB_SERVER }}
+          project-name: ${{ vars.DKRZ_GITLAB_PROJECT }}
+          token: ${{ secrets.DKRZ_GITLAB_TRIGGER_TOKEN }}
+          ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
+          expected-sha: ${{ github.sha }}
+  attach:
     runs-on: ubuntu-latest
-    needs: levante-init
-    strategy:
-      fail-fast: false
-      matrix:
-        config-name:
-          - nvhpc-gpu-openacc-DP
-          - nvhpc-gpu-openacc-SP
-          - nag-cpu-default-SP
-          - nag-cpu-accel-DP
-    steps:
-    #
-    # Build, run and check (fetch the log)
-    #
-    - name: Build, run and check (fetch the log)
-      uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
-      with:
-        server-url: https://gitlab.dkrz.de
-        project-name: 953
-        token: ${{ secrets.DKRZ_GITLAB_TOKEN }}
-        pipeline-id: ${{ needs.levante-init.outputs.pipeline-id }}
-        job-name: ${{ matrix.config-name }}
-  levante-cleanup:
-    runs-on: ubuntu-latest
-    needs: [levante-init, levante]
-    if: always() && needs.levante-init.result != 'skipped'
-    continue-on-error: true
-    steps:
-    - uses: "skosukhin/git-ci-hub-lab/g-delete-ref@v1"
-      with:
-        remote-url: https://gitlab.dkrz.de/icon-libraries/librte-rrtmgp.git
-        password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
-        ref-type: ${{ needs.levante-init.outputs.ref-type }}
-        ref-name: ${{ needs.levante-init.outputs.ref-name }}
-        force: true
-  #
-  # Deferred GitLab pipelines on Lumi at CSC (see .gitlab/lumi.yml):
-  #
-  lumi-init:
-    if: |
-      github.repository_owner == 'earth-system-radiation' &&
-        ( github.event_name != 'pull_request' ||
-          ( github.event.pull_request.head.repo.owner.login == github.repository_owner &&
-            github.event.pull_request.user.login != 'dependabot[bot]' ))
-    runs-on: ubuntu-latest
-    outputs:
-      ref-type: ${{ steps.g-push-rev.outputs.ref-type }}
-      ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
-      pipeline-id: ${{ steps.gl-create-pipeline.outputs.pipeline-id }}
-    steps:
-    #
-    # Check out GitHub repository
-    #
-    - name: Check out GitHub repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    #
-    # Push to GitLab repository
-    #
-    - name: Push to GitLab repository
-      id: g-push-rev
-      uses: "skosukhin/git-ci-hub-lab/g-push-rev@v1"
-      with:
-        remote-url: https://earth.bsc.es/gitlab/utigerstedt/rte-rrtmgp-lumi-cicd.git
-        password: ${{ secrets.BSC_GITLAB_TOKEN }}
-        rev-id: ${{ github.sha }}
-        rev-signing-format: ssh
-        rev-signing-key: ${{ secrets.GITLAB_SIGNING_KEY }}
-        ref-type: branch
-        force-push: true
-    #
-    # Create GitLab CI/CD Pipeline
-    #
-    - name: Create GitLab CI/CD Pipeline
-      id: gl-create-pipeline
-      uses: "skosukhin/git-ci-hub-lab/gl-create-pipeline@v1"
-      with:
-        server-url: https://earth.bsc.es/gitlab
-        project-name: 1817
-        token: ${{ secrets.BSC_GITLAB_TOKEN }}
-        ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
-        expected-sha: ${{ steps.g-push-rev.outputs.ref-commit }}
-    #
-    # Set up Python virtual environment (fetch the log)
-    #
-    - name: Set up Python virtual environment (fetch the log)
-      uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
-      with:
-        server-url: https://earth.bsc.es/gitlab
-        project-name: 1817
-        token: ${{ secrets.BSC_GITLAB_TOKEN }}
-        pipeline-id: ${{ steps.gl-create-pipeline.outputs.pipeline-id }}
-        job-name: setup-python
-  lumi:
-    runs-on: ubuntu-latest
-    needs: lumi-init
+    needs: trigger
     strategy:
       fail-fast: false
       matrix:
         config-name:
           - cce-gpu-openacc-DP
           - cce-gpu-openacc-SP
+          - nag-cpu-accel-DP
+          - nag-cpu-default-SP
+          - nvhpc-gpu-openacc-DP
+          - nvhpc-gpu-openacc-SP
     steps:
-    #
-    # Build, run and check (fetch the log)
-    #
     - name: Build, run and check (fetch the log)
       uses: "skosukhin/git-ci-hub-lab/gl-attach-job@v1"
       with:
-        server-url: https://earth.bsc.es/gitlab
-        project-name: 1817
-        token: ${{ secrets.BSC_GITLAB_TOKEN }}
-        pipeline-id: ${{ needs.lumi-init.outputs.pipeline-id }}
+        server-url: ${{ vars.DKRZ_GITLAB_SERVER }}
+        project-name: ${{ vars.DKRZ_GITLAB_PROJECT }}
+        token: ${{ secrets.DKRZ_GITLAB_TOKEN }}
+        pipeline-id: ${{ needs.trigger.outputs.pipeline-id }}
         job-name: ${{ matrix.config-name }}
-  lumi-cleanup:
+  cleanup:
     runs-on: ubuntu-latest
-    needs: [lumi-init, lumi]
-    if: always() && needs.lumi-init.result != 'skipped'
+    needs: [trigger, attach]
+    if: always() && needs.trigger.result != 'skipped'
     continue-on-error: true
     steps:
-    - uses: "skosukhin/git-ci-hub-lab/gl-cancel-pipeline@v1"
+    - uses: "skosukhin/git-ci-hub-lab/g-delete-ref@v1"
       with:
-        server-url: https://earth.bsc.es/gitlab
-        project-name: 1817
-        token: ${{ secrets.BSC_GITLAB_TOKEN }}
-        pipeline-id: ${{ needs.lumi-init.outputs.pipeline-id }}
-        force: true
-    - uses: "skosukhin/git-ci-hub-lab/gl-delete-ref@v1"
-      with:
-        server-url: https://earth.bsc.es/gitlab
-        project-name: 1817
-        token: ${{ secrets.BSC_GITLAB_TOKEN }}
-        ref-type: ${{ needs.lumi-init.outputs.ref-type }}
-        ref-name: ${{ needs.lumi-init.outputs.ref-name }}
+        remote-url: ${{ vars.DKRZ_GITLAB_SERVER }}/${{ vars.DKRZ_GITLAB_PROJECT }}.git
+        password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
+        ref-type: ${{ needs.trigger.outputs.ref-type }}
+        ref-name: ${{ needs.trigger.outputs.ref-name }}
         force: true

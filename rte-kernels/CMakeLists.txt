@@ -35,6 +35,10 @@ else()
   endif()
 endif()
 
+if(BUILD_SHARED_LIBS)
+  set_target_properties(rtekernels PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
 target_compile_definitions(
   rtekernels PRIVATE $<$<BOOL:${RTE_ENABLE_SP}>:RTE_USE_SP>
 )

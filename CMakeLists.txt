@@ -6,6 +6,7 @@ project(
   LANGUAGES Fortran
 )
 
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(BUILD_TESTING "Build tests" OFF)
 
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)

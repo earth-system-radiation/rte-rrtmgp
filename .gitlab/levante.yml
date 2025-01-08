@@ -43,10 +43,7 @@ include:
   variables:
     ACCOUNT: project_465000454
     PARTITION: dev-g
-    EXTRA_SCHEDULER_PARAMETERS: >-
-      --cpus-per-task=1
-      --mem-per-cpu=1G
-      --gpus=1
+    EXTRA_SCHEDULER_PARAMETERS: --gpus=1
   id_tokens:
     CI_JOB_JWT:
       aud: https://gitlab.dkrz.de

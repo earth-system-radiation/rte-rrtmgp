@@ -26,6 +26,8 @@ include:
   variables:
     ACCOUNT: mh0287
     PARTITION: shared
+    # Levante runners fetch from scratch each time:
+    GIT_DEPTH: 1
 
 .scheduler-levante-gpu:
   extends: .scheduler-levante-cpu

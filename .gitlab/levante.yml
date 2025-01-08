@@ -1,6 +1,7 @@
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "trigger"
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 include:
   - project: 'anw_dienste/ci-templates'

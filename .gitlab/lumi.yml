@@ -5,36 +5,35 @@ workflow:
 include:
   - local: '.gitlab/common.yml'
 
-.default:
+.default-lumi:
+  variables:
+    TIME_LIMIT: "05:00"
+    SCHEDULER_PARAMETERS: >-
+      --account=project_465000454
+      --nodes=1
+      --ntasks=1
+      --cpus-per-task=4
+      --mem-per-cpu=1G
+      --time=${TIME_LIMIT}
+      ${EXTRA_SCHEDULER_PARAMETERS}
+    EXTRA_SCHEDULER_PARAMETERS:
   tags:
     - lumi
 
-variables:
-  TIME_LIMIT: "05:00"
-  SCHEDULER_PARAMETERS: >-
-    --account=project_465000454
-    --nodes=1
-    --ntasks=1
-    --cpus-per-task=4
-    --mem-per-cpu=1G
-    --time=${TIME_LIMIT}
-    ${EXTRA_SCHEDULER_PARAMETERS}
-  EXTRA_SCHEDULER_PARAMETERS:
-
-.gpu:
-  extends: .default
+.gpu-lumi:
+  extends: .default-lumi
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=dev-g
       --gpus=1
 
-.cpu:
-  extends: .default
+.cpu-lumi:
+  extends: .default-lumi
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=debug
 
-.cce:
+.cce-lumi:
   variables:
     FC: ftn
     COMPILER_MODULES: PrgEnv-cray cce/16.0.1 craype-x86-milan
@@ -49,7 +48,7 @@ variables:
 
 setup-python:
   extends:
-    - .cpu
+    - .cpu-lumi
     - .python-common-lumi
   script:
     - test ! -d "${PYHOME}" || exit 0
@@ -81,8 +80,8 @@ setup-python:
 
 .cce-gpu-openacc:
   extends:
-    - .gpu
-    - .cce
+    - .gpu-lumi
+    - .cce-lumi
     - .common-lumi
   variables:
     # Compiler flags used for ICON model:

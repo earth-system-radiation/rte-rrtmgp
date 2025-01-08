@@ -24,7 +24,7 @@ include:
   - project: 'anw_dienste/ci-templates'
     file: '.slurm-ci.yml'
 
-.default-levante:
+.scheduler-levante:
   extends: .default
   variables:
     TIME_LIMIT: "05:00"
@@ -34,15 +34,15 @@ include:
       ${EXTRA_SCHEDULER_PARAMETERS}
     EXTRA_SCHEDULER_PARAMETERS:
 
-.gpu-levante:
-  extends: .default-levante
+.scheduler-levante-gpu:
+  extends: .scheduler-levante
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=gpu
       --gpus=1
 
-.cpu-levante:
-  extends: .default-levante
+.scheduler-levante-cpu:
+  extends: .scheduler-levante
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=shared
@@ -73,7 +73,7 @@ include:
 
 .nvhpc-gpu-openacc:
   extends:
-    - .gpu-levante
+    - .scheduler-levante-gpu
     - .nvhpc-levante
     - .build-and-test-levante
   variables:
@@ -83,7 +83,7 @@ include:
 
 .nag-cpu:
   extends:
-    - .cpu-levante
+    - .scheduler-levante-cpu
     - .nag-levante
     - .build-and-test-levante
   variables:
@@ -119,7 +119,7 @@ nag-cpu-default-SP:
   variables:
     RTE_ENABLE_SP: "ON"
 
-.default-lumi:
+.scheduler-lumi:
   variables:
     TIME_LIMIT: "05:00"
     SCHEDULER_PARAMETERS: >-
@@ -137,15 +137,15 @@ nag-cpu-default-SP:
   tags:
     - lumi
 
-.gpu-lumi:
-  extends: .default-lumi
+.scheduler-lumi-gpu:
+  extends: .scheduler-lumi
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=dev-g
       --gpus=1
 
-.cpu-lumi:
-  extends: .default-lumi
+.scheduler-lumi-cpu:
+  extends: .scheduler-lumi
   variables:
     EXTRA_SCHEDULER_PARAMETERS: >-
       --partition=debug
@@ -162,7 +162,7 @@ nag-cpu-default-SP:
 
 setup-python:
   extends:
-    - .cpu-lumi
+    - .scheduler-lumi-cpu
     - .python-lumi
   script:
     - test ! -d "${PYHOME}" || exit 0
@@ -194,7 +194,7 @@ setup-python:
 
 .cce-gpu-openacc:
   extends:
-    - .gpu-lumi
+    - .scheduler-lumi-gpu
     - .cce-lumi
     - .build-and-test-lumi
   variables:

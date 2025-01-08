@@ -71,41 +71,38 @@ include:
 .build-and-test-levante:
   extends: .build-and-test
   variables:
-    PYHOME: /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg
+    Python3_ROOT_DIR: /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg
     # Suppress an irrelevant but annoying error message:
-    PROJ_LIB: ${PYHOME}/share/proj
+    PROJ_LIB: ${Python3_ROOT_DIR}/share/proj
   before_script:
     - module purge
     - module load git
-    # Extend the existing environment variables:
-    - export PATH="${PYHOME}/bin:${PATH}"
     # Some tests require a large stack:
     - ulimit -s unlimited
 
 .build-and-test-lumi:
   extends: .build-and-test
   variables:
-    PYHOME: ${CI_PROJECT_DIR}/python-venv
+    Python3_ROOT_DIR: ${CI_PROJECT_DIR}/python-venv
   before_script:
     - module --force purge
     - |
       # Set up Python environment
-      test -d "${PYHOME}" || {
+      test -d "${Python3_ROOT_DIR}" || {
         module load cray-python
         set -x
-        python -m venv ${PYHOME}
-        ${PYHOME}/bin/python -m pip install \
+        python -m venv ${Python3_ROOT_DIR}
+        ${Python3_ROOT_DIR}/bin/python -m pip install \
           --verbose --no-cache-dir --upgrade \
           pip dask[array] netCDF4 numpy xarray
         set +x
       }
-      export PATH="${PYHOME}/bin:${PATH}"
     - module load PrgEnv-cray cce/16.0.1 craype-x86-milan craype-accel-amd-gfx90a rocm cray-hdf5 cray-netcdf
   cache:
     # Update the key to regenerate the virtual environment:
     key: python-venv-version-1
     paths:
-      - ${PYHOME}
+      - ${Python3_ROOT_DIR}
 
 nvhpc-gpu-openacc-DP:
   extends:

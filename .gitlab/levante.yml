@@ -97,7 +97,7 @@ include:
           pip dask[array] netCDF4 numpy xarray
       }
       export PATH="${PYHOME}/bin:${PATH}"
-    - module load ${COMPILER_MODULES} cray-hdf5 cray-netcdf
+    - module load PrgEnv-cray cce/16.0.1 craype-x86-milan craype-accel-amd-gfx90a rocm cray-hdf5 cray-netcdf
   cache:
     # Update the key to regenerate the virtual environment:
     key: python-venv-version-1
@@ -148,7 +148,6 @@ cce-gpu-openacc-DP:
     - .build-and-test-lumi
   variables:
     FC: ftn
-    COMPILER_MODULES: PrgEnv-cray cce/16.0.1 craype-x86-milan craype-accel-amd-gfx90a rocm
     # Compiler flags used for ICON model:
     FFLAGS: -hacc -hadd_paren -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -g
     KERNEL_MODE: accel

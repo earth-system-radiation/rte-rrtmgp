@@ -54,6 +54,7 @@ include:
 
 .build-and-test:
   variables:
+    RTE_ENABLE_SP: "OFF"
     CMAKE_BUILD_PARALLEL_LEVEL: 8
     VERBOSE:
     CTEST_PARALLEL_LEVEL: 8
@@ -116,7 +117,6 @@ nvhpc-gpu-openacc-DP:
     # Compiler flags used for ICON model:
     FFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda12.6
     KERNEL_MODE: accel
-    RTE_ENABLE_SP: "OFF"
 
 nvhpc-gpu-openacc-SP:
   extends: nvhpc-gpu-openacc-DP
@@ -133,7 +133,6 @@ nag-cpu-accel-DP:
     # Compiler flags used for ICON model:
     FFLAGS: -Wc=/sw/spack-levante/gcc-11.2.0-bcn7mb/bin/gcc -f2008 -colour -w=uep -g -gline -O0 -float-store -nan -Wc,-g -Wc,-pipe -Wc,--param,max-vartrack-size=200000000 -Wc,-mno-fma -C=all
     KERNEL_MODE: accel
-    RTE_ENABLE_SP: "OFF"
 
 nag-cpu-default-SP:
   extends: nag-cpu-accel-DP

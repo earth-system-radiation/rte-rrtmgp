@@ -296,7 +296,7 @@ public:
   template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**>,
             typename std::enable_if<conv::is_view_v<BandLimsWvnT>>::type* = nullptr >
   void init( BandLimsWvnT const &band_lims_wvn , BandLimsGptT const &band_lims_gpt=view_t<int**>() , std::string name="" ) {
-    view_t<int**> band_lims_gpt_lcl("band_lims_gpt_lcl", 2, band_lims_wvn.extent(1));
+    view_t<int**> band_lims_gpt_lcl("band_lims_gpt_lcl", 2, band_lims_wvn.extent(1)); // ALLOC!
     if (band_lims_wvn.extent(0) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS
     if (conv::any(band_lims_wvn, conv::LTFunc<RealT>(0.))) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
@@ -320,8 +320,65 @@ public:
 
     // Make a map between g-points and bands
     //   Efficient only when g-point indexes start at 1 and are contiguous.
-    this->gpt2band = view_t<int*>("gpt2band", this->ngpt);
+    this->gpt2band = view_t<int*>("gpt2band", this->ngpt); // ALLOC
     set_gpt2band(band_lims_gpt_lcl, this->gpt2band);
+  }
+
+  template <typename BandLimsWvnT, typename Band2Gpt, typename Gpt2Band>
+  void init_no_alloc( BandLimsWvnT const &band_lims_wvn ,
+                      Band2Gpt const& band2gpt_mem,
+                      Gpt2Band const& gpt2band_mem,
+                      std::string name="" ) {
+    if (band_lims_wvn.extent(0) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+    if (conv::any(band_lims_wvn, conv::LTFunc<RealT>(0.))) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
+    #endif
+    init_band_lims(band2gpt_mem);
+
+    // Assignment
+    this->band2gpt       = band2gpt_mem;
+    this->band_lims_wvn  = band_lims_wvn;
+    this->name           = name;
+    this->ngpt           = this->band2gpt.extent(1);
+    assert(this->ngpt == conv::maxval(this->band2gpt) + 1);
+    assert(gpt2band_mem.extent(0) == this->ngpt);
+
+    // Make a map between g-points and bands
+    //   Efficient only when g-point indexes start at 1 and are contiguous.
+    this->gpt2band = gpt2band_mem;
+    set_gpt2band(this->band2gpt, this->gpt2band);
+  }
+
+  template <typename BandLimsWvnT, typename BandLimsGptT, typename Band2Gpt, typename Gpt2Band>
+  void init_no_alloc( BandLimsWvnT const &band_lims_wvn , BandLimsGptT const &band_lims_gpt,
+                      Band2Gpt const& band2gpt_mem, Gpt2Band const& gpt2band_mem,
+                      std::string name="" ) {
+    if (band_lims_wvn.extent(0) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
+    #ifdef RRTMGP_EXPENSIVE_CHECKS
+    if (conv::any(band_lims_wvn, conv::LTFunc<RealT>(0.))) { stoprun("optical_props::init(): band_lims_wvn has values <  0."); }
+    #endif
+    if (band_lims_gpt.is_allocated()) {
+      if (band_lims_gpt.extent(1) != band_lims_wvn.extent(1)) {
+        stoprun("optical_props::init(): band_lims_gpt size inconsistent with band_lims_wvn");
+      }
+      #ifdef RRTMGP_EXPENSIVE_CHECKS
+      if (conv::any(band_lims_gpt, conv::LTFunc<int>(1)) ) { stoprun("optical_props::init(): band_lims_gpt has values < 1"); }
+      #endif
+      Kokkos::deep_copy(band2gpt_mem, band_lims_gpt);
+    } else {
+      init_band_lims(band2gpt_mem);
+    }
+    // Assignment
+    this->band2gpt       = band2gpt_mem;
+    this->band_lims_wvn  = band_lims_wvn;
+    this->name           = name;
+    this->ngpt           = conv::maxval(this->band2gpt) + 1;
+    assert(this->ngpt == gpt2band_mem.extent(0));
+
+    // Make a map between g-points and bands
+    //   Efficient only when g-point indexes start at 1 and are contiguous.
+    this->gpt2band = gpt2band_mem;
+    set_gpt2band(band2gpt_mem, this->gpt2band);
   }
 
   void init(self_t const &in) {
@@ -342,7 +399,6 @@ public:
     this->name          = "";
   }
 
-
   // Number of bands
   int get_nband() const {
     if (this->is_initialized()) { return this->band2gpt.extent(1); }
@@ -357,18 +413,18 @@ public:
   }
 
   // Bands for all the g-points at once;  dimension (ngpt)
-  view_t<int*> get_gpoint_bands() const { return gpt2band; }
+  const view_t<int*>& get_gpoint_bands() const { return gpt2band; }
 
   // The first and last g-point of all bands at once;  dimension (2, nbands)
-  view_t<int**> get_band_lims_gpoint() const { return this->band2gpt; }
+  const view_t<int**>& get_band_lims_gpoint() const { return this->band2gpt; }
 
   // Lower and upper wavenumber of all bands
   // (upper and lower wavenumber by band) = band_lims_wvn(2,band)
-  view_t<RealT**> get_band_lims_wavenumber() const { return this->band_lims_wvn; }
+  const view_t<RealT**>& get_band_lims_wavenumber() const { return this->band_lims_wvn; }
 
   // Lower and upper wavelength of all bands
-  view_t<RealT**> get_band_lims_wavelength() const {
-    view_t<RealT**> ret("band_lim_wavelength", band_lims_wvn.extent(0), band_lims_wvn.extent(1));
+  const view_t<RealT**>& get_band_lims_wavelength() const {
+    view_t<RealT**> ret("band_lim_wavelength", band_lims_wvn.extent(0), band_lims_wvn.extent(1)); // ALLOC
     // for (int j = 1; j <= size(band_lims_wvn,2); j++) {
     //   for (int i = 1; i <= size(band_lims_wvn,1); i++) {
     auto this_band_lims_wvn = this->band_lims_wvn;
@@ -382,6 +438,20 @@ public:
       }));
     }
     return ret;
+  }
+
+  template <typename WavelengthBounds>
+  void get_band_lims_wavelength(WavelengthBounds const& ret) const {
+    auto this_band_lims_wvn = this->band_lims_wvn;
+    if (this->is_initialized()) {
+      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
+        ret(i,j) = 1. / this_band_lims_wvn(i,j);
+      }));
+    } else {
+      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({band_lims_wvn.extent(1) , band_lims_wvn.extent(0)}) , KOKKOS_LAMBDA (int j, int i) {
+        ret(i,j) = 0.;
+      }));
+    }
   }
 
   // Are the bands of two objects the same? (same number, same wavelength limits)
@@ -574,7 +644,17 @@ public:
   void alloc_1scl(int ncol, int nlay) {
     if (! this->is_initialized()) { stoprun("OpticalProps1scl::alloc_1scl: spectral discretization hasn't been provided"); }
     if (ncol <= 0 || nlay <= 0) { stoprun("OpticalProps1scl::alloc_1scl: must provide > 0 extents for ncol, nlay"); }
-    this->tau = view_t<RealT***>("tau",ncol,nlay,this->get_ngpt());
+    this->tau = view_t<RealT***>("tau",ncol,nlay,this->get_ngpt()); // ALLOC
+  }
+
+  template <typename TauMem>
+  void alloc_1scl_no_alloc(int ncol, int nlay, TauMem const& tau_mem) {
+    if (! this->is_initialized()) { stoprun("OpticalProps1scl::alloc_1scl: spectral discretization hasn't been provided"); }
+    if (ncol <= 0 || nlay <= 0) { stoprun("OpticalProps1scl::alloc_1scl: must provide > 0 extents for ncol, nlay"); }
+    assert(tau_mem.extent(0) == ncol);
+    assert(tau_mem.extent(1) == nlay);
+    assert(tau_mem.extent(2) == this->get_ngpt());
+    this->tau = tau_mem;
   }
 
   // Initialization by specifying band limits and possibly g-point/band mapping
@@ -589,6 +669,13 @@ public:
     if (this->is_initialized()) { this->finalize(); }
     this->init(opIn.get_band_lims_wavenumber(), opIn.get_band_lims_gpoint(), name);
     this->alloc_1scl(ncol, nlay);
+  }
+
+  template <typename Band2Gpt, typename Gpt2Band, typename TauMem>
+  void alloc_1scl_no_alloc(int ncol, int nlay, OpticalPropsK<RealT, LayoutT, DeviceT> const &opIn, Band2Gpt const& band2gpt_mem, Gpt2Band const& gpt2band_mem, TauMem const& tau_mem, std::string name="") {
+    if (this->is_initialized()) { this->finalize(); }
+    this->init_no_alloc(opIn.get_band_lims_wavenumber(), opIn.get_band_lims_gpoint(), band2gpt_mem, gpt2band_mem, name);
+    this->alloc_1scl_no_alloc(ncol, nlay, tau_mem);
   }
 
   void increment(OpticalProps1sclK<RealT, LayoutT, DeviceT> &that) {
@@ -822,9 +909,29 @@ class OpticalProps2strK : public OpticalPropsArryK<RealT, LayoutT, DeviceT> {
   void alloc_2str(int ncol, int nlay) {
     if (! this->is_initialized()) { stoprun("optical_props::alloc: spectral discretization hasn't been provided"); }
     if (ncol <= 0 || nlay <= 0) { stoprun("optical_props::alloc: must provide positive extents for ncol, nlay"); }
-    this->tau = view_t<RealT***>("tau",ncol,nlay,this->get_ngpt());
-    this->ssa = view_t<RealT***>("ssa",ncol,nlay,this->get_ngpt());
-    this->g   = view_t<RealT***>("g  ",ncol,nlay,this->get_ngpt());
+    this->tau = view_t<RealT***>("tau",ncol,nlay,this->get_ngpt()); // ALLOC
+    this->ssa = view_t<RealT***>("ssa",ncol,nlay,this->get_ngpt()); // ALLOC
+    this->g   = view_t<RealT***>("g  ",ncol,nlay,this->get_ngpt()); // ALLOC
+  }
+
+  template <typename TauMem, typename SsaMem, typename GMem>
+  void alloc_2str_no_alloc(int ncol, int nlay, TauMem const& tau_mem, SsaMem const& ssa_mem, GMem const& g_mem) {
+    if (! this->is_initialized()) { stoprun("optical_props::alloc: spectral discretization hasn't been provided"); }
+    if (ncol <= 0 || nlay <= 0) { stoprun("optical_props::alloc: must provide positive extents for ncol, nlay"); }
+
+    assert(tau_mem.extent(0) == ncol);
+    assert(tau_mem.extent(1) == nlay);
+    assert(tau_mem.extent(2) == this->get_ngpt());
+    assert(ssa_mem.extent(0) == ncol);
+    assert(ssa_mem.extent(1) == nlay);
+    assert(ssa_mem.extent(2) == this->get_ngpt());
+    assert(g_mem.extent(0) == ncol);
+    assert(g_mem.extent(1) == nlay);
+    assert(g_mem.extent(2) == this->get_ngpt());
+
+    this->tau = tau_mem;
+    this->ssa = ssa_mem;
+    this->g   = g_mem;
   }
 
   template <typename BandLimsWvnT, typename BandLimsGptT=view_t<int**>,
@@ -838,6 +945,16 @@ class OpticalProps2strK : public OpticalPropsArryK<RealT, LayoutT, DeviceT> {
     if (this->is_initialized()) { this->finalize(); }
     this->init(opIn.get_band_lims_wavenumber(), opIn.get_band_lims_gpoint(), name);
     this->alloc_2str(ncol, nlay);
+  }
+
+  template <typename Band2Gpt, typename Gpt2Band, typename TauMem, typename SsaMem, typename GMem>
+  void alloc_2str_no_alloc(int ncol, int nlay, OpticalPropsK<RealT, LayoutT, DeviceT> const &opIn,
+                           Band2Gpt const& band2gpt_mem, Gpt2Band const& gpt2band_mem,
+                           TauMem const& tau_mem, SsaMem const& ssa_mem, GMem const& g_mem,
+                           std::string name="") {
+    if (this->is_initialized()) { this->finalize(); }
+    this->init_no_alloc(opIn.get_band_lims_wavenumber(), opIn.get_band_lims_gpoint(), band2gpt_mem, gpt2band_mem, name);
+    this->alloc_2str_no_alloc(ncol, nlay, tau_mem, ssa_mem, g_mem);
   }
 
   void increment(OpticalProps1sclK<RealT, LayoutT, DeviceT> &that) {

@@ -278,7 +278,7 @@ public:
 
     // Allocate
     this->gas_name = string1dv(ngas);
-    this->concs  = real3d_t("concs"   ,ncol,nlay,ngas);
+    this->concs  = real3d_t("concs"   ,ncol,nlay,ngas); // ALLOC
 
     // Assign gas names
     for (int i=0; i<ngas; i++) {
@@ -286,6 +286,35 @@ public:
     }
   }
 
+  template <typename ConcsMem>
+  void init_no_alloc(string1dv const &gas_names , int ncol , int nlay, ConcsMem const& concs_mem) {
+    this->reset();
+    this->ngas = gas_names.size();
+    this->ncol = ncol;
+    this->nlay = nlay;
+
+    // Transform gas names to lower case, check for empty strings, check for duplicates
+    for (int i=0; i<ngas; i++) {
+      // Empty string
+      if (gas_names[i] == "") { stoprun("ERROR: GasConcs::init(): must provide non-empty gas names"); }
+      // Duplicate gas name
+      for (int j=i+1; j<ngas; j++) {
+        if ( lower_case(gas_names[i]) == lower_case(gas_names[j]) ) { stoprun("GasConcs::init(): duplicate gas names aren't allowed"); }
+      }
+    }
+
+    // Allocate
+    this->gas_name = string1dv(ngas);
+    this->concs    = concs_mem;
+    assert(concs_mem.extent(0) == ncol);
+    assert(concs_mem.extent(1) == nlay);
+    assert(concs_mem.extent(2) == this->ngas);
+
+    // Assign gas names
+    for (int i=0; i<ngas; i++) {
+      this->gas_name[i] = lower_case(gas_names[i]);
+    }
+  }
 
   // Set concentration as a scalar copied to every column and level
   void set_vmr(std::string gas, const RealT w) {

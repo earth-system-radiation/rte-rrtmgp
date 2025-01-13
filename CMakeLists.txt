@@ -20,17 +20,24 @@ set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+# CMake does not support the NEC compiler and usually mistakes it for GNU:
+if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
+  # Check whether the Fortran compiler in use is NEC:
+  include(CheckCompilerIsNEC)
+  check_compiler_is_nec(RTE_RRTMGP_Fortran_is_NEC Fortran)
+endif()
+
 # GNUInstallDirs issues a warning if CMAKE_SIZEOF_VOID_P is not defined, which
-# is the case with NAG. One way to circumvent that is to enable C language for
-# the project:
-if(CMAKE_Fortran_COMPILER_ID STREQUAL NAG)
+# is the case with NAG and NEC. One way to circumvent that is to enable C
+# language for the project:
+if(CMAKE_Fortran_COMPILER_ID STREQUAL NAG OR RTE_RRTMGP_Fortran_is_NEC)
   enable_language(C)
 endif()
 include(GNUInstallDirs)
 
-add_compile_options(
-  $<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>
-)
+if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU AND NOT RTE_RRTMGP_Fortran_is_NEC)
+  add_compile_options($<$<COMPILE_LANGUAGE:Fortran>:-ffree-line-length-none>)
+endif()
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 

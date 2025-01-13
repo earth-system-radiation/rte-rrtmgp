@@ -28,7 +28,7 @@ module mo_gas_optics_util_string
 
 contains
   ! -------------------------------------------------------------------------------------------------
-  !> Convert stringo to lower case 
+  !> Convert stringo to lower case
   pure function lower_case( input_string ) result( output_string )
     character(len=*), intent(in) :: input_string
     character(len=len(input_string)) :: output_string
@@ -66,7 +66,7 @@ contains
   end function string_in_array
   ! --------------------------------------------------------------------------------------
   !
-  !> what is the location of a string in an array 
+  !> what is the location of a string in an array
   !
   pure function string_loc_in_array(string, array)
     character(len=*),               intent(in) :: string

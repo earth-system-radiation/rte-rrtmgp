@@ -5,7 +5,7 @@ module mo_load_aerosol_coefficients
                               ty_optical_props_1scl, &
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
-  use mo_aerosol_optics_rrtmgp_merra,  & 
+  use mo_aerosol_optics_rrtmgp_merra,  &
                         only: ty_aerosol_optics_rrtmgp_merra
   use mo_simple_netcdf, only: read_field, read_string, var_exists, get_dim_size, &
                               write_field, create_dim, create_var
@@ -23,7 +23,7 @@ contains
   ! read aerosol optical property LUT coefficients from NetCDF file
   !
   subroutine load_aero_lutcoeff(aerosol_spec, aero_coeff_file)
-    class(ty_aerosol_optics_rrtmgp_merra),   & 
+    class(ty_aerosol_optics_rrtmgp_merra),   &
                                 intent(inout) :: aerosol_spec
     character(len=*),           intent(in   ) :: aero_coeff_file
     ! -----------------
@@ -95,8 +95,8 @@ contains
   !--------------------------------------------------------------------------------------------------------------------
   subroutine read_aero_state(filename, p_lay, p_lev, t_lay, vmr_h2o)
     character(len=*),                      intent(in   ) :: filename
-    real(wp), dimension(:,:), allocatable, intent(inout) :: p_lay      ! layer pressure 
-    real(wp), dimension(:,:), allocatable, intent(inout) :: p_lev      ! level pressure 
+    real(wp), dimension(:,:), allocatable, intent(inout) :: p_lay      ! layer pressure
+    real(wp), dimension(:,:), allocatable, intent(inout) :: p_lev      ! level pressure
     real(wp), dimension(:,:), allocatable, intent(inout) :: t_lay      ! layer temperature
     real(wp), dimension(:,:), allocatable, intent(inout) :: vmr_h2o    ! water volume mixing ratio
 

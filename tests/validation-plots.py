@@ -73,13 +73,13 @@ def main():
     )
     parser.add_argument(
         "--lw_vars_file",
-        help="Path to the LW results file", 
+        help="Path to the LW results file",
         default="lw_flux_variants.nc"
 
     )
     parser.add_argument(
         "--sw_vars_file",
-        help="Path to the SW results file", 
+        help="Path to the SW results file",
         default="sw_flux_variants.nc"
 
     )

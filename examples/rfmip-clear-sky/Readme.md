@@ -5,7 +5,7 @@ the [RTE+RRTMGP](https://github.com/RobertPincus/rte-rrtmgp) radiation parameter
 
 Note that this example is run, and the results checked automatically, when `make` is invoked in the root directory.
 
-By default needed files (input conditions, output templates) are copied from a subdirectory of `$RRTMGP_DATA`. 
+By default needed files (input conditions, output templates) are copied from a subdirectory of `$RRTMGP_DATA`.
 A Python script `stage_files.py` may also used to download relevant files from the
 [RFMIP web site](https://www.earthsystemcog.org/projects/rfmip/resources/).This script invokes another Python script to create empty output files.
 

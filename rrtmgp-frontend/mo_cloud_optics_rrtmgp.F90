@@ -21,14 +21,14 @@
 module mo_cloud_optics_rrtmgp
   use mo_rte_kind,      only: wp, wl
   use mo_rte_config,    only: check_values, check_extents
-  use mo_rte_util_array_validation,& 
+  use mo_rte_util_array_validation,&
                         only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props, only: ty_optical_props,      &
                               ty_optical_props_arry, &
                               ty_optical_props_1scl, &
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
-  use mo_cloud_optics_rrtmgp_kernels, only: & 
+  use mo_cloud_optics_rrtmgp_kernels, only: &
                               compute_cld_from_table, compute_cld_from_pade
   implicit none
   private

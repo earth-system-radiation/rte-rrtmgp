@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 #
-# General purpose comparison script -- compare all variables in a set of files, 
-#   write output if differences exceed some threshold, 
-#   error exit if differences exceed a different threshold 
+# General purpose comparison script -- compare all variables in a set of files,
+#   write output if differences exceed some threshold,
+#   error exit if differences exceed a different threshold
 #
-# Currently thresholds are specified as absolute differences 
-#    worth revising but could change development practice 
-# Thresholds come from environement variables when set? 
-# 
+# Currently thresholds are specified as absolute differences
+#    worth revising but could change development practice
+# Thresholds come from environement variables when set?
+#
 #
 import sys
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
             raise Exception(
                 v + ": some test values are missing. Now that is strange.")
         #
-        # Reporting 
+        # Reporting
         #
         if not np.allclose(tst[v], ref[v], atol=args.report_threshold, rtol=0):
             diff = abs((tst - ref)[v].values)

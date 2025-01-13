@@ -16,7 +16,7 @@ import csv
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Description here ")
-    # Argument parseing described at 
+    # Argument parseing described at
     # https://stackoverflow.com/questions/15753701/how-can-i-pass-a-list-as-a-command-line-argument-with-argparse
     parser.add_argument("-x", "--executable",
                         type=str,

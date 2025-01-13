@@ -1,7 +1,7 @@
 ! This code is part of
 ! RRTM for GCM Applications - Parallel (RRTMGP)
 !
-! Copyright 2024-,  Atmospheric and Environmental Research, 
+! Copyright 2024-,  Atmospheric and Environmental Research,
 !    Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the

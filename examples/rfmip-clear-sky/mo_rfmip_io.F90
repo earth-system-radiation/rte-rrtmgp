@@ -350,7 +350,7 @@ contains
         call stop_on_err(gas_conc_array(b)%init(gas_names))
       else
         call stop_on_err(gas_conc_array(b)%init([gas_names, 'h2o    ', 'o3     ', 'no2    ']))
-      end if 
+      end if
     end do
     !
     ! Which gases are known to the k-distribution and available in the files?

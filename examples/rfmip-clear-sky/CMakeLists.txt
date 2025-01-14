@@ -21,8 +21,7 @@ set(inoutputs
 list(
   TRANSFORM inoutputs
   PREPEND ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/
-          OUTPUT_VARIABLE
-          inputs
+          OUTPUT_VARIABLE inputs
 )
 
 # The tests write to the input files, therefore we copy them:

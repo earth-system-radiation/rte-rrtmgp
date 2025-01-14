@@ -36,8 +36,10 @@ jobs:
         with:
           remote-url: ${{ vars.DKRZ_GITLAB_SERVER }}/${{ vars.DKRZ_GITLAB_PROJECT }}.git
           password: ${{ secrets.DKRZ_GITLAB_TOKEN }}
-          ref-type: tag
-          ref-message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          rev-id: ${{ github.sha }}
+          rev-signing-format: ssh
+          rev-signing-key: ${{ secrets.GITLAB_SIGNING_KEY }}
+          ref-type: branch
           force-push: true
       - name: Trigger GitLab CI/CD Pipeline
         id: gl-trigger-pipeline
@@ -47,7 +49,7 @@ jobs:
           project-name: ${{ vars.DKRZ_GITLAB_PROJECT }}
           token: ${{ secrets.DKRZ_GITLAB_TRIGGER_TOKEN }}
           ref-name: ${{ steps.g-push-rev.outputs.ref-name }}
-          expected-sha: ${{ github.sha }}
+          expected-sha: ${{ steps.g-push-rev.outputs.ref-commit }}
   attach:
     runs-on: ubuntu-latest
     needs: trigger

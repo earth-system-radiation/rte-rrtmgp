@@ -15,7 +15,7 @@ defaults:
 
 jobs:
   #
-  # Deferred GitLab pipelines at gitlab.dkrz.de (see .gitlab/dkrz.yml):
+  # Deferred GitLab pipelines at gitlab.dkrz.de (see .gitlab/levante.yml):
   #
   trigger:
     if: |

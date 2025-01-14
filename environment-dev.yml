@@ -21,6 +21,7 @@ dependencies:
   - netcdf-fortran
   - cmake
   - ninja
+  - pre-commit
 variables:
   FC: gfortran
   # Debugging flags below

@@ -12,3 +12,7 @@ repos:
         name: cmake-lint (templates)
         types: [file]
         files: \.cmake\.in$
+  - repo: https://github.com/csachs/pyproject-flake8
+    rev: v7.0.0
+    hooks:
+      - id: pyproject-flake8

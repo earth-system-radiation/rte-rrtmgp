@@ -1,0 +1,40 @@
+ci:
+  autofix_prs: false
+  autoupdate_branch: develop
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.6
+    hooks:
+      - id: actionlint
+  - repo: https://github.com/cheshirekow/cmake-format-precommit
+    rev: v0.6.13
+    hooks:
+      - id: cmake-format
+      - id: cmake-format
+        name: cmake-format (templates)
+        types: [file]
+        files: \.cmake\.in$
+      - id: cmake-lint
+      - id: cmake-lint
+        name: cmake-lint (templates)
+        types: [file]
+        files: \.cmake\.in$
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 24.10.0
+    hooks:
+      - id: black
+  - repo: https://github.com/csachs/pyproject-flake8
+    rev: v7.0.0
+    hooks:
+      - id: pyproject-flake8

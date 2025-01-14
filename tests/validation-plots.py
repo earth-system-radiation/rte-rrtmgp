@@ -1,15 +1,16 @@
 #! /usr/bin/env python
 
+import argparse
+import urllib.request
+import warnings
+
 import colorcet as cc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import urllib.request
-import warnings
 import xarray as xr
 from matplotlib.backends.backend_pdf import PdfPages
 
-import argparse
 
 def mae(diff, col_dim):
     #
@@ -25,23 +26,17 @@ def rms(diff, col_dim):
     return np.sqrt(np.square(diff).mean(dim=col_dim))
 
 
-def make_comparison_plot(variants, labels, reference, vscale, colors,
-                         col_dim="site"):
+def make_comparison_plot(variants, labels, reference, vscale, colors, col_dim="site"):
     #
     # Make a plot comparing differences with respect to reference
     #
     if type(variants) is not list:
-        make_comparison_plot([variants], [labels], reference, vscale, colors,
-                             col_dim)
+        make_comparison_plot([variants], [labels], reference, vscale, colors, col_dim)
     else:
         for i in np.arange(0, len(variants)):
             delta = variants[i] - reference
-            plt.plot(mae(delta, col_dim),
-                     vscale, '-',
-                     color=colors[i], label=labels[i])
-            plt.plot(rms(delta, col_dim),
-                     vscale, '--',
-                     color=colors[i])
+            plt.plot(mae(delta, col_dim), vscale, "-", color=colors[i], label=labels[i])
+            plt.plot(rms(delta, col_dim), vscale, "--", color=colors[i])
         # Reverse vertical ordering
         plt.legend()
         # Reverse vertical ordering
@@ -54,13 +49,25 @@ def construct_lbl_esgf_root(var, esgf_node="llnl"):
     # line-by-line results
     #
     model = "LBLRTM-12-8"
-    prefix = ("http://esgf3.dkrz.de/thredds/fileServer/cmip6/RFMIP/AER/" +
-              model + "/rad-irf/r1i1p1f1/Efx/")
+    prefix = (
+        "http://esgf3.dkrz.de/thredds/fileServer/cmip6/RFMIP/AER/"
+        + model
+        + "/rad-irf/r1i1p1f1/Efx/"
+    )
     if esgf_node == "llnl":
-        prefix = ("http://esgf-data1.llnl.gov/thredds/fileServer/css03_data/"
-                  "CMIP6/RFMIP/AER/" + model + "/rad-irf/r1i1p1f1/Efx/")
-    return (prefix + var + "/gn/v20190514/" + var +
-            "_Efx_" + model + "_rad-irf_r1i1p1f1_gn.nc")
+        prefix = (
+            "http://esgf-data1.llnl.gov/thredds/fileServer/css03_data/"
+            "CMIP6/RFMIP/AER/" + model + "/rad-irf/r1i1p1f1/Efx/"
+        )
+    return (
+        prefix
+        + var
+        + "/gn/v20190514/"
+        + var
+        + "_Efx_"
+        + model
+        + "_rad-irf_r1i1p1f1_gn.nc"
+    )
 
 
 ########################################################################
@@ -69,24 +76,22 @@ def main():
     parser.add_argument(
         "--state_file",
         help="Path to the state information NetCDF file.",
-        default="multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc"
+        default="multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc",
     )
     parser.add_argument(
         "--lw_vars_file",
-        help="Path to the LW results file", 
-        default="lw_flux_variants.nc"
-
+        help="Path to the LW results file",
+        default="lw_flux_variants.nc",
     )
     parser.add_argument(
         "--sw_vars_file",
-        help="Path to the SW results file", 
-        default="sw_flux_variants.nc"
-
+        help="Path to the SW results file",
+        default="sw_flux_variants.nc",
     )
     parser.add_argument(
         "--output_pdf",
         help="Path to the output PDF file for validation plots.",
-        default="validation-figures.pdf"
+        default="validation-figures.pdf",
     )
     args = parser.parse_args()
 
@@ -105,17 +110,17 @@ def main():
     for v in fluxes:
         try:
             try:
-                urllib.request.urlretrieve(construct_lbl_esgf_root(v),
-                                           v + lbl_suffix)
-            except:
+                urllib.request.urlretrieve(construct_lbl_esgf_root(v), v + lbl_suffix)
+            except Exception:
                 urllib.request.urlretrieve(
-                    construct_lbl_esgf_root(v, esgf_node="dkrz"),
-                    v + lbl_suffix)
-        except:
+                    construct_lbl_esgf_root(v, esgf_node="dkrz"), v + lbl_suffix
+                )
+        except Exception:
             raise Exception("Failed to download {0}".format(v + lbl_suffix))
 
-    lbl = xr.open_mfdataset([v + lbl_suffix for v in fluxes],
-                            combine="by_coords").sel(expt=0)
+    lbl = xr.open_mfdataset([v + lbl_suffix for v in fluxes], combine="by_coords").sel(
+        expt=0
+    )
 
     #
     # Open the test results
@@ -125,9 +130,10 @@ def main():
     # Does the flux plus the Jacobian equal a calculation with perturbed surface
     # temperature?
     #
-    gp['lw_flux_up_from_deriv'] = gp.lw_flux_up + gp.lw_jaco_up
+    gp["lw_flux_up_from_deriv"] = gp.lw_flux_up + gp.lw_jaco_up
     gp.lw_flux_up_from_deriv.attrs = {
-        "description": "LW flux up, surface T+1K, computed from Jacobian"}
+        "description": "LW flux up, surface T+1K, computed from Jacobian"
+    }
     ########################################################################
     #
     # The RFMIP cases are on an irregular pressure grid so we can't compute
@@ -137,16 +143,28 @@ def main():
     #
     plevs = np.arange(0, lbl.plev.max(), 1000)
     plevs[0] = lbl.plev.min().values
-    plev = xr.DataArray(plevs, dims=['plev'], coords={'plev': plevs})
-    lbli = xr.concat([lbl.sel(site=i).reset_coords().swap_dims(
-        {"level": "plev"}).interp(plev=plev) for i in
-                      np.arange(0, lbl.site.size)], dim='site')
+    plev = xr.DataArray(plevs, dims=["plev"], coords={"plev": plevs})
+    lbli = xr.concat(
+        [
+            lbl.sel(site=i)
+            .reset_coords()
+            .swap_dims({"level": "plev"})
+            .interp(plev=plev)
+            for i in np.arange(0, lbl.site.size)
+        ],
+        dim="site",
+    )
     gpi = xr.concat(
-        [gp.sel(site=i).rename(
-            {"pres_level": "plev"}).reset_coords().swap_dims(
-            {"level": "plev"}).interp(plev=plev)
-         for i in np.arange(0, gp.site.size)],
-        dim='site')
+        [
+            gp.sel(site=i)
+            .rename({"pres_level": "plev"})
+            .reset_coords()
+            .swap_dims({"level": "plev"})
+            .interp(plev=plev)
+            for i in np.arange(0, gp.site.size)
+        ],
+        dim="site",
+    )
 
     cols = cc.glasbey_dark
     mpl.rcParams["legend.frameon"] = False
@@ -160,31 +178,57 @@ def main():
         #
         # Accuracy - 3-angle and single-angle
         #
-        variants = [[gpi.lw_flux_dn, gpi.lw_flux_dn_alt, gpi.lw_flux_dn_optang,
-                     gpi.lw_flux_dn_alt_oa, gpi.lw_flux_dn_3ang,
-                     gpi.lw_flux_dn_2str, gpi.lw_flux_dn_1rescl],
-                    [gpi.lw_flux_up, gpi.lw_flux_up_alt, gpi.lw_flux_up_optang,
-                     gpi.lw_flux_up_alt_oa, gpi.lw_flux_up_3ang,
-                     gpi.lw_flux_up_2str, gpi.lw_flux_up_1rescl],
-                    [gpi.lw_flux_net,
-                     gpi.lw_flux_net_alt,
-                     gpi.lw_flux_dn_optang - gpi.lw_flux_up_optang,
-                     gpi.lw_flux_dn_alt_oa - gpi.lw_flux_up_alt_oa,
-                     gpi.lw_flux_dn_3ang - gpi.lw_flux_up_3ang,
-                     gpi.lw_flux_dn_2str - gpi.lw_flux_up_2str,
-                     gpi.lw_flux_dn_1rescl - gpi.lw_flux_up_1rescl]]
+        variants = [
+            [
+                gpi.lw_flux_dn,
+                gpi.lw_flux_dn_alt,
+                gpi.lw_flux_dn_optang,
+                gpi.lw_flux_dn_alt_oa,
+                gpi.lw_flux_dn_3ang,
+                gpi.lw_flux_dn_2str,
+                gpi.lw_flux_dn_1rescl,
+            ],
+            [
+                gpi.lw_flux_up,
+                gpi.lw_flux_up_alt,
+                gpi.lw_flux_up_optang,
+                gpi.lw_flux_up_alt_oa,
+                gpi.lw_flux_up_3ang,
+                gpi.lw_flux_up_2str,
+                gpi.lw_flux_up_1rescl,
+            ],
+            [
+                gpi.lw_flux_net,
+                gpi.lw_flux_net_alt,
+                gpi.lw_flux_dn_optang - gpi.lw_flux_up_optang,
+                gpi.lw_flux_dn_alt_oa - gpi.lw_flux_up_alt_oa,
+                gpi.lw_flux_dn_3ang - gpi.lw_flux_up_3ang,
+                gpi.lw_flux_dn_2str - gpi.lw_flux_up_2str,
+                gpi.lw_flux_dn_1rescl - gpi.lw_flux_up_1rescl,
+            ],
+        ]
         refs = [lbli.rld, lbli.rlu, lbli.rld - lbli.rlu]
-        titles = ["Accuracy wrt LBLRTM: LW down", "Accuracy wrt LBLRTM: LW up",
-                  "Accuracy: LW net"]
+        titles = [
+            "Accuracy wrt LBLRTM: LW down",
+            "Accuracy wrt LBLRTM: LW up",
+            "Accuracy: LW net",
+        ]
         for v, r, t in zip(variants, refs, titles):
-            make_comparison_plot(v,
-                                 labels=["default", "fewer-g-points",
-                                         "optimal-angle",
-                                         "fewer points + optimal-angle",
-                                         "3-angle", "2-stream", "rescaled"],
-                                 reference=r,
-                                 vscale=plev / 100.,
-                                 colors=cols)
+            make_comparison_plot(
+                v,
+                labels=[
+                    "default",
+                    "fewer-g-points",
+                    "optimal-angle",
+                    "fewer points + optimal-angle",
+                    "3-angle",
+                    "2-stream",
+                    "rescaled",
+                ],
+                reference=r,
+                vscale=plev / 100.0,
+                colors=cols,
+            )
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Error (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
@@ -198,16 +242,20 @@ def main():
         # Using scattering representations of optical properties to do a
         # no-scattering calculation
         #
-        variants = [[gpi.lw_flux_dn_notlev, gpi.lw_flux_dn_2str],
-                    [gpi.lw_flux_up_notlev, gpi.lw_flux_up_2str]]
+        variants = [
+            [gpi.lw_flux_dn_notlev, gpi.lw_flux_dn_2str],
+            [gpi.lw_flux_up_notlev, gpi.lw_flux_up_2str],
+        ]
         refs = [gpi.lw_flux_dn, gpi.lw_flux_up]
         titles = ["Variants: LW down", "Variants: LW up"]
         for v, r, t in zip(variants, refs, titles):
-            make_comparison_plot(v,
-                                 labels=["no-tlev", "2str"],
-                                 reference=r,
-                                 vscale=plev / 100.,
-                                 colors=cols)
+            make_comparison_plot(
+                v,
+                labels=["no-tlev", "2str"],
+                reference=r,
+                vscale=plev / 100.0,
+                colors=cols,
+            )
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Difference (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
@@ -221,16 +269,20 @@ def main():
         #
         # Accuracy comparison
         #
-        variants = [[gpi.sw_flux_dn, gpi.sw_flux_dn_alt],
-                    [gpi.sw_flux_up, gpi.sw_flux_up_alt]]
+        variants = [
+            [gpi.sw_flux_dn, gpi.sw_flux_dn_alt],
+            [gpi.sw_flux_up, gpi.sw_flux_up_alt],
+        ]
         refs = [lbli.rsd, lbli.rsu]
         titles = ["Accuracy: SW down", "Accuracy: SW up"]
         for v, r, t in zip(variants, refs, titles):
-            make_comparison_plot(v,
-                                 labels=["default", "fewer-g-points"],
-                                 reference=r,
-                                 vscale=plev / 100.,
-                                 colors=cols)
+            make_comparison_plot(
+                v,
+                labels=["default", "fewer-g-points"],
+                reference=r,
+                vscale=plev / 100.0,
+                colors=cols,
+            )
             plt.ylabel("Pressure (Pa)")
             plt.xlabel("Error (W/m$^2$), solid=mean, dash=RMS")
             plt.title(t)
@@ -238,5 +290,5 @@ def main():
             plt.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

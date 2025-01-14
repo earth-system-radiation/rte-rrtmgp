@@ -24,7 +24,7 @@ jobs:
         gfortran-version: [12, 13, 14]
         gfortran-from: [system, conda]
         fpmodel: [DP, SP]
-        exclude: 
+        exclude:
           - os: ubuntu-24.04
             gfortran-from: conda
           - os: macos-13
@@ -38,7 +38,7 @@ jobs:
             gfortran-version: 14
             gfortran-from: conda
           - os: windows-2022
-        include: 
+        include:
           - os: ubuntu-24.04
             gfortran-version: 13
             gfortran-from: conda
@@ -101,7 +101,7 @@ jobs:
         if: matrix.gfortran-from == 'conda'
         run: |
           conda install -c conda-forge gfortran=${{ matrix.gfortran-version }} -y
-          echo "FC=gfortran" >> $GITHUB_ENV
+          echo "FC=gfortran" >> "$GITHUB_ENV"
       #
       # Install dependencies
       #
@@ -112,7 +112,7 @@ jobs:
       #
       - name: Adjust toolchain
         if: matrix.os == 'windows-2022'
-        run: echo "FC=${FC}.exe" >> $GITHUB_ENV
+        run: echo "FC=${FC}.exe" >> "$GITHUB_ENV"
       #
       # Build libraries, examples, and tests
       #
@@ -120,7 +120,7 @@ jobs:
         run: |
           cmake -S . -B build -G "Ninja" \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DRTE_ENABLE_SP=`test 'x${{ matrix.fpmodel }}' = xSP && echo ON || echo OFF` \
+              -DRTE_ENABLE_SP="$(test '${{ matrix.fpmodel }}' = SP && echo ON || echo OFF)" \
               -DBUILD_TESTING=ON
           cmake --build build
       #

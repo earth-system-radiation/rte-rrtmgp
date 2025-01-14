@@ -19,7 +19,7 @@ This header files defines the C bindings for the kernels used in RRTMGP
 
 extern "C"
 {
-    /* Gas optics kernels */ 
+    /* Gas optics kernels */
     void rrtmgp_interpolation(
         const int& ncol, const int& nlay,
         const int& ngas, const int& nflav, const int& neta,
@@ -121,8 +121,8 @@ extern "C"
         Float* lev_src, // [out] (ncol,nlay+1,ngpt)
         Float* sfc_src_jac // [out] (ncol,       ngpt)
     );
-    
-    /* Cloud optics kernels */ 
+
+    /* Cloud optics kernels */
     void rrtmgp_compute_tau_rayleigh(
         const int& ncol, const int& nlay, const int& nband, const int& ngpt,
         const int& ngas, const int& nflav, const int& neta, const int& npres, const int& ntemp,
@@ -144,7 +144,7 @@ extern "C"
         const Bool*  mask, // (ncol,nlay)
         const Float* lwp,  // (ncol,nlay)
         const Float* re,   // (ncol,nlay)
-        const Float& step_size, 
+        const Float& step_size,
         const Float& offset,
         const Float* tau_table, // (nsteps, nbnd)
         const Float* ssa_table, // (nsteps, nbnd)
@@ -162,12 +162,12 @@ extern "C"
         const Float* re_bounds_ext, // (nsizes+1)
         const Float* re_bounds_ssa, // (nsizes+1)
         const Float* re_bounds_asy, // (nsizes+1)
-        const int& m_ext, int& n_ext, 
-        const Float* coeffs_ext, // (nbnd,nsizes,0:m_ext+n_ext) 
-        const int& m_ssa, int& n_ssa, 
-        const Float* coeffs_ssa, // (nbnd,nsizes,0:m_ssa+n_ssa) 
-        const int& m_asy, int& n_asy, 
-        const Float* coeffs_asy, // (nbnd,nsizes,0:m_asy+n_asy) 
+        const int& m_ext, int& n_ext,
+        const Float* coeffs_ext, // (nbnd,nsizes,0:m_ext+n_ext)
+        const int& m_ssa, int& n_ssa,
+        const Float* coeffs_ssa, // (nbnd,nsizes,0:m_ssa+n_ssa)
+        const int& m_asy, int& n_asy,
+        const Float* coeffs_asy, // (nbnd,nsizes,0:m_asy+n_asy)
         Float* tau,     // (ncol,nlay,nbnd)
         Float* taussa,  // (ncol,nlay,nbnd)
         Float* taussag  // (ncol,nlay,nbnd)

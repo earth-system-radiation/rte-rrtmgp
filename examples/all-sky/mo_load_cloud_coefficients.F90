@@ -5,7 +5,7 @@ module mo_load_cloud_coefficients
                               ty_optical_props_1scl, &
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
-  use mo_cloud_optics_rrtmgp, & 
+  use mo_cloud_optics_rrtmgp, &
                         only: ty_cloud_optics_rrtmgp
   use mo_simple_netcdf, only: read_field, read_string, var_exists, get_dim_size, &
                               write_field, create_dim, create_var

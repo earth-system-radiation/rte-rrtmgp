@@ -3,7 +3,7 @@ module mo_cloud_optics_rrtmgp_kernels
   implicit none
   private
   public :: compute_cld_from_table, compute_cld_from_pade
-  interface 
+  interface
     !---------------------------------------------------------------------------
     !
     ! Linearly interpolate values from a lookup table with "nsteps" evenly-spaced
@@ -55,4 +55,3 @@ module mo_cloud_optics_rrtmgp_kernels
   end interface
   !---------------------------------------------------------------------------
 end module mo_cloud_optics_rrtmgp_kernels
-

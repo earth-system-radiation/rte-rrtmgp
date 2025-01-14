@@ -12,8 +12,8 @@
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! ----------------------------------------------------------------------------
 !
-! This module is intended to support generic codes using RTE-compatibale gas optics types. 
-!   It defines variable `gas_optics` of class `ty_gas_optics` and subroutine 
+! This module is intended to support generic codes using RTE-compatibale gas optics types.
+!   It defines variable `gas_optics` of class `ty_gas_optics` and subroutine
 !   `load_and_init()` that loads data into the gas_optics variable from a single netCDF file
 !    This module might be replaced by others that implement the same variable and procedure
 !

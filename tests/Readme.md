@@ -7,7 +7,7 @@ This directory contains testing codes used in development.
 The Makefile target `clear_sky_regression` is used for verification, meaning
 ensuring the package produces results as expected (e.g. that the
 rescaling approximation used for LW scattering reduces to the no-scattering
-solution in the absence of clouds), and for validation, meaning 
+solution in the absence of clouds), and for validation, meaning
 comparisons among different approaches (e.g. different numbers of streams).
 
 ## Feature testing

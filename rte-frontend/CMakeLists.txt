@@ -1,5 +1,5 @@
 add_library(
-  rte STATIC # cmake-format: sort
+  rte # cmake-format: sort
   $<TARGET_OBJECTS:rtekernels>
   mo_fluxes.F90
   mo_optical_props.F90
@@ -12,7 +12,12 @@ add_library(
 
 add_library(rte-rrtmgp::rte ALIAS rte)
 
-set_target_properties(rte PROPERTIES EXPORT_NAME rte-rrtmgp::rte)
+set_target_properties(
+  rte
+  PROPERTIES EXPORT_NAME rte-rrtmgp::rte
+             VERSION ${PROJECT_VERSION}
+             SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+)
 
 target_include_directories(
   rte

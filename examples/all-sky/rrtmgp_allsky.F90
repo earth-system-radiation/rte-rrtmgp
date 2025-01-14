@@ -1,5 +1,5 @@
 program rte_rrtmgp_allsky
-  use, intrinsic :: iso_fortran_env, & 
+  use, intrinsic :: iso_fortran_env, &
                              only: output_unit
   use mo_rte_kind,           only: wp, i8, wl
   use mo_optical_props,      only: ty_optical_props, &
@@ -38,7 +38,7 @@ program rte_rrtmgp_allsky
   real(wp), dimension(:),     allocatable :: mu0
   real(wp), dimension(:,:),   allocatable :: sfc_alb_dir, sfc_alb_dif ! First dimension is band
   !
-  ! Gas concentrations 
+  ! Gas concentrations
   !
   character(len=3), dimension(8), parameter :: &
                    gas_names = ['h2o', 'co2', 'o3 ', 'n2o', 'co ', 'ch4', 'o2 ', 'n2 ']
@@ -58,7 +58,7 @@ program rte_rrtmgp_allsky
   ! Aerosols
   !
   logical :: cell_has_aerosols
-  integer,  dimension(:,:), allocatable :: aero_type 
+  integer,  dimension(:,:), allocatable :: aero_type
                                            ! MERRA2/GOCART aerosol type
   real(wp), dimension(:,:), allocatable :: aero_size
                                            ! Aerosol size for dust and sea salt
@@ -79,7 +79,7 @@ program rte_rrtmgp_allsky
   !
   type(ty_gas_optics_rrtmgp)   :: k_dist
   type(ty_cloud_optics_rrtmgp) :: cloud_optics
-  type(ty_aerosol_optics_rrtmgp_merra)   & 
+  type(ty_aerosol_optics_rrtmgp_merra)   &
                                :: aerosol_optics
   type(ty_gas_concs)           :: gas_concs, gas_concs_garand, gas_concs_1col
   class(ty_optical_props_arry), &
@@ -93,12 +93,12 @@ program rte_rrtmgp_allsky
 
   integer  :: nbnd, ngpt
   integer  :: icol, ilay, ibnd, iloop, igas
-  logical  :: top_is_at_1 ! CCE OMP workaround 
+  logical  :: top_is_at_1 ! CCE OMP workaround
 
   character(len=8) :: char_input
   integer :: nUserArgs, nloops, ncol, nlay
   ! logical :: write_fluxes = .false.
-  logical :: do_clouds = .false., use_luts = .true. 
+  logical :: do_clouds = .false., use_luts = .true.
   logical :: do_aerosols = .false.
   integer, parameter :: ngas = 8
 
@@ -115,7 +115,7 @@ program rte_rrtmgp_allsky
   ! Code
   ! ----------------------------------------------------------------------------------
   !
-  ! Parse command line: rrtmgp_allsky ncol nlay nreps kdist [clouds [aerosols]] 
+  ! Parse command line: rrtmgp_allsky ncol nlay nreps kdist [clouds [aerosols]]
 
   !
   nUserArgs = command_argument_count()
@@ -136,14 +136,14 @@ program rte_rrtmgp_allsky
   call get_command_argument(4,output_file)
   call get_command_argument(5,k_dist_file)
 
-  if (nUserArgs >= 6) then 
+  if (nUserArgs >= 6) then
     call get_command_argument(6,cloud_optics_file)
-    do_clouds = .true. 
-  end if 
-  if (nUserArgs >= 7) then 
+    do_clouds = .true.
+  end if
+  if (nUserArgs >= 7) then
     call get_command_argument(7,aerosol_optics_file)
-    do_aerosols = .true. 
-  end if 
+    do_aerosols = .true.
+  end if
   if (nUserArgs >  7) print *, "Ignoring command line arguments beyond the first seven..."
   ! -----------------------------------------------------------------------------------
   allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
@@ -153,20 +153,20 @@ program rte_rrtmgp_allsky
   call compute_profiles(300._wp, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q, o3)
 
   call stop_on_err(gas_concs%init(gas_names))
-  call stop_on_err(gas_concs%set_vmr("h2o", q )) 
-  call stop_on_err(gas_concs%set_vmr("o3",  o3)) 
-  call stop_on_err(gas_concs%set_vmr("co2", 348.e-6_wp)) 
-  call stop_on_err(gas_concs%set_vmr("ch4", 1650.e-9_wp)) 
-  call stop_on_err(gas_concs%set_vmr("n2o", 306.e-9_wp)) 
-  call stop_on_err(gas_concs%set_vmr("n2",  0.7808_wp)) 
-  call stop_on_err(gas_concs%set_vmr("o2",  0.2095_wp)) 
-  call stop_on_err(gas_concs%set_vmr("co",  0._wp)) 
+  call stop_on_err(gas_concs%set_vmr("h2o", q ))
+  call stop_on_err(gas_concs%set_vmr("o3",  o3))
+  call stop_on_err(gas_concs%set_vmr("co2", 348.e-6_wp))
+  call stop_on_err(gas_concs%set_vmr("ch4", 1650.e-9_wp))
+  call stop_on_err(gas_concs%set_vmr("n2o", 306.e-9_wp))
+  call stop_on_err(gas_concs%set_vmr("n2",  0.7808_wp))
+  call stop_on_err(gas_concs%set_vmr("o2",  0.2095_wp))
+  call stop_on_err(gas_concs%set_vmr("co",  0._wp))
   ! ----------------------------------------------------------------------------
   ! load data into classes
   call load_and_init(k_dist, k_dist_file, gas_concs)
   is_sw = k_dist%source_is_external()
   is_lw = .not. is_sw
-  if (do_clouds) then 
+  if (do_clouds) then
     !
     ! Should also try with Pade calculations
     !  call load_cld_padecoeff(cloud_optics, cloud_optics_file)
@@ -179,12 +179,12 @@ program rte_rrtmgp_allsky
     call stop_on_err(cloud_optics%set_ice_roughness(2))
   end if
 
-  if (do_aerosols) then 
+  if (do_aerosols) then
     !
     ! Load aerosol optics coefficients from lookup tables
     !
     call load_aero_lutcoeff (aerosol_optics, aerosol_optics_file)
-  end if 
+  end if
 
   ! ----------------------------------------------------------------------------
   !
@@ -249,7 +249,7 @@ program rte_rrtmgp_allsky
     !$acc         enter data create   (t_sfc, emis_sfc)
     !$omp target  enter data map(alloc:t_sfc, emis_sfc)
     ! Surface temperature
-    top_is_at_1 = atmos%top_is_at_1() ! CCE OMP workaround 
+    top_is_at_1 = atmos%top_is_at_1() ! CCE OMP workaround
     !$acc kernels
     !$omp target
     t_sfc = t_lev(1, merge(nlay+1, 1, top_is_at_1))
@@ -294,12 +294,12 @@ program rte_rrtmgp_allsky
     !
     ! Cloud optics
     !
-    if(do_clouds) & 
+    if(do_clouds) &
       call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
     !
     ! Aerosol optics
     !
-    if(do_aerosols) & 
+    if(do_aerosols) &
       call stop_on_err(aerosol_optics%aerosol_optics(aero_type, aero_size,  &
                                                      aero_mass, relhum, aerosols))
     !
@@ -309,8 +309,8 @@ program rte_rrtmgp_allsky
     fluxes%flux_dn => flux_dn(:,:)
     if(is_lw) then
       !
-      ! Should we allocate these once, rather than once per loop? They're big. 
-      ! 
+      ! Should we allocate these once, rather than once per loop? They're big.
+      !
       !$acc        data create(   lw_sources, lw_sources%lay_source,     lw_sources%lev_source) &
       !$acc             create(               lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
       !$omp target data map(alloc:            lw_sources%lay_source,     lw_sources%lev_source) &
@@ -340,18 +340,18 @@ program rte_rrtmgp_allsky
                                          gas_concs,    &
                                          atmos,        &
                                          toa_flux))
-      if(do_clouds) then 
+      if(do_clouds) then
         call stop_on_err(clouds%delta_scale())
         call stop_on_err(clouds%increment(atmos))
-      end if 
-      if(do_aerosols) then 
+      end if
+      if(do_aerosols) then
         call stop_on_err(aerosols%delta_scale())
         call stop_on_err(aerosols%increment(atmos))
-      end if 
+      end if
       call stop_on_err(rte_sw(atmos, mu0,   toa_flux, &
                               sfc_alb_dir, sfc_alb_dif, &
                               fluxes))
-      !$acc        end data   
+      !$acc        end data
       !$omp end target data
     end if
     call system_clock(finish, clock_rate)
@@ -361,20 +361,20 @@ program rte_rrtmgp_allsky
   call system_clock(finish_all, clock_rate)
 
   avg  = sum( elapsed(merge(2,1,nloops>1):) ) / real(merge(nloops-1,nloops,nloops>1))
-  mint = minval(elapsed) 
+  mint = minval(elapsed)
 
-  ! What to print? 
-  !   ncol, nlay, ngpt; are clouds used, are aerosols used; time per column, total, min; 
+  ! What to print?
+  !   ncol, nlay, ngpt; are clouds used, are aerosols used; time per column, total, min;
   print *, " ncol   nlay   ngpt  clouds aerosols time_per_col_ms nloops time_total_s time_min_s"
-  write(output_unit, '(3(i6, 1x), 6x, 2(i1, 8x), 1x, f7.3, 1x, i6, 2x, 2(4x,f7.3))') & 
-    ncol, nlay, ngpt, merge(1,0,do_clouds), merge(1,0,do_aerosols),  & 
+  write(output_unit, '(3(i6, 1x), 6x, 2(i1, 8x), 1x, f7.3, 1x, i6, 2x, 2(4x,f7.3))') &
+    ncol, nlay, ngpt, merge(1,0,do_clouds), merge(1,0,do_aerosols),  &
     avg/(real(ncol) * (1.0e-3*clock_rate)),  nloops,  sum(elapsed) / real(clock_rate),  mint / real(clock_rate)
 
   call write_fluxes
 
-  ! 
-  ! Memory for bounday conditions on the GPU was allocated with unstructured data dataments 
-  !   (acc enter data). Deallocate it expliicity 
+  !
+  ! Memory for bounday conditions on the GPU was allocated with unstructured data dataments
+  !   (acc enter data). Deallocate it expliicity
   !
   if(is_lw) then
     !$acc        exit data delete(     t_sfc, emis_sfc)
@@ -383,9 +383,9 @@ program rte_rrtmgp_allsky
     !$acc        exit data delete(     sfc_alb_dir, sfc_alb_dif, mu0)
     !$omp target exit data map(release:sfc_alb_dir, sfc_alb_dif, mu0)
   end if
-  
+
   !
-  ! Clouds and aerosols also used enter data  
+  ! Clouds and aerosols also used enter data
   !
   if(do_clouds) then
 #ifndef _CRAYFTN
@@ -402,9 +402,9 @@ program rte_rrtmgp_allsky
         !$acc        exit data delete     (clouds%tau, clouds%ssa, clouds%g, clouds)
         !$omp target exit data map(release:clouds%tau, clouds%ssa, clouds%g)
     end select
-    ! 
-    ! Explicit finalization of cloud optical properties - not really necessary since memory 
-    !   will be freed when the program ends, but useful for testing 
+    !
+    ! Explicit finalization of cloud optical properties - not really necessary since memory
+    !   will be freed when the program ends, but useful for testing
     !
     call clouds%finalize
   end if
@@ -419,9 +419,9 @@ program rte_rrtmgp_allsky
         !$acc        exit data delete     (aerosols%tau, aerosols%ssa, aerosols%g, aerosols)
         !$omp target exit data map(release:aerosols%tau, aerosols%ssa, aerosols%g)
     end select
-    ! 
-    ! Explicit finalization of aerosol optical properties - not really necessary since memory 
-    !   will be freed when the program ends, but useful for testing 
+    !
+    ! Explicit finalization of aerosol optical properties - not really necessary since memory
+    !   will be freed when the program ends, but useful for testing
     !
     call aerosols%finalize
   end if
@@ -429,29 +429,29 @@ program rte_rrtmgp_allsky
   ! k-distribution
   !
   call k_dist%finalize
-  
+
   if(.not. is_lw) then
     !$acc        exit data delete(     flux_dir)
     !$omp target exit data map(release:flux_dir)
   end if
 
-  ! fluxes - but not flux_dir, which used enter data 
-  !$acc end        data 
+  ! fluxes - but not flux_dir, which used enter data
+  !$acc end        data
   !$omp end target data
   ! p_lay etc
-  !$acc end        data 
+  !$acc end        data
   !$omp end target data
 contains
   ! ----------------------------------------------------------------------------------
   subroutine compute_profiles(SST, ncol, nlay, p_lay, t_lay, p_lev, t_lev, q_lay, o3)
     !
-    ! Construct profiles of pressure, temperature, humidity, and ozone 
+    ! Construct profiles of pressure, temperature, humidity, and ozone
     !   more or less following the RCEMIP protocol for a surface temperature of 300K
     !   more or less follows a Python implementation by Chiel van Heerwardeen
-    ! Extensions for future - variable SST and T profile, variable RH, lapse rate in stratosphere 
-    !   will all access absorption coefficient data more realistically 
+    ! Extensions for future - variable SST and T profile, variable RH, lapse rate in stratosphere
+    !   will all access absorption coefficient data more realistically
     !
-    real(wp),                          intent(in ) :: SST 
+    real(wp),                          intent(in ) :: SST
     integer,                           intent(in ) :: ncol, nlay
     real(wp), dimension(ncol, nlay  ), intent(out) :: p_lay, t_lay, q_lay, o3
     real(wp), dimension(ncol, nlay+1), intent(out) :: p_lev, t_lev
@@ -462,76 +462,76 @@ contains
     integer  :: icol, ilay, i
 
     real(wp), parameter :: z_trop = 15000._wp, z_top = 70.e3_wp
-    ! Ozone profile - maybe only a single profile? 
-    real(wp), parameter :: g1 = 3.6478_wp, g2 = 0.83209_wp, g3 = 11.3515_wp, o3_min = 1e-13_wp 
+    ! Ozone profile - maybe only a single profile?
+    real(wp), parameter :: g1 = 3.6478_wp, g2 = 0.83209_wp, g3 = 11.3515_wp, o3_min = 1e-13_wp
     ! According to CvH RRTMGP in Single Precision will fail with lower ozone concentrations
 
-    real(wp), parameter :: g = 9.79764, Rd = 287.04, p0 = 101480. ! Surface pressure 
+    real(wp), parameter :: g = 9.79764, Rd = 287.04, p0 = 101480. ! Surface pressure
     real(wp), parameter :: z_q1 = 4.0e3, z_q2 = 7.5e3,  q_t = 1.e-8
     real(wp), parameter :: gamma = 6.7e-3
-    
+
     real(wp), parameter :: q_0 = 0.01864 ! for 300 K SST.
     ! -------------------
     Tv0 = (1. + 0.608*q_0) * SST
     !
     ! Split resolution above and below RCE tropopause (15 km or about 125 hPa)
     !
-    z_lev(:) = [0._wp,  2._wp*           z_trop /nlay * [(i, i=1, nlay/2)],  & 
+    z_lev(:) = [0._wp,  2._wp*           z_trop /nlay * [(i, i=1, nlay/2)],  &
                z_trop + 2._wp * (z_top - z_trop)/nlay * [(i, i=1, nlay/2)]]
     z_lay(:) = 0.5_wp * (z_lev(1:nlay)  + z_lev(2:nlay+1))
-    
-    !$acc        data copyin(z_lev, z_lay) 
+
+    !$acc        data copyin(z_lev, z_lay)
     !$omp target data map(to:z_lev, z_lay)
 
     !
-    ! The two loops are the same, except applied to layers and levels 
+    ! The two loops are the same, except applied to layers and levels
     !   but nvfortran doesn't seems to support elemental procedures in OpenACC loops
     !
-    !$acc                         parallel loop    collapse(2) 
-    !$omp target teams distribute parallel do simd collapse(2) 
-    do ilay = 1, nlay 
-      do icol = 1, ncol 
-        z = z_lay(ilay) 
-        if (z > z_trop) then 
+    !$acc                         parallel loop    collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do ilay = 1, nlay
+      do icol = 1, ncol
+        z = z_lay(ilay)
+        if (z > z_trop) then
           q = q_t
           T = SST - gamma*z_trop/(1. + 0.608*q_0)
           Tv  = (1. + 0.608*q  ) *   T
           p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv)) )
-        else 
+        else
           q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
-          T = SST - gamma*z / (1. + 0.608*q)    
+          T = SST - gamma*z / (1. + 0.608*q)
           Tv  = (1. + 0.608*q  ) *   T
           p = p0 * (Tv/Tv0)**(g/(Rd*gamma))
-        end if 
-        p_lay(icol,ilay) = p 
+        end if
+        p_lay(icol,ilay) = p
         t_lay(icol,ilay) = T
         q_lay(icol,ilay) = q
         p_hpa = p_lay(icol,ilay) / 100._wp
-        o3(icol, ilay) = max(o3_min, & 
+        o3(icol, ilay) = max(o3_min, &
                              g1 * p_hpa**g2 * exp(-p_hpa/g3) * 1.e-6_wp)
       end do
-    end do 
+    end do
 
-    !$acc                         parallel loop    collapse(2) 
-    !$omp target teams distribute parallel do simd collapse(2) 
+    !$acc                         parallel loop    collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay+1
-      do icol = 1, ncol 
-        z = z_lev(ilay) 
-        if (z > z_trop) then 
+      do icol = 1, ncol
+        z = z_lev(ilay)
+        if (z > z_trop) then
           q = q_t
           T = SST - gamma*z_trop/(1. + 0.608*q_0)
           Tv  = (1. + 0.608*q  ) *   T
           p = p0 * (Tv/Tv0)**(g/(Rd*gamma)) * exp( -((g*(z-z_trop))/(Rd*Tv)) )
-        else 
+        else
           q = q_0 * exp(-z/z_q1) * exp(-(z/z_q2)**2)
-          T = SST - gamma*z / (1. + 0.608*q)    
+          T = SST - gamma*z / (1. + 0.608*q)
           Tv  = (1. + 0.608*q  ) *   T
           p = p0 * (Tv/Tv0)**(g/(Rd*gamma))
-        end if 
-        p_lev(icol,ilay) = p 
+        end if
+        p_lev(icol,ilay) = p
         t_lev(icol,ilay) = T
-      end do 
-    end do 
+      end do
+    end do
     !$acc end        data
     !$omp end target data
   end subroutine compute_profiles
@@ -548,10 +548,10 @@ contains
   end subroutine stop_on_err
   ! --------------------------------------------------------------------------------------
   !
-  subroutine compute_clouds 
+  subroutine compute_clouds
     real(wp) :: rel_val, rei_val
-    ! 
-    ! Variable and memory allocation 
+    !
+    ! Variable and memory allocation
     !
     if(is_sw) then
       allocate(ty_optical_props_2str::clouds)
@@ -574,7 +574,7 @@ contains
         call stop_on_err("rte_rrtmgp_allsky: Don't recognize the kind of optical properties ")
     end select
     !
-    ! Cloud physical properties 
+    ! Cloud physical properties
     !
     allocate(lwp(ncol,nlay), iwp(ncol,nlay), &
              rel(ncol,nlay), rei(ncol,nlay), cloud_mask(ncol,nlay))
@@ -605,16 +605,16 @@ contains
     end do
     !$acc exit data delete(cloud_mask)
     !$omp target exit data map(release:cloud_mask)
-   
+
   end subroutine compute_clouds
   !
   ! --------------------------------------------------------------------------------------
   !
   subroutine compute_aerosols
     real(wp), dimension(ncol,nlay) :: vmr_h2o ! h2o vmr
-    logical :: is_sulfate, is_dust, is_even_column 
-    ! 
-    ! Variable and memory allocation 
+    logical :: is_sulfate, is_dust, is_even_column
+    !
+    ! Variable and memory allocation
     !
     if(is_sw) then
       allocate(ty_optical_props_2str::aerosols)
@@ -642,8 +642,8 @@ contains
     !$omp target data map(alloc:vmr_h2o)
     call stop_on_err(gas_concs%get_vmr("h2o",vmr_h2o))
     !
-    ! Aerosol properties 
-    ! 
+    ! Aerosol properties
+    !
     allocate(aero_type(ncol,nlay), aero_size(ncol,nlay), &
              aero_mass(ncol,nlay), relhum   (ncol,nlay))
     !$acc        enter data create(   aero_type, aero_size, aero_mass, relhum)
@@ -657,20 +657,20 @@ contains
     !   put them in 1/2 of the columns
     !
     !
-    !$acc                         parallel loop    collapse(2) copyin(p_lay) 
-    !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay) 
+    !$acc                         parallel loop    collapse(2) copyin(p_lay)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay)
     do ilay=1,nlay
       do icol=1,ncol
-        is_sulfate = (p_lay(icol,ilay) >  50._wp * 100._wp .and. & 
+        is_sulfate = (p_lay(icol,ilay) >  50._wp * 100._wp .and. &
                       p_lay(icol,ilay) < 100._wp * 100._wp)
-        is_dust    = (p_lay(icol,ilay) > 700._wp * 100._wp .and. & 
+        is_dust    = (p_lay(icol,ilay) > 700._wp * 100._wp .and. &
                       p_lay(icol,ilay) < 900._wp * 100._wp)
         is_even_column = mod(icol, 2) /= 0
-        if      (is_even_column .and. is_sulfate) then 
+        if      (is_even_column .and. is_sulfate) then
           aero_type(icol,ilay) = merra_aero_sulf
           aero_size(icol,ilay) = 0.2_wp
           aero_mass(icol,ilay) = 1.e-6_wp
-        else if(is_even_column .and. is_dust) then 
+        else if(is_even_column .and. is_dust) then
           ! Dust aerosol
           aero_type(icol,ilay) = merra_aero_dust
           aero_size(icol,ilay) = 0.5_wp
@@ -699,7 +699,7 @@ contains
 
     real(wp), intent(inout) :: relhum(ncol,nlay) ! relative humidity (fraction, 0-1)
 
-    ! Local variables 
+    ! Local variables
     integer :: i, k
 
     real(wp) :: mmr_h2o          ! water mass mixing ratio
@@ -715,8 +715,8 @@ contains
 
     ! Derive layer virtual temperature
     !$acc                         parallel loop    collapse(2) copyin(p_lay, vmr_h2o, t_lay) copyout( relhum)
-    !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay, vmr_h2o, t_lay) map(from:relhum) 
-    do i = 1, ncol 
+    !$omp target teams distribute parallel do simd collapse(2) map(to:p_lay, vmr_h2o, t_lay) map(from:relhum)
+    do i = 1, ncol
        do k = 1, nlay
           ! Convert h2o vmr to mmr
           mmr_h2o = vmr_h2o(i,k) * mwd
@@ -730,18 +730,18 @@ contains
     enddo
   end subroutine get_relhum
   !--------------------------------------------------------------------------------------------------------------------
-  subroutine write_fluxes 
+  subroutine write_fluxes
     use netcdf
     use mo_simple_netcdf, only: write_field
     integer :: ncid, i, col_dim, lay_dim, lev_dim, varid
     real(wp) :: vmr(ncol, nlay)
     character(len=3) :: flux_prefix
     !
-    ! Write fluxes - make this optional? 
+    ! Write fluxes - make this optional?
     !
 
     !
-    ! Define dimensions 
+    ! Define dimensions
     !
     if(nf90_create(trim(output_file),  NF90_CLOBBER, ncid) /= NF90_NOERR) &
       call stop_on_err("rrtmgp_allsky: can't create file " // trim(output_file))
@@ -752,11 +752,11 @@ contains
       call stop_on_err("rrtmgp_allsky: can't define lay dimension")
     if(nf90_def_dim(ncid, "lev", nlay+1, lev_dim) /= NF90_NOERR) &
       call stop_on_err("rrtmgp_allsky: can't define lev dimension")
-    
+
     !
-    ! Define variables 
+    ! Define variables
     !
-    ! State 
+    ! State
     !
     call create_var("p_lev", ncid, [col_dim, lev_dim])
     call create_var("t_lev", ncid, [col_dim, lev_dim])
@@ -765,29 +765,29 @@ contains
     call create_var("h2o",   ncid, [col_dim, lay_dim])
     call create_var("o3",    ncid, [col_dim, lay_dim])
 
-    ! All the gases except h2o, o3 - write as attributes? Or not bother? 
+    ! All the gases except h2o, o3 - write as attributes? Or not bother?
 
-    if(do_clouds) then 
+    if(do_clouds) then
       call create_var("lwp", ncid, [col_dim, lay_dim])
       call create_var("iwp", ncid, [col_dim, lay_dim])
       call create_var("rel", ncid, [col_dim, lay_dim])
       call create_var("rei", ncid, [col_dim, lay_dim])
-    end if 
-    if(do_aerosols) then 
+    end if
+    if(do_aerosols) then
       if(nf90_def_var(ncid, "aero_type", NF90_SHORT, [col_dim, lay_dim], varid) /= NF90_NOERR) &
         call stop_on_err("create_var: can't define variable aero_type")
       call create_var("aero_size", ncid, [col_dim, lay_dim])
       call create_var("aero_mass", ncid, [col_dim, lay_dim])
-   end if 
+   end if
     !
-    ! Fluxes - definitions 
+    ! Fluxes - definitions
     !
-    if(is_sw) then 
+    if(is_sw) then
       flux_prefix = "sw_"
       call create_var(flux_prefix // "flux_dir", ncid, [col_dim, lev_dim])
     else
-      flux_prefix = "lw_"  
-    end if 
+      flux_prefix = "lw_"
+    end if
     call create_var(flux_prefix // "flux_up", ncid, [col_dim, lev_dim])
     call create_var(flux_prefix //"flux_dn", ncid, [col_dim, lev_dim])
     if(nf90_enddef(ncid) /= NF90_NOERR) &
@@ -796,7 +796,7 @@ contains
     !
     ! Write variables
     !
-    ! State - writing 
+    ! State - writing
     !$acc        update host(p_lev, t_lev, p_lay, t_lay)
     !$omp target update from(p_lev, t_lev, p_lay, t_lay)
     call stop_on_err(write_field(ncid, "p_lev",  p_lev))
@@ -809,43 +809,43 @@ contains
     call stop_on_err(gas_concs%get_vmr("o3",  vmr))
     call stop_on_err(write_field(ncid, "o3",     vmr))
 
-    if(do_clouds) then 
+    if(do_clouds) then
       !$acc        update host(lwp, iwp, rel, rei)
       !$omp target update from(lwp, iwp, rel, rei)
       call stop_on_err(write_field(ncid, "lwp",  lwp))
       call stop_on_err(write_field(ncid, "iwp",  iwp))
       call stop_on_err(write_field(ncid, "rel",  rel))
       call stop_on_err(write_field(ncid, "rei",  rei))
-    end if 
+    end if
 
-    if(do_aerosols) then 
+    if(do_aerosols) then
       !$acc        update host(aero_size, aero_mass, aero_type)
       !$omp target update from(aero_size, aero_mass, aero_type)
       call stop_on_err(write_field(ncid, "aero_size",  aero_size))
       call stop_on_err(write_field(ncid, "aero_mass",  aero_mass))
       call stop_on_err(write_field(ncid, "aero_type",  aero_type))
-    end if 
+    end if
 
-    ! Fluxes - writing 
+    ! Fluxes - writing
     !$acc        update host(flux_up, flux_dn)
     !$omp target update from(flux_up, flux_dn)
     call stop_on_err(write_field(ncid, flux_prefix // "flux_up",  flux_up))
     call stop_on_err(write_field(ncid, flux_prefix // "flux_dn",  flux_dn))
-    if(.not. is_lw) then 
+    if(.not. is_lw) then
       !$acc        update host(flux_dir)
       !$omp target update from(flux_dir)
       call stop_on_err(write_field(ncid, flux_prefix // "flux_dir",  flux_dir))
-    end if 
+    end if
 
-    ! Close netCDF 
+    ! Close netCDF
     if(nf90_close(ncid) /= NF90_NOERR) call stop_on_err("rrtmgp_allsky: error closing file??")
   end subroutine write_fluxes
   ! ---------------------------------------------------------
   subroutine create_var(name, ncid, dim_ids)
     use netcdf
-    character(len=*),      intent(in) :: name 
+    character(len=*),      intent(in) :: name
     integer,               intent(in) :: ncid
-    integer, dimension(:), intent(in) :: dim_ids 
+    integer, dimension(:), intent(in) :: dim_ids
 
     integer :: varid
 

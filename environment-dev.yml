@@ -20,7 +20,6 @@ dependencies:
   - gfortran
   - netcdf-fortran
   - cmake
-  - cmake-format
   - ninja
 variables:
   FC: gfortran

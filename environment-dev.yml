@@ -23,7 +23,7 @@ dependencies:
   - ninja
   - isort
   - black
-  - flake8
+  - pyproject-flake8
 variables:
   FC: gfortran
   # Debugging flags below

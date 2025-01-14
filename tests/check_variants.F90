@@ -23,14 +23,14 @@ subroutine stop_on_err(error_msg)
 end subroutine stop_on_err
 ! ----------------------------------------------------------------------------------
 !
-! Exercise a range of alternative approaches to RFMIP clear sky problem 
-!   Accuracy is assessed relative to RFMIP submission with validation-plots.py 
-!   Serves also to exercise various code paths 
-! Longwave: 
-!   omiting level temperatures, use optimal angle, use three-angle integration, 
-!   two-stream solution; reduced-resolution gas optics 
-! Shortwave: 
-!   reduced-resolution gas optics 
+! Exercise a range of alternative approaches to RFMIP clear sky problem
+!   Accuracy is assessed relative to RFMIP submission with validation-plots.py
+!   Serves also to exercise various code paths
+! Longwave:
+!   omiting level temperatures, use optimal angle, use three-angle integration,
+!   two-stream solution; reduced-resolution gas optics
+! Shortwave:
+!   reduced-resolution gas optics
 !
 program rte_clear_sky_regression
   use mo_rte_kind,           only: wp
@@ -206,8 +206,8 @@ program rte_clear_sky_regression
   allocate(flux_up(ncol,nlay+1), flux_dn(ncol,nlay+1), flux_dir(ncol,nlay+1))
   ! ----------------------------------------------------------------------------
   !
-  ! Create output file and site, level, layer dimensions 
-  ! 
+  ! Create output file and site, level, layer dimensions
+  !
   if(nf90_create(trim(output_file), NF90_CLOBBER, ncid) /= NF90_NOERR) &
     call stop_on_err("write_fluxes: can't create file " // trim(output_file))
   if(nf90_def_dim(ncid, "site", ncol, dimid) /= NF90_NOERR) &
@@ -279,7 +279,7 @@ contains
                                        atmos,        &
                                        lw_sources,   &
                                        tlev = t_lev))
-    call stop_on_err(rte_lw(atmos,      & 
+    call stop_on_err(rte_lw(atmos,      &
                             lw_sources, &
                             sfc_emis,   &
                             fluxes))

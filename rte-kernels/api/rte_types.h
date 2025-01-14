@@ -29,6 +29,3 @@ const Float Float_epsilon = FLT_EPSILON;
 using Float = double;
 const Float Float_epsilon = DBL_EPSILON;
 #endif
-
-
-

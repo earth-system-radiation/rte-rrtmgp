@@ -143,4 +143,3 @@ switch_for_module ()
     eval "$sfm_cmd"
   done
 }
-

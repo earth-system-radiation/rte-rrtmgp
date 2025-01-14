@@ -24,7 +24,7 @@ jobs:
         gfortran-version: [12, 13, 14]
         gfortran-from: [system, conda]
         fpmodel: [DP, SP]
-        exclude: 
+        exclude:
           - os: ubuntu-24.04
             gfortran-from: conda
           - os: macos-13
@@ -38,7 +38,7 @@ jobs:
             gfortran-version: 14
             gfortran-from: conda
           - os: windows-2022
-        include: 
+        include:
           - os: ubuntu-24.04
             gfortran-version: 13
             gfortran-from: conda

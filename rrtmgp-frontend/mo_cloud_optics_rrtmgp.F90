@@ -56,7 +56,7 @@ module mo_cloud_optics_rrtmgp
     !
     ! -----
   contains
-    procedure, public :: load_cloud_optics
+    procedure, public :: load
     procedure, public :: finalize
     procedure, public :: cloud_optics
     procedure, public :: get_min_radius_liq
@@ -74,17 +74,17 @@ contains
   !    by spectral band or by g-point.
   !
   ! ------------------------------------------------------------------------------
-  function load_cloud_optics(this, ngpnt, nspec, &
-                             band_lims_gpt, band_lims_wvn, &
-                             radliq_lwr, radliq_upr, &
-                             diamice_lwr, diamice_upr, &
-                             extliq, ssaliq, asyliq, &
-                             extice, ssaice, asyice) result(error_msg)
+  function load(this, ngpnt, nspec, &
+                band_lims_wvn, &
+                radliq_lwr, radliq_upr, &
+                diamice_lwr, diamice_upr, &
+                extliq, ssaliq, asyliq, &
+                extice, ssaice, asyice, &
+                band_lims_gpt) result(error_msg)
 
     class(ty_cloud_optics_rrtmgp), intent(inout) :: this
     integer,                    intent(in   ) :: ngpnt         ! number of g-points from spectral discretization
     integer,                    intent(in   ) :: nspec         ! number of bands or g-points from cloud optics tables
-    integer,  dimension(:,:),   intent(in   ) :: band_lims_gpt ! beginning and ending g-points for each band
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! beginning and ending wavenumbers for each band
     ! Lookup table interpolation constants
     ! Lower and upper bounds of the tables; also the constant for calculating interpolation indices for liquid
@@ -94,6 +94,8 @@ contains
     ! Extinction, single-scattering albedo, and asymmetry parameter for liquid and ice respectively
     real(wp), dimension(:,:),   intent(in   ) :: extliq, ssaliq, asyliq
     real(wp), dimension(:,:,:), intent(in   ) :: extice, ssaice, asyice
+    integer,  dimension(:,:), optional,&
+                                intent(in   ) :: band_lims_gpt ! beginning and ending g-points for each band
     character(len=128)    :: error_msg
     ! -------
     !
@@ -165,7 +167,7 @@ contains
     ! Set default ice roughness - min values
     !
     error_msg = this%set_ice_roughness(1)
-  end function load_cloud_optics
+  end function load
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Finalize

@@ -54,8 +54,6 @@ program rte_rrtmgp_allsky
   !
   real(wp), allocatable, dimension(:,:) :: lwp, iwp, rel, rei
   logical,  allocatable, dimension(:,:) :: cloud_mask
-  integer,  allocatable, dimension(:,:) :: band_lims_gpt
-  real(wp), allocatable, dimension(:,:) :: band_lims_wvn
   !
   ! Aerosols
   !
@@ -170,8 +168,7 @@ program rte_rrtmgp_allsky
   is_lw = .not. is_sw
   if (do_clouds) then
     !
-    call load_cld_lutcoeff(cloud_optics, cloud_optics_file, ngpt, nspec, &
-                           band_lims_gpt, band_lims_wvn)
+    call load_cld_lutcoeff(cloud_optics, cloud_optics_file, ngpt, nspec)
     call stop_on_err(cloud_optics%set_ice_roughness(2))
   end if
 
@@ -269,7 +266,7 @@ program rte_rrtmgp_allsky
     !$omp target enter data map(alloc:flux_dir)
   end if
 
-  if (do_clouds)   call compute_clouds(band_lims_gpt, band_lims_wvn)
+  if (do_clouds)   call compute_clouds
   if (do_aerosols) call compute_aerosols
 
   ! ----------------------------------------------------------------------------
@@ -544,9 +541,7 @@ contains
   end subroutine stop_on_err
   ! --------------------------------------------------------------------------------------
   !
-  subroutine compute_clouds(band_lims_gpt, band_lims_wvn)
-    integer,  dimension(:,:), intent(in) :: band_lims_gpt
-    real(wp), dimension(:,:), intent(in) :: band_lims_wvn
+  subroutine compute_clouds
 
     real(wp) :: rel_val, rei_val
     !
@@ -557,12 +552,7 @@ contains
     else
       allocate(ty_optical_props_1scl::clouds)
     end if
-    ! Clouds optical props are defined by band or by g-point
-    if (nspec .eq. ngpt) then
-      call stop_on_err(clouds%init(band_lims_wvn, band_lims_gpt))
-    else
-      call stop_on_err(clouds%init(band_lims_wvn))
-    endif
+    call stop_on_err(clouds%init(cloud_optics))
 
     select type(clouds)
       class is (ty_optical_props_1scl)

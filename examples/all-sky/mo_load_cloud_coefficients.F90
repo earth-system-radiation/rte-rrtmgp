@@ -1,5 +1,5 @@
 module mo_load_cloud_coefficients
-  use mo_rte_kind,      only: wp
+  use mo_rte_kind,      only: wp, wl
   use mo_optical_props, only: ty_optical_props,      &
                               ty_optical_props_arry, &
                               ty_optical_props_1scl, &
@@ -21,14 +21,11 @@ contains
   !
   ! read cloud optical property LUT coefficients from NetCDF file
   !
-  subroutine load_cld_lutcoeff(cloud_spec, cld_coeff_file, ngpnt, nspec, &
-                               band_lims_gpt, band_lims_wvn)
+  subroutine load_cld_lutcoeff(cloud_spec, cld_coeff_file, ngpnt, nspec)
     class(ty_cloud_optics_rrtmgp),         intent(inout) :: cloud_spec
     character(len=*),                      intent(in   ) :: cld_coeff_file
     integer,                               intent(in   ) :: ngpnt
     integer,                               intent(  out) :: nspec
-    integer,  dimension(:,:), allocatable, intent(  out) :: band_lims_gpt
-    real(wp), dimension(:,:), allocatable, intent(  out) :: band_lims_wvn
     ! -----------------
     ! Local variables
     integer :: ncid, nband, nrghice, nsize_liq, nsize_ice
@@ -46,14 +43,18 @@ contains
     real(wp), dimension(:,:,:), allocatable :: ssaice   ! single scattering albedo: ice
     real(wp), dimension(:,:,:), allocatable :: asyice   ! asymmetry parameter: ice
 
+    logical(wl) :: defined_on_gpts
+    integer,  dimension(:,:), allocatable :: band_lims_gpt
+    real(wp), dimension(:,:), allocatable :: band_lims_wvn
     ! -----------------
     ! Open cloud optical property coefficient file
     if(nf90_open(trim(cld_coeff_file), NF90_NOWRITE, ncid) /= NF90_NOERR) &
        call stop_on_err("load_cld_lutcoeff(): can't open file " // trim(cld_coeff_file))
 
-    ! Read band LUT coefficient dimensions
+    defined_on_gpts = dim_exists(ncid, 'ngpt')
+    ! Read LUT coefficient dimensions
     nband = get_dim_size(ncid,'nband')
-    if (dim_exists(ncid, 'ngpt')) then
+    if (defined_on_gpts) then
        nspec = get_dim_size(ncid,'ngpt')
     else
        nspec = nband
@@ -62,19 +63,13 @@ contains
     nsize_liq = get_dim_size(ncid,'nsize_liq')
     nsize_ice = get_dim_size(ncid,'nsize_ice')
 
-    ! Read band wavenumber limits
-    allocate(band_lims_gpt(2, nband), &
-             band_lims_wvn(2, nband))
-    band_lims_gpt = read_field(ncid, 'bnd_limits_gpt', 2, nband)
-    band_lims_wvn = read_field(ncid, 'bnd_limits_wavenumber', 2, nband)
-
     ! Read LUT constants
-    radliq_lwr = read_field(ncid, 'radliq_lwr')
-    radliq_upr = read_field(ncid, 'radliq_upr')
+    radliq_lwr  = read_field(ncid, 'radliq_lwr')
+    radliq_upr  = read_field(ncid, 'radliq_upr')
     diamice_lwr = read_field(ncid, 'diamice_lwr')
     diamice_upr = read_field(ncid, 'diamice_upr')
 
-    ! Allocate cloud property band lookup table input arrays
+    ! Allocate cloud property lookup table input arrays
     allocate(extliq(nsize_liq, nspec), &
              ssaliq(nsize_liq, nspec), &
              asyliq(nsize_liq, nspec), &
@@ -82,31 +77,34 @@ contains
              ssaice(nsize_ice, nspec, nrghice), &
              asyice(nsize_ice, nspec, nrghice))
 
-    if (dim_exists(ncid, 'ngpt')) then
-    ! Read g-point LUT coefficients
-       extliq = read_field(ncid, 'gpt_extliq',  nsize_liq, nspec)
-       ssaliq = read_field(ncid, 'gpt_ssaliq',  nsize_liq, nspec)
-       asyliq = read_field(ncid, 'gpt_asyliq',  nsize_liq, nspec)
-       extice = read_field(ncid, 'gpt_extice',  nsize_ice, nspec, nrghice)
-       ssaice = read_field(ncid, 'gpt_ssaice',  nsize_ice, nspec, nrghice)
-       asyice = read_field(ncid, 'gpt_asyice',  nsize_ice, nspec, nrghice)
+    ! Read LUT coefficients
+     extliq = read_field(ncid, 'extliq',  nsize_liq, nspec)
+     ssaliq = read_field(ncid, 'ssaliq',  nsize_liq, nspec)
+     asyliq = read_field(ncid, 'asyliq',  nsize_liq, nspec)
+     extice = read_field(ncid, 'extice',  nsize_ice, nspec, nrghice)
+     ssaice = read_field(ncid, 'ssaice',  nsize_ice, nspec, nrghice)
+     asyice = read_field(ncid, 'asyice',  nsize_ice, nspec, nrghice)
+
+    ! Read band wavenumber limits
+    allocate(band_lims_wvn(2, nband))
+    band_lims_wvn = read_field(ncid, 'bnd_limits_wavenumber', 2, nband)
+    if(defined_on_gpts) then
+      allocate(band_lims_gpt(2, nband))
+      band_lims_gpt = read_field(ncid, 'bnd_limits_gpt', 2, nband)
+      call stop_on_err(cloud_spec%load(ngpnt, nspec, band_lims_wvn, &
+                                       radliq_lwr, radliq_upr, &
+                                       diamice_lwr, diamice_upr, &
+                                       extliq, ssaliq, asyliq, &
+                                       extice, ssaice, asyice, band_lims_gpt))
     else
-    ! Read band LUT coefficients
-       extliq = read_field(ncid, 'bnd_extliq',  nsize_liq, nspec)
-       ssaliq = read_field(ncid, 'bnd_ssaliq',  nsize_liq, nspec)
-       asyliq = read_field(ncid, 'bnd_asyliq',  nsize_liq, nspec)
-       extice = read_field(ncid, 'bnd_extice',  nsize_ice, nspec, nrghice)
-       ssaice = read_field(ncid, 'bnd_ssaice',  nsize_ice, nspec, nrghice)
-       asyice = read_field(ncid, 'bnd_asyice',  nsize_ice, nspec, nrghice)
-    endif
+      call stop_on_err(cloud_spec%load(ngpnt, nspec, band_lims_wvn, &
+                                       radliq_lwr, radliq_upr, &
+                                       diamice_lwr, diamice_upr, &
+                                       extliq, ssaliq, asyliq, &
+                                       extice, ssaice, asyice))
+    end if
 
     ncid = nf90_close(ncid)
-    call stop_on_err(cloud_spec%load_cloud_optics(ngpnt, nspec, &
-                                                  band_lims_gpt, band_lims_wvn, &
-                                                  radliq_lwr, radliq_upr, &
-                                                  diamice_lwr, diamice_upr, &
-                                                  extliq, ssaliq, asyliq, &
-                                                  extice, ssaice, asyice))
   end subroutine load_cld_lutcoeff
 
   ! -----------------------------------------------------------------------------------

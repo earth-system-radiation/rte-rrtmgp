@@ -14,7 +14,7 @@ program rte_rrtmgp_allsky
   use mo_rte_sw,             only: rte_sw
   use mo_load_coefficients,  only: load_and_init
   use mo_load_cloud_coefficients, &
-                             only: load_cld_lutcoeff, load_cld_padecoeff
+                             only: load_cld_lutcoeff
   use mo_load_aerosol_coefficients, &
                              only: load_aero_lutcoeff
   use mo_rte_config,         only: rte_config_checks
@@ -168,14 +168,8 @@ program rte_rrtmgp_allsky
   is_lw = .not. is_sw
   if (do_clouds) then
     !
-    ! Should also try with Pade calculations
-    !  call load_cld_padecoeff(cloud_optics, cloud_optics_file)
-    !
-    if(use_luts) then
-      call load_cld_lutcoeff (cloud_optics, cloud_optics_file)
-    else
-      call load_cld_padecoeff(cloud_optics, cloud_optics_file)
-    end if
+    call load_cld_lutcoeff(cloud_optics, cloud_optics_file, ngpt, nspec, &
+                           band_lims_gpt, band_lims_wvn)
     call stop_on_err(cloud_optics%set_ice_roughness(2))
   end if
 

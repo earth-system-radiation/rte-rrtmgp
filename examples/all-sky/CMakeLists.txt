@@ -12,7 +12,7 @@ add_test(
   NAME run_allsky_lw
   COMMAND
     rrtmgp_allsky 24 72 1 rrtmgp-allsky-lw.nc
-    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw-bnd.nc
     ${RRTMGP_DATA}/rrtmgp-aerosols-merra-lw.nc
 )
 set_tests_properties(
@@ -24,7 +24,7 @@ add_test(
   NAME run_allsky_sw
   COMMAND
     rrtmgp_allsky 24 72 1 rrtmgp-allsky-sw.nc
-    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw-bnd.nc
     ${RRTMGP_DATA}/rrtmgp-aerosols-merra-sw.nc
 )
 set_tests_properties(
@@ -50,7 +50,7 @@ add_test(
   NAME run_allsky_no_aerosols_lw
   COMMAND
     rrtmgp_allsky 24 72 1 rrtmgp-allsky-lw-no-aerosols.nc
-    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc ${RRTMGP_DATA}/rrtmgp-clouds-lw-bnd.nc
 )
 set_tests_properties(
   run_allsky_no_aerosols_lw
@@ -64,7 +64,7 @@ add_test(
   NAME run_allsky_no_aerosols_sw
   COMMAND
     rrtmgp_allsky 24 72 1 rrtmgp-allsky-sw-no-aerosols.nc
-    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc
+    ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc ${RRTMGP_DATA}/rrtmgp-clouds-sw-bnd.nc
 )
 set_tests_properties(
   run_allsky_no_aerosols_sw

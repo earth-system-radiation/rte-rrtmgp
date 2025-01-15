@@ -54,6 +54,8 @@ program rte_rrtmgp_allsky
   !
   real(wp), allocatable, dimension(:,:) :: lwp, iwp, rel, rei
   logical,  allocatable, dimension(:,:) :: cloud_mask
+  integer,  allocatable, dimension(:,:) :: band_lims_gpt
+  real(wp), allocatable, dimension(:,:) :: band_lims_wvn
   !
   ! Aerosols
   !
@@ -91,7 +93,7 @@ program rte_rrtmgp_allsky
   !
   logical :: is_sw, is_lw
 
-  integer  :: nbnd, ngpt
+  integer  :: nbnd, ngpt, nspec
   integer  :: icol, ilay, ibnd, iloop, igas
   logical  :: top_is_at_1 ! CCE OMP workaround
 
@@ -267,7 +269,7 @@ program rte_rrtmgp_allsky
     !$omp target enter data map(alloc:flux_dir)
   end if
 
-  if (do_clouds)   call compute_clouds
+  if (do_clouds)   call compute_clouds(band_lims_gpt, band_lims_wvn)
   if (do_aerosols) call compute_aerosols
 
   ! ----------------------------------------------------------------------------
@@ -289,7 +291,7 @@ program rte_rrtmgp_allsky
     ! Cloud optics
     !
     if(do_clouds) &
-      call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+      call stop_on_err(cloud_optics%cloud_optics(nspec, lwp, iwp, rel, rei, clouds))
     !
     ! Aerosol optics
     !
@@ -542,7 +544,10 @@ contains
   end subroutine stop_on_err
   ! --------------------------------------------------------------------------------------
   !
-  subroutine compute_clouds
+  subroutine compute_clouds(band_lims_gpt, band_lims_wvn)
+    integer,  dimension(:,:), intent(in) :: band_lims_gpt
+    real(wp), dimension(:,:), intent(in) :: band_lims_wvn
+
     real(wp) :: rel_val, rei_val
     !
     ! Variable and memory allocation
@@ -552,8 +557,12 @@ contains
     else
       allocate(ty_optical_props_1scl::clouds)
     end if
-    ! Clouds optical props are defined by band
-    call stop_on_err(clouds%init(k_dist%get_band_lims_wavenumber()))
+    ! Clouds optical props are defined by band or by g-point
+    if (nspec .eq. ngpt) then
+      call stop_on_err(clouds%init(band_lims_wvn, band_lims_gpt))
+    else
+      call stop_on_err(clouds%init(band_lims_wvn))
+    endif
 
     select type(clouds)
       class is (ty_optical_props_1scl)

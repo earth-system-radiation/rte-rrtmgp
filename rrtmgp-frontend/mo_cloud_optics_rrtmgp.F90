@@ -27,6 +27,8 @@ module mo_cloud_optics_rrtmgp
                               ty_optical_props_1scl, &
                               ty_optical_props_2str, &
                               ty_optical_props_nstr
+  use mo_cloud_optics_rrtmgp_kernels, &
+                        only: compute_cld_from_table
   implicit none
   private
   ! -----------------------------------------------------------------------------------
@@ -322,14 +324,14 @@ contains
         !
         ! Liquid
         !
-        call compute_all_from_table(ncol, nlay, nspec, liqmsk, clwp, reliq,             &
+        call compute_cld_from_table(ncol, nlay, nspec, liqmsk, clwp, reliq,             &
                                     this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
                                     this%extliq, this%ssaliq, this%asyliq,              &
                                     ltau, ltaussa, ltaussag)
         !
         ! Ice
         !
-        call compute_all_from_table(ncol, nlay, nspec, icemsk, ciwp, reice,             &
+        call compute_cld_from_table(ncol, nlay, nspec, icemsk, ciwp, reice,             &
                                     this%ice_nsteps,this%ice_step_size,this%diamice_lwr, &
                                     this%extice(:,:,this%icergh),                       &
                                     this%ssaice(:,:,this%icergh),                       &

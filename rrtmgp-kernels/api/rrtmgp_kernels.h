@@ -124,7 +124,7 @@ extern "C"
     );
 
     void rrtmgp_compute_cld_from_table(
-        const int& ncol, int& nlay, int& nbnd,
+        const int& ncol, int& nlay, int& nspec,
         const Bool*  mask, // (ncol,nlay)
         const Float* lwp,  // (ncol,nlay)
         const Float* re,   // (ncol,nlay)
@@ -134,25 +134,6 @@ extern "C"
         const Float* tau_table, // (nsteps, nbnd)
         const Float* ssa_table, // (nsteps, nbnd)
         const Float* asy_table, // (nsteps, nbnd)
-        Float* tau,     // (ncol,nlay,nbnd)
-        Float* taussa,  // (ncol,nlay,nbnd)
-        Float* taussag  // (ncol,nlay,nbnd)
-    );
-
-    void rrtmgp_compute_cld_from_pade(
-        const int& ncol, int& nlay, int& nbnd, int& nsizes,
-        const Bool*  mask, // (ncol,nlay)
-        const Float* lwp,  // (ncol,nlay)
-        const Float* re,   // (ncol,nlay)
-        const int& m_ext, int& n_ext,
-        const Float* re_bounds_ext, // (nsizes+1)
-        const Float* coeffs_ext, // (nbnd,nsizes,0:m_ext+n_ext)
-        const int& m_ssa, int& n_ssa,
-        const Float* re_bounds_ssa, // (nsizes+1)
-        const Float* coeffs_ssa, // (nbnd,nsizes,0:m_ssa+n_ssa)
-        const int& m_asy, int& n_asy,
-        const Float* re_bounds_asy, // (nsizes+1)
-        const Float* coeffs_asy, // (nbnd,nsizes,0:m_asy+n_asy)
         Float* tau,     // (ncol,nlay,nbnd)
         Float* taussa,  // (ncol,nlay,nbnd)
         Float* taussag  // (ncol,nlay,nbnd)

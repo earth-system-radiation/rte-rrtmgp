@@ -782,10 +782,8 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // Error checking
     if (! (this->lut_extliq.is_allocated() || this->pade_extliq.is_allocated())) { stoprun("cloud optics: no data has been initialized"); }
     // Array sizes
-    const int num_bools = ncol * nlay;
-    bool* bdata         = pool::template alloc_raw<bool>(num_bools * 2), *bcurr = bdata;
-    uview_t<bool**> liqmsk(bcurr, ncol, nlay); bcurr += num_bools;
-    uview_t<bool**> icemsk(bcurr, ncol, nlay); bcurr += num_bools;
+    auto liqmsk= pool::template alloc<RealT>(ncol, nlay);
+    auto icemsk= pool::template alloc<RealT>(ncol, nlay);
 
     // Spectral consistency
     if (! this->bands_are_equal(optical_props)) { stoprun("cloud optics: optical properties don't have the same band structure"); }
@@ -802,16 +800,16 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     }));
 
     #ifdef RRTMGP_EXPENSIVE_CHECKS
-      // Particle size, liquid/ice water paths
-      if ( any(liqmsk && (reliq < this->radliq_lwr)) || any(liqmsk && (reliq > this->radliq_upr)) ) {
-        stoprun("cloud optics: liquid effective radius is out of bounds");
-      }
-      if ( any(icemsk && (reice < this->radice_lwr)) || any(icemsk && (reice > this->radice_upr)) ) {
-        stoprun("cloud optics: ice effective radius is out of bounds");
-      }
-      if ( any(liqmsk && (clwp < 0.)) || any(icemsk && (ciwp < 0.)) ) {
-        stoprun("cloud optics: negative clwp or ciwp where clouds are supposed to be");
-      }
+    // Particle size, liquid/ice water paths
+    if ( any(liqmsk && (reliq < this->radliq_lwr)) || any(liqmsk && (reliq > this->radliq_upr)) ) {
+      stoprun("cloud optics: liquid effective radius is out of bounds");
+    }
+    if ( any(icemsk && (reice < this->radice_lwr)) || any(icemsk && (reice > this->radice_upr)) ) {
+      stoprun("cloud optics: ice effective radius is out of bounds");
+    }
+    if ( any(liqmsk && (clwp < 0.)) || any(icemsk && (ciwp < 0.)) ) {
+      stoprun("cloud optics: negative clwp or ciwp where clouds are supposed to be");
+    }
     #endif
 
     // The tables and Pade coefficients determing extinction coeffient, single-scattering albedo,
@@ -821,14 +819,12 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // These are used to determine the optical properties of ice and water cloud together.
     // We could compute the properties for liquid and ice separately and
     //    use ty_optical_props_arry.increment but this involves substantially more division.
-    const int num_tau = clwp.extent(0) *  clwp.extent(1) * this->get_nband();
-    RealT* data        = pool::template alloc_raw<RealT>(num_tau * 6), *dcurr = data;
-    uview_t<RealT***> ltau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    uview_t<RealT***> ltaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    uview_t<RealT***> ltaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    uview_t<RealT***> itau    (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    uview_t<RealT***> itaussa (dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
-    uview_t<RealT***> itaussag(dcurr, clwp.extent(0), clwp.extent(1), this->get_nband()); dcurr += num_tau;
+    auto ltau    = pool::template alloc<RealT>( clwp.extent(0), clwp.extent(1), this->get_nband());
+    auto ltaussa = pool::template alloc<RealT>( clwp.extent(0), clwp.extent(1), this->get_nband());
+    auto ltaussag= pool::template alloc<RealT>( clwp.extent(0), clwp.extent(1), this->get_nband());
+    auto itau    = pool::template alloc<RealT>( clwp.extent(0), clwp.extent(1), this->get_nband());
+    auto itaussa = pool::template alloc<RealT>( clwp.extent(0), clwp.extent(1), this->get_nband());
+    auto itaussag= pool::template alloc<RealT>( clwp.extent(0), clwp.extent(1), this->get_nband());
     if (this->lut_extliq.is_allocated()) {
       // Liquid
       compute_all_from_table(ncol, nlay, nbnd, liqmsk, clwp, reliq, this->liq_nsteps,this->liq_step_size,this->radliq_lwr,
@@ -859,8 +855,14 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     //   See also the increment routines in mo_optical_props_kernels
     combine( nbnd, nlay, ncol, ltau, itau, ltaussa, itaussa, ltaussag, itaussag, optical_props );
 
-    pool::dealloc(bdata, bcurr - bdata);
-    pool::dealloc(data , dcurr - data);
+    pool::dealloc(liqmsk);
+    pool::dealloc(icemsk);
+    pool::dealloc(ltau);
+    pool::dealloc(ltaussa);
+    pool::dealloc(ltaussag);
+    pool::dealloc(itau);
+    pool::dealloc(itaussa);
+    pool::dealloc(itaussag);
   }
 
   template <typename LtauT, typename ItauT, typename LtaussaT,

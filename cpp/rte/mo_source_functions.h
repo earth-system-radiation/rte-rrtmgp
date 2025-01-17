@@ -170,7 +170,6 @@ public:
   void alloc_no_alloc(int ncol, int nlay, SfcSourceMem const& sfc_source_mem, LaySourceMem const& lay_source_mem, LevSourceIncMem const& lev_source_inc_mem, LevSourceDecMem const& lev_source_dec_mem) {
     if (! this->is_initialized()) { stoprun("source_func_lw%alloc: not initialized so can't allocate"); }
     if (ncol <= 0 || nlay <= 0) { stoprun("source_func_lw%alloc: must provide positive extents for ncol, nlay"); }
-    int ngpt = this->get_ngpt();
     this->sfc_source     = sfc_source_mem;
     this->lay_source     = lay_source_mem;
     this->lev_source_inc = lev_source_inc_mem;

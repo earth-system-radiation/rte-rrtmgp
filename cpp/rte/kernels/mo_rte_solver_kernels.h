@@ -686,12 +686,9 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   using pool    = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  const int dsize1 = ncol*(nlay+1)*ngpt;
-  const int dsize2 = ncol*nlay*ngpt;
-  RealT* data = pool::template alloc_raw<RealT>(dsize1*2 + dsize2), *dcurr = data;
-  ureal3d_t albedo(dcurr,ncol,ngpt,nlay+1); dcurr += dsize1;
-  ureal3d_t src   (dcurr,ncol,ngpt,nlay+1); dcurr += dsize1;
-  ureal3d_t denom (dcurr,ncol,ngpt,nlay); dcurr += dsize2;
+  auto albedo = pool::template alloc<RealT>(ncol,ngpt,nlay+1);
+  auto src    = pool::template alloc<RealT>(ncol,ngpt,nlay+1);
+  auto denom  = pool::template alloc<RealT>(ncol,ngpt,nlay);
   Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
   const int dims2_tot = ncol*ngpt;
 
@@ -783,7 +780,9 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
     }));
   }
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(albedo);
+  pool::dealloc(src);
+  pool::dealloc(denom);
 }
 
 template <typename TauT, typename SsaT, typename GT, typename Mu0T, typename SfcDirT, typename SfcDifT,
@@ -797,20 +796,14 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
   using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
-  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
-
-  const int dsize1 = ncol*nlay*ngpt;
-  const int dsize2 = ncol*ngpt;
-  RealT* data = pool::template alloc_raw<RealT>(dsize1*7 + dsize2), *dcurr = data;
-  ureal3d_t Rdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t Tdif      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t Rdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t Tdir      (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t Tnoscat   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal2d_t source_srf(dcurr,ncol     ,ngpt); dcurr += dsize2;
+  auto Rdif       = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto Tdif       = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto Rdir       = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto Tdir       = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto Tnoscat    = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto source_up  = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto source_dn  = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto source_srf = pool::template alloc<RealT>(ncol     ,ngpt);
 
   // Cell properties: transmittance and reflectance for direct and diffuse radiation
   sw_two_stream(ncol, nlay, ngpt, mu0,
@@ -834,7 +827,14 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
   }));
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(Rdif);
+  pool::dealloc(Tdif);
+  pool::dealloc(Rdir);
+  pool::dealloc(Tdir);
+  pool::dealloc(Tnoscat);
+  pool::dealloc(source_up);
+  pool::dealloc(source_dn);
+  pool::dealloc(source_srf);
 }
 
 // Top-level longwave kernels
@@ -853,19 +853,14 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
   using real3d_t  = Kokkos::View<RealT***, LayoutT, DeviceT>;
-  using ureal3d_t = conv::Unmanaged<real3d_t>;
 
-  const int dsize1 = ncol*nlay*ngpt;
-  const int dsize2 = ncol*ngpt;
-  RealT* data = pool::template alloc_raw<RealT>(dsize1*4 + dsize2*2), *dcurr=data;
-  ureal3d_t tau_loc   (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t trans     (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t source_dn (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal3d_t source_up (dcurr,ncol,nlay,ngpt); dcurr += dsize1;
-  ureal2d_t source_sfc(dcurr,ncol,     ngpt); dcurr += dsize2;
-  ureal2d_t sfc_albedo(dcurr,ncol,     ngpt); dcurr += dsize2;
+  auto tau_loc   = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto trans     = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto source_dn = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto source_up = pool::template alloc<RealT>(ncol,nlay,ngpt);
+  auto source_sfc= pool::template alloc<RealT>(ncol,     ngpt);
+  auto sfc_albedo= pool::template alloc<RealT>(ncol,     ngpt);
 
   RealT tau_thresh = sqrt( std::numeric_limits<RealT>::epsilon() );
 
@@ -936,7 +931,12 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
     radn_up(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
   }));
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(tau_loc);
+  pool::dealloc(trans);
+  pool::dealloc(source_dn);
+  pool::dealloc(source_up);
+  pool::dealloc(source_sfc);
+  pool::dealloc(sfc_albedo);
 }
 
 // LW transport, no scattering, multi-angle quadrature
@@ -954,16 +954,10 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
   using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
-  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
-
-  const int dsize1 = ncol*(nlay+1)*ngpt;
-  const int dsize2 = ncol*ngpt;
-  RealT* data = pool::template alloc_raw<RealT>(dsize1*2 + dsize2*2), *dcurr=data;
-  ureal3d_t radn_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  ureal3d_t radn_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  ureal2d_t Ds_ncol (dcurr,ncol,       ngpt); dcurr += dsize2;
-  ureal2d_t flux_top(dcurr,ncol,       ngpt); dcurr += dsize2;
+  auto radn_dn = pool::template alloc<RealT>(ncol,nlay+1,ngpt);
+  auto radn_up = pool::template alloc<RealT>(ncol,nlay+1,ngpt);
+  auto Ds_ncol = pool::template alloc<RealT>(ncol,       ngpt);
+  auto flux_top= pool::template alloc<RealT>(ncol,       ngpt);
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
@@ -1009,7 +1003,10 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   } // imu
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(radn_dn);
+  pool::dealloc(radn_up);
+  pool::dealloc(Ds_ncol);
+  pool::dealloc(flux_top);
 }
 
 #endif

@@ -140,14 +140,11 @@ void rte_sw(OpticalProps2strK<RealT, LayoutT, DeviceT> const &atmos, bool top_at
   const int ngpt  = atmos.get_ngpt();
   const int nband = atmos.get_nband();
 
-  const int dsize1 = ncol * (nlay+1) * ngpt;
-  const int dsize2 = ncol * ngpt;
-  RealT* data = pool::template alloc_raw<RealT>(dsize1*3 + dsize2*2), *dcurr = data;
-  ureal3d_t gpt_flux_up    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
-  ureal3d_t gpt_flux_dn    (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
-  ureal3d_t gpt_flux_dir   (dcurr,ncol, nlay+1, ngpt); dcurr += dsize1;
-  ureal2d_t sfc_alb_dir_gpt(dcurr,ncol, ngpt);         dcurr += dsize2;
-  ureal2d_t sfc_alb_dif_gpt(dcurr,ncol, ngpt);         dcurr += dsize2;
+  auto gpt_flux_up     = pool::template alloc<RealT>(ncol, nlay+1, ngpt);
+  auto gpt_flux_dn     = pool::template alloc<RealT>(ncol, nlay+1, ngpt);
+  auto gpt_flux_dir    = pool::template alloc<RealT>(ncol, nlay+1, ngpt);
+  auto sfc_alb_dir_gpt = pool::template alloc<RealT>(ncol, ngpt);
+  auto sfc_alb_dif_gpt = pool::template alloc<RealT>(ncol, ngpt);
 
   // Error checking -- consistency of sizes and validity of values
   if (! fluxes.are_desired()) { stoprun("rte_sw: no space allocated for fluxes"); }
@@ -203,6 +200,10 @@ void rte_sw(OpticalProps2strK<RealT, LayoutT, DeviceT> const &atmos, bool top_at
   // ...and reduce spectral fluxes to desired output quantities
   fluxes.reduce(gpt_flux_up, gpt_flux_dn, atmos, top_at_1, gpt_flux_dir);
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(gpt_flux_up);
+  pool::dealloc(gpt_flux_dn);
+  pool::dealloc(gpt_flux_dir);
+  pool::dealloc(sfc_alb_dir_gpt);
+  pool::dealloc(sfc_alb_dif_gpt);
 }
 #endif

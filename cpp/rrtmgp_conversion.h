@@ -27,7 +27,7 @@
 #define KERNEL_FENCE yakl::fence()
 #endif
 
-// #define ENABLE_TIMING
+#define ENABLE_TIMING
 // Macro for timing kernels
 #ifdef ENABLE_TIMING
 #define TIMED_KERNEL(kernel)                                            \
@@ -676,6 +676,19 @@ struct MemPoolSingleton
     s_high_water = 0;
   }
 
+  template <typename T>
+  static inline
+  int64_t get_num_reals(const int64_t num) noexcept
+  {
+    assert(sizeof(T) <= sizeof(RealT));
+    static constexpr int64_t CACHE_LINE_SIZE = 64;
+    static constexpr int64_t reals_per_cache_line = CACHE_LINE_SIZE / sizeof(RealT);
+    const int64_t num_reals = ((num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT));
+    // + reals_per_cache_line; // pad. This didn't seem to help at all
+    const int64_t num_reals_cache_aligned = ((num_reals + reals_per_cache_line - 1) / reals_per_cache_line) * reals_per_cache_line;
+    return num_reals_cache_aligned;
+  }
+
   /**
    * Allocate and return raw memory. This is useful for when you
    * want to batch several view allocations at once.
@@ -684,8 +697,7 @@ struct MemPoolSingleton
   static inline
   T* alloc_raw(const int64_t num) noexcept
   {
-    assert(sizeof(T) <= sizeof(RealT));
-    const int64_t num_reals = (num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT);
+    const int64_t num_reals = get_num_reals<T>(num);
     T* rv = reinterpret_cast<T*>(s_mem.data() + s_curr_used);
     s_curr_used += num_reals;
     assert(s_curr_used <= s_mem.size());
@@ -807,7 +819,7 @@ struct MemPoolSingleton
   static inline
   void dealloc(const T*, const int64_t num) noexcept
   {
-    const int64_t num_reals = (num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT);
+    const int64_t num_reals = get_num_reals<T>(num);
     s_curr_used -= num_reals;
     assert(s_curr_used >= 0);
   }
@@ -1357,7 +1369,6 @@ public:
             typename std::enable_if<is_view_v<View>>::type* = nullptr>
   void read(View& arr , std::string varName) {
     using myStyle = typename View::array_layout;
-    using myMem   = typename View::memory_space;
     using T       = typename View::non_const_value_type;
 
     using LeftHostView = Kokkos::View<typename View::non_const_data_type, Kokkos::LayoutLeft, HostDevice>;

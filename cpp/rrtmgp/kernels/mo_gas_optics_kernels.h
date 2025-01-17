@@ -182,12 +182,8 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
 
   using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
-  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
-
-  const int dsize = ncol *nlay;
-  RealT* data = pool::template alloc_raw<RealT>(dsize*2), *dcurr = data;
-  ureal2d_t ftemp (dcurr,ncol,nlay); dcurr += dsize;
-  ureal2d_t fpress(dcurr,ncol,nlay); dcurr += dsize;
+  auto ftemp = pool::template alloc<RealT>(ncol,nlay);
+  auto fpress= pool::template alloc<RealT>(ncol,nlay);
 
   RealT tiny = std::numeric_limits<RealT>::min();
 
@@ -236,7 +232,8 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     fmajor(1,1,itemp,iflav,icol,ilay) =       fpress(icol,ilay)  * fminor(1,itemp,iflav,icol,ilay);
   }));
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(ftemp);
+  pool::dealloc(fpress);
 }
 
 template <typename TauAbsT, typename TauRayT, typename TauT, typename SsaT, typename GT>
@@ -249,9 +246,9 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
 
   RealT tiny = std::numeric_limits<RealT>::min();
 
-  int constexpr TILE_SIZE=8;
-  int colTiles = ncol / TILE_SIZE + 1;
-  int gptTiles = ngpt / TILE_SIZE + 1;
+  // int constexpr TILE_SIZE=8;
+  // int colTiles = ncol / TILE_SIZE + 1;
+  // int gptTiles = ngpt / TILE_SIZE + 1;
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int tcol=1; tcol<=colTiles; tcol++) {
@@ -290,16 +287,11 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
   using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
-  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
+  auto pfrac           = pool::template alloc<RealT>(ngpt,nlay,ncol);
+  auto planck_function = pool::template alloc<RealT>(nbnd,nlay+1,ncol);
 
-  const int dsize1 = ngpt*nlay*ncol;
-  const int dsize2 = ngpt*(nlay+1)*ncol;
-  RealT* data = pool::template alloc_raw<RealT>(dsize1 + dsize2), *dcurr = data;
-  ureal3d_t pfrac          (dcurr,ngpt,nlay,ncol);   dcurr += dsize1;
-  ureal3d_t planck_function(dcurr,nbnd,nlay+1,ncol); dcurr += dsize2;
-
-  Kokkos::Array<int, 3> dims3_nlay_ncol_ngpt = {nlay,ncol,ngpt};
-  const int dims3_tot = nlay*ncol*ngpt;
+  // Kokkos::Array<int, 3> dims3_nlay_ncol_ngpt = {nlay,ncol,ngpt};
+  // const int dims3_tot = nlay*ncol*ngpt;
   // Calculation of fraction of band's Planck irradiance associated with each g-point
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
@@ -340,8 +332,8 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   //
   // for (int igpt=1; igpt<=ngpt; igpt++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  Kokkos::Array<int, 2> dims2_ngpt_ncol = {ngpt,ncol};
-  const int dims2_ngpt_ncol_tot = ncol*ngpt;
+  // Kokkos::Array<int, 2> dims2_ngpt_ncol = {ngpt,ncol};
+  // const int dims2_ngpt_ncol_tot = ncol*ngpt;
   // TIMED_KERNEL(Kokkos::parallel_for( dims2_ngpt_ncol_tot, KOKKOS_LAMBDA (int idx) {
   //   int igpt, icol;
   //   conv::unflatten_idx(idx, dims2_ngpt_ncol, igpt, icol);
@@ -351,8 +343,8 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
-  Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
-  const int dims2_ncol_nlay_tot = ncol*nlay;
+  // Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
+  // const int dims2_ncol_nlay_tot = ncol*nlay;
   // TIMED_KERNEL(Kokkos::parallel_for( dims2_ncol_nlay_tot, KOKKOS_LAMBDA (int idx) {
   //   int icol, ilay;
   //   conv::unflatten_idx(idx, dims2_ncol_nlay, icol, ilay);
@@ -370,7 +362,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::Array<int, 3> dims3_ngpt_nlay_ncol = {ngpt,nlay,ncol};
+  // Kokkos::Array<int, 3> dims3_ngpt_nlay_ncol = {ngpt,nlay,ncol};
   // TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
   //   int igpt, ilay, icol;
   //   conv::unflatten_idx(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
@@ -410,7 +402,8 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
     }
   }));
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(pfrac);
+  pool::dealloc(planck_function);
 }
 
 // compute Rayleigh scattering optical depths
@@ -458,8 +451,8 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
 
   int extent = scale_by_complement.extent(0);
 
-  Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
-  const int dims2_ncol_nlay_tot = ncol * nlay;
+  // Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
+  // const int dims2_ncol_nlay_tot = ncol * nlay;
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
@@ -600,12 +593,8 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
   using DeviceT = typename TauT::device_type;
   using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
-  using uint2d_t = conv::Unmanaged<Kokkos::View<int**, LayoutT, DeviceT>>;
-
-  const int dsize = 2*ncol;
-  int* data = pool::template alloc_raw<int>(2 * dsize), *icurr = data;
-  uint2d_t itropo_lower(icurr,ncol,2); icurr += dsize;
-  uint2d_t itropo_upper(icurr,ncol,2); icurr += dsize;
+  auto itropo_lower= pool::template alloc<int>(ncol,2);
+  auto itropo_upper= pool::template alloc<int>(ncol,2);
 
   int huge  = std::numeric_limits<int>::max();
   int small = std::numeric_limits<int>::min();
@@ -705,7 +694,8 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
                            idx_minor_scaling_upper, kminor_start_upper, play, tlay, col_gas, fminor,
                            jeta, itropo_upper, jtemp, tau);
 
-  pool::dealloc(data, icurr - data);
+  pool::dealloc(itropo_lower);
+  pool::dealloc(itropo_upper);
 }
 
 #endif

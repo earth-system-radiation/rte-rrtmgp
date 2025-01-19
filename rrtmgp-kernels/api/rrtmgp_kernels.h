@@ -124,11 +124,11 @@ extern "C"
     );
 
     void rrtmgp_compute_cld_from_table(
-        const int& ncol, int& nlay, int& nbnd,
+        const int& ncol, const int& nlay, const int& nbnd,
         const Bool*  mask, // (ncol,nlay)
         const Float* lwp,  // (ncol,nlay)
         const Float* re,   // (ncol,nlay)
-        int& nsteps,
+        const int& nsteps,
         const Float& step_size,
         const Float& offset,
         const Float* tau_table, // (nsteps, nbnd)
@@ -140,7 +140,7 @@ extern "C"
     );
 
     void rrtmgp_compute_cld_from_pade(
-        const int& ncol, int& nlay, int& nbnd, int& nsizes,
+        const int& ncol, const int& nlay, const int& nbnd, const int& nsizes,
         const Bool*  mask, // (ncol,nlay)
         const Float* lwp,  // (ncol,nlay)
         const Float* re,   // (ncol,nlay)

@@ -102,7 +102,7 @@ program rte_rrtmgp_allsky
   logical :: do_aerosols = .false.
   integer, parameter :: ngas = 8
 
-  character(len=256) :: output_file, k_dist_file, cloud_optics_file, aerosol_optics_file
+  character(len=512) :: output_file, k_dist_file, cloud_optics_file, aerosol_optics_file
   !
   ! Timing variables
   !

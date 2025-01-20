@@ -111,7 +111,7 @@ program rte_clear_sky_regression
   character(len=32 ), &
             dimension(:), allocatable :: kdist_gas_names, rfmip_gas_games
 
-  character(len=256) :: input_file = "", output_file = "", gas_optics_file = "", gas_optics_file_2 = ""
+  character(len=512) :: input_file = "", output_file = "", gas_optics_file = "", gas_optics_file_2 = ""
   integer            :: ncid, dimid
   ! ----------------------------------------------------------------------------------
   ! Code

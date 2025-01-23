@@ -166,20 +166,6 @@ public:
     using yakl::fortran::parallel_for;
     using yakl::fortran::SimpleBounds;
 
-    // if ( this->get_nband() != rhs.get_nband() || this->get_nband() == 0) { return false; }
-    // yakl::ScalarLiveOut<bool> ret(true);
-    // // for (int j=1 ; j <= size(this->band_lims_wvn,2); j++) {
-    // //   for (int i=1 ; i <= size(this->band_lims_wvn,1); i++) {
-    // auto &this_band_lims_wvn = this->band_lims_wvn;
-    // auto &rhs_band_lims_wvn  = rhs.band_lims_wvn;
-    // TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , Bounds<2>( size(this->band_lims_wvn,2) , size(this->band_lims_wvn,1) ) , YAKL_LAMBDA (int j, int i) {
-    //   if ( std::abs( this_band_lims_wvn(i,j) - rhs_band_lims_wvn(i,j) ) > 5*epsilon(this_band_lims_wvn) ) {
-    //     ret = false;
-    //   }
-    // }));
-    // return ret.hostRead();
-
-
     // This is working around an issue that arises in E3SM's rrtmgpxx integration.
     // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
     bool ret = true;
@@ -204,15 +190,6 @@ public:
     using yakl::fortran::SimpleBounds;
 
     if ( ! this->bands_are_equal(rhs) || this->get_ngpt() != rhs.get_ngpt() ) { return false; }
-    // yakl::ScalarLiveOut<bool> ret(true);
-    // // for (int i=1; i <= size(this->gpt2bnd,1); i++) {
-    // auto &this_gpt2band = this->gpt2band;
-    // auto &rhs_gpt2band  = rhs.gpt2band;
-    // TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , Bounds<1>(size(this->gpt2band,1)) , YAKL_LAMBDA (int i) {
-    //   if ( this_gpt2band(i) != rhs_gpt2band(i) ) { ret = false; }
-    // }));
-    // return ret.hostRead();
-
 
     // This is working around an issue that arises in E3SM's rrtmgpxx integration.
     // Previously the code failed in the creation of the ScalarLiveOut variable, but only for higher optimizations
@@ -224,25 +201,6 @@ public:
     }
     return ret;
   }
-
-
-  // Expand an array of dimension arr_in(nband) to dimension arr_out(ngpt)
-  // real1d expand(real1d const &arr_in) const {
-  //   real1d ret("arr_out",size(this->gpt2band,1));
-  //   // do iband=1,this->get_nband()
-  //   // TODO: I don't know if this needs to be serialize or not at first glance. Need to look at it more.
-  //   auto &this_band2gpt = this->gpt2band;
-  //   int nband = get_nband();
-  //   TIMED_KERNEL(parallel_for( YAKL_AUTO_LABEL() , Bounds<1>(1) , YAKL_LAMBDA (int dummy) {
-  //     for (int iband = 1 ; iband <= nband ; iband++) {
-  //       for (int i=this_band2gpt(1,iband) ; i <= this_band2gpt(2,iband) ; i++) {
-  //         ret(i) = arr_in(iband);
-  //       }
-  //     }
-  //   }));
-  //   return ret;
-  // }
-
 
   void set_name( std::string name ) { this->name = name; }
 

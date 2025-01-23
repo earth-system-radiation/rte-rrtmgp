@@ -255,9 +255,6 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
   //     for (int tgpt=1; tgpt<=gptTiles; tgpt++) {
   //       for (int itcol=1; itcol<=TILE_SIZE; itcol++) {
   //         for (int itgpt=1; itgpt<=TILE_SIZE; itgpt++) {
-  // TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<5>({nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
-  //   int icol = tcol*TILE_SIZE + itcol;
-  //   int igpt = tgpt*TILE_SIZE + itgpt;
   TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol,nlay,ngpt, icol, ilay, igpt,
     RealT t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
     tau(icol,ilay,igpt) = t;
@@ -296,9 +293,6 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  // TIMED_KERNEL(Kokkos::parallel_for( dims3_tot, KOKKOS_LAMBDA (int idx) {
-  //   int ilay, icol, igpt;
-  //   conv::unflatten_idx(idx, dims3_nlay_ncol_ngpt, ilay, icol, igpt);
   TIMED_KERNEL(FLATTEN_MD_KERNEL3(ngpt,ncol,nlay, igpt, icol, ilay,
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
@@ -332,22 +326,12 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   //
   // for (int igpt=1; igpt<=ngpt; igpt++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  // Kokkos::Array<int, 2> dims2_ngpt_ncol = {ngpt,ncol};
-  // const int dims2_ngpt_ncol_tot = ncol*ngpt;
-  // TIMED_KERNEL(Kokkos::parallel_for( dims2_ngpt_ncol_tot, KOKKOS_LAMBDA (int idx) {
-  //   int igpt, icol;
-  //   conv::unflatten_idx(idx, dims2_ngpt_ncol, igpt, icol);
   TIMED_KERNEL(FLATTEN_MD_KERNEL2(ngpt,ncol, igpt, icol,
     sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 0, icol);
   ));
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
-  // Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
-  // const int dims2_ncol_nlay_tot = ncol*nlay;
-  // TIMED_KERNEL(Kokkos::parallel_for( dims2_ncol_nlay_tot, KOKKOS_LAMBDA (int idx) {
-  //   int icol, ilay;
-  //   conv::unflatten_idx(idx, dims2_ncol_nlay, icol, ilay);
   TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,nlay, icol, ilay,
     // Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
     interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL,ilay,icol),nPlanckTemp,nbnd);
@@ -362,10 +346,6 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  // Kokkos::Array<int, 3> dims3_ngpt_nlay_ncol = {ngpt,nlay,ncol};
-  // TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
-  //   int igpt, ilay, icol;
-  //   conv::unflatten_idx(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
   TIMED_KERNEL(FLATTEN_MD_KERNEL3(ngpt,nlay,ncol, igpt, ilay, icol,
     lay_src(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,icol);
   ));
@@ -378,9 +358,6 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=2; ilay<=nlay+1; ilay++) {
-  // TIMED_KERNEL(Kokkos::parallel_for( dims2_ncol_nlay_tot , KOKKOS_LAMBDA (int idx) {
-  //   int icol, ilay;
-  //   conv::unflatten_idx(idx, dims2_ncol_nlay, icol, ilay);
   TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,nlay, icol, ilay,
     interpolate1D(tlev(icol,ilay+1), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function,Kokkos::ALL,ilay+1,icol),nPlanckTemp,nbnd);
   ));
@@ -457,13 +434,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  // The CUDA optimizations below perform a lot better than the original
-  // code but yield non-deterministic results.
-// #ifdef KOKKOS_ENABLE_CUDA
-//   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
-// #else
   TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,nlay, icol, ilay,
-//#endif
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {

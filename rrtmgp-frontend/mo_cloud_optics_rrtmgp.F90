@@ -49,10 +49,10 @@ module mo_cloud_optics_rrtmgp
     ! How big is each step in the table?
     real(wp) :: liq_step_size = 0._wp, ice_step_size = 0._wp
     !
-    ! The cloud optics lookup tables (band or g-point)
+    ! Cloud optics lookup tables  - by g-point or by band (with ngpt=nbnd)
     !
-    real(wp), dimension(:,:  ), allocatable :: extliq, ssaliq, asyliq ! (nsize_liq, nspec)
-    real(wp), dimension(:,:,:), allocatable :: extice, ssaice, asyice ! (nsize_ice, nspec, nrghice)
+    real(wp), dimension(:,:  ), allocatable :: extliq, ssaliq, asyliq ! (nsize_liq, ngpt)
+    real(wp), dimension(:,:,:), allocatable :: extice, ssaice, asyice ! (nsize_ice, ngpt, nrghice)
     !
     ! -----
   contains
@@ -74,8 +74,7 @@ contains
   !    by spectral band or by g-point.
   !
   ! ------------------------------------------------------------------------------
-  function load(this, ngpnt, nspec, &
-                band_lims_wvn, &
+  function load(this, band_lims_wvn, &
                 radliq_lwr, radliq_upr, &
                 diamice_lwr, diamice_upr, &
                 extliq, ssaliq, asyliq, &
@@ -83,8 +82,6 @@ contains
                 band_lims_gpt) result(error_msg)
 
     class(ty_cloud_optics_rrtmgp), intent(inout) :: this
-    integer,                    intent(in   ) :: ngpnt         ! number of g-points from spectral discretization
-    integer,                    intent(in   ) :: nspec         ! number of bands or g-points from cloud optics tables
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! beginning and ending wavenumbers for each band
     ! Lookup table interpolation constants
     ! Lower and upper bounds of the tables; also the constant for calculating interpolation indices for liquid
@@ -101,7 +98,8 @@ contains
     !
     ! Local variables
     !
-    integer               :: nrghice, nsize_liq, nsize_ice
+    integer :: nrghice, nsize_liq, nsize_ice
+    integer :: nspec
 
     error_msg = this%init(band_lims_wvn, band_lims_gpt, name="RRTMGP cloud optics")
     !
@@ -110,22 +108,23 @@ contains
     nsize_liq = size(extliq,dim=1)
     nsize_ice = size(extice,dim=1)
     nrghice   = size(extice,dim=3)
+    nspec     = this%get_ngpt() ! Same as the number of bands if defined by-band 
     !
     ! Error checking
     !   Can we check for consistency between table bounds
     !
-    if(nspec /= this%get_nband() .and. nspec /= ngpnt) &
-      error_msg = "cloud_optics%init(): nspec inconsistent between lookup tables and spectral discretization"
-    if(size(extice, 2) /= nspec) &
-      error_msg = "cloud_optics%init(): array extice has the wrong spectral dimension"
+    if(.not. extents_are(extliq, nsize_liq, nspec)) &
+      error_msg = "cloud_optics%init(): array extliq isn't consistently sized"
     if(.not. extents_are(ssaliq, nsize_liq, nspec)) &
       error_msg = "cloud_optics%init(): array ssaliq isn't consistently sized"
     if(.not. extents_are(asyliq, nsize_liq, nspec)) &
       error_msg = "cloud_optics%init(): array asyliq isn't consistently sized"
+    if(.not. extents_are(extice, nsize_ice, nspec, nrghice)) &
+      error_msg = "cloud_optics%init(): array extice isn't consistently sized"
     if(.not. extents_are(ssaice, nsize_ice, nspec, nrghice)) &
-      error_msg = "cloud_optics%init(): array ssaice  isn't consistently sized"
+      error_msg = "cloud_optics%init(): array ssaice isn't consistently sized"
     if(.not. extents_are(asyice, nsize_ice, nspec, nrghice)) &
-      error_msg = "cloud_optics%init(): array asyice  isn't consistently sized"
+      error_msg = "cloud_optics%init(): array asyice isn't consistently sized"
     if(error_msg /= "") return
 
     this%liq_nsteps = nsize_liq
@@ -209,24 +208,23 @@ contains
   !
   ! Compute single-scattering properties
   !
-  function cloud_optics(this, nspec, &
+  function cloud_optics(this,                     &
                         clwp, ciwp, reliq, reice, &
                         optical_props) result(error_msg)
     class(ty_cloud_optics_rrtmgp), &
               intent(in   ) :: this
-    integer,  intent(in   ) :: nspec            ! number of bands or g-points
     real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud liquid water path (g/m2)
                                ciwp  (:,:), &   ! cloud ice water path    (g/m2)
                                reliq (:,:), &   ! cloud liquid particle effective size (microns)
                                reice (:,:)      ! cloud ice particle effective radius  (microns)
     class(ty_optical_props_arry), &
               intent(inout) :: optical_props
-                                               ! Dimensions: (ncol,nlay,nspec)
+                                               ! Dimensions: (ncol,nlay,ngpt/nbnd)
 
     character(len=128)      :: error_msg
     ! ------- Local -------
     logical(wl), dimension(size(clwp,1), size(clwp,2)) :: liqmsk, icemsk
-    real(wp),    dimension(size(clwp,1), size(clwp,2), nspec) :: &
+    real(wp),    dimension(size(clwp,1), size(clwp,2), this%get_ngpt()) :: &
                 ltau, ltaussa, ltaussag, itau, itaussa, itaussag
                 ! Optical properties: tau, tau*ssa, tau*ssa*g
                 ! liquid and ice separately
@@ -326,15 +324,15 @@ contains
         !
         ! Liquid
         !
-        call compute_cld_from_table(ncol, nlay, nspec, liqmsk, clwp, reliq,             &
+        call compute_cld_from_table(ncol, nlay, this%get_ngpt(), liqmsk, clwp, reliq,   &
                                     this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
                                     this%extliq, this%ssaliq, this%asyliq,              &
                                     ltau, ltaussa, ltaussag)
         !
         ! Ice
         !
-        call compute_cld_from_table(ncol, nlay, nspec, icemsk, ciwp, reice,             &
-                                    this%ice_nsteps,this%ice_step_size,this%diamice_lwr, &
+        call compute_cld_from_table(ncol, nlay, this%get_ngpt(), icemsk, ciwp, reice,   &
+                                    this%ice_nsteps,this%ice_step_size,this%diamice_lwr,&
                                     this%extice(:,:,this%icergh),                       &
                                     this%ssaice(:,:,this%icergh),                       &
                                     this%asyice(:,:,this%icergh),                       &
@@ -352,7 +350,7 @@ contains
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau)
 
-        do ispec = 1, nspec
+        do ispec = 1, this%get_ngpt()
           do ilay = 1, nlay
             do icol = 1,ncol
               ! Absorption optical depth  = (1-ssa) * tau = tau - taussa
@@ -366,7 +364,7 @@ contains
         !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau, optical_props%ssa, optical_props%g)
-        do ispec = 1, nspec
+        do ispec = 1, this%get_ngpt()
           do ilay = 1, nlay
             do icol = 1,ncol
               tau    = ltau    (icol,ilay,ispec) + itau   (icol,ilay,ispec)

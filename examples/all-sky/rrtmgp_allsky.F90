@@ -168,7 +168,7 @@ program rte_rrtmgp_allsky
   is_lw = .not. is_sw
   if (do_clouds) then
     !
-    call load_cld_lutcoeff(cloud_optics, cloud_optics_file, ngpt, nspec)
+    call load_cld_lutcoeff(cloud_optics, cloud_optics_file)
     call stop_on_err(cloud_optics%set_ice_roughness(2))
   end if
 
@@ -288,7 +288,7 @@ program rte_rrtmgp_allsky
     ! Cloud optics
     !
     if(do_clouds) &
-      call stop_on_err(cloud_optics%cloud_optics(nspec, lwp, iwp, rel, rei, clouds))
+      call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
     !
     ! Aerosol optics
     !

@@ -21,14 +21,12 @@ contains
   !
   ! read cloud optical property LUT coefficients from NetCDF file
   !
-  subroutine load_cld_lutcoeff(cloud_spec, cld_coeff_file, ngpnt, nspec)
+  subroutine load_cld_lutcoeff(cloud_spec, cld_coeff_file)
     class(ty_cloud_optics_rrtmgp),         intent(inout) :: cloud_spec
     character(len=*),                      intent(in   ) :: cld_coeff_file
-    integer,                               intent(in   ) :: ngpnt
-    integer,                               intent(  out) :: nspec
     ! -----------------
     ! Local variables
-    integer :: ncid, nband, nrghice, nsize_liq, nsize_ice
+    integer :: ncid, nband, nrghice, nsize_liq, nsize_ice, nspec
 
     ! Lookup table interpolation constants
     real(wp) :: radliq_lwr          ! liquid particle size lower bound for interpolation
@@ -91,13 +89,13 @@ contains
     if(defined_on_gpts) then
       allocate(band_lims_gpt(2, nband))
       band_lims_gpt = read_field(ncid, 'bnd_limits_gpt', 2, nband)
-      call stop_on_err(cloud_spec%load(ngpnt, nspec, band_lims_wvn, &
+      call stop_on_err(cloud_spec%load(band_lims_wvn, &
                                        radliq_lwr, radliq_upr, &
                                        diamice_lwr, diamice_upr, &
                                        extliq, ssaliq, asyliq, &
                                        extice, ssaice, asyice, band_lims_gpt))
     else
-      call stop_on_err(cloud_spec%load(ngpnt, nspec, band_lims_wvn, &
+      call stop_on_err(cloud_spec%load(band_lims_wvn, &
                                        radliq_lwr, radliq_upr, &
                                        diamice_lwr, diamice_upr, &
                                        extliq, ssaliq, asyliq, &

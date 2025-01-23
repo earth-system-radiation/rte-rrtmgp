@@ -514,11 +514,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::Array<int, 3> dims3_ncol_nlay_ngpt = {ncol,nlay,ngpt};
-  const int dims3_tot = ncol*nlay*ngpt;
-  TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
-    int icol, ilay, igpt;
-    conv::unflatten_idx_left(idx, dims3_ncol_nlay_ngpt, icol, ilay, igpt);
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol, nlay, ngpt, icol, ilay, igpt,
     // Zdunkowski Practical Improved Flux Method "PIFM"
     //  (Zdunkowski et al., 1980;  Contributions to Atmospheric Physics 53, 147-66)
     RealT gamma1= (8. - w0(icol,ilay,igpt) * (5. + 3. * g(icol,ilay,igpt))) * .25;
@@ -579,7 +575,7 @@ inline void sw_two_stream(int ncol, int nlay, int ngpt, Mu0T const &mu0, TauT co
                          (1. - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat(icol,ilay,igpt) -
                           2.0 * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau );
 
-  }));
+  ));
 
   pool::dealloc(mu0_inv.data(), mu0_inv.size());
 }
@@ -594,15 +590,15 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, FluxDnT const &flux_d
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,ngpt, icol, igpt,
       flux_dn(icol,      0, igpt)  = 0;
-    }));
+    ));
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,ngpt, icol, igpt,
       flux_dn(icol, nlay, igpt)  = 0;
-    }));
+    ));
   }
 }
 
@@ -615,15 +611,15 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, IncFluxT const &inc_f
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,ngpt, icol, igpt,
       flux_dn(icol,      0, igpt)  = inc_flux(icol,igpt) * factor(icol);
-    }));
+    ));
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,ngpt, icol, igpt,
       flux_dn(icol, nlay, igpt)  = inc_flux(icol,igpt) * factor(icol);
-    }));
+    ));
   }
 }
 
@@ -640,16 +636,16 @@ void apply_BC(int ncol, int nlay, int ngpt, bool top_at_1, IncFluxT const &inc_f
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,ngpt, icol, igpt,
       flux_dn(icol,      0, igpt)  = inc_flux(icol,igpt);
-    }));
+    ));
   } else {
     //$acc  parallel loop collapse(2)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,ngpt, icol, igpt,
       flux_dn(icol, nlay, igpt)  = inc_flux(icol,igpt);
-    }));
+    ));
   }
 }
 
@@ -670,8 +666,6 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   auto albedo = pool::template alloc<RealT>(ncol,ngpt,nlay+1);
   auto src    = pool::template alloc<RealT>(ncol,ngpt,nlay+1);
   auto denom  = pool::template alloc<RealT>(ncol,ngpt,nlay);
-  Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
-  const int dims2_tot = ncol*ngpt;
 
   // Indexing into arrays for upward and downward propagation depends on the vertical
   //   orientation of the arrays (whether the domain top is at the first or last index)
@@ -679,9 +673,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
-      int icol, igpt;
-      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       int ilev = nlay;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,igpt,ilev)  = albedo_sfc(icol,igpt);
@@ -715,15 +707,12 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
         flux_up(icol,ilev,igpt) = flux_dn(icol,ilev,igpt) * albedo(icol,igpt,ilev) +  // Equation 12
                                   src(icol,igpt,ilev);
       }
-    }));
+    ));
 
   } else {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
-      int icol, igpt;
-      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
-
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       int ilev = 0;
       // Albedo of lowest level is the surface albedo...
       albedo(icol,igpt,ilev)  = albedo_sfc(icol,igpt);
@@ -758,7 +747,7 @@ void adding(int ncol, int nlay, int ngpt, bool top_at_1, AlbedoSfcT const &albed
                                   src(icol,igpt,ilev);
 
       }
-    }));
+    ));
   }
 
   pool::dealloc(albedo);
@@ -804,9 +793,9 @@ void sw_solver_2stream(int ncol, int nlay, int ngpt, bool top_at_1, TauT const &
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay+1
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay+1,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol,nlay+1,ngpt, icol, ilay, igpt,
     flux_dn(icol,ilay,igpt) = flux_dn(icol,ilay,igpt) + flux_dir(icol,ilay,igpt);
-  }));
+  ));
 
   pool::dealloc(Rdif);
   pool::dealloc(Tdif);
@@ -870,7 +859,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,ngpt, icol, igpt,
     // Transport is for intensity
     //   convert flux at top of domain to intensity assuming azimuthal isotropy
     radn_dn(icol,top_level,igpt) = radn_dn(icol,top_level,igpt)/(2. * pi * weights(weight_ind));
@@ -878,16 +867,12 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
     // Surface albedo, surface source function
     sfc_albedo(icol,igpt) = 1. - sfc_emis(icol,igpt);
     source_sfc(icol,igpt) = sfc_emis(icol,igpt) * sfc_src(icol,igpt);
-  }));
+  ));
 
   // do igpt = 1, ngpt
   //   do ilay = 1, nlay
   //     do icol = 1, ncol
-  Kokkos::Array<int, 3> dims3_ngpt_nlay_ncol = {ncol,nlay,ngpt};
-  const int dims3_ngpt_nlay_ncol_tot = ngpt * nlay * ncol;
-  TIMED_KERNEL(Kokkos::parallel_for( dims3_ngpt_nlay_ncol_tot , KOKKOS_LAMBDA (int idx) {
-    int icol, ilay, igpt;
-    conv::unflatten_idx_left(idx, dims3_ngpt_nlay_ncol, icol, ilay, igpt);
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol, nlay, ngpt, icol, ilay, igpt,
     // Optical path and transmission, used in source function and transport calculations
     tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt);
     trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt));
@@ -896,7 +881,7 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
                              lay_source, lev_source_up, lev_source_dn,
                              tau_loc, trans,
                              source_dn, source_up, tau_thresh);
-  }));
+  ));
 
   // Transport
   lw_transport_noscat(ncol, nlay, ngpt, top_at_1,
@@ -907,10 +892,10 @@ void lw_solver_noscat(int ncol, int nlay, int ngpt, bool top_at_1, DT const &D, 
   // do igpt = 1, ngpt
   //   do ilev = 1, nlay+1
   //     do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay+1,ngpt}) , KOKKOS_LAMBDA (int icol, int ilev, int igpt) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol,nlay+1,ngpt, icol, ilev, igpt,
     radn_dn(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_dn(icol,ilev,igpt);
     radn_up(icol,ilev,igpt) = 2. * pi * weights(weight_ind) * radn_up(icol,ilev,igpt);
-  }));
+  ));
 
   pool::dealloc(tau_loc);
   pool::dealloc(trans);
@@ -942,9 +927,9 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
     Ds_ncol(icol, igpt) = Ds(0);
-  }));
+  ));
 
   lw_solver_noscat(ncol, nlay, ngpt,
                    top_at_1, Ds_ncol, weights, 0, tau,
@@ -956,18 +941,18 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
 
   // do igpt = 1, ngpt
   //   do icol = 1, ncol
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
     flux_top(icol,igpt) = flux_dn(icol,top_level,igpt);
-  }));
+  ));
 
   apply_BC(ncol, nlay, ngpt, top_at_1, flux_top, radn_dn);
 
   for (int imu=1; imu<nmus; imu++) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, ngpt}) , KOKKOS_LAMBDA (int icol, int igpt) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       Ds_ncol(icol, igpt) = Ds(imu);
-    }));
+    ));
 
     lw_solver_noscat(ncol, nlay, ngpt,
                      top_at_1, Ds_ncol, weights, imu, tau,
@@ -977,10 +962,10 @@ void lw_solver_noscat_GaussQuad(int ncol, int nlay, int ngpt, bool top_at_1, int
     // do igpt = 1, ngpt
     //   do ilev = 1, nlay+1
     //     do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol, nlay+1, ngpt}) , KOKKOS_LAMBDA (int icol, int ilev, int igpt) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol, nlay+1, ngpt, icol, ilev, igpt,
       flux_up(icol,ilev,ngpt) += radn_up(icol,ilev,ngpt);
       flux_dn(icol,ilev,ngpt) += radn_dn(icol,ilev,ngpt);
-    }));
+    ));
 
   } // imu
 

@@ -501,6 +501,8 @@ void unflatten_idx(const int idx, const Kokkos::Array<int, 4>& dims, int& i, int
   }
 }
 
+// The FLATTEN* macros expect LayoutT to be defined.
+
 #define FLATTEN_MD_KERNEL2(n1, n2, i1, i2, kernel)     \
   {                                                     \
     Kokkos::Array<int, 2> dims_fmk_internal = {n1, n2};         \

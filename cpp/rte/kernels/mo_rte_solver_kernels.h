@@ -408,15 +408,10 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
   using LayoutT = typename RdirT::array_layout;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
-  const int dims2_tot = ncol*ngpt;
-
   if (top_at_1) {
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot, KOKKOS_LAMBDA (int idx) {
-      int icol, igpt;
-      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       for (int ilev=0; ilev<nlay; ilev++) {
         source_up(icol,ilev,igpt)     =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
         source_dn(icol,ilev,igpt)     =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev,igpt);
@@ -424,16 +419,13 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
         if (ilev == nlay-1) {
           source_sfc(icol,igpt) = flux_dn_dir(icol,nlay,igpt)*sfc_albedo(icol,igpt);
         }
-      }
-    }));
+      }));
   } else {
     // layer index = level index
     // previous level is up (+1)
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot, KOKKOS_LAMBDA (int idx) {
-      int icol, igpt;
-      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         source_up(icol,ilev,igpt)   =    Rdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
         source_dn(icol,ilev,igpt)   =    Tdir(icol,ilev,igpt) * flux_dn_dir(icol,ilev+1,igpt);
@@ -441,8 +433,7 @@ inline void sw_source_2str(int ncol, int nlay, int ngpt, bool top_at_1, RdirT co
         if (ilev ==    0) {
           source_sfc(icol,igpt) = flux_dn_dir(icol,    0,igpt)*sfc_albedo(icol,igpt);
         }
-      }
-    }));
+      }));
   }
 }
 
@@ -460,11 +451,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, Tau
     // Top of domain is index 1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
-    const int dims2_tot = ncol*ngpt;
-    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
-      int icol, igpt;
-      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       // Downward propagation
       for (int ilev=1; ilev<nlay+1; ilev++) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev-1,igpt)*radn_dn(icol,ilev-1,igpt) + source_dn(icol,ilev-1,igpt);
@@ -476,17 +463,12 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, Tau
       // Upward propagation
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         radn_up(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_up(icol,ilev+1,igpt) + source_up(icol,ilev,igpt);
-      }
-    }));
+      }));
   } else {
     // Top of domain is index nlay+1
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    Kokkos::Array<int, 2> dims2_ncol_ngpt = {ncol,ngpt};
-    const int dims2_tot = ncol*ngpt;
-    TIMED_KERNEL(Kokkos::parallel_for( dims2_tot , KOKKOS_LAMBDA (int idx) {
-      int icol, igpt;
-      conv::unflatten_idx_left(idx, dims2_ncol_ngpt, icol, igpt);
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       // Downward propagation
       for (int ilev=nlay-1; ilev>=0; ilev--) {
         radn_dn(icol,ilev,igpt) = trans(icol,ilev  ,igpt)*radn_dn(icol,ilev+1,igpt) + source_dn(icol,ilev,igpt);
@@ -498,8 +480,7 @@ inline void lw_transport_noscat(int ncol, int nlay, int ngpt, bool top_at_1, Tau
       // Upward propagation
       for (int ilev=1; ilev<nlay+1; ilev++) {
         radn_up(icol,ilev,igpt) = trans(icol,ilev-1,igpt) * radn_up(icol,ilev-1,igpt) +  source_up(icol,ilev-1,igpt);
-      }
-    }));
+      }));
   }
 }
 

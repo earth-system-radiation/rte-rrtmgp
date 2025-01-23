@@ -465,6 +465,40 @@ void unflatten_idx_right(const int idx, const Kokkos::Array<int, 4>& dims, int& 
   l = idx % dims[3];
 }
 
+#define FLATTEN_MD_KERNEL2(n1, n2, i1, i2, kernel)     \
+  {                                                     \
+    Kokkos::Array<int, 2> dims_fmk_internal = {n1, n2};         \
+    const int dims_fmk_internal_tot = (n1)*(n2);                        \
+    Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
+      int i1, i2;                                                     \
+      conv::unflatten_idx_left(idx_fmk_internal, dims_fmk_internal, i1, i2); \
+      kernel;                                                           \
+    });                                                               \
+  }
+
+#define FLATTEN_MD_KERNEL3(n1, n2, n3, i1, i2, i3, kernel)       \
+  {                                                              \
+    Kokkos::Array<int, 3> dims_fmk_internal = {n1, n2, n3};      \
+    const int dims_fmk_internal_tot = (n1)*(n2)*(n3);                   \
+    Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
+      int i1, i2, i3;                                                 \
+      conv::unflatten_idx_left(idx_fmk_internal, dims_fmk_internal, i1, i2, i3); \
+      kernel;                                                           \
+    });                                                               \
+  }
+
+#define FLATTEN_MD_KERNEL4(n1, n2, n3, n4, i1, i2, i3, i4, kernel)       \
+  {                                                                     \
+    Kokkos::Array<int, 4> dims_fmk_internal = {n1, n2, n3, n4};         \
+    const int dims_fmk_internal_tot = (n1)*(n2)*(n3)*(n4);              \
+    Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
+      int i1, i2, i3, i4;                                             \
+      conv::unflatten_idx_left(idx_fmk_internal, dims_fmk_internal, i1, i2, i3, i4); \
+      kernel;                                                           \
+    });                                                               \
+  }
+
+
 #ifdef RRTMGP_ENABLE_YAKL
 // Compare a yakl array to a kokkos view, checking they are functionally
 // identical (same rank, dims, and values).

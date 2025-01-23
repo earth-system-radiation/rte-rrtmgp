@@ -794,10 +794,10 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // Cloud masks; don't need value re values if there's no cloud
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, nlay}), KOKKOS_LAMBDA (int icol, int ilay) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
       liqmsk(icol,ilay) = clwp(icol,ilay) > 0.;
       icemsk(icol,ilay) = ciwp(icol,ilay) > 0.;
-    }));
+    ));
 
     #ifdef RRTMGP_EXPENSIVE_CHECKS
     // Particle size, liquid/ice water paths
@@ -873,11 +873,11 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,nbnd}), KOKKOS_LAMBDA (int icol, int ilay, int ibnd) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol,nlay,nbnd, icol, ilay, ibnd,
       // Absorption optical depth  = (1-ssa) * tau = tau - taussa
       optical_props_tau(icol,ilay,ibnd) = (ltau(icol,ilay,ibnd) - ltaussa(icol,ilay,ibnd)) +
                                           (itau(icol,ilay,ibnd) - itaussa(icol,ilay,ibnd));
-    }));
+    ));
   }
 
   template <typename LtauT, typename ItauT, typename LtaussaT,
@@ -890,13 +890,13 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1,ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,nbnd}), KOKKOS_LAMBDA (int icol, int ilay, int ibnd) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol,nlay,nbnd, icol, ilay, ibnd,
       RealT tau    = ltau   (icol,ilay,ibnd) + itau   (icol,ilay,ibnd);
       RealT taussa = ltaussa(icol,ilay,ibnd) + itaussa(icol,ilay,ibnd);
       optical_props_g  (icol,ilay,ibnd) = (ltaussag(icol,ilay,ibnd) + itaussag(icol,ilay,ibnd)) / Kokkos::fmax(conv::epsilon(tau), taussa);
       optical_props_ssa(icol,ilay,ibnd) = taussa / Kokkos::fmax(conv::epsilon(tau), tau);
       optical_props_tau(icol,ilay,ibnd) = tau;
-    }));
+    ));
   }
 
   void set_ice_roughness(int icergh) {
@@ -933,7 +933,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ibnd = 1, nbnd
     //   do ilay = 1,nlay
     //     do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,nbnd}), KOKKOS_LAMBDA (int icol, int ilay, int ibnd) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol,nlay,nbnd, icol, ilay, ibnd,
       if (mask(icol,ilay)) {
         int index = Kokkos::fmin( floor( (re(icol,ilay) - offset) / step_size)+1, nsteps-1.) - 1;
         RealT fint = (re(icol,ilay) - offset)/step_size - index;
@@ -947,7 +947,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
         taussa (icol,ilay,ibnd) = 0;
         taussag(icol,ilay,ibnd) = 0;
       }
-    }));
+    ));
   }
 
   // Pade functions
@@ -961,7 +961,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // do ibnd = 1, nbnd
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol, nlay, nbnd}), KOKKOS_LAMBDA (int icol, int ilay, int ibnd) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol, nlay, nbnd, icol, ilay, ibnd,
       if (mask(icol,ilay)) {
         int irad;
         // Finds index into size regime table
@@ -984,7 +984,7 @@ class CloudOpticsK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
         taussa (icol,ilay,ibnd) = 0;
         taussag(icol,ilay,ibnd) = 0;
       }
-    }));
+    ));
   }
 
   // Evaluate Pade approximant of order [m/n]

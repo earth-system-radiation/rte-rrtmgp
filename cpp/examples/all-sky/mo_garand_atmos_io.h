@@ -39,24 +39,24 @@ void read_atmos(const std::string& input_file, ViewT &p_lay, ViewT &t_lay, ViewT
   ViewT tmp2d;
   // p_lay
   io.read(tmp2d,"p_lay");
-  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlay}), KOKKOS_LAMBDA (int icol, int ilay) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
     p_lay(icol,ilay) = tmp2d(0,ilay);
-  }));
+  ));
   // t_lay
   io.read(tmp2d,"t_lay");
-  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlay}), KOKKOS_LAMBDA (int icol, int ilay) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
     t_lay(icol,ilay) = tmp2d(0,ilay);
-  }));
+  ));
   // p_lev
   io.read(tmp2d,"p_lev");
-  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlev}), KOKKOS_LAMBDA (int icol, int ilev) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlev, icol, ilev,
     p_lev(icol,ilev) = tmp2d(0,ilev);
-  }));
+  ));
   // t_lev
   io.read(tmp2d,"t_lev");
-  TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlev}), KOKKOS_LAMBDA (int icol, int ilev) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlev, icol, ilev,
     t_lev(icol,ilev) = tmp2d(0,ilev);
-  }));
+  ));
 
   std::vector<std::string> gas_names = {
     "h2o", "co2", "o3", "n2o", "co", "ch4", "o2", "n2"
@@ -84,9 +84,9 @@ void read_atmos(const std::string& input_file, ViewT &p_lay, ViewT &t_lay, ViewT
     col_dry = ViewT("col_dry",ncol,nlay);
     tmp2d = ViewT();     // Reset the tmp2d variable
     io.read(tmp2d,"col_dry");
-    TIMED_KERNEL(Kokkos::parallel_for( MDRP::template get<2>({ncol, nlay}), KOKKOS_LAMBDA (int icol, int ilay) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
       col_dry(icol,ilay) = tmp2d(0,ilay);
-    }));
+    ));
   }
 
   io.close();

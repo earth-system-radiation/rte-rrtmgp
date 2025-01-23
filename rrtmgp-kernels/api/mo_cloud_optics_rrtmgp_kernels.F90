@@ -16,11 +16,12 @@ module mo_cloud_optics_rrtmgp_kernels
                                       tau_table, ssa_table, asy_table, &
                                       tau, taussa, taussag) bind(C, name="rrtmgp_compute_cld_from_table")
       use mo_rte_kind, only : wp, wl
-      integer,                                intent(in) :: ncol, nlay, nspec, nsteps
-      logical(wl), dimension(ncol,nlay),      intent(in) :: mask
-      real(wp),    dimension(ncol,nlay),      intent(in) :: lwp, re
-      real(wp),                               intent(in) :: step_size, offset
-      real(wp),    dimension(nsteps,   nbnd), intent(in) :: tau_table, ssa_table, asy_table
-      real(wp),    dimension(ncol,nlay,nbnd)             :: tau, taussa, taussag
+      integer,                                 intent(in) :: ncol, nlay, nspec, nsteps
+      logical(wl), dimension(ncol,nlay),       intent(in) :: mask
+      real(wp),    dimension(ncol,nlay),       intent(in) :: lwp, re
+      real(wp),                                intent(in) :: step_size, offset
+      real(wp),    dimension(nsteps,   nspec), intent(in) :: tau_table, ssa_table, asy_table
+      real(wp),    dimension(ncol,nlay,nspec)             :: tau, taussa, taussag
     end subroutine compute_cld_from_table
+  end interface
 end module mo_cloud_optics_rrtmgp_kernels

@@ -138,7 +138,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p1d(const YArray& array, const std::string& name, int idx)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx-1 << ") = " << array(idx) - adjust_val << std::endl; }
 
 template <typename KView,
@@ -150,7 +150,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p2d(const YArray& array, const std::string& name, int idx1, int idx2)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ") = " << array(idx1, idx2) - adjust_val << std::endl; }
 
 template <typename KView,
@@ -162,7 +162,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p3d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ") = " << array(idx1, idx2, idx3) - adjust_val << std::endl;
 }
 
@@ -175,7 +175,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p4d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ") = " << array(idx1, idx2, idx3, idx4) - adjust_val << std::endl;
 }
 
@@ -188,7 +188,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p5d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4, int idx5)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ", " << idx5-1 << ") = " << array(idx1, idx2, idx3, idx4, idx5) - adjust_val << std::endl;
 }
 
@@ -201,7 +201,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p6d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4, int idx5, int idx6)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ", " << idx5-1 << ", " << idx6-1 << ") = " << array(idx1, idx2, idx3, idx4, idx5, idx6) - adjust_val << std::endl;
 }
 
@@ -465,13 +465,49 @@ void unflatten_idx_right(const int idx, const Kokkos::Array<int, 4>& dims, int& 
   l = idx % dims[3];
 }
 
+template <typename LayoutT>
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx(const int idx, const Kokkos::Array<int, 2>& dims, int& i, int& j)
+{
+  if constexpr (std::is_same_v<LayoutT, Kokkos::LayoutLeft>) {
+    unflatten_idx_left(idx, dims, i, j);
+  }
+  else {
+    unflatten_idx_right(idx, dims, i, j);
+  }
+}
+
+template <typename LayoutT>
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
+{
+  if constexpr (std::is_same_v<LayoutT, Kokkos::LayoutLeft>) {
+    unflatten_idx_left(idx, dims, i, j, k);
+  }
+  else {
+    unflatten_idx_right(idx, dims, i, j, k);
+  }
+}
+
+template <typename LayoutT>
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx(const int idx, const Kokkos::Array<int, 4>& dims, int& i, int& j, int& k, int& l)
+{
+  if constexpr (std::is_same_v<LayoutT, Kokkos::LayoutLeft>) {
+    unflatten_idx_left(idx, dims, i, j, k, l);
+  }
+  else {
+    unflatten_idx_right(idx, dims, i, j, k, l);
+  }
+}
+
 #define FLATTEN_MD_KERNEL2(n1, n2, i1, i2, kernel)     \
   {                                                     \
     Kokkos::Array<int, 2> dims_fmk_internal = {n1, n2};         \
     const int dims_fmk_internal_tot = (n1)*(n2);                        \
     Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
       int i1, i2;                                                     \
-      conv::unflatten_idx_left(idx_fmk_internal, dims_fmk_internal, i1, i2); \
+      conv::unflatten_idx<LayoutT>(idx_fmk_internal, dims_fmk_internal, i1, i2); \
       kernel;                                                           \
     });                                                               \
   }
@@ -482,7 +518,7 @@ void unflatten_idx_right(const int idx, const Kokkos::Array<int, 4>& dims, int& 
     const int dims_fmk_internal_tot = (n1)*(n2)*(n3);                   \
     Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
       int i1, i2, i3;                                                 \
-      conv::unflatten_idx_left(idx_fmk_internal, dims_fmk_internal, i1, i2, i3); \
+      conv::unflatten_idx<LayoutT>(idx_fmk_internal, dims_fmk_internal, i1, i2, i3); \
       kernel;                                                           \
     });                                                               \
   }
@@ -493,7 +529,7 @@ void unflatten_idx_right(const int idx, const Kokkos::Array<int, 4>& dims, int& 
     const int dims_fmk_internal_tot = (n1)*(n2)*(n3)*(n4);              \
     Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
       int i1, i2, i3, i4;                                             \
-      conv::unflatten_idx_left(idx_fmk_internal, dims_fmk_internal, i1, i2, i3, i4); \
+      conv::unflatten_idx<LayoutT>(idx_fmk_internal, dims_fmk_internal, i1, i2, i3, i4); \
       kernel;                                                           \
     });                                                               \
   }
@@ -576,7 +612,7 @@ template <typename KView>
 struct ToYakl
 {
   using scalar_t = typename KView::value_type;
-  static constexpr auto yakl_mem = std::is_same<typename KView::device_type, HostDevice>::value ? yakl::memHost : yakl::memDevice;
+  static constexpr auto yakl_mem = std::is_same_v<typename KView::device_type, HostDevice> ? yakl::memHost : yakl::memDevice;
   using type = FArray<scalar_t, KView::rank, yakl_mem>;
 };
 
@@ -666,17 +702,17 @@ typename KView::non_const_value_type minval(const KView& view)
 
 // Get sum of view
 template <typename KView>
-std::conditional_t<std::is_same<typename KView::non_const_value_type, bool>::value, int, typename KView::non_const_value_type>
+std::conditional_t<std::is_same_v<typename KView::non_const_value_type, bool>, int, typename KView::non_const_value_type>
 sum(const KView& view)
 {
   using scalar_t    = typename KView::non_const_value_type;
   using exe_space_t = typename KView::execution_space;
-  using sum_t       = std::conditional_t<std::is_same<scalar_t, bool>::value, int, scalar_t>;
+  using sum_t       = std::conditional_t<std::is_same_v<scalar_t, bool>, int, scalar_t>;
 
   // If comparing sums of ints against f90, the values will need to be adjusted if
   // the sums are going to match. This would only be done during debugging, so disable
   // this for now.
-  // auto adjust = std::is_same<scalar_t, int>::value ? 1 : 0;
+  // auto adjust = std::is_same_v<scalar_t, int> ? 1 : 0;
 
   sum_t rv;
   Kokkos::parallel_reduce(
@@ -1243,8 +1279,8 @@ public:
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
     using T       = typename View::non_const_value_type;
-    constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
-    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+    constexpr bool is_c_layout   = std::is_same_v<myStyle, Kokkos::LayoutRight>;
+    constexpr bool is_device_mem = !std::is_same_v<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>;
     constexpr auto rank = View::rank;
 
     if (rank != dimNames.size()) { throw std::runtime_error("dimNames.size() != Array's rank"); }
@@ -1328,8 +1364,8 @@ public:
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
     using T       = typename View::non_const_value_type;
-    constexpr bool is_c_layout = std::is_same<myStyle, Kokkos::LayoutRight>::value;
-    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+    constexpr bool is_c_layout = std::is_same_v<myStyle, Kokkos::LayoutRight>;
+    constexpr bool is_device_mem = !std::is_same_v<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>;
     constexpr auto rank = View::rank;
 
     if (rank != dimNames.size()) { throw std::runtime_error("dimNames.size() != Array's rank"); }
@@ -1433,7 +1469,7 @@ public:
     }
     LeftHostView read_data("read_data", llayout);
 
-    if (std::is_same<T,bool>::value) {
+    if (std::is_same_v<T,bool>) {
       int* tmp = new int[arr.size()];
       var.getVar(tmp);
       for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] = (tmp[i] == 1); }
@@ -1442,7 +1478,7 @@ public:
     else {
       var.getVar(read_data.data());
       // integer data is nearly always idx data, so adjust it to 0-based
-      if (std::is_same<T,int>::value) {
+      if (std::is_same_v<T,int>) {
         for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] -= 1; }
       }
     }
@@ -1476,19 +1512,19 @@ public:
 
   /** @private */
   template <class T> int getType() const {
-    if ( std::is_same<typename std::remove_cv<T>::type,signed        char>::value ) { return NC_BYTE;   }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned      char>::value ) { return NC_UBYTE;  }
-    else if ( std::is_same<typename std::remove_cv<T>::type,             short>::value ) { return NC_SHORT;  }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned     short>::value ) { return NC_USHORT; }
-    else if ( std::is_same<typename std::remove_cv<T>::type,               int>::value ) { return NC_INT;    }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned       int>::value ) { return NC_UINT;   }
-    else if ( std::is_same<typename std::remove_cv<T>::type,              long>::value ) { return NC_INT;    }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned      long>::value ) { return NC_UINT;   }
-    else if ( std::is_same<typename std::remove_cv<T>::type,         long long>::value ) { return NC_INT64;  }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned long long>::value ) { return NC_UINT64; }
-    else if ( std::is_same<typename std::remove_cv<T>::type,             float>::value ) { return NC_FLOAT;  }
-    else if ( std::is_same<typename std::remove_cv<T>::type,            double>::value ) { return NC_DOUBLE; }
-    if ( std::is_same<typename std::remove_cv<T>::type,              char>::value ) { return NC_CHAR;   }
+    if ( std::is_same_v<typename std::remove_cv<T>::type,signed        char> ) { return NC_BYTE;   }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned      char> ) { return NC_UBYTE;  }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,             short> ) { return NC_SHORT;  }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned     short> ) { return NC_USHORT; }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,               int> ) { return NC_INT;    }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned       int> ) { return NC_UINT;   }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,              long> ) { return NC_INT;    }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned      long> ) { return NC_UINT;   }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,         long long> ) { return NC_INT64;  }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned long long> ) { return NC_UINT64; }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,             float> ) { return NC_FLOAT;  }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,            double> ) { return NC_DOUBLE; }
+    if ( std::is_same_v<typename std::remove_cv<T>::type,              char> ) { return NC_CHAR;   }
     else { throw std::runtime_error("Invalid type"); }
     return -1;
   }

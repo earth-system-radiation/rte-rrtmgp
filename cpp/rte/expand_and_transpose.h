@@ -24,10 +24,10 @@ void expand_and_transpose(OpticalPropsK<RealT, LayoutT, DeviceT> const &ops,
   Kokkos::View<int**, LayoutT, DeviceT> limits = ops.get_band_lims_gpoint();
   // for (int iband=1; iband <= nband; iband++) {
   //   for (int icol=1; icol <= ncol; icol++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol, nband}) , KOKKOS_LAMBDA (int icol, int iband) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nband, icol, iband,
     for (int igpt=limits(0,iband); igpt <= limits(1,iband); igpt++) {
       arr_out(icol, igpt) = arr_in(iband,icol);
     }
-  }));
+  ));
 }
 #endif

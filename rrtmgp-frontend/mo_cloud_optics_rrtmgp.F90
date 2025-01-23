@@ -108,7 +108,7 @@ contains
     nsize_liq = size(extliq,dim=1)
     nsize_ice = size(extice,dim=1)
     nrghice   = size(extice,dim=3)
-    nspec     = this%get_ngpt() ! Same as the number of bands if defined by-band 
+    nspec     = this%get_ngpt() ! Same as the number of bands if defined by-band
     !
     ! Error checking
     !   Can we check for consistency between table bounds

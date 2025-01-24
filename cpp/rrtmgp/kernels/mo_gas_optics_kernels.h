@@ -255,7 +255,7 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
   //     for (int tgpt=1; tgpt<=gptTiles; tgpt++) {
   //       for (int itcol=1; itcol<=TILE_SIZE; itcol++) {
   //         for (int itgpt=1; itgpt<=TILE_SIZE; itgpt++) {
-  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol,nlay,ngpt, icol, ilay, igpt,
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     RealT t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
     tau(icol,ilay,igpt) = t;
     g  (icol,ilay,igpt) = 0.;
@@ -264,7 +264,7 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
     } else {
       ssa(icol,ilay,igpt) = 0.;
     }
-  ));
+  }));
 }
 
 template <typename TlayT, typename TlevT, typename TsfcT, typename FmajorT, typename JetaT, typename TropoT,
@@ -428,13 +428,10 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
 
   int extent = scale_by_complement.extent(0);
 
-  // Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
-  // const int dims2_ncol_nlay_tot = ncol * nlay;
-
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,nlay, icol, ilay,
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {
@@ -491,7 +488,7 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
       }
 //#endif
     }
-  ));
+  }));
 }
 
 // compute minor species optical depths

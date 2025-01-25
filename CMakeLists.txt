@@ -112,8 +112,8 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
       FILES # cmake-format: sort
             ${RRTMGP_DATA}/rrtmgp-aerosols-merra-lw.nc
             ${RRTMGP_DATA}/rrtmgp-aerosols-merra-sw.nc
-            ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc
-            ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc
+            ${RRTMGP_DATA}/rrtmgp-clouds-lw-bnd.nc
+            ${RRTMGP_DATA}/rrtmgp-clouds-sw-bnd.nc
             ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
             ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
             ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc

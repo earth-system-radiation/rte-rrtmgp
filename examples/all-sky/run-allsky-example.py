@@ -14,8 +14,8 @@ all_sky_dir = "."
 lw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-gas-lw-g256.nc")
 sw_gas_coeffs_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-gas-sw-g224.nc")
 
-lw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-clouds-lw.nc")
-sw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-clouds-sw.nc")
+lw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-clouds-lw-bnd.nc")
+sw_clouds_coeff_file = os.path.join(rte_rrtmgp_dir, "rrtmgp-clouds-sw-bnd.nc")
 
 # In the local directory
 all_sky_exe_name = os.path.join(all_sky_dir, "rrtmgp_allsky")

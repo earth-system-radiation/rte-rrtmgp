@@ -1,4 +1,4 @@
-# 
+#
 # All-sky tests with clouds/by-band optics and aerosols
 #
 add_library(
@@ -49,7 +49,7 @@ set_tests_properties(
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_allsky"
 )
 
-# 
+#
 # All-sky tests with clouds/by-band optics only (no aerosols)
 #
 add_test(
@@ -94,7 +94,7 @@ set_tests_properties(
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_allsky_no_aerosols"
 )
 
-# 
+#
 # All-sky tests with clouds/g-point optics only (no aerosols)
 #
 add_test(

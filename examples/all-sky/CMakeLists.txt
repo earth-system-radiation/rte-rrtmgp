@@ -1,3 +1,6 @@
+# 
+# All-sky tests with clouds/by-band optics and aerosols
+#
 add_library(
   all_sky_utils STATIC # cmake-format: sort
   mo_load_aerosol_coefficients.F90 mo_load_cloud_coefficients.F90
@@ -46,6 +49,9 @@ set_tests_properties(
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_allsky"
 )
 
+# 
+# All-sky tests with clouds/by-band optics only (no aerosols)
+#
 add_test(
   NAME run_allsky_no_aerosols_lw
   COMMAND
@@ -88,6 +94,9 @@ set_tests_properties(
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_allsky_no_aerosols"
 )
 
+# 
+# All-sky tests with clouds/g-point optics only (no aerosols)
+#
 add_test(
   NAME run_allsky_gptclds_lw
   COMMAND

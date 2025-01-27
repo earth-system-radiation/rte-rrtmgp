@@ -90,7 +90,7 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
     ExternalProject_Add(
       rrtmgp-data
       GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
-      GIT_TAG "develop"
+      GIT_TAG "gpoint-cloud-optics"
       GIT_SHALLOW True
       EXCLUDE_FROM_ALL True
       PREFIX rrtmgp-data-cmake

@@ -99,7 +99,7 @@ contains
     ! Local variables
     !
     integer :: nrghice, nsize_liq, nsize_ice
-    integer :: nspec
+    integer :: ngpt
 
     error_msg = this%init(band_lims_wvn, band_lims_gpt, name="RRTMGP cloud optics")
     !
@@ -108,22 +108,22 @@ contains
     nsize_liq = size(extliq,dim=1)
     nsize_ice = size(extice,dim=1)
     nrghice   = size(extice,dim=3)
-    nspec     = this%get_ngpt() ! Same as the number of bands if defined by-band
+    ngpt     = this%get_ngpt() ! Same as the number of bands if defined by-band
     !
     ! Error checking
     !   Can we check for consistency between table bounds
     !
-    if(.not. extents_are(extliq, nsize_liq, nspec)) &
+    if(.not. extents_are(extliq, nsize_liq, ngpt)) &
       error_msg = "cloud_optics%init(): array extliq isn't consistently sized"
-    if(.not. extents_are(ssaliq, nsize_liq, nspec)) &
+    if(.not. extents_are(ssaliq, nsize_liq, ngpt)) &
       error_msg = "cloud_optics%init(): array ssaliq isn't consistently sized"
-    if(.not. extents_are(asyliq, nsize_liq, nspec)) &
+    if(.not. extents_are(asyliq, nsize_liq, ngpt)) &
       error_msg = "cloud_optics%init(): array asyliq isn't consistently sized"
-    if(.not. extents_are(extice, nsize_ice, nspec, nrghice)) &
+    if(.not. extents_are(extice, nsize_ice, ngpt, nrghice)) &
       error_msg = "cloud_optics%init(): array extice isn't consistently sized"
-    if(.not. extents_are(ssaice, nsize_ice, nspec, nrghice)) &
+    if(.not. extents_are(ssaice, nsize_ice, ngpt, nrghice)) &
       error_msg = "cloud_optics%init(): array ssaice isn't consistently sized"
-    if(.not. extents_are(asyice, nsize_ice, nspec, nrghice)) &
+    if(.not. extents_are(asyice, nsize_ice, ngpt, nrghice)) &
       error_msg = "cloud_optics%init(): array asyice isn't consistently sized"
     if(error_msg /= "") return
 
@@ -132,12 +132,12 @@ contains
     this%liq_step_size = (radliq_upr - radliq_lwr)/real(nsize_liq-1,wp)
     this%ice_step_size = (diamice_upr - diamice_lwr)/real(nsize_ice-1,wp)
     ! Allocate LUT coefficients
-    allocate(this%extliq(nsize_liq, nspec), &
-             this%ssaliq(nsize_liq, nspec), &
-             this%asyliq(nsize_liq, nspec), &
-             this%extice(nsize_ice, nspec, nrghice), &
-             this%ssaice(nsize_ice, nspec, nrghice), &
-             this%asyice(nsize_ice, nspec, nrghice))
+    allocate(this%extliq(nsize_liq, ngpt), &
+             this%ssaliq(nsize_liq, ngpt), &
+             this%asyliq(nsize_liq, ngpt), &
+             this%extice(nsize_ice, ngpt, nrghice), &
+             this%ssaice(nsize_ice, ngpt, nrghice), &
+             this%asyice(nsize_ice, ngpt, nrghice))
 
     !$acc enter data create(this)                                               &
     !$acc            create(this%extliq, this%ssaliq, this%asyliq)  &
@@ -230,7 +230,7 @@ contains
                 ! liquid and ice separately
     integer  :: ncol, nlay
     integer  :: nsizereg
-    integer  :: icol, ilay, ispec
+    integer  :: icol, ilay, igpt
     ! scalars for total tau, tau*ssa
     real(wp) :: tau, taussa
 
@@ -350,12 +350,12 @@ contains
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau)
 
-        do ispec = 1, this%get_ngpt()
+        do igpt = 1, this%get_ngpt()
           do ilay = 1, nlay
             do icol = 1,ncol
               ! Absorption optical depth  = (1-ssa) * tau = tau - taussa
-              optical_props%tau(icol,ilay,ispec) = (ltau(icol,ilay,ispec) - ltaussa(icol,ilay,ispec)) + &
-                                                   (itau(icol,ilay,ispec) - itaussa(icol,ilay,ispec))
+              optical_props%tau(icol,ilay,igpt) = (ltau(icol,ilay,igpt) - ltaussa(icol,ilay,igpt)) + &
+                                                   (itau(icol,ilay,igpt) - itaussa(icol,ilay,igpt))
             end do
           end do
         end do
@@ -364,15 +364,15 @@ contains
         !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau, optical_props%ssa, optical_props%g)
-        do ispec = 1, this%get_ngpt()
+        do igpt = 1, this%get_ngpt()
           do ilay = 1, nlay
             do icol = 1,ncol
-              tau    = ltau    (icol,ilay,ispec) + itau   (icol,ilay,ispec)
-              taussa = ltaussa (icol,ilay,ispec) + itaussa(icol,ilay,ispec)
-              optical_props%g  (icol,ilay,ispec) = (ltaussag(icol,ilay,ispec) + itaussag(icol,ilay,ispec)) / &
+              tau    = ltau    (icol,ilay,igpt) + itau   (icol,ilay,igpt)
+              taussa = ltaussa (icol,ilay,igpt) + itaussa(icol,ilay,igpt)
+              optical_props%g  (icol,ilay,igpt) = (ltaussag(icol,ilay,igpt) + itaussag(icol,ilay,igpt)) / &
                                                         max(epsilon(tau), taussa)
-              optical_props%ssa(icol,ilay,ispec) = taussa/max(epsilon(tau), tau)
-              optical_props%tau(icol,ilay,ispec) = tau
+              optical_props%ssa(icol,ilay,igpt) = taussa/max(epsilon(tau), tau)
+              optical_props%tau(icol,ilay,igpt) = tau
             end do
           end do
         end do

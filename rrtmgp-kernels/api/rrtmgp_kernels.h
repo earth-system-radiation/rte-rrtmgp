@@ -124,7 +124,7 @@ extern "C"
     );
 
     void rrtmgp_compute_cld_from_table(
-        const int& ncol, const int& nlay, const int& nspec,
+        const int& ncol, const int& nlay, const int& ngpt,
         const Bool*  mask, // (ncol,nlay)
         const Float* lwp,  // (ncol,nlay)
         const Float* re,   // (ncol,nlay)

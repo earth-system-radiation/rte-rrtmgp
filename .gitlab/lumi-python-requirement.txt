@@ -1,0 +1,4 @@
+dask[array]
+netCDF4
+numpy
+xarray

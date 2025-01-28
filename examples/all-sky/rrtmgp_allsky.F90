@@ -726,7 +726,7 @@ contains
   subroutine write_fluxes
     use netcdf
     use mo_simple_netcdf, only: write_field
-    integer :: ncid, i, col_dim, lay_dim, lev_dim, varid
+    integer :: ncid, i, col_dim, lay_dim, lev_dim, gpt_dim, varid
     real(wp) :: vmr(ncol, nlay)
     character(len=3) :: flux_prefix
     !
@@ -745,6 +745,8 @@ contains
       call stop_on_err("rrtmgp_allsky: can't define lay dimension")
     if(nf90_def_dim(ncid, "lev", nlay+1, lev_dim) /= NF90_NOERR) &
       call stop_on_err("rrtmgp_allsky: can't define lev dimension")
+    if(nf90_def_dim(ncid, "gpt", ngpt, gpt_dim) /= NF90_NOERR) &
+      call stop_on_err("rrtmgp_allsky: can't define gpt dimension")
 
     !
     ! Define variables
@@ -765,6 +767,11 @@ contains
       call create_var("iwp", ncid, [col_dim, lay_dim])
       call create_var("rel", ncid, [col_dim, lay_dim])
       call create_var("rei", ncid, [col_dim, lay_dim])
+      call create_var("cld_tau", ncid, [col_dim, lay_dim, gpt_dim])
+      if(is_sw) then
+        call create_var("cld_ssa", ncid, [col_dim, lay_dim, gpt_dim])
+        call create_var("cld_asy", ncid, [col_dim, lay_dim, gpt_dim])
+      end if
     end if
     if(do_aerosols) then
       if(nf90_def_var(ncid, "aero_type", NF90_SHORT, [col_dim, lay_dim], varid) /= NF90_NOERR) &
@@ -809,6 +816,12 @@ contains
       call stop_on_err(write_field(ncid, "iwp",  iwp))
       call stop_on_err(write_field(ncid, "rel",  rel))
       call stop_on_err(write_field(ncid, "rei",  rei))
+      call stop_on_err(write_field(ncid, "cld_tau",  clouds%tau))
+      select type(clouds)
+        type is (ty_optical_props_2str)
+        call stop_on_err(write_field(ncid, "cld_ssa",  clouds%ssa))
+        call stop_on_err(write_field(ncid, "cld_asy",  clouds%g))
+      end select
     end if
 
     if(do_aerosols) then

@@ -86,7 +86,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 4.3% of total for procedures.">20 statements</a>
+    title=" 5.2% of total for procedures.">20 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
@@ -128,13 +128,13 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~12"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~9"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>physical domain size</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~12"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~9"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>physical domain size</p></td>
@@ -143,31 +143,31 @@
   <td><span class="anchor" id="variable-ngas~6"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngas</strong></td><td><p>k-distribution table dimensions </p></td>
+  <td><strong>ngas</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nflav~8"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nflav</strong></td><td><p>k-distribution table dimensions </p></td>
+  <td><strong>nflav</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-neta~8"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>neta</strong></td><td><p>k-distribution table dimensions </p></td>
+  <td><strong>neta</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-npres~8"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>npres</strong></td><td><p>k-distribution table dimensions </p></td>
+  <td><strong>npres</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ntemp~8"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ntemp</strong></td><td><p>k-distribution table dimensions </p></td>
+  <td><strong>ntemp</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-flavor~2"></span>integer,</td>
@@ -179,13 +179,13 @@
   <td><span class="anchor" id="variable-press_ref_log~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(npres)</td><td>::</td>
-  <td><strong>press_ref_log</strong></td><td><p>log of pressure dimension in RRTMGP tables </p></td>
+  <td><strong>press_ref_log</strong></td><td><p>log of pressure dimension in RRTMGP tables</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-temp_ref~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ntemp)</td><td>::</td>
-  <td><strong>temp_ref</strong></td><td><p>temperature dimension in RRTMGP tables </p></td>
+  <td><strong>temp_ref</strong></td><td><p>temperature dimension in RRTMGP tables</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-press_ref_log_delta~2"></span>real(kind=wp),</td>
@@ -233,25 +233,25 @@
   <td><span class="anchor" id="variable-col_gas~6"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,0:ngas)</td><td>::</td>
-  <td><strong>col_gas</strong></td><td><p>input column gas amount - molecules/cm^2 </p></td>
+  <td><strong>col_gas</strong></td><td><p>input column gas amount - molecules/cm^2</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jtemp~8"></span>integer,</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
-  <td><strong>jtemp</strong></td><td><p>temperature and pressure interpolation indexes </p></td>
+  <td><strong>jtemp</strong></td><td><p>temperature and pressure interpolation indexes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-fmajor~6"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(2,2,2,ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>fmajor</strong></td><td><p>Interpolation weights in pressure, eta, strat/trop </p></td>
+  <td><strong>fmajor</strong></td><td><p>Interpolation weights in pressure, eta, strat/trop</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-fminor~6"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(2,2,  ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>fminor</strong></td><td><p>Interpolation fraction in eta, strat/trop </p></td>
+  <td><strong>fminor</strong></td><td><p>Interpolation fraction in eta, strat/trop</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-col_mix~4"></span>real(kind=wp),</td>
@@ -263,19 +263,19 @@
   <td><span class="anchor" id="variable-tropo~8"></span>logical(kind=wl),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
-  <td><strong>tropo</strong></td><td><p>use lower (or upper) atmosphere tables </p></td>
+  <td><strong>tropo</strong></td><td><p>use lower (or upper) atmosphere tables</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jeta~8"></span>integer,</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(2,    ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>jeta</strong></td><td><p>Index for binary species interpolation </p></td>
+  <td><strong>jeta</strong></td><td><p>Index for binary species interpolation</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jpress~6"></span>integer,</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
-  <td><strong>jpress</strong></td><td><p>temperature and pressure interpolation indexes </p></td>
+  <td><strong>jpress</strong></td><td><p>temperature and pressure interpolation indexes</p></td>
 </tr>
 </tbody>
 </table>

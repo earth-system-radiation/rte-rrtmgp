@@ -87,7 +87,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="18.4% of total for source files.">269 statements</a>
+    title="19.3% of total for source files.">269 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_aerosol_optics_rrtmgp_merra.F90"> Source File</a></li>
   </ul>
@@ -172,22 +172,22 @@
 <a id="ln-16" name="ln-16" href="#ln-16"></a><span class="c">!     one sulfate type, and both hydrophobic and hydrophilic black carbon and organic carbon.</span>
 <a id="ln-17" name="ln-17" href="#ln-17"></a><span class="c">!   Input aerosol optical data are stored in look-up tables.</span>
 <a id="ln-18" name="ln-18" href="#ln-18"></a><span class="c">!</span>
-<a id="ln-19" name="ln-19" href="#ln-19"></a><span class="c">!   References for the gocart interactive aerosols:   </span>
+<a id="ln-19" name="ln-19" href="#ln-19"></a><span class="c">!   References for the gocart interactive aerosols:</span>
 <a id="ln-20" name="ln-20" href="#ln-20"></a><span class="c">!     Chin et al., jgr, 2000 (https://doi.org/10.1029/2000jd900384)</span>
 <a id="ln-21" name="ln-21" href="#ln-21"></a><span class="c">!     Chin et al., jas, 2002 (https://doi.org/10.1175/1520-0469(2002)059&lt;0461:TAOTFT&gt;2.0.CO;2)</span>
 <a id="ln-22" name="ln-22" href="#ln-22"></a><span class="c">!     Colarco et al., jgr, 2010 (https://doi.org/10.1029/2009jd012820)</span>
-<a id="ln-23" name="ln-23" href="#ln-23"></a><span class="c">!                                                                      </span>
-<a id="ln-24" name="ln-24" href="#ln-24"></a><span class="c">!   References for merra2 aerosol reanalysis:                          </span>
-<a id="ln-25" name="ln-25" href="#ln-25"></a><span class="c">!     Randles et al., j. clim., 2017 (https://doi.org/10.1175/jcli-d-16-0609.1) </span>
+<a id="ln-23" name="ln-23" href="#ln-23"></a><span class="c">!</span>
+<a id="ln-24" name="ln-24" href="#ln-24"></a><span class="c">!   References for merra2 aerosol reanalysis:</span>
+<a id="ln-25" name="ln-25" href="#ln-25"></a><span class="c">!     Randles et al., j. clim., 2017 (https://doi.org/10.1175/jcli-d-16-0609.1)</span>
 <a id="ln-26" name="ln-26" href="#ln-26"></a><span class="c">!     Buchard et al., j. clim., 2017 (https://doi.org/10.1175/jcli-d-16-0613.1)</span>
-<a id="ln-27" name="ln-27" href="#ln-27"></a><span class="c">!                                                                      </span>
+<a id="ln-27" name="ln-27" href="#ln-27"></a><span class="c">!</span>
 <a id="ln-28" name="ln-28" href="#ln-28"></a><span class="c">! The class can be used as-is but is also intended as an example of how to extend the RTE framework</span>
 <a id="ln-29" name="ln-29" href="#ln-29"></a><span class="c">! -------------------------------------------------------------------------------------------------</span>
 <a id="ln-30" name="ln-30" href="#ln-30"></a>
 <a id="ln-31" name="ln-31" href="#ln-31"></a><span class="k">module </span><span class="n">mo_aerosol_optics_rrtmgp_merra</span><span class="w"></span>
 <a id="ln-32" name="ln-32" href="#ln-32"></a><span class="w">  </span><span class="k">use </span><span class="n">mo_rte_kind</span><span class="p">,</span><span class="w">      </span><span class="k">only</span><span class="p">:</span><span class="w"> </span><span class="n">wp</span><span class="p">,</span><span class="w"> </span><span class="n">wl</span><span class="w"></span>
 <a id="ln-33" name="ln-33" href="#ln-33"></a><span class="w">  </span><span class="k">use </span><span class="n">mo_rte_config</span><span class="p">,</span><span class="w">    </span><span class="k">only</span><span class="p">:</span><span class="w"> </span><span class="n">check_extents</span><span class="p">,</span><span class="w"> </span><span class="n">check_values</span><span class="w"></span>
-<a id="ln-34" name="ln-34" href="#ln-34"></a><span class="w">  </span><span class="k">use </span><span class="n">mo_rte_util_array_validation</span><span class="p">,&amp;</span><span class="w"> </span>
+<a id="ln-34" name="ln-34" href="#ln-34"></a><span class="w">  </span><span class="k">use </span><span class="n">mo_rte_util_array_validation</span><span class="p">,&amp;</span><span class="w"></span>
 <a id="ln-35" name="ln-35" href="#ln-35"></a><span class="w">                        </span><span class="k">only</span><span class="p">:</span><span class="w"> </span><span class="n">extents_are</span><span class="p">,</span><span class="w"> </span><span class="n">any_vals_outside</span><span class="w"></span>
 <a id="ln-36" name="ln-36" href="#ln-36"></a><span class="w">  </span><span class="k">use </span><span class="n">mo_optical_props</span><span class="p">,</span><span class="w"> </span><span class="k">only</span><span class="p">:</span><span class="w"> </span><span class="n">ty_optical_props</span><span class="p">,</span><span class="w">      </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-37" name="ln-37" href="#ln-37"></a><span class="w">                              </span><span class="n">ty_optical_props_arry</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
@@ -259,7 +259,7 @@
 <a id="ln-103" name="ln-103" href="#ln-103"></a><span class="w">                    </span><span class="n">aero_ocar_tbl</span><span class="p">,</span><span class="w"> </span><span class="n">aero_ocar_rh_tbl</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-104" name="ln-104" href="#ln-104"></a><span class="w">                    </span><span class="k">result</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span><span class="w"></span>
 <a id="ln-105" name="ln-105" href="#ln-105"></a>
-<a id="ln-106" name="ln-106" href="#ln-106"></a><span class="w">    </span><span class="k">class</span><span class="p">(</span><span class="n">ty_aerosol_optics_rrtmgp_merra</span><span class="p">),</span><span class="w">   </span><span class="p">&amp;</span><span class="w"> </span>
+<a id="ln-106" name="ln-106" href="#ln-106"></a><span class="w">    </span><span class="k">class</span><span class="p">(</span><span class="n">ty_aerosol_optics_rrtmgp_merra</span><span class="p">),</span><span class="w">   </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-107" name="ln-107" href="#ln-107"></a><span class="w">                                </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">this</span><span class="w"></span>
 <a id="ln-108" name="ln-108" href="#ln-108"></a><span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:),</span><span class="w">   </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="w">   </span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">band_lims_wvn</span><span class="w"> </span><span class="c">! spectral discretization</span>
 <a id="ln-109" name="ln-109" href="#ln-109"></a><span class="w">    </span><span class="c">! Lookup table interpolation constants</span>
@@ -323,7 +323,7 @@
 <a id="ln-167" name="ln-167" href="#ln-167"></a><span class="w">             </span><span class="n">this</span><span class="p">%</span><span class="n">aero_bcar_rh_tbl</span><span class="p">(</span><span class="n">nrh</span><span class="p">,</span><span class="w"> </span><span class="n">nval</span><span class="p">,</span><span class="w"> </span><span class="n">nband</span><span class="p">),</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-168" name="ln-168" href="#ln-168"></a><span class="w">             </span><span class="n">this</span><span class="p">%</span><span class="n">aero_ocar_tbl</span><span class="p">(</span><span class="n">nval</span><span class="p">,</span><span class="w"> </span><span class="n">nband</span><span class="p">),</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-169" name="ln-169" href="#ln-169"></a><span class="w">             </span><span class="n">this</span><span class="p">%</span><span class="n">aero_ocar_rh_tbl</span><span class="p">(</span><span class="n">nrh</span><span class="p">,</span><span class="w"> </span><span class="n">nval</span><span class="p">,</span><span class="w"> </span><span class="n">nband</span><span class="p">))</span><span class="w"></span>
-<a id="ln-170" name="ln-170" href="#ln-170"></a><span class="w">    </span>
+<a id="ln-170" name="ln-170" href="#ln-170"></a>
 <a id="ln-171" name="ln-171" href="#ln-171"></a><span class="w">    </span><span class="c">! Copy LUT coefficients</span>
 <a id="ln-172" name="ln-172" href="#ln-172"></a><span class="w">    </span><span class="n">this</span><span class="p">%</span><span class="n">merra_aero_bin_lims</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">merra_aero_bin_lims</span><span class="w"></span>
 <a id="ln-173" name="ln-173" href="#ln-173"></a><span class="w">    </span><span class="n">this</span><span class="p">%</span><span class="n">aero_rh</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="n">aero_rh</span><span class="w"></span>
@@ -359,7 +359,7 @@
 <a id="ln-203" name="ln-203" href="#ln-203"></a><span class="w">    </span><span class="c">! Lookup table aerosol optics interpolation arrays</span>
 <a id="ln-204" name="ln-204" href="#ln-204"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="nb">allocated</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">merra_aero_bin_lims</span><span class="p">))</span><span class="w"> </span><span class="k">then</span>
 <a id="ln-205" name="ln-205" href="#ln-205"></a><span class="k">      deallocate</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">merra_aero_bin_lims</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="p">%</span><span class="n">aero_rh</span><span class="p">)</span><span class="w"></span>
-<a id="ln-206" name="ln-206" href="#ln-206"></a><span class="w">      </span><span class="c">!$acc        exit data delete(     this%merra_aero_bin_lims, this%aero_rh) </span>
+<a id="ln-206" name="ln-206" href="#ln-206"></a><span class="w">      </span><span class="c">!$acc        exit data delete(     this%merra_aero_bin_lims, this%aero_rh)</span>
 <a id="ln-207" name="ln-207" href="#ln-207"></a><span class="w">      </span><span class="c">!$omp target exit data map(release:this%merra_aero_bin_lims, this%aero_rh)</span>
 <a id="ln-208" name="ln-208" href="#ln-208"></a><span class="w">    </span><span class="k">end if</span><span class="w"></span>
 <a id="ln-209" name="ln-209" href="#ln-209"></a>
@@ -370,8 +370,8 @@
 <a id="ln-214" name="ln-214" href="#ln-214"></a><span class="w">      </span><span class="c">!$acc           delete(this%aero_ocar_tbl, this%aero_ocar_rh_tbl) &amp;</span>
 <a id="ln-215" name="ln-215" href="#ln-215"></a><span class="w">      </span><span class="c">!$acc           delete(this)</span>
 <a id="ln-216" name="ln-216" href="#ln-216"></a><span class="w">      </span><span class="c">!$omp target exit data map(release:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl) &amp;</span>
-<a id="ln-217" name="ln-217" href="#ln-217"></a><span class="w">      </span><span class="c">!$omp                  map(release:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  &amp; </span>
-<a id="ln-218" name="ln-218" href="#ln-218"></a><span class="w">      </span><span class="c">!$omp                  map(release:this%aero_ocar_tbl, this%aero_ocar_rh_tbl) </span>
+<a id="ln-217" name="ln-217" href="#ln-217"></a><span class="w">      </span><span class="c">!$omp                  map(release:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  &amp;</span>
+<a id="ln-218" name="ln-218" href="#ln-218"></a><span class="w">      </span><span class="c">!$omp                  map(release:this%aero_ocar_tbl, this%aero_ocar_rh_tbl)</span>
 <a id="ln-219" name="ln-219" href="#ln-219"></a><span class="w">      </span><span class="k">deallocate</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">aero_dust_tbl</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="p">%</span><span class="n">aero_salt_tbl</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="p">%</span><span class="n">aero_sulf_tbl</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-220" name="ln-220" href="#ln-220"></a><span class="w">                 </span><span class="n">this</span><span class="p">%</span><span class="n">aero_bcar_tbl</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="p">%</span><span class="n">aero_bcar_rh_tbl</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-221" name="ln-221" href="#ln-221"></a><span class="w">                 </span><span class="n">this</span><span class="p">%</span><span class="n">aero_ocar_tbl</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="p">%</span><span class="n">aero_ocar_rh_tbl</span><span class="p">)</span><span class="w"></span>
@@ -391,7 +391,7 @@
 <a id="ln-235" name="ln-235" href="#ln-235"></a>
 <a id="ln-236" name="ln-236" href="#ln-236"></a><span class="w">    </span><span class="k">class</span><span class="p">(</span><span class="n">ty_aerosol_optics_rrtmgp_merra</span><span class="p">),</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-237" name="ln-237" href="#ln-237"></a><span class="w">              </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">this</span><span class="w"></span>
-<a id="ln-238" name="ln-238" href="#ln-238"></a><span class="w">    </span><span class="kt">integer</span><span class="p">,</span><span class="w">  </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">aero_type</span><span class="p">(:,:)</span><span class="w">   </span><span class="c">! MERRA2/GOCART aerosol type </span>
+<a id="ln-238" name="ln-238" href="#ln-238"></a><span class="w">    </span><span class="kt">integer</span><span class="p">,</span><span class="w">  </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">aero_type</span><span class="p">(:,:)</span><span class="w">   </span><span class="c">! MERRA2/GOCART aerosol type</span>
 <a id="ln-239" name="ln-239" href="#ln-239"></a><span class="w">                                               </span><span class="c">! Dimensions: (ncol,nlay)</span>
 <a id="ln-240" name="ln-240" href="#ln-240"></a><span class="w">                                               </span><span class="c">! 1 = merra_aero_dust    (dust)</span>
 <a id="ln-241" name="ln-241" href="#ln-241"></a><span class="w">                                               </span><span class="c">! 2 = merra_aero_salt    (salt)</span>
@@ -478,13 +478,13 @@
 <a id="ln-322" name="ln-322" href="#ln-322"></a><span class="w">      </span><span class="k">if</span><span class="p">(</span><span class="n">error_msg</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">return</span>
 <a id="ln-323" name="ln-323" href="#ln-323"></a><span class="k">    end if</span><span class="w"></span>
 <a id="ln-324" name="ln-324" href="#ln-324"></a>
-<a id="ln-325" name="ln-325" href="#ln-325"></a><span class="w">    </span><span class="c">!$acc data        copyin(aero_type, aero_size, aero_mass, relhum) </span>
-<a id="ln-326" name="ln-326" href="#ln-326"></a><span class="w">    </span><span class="c">!$omp target data map(to:aero_type, aero_size, aero_mass, relhum) </span>
+<a id="ln-325" name="ln-325" href="#ln-325"></a><span class="w">    </span><span class="c">!$acc data        copyin(aero_type, aero_size, aero_mass, relhum)</span>
+<a id="ln-326" name="ln-326" href="#ln-326"></a><span class="w">    </span><span class="c">!$omp target data map(to:aero_type, aero_size, aero_mass, relhum)</span>
 <a id="ln-327" name="ln-327" href="#ln-327"></a><span class="w">    </span><span class="c">!</span>
 <a id="ln-328" name="ln-328" href="#ln-328"></a><span class="w">    </span><span class="c">! Aerosol mask; don&#39;t need aerosol optics if there&#39;s no aerosol</span>
 <a id="ln-329" name="ln-329" href="#ln-329"></a><span class="w">    </span><span class="c">!</span>
 <a id="ln-330" name="ln-330" href="#ln-330"></a><span class="w">    </span><span class="c">!$acc data           create(aeromsk)</span>
-<a id="ln-331" name="ln-331" href="#ln-331"></a><span class="w">    </span><span class="c">!$omp target data map(alloc:aeromsk) </span>
+<a id="ln-331" name="ln-331" href="#ln-331"></a><span class="w">    </span><span class="c">!$omp target data map(alloc:aeromsk)</span>
 <a id="ln-332" name="ln-332" href="#ln-332"></a><span class="w">    </span><span class="c">!$acc              parallel loop default(present) collapse(2)</span>
 <a id="ln-333" name="ln-333" href="#ln-333"></a><span class="w">    </span><span class="c">!$omp target teams distribute parallel do simd collapse(2)</span>
 <a id="ln-334" name="ln-334" href="#ln-334"></a><span class="w">    </span><span class="k">do </span><span class="n">ilay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">nlay</span><span class="w"></span>
@@ -502,13 +502,13 @@
 <a id="ln-346" name="ln-346" href="#ln-346"></a><span class="w">      </span><span class="k">if</span><span class="p">(</span><span class="n">any_vals_outside</span><span class="p">(</span><span class="n">relhum</span><span class="p">,</span><span class="w">    </span><span class="n">aeromsk</span><span class="p">,</span><span class="w"> </span><span class="mf">0._wp</span><span class="p">,</span><span class="w"> </span><span class="mf">1._wp</span><span class="p">))</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-347" name="ln-347" href="#ln-347"></a><span class="w">        </span><span class="n">error_msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;aerosol optics: relative humidity fraction is out of bounds&#39;</span><span class="w"></span>
 <a id="ln-348" name="ln-348" href="#ln-348"></a><span class="w">    </span><span class="k">end if</span><span class="w"></span>
-<a id="ln-349" name="ln-349" href="#ln-349"></a><span class="w">    </span><span class="c">! Release aerosol mask </span>
+<a id="ln-349" name="ln-349" href="#ln-349"></a><span class="w">    </span><span class="c">! Release aerosol mask</span>
 <a id="ln-350" name="ln-350" href="#ln-350"></a><span class="w">    </span><span class="c">!$acc end data</span>
-<a id="ln-351" name="ln-351" href="#ln-351"></a><span class="w">    </span><span class="c">!$omp end target data </span>
+<a id="ln-351" name="ln-351" href="#ln-351"></a><span class="w">    </span><span class="c">!$omp end target data</span>
 <a id="ln-352" name="ln-352" href="#ln-352"></a>
 <a id="ln-353" name="ln-353" href="#ln-353"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">error_msg</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">then</span><span class="w"></span>
 <a id="ln-354" name="ln-354" href="#ln-354"></a><span class="w">      </span><span class="c">!$acc data           create(atau, ataussa, ataussag)</span>
-<a id="ln-355" name="ln-355" href="#ln-355"></a><span class="w">      </span><span class="c">!$omp target data map(alloc:atau, ataussa, ataussag) </span>
+<a id="ln-355" name="ln-355" href="#ln-355"></a><span class="w">      </span><span class="c">!$omp target data map(alloc:atau, ataussa, ataussag)</span>
 <a id="ln-356" name="ln-356" href="#ln-356"></a><span class="w">      </span><span class="c">!</span>
 <a id="ln-357" name="ln-357" href="#ln-357"></a><span class="w">      </span><span class="c">!</span>
 <a id="ln-358" name="ln-358" href="#ln-358"></a><span class="w">      </span><span class="c">! ----------------------------------------</span>
@@ -574,9 +574,9 @@
 <a id="ln-418" name="ln-418" href="#ln-418"></a><span class="w">      </span><span class="k">end select</span><span class="w"></span>
 <a id="ln-419" name="ln-419" href="#ln-419"></a><span class="w">      </span><span class="c">!$acc end data</span>
 <a id="ln-420" name="ln-420" href="#ln-420"></a><span class="w">      </span><span class="c">!$omp end target data</span>
-<a id="ln-421" name="ln-421" href="#ln-421"></a><span class="w">    </span><span class="k">end if</span><span class="w"> </span>
+<a id="ln-421" name="ln-421" href="#ln-421"></a><span class="w">    </span><span class="k">end if</span><span class="w"></span>
 <a id="ln-422" name="ln-422" href="#ln-422"></a><span class="w">    </span><span class="c">!$acc end data</span>
-<a id="ln-423" name="ln-423" href="#ln-423"></a><span class="w">    </span><span class="c">!$omp end target data </span>
+<a id="ln-423" name="ln-423" href="#ln-423"></a><span class="w">    </span><span class="c">!$omp end target data</span>
 <a id="ln-424" name="ln-424" href="#ln-424"></a><span class="w">  </span><span class="k">end function </span><span class="n">aerosol_optics</span><span class="w"></span>
 <a id="ln-425" name="ln-425" href="#ln-425"></a><span class="w">  </span><span class="c">!--------------------------------------------------------------------------------------------------------------------</span>
 <a id="ln-426" name="ln-426" href="#ln-426"></a><span class="w">  </span><span class="c">!</span>
@@ -585,7 +585,7 @@
 <a id="ln-429" name="ln-429" href="#ln-429"></a><span class="w">  </span><span class="c">!--------------------------------------------------------------------------------------------------------------------</span>
 <a id="ln-430" name="ln-430" href="#ln-430"></a><span class="w">  </span><span class="c">!</span>
 <a id="ln-431" name="ln-431" href="#ln-431"></a><span class="w">  </span><span class="c">! For size dimension, select size bin appropriate for the requested aerosol size.</span>
-<a id="ln-432" name="ln-432" href="#ln-432"></a><span class="w">  </span><span class="c">! For rh dimension, linearly interpolate values from a lookup table with &quot;nrh&quot; </span>
+<a id="ln-432" name="ln-432" href="#ln-432"></a><span class="w">  </span><span class="c">! For rh dimension, linearly interpolate values from a lookup table with &quot;nrh&quot;</span>
 <a id="ln-433" name="ln-433" href="#ln-433"></a><span class="w">  </span><span class="c">!   unevenly-spaced elements &quot;aero_rh&quot;. The last dimension for all tables is band.</span>
 <a id="ln-434" name="ln-434" href="#ln-434"></a><span class="w">  </span><span class="c">! Returns zero where no aerosol is present.</span>
 <a id="ln-435" name="ln-435" href="#ln-435"></a><span class="w">  </span><span class="c">!</span>
@@ -625,7 +625,7 @@
 <a id="ln-469" name="ln-469" href="#ln-469"></a><span class="w">      </span><span class="k">do </span><span class="n">ilay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="n">nlay</span><span class="w"></span>
 <a id="ln-470" name="ln-470" href="#ln-470"></a><span class="w">        </span><span class="k">do </span><span class="n">icol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"></span>
 <a id="ln-471" name="ln-471" href="#ln-471"></a><span class="w">          </span><span class="c">! Sequential loop to find size bin</span>
-<a id="ln-472" name="ln-472" href="#ln-472"></a><span class="w">          </span><span class="k">do </span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">nbin</span><span class="w"> </span>
+<a id="ln-472" name="ln-472" href="#ln-472"></a><span class="w">          </span><span class="k">do </span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">nbin</span><span class="w"></span>
 <a id="ln-473" name="ln-473" href="#ln-473"></a><span class="w">             </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="n">ilay</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="n">ge</span><span class="p">.</span><span class="w"> </span><span class="n">merra_aero_bin_lims</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="w"> </span><span class="p">&amp;</span><span class="w"></span>
 <a id="ln-474" name="ln-474" href="#ln-474"></a><span class="w">                 </span><span class="n">size</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="n">ilay</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="n">le</span><span class="p">.</span><span class="w"> </span><span class="n">merra_aero_bin_lims</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">i</span><span class="p">))</span><span class="w"> </span><span class="k">then</span>
 <a id="ln-475" name="ln-475" href="#ln-475"></a><span class="k">                </span><span class="n">ibin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"></span>
@@ -650,7 +650,7 @@
 <a id="ln-494" name="ln-494" href="#ln-494"></a><span class="w">             </span><span class="k">endif</span>
 <a id="ln-495" name="ln-495" href="#ln-495"></a><span class="k">          endif</span><span class="w"></span>
 <a id="ln-496" name="ln-496" href="#ln-496"></a>
-<a id="ln-497" name="ln-497" href="#ln-497"></a><span class="w">          </span><span class="c">! Set aerosol optical properties where aerosol present. Use aerosol type array as the mask. </span>
+<a id="ln-497" name="ln-497" href="#ln-497"></a><span class="w">          </span><span class="c">! Set aerosol optical properties where aerosol present. Use aerosol type array as the mask.</span>
 <a id="ln-498" name="ln-498" href="#ln-498"></a><span class="w">          </span><span class="k">select case</span><span class="w"> </span><span class="p">(</span><span class="n">itype</span><span class="p">)</span><span class="w"></span>
 <a id="ln-499" name="ln-499" href="#ln-499"></a>
 <a id="ln-500" name="ln-500" href="#ln-500"></a><span class="w">             </span><span class="c">! dust</span>
@@ -717,7 +717,7 @@
 <a id="ln-561" name="ln-561" href="#ln-561"></a><span class="w">  </span><span class="c">!</span>
 <a id="ln-562" name="ln-562" href="#ln-562"></a><span class="w">  </span><span class="c">! Function for linearly interpolating MERRA aerosol optics tables in the rh dimension for</span>
 <a id="ln-563" name="ln-563" href="#ln-563"></a><span class="w">  </span><span class="c">! a single parameter, aerosol type, spectral band, and size bin. Interpolation is performed</span>
-<a id="ln-564" name="ln-564" href="#ln-564"></a><span class="w">  </span><span class="c">! only where aerosol in present using aerosol type as the mask. </span>
+<a id="ln-564" name="ln-564" href="#ln-564"></a><span class="w">  </span><span class="c">! only where aerosol in present using aerosol type as the mask.</span>
 <a id="ln-565" name="ln-565" href="#ln-565"></a><span class="w">  </span><span class="c">!</span>
 <a id="ln-566" name="ln-566" href="#ln-566"></a><span class="w">  </span><span class="k">function </span><span class="n">linear_interp_aero_table</span><span class="p">(</span><span class="n">table</span><span class="p">,</span><span class="w"> </span><span class="n">index1</span><span class="p">,</span><span class="w"> </span><span class="n">index2</span><span class="p">,</span><span class="w"> </span><span class="n">weight</span><span class="p">)</span><span class="w"> </span><span class="k">result</span><span class="p">(</span><span class="k">value</span><span class="p">)</span><span class="w"></span>
 <a id="ln-567" name="ln-567" href="#ln-567"></a><span class="w">    </span><span class="c">!$acc routine seq</span>
@@ -730,7 +730,7 @@
 <a id="ln-574" name="ln-574" href="#ln-574"></a><span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="n">wp</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="k">value</span>
 <a id="ln-575" name="ln-575" href="#ln-575"></a>
 <a id="ln-576" name="ln-576" href="#ln-576"></a><span class="k">    value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">table</span><span class="p">(</span><span class="n">index1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">weight</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">table</span><span class="p">(</span><span class="n">index2</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">table</span><span class="p">(</span><span class="n">index1</span><span class="p">))</span><span class="w"></span>
-<a id="ln-577" name="ln-577" href="#ln-577"></a><span class="w">     </span>
+<a id="ln-577" name="ln-577" href="#ln-577"></a>
 <a id="ln-578" name="ln-578" href="#ln-578"></a><span class="w">  </span><span class="k">end function </span><span class="n">linear_interp_aero_table</span><span class="w"></span>
 <a id="ln-579" name="ln-579" href="#ln-579"></a><span class="c">! ----------------------------------------------------------</span>
 <a id="ln-580" name="ln-580" href="#ln-580"></a><span class="w">  </span><span class="kt">logical </span><span class="k">function </span><span class="n">any_int_vals_outside_2D</span><span class="p">(</span><span class="k">array</span><span class="p">,</span><span class="w"> </span><span class="n">checkMin</span><span class="p">,</span><span class="w"> </span><span class="n">checkMax</span><span class="p">)</span><span class="w"></span>

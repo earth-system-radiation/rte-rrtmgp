@@ -16,22 +16,22 @@
 !     one sulfate type, and both hydrophobic and hydrophilic black carbon and organic carbon.
 !   Input aerosol optical data are stored in look-up tables.
 !
-!   References for the gocart interactive aerosols:   
+!   References for the gocart interactive aerosols:
 !     Chin et al., jgr, 2000 (https://doi.org/10.1029/2000jd900384)
 !     Chin et al., jas, 2002 (https://doi.org/10.1175/1520-0469(2002)059<0461:TAOTFT>2.0.CO;2)
 !     Colarco et al., jgr, 2010 (https://doi.org/10.1029/2009jd012820)
-!                                                                      
-!   References for merra2 aerosol reanalysis:                          
-!     Randles et al., j. clim., 2017 (https://doi.org/10.1175/jcli-d-16-0609.1) 
+!
+!   References for merra2 aerosol reanalysis:
+!     Randles et al., j. clim., 2017 (https://doi.org/10.1175/jcli-d-16-0609.1)
 !     Buchard et al., j. clim., 2017 (https://doi.org/10.1175/jcli-d-16-0613.1)
-!                                                                      
+!
 ! The class can be used as-is but is also intended as an example of how to extend the RTE framework
 ! -------------------------------------------------------------------------------------------------
 
 module mo_aerosol_optics_rrtmgp_merra
   use mo_rte_kind,      only: wp, wl
   use mo_rte_config,    only: check_extents, check_values
-  use mo_rte_util_array_validation,& 
+  use mo_rte_util_array_validation,&
                         only: extents_are, any_vals_outside
   use mo_optical_props, only: ty_optical_props,      &
                               ty_optical_props_arry, &
@@ -103,7 +103,7 @@ contains
                     aero_ocar_tbl, aero_ocar_rh_tbl) &
                     result(error_msg)
 
-    class(ty_aerosol_optics_rrtmgp_merra),   & 
+    class(ty_aerosol_optics_rrtmgp_merra),   &
                                 intent(inout) :: this
     real(wp), dimension(:,:),   intent(in   ) :: band_lims_wvn ! spectral discretization
     ! Lookup table interpolation constants
@@ -167,7 +167,7 @@ contains
              this%aero_bcar_rh_tbl(nrh, nval, nband), &
              this%aero_ocar_tbl(nval, nband), &
              this%aero_ocar_rh_tbl(nrh, nval, nband))
-    
+
     ! Copy LUT coefficients
     this%merra_aero_bin_lims = merra_aero_bin_lims
     this%aero_rh             = aero_rh
@@ -203,7 +203,7 @@ contains
     ! Lookup table aerosol optics interpolation arrays
     if(allocated(this%merra_aero_bin_lims)) then
       deallocate(this%merra_aero_bin_lims, this%aero_rh)
-      !$acc        exit data delete(     this%merra_aero_bin_lims, this%aero_rh) 
+      !$acc        exit data delete(     this%merra_aero_bin_lims, this%aero_rh)
       !$omp target exit data map(release:this%merra_aero_bin_lims, this%aero_rh)
     end if
 
@@ -214,8 +214,8 @@ contains
       !$acc           delete(this%aero_ocar_tbl, this%aero_ocar_rh_tbl) &
       !$acc           delete(this)
       !$omp target exit data map(release:this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl) &
-      !$omp                  map(release:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  & 
-      !$omp                  map(release:this%aero_ocar_tbl, this%aero_ocar_rh_tbl) 
+      !$omp                  map(release:this%aero_bcar_tbl, this%aero_bcar_rh_tbl)                  &
+      !$omp                  map(release:this%aero_ocar_tbl, this%aero_ocar_rh_tbl)
       deallocate(this%aero_dust_tbl, this%aero_salt_tbl, this%aero_sulf_tbl, &
                  this%aero_bcar_tbl, this%aero_bcar_rh_tbl, &
                  this%aero_ocar_tbl, this%aero_ocar_rh_tbl)
@@ -235,7 +235,7 @@ contains
 
     class(ty_aerosol_optics_rrtmgp_merra), &
               intent(in  ) :: this
-    integer,  intent(in  ) :: aero_type(:,:)   ! MERRA2/GOCART aerosol type 
+    integer,  intent(in  ) :: aero_type(:,:)   ! MERRA2/GOCART aerosol type
                                                ! Dimensions: (ncol,nlay)
                                                ! 1 = merra_aero_dust    (dust)
                                                ! 2 = merra_aero_salt    (salt)
@@ -322,13 +322,13 @@ contains
       if(error_msg /= "") return
     end if
 
-    !$acc data        copyin(aero_type, aero_size, aero_mass, relhum) 
-    !$omp target data map(to:aero_type, aero_size, aero_mass, relhum) 
+    !$acc data        copyin(aero_type, aero_size, aero_mass, relhum)
+    !$omp target data map(to:aero_type, aero_size, aero_mass, relhum)
     !
     ! Aerosol mask; don't need aerosol optics if there's no aerosol
     !
     !$acc data           create(aeromsk)
-    !$omp target data map(alloc:aeromsk) 
+    !$omp target data map(alloc:aeromsk)
     !$acc              parallel loop default(present) collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
@@ -346,13 +346,13 @@ contains
       if(any_vals_outside(relhum,    aeromsk, 0._wp, 1._wp)) &
         error_msg = 'aerosol optics: relative humidity fraction is out of bounds'
     end if
-    ! Release aerosol mask 
+    ! Release aerosol mask
     !$acc end data
-    !$omp end target data 
+    !$omp end target data
 
     if(error_msg == "") then
       !$acc data           create(atau, ataussa, ataussag)
-      !$omp target data map(alloc:atau, ataussa, ataussag) 
+      !$omp target data map(alloc:atau, ataussa, ataussag)
       !
       !
       ! ----------------------------------------
@@ -418,9 +418,9 @@ contains
       end select
       !$acc end data
       !$omp end target data
-    end if 
+    end if
     !$acc end data
-    !$omp end target data 
+    !$omp end target data
   end function aerosol_optics
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -429,7 +429,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! For size dimension, select size bin appropriate for the requested aerosol size.
-  ! For rh dimension, linearly interpolate values from a lookup table with "nrh" 
+  ! For rh dimension, linearly interpolate values from a lookup table with "nrh"
   !   unevenly-spaced elements "aero_rh". The last dimension for all tables is band.
   ! Returns zero where no aerosol is present.
   !
@@ -469,7 +469,7 @@ contains
       do ilay = 1,nlay
         do icol = 1, ncol
           ! Sequential loop to find size bin
-          do i=1,nbin 
+          do i=1,nbin
              if (size(icol,ilay) .ge. merra_aero_bin_lims(1,i) .and. &
                  size(icol,ilay) .le. merra_aero_bin_lims(2,i)) then
                 ibin = i
@@ -494,7 +494,7 @@ contains
              endif
           endif
 
-          ! Set aerosol optical properties where aerosol present. Use aerosol type array as the mask. 
+          ! Set aerosol optical properties where aerosol present. Use aerosol type array as the mask.
           select case (itype)
 
              ! dust
@@ -561,7 +561,7 @@ contains
   !
   ! Function for linearly interpolating MERRA aerosol optics tables in the rh dimension for
   ! a single parameter, aerosol type, spectral band, and size bin. Interpolation is performed
-  ! only where aerosol in present using aerosol type as the mask. 
+  ! only where aerosol in present using aerosol type as the mask.
   !
   function linear_interp_aero_table(table, index1, index2, weight) result(value)
     !$acc routine seq
@@ -574,7 +574,7 @@ contains
     real(wp) :: value
 
     value = table(index1) + weight * (table(index2) - table(index1))
-     
+
   end function linear_interp_aero_table
 ! ----------------------------------------------------------
   logical function any_int_vals_outside_2D(array, checkMin, checkMax)

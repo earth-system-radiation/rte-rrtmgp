@@ -86,13 +86,13 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 5.4% of total for procedures.">25 statements</a>
+    title=" 2.8% of total for procedures.">11 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_cloud_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
      <li><a href='../sourcefile/mo_cloud_optics_rrtmgp_kernels.f90~2.html'>mo_cloud_optics_rrtmgp_kernels.F90</a></li>
-     <li><a href='../module/mo_cloud_optics_rrtmgp_kernels.html'>mo_cloud_optics_rrtmgp_kernels</a></li>
+     <li><a href='../module/mo_cloud_optics_rrtmgp_kernels~2.html'>mo_cloud_optics_rrtmgp_kernels</a></li>
      <li class="active">compute_cld_from_table</li>
   </ol>
 </div>
@@ -119,7 +119,7 @@
     
     <div class="col-md-9" id='text'>
       <h2>interface <br>
-      public subroutine compute_cld_from_table(ncol, nlay, nbnd, mask, lwp, re, nsteps, step_size, offset, tau_table, ssa_table, asy_table, tau, taussa, taussag) bind(C, name="0")</h2>    
+      public subroutine compute_cld_from_table(ncol, nlay, ngpt, mask, lwp, re, nsteps, step_size, offset, tau_table, ssa_table, asy_table, tau, taussa, taussag) bind(C, name="0")</h2>    
 
     
 
@@ -128,37 +128,37 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~8"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~10"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~8"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~10"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nbnd~7"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngpt~8"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td></td>
+  <td><strong>ngpt</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-mask~4"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-mask~2"></span>logical(kind=wl),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
   <td><strong>mask</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lwp~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lwp~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
   <td><strong>lwp</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-re~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-re~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
   <td><strong>re</strong></td><td></td>
@@ -184,37 +184,37 @@
 <tr>
   <td><span class="anchor" id="variable-tau_table~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(nsteps,   nbnd)</td><td>::</td>
+  <td></td>  <td>dimension(nsteps,   ngpt)</td><td>::</td>
   <td><strong>tau_table</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ssa_table~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(nsteps,   nbnd)</td><td>::</td>
+  <td></td>  <td>dimension(nsteps,   ngpt)</td><td>::</td>
   <td><strong>ssa_table</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-asy_table~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
-  <td></td>  <td>dimension(nsteps,   nbnd)</td><td>::</td>
+  <td></td>  <td>dimension(nsteps,   ngpt)</td><td>::</td>
   <td><strong>asy_table</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau~4"></span>real(kind=wp),</td>
 <td></td>
-  <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>tau</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-taussa~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-taussa~2"></span>real(kind=wp),</td>
 <td></td>
-  <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>taussa</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-taussag~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-taussag~2"></span>real(kind=wp),</td>
 <td></td>
-  <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
+  <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>taussag</strong></td><td></td>
 </tr>
 </tbody>

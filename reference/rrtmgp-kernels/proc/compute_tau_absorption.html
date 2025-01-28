@@ -85,7 +85,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="10.9% of total for procedures.">50 statements</a>
+    title="13.0% of total for procedures.">50 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
@@ -128,58 +128,58 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~4"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td><p>array sizes </p></td>
+  <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~4"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td><p>array sizes </p></td>
+  <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nbnd~4"></span>integer,</td>
+  <td><span class="anchor" id="variable-nbnd~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nbnd</strong></td><td><p>array sizes </p></td>
+  <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ngpt~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngpt</strong></td><td><p>array sizes </p></td>
+  <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ngas"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ngas</strong></td><td><p>tables sizes </p></td>
+  <td><strong>ngas</strong></td><td><p>tables sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nflav~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nflav</strong></td><td><p>tables sizes </p></td>
+  <td><strong>nflav</strong></td><td><p>tables sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-neta~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>neta</strong></td><td><p>tables sizes </p></td>
+  <td><strong>neta</strong></td><td><p>tables sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-npres~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>npres</strong></td><td><p>tables sizes </p></td>
+  <td><strong>npres</strong></td><td><p>tables sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-ntemp~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ntemp</strong></td><td><p>tables sizes </p></td>
+  <td><strong>ntemp</strong></td><td><p>tables sizes</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-nminorlower"></span>integer,</td>
@@ -221,31 +221,31 @@
   <td><span class="anchor" id="variable-band_lims_gpt~2"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
-  <td><strong>band_lims_gpt</strong></td><td><p>beginning and ending g-point for each band </p></td>
+  <td><strong>band_lims_gpt</strong></td><td><p>beginning and ending g-point for each band</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-kmajor"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ntemp,neta,npres+1,ngpt)</td><td>::</td>
-  <td><strong>kmajor</strong></td><td><p>absorption coefficient table - major gases </p></td>
+  <td><strong>kmajor</strong></td><td><p>absorption coefficient table - major gases</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-kminor_lower"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ntemp,neta,nminorklower)</td><td>::</td>
-  <td><strong>kminor_lower</strong></td><td><p>absorption coefficient table - minor gases, lower atmosphere </p></td>
+  <td><strong>kminor_lower</strong></td><td><p>absorption coefficient table - minor gases, lower atmosphere</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-kminor_upper"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ntemp,neta,nminorkupper)</td><td>::</td>
-  <td><strong>kminor_upper</strong></td><td><p>absorption coefficient table - minor gases, upper atmosphere </p></td>
+  <td><strong>kminor_upper</strong></td><td><p>absorption coefficient table - minor gases, upper atmosphere</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-minor_limits_gpt_lower"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nminorlower)</td><td>::</td>
-  <td><strong>minor_limits_gpt_lower</strong></td><td><p>beginning and ending g-point for each minor gas </p></td>
+  <td><strong>minor_limits_gpt_lower</strong></td><td><p>beginning and ending g-point for each minor gas</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-minor_limits_gpt_upper"></span>integer,</td>
@@ -269,7 +269,7 @@
   <td><span class="anchor" id="variable-scale_by_complement_lower"></span>logical(kind=wl),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(  nminorlower)</td><td>::</td>
-  <td><strong>scale_by_complement_lower</strong></td><td><p>generic treatment of minor gases - scale by density (e.g. self-continuum) or complement?  </p></td>
+  <td><strong>scale_by_complement_lower</strong></td><td><p>generic treatment of minor gases - scale by density (e.g. self-continuum) or complement?</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-scale_by_complement_upper"></span>logical(kind=wl),</td>
@@ -293,7 +293,7 @@
   <td><span class="anchor" id="variable-idx_minor_scaling_lower"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(  nminorlower)</td><td>::</td>
-  <td><strong>idx_minor_scaling_lower</strong></td><td><p>for this minor gas, index of the "scaling gas" in col_gas </p></td>
+  <td><strong>idx_minor_scaling_lower</strong></td><td><p>for this minor gas, index of the "scaling gas" in col_gas</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-idx_minor_scaling_upper"></span>integer,</td>
@@ -317,67 +317,67 @@
   <td><span class="anchor" id="variable-tropo~2"></span>logical(kind=wl),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
-  <td><strong>tropo</strong></td><td><p>use upper- or lower-atmospheric tables? </p></td>
+  <td><strong>tropo</strong></td><td><p>use upper- or lower-atmospheric tables?</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-col_mix"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,    ncol,nlay,nflav       )</td><td>::</td>
-  <td><strong>col_mix</strong></td><td><p>combination of major species's column amounts - computed in interpolation() </p></td>
+  <td><strong>col_mix</strong></td><td><p>combination of major species's column amounts - computed in interpolation()</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-fmajor~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,2,2,ncol,nlay,nflav       )</td><td>::</td>
-  <td><strong>fmajor</strong></td><td><p>interpolation weights for major gases - computed in interpolation() </p></td>
+  <td><strong>fmajor</strong></td><td><p>interpolation weights for major gases - computed in interpolation()</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-fminor"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,2,  ncol,nlay,nflav       )</td><td>::</td>
-  <td><strong>fminor</strong></td><td><p>interpolation weights for minor gases - computed in interpolation() </p></td>
+  <td><strong>fminor</strong></td><td><p>interpolation weights for minor gases - computed in interpolation()</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-play"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay       )</td><td>::</td>
-  <td><strong>play</strong></td><td><p>input temperature and pressure </p></td>
+  <td><strong>play</strong></td><td><p>input temperature and pressure</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tlay~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay       )</td><td>::</td>
-  <td><strong>tlay</strong></td><td><p>input temperature and pressure </p></td>
+  <td><strong>tlay</strong></td><td><p>input temperature and pressure</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-col_gas"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay,0:ngas)</td><td>::</td>
-  <td><strong>col_gas</strong></td><td><p>input column gas amount (molecules/cm^2) </p></td>
+  <td><strong>col_gas</strong></td><td><p>input column gas amount (molecules/cm^2)</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jeta~2"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,    ncol,nlay,nflav       )</td><td>::</td>
-  <td><strong>jeta</strong></td><td><p>interpolation indexes in eta - computed in interpolation() </p></td>
+  <td><strong>jeta</strong></td><td><p>interpolation indexes in eta - computed in interpolation()</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jtemp~2"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay       )</td><td>::</td>
-  <td><strong>jtemp</strong></td><td><p>interpolation indexes in temperature - computed in interpolation() </p></td>
+  <td><strong>jtemp</strong></td><td><p>interpolation indexes in temperature - computed in interpolation()</p></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-jpress~2"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay       )</td><td>::</td>
-  <td><strong>jpress</strong></td><td><p>interpolation indexes in pressure  - computed in interpolation() </p></td>
+  <td><strong>jpress</strong></td><td><p>interpolation indexes in pressure  - computed in interpolation()</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
-  <td><strong>tau</strong></td><td><p>aborption optional depth </p></td>
+  <td><strong>tau</strong></td><td><p>aborption optional depth</p></td>
 </tr>
 </tbody>
 </table>

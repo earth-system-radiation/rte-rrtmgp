@@ -38,8 +38,8 @@ module mo_fluxes_broadband_kernels
   ! ----------------------------------------------------------------------------
   !>
   !> Spectral reduction over all points for net flux
-  !>   Overloaded - which routine is called depends on arguments 
-  !> 
+  !>   Overloaded - which routine is called depends on arguments
+  !>
   interface net_broadband
     ! ----------------------------------------------------------------------------
     !>

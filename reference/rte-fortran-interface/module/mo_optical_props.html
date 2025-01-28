@@ -156,7 +156,7 @@
 </ul>
 <p>These classes must be allocated before use. Initialization and allocation can be combined.
   The classes have a validate() function that checks all arrays for valid values (e.g. tau &gt; 0.)
-  The vertical orientation can be specified via this%set_top_at_1() or obtained via this%top_at_1(). </p>
+  The vertical orientation can be specified via this%set_top_at_1() or obtained via this%top_at_1().</p>
 <p>Optical properties can be delta-scaled (though this is currently implemented only for two-stream arrays)</p>
 <p>Optical properties can increment or "add themselves to" a set of properties represented with arrays
   as long as both sets have the same underlying band structure. Properties defined by band
@@ -172,8 +172,8 @@
   <ul class="list-inline">
     <li>mo_rte_kind</li>
     <li><a href='../module/mo_rte_config.html'>mo_rte_config</a></li>
-    <li><a href='../module/mo_rte_util_array_validation.html'>mo_rte_util_array_validation</a></li>
     <li>mo_optical_props_kernels</li>
+    <li><a href='../module/mo_rte_util_array_validation.html'>mo_rte_util_array_validation</a></li>
   </ul>
       </li>
       <li class="list-group-item">
@@ -216,37 +216,37 @@
 </g>
 </g>
 <!-- module~mo_optical_props&#45;&gt;module~mo_rte_util_array_validation -->
-<g id="module~~mo_optical_props~~UsesGraph_edge3" class="edge">
+<g id="module~~mo_optical_props~~UsesGraph_edge2" class="edge">
 <title>module~mo_optical_props&#45;&gt;module~mo_rte_util_array_validation</title>
 <path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M312.61,-81.53C304.4,-82.55 295.71,-83.64 286.93,-84.73"/>
 <polygon fill="#000000" stroke="#000000" points="286.5,-81.26 277.01,-85.97 287.36,-88.2 286.5,-81.26"/>
 </g>
-<!-- module~mo_rte_config -->
+<!-- mo_optical_props_kernels -->
 <g id="module~~mo_optical_props~~UsesGraph_node4" class="node">
+<title>mo_optical_props_kernels</title>
+<polygon fill="#337ab7" stroke="#337ab7" points="270.5,-66 120.5,-66 120.5,-42 270.5,-42 270.5,-66"/>
+<text text-anchor="middle" x="195.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props_kernels</text>
+</g>
+<!-- module~mo_optical_props&#45;&gt;mo_optical_props_kernels -->
+<g id="module~~mo_optical_props~~UsesGraph_edge3" class="edge">
+<title>module~mo_optical_props&#45;&gt;mo_optical_props_kernels</title>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M312.61,-68.47C302.4,-67.2 291.46,-65.84 280.53,-64.47"/>
+<polygon fill="#000000" stroke="#000000" points="280.87,-60.99 270.51,-63.22 280,-67.93 280.87,-60.99"/>
+</g>
+<!-- module~mo_rte_config -->
+<g id="module~~mo_optical_props~~UsesGraph_node5" class="node">
 <title>module~mo_rte_config</title>
-<g id="a_module~~mo_optical_props~~UsesGraph_node4"><a xlink:href=".././module/mo_rte_config.html" xlink:title="mo_rte_config">
-<polygon fill="#337ab7" stroke="#337ab7" points="239.5,-66 151.5,-66 151.5,-42 239.5,-42 239.5,-66"/>
-<text text-anchor="middle" x="195.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config</text>
+<g id="a_module~~mo_optical_props~~UsesGraph_node5"><a xlink:href=".././module/mo_rte_config.html" xlink:title="mo_rte_config">
+<polygon fill="#337ab7" stroke="#337ab7" points="239.5,-24 151.5,-24 151.5,0 239.5,0 239.5,-24"/>
+<text text-anchor="middle" x="195.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_rte_config</text>
 </a>
 </g>
 </g>
 <!-- module~mo_optical_props&#45;&gt;module~mo_rte_config -->
 <g id="module~~mo_optical_props~~UsesGraph_edge4" class="edge">
 <title>module~mo_optical_props&#45;&gt;module~mo_rte_config</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M312.61,-68.47C292.53,-65.97 269.61,-63.11 249.47,-60.6"/>
-<polygon fill="#000000" stroke="#000000" points="249.89,-57.13 239.53,-59.36 249.02,-64.07 249.89,-57.13"/>
-</g>
-<!-- mo_optical_props_kernels -->
-<g id="module~~mo_optical_props~~UsesGraph_node5" class="node">
-<title>mo_optical_props_kernels</title>
-<polygon fill="#337ab7" stroke="#337ab7" points="270.5,-24 120.5,-24 120.5,0 270.5,0 270.5,-24"/>
-<text text-anchor="middle" x="195.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">mo_optical_props_kernels</text>
-</g>
-<!-- module~mo_optical_props&#45;&gt;mo_optical_props_kernels -->
-<g id="module~~mo_optical_props~~UsesGraph_edge2" class="edge">
-<title>module~mo_optical_props&#45;&gt;mo_optical_props_kernels</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M342.72,-62.91C325.23,-53.78 300.06,-41.42 277,-33 271.03,-30.82 264.74,-28.77 258.42,-26.87"/>
-<polygon fill="#000000" stroke="#000000" points="259.06,-23.41 248.48,-24.01 257.12,-30.14 259.06,-23.41"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M342.72,-62.91C325.23,-53.78 300.06,-41.42 277,-33 268.23,-29.8 258.76,-26.87 249.5,-24.29"/>
+<polygon fill="#000000" stroke="#000000" points="250.14,-20.84 239.58,-21.63 248.33,-27.6 250.14,-20.84"/>
 </g>
 <!-- module~mo_rte_util_array_validation&#45;&gt;mo_rte_kind -->
 <g id="module~~mo_optical_props~~UsesGraph_edge5" class="edge">
@@ -257,8 +257,8 @@
 <!-- module~mo_rte_config&#45;&gt;mo_rte_kind -->
 <g id="module~~mo_optical_props~~UsesGraph_edge6" class="edge">
 <title>module~mo_rte_config&#45;&gt;mo_rte_kind</title>
-<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M151.42,-65.06C139.31,-68.22 126.12,-71.7 114,-75 105.66,-77.27 96.82,-79.73 88.25,-82.15"/>
-<polygon fill="#000000" stroke="#000000" points="87.03,-78.85 78.36,-84.94 88.94,-85.59 87.03,-78.85"/>
+<path fill="none" stroke="#000000" stroke-dasharray="5,2" d="M151.4,-19.46C138.9,-22.62 125.53,-26.99 114,-33 92.54,-44.18 71.89,-62.61 57.89,-76.66"/>
+<polygon fill="#000000" stroke="#000000" points="55.28,-74.32 50.83,-83.93 60.3,-79.19 55.28,-74.32"/>
 </g>
 </g>
 </svg>

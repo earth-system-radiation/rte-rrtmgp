@@ -31,7 +31,7 @@
           </span>
         </label>
 
-        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">How to build and run tests</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a></div>
+        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">How to build and run tests</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a></div>
       </nav></div>
 </header>
 <main class="page-content" aria-label="Content">
@@ -50,10 +50,10 @@
 <ul>
   <li>Module names start with <code class="language-plaintext highlighter-rouge">mo_</code>, class/type names with <code class="language-plaintext highlighter-rouge">ty_</code>.</li>
   <li>Real variables are defined with working precision <code class="language-plaintext highlighter-rouge">wp</code>; logical variables with <code class="language-plaintext highlighter-rouge">wl</code>.
-  Both Fortran KIND parameters are set in <code class="language-plaintext highlighter-rouge">mo_rte_kind.F90</code></li>
+Both Fortran KIND parameters are set in <code class="language-plaintext highlighter-rouge">mo_rte_kind.F90</code></li>
   <li>Most procedures in RTE and RRTMGP are functions which return a string. A non-empty string indicates an error of some kind.</li>
   <li>RTE and RRTMGP operate on multiple columns (profiles) at once. Problems are dimensioned by column, layer,
-  and spectral quadrature point.</li>
+and spectral quadrature point.</li>
   <li>RTE and RRTMGP are agnostic to vertical ordering</li>
   <li>Units are MKS</li>
   <li>Procedures (with the exception of testing code) do not perform I/O</li>
@@ -61,13 +61,13 @@
 
 <h2 id="fortran-user-facing-class-interfaces">Fortran user-facing class interfaces</h2>
 
-<p><a href="./rte-fortran-interface/index.html">RTE    Fortran interface</a></p>
+<p><a href="./rte-fortran-interface/index.html">RTE Fortran interface</a></p>
 
 <p><a href="./rrtmgp-fortran-interface/index.html">RRTMGP Fortran interface</a></p>
 
 <h2 id="kernel-interfaces">Kernel interfaces</h2>
 
-<p><a href="./rte-kernels/index.html">RTE kernels:    Fortran interface</a></p>
+<p><a href="./rte-kernels/index.html">RTE kernels: Fortran interface</a></p>
 
 <p><a href="./rrtmgp-kernels/index.html">RRTMGP kernels: Fortran interface</a></p>
 

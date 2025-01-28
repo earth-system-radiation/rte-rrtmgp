@@ -1,9 +1,10 @@
 # rfmip-rrtmgp
+
 This directory contains programs and support infrastructure for running
 the [RTE+RRTMGP](https://github.com/RobertPincus/rte-rrtmgp) radiation parameterization for the
 [RFMIP](https://www.earthsystemcog.org/projects/rfmip/) cases.
 
-Note that this example is run, and the results checked automatically, when `make` is invoked in the root directory.
+Note that this example is run, and the results checked automatically, when `ctest` is invoked in the root directory.
 
 By default needed files (input conditions, output templates) are copied from a subdirectory of `$RRTMGP_DATA`.
 A Python script `stage_files.py` may also used to download relevant files from the

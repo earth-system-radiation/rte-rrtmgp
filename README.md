@@ -15,10 +15,9 @@ RRTMGP uses a k-distribution to provide an optical description (absorption and p
 
 RTE computes fluxes given spectrally-resolved optical descriptions and source functions. The fluxes are normally summarized or reduced via a user extensible class.
 
-
 ## Building the libraries, examples, and unit-testing codes.
 
-A description of building RTE+RRTMGP with an ad hoc homemade system is described in the [documentation](https://earth-system-radiation.github.io/rte-rrtmgp/how-tos/).
+A description of building RTE+RRTMGP with `CMake` is described in the [documentation](https://earth-system-radiation.github.io/rte-rrtmgp/how-tos/).
 
 See also the `autoconf` branch for a Gnu autotools build system.
 

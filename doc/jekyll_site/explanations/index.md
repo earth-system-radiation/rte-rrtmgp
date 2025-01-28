@@ -1,6 +1,6 @@
 ---
-layout: "page"
-title: "Explanations"
+layout: page
+title: Explanations
 ---
 
 # Explanations will live here

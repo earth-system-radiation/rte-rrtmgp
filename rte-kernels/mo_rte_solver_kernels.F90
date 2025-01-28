@@ -625,23 +625,23 @@ contains
                                                      tau,        & ! Optical path (tau/mu)
                                                      trans         ! Transmissivity (exp(-tau))
     real(wp), dimension(ncol, nlay+1), intent(in) :: lev_source    ! Planck source at levels (layer edges)
-    real(wp), dimension(ncol, nlay  ), target, & 
+    real(wp), dimension(ncol, nlay  ), target, &
                                        intent(out):: source_dn, source_up
                                                                    ! Source function at layer edges
                                                                    ! Down at the bottom of the layer, up at the top
     ! --------------------------------
-    real(wp), dimension(:,:), pointer :: source_inc, source_dec 
+    real(wp), dimension(:,:), pointer :: source_inc, source_dec
     integer             :: icol, ilay
     real(wp)            :: fact
     real(wp), parameter :: tau_thresh = sqrt(sqrt(epsilon(tau)))
     ! ---------------------------------------------------------------
-    if (top_at_1) then 
-      source_inc => source_dn 
+    if (top_at_1) then
+      source_inc => source_dn
       source_dec => source_up
     else
       source_inc => source_up
       source_dec => source_dn
-    end if 
+    end if
     do ilay = 1, nlay
       do icol = 1, ncol
       !
@@ -664,13 +664,13 @@ contains
       !
       ! Even better - omit the layer Planck source (not working so well)
       !
-      if(.false.) then 
+      if(.false.) then
         source_inc(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay+1) + &
                                 fact * (lev_source(icol,ilay  ) - lev_source(icol,ilay+1))
         source_dec(icol,ilay) = (1._wp - trans(icol,ilay)) * lev_source(icol,ilay ) + &
                                 fact * (lev_source(icol,ilay+1) - lev_source(icol,ilay  ))
-      end if 
-      end do 
+      end if
+      end do
     end do
   end subroutine lw_source_noscat
   ! -------------------------------------------------------------------------------------------------
@@ -1060,9 +1060,9 @@ contains
         !
         ! On a round earth, where mu0 can increase with depth in the atmosphere,
         !   levels with mu0 <= 0 have no direct beam and hence no source for diffuse light
-        !   Compute transmission and reflection using a nominal value but mask out later 
+        !   Compute transmission and reflection using a nominal value but mask out later
         !
-        mu0_s = max(min_mu0, mu0(i, lay_index)) 
+        mu0_s = max(min_mu0, mu0(i, lay_index))
         k_mu     = k * mu0_s
         !
         ! Equation 14, multiplying top and bottom by exp(-k*tau)
@@ -1101,7 +1101,7 @@ contains
                (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
                2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
         ! Final check that energy is not spuriously created, by recognizing that
-        ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
+        ! the beam can either be reflected, penetrate unscattered to the base of a layer,
         ! or penetrate through but be scattered on the way - the rest is absorbed
         ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
         Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))
@@ -1113,16 +1113,16 @@ contains
       end do
     end do
     !
-    ! T and R for the direct beam are computed using nominal values even when the 
+    ! T and R for the direct beam are computed using nominal values even when the
     !   sun is below the horizon (mu0 < 0); set those values back to zero
     ! This won't be efficient if many nighttime columns are passed
     !
-    source_sfc(:) = merge(dir_flux_trans(:)*sfc_albedo(:), & 
-                          0._wp, mu0(:,lay_index) > 0._wp) 
-    where(mu0(:,:) <= 0._wp) 
+    source_sfc(:) = merge(dir_flux_trans(:)*sfc_albedo(:), &
+                          0._wp, mu0(:,lay_index) > 0._wp)
+    where(mu0(:,:) <= 0._wp)
       source_up(:,:) = 0._wp
       source_dn(:,:) = 0._wp
-    end where 
+    end where
 
   end subroutine sw_dif_and_source
 ! ---------------------------------------------------------------

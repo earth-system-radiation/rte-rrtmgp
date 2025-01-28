@@ -17,7 +17,7 @@
 module mo_zenith_angle_spherical_correction
   use mo_rte_kind,       only: wp, wl
   use mo_rte_config,     only: check_extents, check_values
-  use mo_rte_util_array_validation, & 
+  use mo_rte_util_array_validation, &
                          only: extents_are, any_vals_outside, any_vals_less_than
   implicit none
   private

@@ -1,10 +1,10 @@
 ---
 layout: post
-title:  "2022-06-02: Release notes"
+title: '2022-06-02: Release notes'
 categories: Release-notes
 ---
 
-Commit [a4fe30c](https://github.com/earth-system-radiation/rte-rrtmgp/commit/a4fe30cf4dab2e5fd8d3ab6f11683a82ae584475) 
+Commit [a4fe30c](https://github.com/earth-system-radiation/rte-rrtmgp/commit/a4fe30cf4dab2e5fd8d3ab6f11683a82ae584475)
 to branch `main` makes the following changes:
 
 - Solar zenith angle can vary with height, allowing for calculations on a pseudo-spherical earth

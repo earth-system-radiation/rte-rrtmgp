@@ -33,7 +33,7 @@
 !>
 !>   These classes must be allocated before use. Initialization and allocation can be combined.
 !>   The classes have a validate() function that checks all arrays for valid values (e.g. tau > 0.)
-!>   The vertical orientation can be specified via this%set_top_at_1() or obtained via this%top_at_1(). 
+!>   The vertical orientation can be specified via this%set_top_at_1() or obtained via this%top_at_1().
 !>
 !> Optical properties can be delta-scaled (though this is currently implemented only for two-stream arrays)
 !>
@@ -54,7 +54,7 @@
 module mo_optical_props
   use mo_rte_kind,              only: wp, wl
   use mo_rte_config,            only: check_extents, check_values
-  use mo_rte_util_array_validation, & 
+  use mo_rte_util_array_validation, &
                                 only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props_kernels, only: &
         increment_1scalar_by_1scalar, increment_1scalar_by_2stream, increment_1scalar_by_nstream, &
@@ -110,7 +110,7 @@ module mo_optical_props
   ! -------------------------------------------------------------------------------------------------
   type, extends(ty_optical_props), abstract, public :: ty_optical_props_arry
     real(wp), dimension(:,:,:), allocatable :: tau !! optical depth (ncol, nlay, ngpt)
-    logical(wl),                    private :: top_at_1 ! No default - maybe uninitialized values will get caught? 
+    logical(wl),                    private :: top_at_1 ! No default - maybe uninitialized values will get caught?
   contains
     procedure, public  :: get_ncol
     procedure, public  :: get_nlay
@@ -120,7 +120,7 @@ module mo_optical_props
     procedure, public  :: increment
     !>
     !>
-    !> 
+    !>
     procedure, public :: top_is_at_1
     procedure, public :: set_top_at_1
 
@@ -1074,8 +1074,8 @@ contains
   ! ------------------------------------------------------------------------------------------
   pure function top_is_at_1(this)
     !
-    ! Vertical orientation - .true. if array index 1 is top of atmosphere 
-    ! 
+    ! Vertical orientation - .true. if array index 1 is top of atmosphere
+    !
     class(ty_optical_props_arry), intent(in) :: this
     logical                                  :: top_is_at_1
 
@@ -1084,8 +1084,8 @@ contains
   ! ------------------------------------------------------------------------------------------
   subroutine set_top_at_1(this, top_at_1)
     !
-    !> Set vertical orientation of class - .true. if array index 1 is top of atmosphere 
-    ! 
+    !> Set vertical orientation of class - .true. if array index 1 is top of atmosphere
+    !
     class(ty_optical_props_arry), intent(inout) :: this
     logical,                      intent(in   ) :: top_at_1
 

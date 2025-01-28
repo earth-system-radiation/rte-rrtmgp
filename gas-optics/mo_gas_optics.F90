@@ -10,26 +10,26 @@
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
 !>
-!> ## Generic Fortran interface for gas optics  
-!> 
-!> Defines an interface for gas optics parameterizations: 
+!> ## Generic Fortran interface for gas optics
 !>
-!>   - inquiry functions for the pressure and temperature limits 
-!>   - inquiry functions for the source of radiation (internal or planetary radiation vs. 
+!> Defines an interface for gas optics parameterizations:
+!>
+!>   - inquiry functions for the pressure and temperature limits
+!>   - inquiry functions for the source of radiation (internal or planetary radiation vs.
 !>      external or stellar radiation)
-!>   - Method for computing gas optical optical properties and incident stellar radiation 
-!>     given pressure, temperature, and gas concentrations 
-!>   - Method for computing gas optical optical properties and internal Planck sources 
-!>     given pressure, temperature, and gas concentrations 
-!> 
+!>   - Method for computing gas optical optical properties and incident stellar radiation
+!>     given pressure, temperature, and gas concentrations
+!>   - Method for computing gas optical optical properties and internal Planck sources
+!>     given pressure, temperature, and gas concentrations
+!>
 !> This (abstract) class is a sub-classes of `ty_optical_props` in the RTE module `mo_optical_props`
-!>   and inherits the procedures related to spectral discratization from that class. 
-!> Optical properties are returned in any variable of `ty_optical_props_arry` (that is, 
-!>    an array of values with dimensions ncol, nlay, ngpt) in the same module. 
-!> Internal sources of radiation are provided in a variable of type 
-!>   `ty_source_func_lw` in RTE module `ty_source_func_lw`. 
-!> The module also makes use of [[mo_gas_concentrations(module):ty_gas_concs(type)]] from 
-!>   module [[mo_gas_concentrations]]. 
+!>   and inherits the procedures related to spectral discratization from that class.
+!> Optical properties are returned in any variable of `ty_optical_props_arry` (that is,
+!>    an array of values with dimensions ncol, nlay, ngpt) in the same module.
+!> Internal sources of radiation are provided in a variable of type
+!>   `ty_source_func_lw` in RTE module `ty_source_func_lw`.
+!> The module also makes use of [[mo_gas_concentrations(module):ty_gas_concs(type)]] from
+!>   module [[mo_gas_concentrations]].
 !
 ! -------------------------------------------------------------------------------------------------
 module mo_gas_optics
@@ -78,7 +78,7 @@ module mo_gas_optics
                                                  tlay      !! layer temperatures [K]; (ncol,nlay)
       type(ty_gas_concs),       intent(in   ) :: gas_desc  !! Gas volume mixing ratios
       class(ty_optical_props_arry),  &
-                                intent(inout) :: optical_props !! 
+                                intent(inout) :: optical_props !!
       real(wp), dimension(:,:), intent(  out) :: toa_src   !! Incoming solar irradiance(ncol,ngpt)
       character(len=128)                      :: error_msg !! Empty if successful
       ! Optional inputs
@@ -105,7 +105,7 @@ module mo_gas_optics
                                 intent(inout) :: optical_props !! Optical properties
       class(ty_source_func_lw    ),  &
                                 intent(inout) :: sources    !! Planck sources
-      character(len=128)                      :: error_msg  !! Empty if successful 
+      character(len=128)                      :: error_msg  !! Empty if successful
       real(wp), dimension(:,:), intent(in   ), &
                             optional, target :: col_dry, &  !! Column dry amount (molecules/cm^2); dim(ncol,nlay)
                                                    tlev     !! level temperatures [K]l (ncol,nlay+1)

@@ -8,9 +8,10 @@ include:
   - local: '.gitlab/common.yml'
 
 variables:
+  TIME_LIMIT: "05:00"
   SCHEDULER_PARAMETERS: >-
     --account=mh0287
-    --time=05:00
+    --time=${TIME_LIMIT}
     ${EXTRA_SCHEDULER_PARAMETERS}
   EXTRA_SCHEDULER_PARAMETERS:
 
@@ -67,6 +68,9 @@ variables:
     - .nag
     - .common-levante
   variables:
+    # Test executables produced in this configuration are too slow to run within
+    # the default time limit:
+    TIME_LIMIT: "10:00"
     # Compiler flags used for ICON model:
     FFLAGS: -Wc=/sw/spack-levante/gcc-11.2.0-bcn7mb/bin/gcc -f2008 -colour -w=uep -g -gline -O0 -float-store -nan -Wc,-g -Wc,-pipe -Wc,--param,max-vartrack-size=200000000 -Wc,-mno-fma -C=all
 

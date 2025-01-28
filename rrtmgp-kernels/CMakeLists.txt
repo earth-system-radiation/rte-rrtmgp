@@ -29,6 +29,10 @@ else()
   endif()
 endif()
 
+if(BUILD_SHARED_LIBS)
+  set_target_properties(rrtmgpkernels PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
 target_include_directories(
   rrtmgpkernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY}
 )

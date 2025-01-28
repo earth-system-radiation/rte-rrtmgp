@@ -142,13 +142,13 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1)
     !$acc data copyin(tau2)
 
-    !$acc  parallel loop collapse(3) 
+    !$acc  parallel loop collapse(3)
     !$omp target teams distribute parallel do simd collapse(3) &
     !$omp& map(to:tau2) &
     !$omp& map(tofrom:tau1)
@@ -178,7 +178,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1)
@@ -215,7 +215,7 @@ contains
     ! --------------
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1)
@@ -254,7 +254,7 @@ contains
     ! --------------
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1)
@@ -296,7 +296,7 @@ contains
     ! --------------
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1, g1)
@@ -348,7 +348,7 @@ contains
     ! --------------
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1, g1)
@@ -399,7 +399,7 @@ contains
     ! --------------
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1)
@@ -445,7 +445,7 @@ contains
     ! --------------
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1, p1)
@@ -506,7 +506,7 @@ contains
     mom_lim = min(nmom1, nmom2)
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1, p1)
@@ -561,7 +561,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1)
@@ -601,7 +601,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1)
@@ -641,7 +641,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1)
@@ -684,7 +684,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1)
@@ -729,7 +729,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1, g1)
@@ -786,7 +786,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1, g1)
@@ -841,7 +841,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1)
@@ -891,7 +891,7 @@ contains
 
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1, p1)
@@ -955,7 +955,7 @@ contains
     mom_lim = min(nmom1, nmom2)
     ! tau1 and tau2 might be the same array, thus we need to perform copy and copyin
     ! in separate steps. Otherwise, at the time of copyout of tau1 runtime may see
-    ! it as present (as present counter of tau2, having the same memory address) 
+    ! it as present (as present counter of tau2, having the same memory address)
     ! is not necessarily decrement yet, and copyout action is not carried out
     ! (present_or_copyout semantic)
     !$acc data copy(tau1, ssa1, p1)

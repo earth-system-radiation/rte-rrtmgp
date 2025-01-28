@@ -195,7 +195,7 @@ contains
   ! Generate a McICA-sampled cloud mask for exponential-random overlap.
   !   The overlap parameter overlap_param is defined between pairs of layers.
   !   For layer i, overlap_param(i) describes the overlap between cloud_frac(i) and cloud_frac(i+1).
-  !   It is a correlation coefficient in [-1,1]. E.g., 
+  !   It is a correlation coefficient in [-1,1]. E.g.,
   !     +1 gives perfect correlation or maximum cloud overlap between layers i & i+1;
   !      0 gives no correlation or random cloud overlap between layers i & i+1;
   !     -1 gives perfect anticorrelation or minimum cloud overlap between layers i & i+1.

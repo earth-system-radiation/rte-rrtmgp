@@ -81,7 +81,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1             !! optical properties to be modified
       real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2             !! optical properties to be added to original
     end subroutine increment_1scalar_by_1scalar
-  end interface 
+  end interface
   ! ---------------------------------
   !> increase absorption optical depth with extinction optical depth (2-stream form)
   interface
@@ -93,7 +93,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1             !! optical properties to be modified
       real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2       !! optical properties to be added to original
     end subroutine increment_1scalar_by_2stream
-  end interface 
+  end interface
   ! ---------------------------------
   !> increase absorption optical depth with extinction optical depth (n-stream form)
   interface
@@ -105,7 +105,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1             !! optical properties to be modified
       real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2       !! optical properties to be added to original
     end subroutine increment_1scalar_by_nstream
-  end interface 
+  end interface
   ! ---------------------------------
   ! ---------------------------------
   !> increment two-stream optical properties \(\tau, \omega_0, g\) with absorption optical depth
@@ -118,7 +118,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1       !! optical properties to be modified
       real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2             !! optical properties to be added to original
     end subroutine increment_2stream_by_1scalar
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment two-stream optical properties \(\tau, \omega_0, g\) with a second set
   interface
@@ -130,7 +130,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1, g1   !! optical properties to be modified
       real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2, g2   !! optical properties to be added to original
     end subroutine increment_2stream_by_2stream
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment two-stream optical properties \(\tau, \omega_0, g\) with _n_-stream
   interface
@@ -144,7 +144,7 @@ module mo_optical_props_kernels
       real(wp), dimension(nmom2, &
                           ncol,nlay,ngpt), intent(in   ) :: p2                       !! moments of the phase function to be added
     end subroutine increment_2stream_by_nstream
-  end interface 
+  end interface
   ! ---------------------------------
   ! ---------------------------------
   !> increment _n_-stream optical properties \(\tau, \omega_0, p\) with absorption optical depth
@@ -157,7 +157,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,ngpt), intent(inout) :: tau1, ssa1        !! optical properties to be modified
       real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2              !! optical properties to be added to original
     end subroutine increment_nstream_by_1scalar
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment _n_-stream optical properties \(\tau, \omega_0, p\) with two-stream values
   interface
@@ -171,7 +171,7 @@ module mo_optical_props_kernels
                           ncol,nlay,ngpt), intent(inout) :: p1                        !! moments of the phase function be modified
       real(wp), dimension(ncol,nlay,ngpt), intent(in   ) :: tau2, ssa2, g2            !! optical properties to be added to original
     end subroutine increment_nstream_by_2stream
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment one set of _n_-stream optical properties with another set
   interface
@@ -187,7 +187,7 @@ module mo_optical_props_kernels
       real(wp), dimension(nmom2, &
                           ncol,nlay,ngpt), intent(in   ) :: p2           !! moments of the phase function to be added
     end subroutine increment_nstream_by_nstream
-  end interface 
+  end interface
   ! -------------------------------------------------------------------------------------------------
   !
   ! Incrementing when the second set of optical properties is defined at lower spectral resolution
@@ -206,7 +206,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2     !! optical properties to be added to original (defined on bands)
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims !! Starting and ending gpoint for each band
      end subroutine inc_1scalar_by_1scalar_bybnd
-  end interface 
+  end interface
   ! ---------------------------------
   !> increase absorption optical depth defined on g-points  with extinction optical depth (2-stream form) defined on bands
   interface
@@ -220,7 +220,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2  !! optical properties to be added to original (defined on bands)
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims    !! Starting and ending gpoint for each band
     end subroutine inc_1scalar_by_2stream_bybnd
-  end interface 
+  end interface
   ! ---------------------------------
   !> increase absorption optical depth defined on g-points  with extinction optical depth (n-stream form) defined on bands
   interface
@@ -234,7 +234,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2 !! optical properties to be added to original (defined on bands)
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims   !! Starting and ending gpoint for each band
     end subroutine inc_1scalar_by_nstream_bybnd
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment two-stream optical properties \(\tau, \omega_0, g\) defined on g-points with absorption optical depth defined on bands
   interface
@@ -248,7 +248,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2       !! optical properties to be added to original (defined on bands)
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims   !! Starting and ending gpoint for each band
     end subroutine inc_2stream_by_1scalar_bybnd
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment 2-stream optical properties defined on g-points with another set defined on bands
   interface
@@ -262,7 +262,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2, g2 !! optical properties to be added to original (defined on bands)
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims       !! Starting and ending gpoint for each band
     end subroutine inc_2stream_by_2stream_bybnd
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment 2-stream optical properties defined on g-points with _n_-stream properties set defined on bands
   interface
@@ -278,7 +278,7 @@ module mo_optical_props_kernels
                           ncol,nlay,nbnd), intent(in   ) :: p2             !! moments of the phase function to be added
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims       !! Starting and ending gpoint for each band
     end subroutine inc_2stream_by_nstream_bybnd
-  end interface 
+  end interface
   ! ---------------------------------
   ! ---------------------------------
   !> increment _n_-stream optical properties defined on g-points with absorption optical depth defined on bands
@@ -293,7 +293,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2       !! optical properties to be added to original (defined on bands)
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims   !! Starting and ending gpoint for each band
     end subroutine inc_nstream_by_1scalar_bybnd
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment n-stream optical properties defined on g-points with 2-stream properties set defined on bands
   interface
@@ -309,7 +309,7 @@ module mo_optical_props_kernels
       real(wp), dimension(ncol,nlay,nbnd), intent(in   ) :: tau2, ssa2, g2 !! optical properties to be added to original (defined on bands)
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims       !! Starting and ending gpoint for each band
     end subroutine inc_nstream_by_2stream_bybnd
-  end interface 
+  end interface
   ! ---------------------------------
   !> increment _n_-stream optical properties defined on g-points with a second set defined on bands
   interface
@@ -327,7 +327,7 @@ module mo_optical_props_kernels
                           ncol,nlay,nbnd), intent(in   ) :: p2         !! moments of the phase function to be added
       integer,  dimension(2,nbnd),         intent(in   ) :: gpt_lims   !! Starting and ending gpoint for each band
     end subroutine inc_nstream_by_nstream_bybnd
-  end interface 
+  end interface
   ! -------------------------------------------------------------------------------------------------
   !
   ! Subsetting, meaning extracting some portion of the 3D domain

@@ -173,8 +173,8 @@ contains
             tau_loc(icol,ilay,igpt) = tau(icol,ilay,igpt)*D(icol,igpt)
             trans  (icol,ilay,igpt) = exp(-tau_loc(icol,ilay,igpt))
           end if
-          call lw_source_noscat(top_at_1, & 
-                                lay_source(icol,ilay,igpt), lev_source(icol,ilay,igpt), & 
+          call lw_source_noscat(top_at_1, &
+                                lay_source(icol,ilay,igpt), lev_source(icol,ilay,igpt), &
                                 lev_source(icol,ilay+1,igpt),                           &
                                 tau_loc   (icol,ilay,igpt), trans     (icol,ilay,igpt), &
                                 source_dn (icol,ilay,igpt), source_up (icol,ilay,igpt))
@@ -710,7 +710,7 @@ contains
                                                ! Down at the bottom of the layer, up at the top
     ! --------------------------------
     real(wp), parameter  :: tau_thresh = sqrt(sqrt(epsilon(tau)))
-    real(wp)             :: fact, source_inc, source_dec 
+    real(wp)             :: fact, source_inc, source_dec
     ! ---------------------------------------------------------------
     !
     ! Weighting factor. Use 3rd order series expansion when rounding error (~tau^2)
@@ -727,13 +727,13 @@ contains
     !
     source_inc = (1._wp - trans) * levp1_source + 2._wp * fact * (lay_source - levp1_source)
     source_dec = (1._wp - trans) * lev_source   + 2._wp * fact * (lay_source - lev_source)
-    if (top_at_1) then 
+    if (top_at_1) then
       source_dn = source_inc
       source_up = source_dec
     else
       source_up = source_inc
       source_dn = source_dec
-    end if 
+    end if
   end subroutine lw_source_noscat
   ! ---------------------------------------------------------------
   !
@@ -1125,7 +1125,7 @@ contains
                    (1._wp - k_mu) * (alpha1 - k_gamma4) * exp_minus2ktau * Tnoscat - &
                    2.0_wp * (k_gamma4 + alpha1 * k_mu)  * exp_minusktau)
             ! Final check that energy is not spuriously created, by recognizing that
-            ! the beam can either be reflected, penetrate unscattered to the base of a layer, 
+            ! the beam can either be reflected, penetrate unscattered to the base of a layer,
             ! or penetrate through but be scattered on the way - the rest is absorbed
             ! Makes the equations safer in single precision. Credit: Robin Hogan, Peter Ukkonen
             Rdir    = max(0.0_wp, min(Rdir, (1.0_wp - Tnoscat       ) ))

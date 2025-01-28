@@ -12,11 +12,12 @@ license: by
 title: RRTMGP Fortran interfaces
 src_dir: ../../rrtmgp-frontend
 output_dir: ../../public/reference/rrtmgp-fortran-interface
-...
+---
+
 These pages provide a programmer's view of the Fortran user interface to RRTMGP.
 
 RRTMGP provides a class [ty_gas_optics_rrtmgp](./type/ty_gas_optics_rrtmgp.html) that implements
-the `gas_optics()` and other procedure(s) defined by the  [ty_gas_optics](./type/ty_gas_optics.html)
+the `gas_optics()` and other procedure(s) defined by the [ty_gas_optics](./type/ty_gas_optics.html)
 abstract class. The class is used to compute the spectrally-varying optical properties of the
 gaseous atmosphere given temperature, pressure, and gas concentrations. Each instance of the
 variable is ["loaded"](./type/ty_gas_optics_rrtmgp.html#boundprocedure-load) with data from netCDF
@@ -46,4 +47,4 @@ There is a search bar in the top right.
 
 Return to the [Documentation overview] or the [reference overview].
 
-[Documentation overview]: ../../index.html
+[documentation overview]: ../../index.html

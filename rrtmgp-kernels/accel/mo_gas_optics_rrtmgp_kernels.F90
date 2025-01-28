@@ -604,7 +604,7 @@ contains
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
     integer  :: gptS, gptE
     real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
-    real(wp) :: pfrac, pfrac_m1 ! Planck fraction in this layer and the one below 
+    real(wp) :: pfrac, pfrac_m1 ! Planck fraction in this layer and the one below
     real(wp) :: planck_function_1, planck_function_2
     ! -----------------
 
@@ -636,7 +636,7 @@ contains
 
           ! Compute level source irradiance for g-point
           planck_function_1 = interpolate1D(tlev(icol,ilay), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
-          if (ilay == 1) then 
+          if (ilay == 1) then
             lev_src(icol,ilay,  igpt) = pfrac * planck_function_1
           else
             itropo = merge(1,2,tropo(icol,ilay-1))  !WS moved itropo inside loop for GPU
@@ -645,7 +645,7 @@ contains
               interpolate3D(one, fmajor(:,:,:,icol,ilay-1,iflav), pfracin, &
                             igpt, jeta(:,icol,ilay-1,iflav), jtemp(icol,ilay-1),jpress(icol,ilay-1)+itropo)
             lev_src(icol,ilay,  igpt) = sqrt(pfrac * pfrac_m1) * planck_function_1
-          end if 
+          end if
           if (ilay == nlay) then
             planck_function_1 = interpolate1D(tlev(icol,nlay+1), temp_ref_min, totplnk_delta, totplnk(:,ibnd))
             lev_src(icol,nlay+1,igpt) = pfrac * planck_function_1

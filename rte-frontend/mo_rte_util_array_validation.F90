@@ -368,5 +368,5 @@ contains
     extents_are_2d_int = (size(array,1) == n1 .and. &
                           size(array,2) == n2 )
   end function extents_are_2d_int
- 
+
 end module mo_rte_util_array_validation

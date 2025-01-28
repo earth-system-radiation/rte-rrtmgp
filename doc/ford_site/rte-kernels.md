@@ -13,7 +13,7 @@ title: RTE kernels
 src_dir: ../../rte-kernels
 exclude_dir: ../../rte-kernels/accel
 output_dir: ../../public/reference/rte-kernels
-...
+---
 
 These pages document the low-level computational kernels used by RRTMGP.
 
@@ -23,5 +23,5 @@ There is a search bar in the top right.
 
 Return to the [Documentation overview] or the [reference overview].
 
-[Documentation overview]: ../../index.html
-[reference overview]:    ../index.html
+[documentation overview]: ../../index.html
+[reference overview]: ../index.html

@@ -30,9 +30,9 @@ extern "C"
             Float* flux_dir);  // [out]   (ncol,nlay+1,ngpt)
 
     void rte_sw_solver_2stream(
-            const int& ncol, 
-            const int& nlay, 
-            const int& ngpt, 
+            const int& ncol,
+            const int& nlay,
+            const int& ngpt,
             const Bool& top_at_1,
             const Float* tau,          // (ncol,nlay,  ngpt)
             const Float* ssa,          // (ncol,nlay,  ngpt)
@@ -52,10 +52,10 @@ extern "C"
             Float* broadband_dir);  // [out]   (ncol,nlay+1)
 
     void rte_lw_solver_noscat(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
-            const Bool& top_at_1, 
+            const Bool& top_at_1,
             const int& nmus,
             const Float* secants, // (nmus)
             const Float* weights, // (nmus)
@@ -83,9 +83,9 @@ extern "C"
 
 
     void rte_lw_solver_2stream(
-            const int& ncol, 
-            const int& nlay, 
-            const int& ngpt, 
+            const int& ncol,
+            const int& nlay,
+            const int& ngpt,
             const Bool& top_at_1,
             const Float* tau,        // (ncol,nlay,  ngpt)
             const Float* ssa,        // (ncol,nlay,  ngpt)
@@ -103,40 +103,40 @@ extern "C"
     // OPTICAL PROPS - INCREMENT
     //
     void rte_increment_1scalar_by_1scalar(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in); //     (ncol,nlay,ngpt)
 
 
     void rte_increment_1scalar_by_2stream(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in,  //     (ncol,nlay,ngpt)
             const Float* ssa_in); //     (ncol,nlay,ngpt)
 
     void rte_increment_1scalar_by_nstream(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in,  //     (ncol,nlay,ngpt)
             const Float* ssa_in); //     (ncol,nlay,ngpt)
 
     void rte_increment_2stream_by_1scalar(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in); //     (ncol,nlay,ngpt)
 
     void rte_increment_2stream_by_2stream(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)
@@ -156,16 +156,16 @@ extern "C"
             const Float*   p_in); //(nmom,ncol,nlay,ngpt)
 
     void rte_increment_nstream_by_1scalar(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in,  //     (ncol,nlay,ngpt)
             const Float* ssa_in); //     (ncol,nlay,ngpt)
 
     void rte_increment_nstream_by_2stream(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             const int& nmom1,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
@@ -176,10 +176,10 @@ extern "C"
             const Float*   g_in); //     (ncol,nlay,ngpt)
 
     void rte_increment_nstream_by_nstream(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
-            const int& nmom1, 
+            const int& nmom1,
             const int& nmom2,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)
@@ -192,8 +192,8 @@ extern "C"
     // OPTICAL PROPS - INCREMENT BYBND
     //
     void rte_inc_1scalar_by_1scalar_bybnd(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout,// [inout] (ncol,nlay,ngpt)
             const Float* tau_in, //     (ncol,nlay,nbnd)
@@ -201,8 +201,8 @@ extern "C"
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_1scalar_by_2stream_bybnd(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             const Float* tau_in,  //     (ncol,nlay,nbnd)
@@ -231,8 +231,8 @@ extern "C"
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_2stream_by_2stream_bybnd(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)
@@ -244,9 +244,9 @@ extern "C"
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_2stream_by_nstream_bybnd(
-            const int& ncol, 
-            const int& nlay, 
-            const int& ngpt, 
+            const int& ncol,
+            const int& nlay,
+            const int& ngpt,
             const int& nmom,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)
@@ -258,8 +258,8 @@ extern "C"
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_nstream_by_1scalar_bybnd(
-            const int& ncol, 
-            const int& nlay, 
+            const int& ncol,
+            const int& nlay,
             const int& ngpt,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)
@@ -268,9 +268,9 @@ extern "C"
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_nstream_by_2stream_bybnd(
-            const int& ncol, 
-            const int& nlay, 
-            const int& ngpt, 
+            const int& ncol,
+            const int& nlay,
+            const int& ngpt,
             const int& nmom1,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)
@@ -283,10 +283,10 @@ extern "C"
             const int* band_lims_gpoint); // (2,nbnd)
 
     void rte_inc_nstream_by_nstream_bybnd(
-            const int& ncol, 
-            const int& nlay, 
-            const int& ngpt, 
-            const int& nmom1, 
+            const int& ncol,
+            const int& nlay,
+            const int& ngpt,
+            const int& nmom1,
             const int& nmom2,
             Float* tau_inout, // [inout] (ncol,nlay,ngpt)
             Float* ssa_inout, // [inout] (ncol,nlay,ngpt)

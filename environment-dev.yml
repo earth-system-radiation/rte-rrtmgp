@@ -20,8 +20,8 @@ dependencies:
   - gfortran
   - netcdf-fortran
   - cmake
-  - cmake-format
   - ninja
+  - pre-commit
 variables:
   FC: gfortran
   # Debugging flags below

@@ -33,5 +33,5 @@ jobs:
         $FC --version
         cmake -S . -B build \
          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-         -DKERNEL_MODE=$RTE_KERNELS
+         -DKERNEL_MODE="$RTE_KERNELS"
         cmake --build build

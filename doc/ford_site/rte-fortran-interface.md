@@ -12,7 +12,7 @@ license: by
 title: RTE Fortran interfaces-frontend
 src_dir: ../../rte-frontend
 output_dir: ../../public/reference/rte-fortran-interface
-...
+---
 
 These pages provide a programmer's view of the Fortran user interface to RTE.
 
@@ -39,9 +39,6 @@ There is a search bar in the top right.
 
 Return to the [Documentation overview] or the [reference overview].
 
-[Documentation overview]: ../../index.html
-[reference overview]:    ../index.html
-
 <!---
 ## How to Read This Documentation
 
@@ -57,3 +54,6 @@ Take me back to the [User Documentation].
 [User Documentation]: ../../index.html
 [mo_rte_kind.F90]: ./module/mo_rte_kind.html
 -->
+
+[documentation overview]: ../../index.html
+[reference overview]: ../index.html

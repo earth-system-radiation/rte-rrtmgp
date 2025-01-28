@@ -5,7 +5,7 @@ title: Reference (technical documentation)
 
 # Reference/Technical documentation
 
-RTE aspires to follow a set of coding conventions:
+RTE and RRTMGP aspire to follow a set of coding conventions:
 
 - Module names start with `mo_`, class/type names with `ty_`.
 - Real variables are defined with working precision `wp`; logical variables with `wl`.

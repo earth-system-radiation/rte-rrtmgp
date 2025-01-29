@@ -38,3 +38,14 @@ repos:
     rev: v7.0.0
     hooks:
       - id: pyproject-flake8
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.21  # Use the ref you want to point at
+    hooks:
+    - id: mdformat
+      # Optionally add plugins
+      additional_dependencies:
+      - mdformat-myst
+      - mdformat-black
+      - mdformat-config
+      - mdformat-tables
+      - mdformat-web

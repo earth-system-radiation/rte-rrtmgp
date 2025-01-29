@@ -282,6 +282,9 @@ public:
     set_gpt2band(band_lims_gpt_lcl, this->gpt2band);
   }
 
+  // This function does the same thing as the one above, except takes Views as arguments
+  // instead of allocating new ones. Presumably, these views would come from the pool
+  // allocator in order to avoid cudaMalloc (hurts performance).
   template <typename BandLimsWvnT, typename Band2Gpt, typename Gpt2Band>
   void init_no_alloc( BandLimsWvnT const &band_lims_wvn ,
                       Band2Gpt const& band2gpt_mem,
@@ -308,8 +311,10 @@ public:
   }
 
   template <typename BandLimsWvnT, typename BandLimsGptT, typename Band2Gpt, typename Gpt2Band>
-  void init_no_alloc( BandLimsWvnT const &band_lims_wvn , BandLimsGptT const &band_lims_gpt,
-                      Band2Gpt const& band2gpt_mem, Gpt2Band const& gpt2band_mem,
+  void init_no_alloc( BandLimsWvnT const &band_lims_wvn,
+                      BandLimsGptT const &band_lims_gpt,
+                      Band2Gpt const& band2gpt_mem,
+                      Gpt2Band const& gpt2band_mem,
                       std::string name="" ) {
     if (band_lims_wvn.extent(0) != 2) { stoprun("optical_props::init(): band_lims_wvn 1st dim should be 2"); }
     #ifdef RRTMGP_EXPENSIVE_CHECKS

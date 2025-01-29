@@ -286,6 +286,9 @@ public:
     }
   }
 
+  // This function does the same thing as the one above, except takes concs_mem as an argument
+  // instead of allocating it. Presumably, this would come from the pool
+  // allocator in order to avoid cudaMalloc (hurts performance).
   template <typename ConcsMem>
   void init_no_alloc(string1dv const &gas_names , int ncol , int nlay, ConcsMem const& concs_mem) {
     this->reset();

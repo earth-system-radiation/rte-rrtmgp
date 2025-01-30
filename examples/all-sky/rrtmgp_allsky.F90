@@ -14,7 +14,7 @@ program rte_rrtmgp_allsky
   use mo_rte_sw,             only: rte_sw
   use mo_load_coefficients,  only: load_and_init
   use mo_load_cloud_coefficients, &
-                             only: load_cld_lutcoeff, load_cld_padecoeff
+                             only: load_cld_lutcoeff
   use mo_load_aerosol_coefficients, &
                              only: load_aero_lutcoeff
   use mo_rte_config,         only: rte_config_checks
@@ -91,7 +91,7 @@ program rte_rrtmgp_allsky
   !
   logical :: is_sw, is_lw
 
-  integer  :: nbnd, ngpt
+  integer  :: nbnd, ngpt, nspec
   integer  :: icol, ilay, ibnd, iloop, igas
   logical  :: top_is_at_1 ! CCE OMP workaround
 
@@ -168,14 +168,7 @@ program rte_rrtmgp_allsky
   is_lw = .not. is_sw
   if (do_clouds) then
     !
-    ! Should also try with Pade calculations
-    !  call load_cld_padecoeff(cloud_optics, cloud_optics_file)
-    !
-    if(use_luts) then
-      call load_cld_lutcoeff (cloud_optics, cloud_optics_file)
-    else
-      call load_cld_padecoeff(cloud_optics, cloud_optics_file)
-    end if
+    call load_cld_lutcoeff(cloud_optics, cloud_optics_file)
     call stop_on_err(cloud_optics%set_ice_roughness(2))
   end if
 
@@ -549,6 +542,7 @@ contains
   ! --------------------------------------------------------------------------------------
   !
   subroutine compute_clouds
+
     real(wp) :: rel_val, rei_val
     !
     ! Variable and memory allocation
@@ -558,8 +552,7 @@ contains
     else
       allocate(ty_optical_props_1scl::clouds)
     end if
-    ! Clouds optical props are defined by band
-    call stop_on_err(clouds%init(k_dist%get_band_lims_wavenumber()))
+    call stop_on_err(clouds%init(cloud_optics))
 
     select type(clouds)
       class is (ty_optical_props_1scl)

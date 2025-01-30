@@ -90,7 +90,7 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
     ExternalProject_Add(
       rrtmgp-data
       GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
-      GIT_TAG "v1.8.2"
+      GIT_TAG "v1.9"
       GIT_SHALLOW True
       EXCLUDE_FROM_ALL True
       PREFIX rrtmgp-data-cmake
@@ -112,8 +112,8 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
       FILES # cmake-format: sort
             ${RRTMGP_DATA}/rrtmgp-aerosols-merra-lw.nc
             ${RRTMGP_DATA}/rrtmgp-aerosols-merra-sw.nc
-            ${RRTMGP_DATA}/rrtmgp-clouds-lw.nc
-            ${RRTMGP_DATA}/rrtmgp-clouds-sw.nc
+            ${RRTMGP_DATA}/rrtmgp-clouds-lw-bnd.nc
+            ${RRTMGP_DATA}/rrtmgp-clouds-sw-bnd.nc
             ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc
             ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc
             ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc

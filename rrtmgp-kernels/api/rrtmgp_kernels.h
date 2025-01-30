@@ -81,22 +81,6 @@ extern "C"
         Float* tau // [inout] (ncol,nlay.ngpt)
     );
 
-    void rrtmgp_compute_tau_rayleigh(
-        const int& ncol, const int& nlay, const int& nband, const int& ngpt,
-        const int& ngas, const int& nflav, const int& neta, const int& npres, const int& ntemp,
-        const int* gpoint_flavor, // (2,ngpt)
-        const int* band_lims_gpt,  // (2,nbnd)
-        const Float* krayl,  // (ntemp,neta,ngpt,2)
-        const int& idx_h2o,
-        const Float* col_dry, // (ncol,nlay)
-        const Float* col_gas, // (ncol,nlay,ngas+1)
-        const Float* fminor, // (2,2,ncol,nlay,nflav)
-        const int* jeta, // (2,  ncol,nlay,nflav)
-        const Bool* tropo, // (ncol,nlay)
-        const int* jtemp, // (ncol,nlay)
-        Float* tau_rayleigh  // [inout] (ncol,nlay.ngpt)
-    );
-
     void rrtmgp_compute_Planck_source(
         const int& ncol, const int& nlay, const int& nbnd, const int& ngpt,
         const int& nflav, const int& neta, const int& npres, const int& ntemp,
@@ -124,7 +108,7 @@ extern "C"
 
     /* Cloud optics kernels */
     void rrtmgp_compute_tau_rayleigh(
-        const int& ncol, const int& nlay, const int& nband, const int& ngpt,
+        const int& ncol, const int& nlay, const int& nbnd, const int& ngpt,
         const int& ngas, const int& nflav, const int& neta, const int& npres, const int& ntemp,
         const int* gpoint_flavor, // (2,ngpt)
         const int* band_lims_gpt,  // (2,nbnd)
@@ -140,34 +124,16 @@ extern "C"
     );
 
     void rrtmgp_compute_cld_from_table(
-        const int& ncol, int& nlay, int& nbnd, int& nsteps,
+        const int& ncol, const int& nlay, const int& ngpt,
         const Bool*  mask, // (ncol,nlay)
         const Float* lwp,  // (ncol,nlay)
         const Float* re,   // (ncol,nlay)
+        const int& nsteps,
         const Float& step_size,
         const Float& offset,
         const Float* tau_table, // (nsteps, nbnd)
         const Float* ssa_table, // (nsteps, nbnd)
         const Float* asy_table, // (nsteps, nbnd)
-        Float* tau,     // (ncol,nlay,nbnd)
-        Float* taussa,  // (ncol,nlay,nbnd)
-        Float* taussag  // (ncol,nlay,nbnd)
-    );
-
-    void rrtmgp_compute_cld_from_pade(
-        const int& ncol, int& nlay, int& nbnd, int& nsizes,
-        const Bool*  mask, // (ncol,nlay)
-        const Float* lwp,  // (ncol,nlay)
-        const Float* re,   // (ncol,nlay)
-        const Float* re_bounds_ext, // (nsizes+1)
-        const Float* re_bounds_ssa, // (nsizes+1)
-        const Float* re_bounds_asy, // (nsizes+1)
-        const int& m_ext, int& n_ext,
-        const Float* coeffs_ext, // (nbnd,nsizes,0:m_ext+n_ext)
-        const int& m_ssa, int& n_ssa,
-        const Float* coeffs_ssa, // (nbnd,nsizes,0:m_ssa+n_ssa)
-        const int& m_asy, int& n_asy,
-        const Float* coeffs_asy, // (nbnd,nsizes,0:m_asy+n_asy)
         Float* tau,     // (ncol,nlay,nbnd)
         Float* taussa,  // (ncol,nlay,nbnd)
         Float* taussag  // (ncol,nlay,nbnd)

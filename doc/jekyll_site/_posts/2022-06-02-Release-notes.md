@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "2022-06-02: Release notes"
+title: '2022-06-02: Release notes'
 categories: Release-notes
 ---
 

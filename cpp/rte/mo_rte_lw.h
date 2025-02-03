@@ -152,7 +152,7 @@ void rte_lw(int max_gauss_pts, GaussDsT const &gauss_Ds, GaussWtsT const &gauss_
             bool top_at_1, SourceFuncLWK<RealT, LayoutT, DeviceT> const &sources, SfcEmisT const &sfc_emis,
             FluxesType &fluxes, IncFluxT const &inc_flux=IncFluxT(), int n_gauss_angles=-1)
 {
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using ureal1d_t = conv::Unmanaged<Kokkos::View<RealT*,   LayoutT, DeviceT>>;
   using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**,  LayoutT, DeviceT>>;
   using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
@@ -174,14 +174,11 @@ void rte_lw(int max_gauss_pts, GaussDsT const &gauss_Ds, GaussWtsT const &gauss_
     n_quad_angs = n_gauss_angles;
   }
 
-  const int dsize1 = ncol * (nlay+1) * ngpt;
-  const int dsize2 = ncol * ngpt;
-  RealT* data = pool::template alloc_raw<RealT>(dsize1*2 + dsize2 + 2*n_quad_angs), *dcurr = data;
-  ureal3d_t gpt_flux_up (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  ureal3d_t gpt_flux_dn (dcurr,ncol,nlay+1,ngpt); dcurr += dsize1;
-  ureal2d_t sfc_emis_gpt(dcurr,ncol       ,ngpt); dcurr += dsize2;
-  ureal1d_t tmp_Ds      (dcurr,n_quad_angs); dcurr += n_quad_angs;
-  ureal1d_t tmp_wts     (dcurr,n_quad_angs); dcurr += n_quad_angs;
+  auto gpt_flux_up  = pool::template alloc<RealT>(ncol,nlay+1,ngpt);
+  auto gpt_flux_dn  = pool::template alloc<RealT>(ncol,nlay+1,ngpt);
+  auto sfc_emis_gpt = pool::template alloc<RealT>(ncol       ,ngpt);
+  auto tmp_Ds       = pool::template alloc<RealT>(n_quad_angs);
+  auto tmp_wts      = pool::template alloc<RealT>(n_quad_angs);
 
   // Error checking
   //   if inc_flux is present it has the right dimensions, is positive definite
@@ -236,6 +233,10 @@ void rte_lw(int max_gauss_pts, GaussDsT const &gauss_Ds, GaussWtsT const &gauss_
   // ...and reduce spectral fluxes to desired output quantities
   fluxes.reduce(gpt_flux_up, gpt_flux_dn, optical_props, top_at_1);
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(gpt_flux_up);
+  pool::dealloc(gpt_flux_dn);
+  pool::dealloc(sfc_emis_gpt);
+  pool::dealloc(tmp_Ds);
+  pool::dealloc(tmp_wts);
 }
 #endif

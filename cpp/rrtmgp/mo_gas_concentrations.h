@@ -278,7 +278,7 @@ public:
 
     // Allocate
     this->gas_name = string1dv(ngas);
-    this->concs  = real3d_t("concs"   ,ncol,nlay,ngas);
+    this->concs  = real3d_t("concs"   ,ncol,nlay,ngas); // ALLOC
 
     // Assign gas names
     for (int i=0; i<ngas; i++) {
@@ -286,6 +286,38 @@ public:
     }
   }
 
+  // This function does the same thing as the one above, except takes concs_mem as an argument
+  // instead of allocating it. Presumably, this would come from the pool
+  // allocator in order to avoid cudaMalloc (hurts performance).
+  template <typename ConcsMem>
+  void init_no_alloc(string1dv const &gas_names , int ncol , int nlay, ConcsMem const& concs_mem) {
+    this->reset();
+    this->ngas = gas_names.size();
+    this->ncol = ncol;
+    this->nlay = nlay;
+
+    // Transform gas names to lower case, check for empty strings, check for duplicates
+    for (int i=0; i<ngas; i++) {
+      // Empty string
+      if (gas_names[i] == "") { stoprun("ERROR: GasConcs::init(): must provide non-empty gas names"); }
+      // Duplicate gas name
+      for (int j=i+1; j<ngas; j++) {
+        if ( lower_case(gas_names[i]) == lower_case(gas_names[j]) ) { stoprun("GasConcs::init(): duplicate gas names aren't allowed"); }
+      }
+    }
+
+    // Allocate
+    this->gas_name = string1dv(ngas);
+    this->concs    = concs_mem;
+    assert(concs_mem.extent(0) == ncol);
+    assert(concs_mem.extent(1) == nlay);
+    assert(concs_mem.extent(2) == this->ngas);
+
+    // Assign gas names
+    for (int i=0; i<ngas; i++) {
+      this->gas_name[i] = lower_case(gas_names[i]);
+    }
+  }
 
   // Set concentration as a scalar copied to every column and level
   void set_vmr(std::string gas, const RealT w) {
@@ -295,17 +327,17 @@ public:
     }
     if (w < 0. || w > 1.) { stoprun("GasConcs::set_vmr(): concentrations should be >= 0, <= 1"); }
     auto this_concs = this->concs;
-    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
       this_concs(icol, ilay, igas) = w;
-    }));
+    ));
   }
 
   template <typename ViewT>
   static void inline set_concs_impl(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
   {
-    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
       concs(icol, ilay, igas) = w(ilay);
-    }));
+    ));
   }
 
   // Set concentration as a single column copied to all other columns
@@ -332,9 +364,9 @@ public:
   template <typename ViewT>
   static void inline set_concs_impl2(ViewT const &w, const int nlay, const int ncol, const int igas, const real3d_t& concs)
   {
-    TIMED_KERNEL(Kokkos::parallel_for(mdrp_t::template get<2>({nlay,ncol}), KOKKOS_LAMBDA(int ilay, int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
       concs(icol, ilay, igas) = w(icol, ilay);
-    }));
+    ));
   }
 
   // Set concentration as a 2-D field of columns and levels
@@ -371,9 +403,9 @@ public:
     // for (int ilay=1; ilay<=size(array,2); ilay++) {
     //   for (int icol=1; icol<=size(array,1); icol++) {
     auto this_concs = this->concs;
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({array.extent(1),array.extent(0)}) , KOKKOS_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(array.extent(0), array.extent(1), icol, ilay,
       array(icol,ilay) = this_concs(icol,ilay,igas);
-    }));
+    ));
   }
 
   int get_num_gases() const { return gas_name.size(); }

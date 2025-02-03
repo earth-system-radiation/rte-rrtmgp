@@ -21,8 +21,10 @@
 
 #ifdef RRTMGP_ENABLE_KOKKOS
 #define GENERIC_INLINE KOKKOS_INLINE_FUNCTION
+#define KERNEL_FENCE Kokkos::fence()
 #else
 #define GENERIC_INLINE YAKL_INLINE
+#define KERNEL_FENCE yakl::fence()
 #endif
 
 //#define ENABLE_TIMING
@@ -30,8 +32,10 @@
 #ifdef ENABLE_TIMING
 #define TIMED_KERNEL(kernel)                                            \
 {                                                                       \
+  KERNEL_FENCE;                                                         \
   auto start_t = std::chrono::high_resolution_clock::now();             \
   kernel;                                                               \
+  KERNEL_FENCE;                                                         \
   auto stop_t = std::chrono::high_resolution_clock::now();              \
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop_t - start_t); \
   static double total_s = 0.;                                           \
@@ -41,6 +45,25 @@
 #else
 #define TIMED_KERNEL(kernel) kernel
 #endif
+
+// Macro for timing kernels that does not make a code block. Requires
+// a name to disambiguate variable names. Useful when code block defines
+// variables that need to persist.
+#ifdef ENABLE_TIMING
+#define TIMED_INLINE_KERNEL(name, kernel)                               \
+  KERNEL_FENCE;                                                         \
+  auto start_t##name = std::chrono::high_resolution_clock::now();       \
+  kernel;                                                               \
+  KERNEL_FENCE;                                                         \
+  auto stop_t##name = std::chrono::high_resolution_clock::now();        \
+  auto duration##name = std::chrono::duration_cast<std::chrono::microseconds>(stop_t##name - start_t##name); \
+  static double total_s##name = 0.;                                     \
+  total_s##name += duration##name.count() / 1000000.0;                  \
+  std::cout << "TIMING For func " << __func__ << " file " << __FILE__ << " line " << __LINE__ << " total " << total_s##name << " s" << std::endl
+#else
+#define TIMED_INLINE_KERNEL(name, kernel) kernel
+#endif
+
 
 /**
  * Helper functions for the conversion to Kokkos
@@ -115,7 +138,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p1d(const YArray& array, const std::string& name, int idx)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx-1 << ") = " << array(idx) - adjust_val << std::endl; }
 
 template <typename KView,
@@ -127,7 +150,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p2d(const YArray& array, const std::string& name, int idx1, int idx2)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ") = " << array(idx1, idx2) - adjust_val << std::endl; }
 
 template <typename KView,
@@ -139,7 +162,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p3d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ") = " << array(idx1, idx2, idx3) - adjust_val << std::endl;
 }
 
@@ -152,7 +175,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p4d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ") = " << array(idx1, idx2, idx3, idx4) - adjust_val << std::endl;
 }
 
@@ -165,7 +188,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p5d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4, int idx5)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ", " << idx5-1 << ") = " << array(idx1, idx2, idx3, idx4, idx5) - adjust_val << std::endl;
 }
 
@@ -178,7 +201,7 @@ template <typename YArray,
           typename std::enable_if<!is_view_v<YArray>>::type* = nullptr>
 void p6d(const YArray& array, const std::string& name, int idx1, int idx2, int idx3, int idx4, int idx5, int idx6)
 {
-  const int adjust_val = std::is_same<typename YArray::non_const_value_type, int>::value ? 1 : 0;
+  const int adjust_val = std::is_same_v<typename YArray::non_const_value_type, int> ? 1 : 0;
   std::cout << "JGFY " << name << "(" << idx1-1 << ", " << idx2-1 << ", " << idx3-1 << ", " << idx4-1 << ", " << idx5-1 << ", " << idx6-1 << ") = " << array(idx1, idx2, idx3, idx4, idx5, idx6) - adjust_val << std::endl;
 }
 
@@ -336,30 +359,26 @@ template <> struct DefaultTile<5> {
 template <typename LayoutT, typename DeviceT=DefaultDevice>
 struct MDRP
 {
-  // static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
-  //   ? Kokkos::Iterate::Left
-  //   : Kokkos::Iterate::Right;
-  // static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
-  //   ? Kokkos::Iterate::Right
-  //   : Kokkos::Iterate::Left;
-#ifdef KOKKOS_ENABLE_CUDA
-  static constexpr Kokkos::Iterate LeftI = Kokkos::Iterate::Left;
-  static constexpr Kokkos::Iterate RightI = Kokkos::Iterate::Right;
-#else
-  static constexpr Kokkos::Iterate LeftI = Kokkos::Iterate::Default;
-  static constexpr Kokkos::Iterate RightI = Kokkos::Iterate::Default;
-#endif
+  // By default, follow the Layout's fast index
+  static constexpr Kokkos::Iterate LeftI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+    ? Kokkos::Iterate::Left
+    : Kokkos::Iterate::Right;
+  static constexpr Kokkos::Iterate RightI = std::is_same_v<LayoutT, Kokkos::LayoutRight>
+    ? Kokkos::Iterate::Right
+    : Kokkos::Iterate::Left;
 
   using exe_space_t = typename DeviceT::execution_space;
 
   template <int Rank>
   using MDRP_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, LeftI, RightI> >;
 
+  // Force a right to left (right fast index) loop order
   template <int Rank>
-  using MDRPLR_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Left, Kokkos::Iterate::Right> >;
+  using MDRPRL_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Left, Kokkos::Iterate::Right> >;
 
+  // Force a left to right (left fast index) loop order
   template <int Rank>
-  using MDRPRL_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
+  using MDRPLR_t = Kokkos::MDRangePolicy<exe_space_t, Kokkos::Rank<Rank, Kokkos::Iterate::Right, Kokkos::Iterate::Left> >;
 
   template <int N, typename IntT>
   static inline
@@ -410,7 +429,16 @@ void unflatten_idx_left(const int idx, const Kokkos::Array<int, 3>& dims, int& i
 {
   i = idx % dims[0];
   j = (idx / dims[0]) % dims[1];
-  k = (idx / dims[0]) / dims[1];
+  k = idx / (dims[0] * dims[1]);
+}
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx_left(const int idx, const Kokkos::Array<int, 4>& dims, int& i, int& j, int& k, int& l)
+{
+  i = idx % dims[0];
+  j = (idx / dims[0]) % dims[1];
+  k = (idx / (dims[0]*dims[1])) % dims[2];
+  l = idx / (dims[0]*dims[1]*dims[2]);
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -423,10 +451,90 @@ void unflatten_idx_right(const int idx, const Kokkos::Array<int, 2>& dims, int& 
 KOKKOS_INLINE_FUNCTION
 void unflatten_idx_right(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
 {
-  i = (idx / dims[2]) / dims[1];
+  i = idx / (dims[2] * dims[1]);
   j = (idx / dims[2]) % dims[1];
   k =  idx % dims[2];
 }
+
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx_right(const int idx, const Kokkos::Array<int, 4>& dims, int& i, int& j, int& k, int& l)
+{
+  i = idx / (dims[3]*dims[2]*dims[1]);
+  j = (idx / (dims[3]*dims[2])) % dims[1];
+  k = (idx / dims[3]) % dims[2];
+  l = idx % dims[3];
+}
+
+template <typename LayoutT>
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx(const int idx, const Kokkos::Array<int, 2>& dims, int& i, int& j)
+{
+  if constexpr (std::is_same_v<LayoutT, Kokkos::LayoutLeft>) {
+    unflatten_idx_left(idx, dims, i, j);
+  }
+  else {
+    unflatten_idx_right(idx, dims, i, j);
+  }
+}
+
+template <typename LayoutT>
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx(const int idx, const Kokkos::Array<int, 3>& dims, int& i, int& j, int& k)
+{
+  if constexpr (std::is_same_v<LayoutT, Kokkos::LayoutLeft>) {
+    unflatten_idx_left(idx, dims, i, j, k);
+  }
+  else {
+    unflatten_idx_right(idx, dims, i, j, k);
+  }
+}
+
+template <typename LayoutT>
+KOKKOS_INLINE_FUNCTION
+void unflatten_idx(const int idx, const Kokkos::Array<int, 4>& dims, int& i, int& j, int& k, int& l)
+{
+  if constexpr (std::is_same_v<LayoutT, Kokkos::LayoutLeft>) {
+    unflatten_idx_left(idx, dims, i, j, k, l);
+  }
+  else {
+    unflatten_idx_right(idx, dims, i, j, k, l);
+  }
+}
+
+// The FLATTEN* macros expect LayoutT to be defined.
+
+#define FLATTEN_MD_KERNEL2(n1, n2, i1, i2, kernel)     \
+  {                                                     \
+    Kokkos::Array<int, 2> dims_fmk_internal = {n1, n2};         \
+    const int dims_fmk_internal_tot = (n1)*(n2);                        \
+    Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
+      int i1, i2;                                                     \
+      conv::unflatten_idx<LayoutT>(idx_fmk_internal, dims_fmk_internal, i1, i2); \
+      kernel;                                                           \
+    });                                                               \
+  }
+
+#define FLATTEN_MD_KERNEL3(n1, n2, n3, i1, i2, i3, kernel)       \
+  {                                                              \
+    Kokkos::Array<int, 3> dims_fmk_internal = {n1, n2, n3};      \
+    const int dims_fmk_internal_tot = (n1)*(n2)*(n3);                   \
+    Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
+      int i1, i2, i3;                                                 \
+      conv::unflatten_idx<LayoutT>(idx_fmk_internal, dims_fmk_internal, i1, i2, i3); \
+      kernel;                                                           \
+    });                                                               \
+  }
+
+#define FLATTEN_MD_KERNEL4(n1, n2, n3, n4, i1, i2, i3, i4, kernel)       \
+  {                                                                     \
+    Kokkos::Array<int, 4> dims_fmk_internal = {n1, n2, n3, n4};         \
+    const int dims_fmk_internal_tot = (n1)*(n2)*(n3)*(n4);              \
+    Kokkos::parallel_for(dims_fmk_internal_tot, KOKKOS_LAMBDA (int idx_fmk_internal) { \
+      int i1, i2, i3, i4;                                             \
+      conv::unflatten_idx<LayoutT>(idx_fmk_internal, dims_fmk_internal, i1, i2, i3, i4); \
+      kernel;                                                           \
+    });                                                               \
+  }
 
 
 #ifdef RRTMGP_ENABLE_YAKL
@@ -506,7 +614,7 @@ template <typename KView>
 struct ToYakl
 {
   using scalar_t = typename KView::value_type;
-  static constexpr auto yakl_mem = std::is_same<typename KView::device_type, HostDevice>::value ? yakl::memHost : yakl::memDevice;
+  static constexpr auto yakl_mem = std::is_same_v<typename KView::device_type, HostDevice> ? yakl::memHost : yakl::memDevice;
   using type = FArray<scalar_t, KView::rank, yakl_mem>;
 };
 
@@ -596,17 +704,17 @@ typename KView::non_const_value_type minval(const KView& view)
 
 // Get sum of view
 template <typename KView>
-std::conditional_t<std::is_same<typename KView::non_const_value_type, bool>::value, int, typename KView::non_const_value_type>
+std::conditional_t<std::is_same_v<typename KView::non_const_value_type, bool>, int, typename KView::non_const_value_type>
 sum(const KView& view)
 {
   using scalar_t    = typename KView::non_const_value_type;
   using exe_space_t = typename KView::execution_space;
-  using sum_t       = std::conditional_t<std::is_same<scalar_t, bool>::value, int, scalar_t>;
+  using sum_t       = std::conditional_t<std::is_same_v<scalar_t, bool>, int, scalar_t>;
 
   // If comparing sums of ints against f90, the values will need to be adjusted if
   // the sums are going to match. This would only be done during debugging, so disable
   // this for now.
-  // auto adjust = std::is_same<scalar_t, int>::value ? 1 : 0;
+  // auto adjust = std::is_same_v<scalar_t, int> ? 1 : 0;
 
   sum_t rv;
   Kokkos::parallel_reduce(
@@ -618,14 +726,14 @@ sum(const KView& view)
 }
 
 // MemPool singleton. Stack allocation pattern only.
-template <typename RealT, typename DeviceT>
+template <typename RealT, typename LayoutT, typename DeviceT>
 struct MemPoolSingleton
 {
  public:
-  using memview_t = Kokkos::View<RealT*, Kokkos::LayoutRight, DeviceT>;
+  using memview_t = Kokkos::View<RealT*, LayoutT, DeviceT>;
 
   template <typename T>
-  using view_t = Kokkos::View<T, Kokkos::LayoutRight, DeviceT>;
+  using view_t = Kokkos::View<T, LayoutT, DeviceT>;
 
   static inline memview_t  s_mem;
   static inline int64_t s_curr_used;
@@ -640,6 +748,19 @@ struct MemPoolSingleton
     s_high_water = 0;
   }
 
+  template <typename T>
+  static inline
+  int64_t get_num_reals(const int64_t num) noexcept
+  {
+    assert(sizeof(T) <= sizeof(RealT));
+    static constexpr int64_t CACHE_LINE_SIZE = 64;
+    static constexpr int64_t reals_per_cache_line = CACHE_LINE_SIZE / sizeof(RealT);
+    const int64_t num_reals = ((num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT));
+    // + reals_per_cache_line; // pad. This didn't seem to help at all
+    const int64_t num_reals_cache_aligned = ((num_reals + reals_per_cache_line - 1) / reals_per_cache_line) * reals_per_cache_line;
+    return num_reals_cache_aligned;
+  }
+
   /**
    * Allocate and return raw memory. This is useful for when you
    * want to batch several view allocations at once.
@@ -648,8 +769,7 @@ struct MemPoolSingleton
   static inline
   T* alloc_raw(const int64_t num) noexcept
   {
-    assert(sizeof(T) <= sizeof(RealT));
-    const int64_t num_reals = (num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT);
+    const int64_t num_reals = get_num_reals<T>(num);
     T* rv = reinterpret_cast<T*>(s_mem.data() + s_curr_used);
     s_curr_used += num_reals;
     assert(s_curr_used <= s_mem.size());
@@ -771,7 +891,7 @@ struct MemPoolSingleton
   static inline
   void dealloc(const T*, const int64_t num) noexcept
   {
-    const int64_t num_reals = (num * sizeof(T) + (sizeof(RealT) - 1)) / sizeof(RealT);
+    const int64_t num_reals = get_num_reals<T>(num);
     s_curr_used -= num_reals;
     assert(s_curr_used >= 0);
   }
@@ -1161,8 +1281,8 @@ public:
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
     using T       = typename View::non_const_value_type;
-    constexpr bool is_c_layout   = std::is_same<myStyle, Kokkos::LayoutRight>::value;
-    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+    constexpr bool is_c_layout   = std::is_same_v<myStyle, Kokkos::LayoutRight>;
+    constexpr bool is_device_mem = !std::is_same_v<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>;
     constexpr auto rank = View::rank;
 
     if (rank != dimNames.size()) { throw std::runtime_error("dimNames.size() != Array's rank"); }
@@ -1246,8 +1366,8 @@ public:
     using myStyle = typename View::array_layout;
     using myMem   = typename View::memory_space;
     using T       = typename View::non_const_value_type;
-    constexpr bool is_c_layout = std::is_same<myStyle, Kokkos::LayoutRight>::value;
-    constexpr bool is_device_mem = !std::is_same<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>::value;
+    constexpr bool is_c_layout = std::is_same_v<myStyle, Kokkos::LayoutRight>;
+    constexpr bool is_device_mem = !std::is_same_v<myMem, Kokkos::DefaultHostExecutionSpace::memory_space>;
     constexpr auto rank = View::rank;
 
     if (rank != dimNames.size()) { throw std::runtime_error("dimNames.size() != Array's rank"); }
@@ -1321,7 +1441,6 @@ public:
             typename std::enable_if<is_view_v<View>>::type* = nullptr>
   void read(View& arr , std::string varName) {
     using myStyle = typename View::array_layout;
-    using myMem   = typename View::memory_space;
     using T       = typename View::non_const_value_type;
 
     using LeftHostView = Kokkos::View<typename View::non_const_data_type, Kokkos::LayoutLeft, HostDevice>;
@@ -1352,7 +1471,7 @@ public:
     }
     LeftHostView read_data("read_data", llayout);
 
-    if (std::is_same<T,bool>::value) {
+    if (std::is_same_v<T,bool>) {
       int* tmp = new int[arr.size()];
       var.getVar(tmp);
       for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] = (tmp[i] == 1); }
@@ -1361,7 +1480,7 @@ public:
     else {
       var.getVar(read_data.data());
       // integer data is nearly always idx data, so adjust it to 0-based
-      if (std::is_same<T,int>::value) {
+      if (std::is_same_v<T,int>) {
         for (size_t i=0; i < arr.size(); ++i) { read_data.data()[i] -= 1; }
       }
     }
@@ -1395,19 +1514,19 @@ public:
 
   /** @private */
   template <class T> int getType() const {
-    if ( std::is_same<typename std::remove_cv<T>::type,signed        char>::value ) { return NC_BYTE;   }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned      char>::value ) { return NC_UBYTE;  }
-    else if ( std::is_same<typename std::remove_cv<T>::type,             short>::value ) { return NC_SHORT;  }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned     short>::value ) { return NC_USHORT; }
-    else if ( std::is_same<typename std::remove_cv<T>::type,               int>::value ) { return NC_INT;    }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned       int>::value ) { return NC_UINT;   }
-    else if ( std::is_same<typename std::remove_cv<T>::type,              long>::value ) { return NC_INT;    }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned      long>::value ) { return NC_UINT;   }
-    else if ( std::is_same<typename std::remove_cv<T>::type,         long long>::value ) { return NC_INT64;  }
-    else if ( std::is_same<typename std::remove_cv<T>::type,unsigned long long>::value ) { return NC_UINT64; }
-    else if ( std::is_same<typename std::remove_cv<T>::type,             float>::value ) { return NC_FLOAT;  }
-    else if ( std::is_same<typename std::remove_cv<T>::type,            double>::value ) { return NC_DOUBLE; }
-    if ( std::is_same<typename std::remove_cv<T>::type,              char>::value ) { return NC_CHAR;   }
+    if ( std::is_same_v<typename std::remove_cv<T>::type,signed        char> ) { return NC_BYTE;   }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned      char> ) { return NC_UBYTE;  }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,             short> ) { return NC_SHORT;  }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned     short> ) { return NC_USHORT; }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,               int> ) { return NC_INT;    }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned       int> ) { return NC_UINT;   }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,              long> ) { return NC_INT;    }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned      long> ) { return NC_UINT;   }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,         long long> ) { return NC_INT64;  }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,unsigned long long> ) { return NC_UINT64; }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,             float> ) { return NC_FLOAT;  }
+    else if ( std::is_same_v<typename std::remove_cv<T>::type,            double> ) { return NC_DOUBLE; }
+    if ( std::is_same_v<typename std::remove_cv<T>::type,              char> ) { return NC_CHAR;   }
     else { throw std::runtime_error("Invalid type"); }
     return -1;
   }

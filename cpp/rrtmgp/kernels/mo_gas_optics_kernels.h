@@ -180,20 +180,16 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
   using DeviceT = typename JtempT::device_type;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
 
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
-  using ureal2d_t = conv::Unmanaged<Kokkos::View<RealT**, LayoutT, DeviceT>>;
-
-  const int dsize = ncol *nlay;
-  RealT* data = pool::template alloc_raw<RealT>(dsize*2), *dcurr = data;
-  ureal2d_t ftemp (dcurr,ncol,nlay); dcurr += dsize;
-  ureal2d_t fpress(dcurr,ncol,nlay); dcurr += dsize;
+  auto ftemp = pool::template alloc<RealT>(ncol,nlay);
+  auto fpress= pool::template alloc<RealT>(ncol,nlay);
 
   RealT tiny = std::numeric_limits<RealT>::min();
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
     // index and factor for temperature interpolation
     jtemp(icol,ilay) = (int) ((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta);
     jtemp(icol,ilay) = Kokkos::fmin(ntemp - 1, Kokkos::fmax(1, jtemp(icol,ilay))) - 1; // limit the index range
@@ -206,9 +202,9 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
 
     // determine if in lower or upper part of atmosphere
     tropo(icol,ilay) = log(play(icol,ilay)) > press_ref_trop_log;
-  }));
+  ));
 
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<4>({2,nflav,ncol,nlay}) , KOKKOS_LAMBDA (int itemp, int iflav, int icol , int ilay) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL4(2,nflav,ncol,nlay, itemp, iflav, icol , ilay,
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));
     auto igases1 = flavor(0,iflav);
@@ -234,9 +230,10 @@ void interpolation(int ncol, int nlay, int ngas, int nflav, int neta, int npres,
     fmajor(1,0,itemp,iflav,icol,ilay) = (1. - fpress(icol,ilay)) * fminor(1,itemp,iflav,icol,ilay);
     fmajor(0,1,itemp,iflav,icol,ilay) =       fpress(icol,ilay)  * fminor(0,itemp,iflav,icol,ilay);
     fmajor(1,1,itemp,iflav,icol,ilay) =       fpress(icol,ilay)  * fminor(1,itemp,iflav,icol,ilay);
-  }));
+  ));
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(ftemp);
+  pool::dealloc(fpress);
 }
 
 template <typename TauAbsT, typename TauRayT, typename TauT, typename SsaT, typename GT>
@@ -249,19 +246,16 @@ void combine_and_reorder_2str(int ncol, int nlay, int ngpt, TauAbsT const &tau_a
 
   RealT tiny = std::numeric_limits<RealT>::min();
 
-  int constexpr TILE_SIZE=8;
-  int colTiles = ncol / TILE_SIZE + 1;
-  int gptTiles = ngpt / TILE_SIZE + 1;
+  // int constexpr TILE_SIZE=8;
+  // int colTiles = ncol / TILE_SIZE + 1;
+  // int gptTiles = ngpt / TILE_SIZE + 1;
 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int tcol=1; tcol<=colTiles; tcol++) {
   //     for (int tgpt=1; tgpt<=gptTiles; tgpt++) {
   //       for (int itcol=1; itcol<=TILE_SIZE; itcol++) {
   //         for (int itgpt=1; itgpt<=TILE_SIZE; itgpt++) {
-  // TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<5>({nlay,colTiles,gptTiles,TILE_SIZE,TILE_SIZE}) , KOKKOS_LAMBDA (int ilay, int tcol, int tgpt, int itcol, int itgpt) {
-  //   int icol = tcol*TILE_SIZE + itcol;
-  //   int igpt = tgpt*TILE_SIZE + itgpt;
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ncol,nlay,ngpt}) , KOKKOS_LAMBDA (int icol, int ilay, int igpt) {
     RealT t = tau_abs(igpt,ilay,icol) + tau_rayleigh(igpt,ilay,icol);
     tau(icol,ilay,igpt) = t;
     g  (icol,ilay,igpt) = 0.;
@@ -288,26 +282,18 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   using LayoutT = typename JtempT::array_layout;
   using DeviceT = typename JtempT::device_type;
   using mdrp_t  = typename conv::MDRP<LayoutT, DeviceT>;
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
-  using ureal3d_t = conv::Unmanaged<Kokkos::View<RealT***, LayoutT, DeviceT>>;
+  auto pfrac           = pool::template alloc<RealT>(ngpt,nlay,ncol);
+  auto planck_function = pool::template alloc<RealT>(nbnd,nlay+1,ncol);
 
-  const int dsize1 = ngpt*nlay*ncol;
-  const int dsize2 = ngpt*(nlay+1)*ncol;
-  RealT* data = pool::template alloc_raw<RealT>(dsize1 + dsize2), *dcurr = data;
-  ureal3d_t pfrac          (dcurr,ngpt,nlay,ncol);   dcurr += dsize1;
-  ureal3d_t planck_function(dcurr,nbnd,nlay+1,ncol); dcurr += dsize2;
-
-  Kokkos::Array<int, 3> dims3_nlay_ncol_ngpt = {nlay,ncol,ngpt};
-  const int dims3_tot = nlay*ncol*ngpt;
+  // Kokkos::Array<int, 3> dims3_nlay_ncol_ngpt = {nlay,ncol,ngpt};
+  // const int dims3_tot = nlay*ncol*ngpt;
   // Calculation of fraction of band's Planck irradiance associated with each g-point
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  // TIMED_KERNEL(Kokkos::parallel_for( dims3_tot, KOKKOS_LAMBDA (int idx) {
-  //   int ilay, icol, igpt;
-  //   conv::unflatten_idx(idx, dims3_nlay_ncol_ngpt, ilay, icol, igpt);
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,ncol,nlay}) , KOKKOS_LAMBDA (int igpt, int icol, int ilay) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ngpt,ncol,nlay, igpt, icol, ilay,
     // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int itropo = merge(0,1,tropo(icol,ilay));  //WS moved itropo inside loop for GPU
     int iflav = gpoint_flavor(itropo, igpt); //eta interpolation depends on band's flavor
@@ -325,7 +311,7 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
        fmajor(1,0,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc-1, jtemp_loc+1) +
        fmajor(0,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)  , jpress_loc  , jtemp_loc+1) +
        fmajor(1,1,1,iflav,icol,ilay) * pfracin(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc+1) );
-  }));
+  ));
 
   //
   // Planck function by band for the surface
@@ -340,26 +326,16 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   //
   // for (int igpt=1; igpt<=ngpt; igpt++) {
   //   for (int icol=1; icol<=ncol; icol++) {
-  Kokkos::Array<int, 2> dims2_ngpt_ncol = {ngpt,ncol};
-  const int dims2_ngpt_ncol_tot = ncol*ngpt;
-  // TIMED_KERNEL(Kokkos::parallel_for( dims2_ngpt_ncol_tot, KOKKOS_LAMBDA (int idx) {
-  //   int igpt, icol;
-  //   conv::unflatten_idx(idx, dims2_ngpt_ncol, igpt, icol);
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ngpt,ncol, igpt, icol,
     sfc_src(igpt,icol) = pfrac(igpt,sfc_lay,icol) * planck_function(gpoint_bands(igpt), 0, icol);
-  }));
+  ));
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
-  Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
-  const int dims2_ncol_nlay_tot = ncol*nlay;
-  // TIMED_KERNEL(Kokkos::parallel_for( dims2_ncol_nlay_tot, KOKKOS_LAMBDA (int idx) {
-  //   int icol, ilay;
-  //   conv::unflatten_idx(idx, dims2_ncol_nlay, icol, ilay);
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,nlay, icol, ilay,
     // Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
     interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function, Kokkos::ALL,ilay,icol),nPlanckTemp,nbnd);
-  }));
+  ));
 
   //
   // Map to g-points
@@ -370,13 +346,9 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::Array<int, 3> dims3_ngpt_nlay_ncol = {ngpt,nlay,ncol};
-  // TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
-  //   int igpt, ilay, icol;
-  //   conv::unflatten_idx(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ngpt,nlay,ncol, igpt, ilay, icol,
     lay_src(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,icol);
-  }));
+  ));
 
   // compute level source irradiances for each g-point, one each for upward and downward paths
   // for (int icol=1; icol<=ncol; icol++) {
@@ -386,12 +358,9 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
 
   // for (int icol=1; icol<=ncol; icol++) {
   //   for (int ilay=2; ilay<=nlay+1; ilay++) {
-  // TIMED_KERNEL(Kokkos::parallel_for( dims2_ncol_nlay_tot , KOKKOS_LAMBDA (int idx) {
-  //   int icol, ilay;
-  //   conv::unflatten_idx(idx, dims2_ncol_nlay, icol, ilay);
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol,nlay, icol, ilay,
     interpolate1D(tlev(icol,ilay+1), temp_ref_min, totplnk_delta, totplnk, Kokkos::subview(planck_function,Kokkos::ALL,ilay+1,icol),nPlanckTemp,nbnd);
-  }));
+  ));
 
   //
   // Map to g-points
@@ -401,22 +370,17 @@ void compute_Planck_source(int ncol, int nlay, int nbnd, int ngpt, int nflav, in
   // for (int icol=1; icol<=ncol; icol+=2) {
   //   for (int ilay=1; ilay<=nlay; ilay++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-#ifdef KOKKOS_ENABLE_CUDA
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ngpt,nlay,ncol}) , KOKKOS_LAMBDA (int igpt, int ilay, int icol) {
-#else
-  TIMED_KERNEL(Kokkos::parallel_for( dims3_tot , KOKKOS_LAMBDA (int idx) {
-    int igpt, ilay, icol;
-    conv::unflatten_idx_left(idx, dims3_ngpt_nlay_ncol, igpt, ilay, icol);
-#endif
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ngpt,nlay,ncol, igpt, ilay, icol,
     lev_src_dec(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay,  icol  );
     lev_src_inc(igpt,ilay,icol  ) = pfrac(igpt,ilay,icol  ) * planck_function(gpoint_bands(igpt),ilay+1,icol  );
     if (icol < ncol-1) {
       lev_src_dec(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay,  icol+1);
       lev_src_inc(igpt,ilay,icol+1) = pfrac(igpt,ilay,icol+1) * planck_function(gpoint_bands(igpt),ilay+1,icol+1);
     }
-  }));
+  ));
 
-  pool::dealloc(data, dcurr - data);
+  pool::dealloc(pfrac);
+  pool::dealloc(planck_function);
 }
 
 // compute Rayleigh scattering optical depths
@@ -435,7 +399,7 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getrl<3>({ngpt,ncol,nlay}) , KOKKOS_LAMBDA (int igpt, int icol, int ilay) {
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ngpt,ncol,nlay, igpt, icol, ilay,
     int itropo = merge(0,1,tropo(icol,ilay)); // itropo = 0 lower atmosphere; itropo = 1 upper atmosphere
     int iflav = gpoint_flavor(itropo, igpt);
     // Inlining interpolate2D
@@ -444,7 +408,7 @@ void compute_tau_rayleigh(int ncol, int nlay, int nbnd, int ngpt, int ngas, int 
              fminor(0,1,iflav,icol,ilay) * krayl(igpt, jeta(1,iflav,icol,ilay)  , jtemp(icol,ilay)+1,itropo) +
              fminor(1,1,iflav,icol,ilay) * krayl(igpt, jeta(1,iflav,icol,ilay)+1, jtemp(icol,ilay)+1,itropo);
     tau_rayleigh(igpt,ilay,icol) =  k * (col_gas(icol,ilay,idx_h2o+1)+col_dry(icol,ilay));
-  }));
+  ));
 }
 
 template <typename GptFlvT, typename KminorT, typename MinorLimitsT, typename MinorScalesT, typename ScaleByT,
@@ -464,19 +428,10 @@ void gas_optical_depths_minor(int max_gpt_diff, int ncol, int nlay, int ngpt, in
 
   int extent = scale_by_complement.extent(0);
 
-  Kokkos::Array<int, 2> dims2_ncol_nlay = {ncol,nlay};
-  const int dims2_ncol_nlay_tot = ncol * nlay;
-
   // for (int ilay=1; ilay<=nlay; ilay++) {
   //   for (int icol=1; icol<=ncol; icol++) {
   //     for (int igpt0=0; igpt0<=max_gpt_diff; igpt0++) {
-  // The CUDA optimizations below perform a lot better than the original
-  // code but yield non-deterministic results.
-// #ifdef KOKKOS_ENABLE_CUDA
-//   TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<3>({ncol,nlay,extent}) , KOKKOS_LAMBDA (int icol, int ilay, int imnr) {
-// #else
-  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template getlr<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
-//#endif
+  TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ncol,nlay}) , KOKKOS_LAMBDA (int icol, int ilay) {
     // This check skips individual columns with no pressures in range
     if ( layer_limits(icol,0) <= -1 || ilay < layer_limits(icol,0) || ilay > layer_limits(icol,1) ) {
     } else {
@@ -554,11 +509,7 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
   //   for (int icol=1; icol<=ncol; icol++) {
   //     // optical depth calculation for major species
   //     for (int igpt=1; igpt<=ngpt; igpt++) {
-  Kokkos::Array<int, 3> dims3_ngpt_ncol_nlay = {ngpt,ncol,nlay};
-  const int dims3_tot = ngpt*ncol*nlay;;
-  TIMED_KERNEL(Kokkos::parallel_for(dims3_tot, KOKKOS_LAMBDA (int idx) {
-    int igpt, icol, ilay;
-    conv::unflatten_idx_left(idx, dims3_ngpt_ncol_nlay, igpt, icol, ilay);
+  TIMED_KERNEL(FLATTEN_MD_KERNEL3(ngpt,ncol,nlay, igpt, icol, ilay,
     int itropo = merge(0,1,tropo(icol,ilay));  // WS: moved inside innermost loop
 
     // binary species parameter (eta) and col_mix depend on band flavor
@@ -580,7 +531,7 @@ void gas_optical_depths_major(int ncol, int nlay, int nbnd, int ngpt, int nflav,
         fmajor(1,1,1,iflav,icol,ilay) * kmajor(igpt, jeta(1,iflav,icol,ilay)+1, jpress_loc  , jtemp_loc+1) );
 
     tau(igpt,ilay,icol) += tau_major;
-  }));
+  ));
 }
 
 // Compute minor and major species opitcal depth from pre-computed interpolation coefficients
@@ -604,14 +555,10 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
   using RealT   = typename TauT::non_const_value_type;
   using LayoutT = typename TauT::array_layout;
   using DeviceT = typename TauT::device_type;
-  using pool = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
 
-  using uint2d_t = conv::Unmanaged<Kokkos::View<int**, LayoutT, DeviceT>>;
-
-  const int dsize = 2*ncol;
-  int* data = pool::template alloc_raw<int>(2 * dsize), *icurr = data;
-  uint2d_t itropo_lower(icurr,ncol,2); icurr += dsize;
-  uint2d_t itropo_upper(icurr,ncol,2); icurr += dsize;
+  auto itropo_lower= pool::template alloc<int>(ncol,2);
+  auto itropo_upper= pool::template alloc<int>(ncol,2);
 
   int huge  = std::numeric_limits<int>::max();
   int small = std::numeric_limits<int>::min();
@@ -711,7 +658,8 @@ void compute_tau_absorption(int max_gpt_diff_lower, int max_gpt_diff_upper, int 
                            idx_minor_scaling_upper, kminor_start_upper, play, tlay, col_gas, fminor,
                            jeta, itropo_upper, jtemp, tau);
 
-  pool::dealloc(data, icurr - data);
+  pool::dealloc(itropo_lower);
+  pool::dealloc(itropo_upper);
 }
 
 #endif

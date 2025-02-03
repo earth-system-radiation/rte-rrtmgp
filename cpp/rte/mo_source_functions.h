@@ -160,10 +160,23 @@ public:
     if (! this->is_initialized()) { stoprun("source_func_lw%alloc: not initialized so can't allocate"); }
     if (ncol <= 0 || nlay <= 0) { stoprun("source_func_lw%alloc: must provide positive extents for ncol, nlay"); }
     int ngpt = this->get_ngpt();
-    this->sfc_source     = view_t<RealT**> ("sfc_source"    ,ncol,ngpt);
-    this->lay_source     = view_t<RealT***>("lay_source"    ,ncol,nlay,ngpt);
-    this->lev_source_inc = view_t<RealT***>("lev_source_inc",ncol,nlay,ngpt);
-    this->lev_source_dec = view_t<RealT***>("lev_source_dec",ncol,nlay,ngpt);
+    this->sfc_source     = view_t<RealT**> ("sfc_source"    ,ncol,ngpt);      // ALLOC
+    this->lay_source     = view_t<RealT***>("lay_source"    ,ncol,nlay,ngpt); // ALLOC
+    this->lev_source_inc = view_t<RealT***>("lev_source_inc",ncol,nlay,ngpt); // ALLOC
+    this->lev_source_dec = view_t<RealT***>("lev_source_dec",ncol,nlay,ngpt); // ALLOC
+  }
+
+  // This function does the same thing as the one above, except takes Views as arguments
+  // instead of allocating new ones. Presumably, these views would come from the pool
+  // allocator in order to avoid cudaMalloc (hurts performance).
+  template <typename SfcSourceMem, typename LaySourceMem, typename LevSourceIncMem, typename LevSourceDecMem>
+  void alloc_no_alloc(int ncol, int nlay, SfcSourceMem const& sfc_source_mem, LaySourceMem const& lay_source_mem, LevSourceIncMem const& lev_source_inc_mem, LevSourceDecMem const& lev_source_dec_mem) {
+    if (! this->is_initialized()) { stoprun("source_func_lw%alloc: not initialized so can't allocate"); }
+    if (ncol <= 0 || nlay <= 0) { stoprun("source_func_lw%alloc: must provide positive extents for ncol, nlay"); }
+    this->sfc_source     = sfc_source_mem;
+    this->lay_source     = lay_source_mem;
+    this->lev_source_inc = lev_source_inc_mem;
+    this->lev_source_dec = lev_source_dec_mem;
   }
 
   void alloc(int ncol, int nlay, parent_t const &op) {
@@ -171,6 +184,17 @@ public:
     this->finalize();
     this->init(op);
     this->alloc(ncol,nlay);
+  }
+
+  // This function does the same thing as the one above, except takes Views as arguments
+  // instead of allocating new ones. Presumably, these views would come from the pool
+  // allocator in order to avoid cudaMalloc (hurts performance).
+  template <typename Band2Gpt, typename Gpt2Band, typename SfcSourceMem, typename LaySourceMem, typename LevSourceIncMem, typename LevSourceDecMem>
+  void alloc_no_alloc(int ncol, int nlay, parent_t const &op, Band2Gpt const& band2gpt_mem, Gpt2Band const& gpt2band_mem, SfcSourceMem const& sfc_source_mem, LaySourceMem const& lay_source_mem, LevSourceIncMem const& lev_source_inc_mem, LevSourceDecMem const& lev_source_dec_mem) {
+    if (! op.is_initialized()) { stoprun("source_func_lw::alloc: op not initialized"); }
+    this->finalize();
+    this->init_no_alloc(op.get_band_lims_wavenumber(), op.get_band_lims_gpoint(), band2gpt_mem, gpt2band_mem);
+    this->alloc_no_alloc(ncol, nlay, sfc_source_mem, lay_source_mem, lev_source_inc_mem, lev_source_dec_mem);
   }
 
   void finalize() {

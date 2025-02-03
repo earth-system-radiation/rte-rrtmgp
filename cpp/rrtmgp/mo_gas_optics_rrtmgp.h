@@ -970,8 +970,6 @@ public:
       #endif
     }
 
-    bool use_rayl = allocated(this->krayl);
-
     int ngas  = this->get_ngas();
     int nflav = this->get_nflav();
     int neta  = this->get_neta();
@@ -1243,7 +1241,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
 
   using parent_t = OpticalPropsK<RealT, LayoutT, DeviceT>;
   using hparent_t = OpticalPropsK<RealT, LayoutT, HostDevice>;
-  using pool_t = conv::MemPoolSingleton<RealT, DeviceT>;
+  using pool_t = conv::MemPoolSingleton<RealT, LayoutT, DeviceT>;
   using const_t = rrtmgp_constants<RealT>;
   using mdrp_t = typename conv::MDRP<LayoutT, DeviceT>;
 
@@ -1809,9 +1807,9 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     //   do i = 1, size(this%flavor, 1) ! extents should be 2
     auto this_flavor = this->flavor;
     auto this_is_key = this->is_key;
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({this->flavor.extent(0), this->flavor.extent(1)}) , KOKKOS_LAMBDA (int i, int j) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(this->flavor.extent(0), this->flavor.extent(1), i, j,
       if (this_flavor(i,j) != -1) { this_is_key(this_flavor(i,j)) = true; }
-    }));
+    ));
   }
 
   // Initialize object based on data read from netCDF file however the user desires.
@@ -2053,17 +2051,16 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
                   bool top_at_1, PlayT const &play, PlevT const &plev, TlayT const &tlay,
                   GasConcsK<RealT, LayoutT, DeviceT> const &gas_desc,
                   ColGasT const& col_gas, OpticalPropsT &optical_props, ToaT &toa_src, ColDryT const &col_dry=ColDryT()) {
-    int ngpt  = this->get_ngpt();
-    int nband = this->get_nband();
-    int ngas  = this->get_ngas();
-    int nflav = get_nflav();
+    const int ngpt  = this->get_ngpt();
+    const int nband = this->get_nband();
+    const int nflav = get_nflav();
 
     // Interpolation coefficients for use in source function
     auto jtemp  = pool_t::template alloc<int>(ncol,nlay);
     auto jpress = pool_t::template alloc<int>(ncol,nlay);
     auto tropo  = pool_t::template alloc<bool>(ncol,nlay);
-    auto fmajor = pool_t::template alloc<RealT>(2,2,2,this->get_nflav(),ncol,nlay);
-    auto jeta   = pool_t::template alloc<int>(2,this->get_nflav(),ncol,nlay);
+    auto fmajor = pool_t::template alloc<RealT>(2,2,2,nflav,ncol,nlay);
+    auto jeta   = pool_t::template alloc<int>(2,nflav,ncol,nlay);
     // Gas optics
     compute_gas_taus(top_at_1, ncol, nlay, ngpt, nband, play, plev, tlay, gas_desc, col_gas, optical_props, jtemp, jpress, jeta,
                      tropo, fmajor, col_dry);
@@ -2072,9 +2069,9 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     if (toa_src.extent(0) != ncol || toa_src.extent(1) != ngpt) { stoprun("gas_optics(): array toa_src has wrong size"); }
 
     auto this_solar_src = this->solar_src;
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       toa_src(icol,igpt) = this_solar_src(igpt);
-    }));
+    ));
 
     pool_t::dealloc(jtemp);
     pool_t::dealloc(jpress);
@@ -2095,28 +2092,21 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
                         TropoT const &tropo, FmajorT const &fmajor, ColDryT const &col_dry=ColDryT() ) {
     // Number of molecules per cm^2
     const int nlev = plev.extent(1);
-    const int size1 = ngpt*nlay*ncol;
-    const int size2 = ncol*nlay*this->get_ngas();
-    const int size3 = 2*this->get_nflav()*ncol*nlay;
-    const int size4 = 2*2*this->get_nflav()*ncol*nlay;
-    const int size5 = ncol;
-    const int size6 = ncol * (nlev-1);
-    RealT* data = pool_t::template alloc_raw<RealT>(size1*2 + size2 + size3 + size4 + size5 + size6), *dcurr = data;
-    uview_t<RealT***> tau         (dcurr,ngpt,nlay,ncol); dcurr += size1;
-    uview_t<RealT***> tau_rayleigh(dcurr,ngpt,nlay,ncol); dcurr += size1;
+    auto tau         = pool_t::template alloc<RealT>(ngpt,nlay,ncol);
+    auto tau_rayleigh= pool_t::template alloc<RealT>(ngpt,nlay,ncol);
     // Interpolation variables used in major gas but not elsewhere, so don't need exporting
-    uview_t<RealT***> vmr         (dcurr,ncol,nlay,this->get_ngas()); dcurr += size2;
-    uview_t<RealT****> col_mix     (dcurr,2,this->get_nflav(),ncol,nlay); dcurr += size3; // combination of major species's column amounts
+    auto vmr         = pool_t::template alloc<RealT>(ncol,nlay,this->get_ngas());
+    auto col_mix     = pool_t::template alloc<RealT>(2,this->get_nflav(),ncol,nlay); // combination of major species's column amounts
                                                                                // index(1) : reference temperature level
                                                                                // index(2) : flavor
                                                                                // index(3) : layer
-    uview_t<RealT*****> fminor      (dcurr,2,2,this->get_nflav(),ncol,nlay); dcurr += size4; // interpolation fractions for minor species
+    auto fminor      = pool_t::template alloc<RealT>(2,2,this->get_nflav(),ncol,nlay); // interpolation fractions for minor species
                                                                                  // index(1) : reference eta level (temperature dependent)
                                                                                  // index(2) : reference temperature level
                                                                                  // index(3) : flavor
                                                                                  // index(4) : layer
-    uview_t<RealT*> g0(dcurr, ncol); dcurr += size5;
-    uview_t<RealT**> col_dry_tmp(dcurr, ncol, nlev-1); dcurr += size6;
+    auto g0 = pool_t::template alloc<RealT>( ncol);
+    auto col_dry_tmp= pool_t::template alloc<RealT>( ncol, nlev-1);
 
     // Error checking
     // Check for initialization
@@ -2140,8 +2130,6 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
         if (any(col_dry < 0.)) { stoprun("gas_optics(): array col_dry has values outside range"); }
       #endif
     }
-
-    bool use_rayl = this->krayl.is_allocated();
 
     int ngas  = this->get_ngas();
     int nflav = this->get_nflav();
@@ -2176,15 +2164,15 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     // compute column gas amounts [molec/cm^2]
     // do ilay = 1, nlay
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay, icol, ilay,
       col_gas(icol,ilay,0) = col_dry_wk(icol,ilay);
-    }));
+    ));
     // do igas = 1, ngas
     //   do ilay = 1, nlay
     //     do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<3>({ngas,nlay,ncol}) , KOKKOS_LAMBDA (int igas, int ilay, int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL3(ncol, nlay, ngas, icol, ilay, igas,
       col_gas(icol,ilay,igas+1) = vmr(icol,ilay,igas) * col_dry_wk(icol,ilay);
-    }));
+    ));
     // ---- calculate gas optical depths ----
     Kokkos::deep_copy(tau, 0);
 
@@ -2209,7 +2197,13 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     }
     combine_and_reorder(tau, tau_rayleigh, this->krayl.is_allocated(), optical_props);
 
-    pool_t::dealloc(data, dcurr - data);
+    pool_t::dealloc(tau);
+    pool_t::dealloc(tau_rayleigh);
+    pool_t::dealloc(vmr);
+    pool_t::dealloc(col_mix);
+    pool_t::dealloc(fminor);
+    pool_t::dealloc(g0);
+    pool_t::dealloc(col_dry_tmp);
   }
 
   // Compute Planck source functions at layer centers and levels
@@ -2221,30 +2215,26 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
               TsfcT const &tsfc, JtempT const &jtemp, JpressT const &jpress, JetaT const &jeta,
               TropoT const &tropo, FmajorT const &fmajor, SourceFuncLWK<RealT, LayoutT, DeviceT> &sources,
               TlevT const &tlev=TlevT()) {
-    const int dsize1 = ngpt * nlay * ncol;
-    const int dsize2 = ngpt * ncol;
-    const int dsize3 = ncol * (nlay+1);
-    RealT* data = pool_t::template alloc_raw<RealT>(dsize1*3 + dsize2 + dsize3*2), *dcurr = data;
-    uview_t<RealT***> lay_source_t    (dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    uview_t<RealT***> lev_source_inc_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    uview_t<RealT***> lev_source_dec_t(dcurr,ngpt,nlay,ncol); dcurr += dsize1;
-    uview_t<RealT**> sfc_source_t    (dcurr,ngpt     ,ncol); dcurr += dsize2;
+    auto lay_source_t     = pool_t::template alloc<RealT>(ngpt,nlay,ncol);
+    auto lev_source_inc_t = pool_t::template alloc<RealT>(ngpt,nlay,ncol);
+    auto lev_source_dec_t = pool_t::template alloc<RealT>(ngpt,nlay,ncol);
+    auto sfc_source_t     = pool_t::template alloc<RealT>(ngpt     ,ncol);
     // Variables for temperature at layer edges [K] (ncol, nlay+1)
-    uview_t<RealT**> tlev_arr(dcurr,ncol,nlay+1); dcurr += dsize3;
+    auto tlev_arr         = pool_t::template alloc<RealT>(ncol,nlay+1);
 
     // Source function needs temperature at interfaces/levels and at layer centers
+    auto tlev_wk_pool = pool_t::template alloc<RealT>(ncol,nlay+1);
     uview_t<RealT**> tlev_wk;
     if (tlev.is_allocated()) {
       //   Users might have provided these
       tlev_wk = tlev;
-      dcurr += dsize3;
     } else {
-      tlev_wk = view_t<RealT**>(dcurr,ncol,nlay+1); dcurr += dsize3;
+      tlev_wk = tlev_wk_pool;
       // Interpolate temperature to levels if not provided
       //   Interpolation and extrapolation at boundaries is weighted by pressure
       // do ilay = 1, nlay+1
       //   do icol = 1, ncol
-      TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlay+1,ncol}) , KOKKOS_LAMBDA (int ilay, int icol) {
+      TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlay+1, icol, ilay,
         if (ilay == 0) {
           tlev_wk(icol,0) = tlay(icol,0) + (plev(icol,0)-play(icol,0))*(tlay(icol,1)-tlay(icol,0)) / (play(icol,1)-play(icol,0));
         }
@@ -2257,7 +2247,7 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
                                  play(icol,ilay  )*tlay(icol,ilay  )*(play(icol,ilay-1)-plev(icol,ilay)) ) /
             (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)));
         }
-      }));
+      ));
     }
     // Compute internal (Planck) source functions at layers and levels,
     //  which depend on mapping from spectral space that creates k-distribution.
@@ -2271,14 +2261,19 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     auto &sources_sfc_source = sources.sfc_source;
     // do igpt = 1, ngpt
     //   do icol = 1, ncol
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({ngpt,ncol}) , KOKKOS_LAMBDA (int igpt, int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, ngpt, icol, igpt,
       sources_sfc_source(icol,igpt) = sfc_source_t(igpt,icol);
-    }));
+    ));
     reorder123x321(ngpt, nlay, ncol, lay_source_t    , sources.lay_source    );
     reorder123x321(ngpt, nlay, ncol, lev_source_inc_t, sources.lev_source_inc);
     reorder123x321(ngpt, nlay, ncol, lev_source_dec_t, sources.lev_source_dec);
 
-    pool_t::dealloc(data, dcurr - data);
+    pool_t::dealloc(lay_source_t);
+    pool_t::dealloc(lev_source_inc_t);
+    pool_t::dealloc(lev_source_dec_t);
+    pool_t::dealloc(sfc_source_t);
+    pool_t::dealloc(tlev_arr);
+    pool_t::dealloc(tlev_wk_pool);
   }
 
   // Utility function, provided for user convenience
@@ -2309,13 +2304,13 @@ class GasOpticsRRTMGPK : public OpticalPropsK<RealT, LayoutT, DeviceT> {
     const auto m_dry = const_t::m_dry;
     const auto m_h2o = const_t::m_h2o;
     const auto avogad = const_t::avogad;
-    TIMED_KERNEL(Kokkos::parallel_for( mdrp_t::template get<2>({nlev-1,ncol}) , KOKKOS_LAMBDA (int ilev , int icol) {
+    TIMED_KERNEL(FLATTEN_MD_KERNEL2(ncol, nlev-1, icol, ilev,
       RealT delta_plev = Kokkos::fabs(plev(icol,ilev) - plev(icol,ilev+1));
       // Get average mass of moist air per mole of moist air
       RealT fact = 1. / (1.+vmr_h2o(icol,ilev));
       RealT m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact;
       col_dry(icol,ilev) = 10. * delta_plev * avogad * fact/(1000.*m_air*100.*g0(icol));
-    }));
+    ));
   }
 
   // Utility function to combine optical depths from gas absorption and Rayleigh scattering

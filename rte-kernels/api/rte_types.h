@@ -16,11 +16,7 @@ This header files C-compatible Boolean and floating point types (see mo_rte_type
 */
 #pragma once
 
-#ifdef RTE_USE_CBOOL
 using Bool = signed char;
-#else
-using Bool = int;
-#endif
 
 #ifdef RTE_USE_SP
 using Float = float;

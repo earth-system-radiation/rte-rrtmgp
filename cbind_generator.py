@@ -4,13 +4,18 @@ import os
 import argparse
 
 def fortran_to_c(fortran_code):
-    subroutine_pattern = re.compile(r'subroutine\s+(\w+)\s*\((.*?)\)\s*&?\s*bind\(C,\s*name="(.*?)"\)', re.DOTALL | re.IGNORECASE)
+    subroutine_pattern = re.compile(
+        r'subroutine\s+(\w+)\s*'
+        r'\((.*?)\)\s*&?\s*'
+        r'bind\(C,\s*name="(.*?)"\)',
+        re.DOTALL | re.IGNORECASE
+    )
     var_pattern = re.compile(
         r'^\s*((?:integer|logical\(\w+\)|real\(\w+\)))\s*,?\s*' # Match variable type
         r'(?:dimension\s*\(([^)]*)\)\s*,?\s*)?'                 # Match dimensions (optional)
-        r'(?:target\s*,?\s*&?\s*)?'                             # Capture 'target' if it exists (optional)
+        r'(?:target\s*,?\s*&?\s*)?'                             # Match target (optional)
         r'\s*intent\(\s*(\w+)\s*\)\s*::\s*'                     # Match intent
-        r'([^\n!]+)',                                           # Capture variable names
+        r'([\w, ]+(?:\s*&\s*\n[\w, ]+)*)',                      # Capture variable names
         re.MULTILINE                                            # Allow multiline processing
     )
 
@@ -24,11 +29,15 @@ def fortran_to_c(fortran_code):
     if not match:
         return "", -1
 
-    subroutineName  = match.group(1)
-    funcParams      = match.group(2)
-    cFunctionName   = match.group(3)
+    subroutineName = match.group(1)
+    funcParams     = match.group(2)
+    cFunctionName  = match.group(3)
 
-    funcParams    = funcParams.replace('&', '').replace('\n', '').replace(' ', '')
+    funcParams    = funcParams.replace(' ', '')
+    # Remove comments
+    funcParams    = re.sub(r'&(![^&\n]*)\n', '', funcParams)
+    funcParams    = funcParams.replace('\n', '')
+    funcParams    = funcParams.replace('&', '')
     funcParams    = funcParams.split(',')
     matchedParams = {}
 
@@ -38,11 +47,14 @@ def fortran_to_c(fortran_code):
         fortran_type = match[0]
         dimensions   = match[1] if match[1] else None
         intent       = match[2]
-        variables    = match[3].split(",")
+        variables    = match[3]
+
+        variables = variables.replace('&', '')
+        variables = variables.replace(' ', '')
+        variables = variables.replace('\n', '')
+        variables = variables.split(',')
 
         for var in variables:
-            var = var.strip()
-
             type           = type_map.get(fortran_type, 'void*')
             qualifier      = 'const' if intent == 'in' else ''
             pointer_or_ref = '*' if dimensions else '&'
@@ -70,7 +82,7 @@ def fortran_to_c(fortran_code):
 
         if dimensions:
             dimensions = dimensions.replace('&', '').replace('\n', '').replace(' ', '')
-            strDimensions = f" // Dims: ({dimensions})\n" if isLast else f", // Dim: ({dimensions})\n"
+            strDimensions = f" // Dims: ({dimensions})\n" if isLast else f", // Dims: ({dimensions})\n"
 
         args += f"\t{strQualifier}{type}{pointer_or_ref} {param}{strDimensions}"
 

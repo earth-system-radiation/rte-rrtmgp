@@ -46,6 +46,12 @@ target_compile_definitions(
 target_include_directories(rtekernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 
 if(BUILD_C_HEADERS)
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.imp.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.imp
+    @ONLY
+  )
+
   get_target_property(RTEKERNELS_SOURCES rtekernels SOURCES)
 
   if(RTEKERNELS_SOURCES)

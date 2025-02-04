@@ -44,3 +44,27 @@ target_compile_definitions(
 )
 
 target_include_directories(rtekernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
+
+if(BUILD_C_HEADERS)
+  get_target_property(RTEKERNELS_SOURCES rtekernels SOURCES)
+
+  if(RTEKERNELS_SOURCES)
+    # Convert sources to absolute paths
+    set(ABSOLUTE_RTEKERNELS_SOURCES "")
+
+    foreach(SRC ${RTEKERNELS_SOURCES})
+      get_filename_component(ABS_PATH ${SRC} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR})
+      list(APPEND ABSOLUTE_RTEKERNELS_SOURCES ${ABS_PATH})
+    endforeach()
+
+    add_custom_target(
+      rtekernels_header ALL
+      COMMAND
+        ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py
+        -if ${ABSOLUTE_RTEKERNELS_SOURCES}
+        -of ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+    )
+  else()
+    message(WARNING "No sources found for rtekernels!")
+  endif()
+endif()

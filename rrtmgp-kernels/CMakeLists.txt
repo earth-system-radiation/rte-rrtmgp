@@ -38,3 +38,27 @@ target_include_directories(
 )
 
 target_link_libraries(rrtmgpkernels PRIVATE rte)
+
+if(BUILD_C_HEADERS)
+  get_target_property(RRTMGPKERNELS_SOURCES rrtmgpkernels SOURCES)
+
+  if(RRTMGPKERNELS_SOURCES)
+    # Convert sources to absolute paths
+    set(ABSOLUTE_RRTMGPKERNELS_SOURCES "")
+
+    foreach(SRC ${RRTMGPKERNELS_SOURCES})
+      get_filename_component(ABS_PATH ${SRC} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR})
+      list(APPEND ABSOLUTE_RRTMGPKERNELS_SOURCES ${ABS_PATH})
+    endforeach()
+
+    add_custom_target(
+      rrtmgpkernels_header ALL
+      COMMAND
+        ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py
+        -if ${ABSOLUTE_RRTMGPKERNELS_SOURCES}
+        -of ${CMAKE_CURRENT_SOURCE_DIR}/api/rrtmgp_kernels.h
+    )
+  else()
+    message(WARNING "No sources found for rtekernels!")
+  endif()
+endif()

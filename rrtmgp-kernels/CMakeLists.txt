@@ -46,16 +46,18 @@ if(BUILD_C_HEADERS)
     set(ABSOLUTE_RRTMGPKERNELS_SOURCES "")
 
     foreach(SRC ${RRTMGPKERNELS_SOURCES})
-      get_filename_component(ABS_PATH ${SRC} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR})
+      get_filename_component(
+        ABS_PATH ${SRC} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR}
+      )
       list(APPEND ABSOLUTE_RRTMGPKERNELS_SOURCES ${ABS_PATH})
     endforeach()
 
     add_custom_target(
       rrtmgpkernels_header ALL
       COMMAND
-        ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py
-        -if ${ABSOLUTE_RRTMGPKERNELS_SOURCES}
-        -of ${CMAKE_CURRENT_SOURCE_DIR}/api/rrtmgp_kernels.h
+        ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if
+        ${ABSOLUTE_RRTMGPKERNELS_SOURCES} -of
+        ${CMAKE_CURRENT_SOURCE_DIR}/api/rrtmgp_kernels.h
     )
 
     if(KERNEL_MODE STREQUAL "extern")

@@ -38,10 +38,11 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 target_compile_definitions(
-  rtekernels PRIVATE $<$<BOOL:${RTE_ENABLE_SP}>:RTE_USE_SP>
-  rtekernels PRIVATE $<$<BOOL:${RTE_BOOL}>:RTE_BOOL>
-  rtekernels PRIVATE $<$<BOOL:${RTE_PRECISION}>:RTE_PRECISION>
-  rtekernels PRIVATE $<$<BOOL:${RTE_EPSILON}>:RTE_EPSILON>
+  rtekernels
+  PRIVATE $<$<BOOL:${RTE_ENABLE_SP}>:RTE_USE_SP> rtekernels
+  PRIVATE $<$<BOOL:${RTE_BOOL}>:RTE_BOOL> rtekernels
+  PRIVATE $<$<BOOL:${RTE_PRECISION}>:RTE_PRECISION> rtekernels
+  PRIVATE $<$<BOOL:${RTE_EPSILON}>:RTE_EPSILON>
 )
 
 target_include_directories(rtekernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
@@ -60,16 +61,18 @@ if(BUILD_C_HEADERS)
     set(ABSOLUTE_RTEKERNELS_SOURCES "")
 
     foreach(SRC ${RTEKERNELS_SOURCES})
-      get_filename_component(ABS_PATH ${SRC} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR})
+      get_filename_component(
+        ABS_PATH ${SRC} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR}
+      )
       list(APPEND ABSOLUTE_RTEKERNELS_SOURCES ${ABS_PATH})
     endforeach()
 
     add_custom_target(
       rtekernels_header ALL
       COMMAND
-        ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py
-        -if ${ABSOLUTE_RTEKERNELS_SOURCES}
-        -of ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+        ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if
+        ${ABSOLUTE_RTEKERNELS_SOURCES} -of
+        ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
     )
 
     if(KERNEL_MODE STREQUAL "extern")

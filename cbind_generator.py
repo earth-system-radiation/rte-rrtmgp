@@ -23,7 +23,7 @@ def fortran_to_c(fortran_code):
     if not match:
         return "", -1
 
-    subroutineName = match.group(1)
+    # subroutineName = match.group(1)
     funcParams = match.group(2)
     cFunctionName = match.group(3)
 
@@ -130,10 +130,10 @@ def extract_cbinds(fortran_code):
 
         if err:
             cbind = f"// void {subroutine_name}(...); Fix me!"
-            print(f"FAILED")
+            print("FAILED")
         else:
             passed += 1
-            print(f"PASSED")
+            print("PASSED")
 
         cbinds.append(cbind)
 

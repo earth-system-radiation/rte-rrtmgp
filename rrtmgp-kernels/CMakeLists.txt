@@ -45,9 +45,9 @@ if(BUILD_C_HEADERS)
     # Convert sources to absolute paths
     set(ABSOLUTE_RRTMGPKERNELS_SOURCES "")
 
-    foreach(SRC ${RRTMGPKERNELS_SOURCES})
+    foreach(src ${RRTMGPKERNELS_SOURCES})
       get_filename_component(
-        ABS_PATH ${SRC} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR}
+        ABS_PATH ${src} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR}
       )
       list(APPEND ABSOLUTE_RRTMGPKERNELS_SOURCES ${ABS_PATH})
     endforeach()
@@ -58,6 +58,8 @@ if(BUILD_C_HEADERS)
         ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if
         ${ABSOLUTE_RRTMGPKERNELS_SOURCES} -of
         ${CMAKE_CURRENT_SOURCE_DIR}/api/rrtmgp_kernels.h
+      COMMENT
+        "Builds a target for generating the RRTMGPKernels' C bindings header"
     )
 
     if(KERNEL_MODE STREQUAL "extern")

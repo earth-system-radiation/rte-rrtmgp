@@ -188,7 +188,7 @@ Adapted from code written by Chiel van Heerwaarden at Wageningen University and 
 
         f.write("\n#pragma once")
         f.write("\n")
-        f.write("\n#include \"rte_types.imp\"")
+        f.write("\n#include \"rte_types.h\"")
         f.write("\n")
         f.write("\nextern \"C\" ")
         f.write("{\n")

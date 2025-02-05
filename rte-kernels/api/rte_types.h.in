@@ -1,6 +1,6 @@
 /* This code is part of Radiative Transfer for Energetics (RTE)
 
-Contacts: Robert Pincus and Eli Mlawer
+Contacts: Makepath LLC
 email:  rrtmgp@aer.com
 
 Copyright 2024-
@@ -10,26 +10,19 @@ Copyright 2024-
 Use and duplication is permitted under the terms of the
     BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 
-This `.imp` file defines C-compatible Boolean and floating-point types.
+This `.h` file defines C-compatible Boolean and floating-point types.
   See mo_rte_type.F90 for the Fortran equivalent.
   Adapted from code written by Chiel van Heerwaarden at Wageningen University and Research
 
 */
 #pragma once
 
-#include <cfloat>  // Ensure FLT_EPSILON and DBL_EPSILON are available
-#include <cstdint>
+#include <cfloat.h>  // Ensure FLT_EPSILON and DBL_EPSILON are available
+#include <stdbool.h>
 
 // Define a C-compatible Boolean type
-// Ensures explicit 8-bit signed type, char can be ambiguities
-using Bool = std::int8_t;
+typedef @RTE_BOOL@ Bool;
 
 // Define a floating-point type based on precision selection
-// constexpr for compile-time evaluation
-#ifdef @RTE_ENABLE_SP@
-    using Float = float;
-    constexpr Float Float_epsilon = FLT_EPSILON;
-#else
-    using Float = double;
-    constexpr Float Float_epsilon = DBL_EPSILON;
-#endif
+typedef @RTE_PRECISION@ Float;
+const Float Float_epsilon = @RTE_EPSILON@;

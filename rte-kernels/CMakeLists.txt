@@ -8,8 +8,6 @@ if(KERNEL_MODE STREQUAL "extern")
             api/mo_optical_props_kernels.F90
             api/mo_rte_solver_kernels.F90
             api/mo_rte_util_array.F90
-            api/rte_kernels.h
-            api/rte_types.h
   )
 else()
   target_sources(
@@ -41,14 +39,17 @@ endif()
 
 target_compile_definitions(
   rtekernels PRIVATE $<$<BOOL:${RTE_ENABLE_SP}>:RTE_USE_SP>
+  rtekernels PRIVATE $<$<BOOL:${RTE_BOOL}>:RTE_BOOL>
+  rtekernels PRIVATE $<$<BOOL:${RTE_PRECISION}>:RTE_PRECISION>
+  rtekernels PRIVATE $<$<BOOL:${RTE_EPSILON}>:RTE_EPSILON>
 )
 
 target_include_directories(rtekernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 
 if(BUILD_C_HEADERS)
   configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.imp.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.imp
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.h
     @ONLY
   )
 
@@ -70,6 +71,15 @@ if(BUILD_C_HEADERS)
         -if ${ABSOLUTE_RTEKERNELS_SOURCES}
         -of ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
     )
+
+    if(KERNEL_MODE STREQUAL "extern")
+      target_sources(
+        rtekernels
+        PRIVATE # cmake-format: sort
+                api/rte_kernels.h
+                api/rte_types.h
+      )
+    endif()
   else()
     message(WARNING "No sources found for rtekernels!")
   endif()

@@ -6,7 +6,6 @@ if(KERNEL_MODE STREQUAL "extern")
     PRIVATE # cmake-format: sort
             api/mo_cloud_optics_rrtmgp_kernels.F90
             api/mo_gas_optics_rrtmgp_kernels.F90
-            api/rrtmgp_kernels.h
   )
 else()
   target_sources(
@@ -58,6 +57,14 @@ if(BUILD_C_HEADERS)
         -if ${ABSOLUTE_RRTMGPKERNELS_SOURCES}
         -of ${CMAKE_CURRENT_SOURCE_DIR}/api/rrtmgp_kernels.h
     )
+
+    if(KERNEL_MODE STREQUAL "extern")
+      target_sources(
+        rrtmgpkernels
+        PRIVATE # cmake-format: sort
+                api/rrtmgp_kernels.h
+      )
+    endif()
   else()
     message(WARNING "No sources found for rtekernels!")
   endif()

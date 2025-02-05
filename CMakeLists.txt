@@ -12,6 +12,17 @@ option(BUILD_C_HEADERS "Build c headers" ON)
 
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
 
+if(BUILD_C_HEADERS)
+  set(RTE_BOOL "_Bool")
+  set(RTE_PRECISION "double")
+  set(RTE_EPSILON "DBL_EPSILON")
+
+  if(RTE_ENABLE_SP)
+    set(RTE_PRECISION "float")
+    set(RTE_EPSILON "FLT_EPSILON")
+  endif()
+endif()
+
 set(PREFERRED_KERNEL_MODES "default" "accel" "extern")
 set(KERNEL_MODE
     "default"

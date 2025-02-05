@@ -70,16 +70,27 @@ if(BUILD_C_HEADERS)
       list(APPEND ABSOLUTE_RTEKERNELS_SOURCES ${ABS_PATH})
     endforeach()
 
-    add_custom_target(
-      rtekernels_header ALL
+    add_custom_command(
+      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
       COMMAND
         ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if
         ${ABSOLUTE_RTEKERNELS_SOURCES} -of
         ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
-      COMMENT "Builds a target for generating the RTEKernels' C bindings header"
+      COMMENT "Generating RTEKernels' C bindings header"
+      DEPENDS ${ABSOLUTE_RTEKERNELS_SOURCES}
+    )
+
+    add_custom_target(
+      rtekernels_header
+      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+      COMMENT
+        "Ensure rtekernels_header is built before rtekernels can use its output"
     )
 
     if(KERNEL_MODE STREQUAL "extern")
+      # Ensure that rtekernels depends on rtekernels_header
+      add_dependencies(rtekernels rtekernels_header)
+
       target_sources(
         rtekernels
         PRIVATE # cmake-format: sort

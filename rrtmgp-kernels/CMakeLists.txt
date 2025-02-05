@@ -52,17 +52,27 @@ if(BUILD_C_HEADERS)
       list(APPEND ABSOLUTE_RRTMGPKERNELS_SOURCES ${ABS_PATH})
     endforeach()
 
-    add_custom_target(
-      rrtmgpkernels_header ALL
+    add_custom_command(
+      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/api/rrtmgp_kernels.h
       COMMAND
         ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if
         ${ABSOLUTE_RRTMGPKERNELS_SOURCES} -of
         ${CMAKE_CURRENT_SOURCE_DIR}/api/rrtmgp_kernels.h
+      COMMENT "Generating RRTMGPKernels' C bindings header"
+      DEPENDS ${ABSOLUTE_RRTMGPKERNELS_SOURCES}
+    )
+
+    add_custom_target(
+      rrtmgpkernels_header
+      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/api/rrtmgp_kernels.h
       COMMENT
-        "Builds a target for generating the RRTMGPKernels' C bindings header"
+        "Ensure rrtmgpkernels_header is built before rrtmgpkernels can use its output"
     )
 
     if(KERNEL_MODE STREQUAL "extern")
+      # Ensure that rrtmgpkernels depends on rrtmgpkernels_header
+      add_dependencies(rrtmgpkernels rrtmgpkernels_header)
+
       target_sources(
         rrtmgpkernels
         PRIVATE # cmake-format: sort
@@ -70,6 +80,6 @@ if(BUILD_C_HEADERS)
       )
     endif()
   else()
-    message(WARNING "No sources found for rtekernels!")
+    message(WARNING "No sources found for rrtmgpkernels!")
   endif()
 endif()

@@ -3,7 +3,8 @@ on:
   push:
     branches:
     - main
-    - documentation
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   Build:
@@ -60,7 +61,7 @@ jobs:
     # Check broken links
     #
     - name: Broken Link Check
-      if: ${{ github.ref == 'refs/heads/documentation'}}
+      if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v2
       with:
         TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
@@ -71,7 +72,7 @@ jobs:
     #
     - name: Deploy API Documentation
       uses: JamesIves/github-pages-deploy-action@v4.7.2
-      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/documentation' }}
+      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages
         folder: public/

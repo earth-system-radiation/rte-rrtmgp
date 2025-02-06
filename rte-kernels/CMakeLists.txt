@@ -8,8 +8,6 @@ if(KERNEL_MODE STREQUAL "extern")
             api/mo_optical_props_kernels.F90
             api/mo_rte_solver_kernels.F90
             api/mo_rte_util_array.F90
-            api/rte_kernels.h
-            api/rte_types.h
   )
 else()
   target_sources(
@@ -40,7 +38,67 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 target_compile_definitions(
-  rtekernels PRIVATE $<$<BOOL:${RTE_ENABLE_SP}>:RTE_USE_SP>
+  rtekernels
+  PRIVATE $<$<BOOL:${RTE_ENABLE_SP}>:RTE_USE_SP>
+          rtekernels
+          $<$<BOOL:${RTE_BOOL}>:RTE_BOOL>
+          rtekernels
+          $<$<BOOL:${RTE_PRECISION}>:RTE_PRECISION>
+          rtekernels
+          $<$<BOOL:${RTE_EPSILON}>:RTE_EPSILON>
 )
 
 target_include_directories(rtekernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
+
+if(BUILD_C_HEADERS)
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.h
+    @ONLY
+  )
+
+  get_target_property(RTEKERNELS_SOURCES rtekernels SOURCES)
+
+  if(RTEKERNELS_SOURCES)
+    # Convert sources to absolute paths
+    set(ABSOLUTE_RTEKERNELS_SOURCES "")
+
+    foreach(src ${RTEKERNELS_SOURCES})
+      get_filename_component(
+        ABS_PATH ${src} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR}
+      )
+      list(APPEND ABSOLUTE_RTEKERNELS_SOURCES ${ABS_PATH})
+    endforeach()
+
+    add_custom_command(
+      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+      COMMAND
+        ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if
+        ${ABSOLUTE_RTEKERNELS_SOURCES} -of
+        ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+      COMMENT "Generating RTEKernels' C bindings header"
+      DEPENDS ${ABSOLUTE_RTEKERNELS_SOURCES}
+    )
+
+    add_custom_target(
+      rtekernels_header
+      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+      COMMENT
+        "Ensure rtekernels_header is built before rtekernels can use its output"
+    )
+
+    if(KERNEL_MODE STREQUAL "extern")
+      # Ensure that rtekernels depends on rtekernels_header
+      add_dependencies(rtekernels rtekernels_header)
+
+      target_sources(
+        rtekernels
+        PRIVATE # cmake-format: sort
+                api/rte_kernels.h
+                api/rte_types.h
+      )
+    endif()
+  else()
+    message(WARNING "No sources found for rtekernels!")
+  endif()
+endif()

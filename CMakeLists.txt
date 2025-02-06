@@ -8,8 +8,20 @@ project(
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(BUILD_TESTING "Build tests" OFF)
+option(BUILD_C_HEADERS "Build c headers" ON)
 
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
+
+if(BUILD_C_HEADERS)
+  set(RTE_BOOL "_Bool")
+  set(RTE_PRECISION "double")
+  set(RTE_EPSILON "DBL_EPSILON")
+
+  if(RTE_ENABLE_SP)
+    set(RTE_PRECISION "float")
+    set(RTE_EPSILON "FLT_EPSILON")
+  endif()
+endif()
 
 set(PREFERRED_KERNEL_MODES "default" "accel" "extern")
 set(KERNEL_MODE
@@ -41,6 +53,10 @@ endif()
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
+if(BUILD_TESTING OR BUILD_C_HEADERS)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+endif()
+
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
 add_subdirectory(rrtmgp-kernels)
@@ -48,8 +64,6 @@ add_subdirectory(rrtmgp-frontend)
 
 include(CTest)
 if(BUILD_TESTING)
-  find_package(Python3 REQUIRED COMPONENTS Interpreter)
-
   if(NOT _RTE_RRTMGP_HAVE_PY_PACKAGES)
     include(CheckPython3Package)
     check_python3_package(numpy)

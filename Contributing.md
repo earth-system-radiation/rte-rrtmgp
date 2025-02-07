@@ -14,6 +14,6 @@ Please fork this repository, branch from `main`, make your changes, and open a G
 
 ##### Did you add functionality?
 
-Please fork this repository, branch from `develop`, make your changes, and open a Github [pull request](https://github.com/RobertPincus/rte-rrtmgp/pulls) against branch `main`, adding a new regression test or comparison against the reference in `tests/verification.py` or `tests/validation-plots.py` as appropriate. Add the test to `CMakeLists.txt` in the relevant directory.
+Please fork this repository, branch from `main`, make your changes, and open a Github [pull request](https://github.com/RobertPincus/rte-rrtmgp/pulls) against branch `main`, adding a new regression test or comparison against the reference in `tests/verification.py` or `tests/validation-plots.py` as appropriate. Add the test to `CMakeLists.txt` in the relevant directory.
 
 RTE+RRTMGP is intended to be a core that users can extend with custom code to suit their own needs.

@@ -68,11 +68,10 @@ if(BUILD_C_HEADERS)
       COMMENT
         "Ensure rrtmgpkernels_header is built before rrtmgpkernels can use its output"
     )
+    # Ensure that rrtmgpkernels depends on rrtmgpkernels_header
+    add_dependencies(rrtmgpkernels rrtmgpkernels_header)
 
     if(KERNEL_MODE STREQUAL "extern")
-      # Ensure that rrtmgpkernels depends on rrtmgpkernels_header
-      add_dependencies(rrtmgpkernels rrtmgpkernels_header)
-
       target_sources(
         rrtmgpkernels
         PRIVATE # cmake-format: sort

@@ -86,11 +86,10 @@ if(BUILD_C_HEADERS)
       COMMENT
         "Ensure rtekernels_header is built before rtekernels can use its output"
     )
+    # Ensure that rtekernels depends on rtekernels_header
+    add_dependencies(rtekernels rtekernels_header)
 
     if(KERNEL_MODE STREQUAL "extern")
-      # Ensure that rtekernels depends on rtekernels_header
-      add_dependencies(rtekernels rtekernels_header)
-
       target_sources(
         rtekernels
         PRIVATE # cmake-format: sort

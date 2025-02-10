@@ -17,7 +17,6 @@ This `.h` file defines C-compatible Boolean and floating-point types.
 */
 #pragma once
 
-#include <cfloat.h>  // Ensure FLT_EPSILON and DBL_EPSILON are available
 #include <stdbool.h>
 
 // Define a C-compatible Boolean type

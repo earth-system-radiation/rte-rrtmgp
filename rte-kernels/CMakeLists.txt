@@ -53,13 +53,14 @@ target_include_directories(rtekernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 if(BUILD_C_HEADERS)
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.h.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.h
+    ${CMAKE_BINARY_DIR}/headers/rte_types.h
     @ONLY
   )
 
   get_target_property(RTEKERNELS_SOURCES rtekernels SOURCES)
 
   if(RTEKERNELS_SOURCES)
+    set(RTE_HEADER ${CMAKE_BINARY_DIR}/headers/rte_kernels.h)
     # Convert sources to absolute paths
     set(ABSOLUTE_RTEKERNELS_SOURCES "")
 
@@ -71,18 +72,17 @@ if(BUILD_C_HEADERS)
     endforeach()
 
     add_custom_command(
-      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+      OUTPUT ${RTE_HEADER}
       COMMAND
         ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if
-        ${ABSOLUTE_RTEKERNELS_SOURCES} -of
-        ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+        ${ABSOLUTE_RTEKERNELS_SOURCES} -of ${RTE_HEADER}
       COMMENT "Generating RTEKernels' C bindings header"
       DEPENDS ${ABSOLUTE_RTEKERNELS_SOURCES}
     )
 
     add_custom_target(
       rtekernels_header
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_kernels.h
+      DEPENDS ${RTE_HEADER}
       COMMENT
         "Ensure rtekernels_header is built before rtekernels can use its output"
     )
@@ -94,11 +94,15 @@ if(BUILD_C_HEADERS)
       target_sources(
         rtekernels
         PRIVATE # cmake-format: sort
-                api/rte_kernels.h
-                api/rte_types.h
+                ${CMAKE_BINARY_DIR}/headers/rte_types.h
+                ${RTE_HEADER}
       )
     endif()
+
+    install(FILES ${RTE_HEADER} TYPE INCLUDE)
   else()
     message(WARNING "No sources found for rtekernels!")
   endif()
+
+  install(FILES ${CMAKE_BINARY_DIR}/headers/rte_types.h TYPE INCLUDE)
 endif()

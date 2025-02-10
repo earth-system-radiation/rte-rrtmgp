@@ -77,9 +77,9 @@ if(BUILD_C_HEADERS)
         PRIVATE # cmake-format: sort
                 ${RRTMGP_HEADER}
       )
-
-      install(FILES ${RRTMGP_HEADER} TYPE INCLUDE)
     endif()
+
+    install(FILES ${RRTMGP_HEADER} TYPE INCLUDE)
   else()
     message(WARNING "No sources found for rrtmgpkernels!")
   endif()

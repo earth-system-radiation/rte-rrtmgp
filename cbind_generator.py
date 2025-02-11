@@ -92,7 +92,7 @@ def extract_between(text, start_str, end_str):
     endOfStart = start + len(start_str)
 
     # Error checking for function with same preffix-name
-    if start != -1 and not (text[endOfStart] == ' ' or text[endOfStart] == '('):
+    if start != -1 and not (text[endOfStart] == " " or text[endOfStart] == "("):
         start = text.find(start_str, endOfStart)
 
     if start == -1:

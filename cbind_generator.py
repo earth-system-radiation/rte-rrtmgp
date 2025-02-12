@@ -5,7 +5,7 @@ import re
 
 def fortran_to_c(fortran_code):
     subroutine_pattern = re.compile(
-        r"subroutine\s+(\w+)\s*" r"\((.*?)\)\s*&?\s*" r'bind\(C,\s*name="(.*?)"\)',
+        r"subroutine\s+(\w+)\s*" r"\((.*?)\)\s*&?\s*" r'bind\s*\(C,\s*name="(.*?)"\)',
         re.DOTALL | re.IGNORECASE,
     )
     var_pattern = re.compile(
@@ -89,6 +89,12 @@ def fortran_to_c(fortran_code):
 
 def extract_between(text, start_str, end_str):
     start = text.find(start_str)
+    endOfStart = start + len(start_str)
+
+    # Error checking for function with same preffix-name
+    if start != -1 and not (text[endOfStart] == " " or text[endOfStart] == "("):
+        start = text.find(start_str, endOfStart)
+
     if start == -1:
         return None
     end = text.find(end_str, start + len(start_str))
@@ -116,10 +122,10 @@ def extract_cbinds(fortran_code):
         )
 
         if subroutine_code:
-            res = subroutine_code.find("bind(C, name=")
+            res = re.search(r'bind\s*\(\s*C\s*,\s*name\s*=\s*"', subroutine_code)
 
             # Skip subroutine if not binded
-            if res == -1:
+            if not res:
                 continue
         else:
             print("Invalid subroutine declaration! exiting...")

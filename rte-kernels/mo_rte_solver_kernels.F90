@@ -922,14 +922,14 @@ contains
     integer,                         intent(in) :: ncol, nlay
     logical(wl),                     intent(in) :: top_at_1
     real(wp), dimension(ncol      ), intent(in) :: sfc_emis, sfc_src
-    real(wp), dimension(ncol, nlay), intent(in) :: lay_source,    & ! Planck source at layer center
-                                                   tau,           & ! Optical depth (tau)
-                                                   gamma1, gamma2,& ! Coupling coefficients
-                                                   rdif, tdif       ! Layer reflectance and transmittance
+    real(wp), dimension(ncol, nlay), intent(in) :: lay_source     ! Planck source at layer center
+    real(wp), dimension(ncol, nlay), intent(in) :: tau            ! Optical depth (tau)
+    real(wp), dimension(ncol, nlay), intent(in) :: gamma1, gamma2 ! Coupling coefficients
+    real(wp), dimension(ncol, nlay), intent(in) :: rdif, tdif     ! Layer reflectance and transmittance
     real(wp), dimension(ncol, nlay+1), target, &
-                                     intent(in)  :: lev_source       ! Planck source at layer edges
+                                     intent(in)  :: lev_source    ! Planck source at layer edges
     real(wp), dimension(ncol, nlay), intent(out) :: source_dn, source_up
-    real(wp), dimension(ncol      ), intent(out) :: source_sfc      ! Source function for upward radation at surface
+    real(wp), dimension(ncol      ), intent(out) :: source_sfc    ! Source function for upward radation at surface
 
     integer             :: icol, ilay
     real(wp)            :: Z, Zup_top, Zup_bottom, Zdn_top, Zdn_bottom

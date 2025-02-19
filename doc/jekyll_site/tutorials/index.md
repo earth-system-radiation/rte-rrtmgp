@@ -3,9 +3,7 @@ layout: page
 title: Tutorials
 ---
 
-# Tutorials will live here
-
-### Clear-sky calculation
+# Clear-sky calculation
 
 A typical workflow for a clear-sky calculation is to
 
@@ -16,7 +14,7 @@ A typical workflow for a clear-sky calculation is to
 
 This repository contains all the pieces needed to perform a clear-sky calculation. An [example](https://github.com/RobertPincus/rte-rrtmgp/tree/master/examples/rfmip-clear-sky) is provided.
 
-### All-sky calculation
+# All-sky calculation
 
 An all-sky calculation is a small variant
 

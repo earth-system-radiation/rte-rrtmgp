@@ -14,7 +14,7 @@ To compare against baseline results:
 * Make changes *
 % OMP_NUM_THREADS=64 ../test_lw_perf.sh 100 | grep TIMING > NEW_DATA
 % rrtmgp_perf_analysis NEW_DATA > NEW_ANALYSIS
-% rrtmgp_perf_analysis NEW_DATA BASELINE_DATA
+% rrtmgp_perf_analysis NEW_ANALYSIS BASELINE_ANALYSIS
 """
 
 import argparse, sys, os

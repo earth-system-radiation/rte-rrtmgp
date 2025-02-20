@@ -3,20 +3,20 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>Reference (technical documentation) | RTE-RRTMGP</title>
+<title>RTE - optics | RTE-RRTMGP</title>
 <meta name="generator" content="Jekyll v4.2.2" />
-<meta property="og:title" content="Reference (technical documentation)" />
+<meta property="og:title" content="RTE - optics" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
 <meta property="og:description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
-<link rel="canonical" href="https://earth-system-radiation.github.io//rte-rrtmgp/reference/" />
-<meta property="og:url" content="https://earth-system-radiation.github.io//rte-rrtmgp/reference/" />
+<link rel="canonical" href="https://earth-system-radiation.github.io//rte-rrtmgp/explanations/rte-optics.html" />
+<meta property="og:url" content="https://earth-system-radiation.github.io//rte-rrtmgp/explanations/rte-optics.html" />
 <meta property="og:site_name" content="RTE-RRTMGP" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="Reference (technical documentation)" />
+<meta property="twitter:title" content="RTE - optics" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"Reference (technical documentation)","url":"https://earth-system-radiation.github.io//rte-rrtmgp/reference/"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"RTE - optics","url":"https://earth-system-radiation.github.io//rte-rrtmgp/explanations/rte-optics.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/rte-rrtmgp/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://earth-system-radiation.github.io//rte-rrtmgp/feed.xml" title="RTE-RRTMGP" /></head>
 <body><header class="site-header" role="banner">
@@ -39,37 +39,11 @@
         <article class="post">
 
   <header class="post-header">
-    <h1 class="post-title">Reference (technical documentation)</h1>
+    <h1 class="post-title">RTE - optics</h1>
   </header>
 
   <div class="post-content">
-    <h1 id="reading-the-code">Reading the code</h1>
-
-<p>RTE and RRTMGP aspire to follow a set of coding conventions:</p>
-
-<ul>
-  <li>Module names start with <code class="language-plaintext highlighter-rouge">mo_</code>, class/type names with <code class="language-plaintext highlighter-rouge">ty_</code>.</li>
-  <li>Real variables are defined with working precision <code class="language-plaintext highlighter-rouge">wp</code>; logical variables with <code class="language-plaintext highlighter-rouge">wl</code>.
-Both Fortran KIND parameters are set in <code class="language-plaintext highlighter-rouge">mo_rte_kind.F90</code></li>
-  <li>Most procedures in RTE and RRTMGP are functions which return a string. A non-empty string indicates an error of some kind.</li>
-  <li>RTE and RRTMGP operate on multiple columns (profiles) at once. Problems are dimensioned by column, layer,
-and spectral quadrature point.</li>
-  <li>RTE and RRTMGP are agnostic to vertical ordering</li>
-  <li>Units are MKS</li>
-  <li>Procedures (with the exception of testing code) do not perform I/O</li>
-</ul>
-
-<h1 id="fortran-user-facing-class-interfaces">Fortran user-facing class interfaces</h1>
-
-<p><a href="./rte-fortran-interface/index.html">RTE Fortran interface</a></p>
-
-<p><a href="./rrtmgp-fortran-interface/index.html">RRTMGP Fortran interface</a></p>
-
-<h1 id="kernel-interfaces">Kernel interfaces</h1>
-
-<p><a href="./rte-kernels/index.html">RTE kernels: Fortran interface</a></p>
-
-<p><a href="./rrtmgp-kernels/index.html">RRTMGP kernels: Fortran interface</a></p>
+    <p>This page to describe the gas optics intereface and the RRTMGP cloud and aerosol optics interfaces</p>
 
   </div>
 

@@ -11,6 +11,10 @@ Bands are defined by their bounds, expressed as wavenumbers in 1/cm, and by thei
 
 Class `ty_optical_props` implements a range of [procedures](../reference/optical-props-overview.html) for representing and manipulating the spectral discretization. These capabilities are inherited by classes that represent arrays of optical properties (i.e. optical depth) or sources of radiation and by those used to compute optical properties from a physical description of the atmosphere.
 
+# Working with sets of optical properties
+
+# Working with (longwave) source functions
+
 # RRTMGP's spectral discretization
 
 The bands defined by RRTMGP cover the full spectrum of radiation emitted by the Sun and Earth: these are _broadband_ calculations. In RRTMGP the bands are continuous so that the ending wavelength of one band is the starting wavelength of the next.

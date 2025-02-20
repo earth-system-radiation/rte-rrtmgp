@@ -34,8 +34,10 @@ twitter_username: #jekyllrb
 github_username: earth-system-radiation
 
 # Build settings
-#theme: minima
-remote_theme: rundocs/jekyll-rtd-theme
+theme: minima
+# remote_theme: rundocs/jekyll-rtd-theme
+#   from https://github.com/jekyllrtdtheme/jekyll-rtd-theme/
+#   May require new _config.yml? Example at https://github.com/darren1998s/darren1998s.github.io ?
 # plugins:
 #   - jekyll-feed
 

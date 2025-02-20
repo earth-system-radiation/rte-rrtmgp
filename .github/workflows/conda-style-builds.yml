@@ -1,0 +1,91 @@
+name: Conda-compatible builds
+
+on:
+  push:
+    branches:
+      - main
+      - feature-add-conda-compatible-ci
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    # Enable Conda environment by using the login shell:
+    shell: bash -leo pipefail {0}
+
+jobs:
+  CI:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-13, macos-latest, windows-2022]
+        fpmodel: [DP, SP]
+    env:
+      FC: gfortran-14
+      FFLAGS: "-std=f2008"
+      CMAKE_BUILD_PARALLEL_LEVEL: 8
+      VERBOSE:
+      CTEST_PARALLEL_LEVEL: 8
+      CTEST_OUTPUT_ON_FAILURE: 1
+    runs-on: ${{ matrix.os }}
+    steps:
+      #
+      # Check out repository under $GITHUB_WORKSPACE
+      #
+      - name: Check out code
+        uses: actions/checkout@v4
+      #
+      # Cache Conda packages
+      #
+      - name: Cache Conda packages
+        uses: actions/cache@v4
+        with:
+          path: ~/conda_pkgs_dir
+          key: conda-pkgs-${{ matrix.os }}
+      #
+      # Set up Conda
+      #
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          activate-environment: rte_rrtmgp_test
+          environment-file: environment-noplots.yml
+          python-version: 3.11
+          auto-activate-base: false
+          # Use the cache properly:
+          use-only-tar-bz2: false
+      #
+      # Install compiler
+      #
+      - name: Install compiler
+        run: |
+          conda install -c conda-forge ${FC} -y
+          echo "FC=gfortran" >> "$GITHUB_ENV"
+      #
+      # Install dependencies
+      #
+      - name: Install dependencies
+        run: conda install -c conda-forge netcdf-fortran ninja -y
+      #
+      # Adjust toolchain
+      #
+      - name: Adjust toolchain
+        if: matrix.os == 'windows-2022'
+        run: echo "FC=${FC}.exe" >> "$GITHUB_ENV"
+      #
+      # Build libraries, examples, and tests
+      #
+      - name: Build libraries and tests
+        run: |
+          cmake -S . -B build -G "Ninja" \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DRTE_ENABLE_SP="$(test '${{ matrix.fpmodel }}' = SP && echo ON || echo OFF)" \
+              -DBUILD_TESTING=ON
+          cmake --build build
+      #
+      # Run examples, tests and checks
+      #
+      - name: Run examples, tests and checks
+        working-directory: build
+        run: ctest

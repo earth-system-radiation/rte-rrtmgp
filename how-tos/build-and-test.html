@@ -3,9 +3,9 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>How to build and run tests | RTE-RRTMGP</title>
+<title>Building and testing using examples | RTE-RRTMGP</title>
 <meta name="generator" content="Jekyll v4.2.2" />
-<meta property="og:title" content="How to build and run tests" />
+<meta property="og:title" content="Building and testing using examples" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
 <meta property="og:description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
@@ -14,9 +14,9 @@
 <meta property="og:site_name" content="RTE-RRTMGP" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="How to build and run tests" />
+<meta property="twitter:title" content="Building and testing using examples" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"How to build and run tests","url":"https://earth-system-radiation.github.io//rte-rrtmgp/how-tos/build-and-test.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"Building and testing using examples","url":"https://earth-system-radiation.github.io//rte-rrtmgp/how-tos/build-and-test.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/rte-rrtmgp/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://earth-system-radiation.github.io//rte-rrtmgp/feed.xml" title="RTE-RRTMGP" /></head>
 <body><header class="site-header" role="banner">
@@ -31,7 +31,7 @@
           </span>
         </label>
 
-        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">How to build and run tests</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a></div>
+        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">Building and testing using examples</a><a class="page-link" href="/rte-rrtmgp/reference/compiler-flags.html">Example compiler flags</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/explanations/">RTE+RRTMGP - Explanations</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a><a class="page-link" href="/rte-rrtmgp/reference/optical-props-overview.html">Working with optical properties and spectral discretizations</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-fluxes.html">RTE - fluxes</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optical-props.html">RTE - optical properties</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-solvers.html">RTE - solvers</a></div>
       </nav></div>
 </header>
 <main class="page-content" aria-label="Content">
@@ -39,13 +39,13 @@
         <article class="post">
 
   <header class="post-header">
-    <h1 class="post-title">How to build and run tests</h1>
+    <h1 class="post-title">Building and testing using examples</h1>
   </header>
 
   <div class="post-content">
     <p>How to build the libraries, tests, and examples, run the tests, and verify the results</p>
 
-<h2 id="in-a-nutshell">In a nutshell</h2>
+<h1 id="in-a-nutshell">In a nutshell</h1>
 
 <p>RTE+RRTMGP uses <code class="language-plaintext highlighter-rouge">CMake</code>. To generate a configuration using the <code class="language-plaintext highlighter-rouge">ninja</code> build system:
 <code class="language-plaintext highlighter-rouge">cmake -S . -B build -G "Ninja" \               -DCMAKE_BUILD_TYPE=RelWithDebInfo \               -DBUILD_TESTING=ON</code></p>
@@ -58,81 +58,19 @@
 
 <p>Evaluating the results of the tests requires <code class="language-plaintext highlighter-rouge">Python</code> and the packages described in <code class="language-plaintext highlighter-rouge">environment*.yml</code>.</p>
 
-<h2 id="building-and-testing-using-gnu-autotools">Building and testing using (Gnu) autotools</h2>
+<p>See also possible values of <a href="/reference/compiler-flags.html">compiler flags</a>.</p>
+
+<h1 id="building-and-testing-using-gnu-autotools">Building and testing using (Gnu) autotools</h1>
 
 <p>Sergey Kosukhin and his colleagues at the Max Planck Institute for Meteorology
 maintain the <code class="language-plaintext highlighter-rouge">autoconf</code> branch which adds Gnu <code class="language-plaintext highlighter-rouge">autotools</code> building to <code class="language-plaintext highlighter-rouge">main</code> branch.</p>
 
-<h2 id="supplying-data">Supplying data</h2>
+<h1 id="supplying-data">Supplying data</h1>
 
 <p>Data files needed for RRTMGP are available via a <a href="https://github.com/earth-system-radiation/rrtmgp-data">data repository</a> or
 as a <a href="https://doi.org/10.5281/zenodo.7988260">Zenodo archive</a>.</p>
 
 <p><code class="language-plaintext highlighter-rouge">ctest</code> fetches a specific version of this data for running the tests and examples.</p>
-
-<h2 id="example-compiler-flags">Example compiler flags</h2>
-
-<p>In these examples <code class="language-plaintext highlighter-rouge">FC</code> is the Fortran compilers using flags <code class="language-plaintext highlighter-rouge">FCFLAGS</code></p>
-
-<h3 id="gnu-fortran">Gnu Fortran</h3>
-
-<p>(see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/continuous-integration.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC</code>: <code class="language-plaintext highlighter-rouge">gfortran-12</code> or <code class="language-plaintext highlighter-rouge">gfortran-13</code> or <code class="language-plaintext highlighter-rouge">gfortran-14</code></p>
-
-<h4 id="debugging-flags">Debugging flags</h4>
-
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan"</code></p>
-
-<h4 id="even-stricter-debugging-flags">Even stricter debugging flags</h4>
-
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fbacktrace -finit-real=nan -pedantic -g -Wall"</code></p>
-
-<h3 id="intel-fortran-classic">Intel Fortran Classic</h3>
-
-<p>(see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC: ifort</code></p>
-
-<h4 id="debugging-flags-1">Debugging flags</h4>
-
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"</code></p>
-
-<h4 id="optimization-flags">Optimization flags:</h4>
-
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS:"-m64 -O3 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132"</code></p>
-
-<h3 id="intel-fortran">Intel Fortran</h3>
-
-<p>(LLVM, see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC: ifx</code></p>
-
-<h4 id="debugging-flags-2">Debugging flags</h4>
-
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"</code></p>
-
-<h4 id="using-openmp-gpu-offload">Using OpenMP GPU offload</h4>
-
-<p>See <a href="https://github.com/earth-system-radiation/rte-rrtmgp/issues/194">this open issue</a></p>
-
-<h3 id="nvfortran">NVFortran</h3>
-
-<p>(see also the see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC: nvfortran</code></p>
-
-<h4 id="debugging-flags-3">Debugging flags</h4>
-
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mallocatable=03  -Mpreprocess"</code></p>
-
-<h4 id="optimization-flags-1">Optimization flags:</h4>
-
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-O3 -fast -Minfo -Mallocatable=03 -Mpreprocess"</code></p>
-
-<h3 id="hpe-cce-for-gpu-using-openmp-acc-crayftn--requires-at-least-cce-1400">HPE CCE for GPU using OpenMP-acc: crayftn – requires at least CCE 14.0.0</h3>
-
-<p><code class="language-plaintext highlighter-rouge">FC: crayftn</code></p>
-
-<h4 id="debugging-flags-these-appear-to-be-insufficient-during-the-link-stage">Debugging flags (these appear to be insufficient during the link stage)</h4>
-
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-hnoacc -homp -O0"</code></p>
 
   </div>
 

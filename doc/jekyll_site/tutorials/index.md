@@ -12,7 +12,7 @@ A typical workflow for a clear-sky calculation is to
 1. compute the optical properties of the gaseous atmosphere
 1. compute radiative fluxes
 
-This repository contains all the pieces needed to perform a clear-sky calculation. An [example](https://github.com/RobertPincus/rte-rrtmgp/tree/master/examples/rfmip-clear-sky) is provided.
+This repository contains all the pieces needed to perform a clear-sky calculation. An [example](https://github.com/earth-system-radiation/rte-rrtmgp/tree/master/examples/rfmip-clear-sky) is provided.
 
 # All-sky calculation
 

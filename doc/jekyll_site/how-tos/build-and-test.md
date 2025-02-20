@@ -18,7 +18,7 @@ To run the examples and tests and check the results:
 
 Evaluating the results of the tests requires `Python` and the packages described in `environment*.yml`.
 
-See also possible values of [compiler flags](/reference/compiler-flags.html).
+See also possible values of [compiler flags](./reference/compiler-flags.html).
 
 # Building and testing using (Gnu) autotools
 

@@ -69,6 +69,16 @@ jobs:
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
     #
+    # Check broken links
+    #
+    - name: Broken Link Check -- all files?
+      if: ${{ github.ref == 'refs/heads/main'}}
+      uses: technote-space/broken-link-checker-action@v2
+      with:
+        TARGET: file://${{ github.workspace }}/public/index.html
+        RECURSIVE: true
+        ASSIGNEES: ${{ github.actor }}
+    #
     # Deploy documentation (can add target-folder)
     #
     - name: Deploy to Github Pages root

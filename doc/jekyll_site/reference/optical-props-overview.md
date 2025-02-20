@@ -17,4 +17,4 @@ Procedure `op%is_initialized()` returns a logical value indicating if the spectr
 
 Integer functions `op%convert_band2gpt()` and `op%convert_gpt2band()` provide a map between individual bands and g-points. Function `op%get_gpoint_bands()` returns an integer of length op%get_ngpt() with the band number to which each g-point belongs (i.e. it's the vector version of `op%convert_gpt2band()`).
 
-Comparison functions `op1%bands_are_equal(op2)` and `op1%gpoints_are_equal(op2)` return logical values indicating whether the tw sets of optical properties share the same band or g-point discretization.
+Comparison functions `op1%bands_are_equal(op2)` and `op1%gpoints_are_equal(op2)` return logical values indicating whether the two sets of optical properties share the same band or g-point discretization.

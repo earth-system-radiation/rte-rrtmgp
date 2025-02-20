@@ -79,11 +79,11 @@ jobs:
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
     #
-    # Deploy documentation (can add target-folder)
+    # Deploy documentation from main (could restrict to push events as below)
     #
     - name: Deploy to Github Pages root
       uses: JamesIves/github-pages-deploy-action@v4.7.2
-      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
+      if: ${{ github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages
         folder: public/

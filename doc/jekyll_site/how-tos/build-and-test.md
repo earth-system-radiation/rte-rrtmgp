@@ -1,9 +1,7 @@
 ---
 layout: page
-title: Building and testing using examples
+title: How to build the libraries, tests, and examples, run the tests, and verify the results
 ---
-
-How to build the libraries, tests, and examples, run the tests, and verify the results
 
 # In a nutshell
 

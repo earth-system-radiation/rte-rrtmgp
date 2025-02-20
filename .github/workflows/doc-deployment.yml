@@ -3,12 +3,13 @@ on:
   push:
     branches:
     - main
+    - feature-docs-from-wiki
   pull_request:
   workflow_dispatch:
 
 jobs:
   Build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -32,7 +33,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1
+        ruby-version: 3.3
     #
     # Install Jekyll
     #
@@ -68,9 +69,9 @@ jobs:
         RECURSIVE: true
         ASSIGNEES: ${{ github.actor }}
     #
-    # Deploy documentation
+    # Deploy documentation (can add target_folder)
     #
-    - name: Deploy API Documentation
+    - name: Deploy to Github Pages root
       uses: JamesIves/github-pages-deploy-action@v4.7.2
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:

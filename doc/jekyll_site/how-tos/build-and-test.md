@@ -1,7 +1,9 @@
 ---
 layout: page
-title: How to build the libraries, tests, and examples, run the tests, and verify the results
+title: Building and testing
 ---
+
+How to build the libraries, tests, and examples, run the tests, and verify the results
 
 # In a nutshell
 
@@ -16,7 +18,7 @@ To run the examples and tests and check the results:
 
 Evaluating the results of the tests requires `Python` and the packages described in `environment*.yml`.
 
-See also possible values of [compiler flags](./reference/compiler-flags.html).
+See also possible values of [compiler flags](../reference/compiler-flags.html).
 
 # Building and testing using (Gnu) autotools
 

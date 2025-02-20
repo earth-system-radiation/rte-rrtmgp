@@ -72,7 +72,6 @@ jobs:
     # Check broken links
     #
     - name: Broken Link Check -- all files?
-      if: ${{ github.ref == 'refs/heads/main'}}
       uses: technote-space/broken-link-checker-action@v2
       with:
         TARGET: file://${{ github.workspace }}/public/index.html

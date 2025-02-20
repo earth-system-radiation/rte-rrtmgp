@@ -77,3 +77,14 @@ jobs:
       with:
         branch: gh-pages
         folder: public/
+
+    #
+    # Deploy documentation (can add target_folder)
+    #
+    - name: Deploy to Github Pages root
+      uses: JamesIves/github-pages-deploy-action@v4.7.2
+      if: ${{ github.event_name == 'push'  &&  github.ref != 'refs/heads/main' }}
+      with:
+        branch: gh-pages
+        folder: public/
+        target_folder: staging/

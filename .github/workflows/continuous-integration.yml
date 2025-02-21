@@ -74,12 +74,10 @@ jobs:
       #
       - name: Build libraries and tests
         run: |
-          echo $FFLAGS
           cmake -S . -B build -G "Ninja" \
               -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
               -DRTE_ENABLE_SP="$(test '${{ matrix.fpmodel }}' = SP && echo ON || echo OFF)" \
               -DKERNEL_MODE=${{ matrix.rte-kernels }} \
-              -DCMAKE_Fortran_FLAGS="$FFLAGS" \
               -DBUILD_TESTING=ON
           cmake --build build
       #

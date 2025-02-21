@@ -59,7 +59,7 @@ jobs:
       #
       - name: Install compiler, dependencies
         run: |
-          conda install -c conda-forge ${FC} netcdf-fortran ninja -y
+          conda install -c conda-forge "${FC}" netcdf-fortran ninja -y
           echo "FC=gfortran" >> "$GITHUB_ENV"
       #
       # Adjust toolchain

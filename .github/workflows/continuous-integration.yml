@@ -67,7 +67,7 @@ jobs:
       #
       - name: Add debug flags
         if: matrix.build-type == 'Debug'
-        run: echo  "FFLAGS = '-std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan'" >> "$GITHUB_ENV"
+        run: echo  "CMAKE_Fortran_FLAGS = '-std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan'" >> "$GITHUB_ENV"
       #
       # Build libraries, examples, and tests
       #

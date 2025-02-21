@@ -21,7 +21,8 @@ jobs:
         rte-kernels: [default, accel]
         fpmodel: [DP, SP]
         build-type: [Debug, RelWithDebugInfo]
-        # Might exclude RelWithDebugInfo/accel combinations
+        # Add Release config?
+        # Exclude RelWithDebugInfo/accel combinations?
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 8
       VERBOSE:
@@ -73,6 +74,7 @@ jobs:
       #
       - name: Build libraries and tests
         run: |
+          echo $FFLAGS
           cmake -S . -B build -G "Ninja" \
               -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
               -DRTE_ENABLE_SP="$(test '${{ matrix.fpmodel }}' = SP && echo ON || echo OFF)" \

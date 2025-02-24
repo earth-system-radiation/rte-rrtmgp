@@ -30,7 +30,7 @@ jobs:
         #
         include:
         - build_type: Debug
-          fflags: "-std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
+          fflags: -std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan
 
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 8
@@ -79,7 +79,7 @@ jobs:
         run: |
           cmake -S . -B build -G "Ninja" \
               -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-              -DCMAKE_Fortran_FLAGS=${{ matrix.fflags}} \
+              -DCMAKE_Fortran_FLAGS="${{ matrix.fflags }}" \
               -DRTE_ENABLE_SP="$(test '${{ matrix.fpmodel }}' = SP && echo ON || echo OFF)" \
               -DKERNEL_MODE=${{ matrix.rte-kernels }} \
               -DBUILD_TESTING=ON

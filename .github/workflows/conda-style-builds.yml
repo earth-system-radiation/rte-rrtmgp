@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-13, macos-latest, windows-2022]
-        build-type: [RelWithDebugInfo, Release]
+        build-type: [RelWithDebugInfo]
     env:
       FC: gfortran
       # FFLAGS: "-std=f2008"

@@ -30,7 +30,7 @@ jobs:
         #
         include:
         - build_type: Debug
-          fflags: =-std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan
+          fflags: "-std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan"
 
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 8

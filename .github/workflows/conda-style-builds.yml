@@ -18,6 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-13, macos-latest, windows-2022]
+        build-type: [RelWithDebugInfo, Release]
     env:
       FC: gfortran
       # FFLAGS: "-std=f2008"
@@ -72,7 +73,7 @@ jobs:
       - name: Build libraries and tests
         run: |
           cmake -S . -B build -G "Ninja" \
-              -DCMAKE_BUILD_TYPE=RelWithDebugInfo \
+              -DCMAKE_BUILD_TYPE=${{ matrix.build-type}} \
               -DRTE_ENABLE_SP=OFF \
               -DBUILD_TESTING=ON
           cmake --build build

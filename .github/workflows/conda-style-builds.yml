@@ -60,7 +60,6 @@ jobs:
       - name: Install compiler, dependencies
         run: |
           conda install -c conda-forge "${FC}" netcdf-fortran ninja -y
-          echo "FC=gfortran" >> "$GITHUB_ENV"
       #
       # Adjust toolchain
       #
@@ -73,7 +72,8 @@ jobs:
       - name: Build libraries and tests
         run: |
           cmake -S . -B build -G "Ninja" \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DCMAKE_BUILD_TYPE=RelWithDebugInfo \
+              -DRTE_ENABLE_SP=OFF \
               -DBUILD_TESTING=ON
           cmake --build build
       #

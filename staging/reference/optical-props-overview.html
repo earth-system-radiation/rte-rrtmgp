@@ -43,11 +43,11 @@
   </header>
 
   <div class="post-content">
-    <p>This page provides an overview of methods available for working with spectral discretizations as used by the optical properties class and its descendents. Further details are available in the <a href="./reference/rte-fortran-interface/type/ty_optical_props.html">auto-generated documentation</a>.</p>
+    <p>This page provides an overview of methods available for working with spectral discretizations as used by the optical properties class and its descendents. Further details are available in the <a href="./rte-fortran-interface/type/ty_optical_props.html">auto-generated documentation</a>.</p>
 
 <h1 id="procedures-for-working-with-spectral-resolution">Procedures for working with spectral resolution</h1>
 
-<p>Optical properties are defined by their spectral dependence which is described during <a href="./reference/rte-fortran-interface/type/ty_optical_props.html">initialization</a>.</p>
+<p>Optical properties are defined by their spectral dependence which is described during <a href="./rte-fortran-interface/type/ty_optical_props.html">initialization</a>.</p>
 
 <p>The spectral dependence can be described via arrays: array <code class="language-plaintext highlighter-rouge">band_lims_wvn</code> with extents (2, number-of-bands) describes the number of bands beginning and ending wavenumber of each band (in MKS units i.e. inverse meters). Optional argument <code class="language-plaintext highlighter-rouge">band_lims_gpt</code> describes the beginning and ending g-point of each band; if this array isn’t provided it’s assumed values are available by band. An optional <code class="language-plaintext highlighter-rouge">name</code> may be useful in debugging.</p>
 
@@ -61,7 +61,9 @@
 
 <p>Comparison functions <code class="language-plaintext highlighter-rouge">op1%bands_are_equal(op2)</code> and <code class="language-plaintext highlighter-rouge">op1%gpoints_are_equal(op2)</code> return logical values indicating whether the two sets of optical properties share the same band or g-point discretization.</p>
 
-<h1 id="working-with-source-functions-and-arrays-of-optical-properties">Working with source functions and arrays of optical properties</h1>
+<h1 id="see-also">See also</h1>
+
+<p>There are more <a href="./optical-props-src-funcs.html">types and procedures</a> for working with discrete values of optical properties.</p>
 
   </div>
 

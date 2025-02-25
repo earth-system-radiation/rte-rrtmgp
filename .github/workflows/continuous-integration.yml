@@ -9,8 +9,7 @@ on:
 
 defaults:
   run:
-    # Enable Conda environment by using the login shell:
-    shell: bash -leo pipefail {0}
+    shell: bash -eo pipefail {0}
 
 jobs:
   CI:
@@ -19,77 +18,37 @@ jobs:
       matrix:
         rte-kernels: [default, accel]
         fpmodel: [DP, SP]
-        build-type: [Debug, RelWithDebugInfo]
-        # Add Release config?
-
-        # Exclude RelWithDebugInfo/accel combinations?
-        exclude:
-        - build-type: RelWithDebugInfo
-          rte-kernels: accel
-        #
-        # Add debug flags
-        #
-        include:
-        - build_type: Debug
-          fflags: -std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan
 
     env:
+      FFLAGS: -std=f2008 -fbounds-check -fmodule-private -fimplicit-none -finit-real=nan
       CMAKE_BUILD_PARALLEL_LEVEL: 8
       VERBOSE:
       CTEST_PARALLEL_LEVEL: 8
       CTEST_OUTPUT_ON_FAILURE: 1
-      FC: gfortran-14
     runs-on: ubuntu-24.04
     steps:
-      #
-      # Check out repository under $GITHUB_WORKSPACE
-      #
-      - name: Check out code
+      - name: Check out
         uses: actions/checkout@v4
-      #
-      # Cache Conda packages
-      #
-      - name: Cache Conda packages
-        uses: actions/cache@v4
-        with:
-          path: ~/conda_pkgs_dir
-          key: conda-pkgs
-      #
-      # Set up Conda
-      #
-      - name: Set up Conda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniforge-version: latest
-          activate-environment: rte_rrtmgp_test
-          environment-file: environment-noplots.yml
-          python-version: 3.11
-          auto-activate-base: false
-          conda-remove-defaults: true
-          # Use the cache properly:
-          use-only-tar-bz2: false
-      #
-      # Install dependencies
-      #
-      - name: Install dependencies (ninja, netCDF Fortran)
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install libnetcdff-dev ninja-build -y
-      #
-      # Build libraries, examples, and tests
-      #
-      - name: Build libraries and tests
+          sudo apt-get install --no-install-recommends --assume-yes \
+            libnetcdff-dev \
+            python3-dask \
+            python3-h5netcdf \
+            python3-numpy \
+            python3-scipy \
+            python3-xarray
+      - name: Configure
         run: |
-          cmake -S . -B build -G "Ninja" \
-              -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-              -DCMAKE_Fortran_FLAGS="${{ matrix.fflags }}" \
+          cmake -S . -B build \
+              -DCMAKE_BUILD_TYPE=RelWithDebugInfo \
               -DRTE_ENABLE_SP="$(test '${{ matrix.fpmodel }}' = SP && echo ON || echo OFF)" \
               -DKERNEL_MODE=${{ matrix.rte-kernels }} \
               -DBUILD_TESTING=ON
-          cmake --build build
-      #
-      # Run examples, tests and checks
-      #
-      - name: Run examples, tests and checks
-        working-directory: build
-        run: ctest
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build
+      - name: Install
+        run: sudo cmake --install build

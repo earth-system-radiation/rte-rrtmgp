@@ -97,7 +97,7 @@ include:
         ${Python3_ROOT_DIR}/bin/python -m pip install --no-cache-dir --requirement ${REQUIREMENT_FILE}
         set +x
       }
-    - module load PrgEnv-cray cce/16.0.1 craype-x86-milan craype-accel-amd-gfx90a rocm cray-hdf5 cray-netcdf
+    - module load PrgEnv-cray cce/17.0.1 craype-x86-trento craype-accel-amd-gfx90a rocm/6.0.3 cray-hdf5 cray-netcdf
   cache:
     # Update the key to regenerate the virtual environment:
     key:
@@ -145,7 +145,7 @@ cce-gpu-openacc-DP:
   variables:
     FC: ftn
     # Compiler flags used for ICON model:
-    FFLAGS: -hacc -hadd_paren -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -g
+    FFLAGS: -hacc -hadd_paren -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hipa0
 
 cce-gpu-openacc-SP:
   extends: cce-gpu-openacc-DP

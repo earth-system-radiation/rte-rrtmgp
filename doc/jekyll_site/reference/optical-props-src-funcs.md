@@ -25,4 +25,4 @@ Optical properties can be added together: `err_msg = op1%increment(op2)` adds th
 
 # Reference
 
-A complete description of the [optical properties](rte-fortran-interface/type/ty_optical_props_arry.html) and [source function](./rte-fortran-interface/type/ty_source_func_lw.html) implementations is also generated from the source code.
+A complete description of the [optical properties](./rte-fortran-interface/type/ty_optical_props_arry.html) and [source function](./rte-fortran-interface/type/ty_source_func_lw.html) implementations is also generated from the source code.

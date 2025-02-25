@@ -3,11 +3,11 @@ layout: page
 title: Working with optical properties and spectral discretizations
 ---
 
-This page provides an overview of methods available for working with spectral discretizations as used by the optical properties class and its descendents. Further details are available in the [auto-generated documentation](./reference/rte-fortran-interface/type/ty_optical_props.html).
+This page provides an overview of methods available for working with spectral discretizations as used by the optical properties class and its descendents. Further details are available in the [auto-generated documentation](./rte-fortran-interface/type/ty_optical_props.html).
 
 # Procedures for working with spectral resolution
 
-Optical properties are defined by their spectral dependence which is described during [initialization](./reference/rte-fortran-interface/type/ty_optical_props.html).
+Optical properties are defined by their spectral dependence which is described during [initialization](./rte-fortran-interface/type/ty_optical_props.html).
 
 The spectral dependence can be described via arrays: array `band_lims_wvn` with extents (2, number-of-bands) describes the number of bands beginning and ending wavenumber of each band (in MKS units i.e. inverse meters). Optional argument `band_lims_gpt` describes the beginning and ending g-point of each band; if this array isn't provided it's assumed values are available by band. An optional `name` may be useful in debugging.
 
@@ -21,4 +21,6 @@ Integer functions `op%convert_band2gpt()` and `op%convert_gpt2band()` provide a 
 
 Comparison functions `op1%bands_are_equal(op2)` and `op1%gpoints_are_equal(op2)` return logical values indicating whether the two sets of optical properties share the same band or g-point discretization.
 
-# Working with source functions and arrays of optical properties
+# See also
+
+There are more [types and procedures](./optical-props-src-funcs.html) for working with discrete values of optical properties.

@@ -3,20 +3,20 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>Example compiler flags | RTE-RRTMGP</title>
+<title>Working with RRTMGP gas optics | RTE-RRTMGP</title>
 <meta name="generator" content="Jekyll v4.2.2" />
-<meta property="og:title" content="Example compiler flags" />
+<meta property="og:title" content="Working with RRTMGP gas optics" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
 <meta property="og:description" content="RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions." />
-<link rel="canonical" href="https://earth-system-radiation.github.io//rte-rrtmgp/reference/compiler-flags.html" />
-<meta property="og:url" content="https://earth-system-radiation.github.io//rte-rrtmgp/reference/compiler-flags.html" />
+<link rel="canonical" href="https://earth-system-radiation.github.io//rte-rrtmgp/reference/rrtmgp-overview.html" />
+<meta property="og:url" content="https://earth-system-radiation.github.io//rte-rrtmgp/reference/rrtmgp-overview.html" />
 <meta property="og:site_name" content="RTE-RRTMGP" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary" />
-<meta property="twitter:title" content="Example compiler flags" />
+<meta property="twitter:title" content="Working with RRTMGP gas optics" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"Example compiler flags","url":"https://earth-system-radiation.github.io//rte-rrtmgp/reference/compiler-flags.html"}</script>
+{"@context":"https://schema.org","@type":"WebPage","description":"RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres. RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions.","headline":"Working with RRTMGP gas optics","url":"https://earth-system-radiation.github.io//rte-rrtmgp/reference/rrtmgp-overview.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/rte-rrtmgp/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://earth-system-radiation.github.io//rte-rrtmgp/feed.xml" title="RTE-RRTMGP" /></head>
 <body><header class="site-header" role="banner">
@@ -39,86 +39,34 @@
         <article class="post">
 
   <header class="post-header">
-    <h1 class="post-title">Example compiler flags</h1>
+    <h1 class="post-title">Working with RRTMGP gas optics</h1>
   </header>
 
   <div class="post-content">
-    <p>Here are sets of compiler flags used to compile and test the code over time. They are provided as a starting point - other configurations may work as well or better.</p>
+    <p><strong>Initialization</strong>:
+Variables of class <code class="language-plaintext highlighter-rouge">ty_gas_optics_rrtmgp</code> require a set of lookup tables in order to compute optical properties from atmospheric state and composition. These data are provided in netCDF files in the <a href="https://github.com/earth-system-radiation/rrtmgp-data">rrtmgp-data repository</a>. The fields in the netCDF file must be passed to the <code class="language-plaintext highlighter-rouge">load()</code> functions, invoked as <code class="language-plaintext highlighter-rouge">err_msg = go%load(...)</code>, before the gas optics class can be used.</p>
 
-<p>In these examples <code class="language-plaintext highlighter-rouge">FC</code> is the Fortran compilers using flags <code class="language-plaintext highlighter-rouge">FCFLAGS</code></p>
+<p>The longwave/shortwave variant is set depending on what data are provided to <code class="language-plaintext highlighter-rouge">load()</code>. Logical functions<code class="language-plaintext highlighter-rouge">go%source_is_external()</code> and <code class="language-plaintext highlighter-rouge">go%source_is_internal()</code> can be used to determine the variant.</p>
 
-<h1 id="gnu-fortran">Gnu Fortran</h1>
+<p>RRTMGP does not read the netCDF files directly (we expect the code to be used in many environment with specific requirements) but a straightforward implementation is available in <code class="language-plaintext highlighter-rouge">examples/rfmip-clear-sky/</code>.</p>
 
-<p>(see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/continuous-integration.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC</code>: <code class="language-plaintext highlighter-rouge">gfortran-12</code> or <code class="language-plaintext highlighter-rouge">gfortran-13</code> or <code class="language-plaintext highlighter-rouge">gfortran-14</code></p>
+<p><strong>Computing optimal angles for longwave radiative transfer</strong>:
+Longwave flux can be estimated from intensity calculations made at one or more angles; using more than one angle increases accuracy at the expense of more computation. RRTMGP gas optics can provide an empirical estimate, based on the atmospheric opacity, of the single spectrally-dependent angle at which to make such calculations to minimize error. For example:</p>
 
-<ul>
-  <li>
-    <p><strong>Debugging flags</strong>:
-<code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -std=f2008 -fbounds-check -finit-real=nan"</code></p>
-  </li>
-  <li>
-    <p><strong>Even stricter debugging flags</strong>:
-<code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -std=f2008 -fbounds-check -finit-real=nan -fbacktrace -pedantic -g -Wall"</code></p>
-  </li>
-</ul>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    real(wp), dimension(ncol, ngpt) :: lw_Ds
 
-<h1 id="intel-fortran-classic">Intel Fortran Classic</h1>
+    ! Compute the optical properties of the clear atmosphere in atmos
+    call stop_on_err(k_dist%gas_optics(..., atmos)
 
-<p>(see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC: ifort</code></p>
+    ! Compute the spectrally dependent optimal angle
+    call stop_on_err(k_dist%compute_optimal_angles(atmos, lw_Ds))
 
-<ul>
-  <li>
-    <p><strong>Debugging flags</strong>:
-<code class="language-plaintext highlighter-rouge">FCFLAGS: "-m64 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08"</code></p>
-  </li>
-  <li>
-    <p><strong>Optimization flags</strong>:
-<code class="language-plaintext highlighter-rouge">FCFLAGS:"-m64 -O3 -g -traceback -heap-arrays -assume realloc_lhs -extend-source 132"</code></p>
-  </li>
-</ul>
+    ! Use the optimal angle in flux calculations
+    call stop_on_err(rte_lw(atmos, ..., lw_Ds=lw_Ds))
+</code></pre></div></div>
 
-<h1 id="intel-fortran">Intel Fortran</h1>
-
-<p>(LLVM, see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC: ifx</code></p>
-
-<ul>
-  <li>
-    <p><strong>Debugging flags</strong>:
-<code class="language-plaintext highlighter-rouge">FCFLAGS: "-debug -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08"</code></p>
-  </li>
-  <li>
-    <p><strong>Using OpenMP GPU offload</strong>:
-See <a href="https://github.com/earth-system-radiation/rte-rrtmgp/issues/194">this open issue</a></p>
-  </li>
-</ul>
-
-<h1 id="nvfortran">NVFortran</h1>
-
-<p>(see also the see also the <a href="https://github.com/earth-system-radiation/rte-rrtmgp/blob/main/.github/workflows/containerized-ci.yml">continuous integration</a>)
-<code class="language-plaintext highlighter-rouge">FC: nvfortran</code></p>
-
-<ul>
-  <li>
-    <p><strong>Debugging flags</strong>:
-<code class="language-plaintext highlighter-rouge">FCFLAGS: "-g -Minfo -Mbounds -Mchkptr -Mstandard -Kieee -Mchkstk -Mallocatable=03  -Mpreprocess"</code></p>
-  </li>
-  <li>
-    <p><strong>Optimization flags</strong>:
-<code class="language-plaintext highlighter-rouge">FCFLAGS: "-O3 -fast -Minfo -Mallocatable=03 -Mpreprocess"</code></p>
-  </li>
-</ul>
-
-<h1 id="hpe-cce-for-gpu-using-openmp-acc-crayftn--requires-at-least-cce-1400">HPE CCE for GPU using OpenMP-acc: crayftn – requires at least CCE 14.0.0</h1>
-
-<p><code class="language-plaintext highlighter-rouge">FC: crayftn</code></p>
-
-<ul>
-  <li><strong>Debugging flags (these appear to be insufficient during the link stage)</strong>:
-<code class="language-plaintext highlighter-rouge">FCFLAGS: "-hnoacc -homp -O0"</code></li>
-</ul>
+<p><strong>Modifying the solar source function</strong>:
+The solar source function provided by the solar variant of <code class="language-plaintext highlighter-rouge">ty_gas_optics_rrtmgp</code> can be modified via calls. The total solar irradiance can be set directly with a call to <code class="language-plaintext highlighter-rouge">err_msg = go%set_tsi(tsi)</code>. Alternatively any or all of parameters of the NRLSSI2 model of solar variability (total solar irradiance, Bremen facular index, and sunspot index) can be provided via <code class="language-plaintext highlighter-rouge">err_msg = go%set_solar_variability(mg_index, sb_index, tsi)</code>. Values persist until they are explicitly reset. Directory <code class="language-plaintext highlighter-rouge">extensions/solar_variability/</code> contains code and data for determining these indices as a function of position in an average solar cycle.</p>
 
   </div>
 

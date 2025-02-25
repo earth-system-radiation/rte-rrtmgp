@@ -31,7 +31,7 @@
           </span>
         </label>
 
-        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">Building and testing</a><a class="page-link" href="/rte-rrtmgp/reference/compiler-flags.html">Example compiler flags</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a><a class="page-link" href="/rte-rrtmgp/how-tos/migrating-from-rrtmg.html">Migrating from RRTMG</a><a class="page-link" href="/rte-rrtmgp/reference/optical-props-overview.html">Working with optical properties and spectral discretizations</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-fluxes.html">RTE - fluxes</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optical-props.html">RTE - optical properties</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optics.html">RTE - optics</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-solvers.html">RTE - solvers</a></div>
+        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">Building and testing</a><a class="page-link" href="/rte-rrtmgp/reference/compiler-flags.html">Example compiler flags</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/reference/">Conventions, technical documentation</a><a class="page-link" href="/rte-rrtmgp/how-tos/migrating-from-rrtmg.html">Migrating from RRTMG</a><a class="page-link" href="/rte-rrtmgp/reference/optical-props-overview.html">Working with optical properties and spectral discretizations</a><a class="page-link" href="/rte-rrtmgp/reference/optical-props-src-funcs.html">Working with optical property and source function values</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-fluxes.html">RTE - fluxes</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optical-props.html">RTE - optical properties</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optics.html">RTE - optics</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-solvers.html">RTE - solvers</a></div>
       </nav></div>
 </header>
 <main class="page-content" aria-label="Content">
@@ -51,11 +51,21 @@
 
 <p>Class <code class="language-plaintext highlighter-rouge">ty_optical_props</code> implements a range of <a href="../reference/optical-props-overview.html">procedures</a> for representing and manipulating the spectral discretization. These capabilities are inherited by classes that represent arrays of optical properties (i.e. optical depth) or sources of radiation and by those used to compute optical properties from a physical description of the atmosphere.</p>
 
-<h1 id="working-with-sets-of-optical-properties">Working with sets of optical properties</h1>
+<h1 id="concrete-sets-of-optical-properties">Concrete sets of optical properties</h1>
+
+<p>RTE supports three concrete descriptions of radiative transfer problems expressed as arrays of discrete values on a domain with dimensions column, layer, spectral location (g-point).</p>
+
+<ul>
+  <li>For problems considering only emission and absorption class <code class="language-plaintext highlighter-rouge">ty_optical_props_1scl</code> contains the data field <code class="language-plaintext highlighter-rouge">tau</code> representing absorption optical depth.</li>
+  <li>For low-order problems considering scattering class <code class="language-plaintext highlighter-rouge">ty_optical_props_2str</code> contains the data fields <code class="language-plaintext highlighter-rouge">tau</code> (extinction optical depth), <code class="language-plaintext highlighter-rouge">ssa</code> (single-scattering albedo, and <code class="language-plaintext highlighter-rouge">g</code> (asymmetry parameter).</li>
+  <li>For problems requiring higher-order treatments of scattering class <code class="language-plaintext highlighter-rouge">ty_optical_props_nstr</code> contains the data fields <code class="language-plaintext highlighter-rouge">tau</code>, <code class="language-plaintext highlighter-rouge">ssa</code>, and <code class="language-plaintext highlighter-rouge">p</code>. The latter has leading dimension <code class="language-plaintext highlighter-rouge">nmom</code> to accommodate the Legendre moments of a phase function. RTE does not contain a solution method for this class.</li>
+</ul>
+
+<p>Each of these descriptions is a sub-class of the generic class <code class="language-plaintext highlighter-rouge">ty_optical_props_arry</code>. These classes share a range of <a href="../reference/optical-props-src-funcs.html">behaviors</a> in addition to the procedures for working with spectral discretizations.</p>
 
 <h1 id="working-with-longwave-source-functions">Working with (longwave) source functions</h1>
 
-<h1 id="rrtmgps-spectral-discretization">RRTMGP’s spectral discretization</h1>
+<h1 id="digression-rrtmgps-spectral-discretization">Digression: RRTMGP’s spectral discretization</h1>
 
 <p>The bands defined by RRTMGP cover the full spectrum of radiation emitted by the Sun and Earth: these are <em>broadband</em> calculations. In RRTMGP the bands are continuous so that the ending wavelength of one band is the starting wavelength of the next.</p>
 

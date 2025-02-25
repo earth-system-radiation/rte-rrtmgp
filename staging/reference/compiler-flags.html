@@ -31,7 +31,7 @@
           </span>
         </label>
 
-        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">Building and testing</a><a class="page-link" href="/rte-rrtmgp/reference/compiler-flags.html">Example compiler flags</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/reference/">Reference (technical documentation)</a><a class="page-link" href="/rte-rrtmgp/how-tos/migrating-from-rrtmg.html">Migrating from RRTMG</a><a class="page-link" href="/rte-rrtmgp/reference/optical-props-overview.html">Working with optical properties and spectral discretizations</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-fluxes.html">RTE - fluxes</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optical-props.html">RTE - optical properties</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optics.html">RTE - optics</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-solvers.html">RTE - solvers</a></div>
+        <div class="trigger"><a class="page-link" href="/rte-rrtmgp/how-tos/build-and-test.html">Building and testing</a><a class="page-link" href="/rte-rrtmgp/reference/compiler-flags.html">Example compiler flags</a><a class="page-link" href="/rte-rrtmgp/">RTE+RRTMGP documentation</a><a class="page-link" href="/rte-rrtmgp/explanations/">Explanations</a><a class="page-link" href="/rte-rrtmgp/tutorials/">Tutorials</a><a class="page-link" href="/rte-rrtmgp/how-tos/">How-to guides</a><a class="page-link" href="/rte-rrtmgp/reference/">Conventions, technical documentation</a><a class="page-link" href="/rte-rrtmgp/how-tos/migrating-from-rrtmg.html">Migrating from RRTMG</a><a class="page-link" href="/rte-rrtmgp/reference/optical-props-overview.html">Working with optical properties and spectral discretizations</a><a class="page-link" href="/rte-rrtmgp/reference/optical-props-src-funcs.html">Working with optical property and source function values</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-fluxes.html">RTE - fluxes</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optical-props.html">RTE - optical properties</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-optics.html">RTE - optics</a><a class="page-link" href="/rte-rrtmgp/explanations/rte-solvers.html">RTE - solvers</a></div>
       </nav></div>
 </header>
 <main class="page-content" aria-label="Content">
@@ -54,11 +54,11 @@
 
 <h2 id="debugging-flags">Debugging flags</h2>
 
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan"</code></p>
+<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -std=f2008 -fbounds-check -finit-real=nan"</code></p>
 
 <h2 id="even-stricter-debugging-flags">Even stricter debugging flags</h2>
 
-<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fbacktrace -finit-real=nan -pedantic -g -Wall"</code></p>
+<p><code class="language-plaintext highlighter-rouge">FCFLAGS: "-ffree-line-length-none -std=f2008 -fbounds-check -finit-real=nan -fbacktrace -pedantic -g -Wall"</code></p>
 
 <h1 id="intel-fortran-classic">Intel Fortran Classic</h1>
 

@@ -21,7 +21,6 @@ jobs:
         build-type: [RelWithDebugInfo]
     env:
       FC: gfortran
-      # FFLAGS: "-std=f2008"
       CMAKE_BUILD_PARALLEL_LEVEL: 8
       VERBOSE:
       CTEST_PARALLEL_LEVEL: 8
@@ -44,7 +43,7 @@ jobs:
       #
       # Set up Conda
       #
-      - name: Set up Conda
+      - name: Set up Conda (testing scripts only)
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest

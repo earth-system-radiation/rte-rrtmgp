@@ -21,6 +21,7 @@ jobs:
         fpmodel: [DP, SP]
         build-type: [Debug, RelWithDebugInfo]
         # Add Release config?
+
         # Exclude RelWithDebugInfo/accel combinations?
         exclude:
         - build-type: RelWithDebugInfo
@@ -38,7 +39,7 @@ jobs:
       CTEST_PARALLEL_LEVEL: 8
       CTEST_OUTPUT_ON_FAILURE: 1
       FC: gfortran-14
-    runs-on: ubuntu-24.04 # latest?
+    runs-on: ubuntu-24.04
     steps:
       #
       # Check out repository under $GITHUB_WORKSPACE

@@ -21,7 +21,7 @@ RTE supports three concrete descriptions of radiative transfer problems expresse
 
 Each of these descriptions is a sub-class of the generic class `ty_optical_props_arry`. These classes share a range of [behaviors](../reference/optical-props-src-funcs.html) in addition to the procedures for working with spectral discretizations.
 
-# Working with (longwave) source functions
+# (Longwave) source functions
 
 Class `ty_source_func_lw` describes longwave source functions. It shares some behavior with `ty_optical_props_arry` but the data fields are not user-accessible.
 

@@ -3,6 +3,13 @@ layout: page
 title: Conventions, technical documentation
 ---
 
+# Overviews
+
+- [Optical properties and spectral discretization](./optical-props-overview.html)
+- [Problem descriptions](./optical-props-src-funcs.html)
+- [Gas concentrations](./gas-concentrations-overview.html)
+- [Gas optics: generic interface, RRTMGP implementation](./rte-optics.md)
+
 # Reading the code
 
 RTE and RRTMGP aspire to follow a set of coding conventions:
@@ -16,13 +23,6 @@ RTE and RRTMGP aspire to follow a set of coding conventions:
 - RTE and RRTMGP are agnostic to vertical ordering
 - Units are MKS
 - Procedures (with the exception of testing code) do not perform I/O
-
-# Some overviews
-
-- [Optical properties and spectral discretization](./optical-props-overview.html)
-- [Problem descriptions](./optical-props-src-funcs.html)
-- [Gas concentrations](./gas-concentrations-overview.html)
-- [Gas optics: generic interface, RRTMGP implementation](./rte-optics.md)
 
 # Fortran user-facing class interfaces
 

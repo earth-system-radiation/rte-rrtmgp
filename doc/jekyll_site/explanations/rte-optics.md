@@ -3,4 +3,4 @@ layout: page
 title: RTE - optics
 ---
 
-This page to describe the gas optics intereface and the RRTMGP cloud and aerosol optics interfaces
+This page will describe the gas optics interface and the RRTMGP cloud and aerosol optics interfaces

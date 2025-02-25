@@ -14,11 +14,11 @@ In these examples `FC` is the Fortran compilers using flags `FCFLAGS`
 
 ## Debugging flags
 
-`FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -finit-real=nan"`
+`FCFLAGS: "-ffree-line-length-none -std=f2008 -fbounds-check -finit-real=nan"`
 
 ## Even stricter debugging flags
 
-`FCFLAGS: "-ffree-line-length-none -m64 -std=f2008 -march=native -fbounds-check -fbacktrace -finit-real=nan -pedantic -g -Wall"`
+`FCFLAGS: "-ffree-line-length-none -std=f2008 -fbounds-check -finit-real=nan -fbacktrace -pedantic -g -Wall"`
 
 # Intel Fortran Classic
 

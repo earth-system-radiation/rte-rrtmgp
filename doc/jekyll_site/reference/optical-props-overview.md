@@ -21,4 +21,4 @@ Integer functions `op%convert_band2gpt()` and `op%convert_gpt2band()` provide a 
 
 Comparison functions `op1%bands_are_equal(op2)` and `op1%gpoints_are_equal(op2)` return logical values indicating whether the two sets of optical properties share the same band or g-point discretization.
 
-# Managing arrys of optical properties
+# Working with source functions and arrays of optical properties

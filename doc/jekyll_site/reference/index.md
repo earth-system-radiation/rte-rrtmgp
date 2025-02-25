@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Reference (technical documentation)
+title: Conventions, technical documentation
 ---
 
 # Reading the code
@@ -16,6 +16,11 @@ RTE and RRTMGP aspire to follow a set of coding conventions:
 - RTE and RRTMGP are agnostic to vertical ordering
 - Units are MKS
 - Procedures (with the exception of testing code) do not perform I/O
+
+# Some overviews
+
+- [Optical properties and spectral discretization](./optical-props-overview.html)
+- [Problem descriptions](./optical-props-src-funcs.html)
 
 # Fortran user-facing class interfaces
 

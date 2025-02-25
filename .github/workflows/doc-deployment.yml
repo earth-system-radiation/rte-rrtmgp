@@ -82,7 +82,7 @@ jobs:
     #   Won't run on pull requests or push unless a new branch is added to the on: section
     #
     - name: Deploy to Github Pages root
-      uses: JamesIves/github-pages-deploy-action@v4.7.2
+      uses: JamesIves/github-pages-deploy-action@v4.7.3
       if: ${{ github.event_name == 'push'  &&  github.ref != 'refs/heads/main' }}
       with:
         branch: gh-pages

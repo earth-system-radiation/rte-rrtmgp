@@ -35,6 +35,11 @@ github_username: earth-system-radiation
 
 # Build settings
 theme: minima
+header_pages:
+  - explanations/index.md
+  - how-tos/index.md
+  - reference/index.md
+  - tutorials/index.md
 # remote_theme: rundocs/jekyll-rtd-theme
 #   from https://github.com/jekyllrtdtheme/jekyll-rtd-theme/
 #   May require new _config.yml? Example at https://github.com/darren1998s/darren1998s.github.io ?

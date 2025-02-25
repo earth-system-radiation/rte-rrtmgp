@@ -5,7 +5,7 @@ a mix of automatically-generated documentation and hand-written descriptions. Th
 incomplete and evolving. Thanks to the folks at [Sourcery Institute](https://www.sourceryinstitute.org)
 for help in setting this up.
 
-For the moment the [Wiki](https://github.com/earth-system-radiation/rte-rrtmgp/wiki) may also be useful.
+The Wiki is deprecated.
 
 # RTE+RRTMGP
 
@@ -29,7 +29,7 @@ Two examples are provided in `examples/`, one for clear skies and one including 
 
 Code releases are archived at Zenodo. All releases are available at
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3403172.svg)](https://doi.org/10.5281/zenodo.3403172).
-The current release is available at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7521518.svg)](https://doi.org/10.5281/zenodo.10211873)
+The current release is available at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14841903.svg)](https://doi.org/10.5281/zenodo.14841903)
 
 Please cite the code using these DOIs and the information in the `CITATION.cff` file in addition to the reference [paper](https://doi.org/10.1029/2019MS001621)
 

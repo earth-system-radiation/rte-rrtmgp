@@ -228,7 +228,7 @@ contains
                 ltau, ltaussa, ltaussag, itau, itaussa, itaussag
                 ! Optical properties: tau, tau*ssa, tau*ssa*g
                 ! liquid and ice separately
-    integer  :: ncol, nlay
+    integer  :: ncol, nlay, ngpt
     integer  :: nsizereg
     integer  :: icol, ilay, igpt
     ! scalars for total tau, tau*ssa
@@ -248,6 +248,7 @@ contains
 
     ncol = size(clwp,1)
     nlay = size(clwp,2)
+    ngpt = this%get_ngpt()
     !
     ! Array sizes
     !
@@ -324,14 +325,14 @@ contains
         !
         ! Liquid
         !
-        call compute_cld_from_table(ncol, nlay, this%get_ngpt(), liqmsk, clwp, reliq,   &
+        call compute_cld_from_table(ncol, nlay, ngpt, liqmsk, clwp, reliq,              &
                                     this%liq_nsteps,this%liq_step_size,this%radliq_lwr, &
                                     this%extliq, this%ssaliq, this%asyliq,              &
                                     ltau, ltaussa, ltaussag)
         !
         ! Ice
         !
-        call compute_cld_from_table(ncol, nlay, this%get_ngpt(), icemsk, ciwp, reice,   &
+        call compute_cld_from_table(ncol, nlay, ngpt, icemsk, ciwp, reice,              &
                                     this%ice_nsteps,this%ice_step_size,this%diamice_lwr,&
                                     this%extice(:,:,this%icergh),                       &
                                     this%ssaice(:,:,this%icergh),                       &
@@ -350,7 +351,7 @@ contains
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau)
 
-        do igpt = 1, this%get_ngpt()
+        do igpt = 1, ngpt
           do ilay = 1, nlay
             do icol = 1,ncol
               ! Absorption optical depth  = (1-ssa) * tau = tau - taussa
@@ -364,7 +365,7 @@ contains
         !$acc               copyin(optical_props) copyout(optical_props%tau, optical_props%ssa, optical_props%g)
         !$omp target teams distribute parallel do simd collapse(3) &
         !$omp map(from:optical_props%tau, optical_props%ssa, optical_props%g)
-        do igpt = 1, this%get_ngpt()
+        do igpt = 1, ngpt
           do ilay = 1, nlay
             do icol = 1,ncol
               tau    = ltau    (icol,ilay,igpt) + itau   (icol,ilay,igpt)

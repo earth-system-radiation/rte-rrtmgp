@@ -70,18 +70,9 @@ jobs:
     #
     # Check broken links
     #
-    - name: Broken Link Check -- all files?
-      uses: technote-space/broken-link-checker-action@v2
-      with:
-        TARGET: file://${{ github.workspace }}/public/index.html
-        RECURSIVE: true
-        ASSIGNEES: ${{ github.actor }}
-    #
-    # Deploy documentation from main (could restrict to push events as below)
-    #
-    - name: Deploy to Github Pages root
-      uses: JamesIves/github-pages-deploy-action@v4.7.2
-      if: ${{ github.ref == 'refs/heads/main' }}
+    - name: Deploy API Documentation
+      uses: JamesIves/github-pages-deploy-action@v4.7.3
+      if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages
         folder: public/

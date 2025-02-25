@@ -1,0 +1,156 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+include:
+  - project: 'anw_dienste/ci-templates'
+    file: '.slurm-ci.yml'
+
+.scheduler:
+  variables:
+    ACCOUNT:
+    PARTITION:
+    TIME_LIMIT: "10:00"
+    NTASKS: 8
+    EXTRA_SCHEDULER_PARAMETERS:
+    SCHEDULER_PARAMETERS: >-
+      --account=${ACCOUNT}
+      --partition=${PARTITION}
+      --time=${TIME_LIMIT}
+      --ntasks=${NTASKS}
+      --nodes=1
+      ${EXTRA_SCHEDULER_PARAMETERS}
+
+.scheduler-levante-cpu:
+  extends:
+    - .default  # from anw_dienste/ci-templates/.slurm-ci.yml
+    - .scheduler
+  variables:
+    ACCOUNT: mh0287
+    PARTITION: shared
+    # Levante runners fetch from scratch each time:
+    GIT_DEPTH: 1
+
+.scheduler-levante-gpu:
+  extends: .scheduler-levante-cpu
+  variables:
+    PARTITION: gpu
+    EXTRA_SCHEDULER_PARAMETERS: --gpus=1
+
+.scheduler-lumi-gpu:
+  extends: .scheduler
+  variables:
+    ACCOUNT: project_465000454
+    PARTITION: dev-g
+    EXTRA_SCHEDULER_PARAMETERS: --gpus=1
+  id_tokens:
+    CI_JOB_JWT:
+      aud: https://gitlab.dkrz.de
+  tags:
+    - lumi, hpc, csc
+
+.build-and-test:
+  variables:
+    KERNEL_MODE: accel
+    RTE_ENABLE_SP: "OFF"
+    CMAKE_BUILD_PARALLEL_LEVEL: ${NTASKS}
+    VERBOSE:  # any given value is ignored, it's just checked for existence
+    CTEST_PARALLEL_LEVEL: ${NTASKS}
+    CTEST_OUTPUT_ON_FAILURE: 1
+  script:
+    - >
+      cmake -S . -B build
+      -DCMAKE_BUILD_TYPE=None
+      -DKERNEL_MODE=${KERNEL_MODE}
+      -DRTE_ENABLE_SP=${RTE_ENABLE_SP}
+      -DBUILD_TESTING=ON
+    - cmake --build build
+    - ctest --test-dir build
+
+.build-and-test-levante:
+  extends: .build-and-test
+  variables:
+    Python3_ROOT_DIR: /sw/spack-levante/mambaforge-22.9.0-2-Linux-x86_64-kptncg
+    # Suppress an irrelevant but annoying error message:
+    PROJ_LIB: ${Python3_ROOT_DIR}/share/proj
+  before_script:
+    - module purge
+    - module load git
+    # Some tests require a large stack:
+    - ulimit -s unlimited
+
+.build-and-test-lumi:
+  extends: .build-and-test
+  variables:
+    Python3_ROOT_DIR: ${CI_PROJECT_DIR}/python-venv
+    REQUIREMENT_FILE: ${CI_PROJECT_DIR}/.gitlab/lumi-python-requirement.txt
+  before_script:
+    - module --force purge
+    - |
+      # Set up Python environment
+      test -d "${Python3_ROOT_DIR}" || {
+        module load cray-python
+        set -x
+        python -m venv ${Python3_ROOT_DIR}
+        ${Python3_ROOT_DIR}/bin/python -m pip install --upgrade pip
+        ${Python3_ROOT_DIR}/bin/python -m pip install --no-cache-dir --requirement ${REQUIREMENT_FILE}
+        set +x
+      }
+    - module load PrgEnv-cray cce/17.0.1 craype-x86-trento craype-accel-amd-gfx90a rocm/6.0.3 cray-hdf5 cray-netcdf
+  cache:
+    # Update the key to regenerate the virtual environment:
+    key:
+      files:
+        - ${REQUIREMENT_FILE}
+    paths:
+      - ${Python3_ROOT_DIR}
+
+nvhpc-gpu-openacc-DP:
+  extends:
+    - .scheduler-levante-gpu
+    - .build-and-test-levante
+  variables:
+    FC: /sw/spack-levante/nvhpc-24.9-p7iohv/Linux_x86_64/24.9/compilers/bin/nvfortran
+    NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.6.1-4wu5wt
+    # Compiler flags used for ICON model:
+    FFLAGS: -g -O2 -Mrecursive -Mallocatable=03 -Mstack_arrays -Minfo=accel,inline -acc=gpu,verystrict -gpu=cc80,cuda12.6
+
+nvhpc-gpu-openacc-SP:
+  extends: nvhpc-gpu-openacc-DP
+  variables:
+    RTE_ENABLE_SP: "ON"
+
+nag-cpu-accel-DP:
+  extends:
+    - .scheduler-levante-cpu
+    - .build-and-test-levante
+  variables:
+    FC: /sw/spack-levante/nag-7.1-lqjbej/bin/nagfor
+    CC: /sw/spack-levante/gcc-11.2.0-bcn7mb/bin/gcc
+    NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-5di6qe
+    # Compiler flags used for ICON model:
+    FFLAGS: -Wc=${CC} -f2008 -colour -w=uep -g -gline -O0 -float-store -nan -Wc,-g -Wc,-pipe -Wc,--param,max-vartrack-size=200000000 -Wc,-mno-fma -C=all
+
+nag-cpu-default-SP:
+  extends: nag-cpu-accel-DP
+  variables:
+    KERNEL_MODE: default
+    RTE_ENABLE_SP: "ON"
+
+cce-gpu-openacc-DP:
+  extends:
+    - .scheduler-lumi-gpu
+    - .build-and-test-lumi
+  variables:
+    FC: ftn
+    # Compiler flags used for ICON model:
+    FFLAGS: -hacc -hadd_paren -Ktrap=divz,ovf,inv -hflex_mp=intolerant -hfp1 -hipa0
+
+cce-gpu-openacc-SP:
+  extends: cce-gpu-openacc-DP
+  variables:
+    RTE_ENABLE_SP: "ON"
+  cache:
+    # Let the other job update the cache:
+    policy: pull

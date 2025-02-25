@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature-add-conda-compatible-ci
   pull_request:
   workflow_dispatch:
 
@@ -19,10 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-13, macos-latest, windows-2022]
-        fpmodel: [DP, SP]
+        build-type: [RelWithDebugInfo]
     env:
-      FC: gfortran-14
-      FFLAGS: "-std=f2008"
+      FC: gfortran
       CMAKE_BUILD_PARALLEL_LEVEL: 8
       VERBOSE:
       CTEST_PARALLEL_LEVEL: 8
@@ -45,7 +43,7 @@ jobs:
       #
       # Set up Conda
       #
-      - name: Set up Conda
+      - name: Set up Conda (testing scripts only)
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
@@ -53,24 +51,19 @@ jobs:
           environment-file: environment-noplots.yml
           python-version: 3.11
           auto-activate-base: false
+          conda-remove-defaults: true
           # Use the cache properly:
           use-only-tar-bz2: false
       #
-      # Install compiler
+      # Install compiler and dependencies
       #
-      - name: Install compiler
+      - name: Install compiler, dependencies
         run: |
-          conda install -c conda-forge ${FC} -y
-          echo "FC=gfortran" >> "$GITHUB_ENV"
-      #
-      # Install dependencies
-      #
-      - name: Install dependencies
-        run: conda install -c conda-forge netcdf-fortran ninja -y
+          conda install -c conda-forge "${FC}" netcdf-fortran ninja -y
       #
       # Adjust toolchain
       #
-      - name: Adjust toolchain
+      - name: Adjust Windows toolchain
         if: matrix.os == 'windows-2022'
         run: echo "FC=${FC}.exe" >> "$GITHUB_ENV"
       #
@@ -79,8 +72,8 @@ jobs:
       - name: Build libraries and tests
         run: |
           cmake -S . -B build -G "Ninja" \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DRTE_ENABLE_SP="$(test '${{ matrix.fpmodel }}' = SP && echo ON || echo OFF)" \
+              -DCMAKE_BUILD_TYPE=${{ matrix.build-type}} \
+              -DRTE_ENABLE_SP=OFF \
               -DBUILD_TESTING=ON
           cmake --build build
       #

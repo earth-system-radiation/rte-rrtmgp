@@ -23,6 +23,8 @@ Each of these descriptions is a sub-class of the generic class `ty_optical_props
 
 # Working with (longwave) source functions
 
+Class `ty_source_func_lw` describes longwave source functions. It shares some behavior with `ty_optical_props_arry` but the data fields are not user-accessible.
+
 # Digression: RRTMGP's spectral discretization
 
 The bands defined by RRTMGP cover the full spectrum of radiation emitted by the Sun and Earth: these are _broadband_ calculations. In RRTMGP the bands are continuous so that the ending wavelength of one band is the starting wavelength of the next.

@@ -7,7 +7,7 @@ RTE solves the radiative transfer equation for each spectral point independently
 
 # Fluxes interface
 
-`[ty_fluxes](https://earth-system-radiation.github.io/rte-rrtmgp/reference/rte-fortran-interface/type/ty_fluxes.html)` is an abstract class that defines [two interfaces](../reference/rte-fortran-interface/type/ty_fluxes.html) defining type-bound functions. Function `reduce()` is called within the RTE solvers. The input arguments include the spectrally-resolved fluxes up and down (and, optically, the direct-beam flux) and the spectral discretization. Logical function `are_desired()` is called by RTE to check if the results of a calculation will be used.
+[ty_fluxes](https://earth-system-radiation.github.io/rte-rrtmgp/reference/rte-fortran-interface/type/ty_fluxes.html) is an abstract class that defines [two interfaces](../reference/rte-fortran-interface/type/ty_fluxes.html) defining type-bound functions. Function `reduce()` is called within the RTE solvers. The input arguments include the spectrally-resolved fluxes up and down (and, optically, the direct-beam flux) and the spectral discretization. Logical function `are_desired()` is called by RTE to check if the results of a calculation will be used.
 
 Class `ty_fluxes` is abstract; it defines only the interfaces to these routines. Implementation is deferred to user classes that extend this class.
 

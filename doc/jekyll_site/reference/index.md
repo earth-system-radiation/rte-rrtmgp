@@ -21,6 +21,7 @@ RTE and RRTMGP aspire to follow a set of coding conventions:
 
 - [Optical properties and spectral discretization](./optical-props-overview.html)
 - [Problem descriptions](./optical-props-src-funcs.html)
+- [Gas concentrations](./gas-concentrations-overview.html)
 
 # Fortran user-facing class interfaces
 

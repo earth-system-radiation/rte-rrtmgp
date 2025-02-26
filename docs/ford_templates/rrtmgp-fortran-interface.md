@@ -1,7 +1,7 @@
 ---
 project: RRTMGP-Fortran
 summary: RRTMGP is a correlated k-distribution for computing fluxes in earth's atmosphere.
-preprocessor: gfortran -E
+preprocess: false
 display: public
 sort: permission-alpha
 graph: true
@@ -9,9 +9,8 @@ md_extensions: markdown.extensions.toc
 author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
-title: RRTMGP Fortran interfaces
 src_dir: ../../rrtmgp-frontend
-output_dir: ../../public/reference/rrtmgp-fortran-interface
+output_dir: ../reference/rrtmgp-fortran-interface
 ---
 
 These pages provide a programmer's view of the Fortran user interface to RRTMGP.

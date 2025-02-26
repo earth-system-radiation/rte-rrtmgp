@@ -1,7 +1,7 @@
 ---
-project: RTE kernels
-summary: RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.
-preprocessor: gfortran -E
+project: RRTMGP kernels
+summary: RRTMGP is a correlated k-distribution for computing fluxes in earth's atmosphere.
+preprocess: false
 display: public
 sort: permission-alpha
 graph: true
@@ -9,15 +9,14 @@ md_extensions: markdown.extensions.toc
 author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
-title: RTE kernels
-src_dir: ../../rte-kernels
-exclude_dir: ../../rte-kernels/accel ../../rte-kernels/api
-output_dir: ../../public/reference/rte-kernels
+src_dir: ../../rrtmgp-kernels
+exclude_dir: **/accel **/api
+output_dir: ../reference/rrtmgp-kernels
 ---
 
 These pages document the low-level computational kernels used by RRTMGP.
 
-The listings below are not exhaustive.
+The listings below may not be exhaustive.
 To see the full listings use the links at the top of the page.
 There is a search bar in the top right.
 

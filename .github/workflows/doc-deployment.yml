@@ -15,48 +15,24 @@ jobs:
     #
     - uses: actions/checkout@v4
     #
-    # Synchronize the package index
-    #
-    - name: Synchronize the package index
-      run: sudo apt-get update
-    #
     # Install dependencies
     #
     - name: Install dependencies
       run: |
+        sudo apt-get update
         sudo apt-get install graphviz
         sudo pip install 'markdown<3.4' ford
     #
-    # Install Ruby
-    #
-    - name: Install Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 3.1
-    #
-    # Install Jekyll
-    #
-    - name: Install Jekyll
-      run: |
-        cd doc/jekyll_site
-        sudo gem install bundler jekyll
-        bundle update
-    #
     # Build documentation
     #
-    - name: Build Documentation
+    - name: Build FORD files
+      id: build
       run: |
-        cd doc
-        ./build_documentation.sh -ci
-    #
-    # Upload documentation
-    #
-    - name: Upload Documentation
-      uses: actions/upload-artifact@v4
-      with:
-        name: documentation
-        path: public/
-        if-no-files-found: error
+        cd docs
+        ford ford_templates/rrtmgp-fortran-interface.md
+        ford ford_templates/rrtmgp-kernels.md
+        ford ford_templates/rte-fortran-interface.md
+        ford ford_templates/rte-kernels.md
     #
     # Check broken links
     #
@@ -75,7 +51,7 @@ jobs:
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
         branch: gh-pages
-        folder: public/
+        folder: docs/
 
     #
     # Deploy documentation (can add target-folder)
@@ -86,5 +62,5 @@ jobs:
       if: ${{ github.event_name == 'push'  &&  github.ref != 'refs/heads/main' }}
       with:
         branch: gh-pages
-        folder: public/
+        folder: docs/
         target-folder: staging/

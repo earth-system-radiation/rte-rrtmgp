@@ -11,8 +11,8 @@ github: https://github.com/earth-system-radiation/
 license: by
 src_dir: ../../rte-kernels
 exclude_dir:
-	**/accel
-	**/api
+	./accel
+	./api
 output_dir: ../reference/rte-kernels
 ---
 

@@ -54,6 +54,11 @@ header_pages:
 # Excluded items can be processed by explicitly listing the directories or
 # their entries' file path in the `include:` list.
 #
+exclude:
+    - reference/rrtmgp-fortran-interface/
+    - reference/rte-fortran-interface/
+    - reference/rrtmgp-kernels/
+    - reference/rte-kernels/
 # exclude:
 #   - .sass-cache/
 #   - .jekyll-cache/

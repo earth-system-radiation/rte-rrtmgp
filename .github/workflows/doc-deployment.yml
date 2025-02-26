@@ -8,7 +8,7 @@ on:
 
 jobs:
   Build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     #
     # Checks-out repository under $GITHUB_WORKSPACE
@@ -43,14 +43,12 @@ jobs:
         branch: gh-pages
         folder: docs/
 
-    #
-    # Deploy documentation (can add target-folder)
-    #   Won't run on pull requests or push unless a new branch is added to the on: section
-    #
-    - name: Deploy to Github Pages folder
+   #
+   # Deploy (temporary)
+   #
+    - name: Deploy to Github Pages root
       uses: JamesIves/github-pages-deploy-action@v4.7.3
-      if: ${{ github.event_name == 'push'  &&  github.ref != 'refs/heads/main' }}
+      if: ${{ github.event_name == 'workflow_dispatch' }}
       with:
         branch: gh-pages
         folder: docs/
-        target-folder: staging/

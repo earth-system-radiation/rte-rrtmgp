@@ -59,6 +59,7 @@ exclude:
     - reference/rte-fortran-interface/
     - reference/rrtmgp-kernels/
     - reference/rte-kernels/
+    - ford_templates/
 # exclude:
 #   - .sass-cache/
 #   - .jekyll-cache/

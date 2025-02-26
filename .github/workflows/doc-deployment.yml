@@ -34,16 +34,6 @@ jobs:
         ford ford_templates/rte-fortran-interface.md
         ford ford_templates/rte-kernels.md
     #
-    # Check broken links
-    #
-    - name: Broken Link Check
-      if: ${{ github.ref == 'refs/heads/main'}}
-      uses: technote-space/broken-link-checker-action@v2
-      with:
-        TARGET: file://${{ github.workspace }}/doc/ford_site/pages/index.html
-        RECURSIVE: true
-        ASSIGNEES: ${{ github.actor }}
-    #
     # Deploy
     #
     - name: Deploy to Github Pages root

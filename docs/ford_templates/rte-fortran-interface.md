@@ -1,7 +1,7 @@
 ---
 project: RTE-Fortran
 summary: RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.
-preprocessor: gfortran -E
+preprocess: false
 display: public
 sort: permission-alpha
 graph: true
@@ -9,9 +9,8 @@ md_extensions: markdown.extensions.toc
 author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
-title: RTE Fortran interfaces-frontend
 src_dir: ../../rte-frontend
-output_dir: ../../public/reference/rte-fortran-interface
+output_dir: ../reference/rte-fortran-interface
 ---
 
 These pages provide a programmer's view of the Fortran user interface to RTE.

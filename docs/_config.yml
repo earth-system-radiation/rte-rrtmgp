@@ -43,6 +43,9 @@ header_pages:
 # remote_theme: rundocs/jekyll-rtd-theme
 #   from https://github.com/jekyllrtdtheme/jekyll-rtd-theme/
 #   May require new _config.yml? Example at https://github.com/darren1998s/darren1998s.github.io ?
+
+mathjax: true
+
 # plugins:
 #   - jekyll-feed
 
@@ -55,10 +58,6 @@ header_pages:
 # their entries' file path in the `include:` list.
 #
 exclude:
-    - reference/rrtmgp-fortran-interface/
-    - reference/rte-fortran-interface/
-    - reference/rrtmgp-kernels/
-    - reference/rte-kernels/
     - ford_templates/
 # exclude:
 #   - .sass-cache/

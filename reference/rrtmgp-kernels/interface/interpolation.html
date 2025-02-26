@@ -86,13 +86,13 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 3.4% of total for procedures.">20 statements</a>
+    title=" 3.5% of total for procedures.">21 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
      <li><a href='../sourcefile/mo_gas_optics_rrtmgp_kernels.f90~2.html'>mo_gas_optics_rrtmgp_kernels.F90</a></li>
-     <li><a href='../module/mo_gas_optics_rrtmgp_kernels~3.html'>mo_gas_optics_rrtmgp_kernels</a></li>
+     <li><a href='../module/mo_gas_optics_rrtmgp_kernels~2.html'>mo_gas_optics_rrtmgp_kernels</a></li>
      <li class="active">interpolation</li>
   </ol>
 </div>
@@ -128,13 +128,13 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~10"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>physical domain size</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~10"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>physical domain size</p></td>
@@ -256,8 +256,8 @@
 <tr>
   <td><span class="anchor" id="variable-col_mix~4"></span>real(kind=wp),</td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(2,    ncol,nlay,nflav)</td><td>::</td>
-  <td><strong>col_mix</strong></td><td><p>combination of major species's column amounts (first index is strat/trop)</p></td>
+  <td></td>  <td>dimension(:,       :,   :,    :)</td><td>::</td>
+  <td><strong>col_mix</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tropo~8"></span>logical(kind=wl),</td>

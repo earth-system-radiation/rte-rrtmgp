@@ -36,7 +36,7 @@ jobs:
     #
     # Deploy
     #
-    - name: Deploy to Github Pages root
+    - name: Deploy to Github Pages
       uses: JamesIves/github-pages-deploy-action@v4.7.3
       if: ${{ github.event_name == 'push'  &&  github.ref == 'refs/heads/main' }}
       with:
@@ -44,9 +44,9 @@ jobs:
         folder: docs/
 
    #
-   # Deploy (temporary)
+   # Deploy from workflow dispatch
    #
-    - name: Deploy to Github Pages root
+    - name: Deploy to Github Pages from workflow_dispatch
       uses: JamesIves/github-pages-deploy-action@v4.7.3
       if: ${{ github.event_name == 'workflow_dispatch' }}
       with:

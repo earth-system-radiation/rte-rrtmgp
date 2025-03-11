@@ -1,7 +1,7 @@
-[![Conda Version](https://img.shields.io/conda/vn/conda-forge/rte_rrtmgp.svg)](https://anaconda.org/conda-forge/rte_rrtmgp) 
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/rte_rrtmgp.svg)](https://anaconda.org/conda-forge/rte_rrtmgp)
 [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/rte_rrtmgp.svg)](https://anaconda.org/conda-forge/rte_rrtmgp)
- 
-The RTE+RRTMGP libraries and data files can be installed via `conda-forge`. 
+
+The RTE+RRTMGP libraries and data files can be installed via `conda-forge`.
 
 # Documentation
 

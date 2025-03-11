@@ -1,11 +1,12 @@
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/rte_rrtmgp.svg)](https://anaconda.org/conda-forge/rte_rrtmgp) 
+[![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/rte_rrtmgp.svg)](https://anaconda.org/conda-forge/rte_rrtmgp)
+ 
+The RTE+RRTMGP libraries and data files can be installed via `conda-forge`. 
+
 # Documentation
 
-[RTE+RRTMGP's GitHub Pages site](https://earth-system-radiation.github.io/rte-rrtmgp/) contains
-a mix of automatically-generated documentation and hand-written descriptions. The documentation is
-incomplete and evolving. Thanks to the folks at [Sourcery Institute](https://www.sourceryinstitute.org)
-for help in setting this up.
-
-The Wiki is deprecated.
+[RTE+RRTMGP's documentation](https://earth-system-radiation.github.io/rte-rrtmgp/) contains
+a mix of automatically-generated pages and hand-written descriptions. The Wiki is deprecated.
 
 # RTE+RRTMGP
 

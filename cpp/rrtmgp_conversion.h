@@ -906,8 +906,8 @@ struct MemPoolSingleton
   static inline
   void finalize(bool verbose=true)
   {
-    if (verbose) print_state;
-    assert(s_curr_used == 0); // !=0 indicates we may have forgetten a dealloc
+    if (verbose) print_state();
+    assert(s_curr_used == 0); // !=0 indicates we may have forgotten a dealloc
     s_mem = memview_t();
   }
 

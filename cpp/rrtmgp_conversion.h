@@ -914,7 +914,10 @@ struct MemPoolSingleton
   static inline
   void print_state()
   {
-    std::cout << "Used " << s_curr_used << " of out of " << s_mem.size() << ", high_water was " << s_high_water << std::endl;
+    if (s_curr_used != 0) {
+      std::cout << "Warning: s_curr_used is not 0! Used " << s_curr_used << " out of " << s_mem.size() 
+                << ", high_water was " << s_high_water << std::endl;
+    }
   }
 };
 

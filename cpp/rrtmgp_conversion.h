@@ -904,17 +904,17 @@ struct MemPoolSingleton
   }
 
   static inline
-  void finalize()
+  void finalize(bool verbose=true)
   {
-    print_state();
-    assert(s_curr_used == 0); // !=0 indicates we may have forgetten a dealloc
+    if (verbose) print_state();
+    assert(s_curr_used == 0); // !=0 indicates we may have forgotten a dealloc
     s_mem = memview_t();
   }
 
   static inline
   void print_state()
   {
-    std::cout << "Used " << s_curr_used << " of out of " << s_mem.size() << ", high_water was " << s_high_water << std::endl;
+    std::cout << "rrtmgp_conversion MemPoolSingleton used " << s_curr_used << " out of " << s_mem.size() << "; high_water was " << s_high_water << std::endl;
   }
 };
 

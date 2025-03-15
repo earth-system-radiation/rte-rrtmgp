@@ -24,4 +24,3 @@ typedef @RTE_BOOL@ Bool;
 
 // Define a floating-point type based on precision selection
 typedef @RTE_PRECISION@ Float;
-const Float Float_epsilon = @RTE_EPSILON@;

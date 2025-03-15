@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 project(
   rte-rrtmgp
-  VERSION 1.9.0
+  VERSION 1.9.1
   LANGUAGES Fortran
 )
 
@@ -15,11 +15,11 @@ option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
 if(BUILD_C_HEADERS)
   set(RTE_BOOL "_Bool")
   set(RTE_PRECISION "double")
-  set(RTE_EPSILON "DBL_EPSILON")
+  set(RTE_EPSILON "2.2204460492503131e-16")
 
   if(RTE_ENABLE_SP)
     set(RTE_PRECISION "float")
-    set(RTE_EPSILON "FLT_EPSILON")
+    set(RTE_EPSILON "1.19209290E-07F")
   endif()
 endif()
 

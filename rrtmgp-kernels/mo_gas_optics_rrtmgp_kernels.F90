@@ -382,14 +382,13 @@ contains
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
-          tau_major(gptS:gptE) = &
-            ! interpolation in temperature, pressure, and eta
-            interpolate3D_byflav(neta,npres,ntemp,ngpt, &
+          ! interpolation in temperature, pressure, and eta
+          call interpolate3D_byflav(neta,npres,ntemp,ngpt, &
                                  col_mix(:,icol,ilay,iflav),                                     &
                                  fmajor(:,:,:,icol,ilay,iflav), kmajor,                          &
                                  band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
-                                 jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
-            tau(icol,ilay,gptS:gptE) = tau(icol,ilay,gptS:gptE) + tau_major(gptS:gptE)
+                                 jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo, tau_major)
+          tau(icol,ilay,gptS:gptE) = tau(icol,ilay,gptS:gptE) + tau_major(gptS:gptE)
         end do
       end do
     end do
@@ -621,12 +620,12 @@ contains
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
-          pfrac(icol,ilay,gptS:gptE) = &
-            ! interpolation in temperature, pressure, and eta
-            interpolate3D_byflav(neta, npres, ntemp, ngpt, &
+          ! interpolation in temperature, pressure, and eta
+          call interpolate3D_byflav(neta, npres, ntemp, ngpt, &
                           one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
-                          jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
+                          jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo, &
+                          pfrac(icol,ilay,:))
         end do ! column
       end do   ! layer
     end do     ! band
@@ -757,8 +756,8 @@ contains
 
   end function interpolate2D_byflav
   ! ----------------------------------------------------------
-  pure function interpolate3D_byflav(neta, npres, ntemp, ngpt, &
-       scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress) result(res)
+  pure subroutine interpolate3D_byflav(neta, npres, ntemp, ngpt, &
+       scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress, res)
     integer,                    intent(in) :: neta,npres,ntemp,ngpt
     real(wp), dimension(2),     intent(in) :: scaling
     real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
@@ -770,7 +769,7 @@ contains
     integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
     integer,                     intent(in) :: jtemp ! interpolation index for temperature
     integer,                     intent(in) :: jpress ! interpolation index for pressure
-    real(wp), dimension(gptS:gptE)          :: res ! the result
+    real(wp), dimension(:), intent(out)          :: res ! the result
 
     ! Local variable
     integer :: igpt, jeta1, jeta2
@@ -793,6 +792,6 @@ contains
           fmajor(1,2,2) * k(jtemp+1, jeta2  , jpress  , igpt) + &
           fmajor(2,2,2) * k(jtemp+1, jeta2+1, jpress  , igpt) )
     end do
-  end function interpolate3D_byflav
+  end subroutine interpolate3D_byflav
 
 end module mo_gas_optics_rrtmgp_kernels

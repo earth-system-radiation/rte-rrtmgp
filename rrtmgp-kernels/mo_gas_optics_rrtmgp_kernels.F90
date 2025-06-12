@@ -122,11 +122,11 @@ contains
       igas_1 = flavor(1,iflav)
       igas_2 = flavor(2,iflav)
       do ilay = 1, nlay
-        do icol = 1, ncol
-        ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        itropo = merge(1,2,tropo(icol,ilay))
-        ! loop over implemented combinations of major species
-          do itemp = 1, 2
+        do itemp = 1, 2
+          do icol = 1, ncol
+            ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+            itropo = merge(1,2,tropo(icol,ilay))
+            ! loop over implemented combinations of major species
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors
@@ -162,8 +162,8 @@ contains
             fmajor(2,1,itemp,icol,ilay,iflav) = (1._wp-fpress(icol,ilay)) * fminor(2,itemp,icol,ilay,iflav)
             fmajor(1,2,itemp,icol,ilay,iflav) =        fpress(icol,ilay)  * fminor(1,itemp,icol,ilay,iflav)
             fmajor(2,2,itemp,icol,ilay,iflav) =        fpress(icol,ilay)  * fminor(2,itemp,icol,ilay,iflav)
-          end do ! reference temperatures
-        end do ! icol
+          end do ! icol
+        end do ! reference temperatures
       end do ! ilay
     end do ! iflav
 
@@ -370,7 +370,7 @@ contains
     ! local variables
     real(wp) :: tau_major(ngpt) ! major species optical depth
     ! local index
-    integer :: icol, ilay, iflav, ibnd, itropo
+    integer :: icol, igpt, ilay, iflav, ibnd, itropo
     integer :: gptS, gptE
 
     ! optical depth calculation for major species
@@ -382,13 +382,15 @@ contains
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
-          tau_major(gptS:gptE) = &
-            ! interpolation in temperature, pressure, and eta
-            interpolate3D_byflav(col_mix(:,icol,ilay,iflav),                                     &
+          ! interpolation in temperature, pressure, and eta
+          call interpolate3D_byflav(neta,npres,ntemp,ngpt, &
+                                 col_mix(:,icol,ilay,iflav),                                     &
                                  fmajor(:,:,:,icol,ilay,iflav), kmajor,                          &
                                  band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
-                                 jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
-            tau(icol,ilay,gptS:gptE) = tau(icol,ilay,gptS:gptE) + tau_major(gptS:gptE)
+                                 jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo, tau_major)
+          do igpt = gptS, gptE
+            tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + tau_major(igpt)
+          end do
         end do
       end do
     end do
@@ -607,7 +609,7 @@ contains
     integer  :: ilay, icol, igpt, ibnd, itropo, iflav
     integer  :: gptS, gptE
     real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
-    real(wp) :: pfrac          (ncol,nlay  ,ngpt)
+    real(wp) :: pfrac          (ngpt, ncol,nlay)
     real(wp) :: planck_function(ncol,nlay+1,nbnd)
     ! -----------------
 
@@ -620,11 +622,12 @@ contains
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
           itropo = merge(1,2,tropo(icol,ilay))
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
-          pfrac(icol,ilay,gptS:gptE) = &
-            ! interpolation in temperature, pressure, and eta
-            interpolate3D_byflav(one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
+          ! interpolation in temperature, pressure, and eta
+          call interpolate3D_byflav(neta, npres, ntemp, ngpt, &
+                          one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
                           band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
-                          jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo)
+                          jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo, &
+                          pfrac(:, icol,ilay))
         end do ! column
       end do   ! layer
     end do     ! band
@@ -643,8 +646,8 @@ contains
         gptS = band_lims_gpt(1, ibnd)
         gptE = band_lims_gpt(2, ibnd)
         do igpt = gptS, gptE
-            sfc_src(icol,igpt) = pfrac(icol,sfc_lay,igpt) * planck_function(icol,1,ibnd)
-            sfc_source_Jac(icol, igpt) = pfrac(icol,sfc_lay,igpt) * &
+            sfc_src(icol,igpt) = pfrac(igpt,icol,sfc_lay) * planck_function(icol,1,ibnd)
+            sfc_source_Jac(icol, igpt) = pfrac(igpt,icol,sfc_lay) * &
                                 (planck_function(icol, 2, ibnd) - planck_function(icol,1,ibnd))
         end do
       end do
@@ -663,10 +666,10 @@ contains
     do ibnd = 1, nbnd
       gptS = band_lims_gpt(1, ibnd)
       gptE = band_lims_gpt(2, ibnd)
-      do igpt = gptS, gptE
-        do ilay = 1, nlay
-          do icol = 1, ncol
-            lay_src(icol,ilay,igpt) = pfrac(icol,ilay,igpt) * planck_function(icol,ilay,ibnd)
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          do igpt = gptS, gptE
+            lay_src(icol,ilay,igpt) = pfrac(igpt,icol,ilay) * planck_function(icol,ilay,ibnd)
           end do
         end do
       end do
@@ -690,17 +693,17 @@ contains
       gptE = band_lims_gpt(2, ibnd)
       do igpt = gptS, gptE
         do icol = 1, ncol
-          lev_src(icol,     1,igpt) = pfrac(icol,   1,igpt) * planck_function(icol,     1,ibnd)
+          lev_src(icol,     1,igpt) = pfrac(igpt,icol,   1) * planck_function(icol,     1,ibnd)
         end do
         do ilay = 2, nlay
           do icol = 1, ncol
-            lev_src(icol,ilay,igpt) = sqrt(pfrac(icol,ilay-1, igpt) *  &
-                                           pfrac(icol,ilay,   igpt)) &
+            lev_src(icol,ilay,igpt) = sqrt(pfrac(igpt,icol,ilay-1) *  &
+                                           pfrac(igpt,icol,ilay)) &
                                                             * planck_function(icol,ilay,  ibnd)
           end do
         end do
         do icol = 1, ncol
-          lev_src(icol,nlay+1,igpt) = pfrac(icol,nlay,igpt) * planck_function(icol,nlay+1,ibnd)
+          lev_src(icol,nlay+1,igpt) = pfrac(igpt,icol,nlay) * planck_function(icol,nlay+1,ibnd)
         end do
       end do
     end do
@@ -755,35 +758,42 @@ contains
 
   end function interpolate2D_byflav
   ! ----------------------------------------------------------
-  pure function interpolate3D_byflav(scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress) result(res)
+  pure subroutine interpolate3D_byflav(neta, npres, ntemp, ngpt, &
+       scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress, res)
+    integer,                    intent(in) :: neta,npres,ntemp,ngpt
     real(wp), dimension(2),     intent(in) :: scaling
     real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
                                                      ! index(1) : reference eta level (temperature dependent)
                                                      ! index(2) : reference pressure level
                                                      ! index(3) : reference temperature level
-    real(wp), dimension(:,:,:,:),intent(in) :: k ! (temp,eta,press,gpt)
+    real(wp), dimension(ntemp,neta,npres+1,ngpt),intent(in) :: k
     integer,                     intent(in) :: gptS, gptE
     integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
     integer,                     intent(in) :: jtemp ! interpolation index for temperature
     integer,                     intent(in) :: jpress ! interpolation index for pressure
-    real(wp), dimension(gptS:gptE)          :: res ! the result
+    real(wp), dimension(ngpt), intent(out)          :: res ! the result
 
     ! Local variable
-    integer :: igpt
+    integer :: igpt, jeta1, jeta2
+    real(wp) :: scaling1, scaling2
+    jeta1 = jeta(1)
+    jeta2 = jeta(2)
+    scaling1 = scaling(1)
+    scaling2 = scaling(2)
     ! each code block is for a different reference temperature
     do igpt = gptS, gptE
       res(igpt) =  &
-        scaling(1) * &
-        ( fmajor(1,1,1) * k(jtemp, jeta(1)  , jpress-1, igpt) + &
-          fmajor(2,1,1) * k(jtemp, jeta(1)+1, jpress-1, igpt) + &
-          fmajor(1,2,1) * k(jtemp, jeta(1)  , jpress  , igpt) + &
-          fmajor(2,2,1) * k(jtemp, jeta(1)+1, jpress  , igpt) ) + &
-        scaling(2) * &
-        ( fmajor(1,1,2) * k(jtemp+1, jeta(2)  , jpress-1, igpt) + &
-          fmajor(2,1,2) * k(jtemp+1, jeta(2)+1, jpress-1, igpt) + &
-          fmajor(1,2,2) * k(jtemp+1, jeta(2)  , jpress  , igpt) + &
-          fmajor(2,2,2) * k(jtemp+1, jeta(2)+1, jpress  , igpt) )
+        scaling1 * &
+        ( fmajor(1,1,1) * k(jtemp, jeta1  , jpress-1, igpt) + &
+          fmajor(2,1,1) * k(jtemp, jeta1+1, jpress-1, igpt) + &
+          fmajor(1,2,1) * k(jtemp, jeta1  , jpress  , igpt) + &
+          fmajor(2,2,1) * k(jtemp, jeta1+1, jpress  , igpt) ) + &
+        scaling2 * &
+        ( fmajor(1,1,2) * k(jtemp+1, jeta2  , jpress-1, igpt) + &
+          fmajor(2,1,2) * k(jtemp+1, jeta2+1, jpress-1, igpt) + &
+          fmajor(1,2,2) * k(jtemp+1, jeta2  , jpress  , igpt) + &
+          fmajor(2,2,2) * k(jtemp+1, jeta2+1, jpress  , igpt) )
     end do
-  end function interpolate3D_byflav
+  end subroutine interpolate3D_byflav
 
 end module mo_gas_optics_rrtmgp_kernels

@@ -122,11 +122,11 @@ contains
       igas_1 = flavor(1,iflav)
       igas_2 = flavor(2,iflav)
       do ilay = 1, nlay
-        do icol = 1, ncol
-        ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
-        itropo = merge(1,2,tropo(icol,ilay))
-        ! loop over implemented combinations of major species
-          do itemp = 1, 2
+        do itemp = 1, 2
+          do icol = 1, ncol
+            ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
+            itropo = merge(1,2,tropo(icol,ilay))
+            ! loop over implemented combinations of major species
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors
@@ -162,8 +162,8 @@ contains
             fmajor(2,1,itemp,icol,ilay,iflav) = (1._wp-fpress(icol,ilay)) * fminor(2,itemp,icol,ilay,iflav)
             fmajor(1,2,itemp,icol,ilay,iflav) =        fpress(icol,ilay)  * fminor(1,itemp,icol,ilay,iflav)
             fmajor(2,2,itemp,icol,ilay,iflav) =        fpress(icol,ilay)  * fminor(2,itemp,icol,ilay,iflav)
-          end do ! reference temperatures
-        end do ! icol
+          end do ! icol
+        end do ! reference temperatures
       end do ! ilay
     end do ! iflav
 

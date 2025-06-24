@@ -609,6 +609,7 @@ contains
     real(wp), dimension(2), parameter :: one = [1._wp, 1._wp]
     real(wp) :: pfrac          (ncol,nlay  ,ngpt)
     real(wp) :: planck_function(ncol,nlay+1,nbnd)
+    real(wp) :: totplnk_delta_r
     ! -----------------
 
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
@@ -630,13 +631,14 @@ contains
       end do   ! layer
     end do     ! band
 
+    totplnk_delta_r = 1.0_wp / totplnk_delta
     !
     ! Planck function by band for the surface
     ! Compute surface source irradiance for g-point, equals band irradiance x fraction for g-point
     !
     do icol = 1, ncol
-      planck_function(icol,1,1:nbnd) = interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta, totplnk)
-      planck_function(icol,2,1:nbnd) = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta, totplnk)
+      planck_function(icol,1,1:nbnd) = interpolate1D(tsfc(icol), temp_ref_min, totplnk_delta_r, totplnk)
+      planck_function(icol,2,1:nbnd) = interpolate1D(tsfc(icol) + delta_Tsurf, temp_ref_min, totplnk_delta_r, totplnk)
       !
       ! Map to g-points
       !
@@ -654,7 +656,7 @@ contains
     do ilay = 1, nlay
       do icol = 1, ncol
         ! Compute layer source irradiance for g-point, equals band irradiance x fraction for g-point
-        planck_function(icol,ilay,1:nbnd) = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta, totplnk)
+        planck_function(icol,ilay,1:nbnd) = interpolate1D(tlay(icol,ilay), temp_ref_min, totplnk_delta_r, totplnk)
       end do
     end do
 
@@ -675,11 +677,11 @@ contains
 
     ! compute level source irradiances for each g-point
     do icol = 1, ncol
-      planck_function  (icol,     1,1:nbnd) = interpolate1D(tlev(icol,     1),temp_ref_min, totplnk_delta, totplnk)
+      planck_function  (icol,     1,1:nbnd) = interpolate1D(tlev(icol,     1),temp_ref_min, totplnk_delta_r, totplnk)
     end do
     do ilay = 1, nlay
       do icol = 1, ncol
-        planck_function(icol,ilay+1,1:nbnd) = interpolate1D(tlev(icol,ilay+1),temp_ref_min, totplnk_delta, totplnk)
+        planck_function(icol,ilay+1,1:nbnd) = interpolate1D(tlev(icol,ilay+1),temp_ref_min, totplnk_delta_r, totplnk)
       end do
     end do
 
@@ -711,11 +713,11 @@ contains
   !
   ! One dimensional interpolation -- return all values along second table dimension
   !
-  pure function interpolate1D(val, offset, delta, table) result(res)
+  pure function interpolate1D(val, offset, delta_r, table) result(res)
     ! input
     real(wp), intent(in) :: val,    & ! axis value at which to evaluate table
                             offset, & ! minimum of table axis
-                            delta     ! step size of table axis
+                            delta_r   ! inverse of step size of table axis
     real(wp), dimension(:,:), &
               intent(in) :: table ! dimensions (axis, values)
     ! output
@@ -726,7 +728,7 @@ contains
     integer :: index ! index term
     real(wp) :: frac ! fractional term
     ! -------------------------------------
-    val0 = (val - offset) / delta
+    val0 = (val - offset) * delta_r
     frac = val0 - int(val0) ! get fractional part
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
     res(:) = table(index,:) + frac * (table(index+1,:) - table(index,:))

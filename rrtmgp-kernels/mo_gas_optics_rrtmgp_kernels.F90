@@ -769,7 +769,7 @@ contains
     integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
     integer,                     intent(in) :: jtemp ! interpolation index for temperature
     integer,                     intent(in) :: jpress ! interpolation index for pressure
-    real(wp), dimension(:), intent(out)          :: res ! the result
+    real(wp), dimension(:), intent(inout)          :: res ! the result
 
     ! Local variable
     integer :: igpt, jeta1, jeta2

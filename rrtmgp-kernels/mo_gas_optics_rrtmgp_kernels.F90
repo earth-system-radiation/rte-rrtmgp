@@ -386,7 +386,7 @@ contains
           call interpolate3D_byflav(neta,npres,ntemp,ngpt, &
                                  col_mix(:,icol,ilay,iflav),                                     &
                                  fmajor(:,:,:,icol,ilay,iflav), kmajor,                          &
-                                 band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
+                                 band_lims_gpt(:, ibnd),                 &
                                  jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo, tau_major)
           do igpt = gptS, gptE
             tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + tau_major(igpt)
@@ -617,7 +617,6 @@ contains
     ! Calculation of fraction of band's Planck irradiance associated with each g-point
     do ibnd = 1, nbnd
       gptS = band_lims_gpt(1, ibnd)
-      gptE = band_lims_gpt(2, ibnd)
       do ilay = 1, nlay
         do icol = 1, ncol
           ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
@@ -626,7 +625,7 @@ contains
           ! interpolation in temperature, pressure, and eta
           call interpolate3D_byflav(neta, npres, ntemp, ngpt, &
                           one, fmajor(:,:,:,icol,ilay,iflav), pfracin, &
-                          band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
+                          band_lims_gpt(:, ibnd),                 &
                           jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo, &
                           pfrac(icol,ilay,:))
         end do ! column
@@ -761,7 +760,7 @@ contains
   end function interpolate2D_byflav
   ! ----------------------------------------------------------
   pure subroutine interpolate3D_byflav(neta, npres, ntemp, ngpt, &
-       scaling, fmajor, k, gptS, gptE, jeta, jtemp, jpress, res)
+       scaling, fmajor, k, lim_gpt, jeta, jtemp, jpress, res)
     integer,                    intent(in) :: neta,npres,ntemp,ngpt
     real(wp), dimension(2),     intent(in) :: scaling
     real(wp), dimension(2,2,2), intent(in) :: fmajor ! interpolation fractions for major species
@@ -769,15 +768,17 @@ contains
                                                      ! index(2) : reference pressure level
                                                      ! index(3) : reference temperature level
     real(wp), dimension(ntemp,neta,npres+1,ngpt),intent(in) :: k
-    integer,                     intent(in) :: gptS, gptE
+    INTEGER, dimension(2),       intent(in) :: lim_gpt
     integer, dimension(2),       intent(in) :: jeta ! interpolation index for binary species parameter (eta)
     integer,                     intent(in) :: jtemp ! interpolation index for temperature
     integer,                     intent(in) :: jpress ! interpolation index for pressure
     real(wp), dimension(:), intent(inout)          :: res ! the result
 
     ! Local variable
-    integer :: igpt, jeta1, jeta2
+    integer :: igpt, gptS, gptE, jeta1, jeta2
     real(wp) :: scaling1, scaling2
+    gptS = lim_gpt(1)
+    gptE = lim_gpt(2)
     jeta1 = jeta(1)
     jeta2 = jeta(2)
     scaling1 = scaling(1)

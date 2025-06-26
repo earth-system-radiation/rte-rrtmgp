@@ -371,7 +371,7 @@ contains
     real(wp) :: tau_major(ngpt) ! major species optical depth
     ! local index
     integer :: icol, ilay, iflav, ibnd, itropo
-    integer :: gptS, gptE
+    INTEGER :: gptS, gptE, igpt
 
     ! optical depth calculation for major species
     do ibnd = 1, nbnd
@@ -388,7 +388,9 @@ contains
                                  fmajor(:,:,:,icol,ilay,iflav), kmajor,                          &
                                  band_lims_gpt(1, ibnd), band_lims_gpt(2, ibnd),                 &
                                  jeta(:,icol,ilay,iflav), jtemp(icol,ilay),jpress(icol,ilay)+itropo, tau_major)
-          tau(icol,ilay,gptS:gptE) = tau(icol,ilay,gptS:gptE) + tau_major(gptS:gptE)
+          do igpt = gptS, gptE
+            tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + tau_major(igpt)
+          end do
         end do
       end do
     end do

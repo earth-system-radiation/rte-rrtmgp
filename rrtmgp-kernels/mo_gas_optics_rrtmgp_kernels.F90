@@ -439,7 +439,7 @@ contains
     real(wp), parameter :: PaTohPa = 0.01_wp
     real(wp) :: vmr_fact, dry_fact             ! conversion from column abundance to dry vol. mixing ratio;
     real(wp) :: scaling                        ! optical depth
-    integer  :: icol, ilay, iflav, imnr
+    integer  :: icol, ilay, iflav, imnr, igpt
     integer  :: gptS, gptE
     real(wp), dimension(ngpt) :: tau_minor
     ! -----------------
@@ -487,12 +487,13 @@ contains
               gptS = minor_limits_gpt(1,imnr)
               gptE = minor_limits_gpt(2,imnr)
               iflav = gpt_flv(gptS)
-              tau_minor(gptS:gptE) = scaling *                   &
-                                      interpolate2D_byflav(fminor(:,:,icol,ilay,iflav), &
-                                                           kminor, &
-                                                           kminor_start(imnr), kminor_start(imnr)+(gptE-gptS), &
-                                                           jeta(:,icol,ilay,iflav), jtemp(icol,ilay))
-              tau(icol,ilay,gptS:gptE) = tau(icol,ilay,gptS:gptE) + tau_minor(gptS:gptE)
+              call interpolate2D_byflav(fminor(:,:,icol,ilay,iflav), &
+                                        kminor, &
+                                        kminor_start(imnr), kminor_start(imnr)+(gptE-gptS), &
+                                        jeta(:,icol,ilay,iflav), jtemp(icol,ilay), tau_minor(gptS:gptE))
+              do igpt = gptS, gptE
+                tau(icol,ilay,igpt) = tau(icol,ilay,igpt) + scaling * tau_minor(igpt)
+              end do
             enddo
           end if
         enddo
@@ -541,7 +542,7 @@ contains
     ! -----------------
     ! local variables
     real(wp) :: k(ngpt) ! rayleigh scattering coefficient
-    integer  :: icol, ilay, iflav, ibnd, gptS, gptE
+    integer  :: icol, ilay, iflav, ibnd, igpt, gptS, gptE
     integer  :: itropo
     ! -----------------
 
@@ -552,11 +553,13 @@ contains
         do icol = 1, ncol
           itropo = merge(1,2,tropo(icol,ilay)) ! itropo = 1 lower atmosphere;itropo = 2 upper atmosphere
           iflav = gpoint_flavor(itropo, gptS) !eta interpolation depends on band's flavor
-          k(gptS:gptE) = interpolate2D_byflav(fminor(:,:,icol,ilay,iflav), &
-                                              krayl(:,:,:,itropo),      &
-                                              gptS, gptE, jeta(:,icol,ilay,iflav), jtemp(icol,ilay))
-          tau_rayleigh(icol,ilay,gptS:gptE) = k(gptS:gptE) * &
-                                              (col_gas(icol,ilay,idx_h2o)+col_dry(icol,ilay))
+          call interpolate2D_byflav(fminor(:,:,icol,ilay,iflav), &
+                                    krayl(:,:,:,itropo),      &
+                                    gptS, gptE, jeta(:,icol,ilay,iflav), jtemp(icol,ilay), k(gptS:gptE))
+          do igpt = gptS, gptE
+            tau_rayleigh(icol,ilay,igpt) = k(igpt) * &
+                                           (col_gas(icol,ilay,idx_h2o)+col_dry(icol,ilay))
+          end do
         end do
       end do
     end do
@@ -737,27 +740,29 @@ contains
   ! ----------------------------------------------------------
   !   This function returns a range of values from a subset (in gpoint) of the k table
   !
-  pure function interpolate2D_byflav(fminor, k, gptS, gptE, jeta, jtemp) result(res)
+  pure subroutine interpolate2D_byflav(fminor, k, gptS, gptE, jeta, jtemp, res)
     real(wp), dimension(2,2), intent(in) :: fminor ! interpolation fractions for minor species
                                        ! index(1) : reference eta level (temperature dependent)
                                        ! index(2) : reference temperature level
     real(wp), dimension(:,:,:), intent(in) :: k ! (g-point, eta, temp)
     integer,                    intent(in) :: gptS, gptE, jtemp ! interpolation index for temperature
     integer, dimension(2),      intent(in) :: jeta ! interpolation index for binary species parameter (eta)
-    real(wp), dimension(gptE-gptS+1)       :: res ! the result
+    real(wp), dimension(gptS:gptE), intent(out) :: res ! the result
 
     ! Local variable
-    integer :: igpt
+    integer :: igpt, jeta1, jeta2
     ! each code block is for a different reference temperature
 
-    do igpt = 1, gptE-gptS+1
-      res(igpt) = fminor(1,1) * k(jtemp  , jeta(1)  , gptS+igpt-1) + &
-                  fminor(2,1) * k(jtemp  , jeta(1)+1, gptS+igpt-1) + &
-                  fminor(1,2) * k(jtemp+1, jeta(2)  , gptS+igpt-1) + &
-                  fminor(2,2) * k(jtemp+1, jeta(2)+1, gptS+igpt-1)
+    jeta1 = jeta(1)
+    jeta2 = jeta(2)
+    do igpt = gptS, gptE
+      res(igpt) = fminor(1,1) * k(jtemp  , jeta1  , igpt) + &
+                  fminor(2,1) * k(jtemp  , jeta1+1, igpt) + &
+                  fminor(1,2) * k(jtemp+1, jeta2  , igpt) + &
+                  fminor(2,2) * k(jtemp+1, jeta2+1, igpt)
     end do
 
-  end function interpolate2D_byflav
+  end subroutine interpolate2D_byflav
   ! ----------------------------------------------------------
   pure subroutine interpolate3D_byflav(neta, npres, ntemp, ngpt, &
        scaling, fmajor, k, lim_gpt, jeta, jtemp, jpress, res)

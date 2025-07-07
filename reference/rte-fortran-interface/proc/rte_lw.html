@@ -211,44 +211,41 @@ Default is to use re-scaled longwave transport</p></td>
 <polygon fill="none" stroke="black" points="54,-129 0,-129 0,-105 54,-105 54,-129"/>
 <text text-anchor="middle" x="27" y="-114.6" font-family="Helvetica,sans-Serif" font-size="10.50">rte_lw</text>
 </g>
-<!-- lw_solver_2stream -->
+<!-- zero_array -->
 <g id="proc~~rte_lw~~CallsGraph_node2" class="node">
+<title>zero_array</title>
+<polygon fill="#777777" stroke="#777777" points="181,-234 112,-234 112,-210 181,-210 181,-234"/>
+<text text-anchor="middle" x="146.5" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array</text>
+</g>
+<!-- proc~rte_lw&#45;&gt;zero_array -->
+<g id="proc~~rte_lw~~CallsGraph_edge1" class="edge">
+<title>proc~rte_lw&#45;&gt;zero_array</title>
+<path fill="none" stroke="#000000" d="M33.96,-129.01C43.46,-147.03 63.71,-181.08 90,-201 93.85,-203.92 98.16,-206.47 102.62,-208.7"/>
+<polygon fill="#000000" stroke="#000000" points="101.34,-211.96 111.9,-212.81 104.18,-205.56 101.34,-211.96"/>
+</g>
+<!-- lw_solver_2stream -->
+<g id="proc~~rte_lw~~CallsGraph_node3" class="node">
 <title>lw_solver_2stream</title>
-<polygon fill="#777777" stroke="#777777" points="201.5,-234 91.5,-234 91.5,-210 201.5,-210 201.5,-234"/>
-<text text-anchor="middle" x="146.5" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lw_solver_2stream</text>
+<polygon fill="#777777" stroke="#777777" points="201.5,-192 91.5,-192 91.5,-168 201.5,-168 201.5,-192"/>
+<text text-anchor="middle" x="146.5" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lw_solver_2stream</text>
 </g>
 <!-- proc~rte_lw&#45;&gt;lw_solver_2stream -->
-<g id="proc~~rte_lw~~CallsGraph_edge1" class="edge">
+<g id="proc~~rte_lw~~CallsGraph_edge3" class="edge">
 <title>proc~rte_lw&#45;&gt;lw_solver_2stream</title>
-<path fill="none" stroke="#000000" d="M33.96,-129.01C43.46,-147.03 63.71,-181.08 90,-201 92.01,-202.52 94.15,-203.95 96.36,-205.28"/>
-<polygon fill="#000000" stroke="#000000" points="94.75,-208.38 105.23,-209.95 98.01,-202.19 94.75,-208.38"/>
-</g>
-<!-- interface~extents_are -->
-<g id="proc~~rte_lw~~CallsGraph_node3" class="node">
-<title>interface~extents_are</title>
-<g id="a_proc~~rte_lw~~CallsGraph_node3"><a xlink:href=".././interface/extents_are.html" xlink:title="extents_are">
-<polygon fill="#a7506f" stroke="#a7506f" points="183,-192 110,-192 110,-168 183,-168 183,-192"/>
-<text text-anchor="middle" x="146.5" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extents_are</text>
-</a>
-</g>
-</g>
-<!-- proc~rte_lw&#45;&gt;interface~extents_are -->
-<g id="proc~~rte_lw~~CallsGraph_edge2" class="edge">
-<title>proc~rte_lw&#45;&gt;interface~extents_are</title>
 <path fill="none" stroke="#000000" d="M43.68,-129.13C55.84,-138.17 73.38,-150.38 90,-159 93.45,-160.79 97.09,-162.51 100.79,-164.14"/>
 <polygon fill="#000000" stroke="#000000" points="99.45,-167.37 110.02,-167.99 102.14,-160.91 99.45,-167.37"/>
 </g>
-<!-- zero_array -->
+<!-- lw_solver_noscat -->
 <g id="proc~~rte_lw~~CallsGraph_node4" class="node">
-<title>zero_array</title>
-<polygon fill="#777777" stroke="#777777" points="181,-150 112,-150 112,-126 181,-126 181,-150"/>
-<text text-anchor="middle" x="146.5" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">zero_array</text>
+<title>lw_solver_noscat</title>
+<polygon fill="#777777" stroke="#777777" points="197.5,-150 95.5,-150 95.5,-126 197.5,-126 197.5,-150"/>
+<text text-anchor="middle" x="146.5" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lw_solver_noscat</text>
 </g>
-<!-- proc~rte_lw&#45;&gt;zero_array -->
-<g id="proc~~rte_lw~~CallsGraph_edge3" class="edge">
-<title>proc~rte_lw&#45;&gt;zero_array</title>
-<path fill="none" stroke="#000000" d="M54.08,-121.66C68.05,-124.16 85.65,-127.3 101.66,-130.16"/>
-<polygon fill="#000000" stroke="#000000" points="101.44,-133.68 111.9,-131.99 102.67,-126.79 101.44,-133.68"/>
+<!-- proc~rte_lw&#45;&gt;lw_solver_noscat -->
+<g id="proc~~rte_lw~~CallsGraph_edge2" class="edge">
+<title>proc~rte_lw&#45;&gt;lw_solver_noscat</title>
+<path fill="none" stroke="#000000" d="M54.08,-121.66C63.39,-123.33 74.32,-125.28 85.31,-127.24"/>
+<polygon fill="#000000" stroke="#000000" points="84.92,-130.73 95.38,-129.04 86.15,-123.84 84.92,-130.73"/>
 </g>
 <!-- interface~any_vals_less_than -->
 <g id="proc~~rte_lw~~CallsGraph_node5" class="node">
@@ -260,20 +257,23 @@ Default is to use re-scaled longwave transport</p></td>
 </g>
 </g>
 <!-- proc~rte_lw&#45;&gt;interface~any_vals_less_than -->
-<g id="proc~~rte_lw~~CallsGraph_edge4" class="edge">
+<g id="proc~~rte_lw~~CallsGraph_edge5" class="edge">
 <title>proc~rte_lw&#45;&gt;interface~any_vals_less_than</title>
 <path fill="none" stroke="#000000" d="M54.08,-112.34C61.82,-110.96 70.68,-109.37 79.76,-107.75"/>
 <polygon fill="#000000" stroke="#000000" points="80.44,-111.18 89.66,-105.98 79.2,-104.29 80.44,-111.18"/>
 </g>
-<!-- lw_solver_noscat -->
+<!-- interface~extents_are -->
 <g id="proc~~rte_lw~~CallsGraph_node6" class="node">
-<title>lw_solver_noscat</title>
-<polygon fill="#777777" stroke="#777777" points="197.5,-66 95.5,-66 95.5,-42 197.5,-42 197.5,-66"/>
-<text text-anchor="middle" x="146.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">lw_solver_noscat</text>
+<title>interface~extents_are</title>
+<g id="a_proc~~rte_lw~~CallsGraph_node6"><a xlink:href=".././interface/extents_are.html" xlink:title="extents_are">
+<polygon fill="#a7506f" stroke="#a7506f" points="183,-66 110,-66 110,-42 183,-42 183,-66"/>
+<text text-anchor="middle" x="146.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="white">extents_are</text>
+</a>
 </g>
-<!-- proc~rte_lw&#45;&gt;lw_solver_noscat -->
-<g id="proc~~rte_lw~~CallsGraph_edge5" class="edge">
-<title>proc~rte_lw&#45;&gt;lw_solver_noscat</title>
+</g>
+<!-- proc~rte_lw&#45;&gt;interface~extents_are -->
+<g id="proc~~rte_lw~~CallsGraph_edge4" class="edge">
+<title>proc~rte_lw&#45;&gt;interface~extents_are</title>
 <path fill="none" stroke="#000000" d="M43.68,-104.87C55.84,-95.83 73.38,-83.62 90,-75 93.45,-73.21 97.09,-71.49 100.79,-69.86"/>
 <polygon fill="#000000" stroke="#000000" points="102.14,-73.09 110.02,-66.01 99.45,-66.63 102.14,-73.09"/>
 </g>

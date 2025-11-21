@@ -8,11 +8,11 @@ on:
 
 jobs:
   Containerized-CI:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        fortran-compiler: [ifort, ifx, nvfortran]
+        fortran-compiler: [ifx, nvfortran]
         rte-kernels: [default, accel]
         fpmodel: [DP, SP]
         exclude:
@@ -22,10 +22,6 @@ jobs:
           # fcflags: -debug -traceback -O0 -heap-arrays -assume realloc_lhs -extend-source 132 -stand f08 -fiopenmp -fopenmp-targets=spir64
           # build-type: None
         include:
-        # Set flags for Intel Fortran Compiler Classic
-        - fortran-compiler: ifort
-          fcflags: -m64 -traceback -heap-arrays -assume realloc_lhs -extend-source 132 -check bounds,uninit,pointers,stack -stand f08 -diag-disable=10448
-          build-type: RelWithDebInfo
         # Set flags for Intel Fortran Compiler
         - fortran-compiler: ifx
           rte-kernels: default
@@ -41,8 +37,6 @@ jobs:
           fcflags: -Mallocatable=03 -Mstandard -Mbounds -Mchkptr -Kieee -Mchkstk -acc
           build-type: None
         # Set container images
-        - fortran-compiler: ifort
-          image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:oneapi
         - fortran-compiler: ifx
           image: ghcr.io/earth-system-radiation/rte-rrtmgp-ci:oneapi
         - fortran-compiler: nvfortran
@@ -94,14 +88,14 @@ jobs:
     # Generate validation plots
     #
     - name: Generate validation plots
-      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
+      if: matrix.fortran-compiler == 'ifx' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       run: |
         cmake --build build --target validation-plots
     #
     # Upload validation plots
     #
     - name: Upload validation plots
-      if: matrix.fortran-compiler == 'ifort' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
+      if: matrix.fortran-compiler == 'ifx' && matrix.rte-kernels == 'default' && matrix.fpmodel == 'DP'
       uses: actions/upload-artifact@v4
       with:
         name: valdiation-plot

@@ -163,7 +163,7 @@
   <div id="boundprocs-0" class="panel-collapse collapse">
     <div class="list-group">
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-compute_optimal_angles">compute_optimal_angles</a>
-      <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-finalize">finalize</a>
+      <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-finalize~2">finalize</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-gas_optics_ext">gas_optics_ext</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-gas_optics_int">gas_optics_int</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-get_gases">get_gases</a>
@@ -173,7 +173,7 @@
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-get_temp_max">get_temp_max</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-get_temp_min">get_temp_min</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-is_loaded">is_loaded</a>
-      <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-load">load</a>
+      <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-load~2">load</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-set_solar_variability">set_solar_variability</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-set_tsi">set_tsi</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-source_is_external">source_is_external</a>
@@ -318,7 +318,7 @@
   <div id="boundprocs-1" class="panel-collapse collapse">
     <div class="list-group">
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-compute_optimal_angles">compute_optimal_angles</a>
-      <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-finalize">finalize</a>
+      <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-finalize~2">finalize</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-gas_optics_ext">gas_optics_ext</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-gas_optics_int">gas_optics_int</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-get_gases">get_gases</a>
@@ -328,7 +328,7 @@
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-get_temp_max">get_temp_max</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-get_temp_min">get_temp_min</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-is_loaded">is_loaded</a>
-      <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-load">load</a>
+      <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-load~2">load</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-set_solar_variability">set_solar_variability</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-set_tsi">set_tsi</a>
       <a class="list-group-item" href="../type/ty_gas_optics_rrtmgp.html#boundprocedure-source_is_external">source_is_external</a>
@@ -588,7 +588,7 @@
 </div>
 
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-finalize"></span><h3>procedure, public :: <strong>finalize</strong>    </h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-finalize~2"></span><h3>procedure, public :: <strong>finalize</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
           <h3>private subroutine finalize(this)</h3>    
@@ -937,7 +937,7 @@ level temperatures [K]; (ncol,nlay+1)</p></td>
 </div>
 
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-load"></span><h3>generic, public :: <strong>load</strong>  => load_int, load_ext   </h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-load~2"></span><h3>generic, public :: <strong>load</strong>  => load_int, load_ext   </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
             <h3>private function load_int(this, available_gases, gas_names, key_species, band2gpt, band_lims_wavenum, press_ref, press_ref_trop, temp_ref, temp_ref_p, temp_ref_t, vmr_ref, kmajor, kminor_lower, kminor_upper, gas_minor, identifier_minor, minor_gases_lower, minor_gases_upper, minor_limits_gpt_lower, minor_limits_gpt_upper, minor_scales_with_density_lower, minor_scales_with_density_upper, scaling_gas_lower, scaling_gas_upper, scale_by_complement_lower, scale_by_complement_upper, kminor_start_lower, kminor_start_upper, totplnk, planck_frac, rayl_lower, rayl_upper, optimal_angle_fit) result(err_message)</h3>    

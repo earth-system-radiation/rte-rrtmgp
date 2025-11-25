@@ -1,7 +1,8 @@
 add_library(ssm OBJECT)
 
 target_sources(
-    ssm
-    PRIVATE # cmake-format: sort
-    mo_gas_optics_ssm.F90
+  ssm
+  PRIVATE # cmake-format: sort
+          mo_gas_optics_ssm.F90
+          mo_gas_optics_ssm_kernels.F90
 )

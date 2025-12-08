@@ -18,6 +18,13 @@ module mo_optics_ssm_kernels
   implicit none
   private
   public :: compute_tau, compute_Planck_source
+  !
+  ! Physical constants
+  !
+  real(wp), parameter :: planck_h     = 6.626075540e-34_wp    ! Planck's constant
+  real(wp), parameter :: lightspeed   = 2.99792458e8_wp       ! Speed of light
+  real(wp), parameter :: boltzmann_k  = 1.38065812e-23_wp     ! Boltzman thermodynamic constant
+
 contains
   !
   ! Doesn't account for pressure broadening yet...
@@ -52,11 +59,35 @@ contains
   !
   ! Maybe make an elemental function then call with 1D and 2D wrappers?
   !
-  subroutine compute_Planck_source(&
+  elemental function B_nu(T, nu)
+    real(wp), intent(in) :: T, nu
+    real(wp)             :: B_nu
+    B_nu = 100._wp*2._wp*planck_h*((nu*100._wp)**3)*(lightspeed**2) / &
+                  (exp( (planck_h * lightspeed * nu * 100._wp) / (boltzmann_k * T) - 1._wp)
+  end function
+  ! -------
+  subroutine compute_Planck_source_2D(&
       ncol, nlay, nnu, &
-      nus, dnus, tlay, &
-      source) bind(C, name="ssm_compute_Planck_source")
+      nus, dnus, T, &
+      source) bind(C, name="ssm_compute_Planck_source_2D")
+    integer,  &
+      intent(in ) :: ncol, nlay, nnu
+    real(wp), dimension(nnu), &
+      intent(in ) :: nus, dnus
+    real(wp), dimension(ncol, nlay), &
+      intent(in ) :: T
+    real(wp), dimension(ncol, nlay, nnu), &
+      intent(out) :: source
 
-  end subroutine compute_Planck_source
+    do inu = 1, nnu
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          source(icol, ilay, inu) = B_nu(T(icol, ilay), nus(inu)) * dnus(inu)
+        end do
+      end do
+    end do
+
+  end subroutine compute_Planck_source_2D
+  ! -------
 
 end module mo_optics_ssm_kernels

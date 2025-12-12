@@ -6,6 +6,7 @@ project(
   LANGUAGES Fortran
 )
 
+option(BUILD_SSM "Build simple spectral model" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(BUILD_TESTING "Build tests" OFF)
 option(BUILD_C_HEADERS "Build c headers" ON)

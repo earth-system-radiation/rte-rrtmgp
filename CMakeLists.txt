@@ -61,7 +61,7 @@ add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
 add_subdirectory(rrtmgp-kernels)
 add_subdirectory(rrtmgp-frontend)
-# add_subdirectory(ssm)
+add_subdirectory(ssm)
 
 include(CTest)
 if(BUILD_TESTING)

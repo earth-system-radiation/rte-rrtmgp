@@ -25,6 +25,7 @@ module mo_optics_ssm
   use mo_optical_props,      only: ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
+  use mo_gas_optics_constants,   only: avogad, m_dry, m_h2o, grav
   use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source
 
   implicit none
@@ -41,11 +42,13 @@ module mo_optics_ssm
   type, extends(ty_gas_optics), public :: ty_optics_ssm
     private
     character(32), dimension(:),    allocatable :: gas_names
+    real(wp),      dimension(:),    allocatable :: mol_weights
     real(wp),      dimension(:, :), allocatable :: absorption_coeffs
     real(wp),      dimension(:),    allocatable :: nus, dnus
       ! total absorption coefficients at spectral points (nnus, ngases)
-    real(wp) :: Tstar = 0._wp, &
-                pref  = 100._wp * 100._wp ! 100 hPa
+    real(wp) :: Tstar  = 0._wp, &
+                pref   = 100._wp * 100._wp ! 100 hPa
+                m_dry  = 0.029_wp ! molecular weight of dry air [kg/mol]
     contains
       procedure, public :: configure
       procedure, public :: gas_optics_int
@@ -97,36 +100,66 @@ contains
       !! Upper and lower bounds of spectrum
     real(wp),      optional,       intent(in   ) :: Tstar
       !! Temperature for stellar insolation
-    character(len=128)                      :: error_msg     !! Empty if succssful
+    character(len=128)                      :: error_msg     !! Empty if successful
     ! ----------------------------------------------------------
     ! Local variables
     ! ----------------------------------------------------------
     integer :: ncol, nlay, nnu, ngas
-
+    integer :: inu, itri, igas
+                
     error_msg = ""
     ngas = size(gas_names)
     nnu  = size(nus)
+    
     ! Input sanitizing?
     ! triangle params: index <= ngases, kappa0 >= 0; nu_min < nu0s < nu_max; l >= 0
     ! nus > 0; ascending? nu_min <= nus <= max_nu
     ! Tstar > 0 if specified
 
     if(allocated(this%gas_names)) &
-      deallocate(this%gas_names, this%nus, this%dnus, this%absorption_coeffs)
+      deallocate(this%gas_names, this%mol_weights, this%nus, this%dnus, this%absorption_coeffs)
 
     allocate(this%gas_names(ngas)
+             this%mol_weights, &
              this%nus (nnu), &
              this%dnus(nnu), &
              this%absorption_coeffs(ngas,nnu) )
+             
     this%nus(1:nnu) = nus(1:nnu)
+    this%gas_names(:) = gas_names(:)
 
+    ! Set molar masses based on gas names
+    do igas = 1, ngas
+      select case (trim(lower_case(gas_names(igas))))
+        case ('h2o')
+          this%mol_weights(igas) = 0.018_wp
+        case ('co2')
+          this%mol_weights(igas) = 0.044_wp
+        case ('o3')
+          this%mol_weights(igas) = 0.048_wp
+        case default
+          error_msg = "Unknown gas: " // trim(gas_names(igas))
+          return
+      end select
+    end do
+    
     ! Spectral discretization - edges of "bands"
     ! err_message = this%ty_optical_props%init(band_lims_wavenum, band2gpt)
     ! where band2gpt = [(i, i = 1, nnu)]
 
     ! Compute absorption coefficients by summing exponentials at each nu
-    ! this%absorption_coeffs = ...
+    ! Initialize absorption coefficients to zero
+    this%absorption_coeffs(:,:) = 0._wp
 
+    ! robert, can we parallelize this?
+    do itri = 1, size(triangle_params, 1)
+      do inu = 1, nnu
+        this%absorption_coeffs(nint(triangle_params(itri, 1)), inu) = &
+          this%absorption_coeffs(nint(triangle_params(itri, 1)), inu) + &
+          triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
+      end do
+    end do
+    
     if(present(Tstar)) this%Tstar = Tstar
   end function configure
   !--------------------------------------------------------------------------------------------------------------------
@@ -158,20 +191,51 @@ contains
     ! ----------------------------------------------------------
     ! Local variables
     ! ----------------------------------------------------------
-
+    integer :: ncol, nlay, nnu, ngas
+    integer :: igas, icol, ilay, idx_gas
+    real(wp), dimension(size(play,1), size(play,2)) :: p_scaling, dp
+    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: vmr, layer_mass !! (ngas, ncol, nlay)
 
     error_msg = ""
 
+    ncol = size(play,1)
+    nlay = size(play,2)
+    nnu  = size(this%nus)
+    ngas = size(this%gas_names)
+    
     ! How much data validation to implement?
 
-    ! Convert pressures and vmr to layer mases (ngas, ncol, nlay)
+    ! Get vmr if  gas is provided in ty_gas_concs
+    do igas = 1, ngas
+      if (any (lower_case(this%gas_names(igas)) == gas_desc%get_gas_names())) then
+        error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(igas,:,:))
+      endif
+    end do
 
+    ! Convert pressures and vmr to layer mases (ngas, ncol, nlay)
+    ! mmr = vmr * (Mgas/Mair)
+    ! layer_mass = mmr * dp / g
+    do ilay = 1, nlay
+      do icol = 1, ncol
+        dp = plev(icol, ilay+1) - plev(icol, ilay) ! how to relax assumption about vertical ordering???
+        do igas = 1, ngas
+          layer_mass(igas, icol, ilay) = vmr(igas, icol, ilay) * &
+            (this%mol_weights(igas) / m_dry) * dp / grav
+        end do
+      end do
+    end do
+    
     !
     ! Absorption optical depth
-    !   Pressure broadening not yet in place - could just scale mass but that's not pretty
+    ! Apply pressure broadening if pref input is non-zero
     !
+    if (this%pref /= 0) then
+      p_scaling = play / this%pref
+    else
+      p_scaling = 1
+
     call compute_tau(ncol, nlay, nnu, ngas,   &
-                     this%absorption_coeffs, mass, &
+                     this%absorption_coeffs, layer_mass, p_scaling, &
                      optical_props%tau)
 
     select type(optical_props)

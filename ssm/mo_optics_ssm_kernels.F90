@@ -30,14 +30,16 @@ contains
   ! Doesn't account for pressure broadening yet...
   !
   subroutine compute_tau(ncol, nlay, nnu, ngas,   &
-                         absorption_coeffs, mass, &
+                         absorption_coeffs, layer_mass, p_scaling, &
                          tau) bind(C, name="ssm_compute_tau_absorption")
     integer,  &
       intent(in ) :: ncol, nlay, nnu, ngas
     real(wp), dimension(ngases, nnu), &
       intent(in ) :: absorption_coeffs
     real(wp), dimension(ngas, ncol, nlay), &
-      intent(in ) :: mass
+      intent(in ) :: layer_mass
+    real(wp), dimension(ncol, nlay), &
+      intent(in ) :: p_scaling
     real(wp), dimension(ncol, nlay, nnu), &
       intent(out) :: tau
 
@@ -49,7 +51,7 @@ contains
       do ilay = 1, nlay
         do icol = 1, ncol
           tau(icol, ilay) = &
-            sum([(mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas))])
+            p_scaling(icol, ilay) * sum([(layer_mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas))])
         end do
       end do
     end do

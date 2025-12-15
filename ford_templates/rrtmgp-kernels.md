@@ -9,10 +9,10 @@ md_extensions: markdown.extensions.toc
 author: The RTE+RRTTMGP consortium
 github: https://github.com/earth-system-radiation/
 license: by
-src_dir: ../../rrtmgp-kernels
+src_dir: ../../rrtmgp/kernels
 exclude_dir:
-	../../rrtmgp-kernels/accel
-	../../rrtmgp-kernels/api
+	../../rrtmgp/kernels/accel
+	../../rrtmgp/kernels/api
 output_dir: ../reference/rrtmgp-kernels
 ---
 

@@ -299,7 +299,7 @@ contains
     ! output
     class(ty_optical_props_arry),  &
                               intent(inout) :: optical_props
-    real(wp), dimension(:),   intent(  out) :: toa_src     !! Incoming solar irradiance(ncol)
+    real(wp), dimension(:,:), intent(  out) :: toa_src     !! Incoming solar irradiance(ncol, nnu)
     character(len=128)                      :: error_msg   !! Empty if successful
 
     ! Optional inputs
@@ -338,6 +338,9 @@ contains
     call compute_Planck_source_1D(ncol, nlay,   nnu, &
                                this%nus, this%dnus, this%Tstar,   &
                                toa_src)
+
+    ! Make sure that the integral is the tsi                                   
+    toa_src = toa_src / spread(sum(toa_src, dim=2), dim=2, ncopies=size(toa_src,2)) * this%tsi
     
   end function gas_optics_ext
 

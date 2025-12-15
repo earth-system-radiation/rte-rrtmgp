@@ -68,6 +68,7 @@ module mo_optics_ssm
       procedure, public :: configure
       procedure, public :: gas_optics_int
       procedure, public :: gas_optics_ext
+      procedure, public :: cloud_optics
       procedure, public :: source_is_internal
       procedure, public :: source_is_external
       procedure, public :: get_press_min
@@ -223,6 +224,7 @@ contains
     if(.not. present(Tstar)) this%ssa_cld = ssa_cld_lw
     if(.not. present(Tstar)) this%kappa_cld = kappa_cld_lw
   end function configure
+  
   !--------------------------------------------------------------------------------------------------------------------
   !
   !> Compute gas optical depth and Planck source functions,
@@ -261,8 +263,6 @@ contains
     nlay = size(play,2)
     nnu  = size(this%nus)
     ngas = size(this%gas_names)
-
-    ! How much data validation to implement?
 
     call compute_layer_mass(ncol, nlay, ngas, &
                             this, plev, gas_desc, layer_mass, &
@@ -342,8 +342,6 @@ contains
     nnu  = size(this%nus)
     ngas = size(this%gas_names)
 
-    ! How much data validation to implement?
-
     call compute_layer_mass(ncol, nlay, ngas, &
                             this, plev, gas_desc, layer_mass, &
                             error_msg)
@@ -355,10 +353,21 @@ contains
     call compute_tau(ncol, nlay, nnu, ngas,   &
                      this%absorption_coeffs, play, this%pref, layer_mass, &
                      optical_props%tau)
-                     
+
+    ! Not doing scattering of gases
+    select type(optical_props)
+      type is (ty_optical_props_2str)
+        call zero_array(ncol, nlay, nnu, optical_props%ssa)
+        call zero_array(ncol, nlay, nnu, optical_props%g)
+      type is (ty_optical_props_nstr)
+        call zero_array(ncol, nlay, nnu, optical_props%ssa)
+        call zero_array(optical_props%get_nmom(), &
+                      ncol, nlay, nnu, optical_props%p)
+    end select
+    
     !
-    ! Planck function sources
     ! Shortwave: incoming solar irradiance
+    !
     call compute_Planck_source_1D(ncol, nlay,   nnu, &
                                this%nus, this%dnus, this%Tstar,   &
                                toa_src)
@@ -367,6 +376,48 @@ contains
     toa_src = toa_src / spread(sum(toa_src, dim=2), dim=2, ncopies=size(toa_src,2)) * this%tsi
     
   end function gas_optics_ext
+
+  !------------------------------------------------------------------------------------------
+  !
+  !> Derive cloud optical properties from provided cloud physical properties
+  !
+  function cloud_optics(this,                     &
+                        clwp, ciwp, reliq, reice, &
+                        optical_props) result(error_msg)
+    class(ty_optics_ssm), &
+              intent(in   ) :: this
+    real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud liquid water path (g/m2)
+                               ciwp  (:,:), &   ! cloud ice water path    (g/m2)
+                               reliq (:,:), &   ! cloud liquid particle effective size (microns)
+                               reice (:,:)      ! cloud ice particle effective radius  (microns)
+    class(ty_optical_props_arry), &
+              intent(inout) :: optical_props
+    character(len=128)      :: error_msg
+    ! ----------------------------------------------------------
+    ! Local variables
+    ! ----------------------------------------------------------
+    integer :: ncol, nlay, nnu, ngas
+    integer :: igas, icol, ilay, idx_gas
+    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: layer_mass
+    error_msg = ""
+
+    ncol = size(play,1)
+    nlay = size(play,2)
+    nnu  = size(this%nus)
+
+    ! Get cloud optical depth by multiplying 
+    ! [kg/m2] of cloud by [m2/kg] absorption coeff
+    optical_props%tau = 1000._wp * (clwp + ciwp) * this%kappa_cld
+
+    if (this%source_is_external) then
+      optical_props%ssa = ssa_cld_sw
+      optical_props%g   = g_cld_sw
+    else
+      optical_props%ssa = ssa_cld_lw
+      optical_props%g   = g_cld_lw
+    end if
+    
+  end function cloud_optics
 
   !--------------------------------------------------------------------------------------------------------------------
   !

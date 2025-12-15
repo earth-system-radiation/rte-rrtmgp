@@ -64,6 +64,10 @@ module mo_optics_ssm
     real(wp) :: Tstar  = 0._wp, &
                 pref   = 500._wp * 500._wp, & ! 500 hPa
                 m_dry  = 0.029_wp ! molecular weight of dry air [kg/mol]
+                tsi       = 1360._wp, &           ! Add this
+                kappa_cld = 0._wp, &              ! Add this
+                g_cld     = 0._wp, &              ! Add this
+                ssa_cld   = 0._wp 
     contains
       procedure, public :: configure
       procedure, public :: gas_optics_int
@@ -138,18 +142,18 @@ contains
     ! triangle params: index <= ngases, kappa0 >= 0; nu_min < nu0s < nu_max; l > 0
     ! nus > 0; ascending? nu_min <= nus <= max_nu
     ! Tstar > 0 if specified
-    if (.not. all(nu_min < nus < nu_max)) then
+    if (.not. all(nus > nu_min .and. nus < nu_max)) then
       error_msg = "ssm_gas_optics(): nu must be less than nu_max and greater than nu_min"
     end if
 
     if (present(Tstar)) then
-      if (.not. all(Tstar > 0.0_wp)) then
+      if (Tstar <= 0.0_wp) then
         error_msg = "ssm_gas_optics(): Tstar must be > 0"
       end if
     end if
 
     if (present(tsi)) then
-      if (.not. all(tsi > 0.0_wp)) then
+      if (tsi <= 0.0_wp) then
         error_msg = "ssm_gas_optics(): tsi must be > 0"
       end if
     end if
@@ -396,14 +400,7 @@ contains
     ! ----------------------------------------------------------
     ! Local variables
     ! ----------------------------------------------------------
-    integer :: ncol, nlay, nnu, ngas
-    integer :: igas, icol, ilay, idx_gas
-    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: layer_mass
     error_msg = ""
-
-    ncol = size(play,1)
-    nlay = size(play,2)
-    nnu  = size(this%nus)
 
     ! Get cloud optical depth by multiplying 
     ! [kg/m2] of cloud by [m2/kg] absorption coeff

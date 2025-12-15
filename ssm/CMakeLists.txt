@@ -12,4 +12,5 @@ if(BUILD_SSM)
   target_include_directories(
     ssm PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY}
   )
+  target_link_libraries(ssm PUBLIC rte rrtmgp)
 endif()

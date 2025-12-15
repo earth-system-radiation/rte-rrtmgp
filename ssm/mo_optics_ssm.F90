@@ -33,9 +33,20 @@ module mo_optics_ssm
 
   real(wp), parameter, public :: Tsun_ssm = 5760._wp ! Default sun temperature for SSM
   real(wp), parameter, public :: tsi = 1360._wp ! Default total solar irradiance
+  
   real(wp), parameter, public :: mw_h2o = 0.018_wp ! Molecular weight h2o
   real(wp), parameter, public :: mw_co2 = 0.044_wp ! Molecular weight co2
   real(wp), parameter, public :: mw_o3  = 0.048_wp ! Molecular weight o3
+
+  real(wp), parameter, public :: kappa_cld_lw = 50._wp ! Default for lw cloud absorption coefficient (m2/kg)
+  real(wp), parameter, public :: kappa_cld_sw = 0.0001_wp ! Default for sw cloud absorption coefficient (m2/kg)
+
+  real(wp), parameter, public :: ssa_cld_lw = 0._wp ! Default for lw cloud single scattering albedo
+  real(wp), parameter, public :: ssa_cld_sw = 0.9999_wp ! Default for sw cloud single scattering albedo
+
+  real(wp), parameter, public :: g_cld_lw = 0._wp ! Default for lw cloud asymmetry
+  real(wp), parameter, public :: g_cld_sw = 0.85_wp ! Default for sw cloud asymmetry
+  
   !
   ! Do the other SSM defaults - absorption parameters, spectral dicretization -
   !   get declared here as public entities? Or do we add general introscpection?
@@ -98,12 +109,10 @@ contains
     character(32), dimension(:),   intent(in   ) :: gas_names
     real(wp),      dimension(:,:), intent(in   ) :: triangle_params
       !! (ntriangles, 4) where the second dimension holds [gas_index, kappa0, nu0, l]
-    real(wp),                      intent(in   ) ::  kappa_cld_lw
-      !! cloud optical properties in longwave
-    real(wp),                      intent(in   ) ::  kappa_cld_sw
-    real(wp),                      intent(in   ) ::  g_cld_sw
-    real(wp),                      intent(in   ) ::  ssa_cld_sw
-      !! cloud optical properties in shortwave
+    real(wp),                      intent(in   ) ::  kappa_cld
+    real(wp),                      intent(in   ) ::  g_cld
+    real(wp),                      intent(in   ) ::  ssa_cld
+      !! cloud optical properties
     real(wp),      dimension(:),   intent(in   ) :: nus
       !! Wavenumbers at which to evaluate Planck function and absorption coefficient
     real(wp),                      intent(in   ) :: nu_min, nu_max

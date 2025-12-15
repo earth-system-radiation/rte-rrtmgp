@@ -35,22 +35,31 @@ contains
   ! Doesn't account for pressure broadening yet...
   !
   subroutine compute_tau(ncol, nlay, nnu, ngas,   &
-                         absorption_coeffs, layer_mass, p_scaling, &
+                         absorption_coeffs, play, pref, layer_mass, &
                          tau) bind(C, name="ssm_compute_tau_absorption")
     integer,  &
       intent(in ) :: ncol, nlay, nnu, ngas
     real(wp), dimension(ngas, nnu), &
       intent(in ) :: absorption_coeffs
+    real(wp), dimension(ncol, nlay), & 
+      intent(in   ) :: play, &   !! layer pressures [Pa]; (ncol,nlay)  
     real(wp), dimension(ngas, ncol, nlay), &
       intent(in ) :: layer_mass
-    real(wp), dimension(ncol, nlay), &
-      intent(in ) :: p_scaling
+    real(wp), dimension(:), &
+      intent(in ) :: pref
     real(wp), dimension(ncol, nlay, nnu), &
       intent(out) :: tau
 
     ! Local variables
     integer :: icol, ilay, inu, igas
+    real(wp), dimension(size(play,1), size(play,2)) :: p_scaling
 
+    ! Apply pressure broadening if pref input is non-zero
+    if (pref /= 0._wp) then
+      p_scaling(:,:) = play(:,:) / pref
+    else
+      p_scaling(:,:) = 1._wp
+    end if
 
     do inu = 1, nnu
       do ilay = 1, nlay

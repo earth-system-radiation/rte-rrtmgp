@@ -221,7 +221,6 @@ contains
     ! ----------------------------------------------------------
     integer :: ncol, nlay, nnu, ngas
     integer :: igas, icol, ilay, idx_gas
-    real(wp), dimension(size(play,1), size(play,2)) :: p_scaling, dp
     real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: vmr, layer_mass !! (ngas, ncol, nlay)
 
     error_msg = ""
@@ -255,17 +254,9 @@ contains
 
     !
     ! Absorption optical depth
-    ! Apply pressure broadening if pref input is non-zero
-    !   Maybe this belongs in the kernel for locality
     !
-    if (this%pref /= 0) then
-      p_scaling(:,:) = play(:,:) / this%pref
-    else
-      p_scaling(:,:) = 1._wp
-    end if
-
     call compute_tau(ncol, nlay, nnu, ngas,   &
-                     this%absorption_coeffs, layer_mass, p_scaling, &
+                     this%absorption_coeffs, play, this%pref, layer_mass, &
                      optical_props%tau)
 
     select type(optical_props)

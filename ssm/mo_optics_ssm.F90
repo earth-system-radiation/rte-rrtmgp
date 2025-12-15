@@ -61,9 +61,9 @@ module mo_optics_ssm
     real(wp),      dimension(:, :), allocatable :: absorption_coeffs
     real(wp),      dimension(:),    allocatable :: nus, dnus
       ! total absorption coefficients at spectral points (nnus, ngases)
-    real(wp) :: Tstar  = 0._wp, &
-                pref   = 500._wp * 500._wp, & ! 500 hPa
-                m_dry  = 0.029_wp ! molecular weight of dry air [kg/mol]
+    real(wp) :: Tstar     = 0._wp, &
+                pref      = 500._wp * 500._wp, & ! 500 hPa
+                m_dry     = 0.029_wp, & ! molecular weight of dry air [kg/mol]
                 tsi       = 1360._wp, &           ! Add this
                 kappa_cld = 0._wp, &              ! Add this
                 g_cld     = 0._wp, &              ! Add this
@@ -162,7 +162,7 @@ contains
       error_msg = "ssm_gas_optics(): kappa0 needs to be >=0"
     end if
     
-    if (.not. all(nu_min < triangle_params(:, 3) < nu_max)) then
+    if (.not. all(triangle_params(:, 3) > nu_min .and. triangle_params(:, 3) < nu_max)) then
       error_msg = "ssm_gas_optics(): nu0 needs to be less than nu_max and greater than nu_min"
     end if
 
@@ -372,8 +372,8 @@ contains
     !
     ! Shortwave: incoming solar irradiance
     !
-    call compute_Planck_source_1D(ncol, nlay,   nnu, &
-                               this%nus, this%dnus, this%Tstar,   &
+    call compute_Planck_source_1D(ncol, nnu, &
+                               this%nus, this%dnus, spread(this%Tstar, 1, ncol),   &
                                toa_src)
 
     ! Make sure that the integral is the tsi                                   
@@ -404,15 +404,22 @@ contains
 
     ! Get cloud optical depth by multiplying 
     ! [kg/m2] of cloud by [m2/kg] absorption coeff
-    optical_props%tau = 1000._wp * (clwp + ciwp) * this%kappa_cld
+    ! Need spread because tau is 3D and cwp is 2D
+    optical_props%tau = spread(1000._wp * (clwp + ciwp) * this%kappa_cld, 3, size(this%nus))
 
-    if (this%source_is_external) then
-      optical_props%ssa = ssa_cld_sw
-      optical_props%g   = g_cld_sw
-    else
-      optical_props%ssa = ssa_cld_lw
-      optical_props%g   = g_cld_lw
-    end if
+    select type(optical_props)
+      type is (ty_optical_props_2str)
+        if (this%source_is_external()) then
+          optical_props%ssa = this%ssa_cld
+          optical_props%g   = this%g_cld
+        else
+          optical_props%ssa = this%ssa_cld
+          optical_props%g   = this%g_cld
+        end if
+      type is (ty_optical_props_nstr)
+        optical_props%ssa = this%ssa_cld
+        ! Handle p array for nstr if needed
+    end select
     
   end function cloud_optics
 

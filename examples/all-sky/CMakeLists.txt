@@ -3,9 +3,7 @@
 #
 add_library(
   all_sky_utils STATIC # cmake-format: sort
-  ${PROJECT_SOURCE_DIR}/testing-utils/mo_optics_utils_rrtmgp.F90
-  mo_load_aerosol_coefficients.F90
-  mo_load_cloud_coefficients.F90
+  mo_load_aerosol_coefficients.F90 mo_load_cloud_coefficients.F90
 )
 
 target_link_libraries(all_sky_utils PUBLIC testing-utils optics-utils)

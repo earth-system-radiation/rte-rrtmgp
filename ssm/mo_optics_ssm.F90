@@ -47,7 +47,7 @@ module mo_optics_ssm
     real(wp),      dimension(:),    allocatable :: nus, dnus
       ! total absorption coefficients at spectral points (nnus, ngases)
     real(wp) :: Tstar  = 0._wp, &
-                pref   = 100._wp * 100._wp ! 100 hPa
+                pref   = 100._wp * 100._wp, & ! 100 hPa
                 m_dry  = 0.029_wp ! molecular weight of dry air [kg/mol]
     contains
       procedure, public :: configure
@@ -104,13 +104,13 @@ contains
     ! ----------------------------------------------------------
     ! Local variables
     ! ----------------------------------------------------------
-    integer :: ncol, nlay, nnu, ngas
+    integer :: nnu, ngas
     integer :: inu, itri, igas
-                
+
     error_msg = ""
     ngas = size(gas_names)
     nnu  = size(nus)
-    
+
     ! Input sanitizing?
     ! triangle params: index <= ngases, kappa0 >= 0; nu_min < nu0s < nu_max; l >= 0
     ! nus > 0; ascending? nu_min <= nus <= max_nu
@@ -119,16 +119,17 @@ contains
     if(allocated(this%gas_names)) &
       deallocate(this%gas_names, this%mol_weights, this%nus, this%dnus, this%absorption_coeffs)
 
-    allocate(this%gas_names(ngas)
-             this%mol_weights, &
+    allocate(this%gas_names(ngas), &
+             this%mol_weights(ngas), &
              this%nus (nnu), &
              this%dnus(nnu), &
              this%absorption_coeffs(ngas,nnu) )
-             
+
     this%nus(1:nnu) = nus(1:nnu)
     this%gas_names(:) = gas_names(:)
 
     ! Set molar masses based on gas names
+    !   Maybe this is better as module data...
     do igas = 1, ngas
       select case (trim(lower_case(gas_names(igas))))
         case ('h2o')
@@ -142,7 +143,7 @@ contains
           return
       end select
     end do
-    
+
     ! Spectral discretization - edges of "bands"
     ! err_message = this%ty_optical_props%init(band_lims_wavenum, band2gpt)
     ! where band2gpt = [(i, i = 1, nnu)]
@@ -159,7 +160,7 @@ contains
           triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
       end do
     end do
-    
+
     if(present(Tstar)) this%Tstar = Tstar
   end function configure
   !--------------------------------------------------------------------------------------------------------------------
@@ -202,7 +203,7 @@ contains
     nlay = size(play,2)
     nnu  = size(this%nus)
     ngas = size(this%gas_names)
-    
+
     ! How much data validation to implement?
 
     ! Get vmr if  gas is provided in ty_gas_concs
@@ -217,22 +218,24 @@ contains
     ! layer_mass = mmr * dp / g
     do ilay = 1, nlay
       do icol = 1, ncol
-        dp = plev(icol, ilay+1) - plev(icol, ilay) ! how to relax assumption about vertical ordering???
         do igas = 1, ngas
           layer_mass(igas, icol, ilay) = vmr(igas, icol, ilay) * &
-            (this%mol_weights(igas) / m_dry) * dp / grav
+            (this%mol_weights(igas) / this%m_dry) * &
+            abs(plev(icol, ilay+1) - plev(icol, ilay)) / grav
         end do
       end do
     end do
-    
+
     !
     ! Absorption optical depth
     ! Apply pressure broadening if pref input is non-zero
+    !   Maybe this belongs in the kernel for locality
     !
     if (this%pref /= 0) then
-      p_scaling = play / this%pref
+      p_scaling(:,:) = play(:,:) / this%pref
     else
-      p_scaling = 1
+      p_scaling(:,:) = 1._wp
+    end if
 
     call compute_tau(ncol, nlay, nnu, ngas,   &
                      this%absorption_coeffs, layer_mass, p_scaling, &
@@ -255,11 +258,14 @@ contains
     ! How to compute 1D/sfc - another kernel subroutine?
     ! How to compute Tlev if not provided - make generic?
     call compute_Planck_source(ncol, nlay,   nnu, &
-                               nus, dnus, tlay,   &
+                               this%nus, this%dnus, tlay,   &
                                sources%lay_source)
     call compute_Planck_source(ncol, nlay+1, nnu, &
-                               nus, dnus, tlev,   &
+                               this%nus, this%dnus, tlev,   &
                                sources%lev_source)
+    call compute_Planck_source(ncol, nnu, &
+                               this%nus, this%dnus, tsfc,   &
+                               sources%sfc_source)
 
     call zero_array(ncol, nnu, sources%sfc_source_Jac)
   end function gas_optics_int
@@ -305,7 +311,7 @@ contains
   pure function source_is_internal(this)
     class(ty_optics_ssm), intent(in) :: this
     logical                          :: source_is_internal
-    source_is_internal = (Tstar <= 0._wp)
+    source_is_internal = (this%Tstar <= 0._wp)
   end function source_is_internal
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -314,7 +320,7 @@ contains
   pure function source_is_external(this)
     class(ty_optics_ssm), intent(in) :: this
     logical                              :: source_is_external
-    source_is_external = (Tstar > 0._wp)
+    source_is_external = (this%Tstar > 0._wp)
   end function source_is_external
   !--------------------------------------------------------------------------------------------------------------------
   !

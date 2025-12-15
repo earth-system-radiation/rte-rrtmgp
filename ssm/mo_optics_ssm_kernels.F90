@@ -16,8 +16,13 @@ module mo_optics_ssm_kernels
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array
   implicit none
+  interface compute_Planck_source
+    module procedure compute_Planck_source_1D, compute_Planck_source_2D
+  end interface
+
   private
   public :: compute_tau, compute_Planck_source
+
   !
   ! Physical constants
   !
@@ -34,7 +39,7 @@ contains
                          tau) bind(C, name="ssm_compute_tau_absorption")
     integer,  &
       intent(in ) :: ncol, nlay, nnu, ngas
-    real(wp), dimension(ngases, nnu), &
+    real(wp), dimension(ngas, nnu), &
       intent(in ) :: absorption_coeffs
     real(wp), dimension(ngas, ncol, nlay), &
       intent(in ) :: layer_mass
@@ -50,8 +55,8 @@ contains
     do inu = 1, nnu
       do ilay = 1, nlay
         do icol = 1, ncol
-          tau(icol, ilay) = &
-            p_scaling(icol, ilay) * sum([(layer_mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas))])
+          tau(icol, ilay, inu) = &
+            p_scaling(icol, ilay) * sum( [(layer_mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas)] )
         end do
       end do
     end do
@@ -65,7 +70,7 @@ contains
     real(wp), intent(in) :: T, nu
     real(wp)             :: B_nu
     B_nu = 100._wp*2._wp*planck_h*((nu*100._wp)**3)*(lightspeed**2) / &
-                  (exp( (planck_h * lightspeed * nu * 100._wp) / (boltzmann_k * T) - 1._wp)
+                  exp( (planck_h * lightspeed * nu * 100._wp) / (boltzmann_k * T) - 1._wp)
   end function
   ! -------
   subroutine compute_Planck_source_2D(&
@@ -81,6 +86,9 @@ contains
     real(wp), dimension(ncol, nlay, nnu), &
       intent(out) :: source
 
+     ! Local variables
+     integer :: icol, ilay, inu
+
     do inu = 1, nnu
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -90,6 +98,30 @@ contains
     end do
 
   end subroutine compute_Planck_source_2D
+  ! -------
+  subroutine compute_Planck_source_1D(&
+      ncol, nnu, &
+      nus, dnus, T, &
+      source) bind(C, name="ssm_compute_Planck_source_1D")
+    integer,  &
+      intent(in ) :: ncol, nnu
+    real(wp), dimension(nnu), &
+      intent(in ) :: nus, dnus
+    real(wp), dimension(ncol), &
+      intent(in ) :: T
+    real(wp), dimension(ncol, nnu), &
+      intent(out) :: source
+
+     ! Local variables
+     integer :: icol, ilay, inu
+
+    do inu = 1, nnu
+      do icol = 1, ncol
+        source(icol, inu) = B_nu(T(icol), nus(inu)) * dnus(inu)
+      end do
+    end do
+
+  end subroutine compute_Planck_source_1D
   ! -------
 
 end module mo_optics_ssm_kernels

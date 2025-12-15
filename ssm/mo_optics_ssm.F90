@@ -99,7 +99,8 @@ contains
   function configure(this,                       &
                      gas_names, triangle_params, &
                      nus, nu_min, nu_max,        &
-                     Tstar) result(error_msg)
+                     Tstar, tsi,                 &
+                     kappa_cld, g_cld, ssa_cld) result(error_msg)
     !
     ! All the parameters for the SSM need to get added to the argument list
     !   At least one of the arguments needs to distinguish LW from SW
@@ -109,17 +110,17 @@ contains
     character(32), dimension(:),   intent(in   ) :: gas_names
     real(wp),      dimension(:,:), intent(in   ) :: triangle_params
       !! (ntriangles, 4) where the second dimension holds [gas_index, kappa0, nu0, l]
-    real(wp),                      intent(in   ) ::  kappa_cld
-    real(wp),                      intent(in   ) ::  g_cld
-    real(wp),                      intent(in   ) ::  ssa_cld
-      !! cloud optical properties
     real(wp),      dimension(:),   intent(in   ) :: nus
       !! Wavenumbers at which to evaluate Planck function and absorption coefficient
     real(wp),                      intent(in   ) :: nu_min, nu_max
       !! Upper and lower bounds of spectrum
     real(wp),      optional,       intent(in   ) :: Tstar
-      !! Temperature for stellar insolation
     real(wp),      optional,       intent(in   ) :: tsi
+      !! Temperature for stellar insolation and total solar irradiance
+    real(wp),      optional,       intent(in   ) :: kappa_cld
+    real(wp),      optional,       intent(in   ) :: g_cld
+    real(wp),      optional,       intent(in   ) :: ssa_cld
+      !! cloud optical properties
       !! Total solar irradiance
     character(len=128)                      :: error_msg     !! Empty if successful
     ! ----------------------------------------------------------

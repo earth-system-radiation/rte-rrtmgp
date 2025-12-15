@@ -1,6 +1,12 @@
+set(gas_optics_source_dir ${PROJECT_SOURCE_DIR}/gas-optics)
+
 add_library(
   rte # cmake-format: sort
   $<TARGET_OBJECTS:rtekernels>
+  ${gas_optics_source_dir}/mo_gas_concentrations.F90
+  ${gas_optics_source_dir}/mo_gas_optics.F90
+  ${gas_optics_source_dir}/mo_gas_optics_constants.F90
+  ${gas_optics_source_dir}/mo_gas_optics_util_string.F90
   mo_fluxes.F90
   mo_optical_props.F90
   mo_rte_config.F90

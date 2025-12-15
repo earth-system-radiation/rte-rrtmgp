@@ -82,3 +82,20 @@ set_tests_properties(
   check_rfmip_lw_sw
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
 )
+
+#
+# Simple spectral model tests
+#
+if(BUILD_SSM)
+  target_link_libraries(rfmip_clear_utils PUBLIC testing-utils optics-utils-ssm)
+
+  foreach(
+    test_executable IN
+    ITEMS # cmake-format: sort
+          rfmip_lw
+          rfmip_sw
+  )
+    add_executable(ssm_${test_executable} rrtmgp_${test_executable}.F90)
+    target_link_libraries(ssm_${test_executable} PRIVATE rfmip_clear_utils)
+  endforeach()
+endif()

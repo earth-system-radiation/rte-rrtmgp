@@ -17,10 +17,7 @@ target_link_libraries(
   PUBLIC rte-rrtmgp::rrtmgp rte-rrtmgp::rte ${NetCDF_Fortran_LIBRARY}
 )
 
-add_library(
-  optics-utils STATIC # cmake-format: sort
-  mo_optics_utils_rrtmgp.F90
-)
+add_library(optics-utils STATIC mo_optics_utils_rrtmgp.F90)
 
 target_include_directories(
   optics-utils
@@ -36,3 +33,17 @@ target_link_libraries(
          testing-utils
          ${NetCDF_Fortran_LIBRARY}
 )
+
+if(BUILD_SSM)
+  add_library(optics-utils-ssm STATIC mo_optics_utils_ssm.F90)
+
+  target_include_directories(
+    optics-utils-ssm
+    PUBLIC
+      $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+  )
+
+  target_link_libraries(
+    optics-utils-ssm PUBLIC rte-rrtmgp::ssm rte-rrtmgp::rte testing-utils
+  )
+endif()

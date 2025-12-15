@@ -60,7 +60,6 @@ endif()
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
 add_subdirectory(rrtmgp)
-add_subdirectory(testing-utils)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -140,6 +139,7 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
     fetch_rrtmgp_data PROPERTIES FIXTURES_SETUP fetch_rrtmgp_data
   )
 
+  add_subdirectory(testing-utils)
   add_subdirectory(examples)
   add_subdirectory(tests)
 else()

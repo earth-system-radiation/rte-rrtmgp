@@ -10,7 +10,6 @@ add_library(
   ${extensions_source_dir}/mo_zenith_angle_spherical_correction.F90
   ${extensions_source_dir}/solar_variability/mo_solar_variability.F90
   mo_gas_optics_defs_rrtmgp.F90
-  mo_optics_defs_ssm.F90
   mo_rcemip_profiles.F90
   mo_testing_utils.F90
 )

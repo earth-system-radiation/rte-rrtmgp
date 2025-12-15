@@ -25,7 +25,7 @@ module mo_optics_ssm
   use mo_optical_props,      only: ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
-  use mo_gas_optics_constants,   only: avogad, m_dry, m_h2o, grav
+  use mo_gas_optics_constants,   only: grav
   use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source
 
   implicit none
@@ -115,13 +115,13 @@ contains
     real(wp),                      intent(in   ) :: nu_min, nu_max
       !! Upper and lower bounds of spectrum
     real(wp),      optional,       intent(in   ) :: Tstar
+      !! Temperature for stellar insolation
     real(wp),      optional,       intent(in   ) :: tsi
-      !! Temperature for stellar insolation and total solar irradiance
+      !! Total solar irradiance
     real(wp),      optional,       intent(in   ) :: kappa_cld
     real(wp),      optional,       intent(in   ) :: g_cld
     real(wp),      optional,       intent(in   ) :: ssa_cld
       !! cloud optical properties
-      !! Total solar irradiance
     character(len=128)                      :: error_msg     !! Empty if successful
     ! ----------------------------------------------------------
     ! Local variables
@@ -137,13 +137,19 @@ contains
     ! triangle params: index <= ngases, kappa0 >= 0; nu_min < nu0s < nu_max; l > 0
     ! nus > 0; ascending? nu_min <= nus <= max_nu
     ! Tstar > 0 if specified
-    if (.not. all(nus > 0.0_wp)) then
-      error_msg = "ssm_gas_optics(): all wavenumbers must be > 0"
+    if (.not. all(nu_min < nus < nu_max)) then
+      error_msg = "ssm_gas_optics(): nu must be less than nu_max and greater than nu_min"
     end if
 
     if (present(Tstar)) then
       if (.not. all(Tstar > 0.0_wp)) then
         error_msg = "ssm_gas_optics(): Tstar must be > 0"
+      end if
+    end if
+
+    if (present(tsi)) then
+      if (.not. all(tsi > 0.0_wp)) then
+        error_msg = "ssm_gas_optics(): tsi must be > 0"
       end if
     end if
     
@@ -208,9 +214,11 @@ contains
 
     if(present(Tstar)) this%Tstar = Tstar
     if(present(tsi))   this%tsi = tsi
+    
     if(present(Tstar)) this%g_cld = g_cld_sw
     if(present(Tstar)) this%ssa_cld = ssa_cld_sw
     if(present(Tstar)) this%kappa_cld = kappa_cld_sw
+    
     if(.not. present(Tstar)) this%g_cld = g_cld_lw
     if(.not. present(Tstar)) this%ssa_cld = ssa_cld_lw
     if(.not. present(Tstar)) this%kappa_cld = kappa_cld_lw

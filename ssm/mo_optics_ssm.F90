@@ -32,6 +32,9 @@ module mo_optics_ssm
   private
 
   real(wp), parameter, public :: Tsun_ssm = 5760._wp ! Default sun temperature for SSM
+  real(wp), parameter, public :: mw_h2o = 0.018_wp ! Molecular weight h2o
+  real(wp), parameter, public :: mw_co2 = 0.044_wp ! Molecular weight co2
+  real(wp), parameter, public :: mw_o3  = 0.048_wp ! Molecular weight o3
   !
   ! Do the other SSM defaults - absorption parameters, spectral dicretization -
   !   get declared here as public entities? Or do we add general introscpection?
@@ -41,7 +44,7 @@ module mo_optics_ssm
   ! -------------------------------------------------------------------------------------------------
   type, extends(ty_gas_optics), public :: ty_optics_ssm
     private
-    character(32), dimension(:),    allocatable :: gas_names
+    character(32), dimension(:),    allocatable :: gas_names 
     real(wp),      dimension(:),    allocatable :: mol_weights
     real(wp),      dimension(:, :), allocatable :: absorption_coeffs
     real(wp),      dimension(:),    allocatable :: nus, dnus
@@ -94,6 +97,7 @@ contains
     character(32), dimension(:),   intent(in   ) :: gas_names
     real(wp),      dimension(:,:), intent(in   ) :: triangle_params
       !! (ntriangles, 4) where the second dimension holds [gas_index, kappa0, nu0, l]
+    real(wp),      dimension(:),   intent(in   ) ::  kappa_cld_lw 
     real(wp),      dimension(:),   intent(in   ) :: nus
       !! Wavenumbers at which to evaluate Planck function and absorption coefficient
     real(wp),                      intent(in   ) :: nu_min, nu_max
@@ -112,10 +116,32 @@ contains
     nnu  = size(nus)
 
     ! Input sanitizing?
-    ! triangle params: index <= ngases, kappa0 >= 0; nu_min < nu0s < nu_max; l >= 0
+    ! triangle params: index <= ngases, kappa0 >= 0; nu_min < nu0s < nu_max; l > 0
     ! nus > 0; ascending? nu_min <= nus <= max_nu
     ! Tstar > 0 if specified
+    if (.not. all(nus > 0.0_wp)) then
+      error_msg = "ssm_gas_optics(): all wavenumbers must be > 0"
+    end if
 
+    if (present(Tstar)) then
+      if (.not. all(Tstar > 0.0_wp)) then
+        error_msg = "ssm_gas_optics(): Tstar must be > 0"
+      end if
+    end if
+    
+    if (.not. all(triangle_params(:, 2) >= 0.0_wp)) then
+      error_msg = "ssm_gas_optics(): kappa0 needs to be >=0"
+    end if
+    
+    if (.not. all(nu_min < triangle_params(:, 3) < nu_max)) then
+      error_msg = "ssm_gas_optics(): nu0 needs to be less than nu_max and greater than nu_min"
+    end if
+
+    if (.not. all(triangle_params(:, 4) > 0.0_wp)) then
+      error_msg = "ssm_gas_optics(): l needs to be > 0"
+    end if
+    if (error_msg /= '') return
+    
     if(allocated(this%gas_names)) &
       deallocate(this%gas_names, this%mol_weights, this%nus, this%dnus, this%absorption_coeffs)
 
@@ -133,16 +159,17 @@ contains
     do igas = 1, ngas
       select case (trim(lower_case(gas_names(igas))))
         case ('h2o')
-          this%mol_weights(igas) = 0.018_wp
+          this%mol_weights(igas) = mw_h2o
         case ('co2')
-          this%mol_weights(igas) = 0.044_wp
+          this%mol_weights(igas) = mw_co2
         case ('o3')
-          this%mol_weights(igas) = 0.048_wp
+          this%mol_weights(igas) = mw_o3
         case default
           error_msg = "Unknown gas: " // trim(gas_names(igas))
           return
       end select
     end do
+    if (error_msg /= '') return
 
     ! Spectral discretization - edges of "bands"
     ! err_message = this%ty_optical_props%init(band_lims_wavenum, band2gpt)

@@ -32,6 +32,7 @@ module mo_optics_ssm
   private
 
   real(wp), parameter, public :: Tsun_ssm = 5760._wp ! Default sun temperature for SSM
+  real(wp), parameter, public :: tsi = 1360._wp ! Default total solar irradiance
   real(wp), parameter, public :: mw_h2o = 0.018_wp ! Molecular weight h2o
   real(wp), parameter, public :: mw_co2 = 0.044_wp ! Molecular weight co2
   real(wp), parameter, public :: mw_o3  = 0.048_wp ! Molecular weight o3
@@ -97,13 +98,20 @@ contains
     character(32), dimension(:),   intent(in   ) :: gas_names
     real(wp),      dimension(:,:), intent(in   ) :: triangle_params
       !! (ntriangles, 4) where the second dimension holds [gas_index, kappa0, nu0, l]
-    real(wp),      dimension(:),   intent(in   ) ::  kappa_cld_lw 
+    real(wp),                      intent(in   ) ::  kappa_cld_lw
+      !! cloud optical properties in longwave
+    real(wp),                      intent(in   ) ::  kappa_cld_sw
+    real(wp),                      intent(in   ) ::  g_cld_sw
+    real(wp),                      intent(in   ) ::  ssa_cld_sw
+      !! cloud optical properties in shortwave
     real(wp),      dimension(:),   intent(in   ) :: nus
       !! Wavenumbers at which to evaluate Planck function and absorption coefficient
     real(wp),                      intent(in   ) :: nu_min, nu_max
       !! Upper and lower bounds of spectrum
     real(wp),      optional,       intent(in   ) :: Tstar
       !! Temperature for stellar insolation
+    real(wp),      optional,       intent(in   ) :: tsi
+      !! Total solar irradiance
     character(len=128)                      :: error_msg     !! Empty if successful
     ! ----------------------------------------------------------
     ! Local variables
@@ -189,6 +197,7 @@ contains
     end do
 
     if(present(Tstar)) this%Tstar = Tstar
+    if(present(tsi))   this%tsi = tsi
   end function configure
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -221,8 +230,7 @@ contains
     ! ----------------------------------------------------------
     integer :: ncol, nlay, nnu, ngas
     integer :: igas, icol, ilay, idx_gas
-    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: vmr, layer_mass !! (ngas, ncol, nlay)
-
+    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: layer_mass
     error_msg = ""
 
     ncol = size(play,1)
@@ -232,25 +240,10 @@ contains
 
     ! How much data validation to implement?
 
-    ! Get vmr if  gas is provided in ty_gas_concs
-    do igas = 1, ngas
-      if (any (lower_case(this%gas_names(igas)) == gas_desc%get_gas_names())) then
-        error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(igas,:,:))
-      endif
-    end do
-
-    ! Convert pressures and vmr to layer mases (ngas, ncol, nlay)
-    ! mmr = vmr * (Mgas/Mair)
-    ! layer_mass = mmr * dp / g
-    do ilay = 1, nlay
-      do icol = 1, ncol
-        do igas = 1, ngas
-          layer_mass(igas, icol, ilay) = vmr(igas, icol, ilay) * &
-            (this%mol_weights(igas) / this%m_dry) * &
-            abs(plev(icol, ilay+1) - plev(icol, ilay)) / grav
-        end do
-      end do
-    end do
+    call compute_layer_mass(ncol, nlay, ngas, &
+                            this, plev, gas_desc, layer_mass, &
+                            error_msg)
+    if (error_msg /= '') return
 
     !
     ! Absorption optical depth
@@ -275,13 +268,13 @@ contains
     !            sources%sfc_source_Jac
     ! How to compute 1D/sfc - another kernel subroutine?
     ! How to compute Tlev if not provided - make generic?
-    call compute_Planck_source(ncol, nlay,   nnu, &
+    call compute_Planck_source_2D(ncol, nlay,   nnu, &
                                this%nus, this%dnus, tlay,   &
                                sources%lay_source)
-    call compute_Planck_source(ncol, nlay+1, nnu, &
+    call compute_Planck_source_2D(ncol, nlay+1, nnu, &
                                this%nus, this%dnus, tlev,   &
                                sources%lev_source)
-    call compute_Planck_source(ncol, nnu, &
+    call compute_Planck_source_1D(ncol, nnu, &
                                this%nus, this%dnus, tsfc,   &
                                sources%sfc_source)
 
@@ -306,7 +299,7 @@ contains
     ! output
     class(ty_optical_props_arry),  &
                               intent(inout) :: optical_props
-    real(wp), dimension(:,:), intent(  out) :: toa_src     !! Incoming solar irradiance(ncol,ngpt)
+    real(wp), dimension(:),   intent(  out) :: toa_src     !! Incoming solar irradiance(ncol)
     character(len=128)                      :: error_msg   !! Empty if successful
 
     ! Optional inputs
@@ -315,7 +308,37 @@ contains
     ! ----------------------------------------------------------
     ! Local variables
     ! ----------------------------------------------------------
+    integer :: ncol, nlay, nnu, ngas
+    integer :: igas, icol, ilay, idx_gas
+    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: layer_mass
     error_msg = ""
+
+    ncol = size(play,1)
+    nlay = size(play,2)
+    nnu  = size(this%nus)
+    ngas = size(this%gas_names)
+
+    ! How much data validation to implement?
+
+    call compute_layer_mass(ncol, nlay, ngas, &
+                            this, plev, gas_desc, layer_mass, &
+                            error_msg)
+    if (error_msg /= '') return
+
+    !
+    ! Absorption optical depth
+    !
+    call compute_tau(ncol, nlay, nnu, ngas,   &
+                     this%absorption_coeffs, play, this%pref, layer_mass, &
+                     optical_props%tau)
+                     
+    !
+    ! Planck function sources
+    ! Shortwave: incoming solar irradiance
+    call compute_Planck_source_1D(ncol, nlay,   nnu, &
+                               this%nus, this%dnus, this%Tstar,   &
+                               toa_src)
+    
   end function gas_optics_ext
 
   !--------------------------------------------------------------------------------------------------------------------
@@ -386,6 +409,46 @@ contains
 
     get_temp_max = huge(1._wp)
   end function get_temp_max
+  
   !--------------------------------------------------------------------------------------------------------------------
+  !
+  !> Compute layer masses from gas concentrations and pressure levels 
+  !
+  subroutine compute_layer_mass(ncol, nlay, ngas, this, plev, gas_desc, layer_mass, error_msg)
+    integer,  intent(in ) :: ncol, nlay, ngas
+    class(ty_optics_ssm),     intent(in   ) :: this
+    real(wp), dimension(:,:), intent(in   ) :: plev       !! level pressures [Pa]; (ncol,nlay+1)
+    type(ty_gas_concs),       intent(in   ) :: gas_desc   !! Gas volume mixing ratios
+    real(wp), dimension(:,:,:), intent(  out) :: layer_mass !! (ngas, ncol, nlay)
+    character(len=128),       intent(  out) :: error_msg
 
+    integer :: igas, icol, ilay
+    real(wp), dimension(size(layer_mass,1), size(layer_mass,2), size(layer_mass,3)) :: vmr
+
+    error_msg = ""
+
+    vmr(:,:,:) = 0._wp
+
+    ! Get vmr if gas is provided in ty_gas_concs
+    do igas = 1, ngas
+      if (any(lower_case(this%gas_names(igas)) == gas_desc%get_gas_names())) then
+        error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(igas,:,:))
+        if (error_msg /= '') return
+      endif
+    end do
+
+    ! Convert pressures and vmr to layer masses (ngas, ncol, nlay)
+    ! mmr = vmr * (Mgas/Mair)
+    ! layer_mass = mmr * dp / g
+    do ilay = 1, nlay
+      do icol = 1, ncol
+        do igas = 1, ngas
+          layer_mass(igas, icol, ilay) = vmr(igas, icol, ilay) * &
+            (this%mol_weights(igas) / this%m_dry) * &
+            abs(plev(icol, ilay+1) - plev(icol, ilay)) / grav
+        end do
+      end do
+    end do
+
+  end subroutine compute_layer_mass
 end module mo_optics_ssm

@@ -42,7 +42,7 @@ contains
     real(wp), dimension(ngas, nnu), &
       intent(in ) :: absorption_coeffs
     real(wp), dimension(ncol, nlay), & 
-      intent(in   ) :: play &   !! layer pressures [Pa]; (ncol,nlay)  
+      intent(in   ) :: play    !! layer pressures [Pa]; (ncol,nlay)  
     real(wp), dimension(ngas, ncol, nlay), &
       intent(in ) :: layer_mass
     real(wp), &

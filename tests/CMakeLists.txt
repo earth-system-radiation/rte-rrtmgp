@@ -9,9 +9,8 @@ add_library(
   ${extensions_source_dir}/mo_rrtmgp_clr_all_sky.F90
   ${extensions_source_dir}/mo_zenith_angle_spherical_correction.F90
   ${extensions_source_dir}/solar_variability/mo_solar_variability.F90
-  mo_gas_optics_defs_rrtmgp.F90
+  mo_comparisons.F90
   mo_rcemip_profiles.F90
-  mo_testing_utils.F90
 )
 
 target_include_directories(
@@ -21,7 +20,9 @@ target_include_directories(
     ${NetCDF_Fortran_INCLUDE_DIR}
 )
 
-target_link_libraries(test_utils PUBLIC rfmip_clear_utils)
+target_link_libraries(
+  test_utils PUBLIC rfmip_clear_utils testing-utils optics-utils
+)
 
 foreach(
   test_executable IN

@@ -28,6 +28,7 @@ module mo_rfmip_io
                         only: ty_gas_concs
   use mo_gas_optics_util_string, &
                         only: lower_case, string_in_array, string_loc_in_array
+  use mo_testing_utils, only: stop_on_err
   use mo_simple_netcdf, only: read_field, write_field, get_dim_size
   use netcdf
   implicit none
@@ -469,16 +470,4 @@ contains
 
     ncid = nf90_close(ncid)
   end subroutine unblock_and_write
-  !--------------------------------------------------------------------------------------------------------------------
-  subroutine stop_on_err(msg)
-    !
-    ! Print error message and stop
-    !
-    use iso_fortran_env, only : error_unit
-    character(len=*), intent(in) :: msg
-    if(len_trim(msg) > 0) then
-      write(error_unit,*) trim(msg)
-      error stop 1
-    end if
-  end subroutine
 end module mo_rfmip_io

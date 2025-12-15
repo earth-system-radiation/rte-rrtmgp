@@ -7,6 +7,7 @@ module mo_load_aerosol_coefficients
                               ty_optical_props_nstr
   use mo_aerosol_optics_rrtmgp_merra,  &
                         only: ty_aerosol_optics_rrtmgp_merra
+  use mo_testing_utils, only: stop_on_err
   use mo_simple_netcdf, only: read_field, read_string, var_exists, get_dim_size, &
                               write_field, create_dim, create_var
   use netcdf
@@ -340,18 +341,4 @@ contains
 
     is_lw = .not. is_sw(fileName)
   end function is_lw
-
-  ! -----------------------------------------------------------------------------------
-    subroutine stop_on_err(msg)
-      !
-      ! Print error message and stop
-      !
-      use iso_fortran_env, only : error_unit
-      character(len=*), intent(in) :: msg
-      if(len_trim(msg) > 0) then
-        write (error_unit,*) trim(msg)
-        stop
-      end if
-    end subroutine
-
 end module

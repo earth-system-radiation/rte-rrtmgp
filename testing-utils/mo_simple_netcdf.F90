@@ -1,5 +1,6 @@
 module mo_simple_netcdf
-  use mo_rte_kind, only: wp, wl
+  use mo_rte_kind,      only: wp, wl
+  use mo_testing_utils, only: stop_on_err
   use netcdf
   implicit none
   private
@@ -397,17 +398,5 @@ contains
     end do
 
   end function get_var_size
-  !--------------------------------------------------------------------------------------------------------------------
-  subroutine stop_on_err(msg)
-    !
-    ! Print error message and stop
-    !
-    use iso_fortran_env, only : error_unit
-    character(len=*), intent(in) :: msg
-    if(len_trim(msg) > 0) then
-      write(error_unit,*) trim(msg)
-      error stop 1
-    end if
-  end subroutine
   !--------------------------------------------------------------------------------------------------------------------
 end module mo_simple_netcdf

@@ -60,6 +60,7 @@ endif()
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
 add_subdirectory(rrtmgp)
+add_subdirectory(testing-utils)
 
 include(CTest)
 if(BUILD_TESTING)

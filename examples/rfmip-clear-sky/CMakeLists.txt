@@ -1,5 +1,5 @@
 add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
-target_link_libraries(rfmip_clear_utils PUBLIC examples_utils)
+target_link_libraries(rfmip_clear_utils PUBLIC testing-utils)
 
 foreach(
   test_executable IN

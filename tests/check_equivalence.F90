@@ -35,7 +35,7 @@ program rte_check_equivalence
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_rte_util_array,     only: zero_array
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_gas_optics_defs,    only: gas_optics, load_and_init
+  use mo_optics_utils_rrtmgp,only: gas_optics, load_and_init
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw

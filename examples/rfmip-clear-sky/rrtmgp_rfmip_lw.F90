@@ -78,7 +78,7 @@ program rrtmgp_rfmip_lw
   !
   ! RRTMGP's gas optics class needs to be initialized with data read from a netCDF files
   !
-  use mo_load_coefficients,  only: load_and_init
+  use mo_optics_utils_rrtmgp,only: gas_optics => k_dist, load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_lw_bc, determine_gas_names
   implicit none
@@ -103,7 +103,8 @@ program rrtmgp_rfmip_lw
   !
   ! Classes used by rte+rrtmgp
   !
-  type(ty_gas_optics_rrtmgp)  :: k_dist
+  ! mo_optics_utils_rrtmgp declares a variable
+  ! type(ty_gas_optics_rrtmgp) :: gas_optics
   type(ty_source_func_lw)     :: source
   type(ty_optical_props_1scl) :: optical_props
   type(ty_fluxes_broadband)   :: fluxes

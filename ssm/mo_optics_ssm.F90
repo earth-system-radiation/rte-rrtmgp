@@ -50,7 +50,7 @@ module mo_optics_ssm
     real(wp),      dimension(:),    allocatable :: nus, dnus
       ! total absorption coefficients at spectral points (nnus, ngases)
     real(wp) :: Tstar  = 0._wp, &
-                pref   = 100._wp * 100._wp, & ! 100 hPa
+                pref   = 500._wp * 500._wp, & ! 500 hPa
                 m_dry  = 0.029_wp ! molecular weight of dry air [kg/mol]
     contains
       procedure, public :: configure

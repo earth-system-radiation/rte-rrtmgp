@@ -12,7 +12,7 @@ program rte_rrtmgp_allsky
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
-  use mo_optics_utils_rrtmgp,only: gas_optics => k_dist, load_and_init
+  use mo_optics_utils_rrtmgp,only: k_dist => gas_optics, load_and_init
   use mo_load_cloud_coefficients, &
                              only: load_cld_lutcoeff
   use mo_load_aerosol_coefficients, &

@@ -3,10 +3,12 @@
 #
 add_library(
   all_sky_utils STATIC # cmake-format: sort
-  mo_load_aerosol_coefficients.F90 mo_load_cloud_coefficients.F90
+  ${PROJECT_SOURCE_DIR}/testing-utils/mo_optics_utils_rrtmgp.F90
+  mo_load_aerosol_coefficients.F90
+  mo_load_cloud_coefficients.F90
 )
 
-target_link_libraries(all_sky_utils PUBLIC testing-utils)
+target_link_libraries(all_sky_utils PUBLIC testing-utils optics-utils)
 
 add_executable(rrtmgp_allsky rrtmgp_allsky.F90)
 target_link_libraries(rrtmgp_allsky PRIVATE all_sky_utils)

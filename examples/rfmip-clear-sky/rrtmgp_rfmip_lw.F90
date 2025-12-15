@@ -19,21 +19,6 @@
 !
 ! -------------------------------------------------------------------------------------------------
 !
-! Error checking: Procedures in rte+rrtmgp return strings which are empty if no errors occured
-!   Check the incoming string, print it out and stop execution if non-empty
-!
-subroutine stop_on_err(error_msg)
-  use iso_fortran_env, only : error_unit
-  character(len=*), intent(in) :: error_msg
-
-  if(error_msg /= "") then
-    write (error_unit,*) trim(error_msg)
-    write (error_unit,*) "rrtmgp_rfmip_lw stopping"
-    error stop 1
-  end if
-end subroutine stop_on_err
-! -------------------------------------------------------------------------------------------------
-!
 ! Main program
 !
 ! -------------------------------------------------------------------------------------------------
@@ -78,9 +63,10 @@ program rrtmgp_rfmip_lw
   !
   ! RRTMGP's gas optics class needs to be initialized with data read from a netCDF files
   !
-  use mo_optics_utils_rrtmgp,only: gas_optics => k_dist, load_and_init
+  use mo_optics_utils_rrtmgp,only: k_dist => gas_optics, load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_lw_bc, determine_gas_names
+  use mo_testing_utils,      only: stop_on_err
   implicit none
   ! --------------------------------------------------
   !

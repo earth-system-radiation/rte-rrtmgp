@@ -1,14 +1,3 @@
-subroutine stop_on_err(error_msg)
-  use iso_fortran_env, only : error_unit
-  character(len=*), intent(in) :: error_msg
-
-  if(error_msg /= "") then
-    write (error_unit,*) trim(error_msg)
-    write (error_unit,*) "test_solar_zenith_angle stopping"
-    error stop 1
-  end if
-end subroutine stop_on_err
-! ------------------------------------------------------------------------------
 program test_solar_zenith_angle
   use mo_rte_kind,           only: wp, wl
   use mo_zenith_angle_spherical_correction, &
@@ -21,6 +10,7 @@ program test_solar_zenith_angle
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_sw,             only: rte_sw
   use mo_heating_rates,      only: compute_heating_rate
+  use mo_testing_utils,      only: stop_on_err, report_err
   implicit none
 
   integer             :: i, icol, ilay, nbnd, ngpt

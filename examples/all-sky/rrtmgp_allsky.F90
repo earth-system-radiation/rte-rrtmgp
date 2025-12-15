@@ -13,6 +13,7 @@ program rte_rrtmgp_allsky
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
   use mo_optics_utils_rrtmgp,only: k_dist => gas_optics, load_and_init
+  use mo_testing_utils,      only: stop_on_err
   use mo_load_cloud_coefficients, &
                              only: load_cld_lutcoeff
   use mo_load_aerosol_coefficients, &
@@ -528,17 +529,6 @@ contains
     !$acc end        data
     !$omp end target data
   end subroutine compute_profiles
-  ! ----------------------------------------------------------------------------------
-  subroutine stop_on_err(error_msg)
-    use iso_fortran_env, only : error_unit
-    character(len=*), intent(in) :: error_msg
-
-    if(error_msg /= "") then
-      write (error_unit,*) trim(error_msg)
-      write (error_unit,*) "rrtmgp_allsky stopping"
-      error stop 1
-    end if
-  end subroutine stop_on_err
   ! --------------------------------------------------------------------------------------
   !
   subroutine compute_clouds

@@ -19,21 +19,6 @@
 !
 ! -------------------------------------------------------------------------------------------------
 !
-! Error checking: Procedures in rte+rrtmgp return strings which are empty if no errors occured
-!   Check the incoming string, print it out and stop execution if non-empty
-!
-subroutine stop_on_err(error_msg)
-  use iso_fortran_env, only : error_unit
-  character(len=*), intent(in) :: error_msg
-
-  if(error_msg /= "") then
-    write (error_unit,*) trim(error_msg)
-    write (error_unit,*) "rrtmgp_rfmip_sw stopping"
-    error stop 1
-  end if
-end subroutine stop_on_err
-! -------------------------------------------------------------------------------------------------
-!
 ! Main program
 !
 ! -------------------------------------------------------------------------------------------------
@@ -78,9 +63,10 @@ program rrtmgp_rfmip_sw
   !
   ! RRTMGP's gas optics class needs to be initialized with data read from a netCDF files
   !
-  use mo_load_coefficients,  only: load_and_init
+  use mo_optics_utils_rrtmgp,only: k_dist => gas_optics, load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_sw_bc, determine_gas_names
+  use mo_testing_utils,      only: stop_on_err
   implicit none
   ! --------------------------------------------------
   !
@@ -103,7 +89,8 @@ program rrtmgp_rfmip_sw
   !
   ! Classes used by rte+rrtmgp
   !
-  type(ty_gas_optics_rrtmgp)                     :: k_dist
+  ! mo_optics_utils_rrtmgp declares a variable
+  ! type(ty_gas_optics_rrtmgp) :: gas_optics
   type(ty_optical_props_2str)                    :: optical_props
   type(ty_fluxes_broadband)                      :: fluxes
 

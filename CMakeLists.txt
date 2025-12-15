@@ -60,8 +60,7 @@ endif()
 
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
-add_subdirectory(rrtmgp-kernels)
-add_subdirectory(rrtmgp-frontend)
+add_subdirectory(rrtmgp)
 if(BUILD_SSM)
   add_subdirectory(ssm)
 endif()
@@ -144,6 +143,7 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
     fetch_rrtmgp_data PROPERTIES FIXTURES_SETUP fetch_rrtmgp_data
   )
 
+  add_subdirectory(testing-utils)
   add_subdirectory(examples)
   add_subdirectory(tests)
 else()

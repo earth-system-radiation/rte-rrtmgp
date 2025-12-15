@@ -26,7 +26,8 @@ program rte_lw_solver_unit_tests
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
-  use mo_testing_utils,      only: allclose, stop_on_err, report_err, check_fluxes, &
+  use mo_testing_utils,      only: stop_on_err, report_err
+  use mo_comparisons,        only: allclose, check_fluxes, &
                                    vr, &
                                    increment_with_1scl, increment_with_2str, increment_with_nstr
   implicit none

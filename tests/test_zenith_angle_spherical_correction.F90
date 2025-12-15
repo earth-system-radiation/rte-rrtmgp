@@ -1,14 +1,3 @@
-subroutine stop_on_err(error_msg)
-  use iso_fortran_env, only : error_unit
-  character(len=*), intent(in) :: error_msg
-
-  if(error_msg /= "") then
-    write (error_unit,*) trim(error_msg)
-    write (error_unit,*) "test_solar_zenith_angle stopping"
-    error stop 1
-  end if
-end subroutine stop_on_err
-! ------------------------------------------------------------------------------
 program test_solar_zenith_angle
   use mo_rte_kind,           only: wp, wl
   use mo_zenith_angle_spherical_correction, &
@@ -16,11 +5,12 @@ program test_solar_zenith_angle
 
   use mo_rcemip_profiles,    only: make_rcemip_profiles
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_gas_optics_defs,    only: gas_optics, load_and_init
+  use mo_optics_utils_rrtmgp,only: gas_optics, load_and_init
   use mo_optical_props,      only: ty_optical_props_2str
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_sw,             only: rte_sw
   use mo_heating_rates,      only: compute_heating_rate
+  use mo_testing_utils,      only: stop_on_err, report_err
   implicit none
 
   integer             :: i, icol, ilay, nbnd, ngpt

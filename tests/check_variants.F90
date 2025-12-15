@@ -10,17 +10,6 @@
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
-
-subroutine stop_on_err(error_msg)
-  use iso_fortran_env, only : error_unit
-  character(len=*), intent(in) :: error_msg
-
-  if(error_msg /= "") then
-    write (error_unit,*) trim(error_msg)
-    write (error_unit,*) "clear-sky regression tests stopping"
-    error stop 1
-  end if
-end subroutine stop_on_err
 ! ----------------------------------------------------------------------------------
 !
 ! Exercise a range of alternative approaches to RFMIP clear sky problem
@@ -38,7 +27,7 @@ program rte_clear_sky_regression
                                    ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_gas_optics_defs,    only: gas_optics => gas_optics, load_and_init
+  use mo_optics_utils_rrtmgp,only: gas_optics => gas_optics, load_and_init
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
@@ -46,6 +35,7 @@ program rte_clear_sky_regression
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty,  &
                                    read_and_block_lw_bc, read_and_block_sw_bc, determine_gas_names
   use mo_simple_netcdf,      only: get_dim_size, read_field
+  use mo_testing_utils,      only: stop_on_err
   use mo_heating_rates,      only: compute_heating_rate
   use netcdf
   use mo_simple_netcdf

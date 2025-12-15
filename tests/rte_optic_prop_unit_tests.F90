@@ -20,7 +20,8 @@ program optical_prop_unit_tests
   use mo_optical_props,      only: ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_rte_util_array,     only: zero_array
-  use mo_testing_utils,      only: allclose, ops_match, stop_on_err, report_err, &
+  use mo_testing_utils,      only: stop_on_err, report_err
+  use mo_comparisons,        only: allclose, ops_match,  &
                                    increment_with_1scl, increment_with_2str, increment_with_nstr
 
   type(ty_optical_props_1scl) :: ref_1scl, tst_1scl

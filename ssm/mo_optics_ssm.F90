@@ -207,6 +207,12 @@ contains
 
     if(present(Tstar)) this%Tstar = Tstar
     if(present(tsi))   this%tsi = tsi
+    if(present(Tstar)) this%g_cld = g_cld_sw
+    if(present(Tstar)) this%ssa_cld = ssa_cld_sw
+    if(present(Tstar)) this%kappa_cld = kappa_cld_sw
+    if(.not. present(Tstar)) this%g_cld = g_cld_lw
+    if(.not. present(Tstar)) this%ssa_cld = ssa_cld_lw
+    if(.not. present(Tstar)) this%kappa_cld = kappa_cld_lw
   end function configure
   !--------------------------------------------------------------------------------------------------------------------
   !

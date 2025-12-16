@@ -114,21 +114,20 @@ if(BUILD_SSM)
     set(src "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/${fn}")
     set(dst "${CMAKE_CURRENT_BINARY_DIR}/${new_name}")
 
-    add_custom_command(
-      OUTPUT "${dst}"
+    add_test(
+      NAME copy_ssm_rfmip_inputs_${fn}
       COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src}" "${dst}"
-      DEPENDS "${src}"
-      COMMENT "Copying ${fn} → ${new_name}"
+    )
+    set_tests_properties(
+      copy_ssm_rfmip_inputs_${fn}
+      PROPERTIES FIXTURES_REQUIRED
+                 fetch_rrtmgp_data
+                 FIXTURES_SETUP
+                 copy_ssm_rfmip_inputs_${fn}
     )
 
     list(APPEND RENAMED_OUTPUTS "${dst}")
   endforeach()
-
-  add_custom_target(
-    copy_and_rename_rfmip_ssm_files ALL
-    DEPENDS ${RENAMED_OUTPUTS}
-    COMMENT "Copy and rename RFMIP -> SSM files"
-  )
 
   add_test(
     NAME run_ssm_rfmip_lw

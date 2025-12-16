@@ -82,7 +82,7 @@ set_tests_properties(
   check_rfmip_lw_sw
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
 )
-
+# ##############################################################################
 #
 # Simple spectral model tests
 #
@@ -98,4 +98,66 @@ if(BUILD_SSM)
     add_executable(ssm_${test_executable} rrtmgp_${test_executable}.F90)
     target_link_libraries(ssm_${test_executable} PRIVATE rfmip_clear_utils)
   endforeach()
+  #
+  # Copy and rename files
+  #
+  set(RENAMED_OUTPUTS)
+
+  foreach(fn IN LISTS inoutputs)
+    # Rename rule: p1f1 -> p1f2
+    string(REGEX REPLACE "p1f1" "p1f2" new_name "${fn}")
+
+    set(src "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/${fn}")
+    set(dst "${CMAKE_CURRENT_BINARY_DIR}/${new_name}")
+
+    add_custom_command(
+      OUTPUT "${dst}"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src}" "${dst}"
+      DEPENDS "${src}"
+      COMMENT "Copying ${fn} → ${new_name}"
+    )
+
+    list(APPEND RENAMED_OUTPUTS "${dst}")
+  endforeach()
+
+  add_custom_target(
+    copy_and_rename_rfmip_ssm_files ALL
+    DEPENDS ${RENAMED_OUTPUTS}
+    COMMENT "Copy and rename RFMIP -> SSM files"
+  )
+
+  add_test(
+    NAME run_ssm_rfmip_lw
+    COMMAND
+      ssm_rfmip_lw 8
+      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+      ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc 2
+  )
+  set_tests_properties(
+    run_ssm_rfmip_lw
+    PROPERTIES FIXTURES_REQUIRED
+               "fetch_rrtmgp_data;copy_rrtmgp_rfmip_inputs"
+               FIXTURES_SETUP
+               run_ssm_rfmip
+               DEPENDS
+               copy_and_rename_rfmip_ssm_files
+  )
+
+  add_test(
+    NAME run_ssm_rfmip_sw
+    COMMAND
+      ssm_rfmip_sw 8
+      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+      ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc 2
+  )
+  set_tests_properties(
+    run_ssm_rfmip_sw
+    PROPERTIES FIXTURES_REQUIRED
+               "fetch_rrtmgp_data;copy_rrtmgp_rfmip_inputs"
+               FIXTURES_SETUP
+               run_ssm_rfmip
+               DEPENDS
+               copy_and_rename_rfmip_ssm_files
+  )
+
 endif()

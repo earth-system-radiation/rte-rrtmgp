@@ -87,7 +87,8 @@ set_tests_properties(
 # Simple spectral model tests
 #
 if(BUILD_SSM)
-  target_link_libraries(rfmip_clear_utils PUBLIC testing-utils optics-utils-ssm)
+  # target_link_libraries(rfmip_clear_utils PUBLIC testing-utils
+  # optics-utils-ssm)
 
   foreach(
     test_executable IN
@@ -96,7 +97,10 @@ if(BUILD_SSM)
           rfmip_sw
   )
     add_executable(ssm_${test_executable} rrtmgp_${test_executable}.F90)
-    target_link_libraries(ssm_${test_executable} PRIVATE rfmip_clear_utils)
+    target_link_libraries(
+      ssm_${test_executable}
+      PRIVATE rfmip_clear_utils testing-utils optics-utils-ssm
+    )
   endforeach()
   #
   # Copy and rename files

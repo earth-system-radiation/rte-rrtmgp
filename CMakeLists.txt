@@ -7,9 +7,9 @@ project(
 )
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(BUILD_C_HEADERS "Build c headers" OFF)
 option(BUILD_TESTING "Build tests" OFF)
-option(BUILD_SSM "Build simple spectral model" OFF)
-option(BUILD_C_HEADERS "Build c headers" ON)
+option(TEST_WITH "Optics to test with" "RRTMGP")
 
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
 
@@ -61,9 +61,7 @@ endif()
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
 add_subdirectory(rrtmgp)
-if(BUILD_SSM)
-  add_subdirectory(ssm)
-endif()
+add_subdirectory(ssm)
 
 include(CTest)
 if(BUILD_TESTING)

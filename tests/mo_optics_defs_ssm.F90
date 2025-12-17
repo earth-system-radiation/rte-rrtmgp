@@ -3,7 +3,7 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2025 - 
+! Copyright 2025 -
 !    Trustees of Columbia University in the City of New York
 ! All right reserved.
 !
@@ -38,13 +38,13 @@ module mo_gas_optics_defs
 
 contains
   !--------------------------------------------------------------------------------------------------------------------
-  ! read optical coefficients from NetCDF file - or don't bother, with the SSM 
+  ! read optical coefficients from NetCDF file - or don't bother, with the SSM
   subroutine load_and_init(kdist, filename, available_gases)
     class(ty_gas_optics_ssm), intent(inout) :: kdist
     character(len=*),         intent(in   ) :: filename
     class(ty_gas_concs),      intent(in   ) :: available_gases ! Which gases does the host model have available?
     ! --------------------------------------------------
-  
+
     call stop_on_err(kdist.configure())
   end subroutine
 end module mo_gas_optics_defs

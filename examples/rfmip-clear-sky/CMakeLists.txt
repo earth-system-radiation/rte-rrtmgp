@@ -1,6 +1,16 @@
-add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
+if(TEST_WITH EQUAL "RRTMGP")
+  set(optics-lib rte-rrtmgp::rrtmgp)
+elseif(TEST_WITH EQUAL "SSM")
+  set(optics-lib rte-rrtmgp::ssm)
+endif()
 
-target_link_libraries(rfmip_clear_utils PUBLIC testing-utils optics-utils)
+add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
+target_include_directories(
+  rfmip_clear_utils
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+)
+target_link_libraries(rfmip_clear_utils PRIVATE testing-utils)
 
 foreach(
   test_executable IN
@@ -9,7 +19,15 @@ foreach(
         rrtmgp_rfmip_sw
 )
   add_executable(${test_executable} ${test_executable}.F90)
-  target_link_libraries(${test_executable} PRIVATE rfmip_clear_utils)
+  target_include_directories(
+    ${test_executable}
+    PUBLIC
+      $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+  )
+  target_link_libraries(
+    ${test_executable}
+    PRIVATE rfmip_clear_utils testing-utils rte-rrtmgp::rte ${optics-lib}
+  )
 endforeach()
 
 set(inoutputs
@@ -70,97 +88,18 @@ set_tests_properties(
              run_rrtmgp_rfmip
 )
 
-add_test(
-  NAME check_rfmip_lw_sw
-  COMMAND
-    ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py
-    --ref_dir ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir
-    ${CMAKE_CURRENT_BINARY_DIR} --variables rld rlu rsd rsu --file_names
-    ${inoutputs} --failure_threshold ${FAILURE_THRESHOLD}
-)
-set_tests_properties(
-  check_rfmip_lw_sw
-  PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
-)
-# ##############################################################################
-#
-# Simple spectral model tests
-#
-if(BUILD_SSM)
-  # target_link_libraries(rfmip_clear_utils PUBLIC testing-utils
-  # optics-utils-ssm)
-
-  foreach(
-    test_executable IN
-    ITEMS # cmake-format: sort
-          rfmip_lw
-          rfmip_sw
-  )
-    add_executable(ssm_${test_executable} rrtmgp_${test_executable}.F90)
-    target_link_libraries(
-      ssm_${test_executable}
-      PRIVATE rfmip_clear_utils testing-utils optics-utils-ssm
-    )
-  endforeach()
-  #
-  # Copy and rename files
-  #
-  set(RENAMED_OUTPUTS)
-
-  foreach(fn IN LISTS inoutputs)
-    # Rename rule: p1f1 -> p1f2
-    string(REGEX REPLACE "p1f1" "p1f2" new_name "${fn}")
-
-    set(src "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/${fn}")
-    set(dst "${CMAKE_CURRENT_BINARY_DIR}/${new_name}")
-
-    add_test(
-      NAME copy_ssm_rfmip_inputs_${fn}
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src}" "${dst}"
-    )
-    set_tests_properties(
-      copy_ssm_rfmip_inputs_${fn}
-      PROPERTIES FIXTURES_REQUIRED
-                 fetch_rrtmgp_data
-                 FIXTURES_SETUP
-                 copy_ssm_rfmip_inputs_${fn}
-    )
-
-    list(APPEND RENAMED_OUTPUTS "${dst}")
-  endforeach()
-
+if(TEST_WITH EQUAL "RRTMGP")
   add_test(
-    NAME run_ssm_rfmip_lw
+    NAME check_rfmip_lw_sw
     COMMAND
-      ssm_rfmip_lw 8
-      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-      ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc 2
+      ${Python3_EXECUTABLE}
+      ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
+      ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir
+      ${CMAKE_CURRENT_BINARY_DIR} --variables rld rlu rsd rsu --file_names
+      ${inoutputs} --failure_threshold ${FAILURE_THRESHOLD}
   )
   set_tests_properties(
-    run_ssm_rfmip_lw
-    PROPERTIES FIXTURES_REQUIRED
-               "fetch_rrtmgp_data;copy_rrtmgp_rfmip_inputs"
-               FIXTURES_SETUP
-               run_ssm_rfmip
-               DEPENDS
-               copy_and_rename_rfmip_ssm_files
+    check_rfmip_lw_sw
+    PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
   )
-
-  add_test(
-    NAME run_ssm_rfmip_sw
-    COMMAND
-      ssm_rfmip_sw 8
-      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
-      ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc 2
-  )
-  set_tests_properties(
-    run_ssm_rfmip_sw
-    PROPERTIES FIXTURES_REQUIRED
-               "fetch_rrtmgp_data;copy_rrtmgp_rfmip_inputs"
-               FIXTURES_SETUP
-               run_ssm_rfmip
-               DEPENDS
-               copy_and_rename_rfmip_ssm_files
-  )
-
 endif()

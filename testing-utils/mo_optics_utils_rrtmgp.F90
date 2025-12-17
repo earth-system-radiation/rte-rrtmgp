@@ -23,7 +23,7 @@
 !    and calling gas_optics%load().
 !
 !
-module mo_optics_utils_rrtmgp
+module mo_optics_utils
   use mo_rte_kind,           only: wp, wl
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
@@ -247,4 +247,4 @@ contains
     ncid = nf90_close(ncid)
   end subroutine load_and_init
   !--------------------------------------------------------------------------------------------------------------------
-end module mo_optics_utils_rrtmgp
+end module mo_optics_utils

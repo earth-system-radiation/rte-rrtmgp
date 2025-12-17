@@ -33,7 +33,7 @@ module mo_optics_ssm
 
   real(wp), parameter, public :: Tsun_ssm = 5760._wp ! Default sun temperature for SSM
   real(wp), parameter, public :: tsi = 1360._wp ! Default total solar irradiance
-  
+
   real(wp), parameter, public :: mw_h2o = 0.018_wp ! Molecular weight h2o
   real(wp), parameter, public :: mw_co2 = 0.044_wp ! Molecular weight co2
   real(wp), parameter, public :: mw_o3  = 0.048_wp ! Molecular weight o3
@@ -46,7 +46,7 @@ module mo_optics_ssm
 
   real(wp), parameter, public :: g_cld_lw = 0._wp ! Default for lw cloud asymmetry
   real(wp), parameter, public :: g_cld_sw = 0.85_wp ! Default for sw cloud asymmetry
-  
+
   !
   ! Do the other SSM defaults - absorption parameters, spectral dicretization -
   !   get declared here as public entities? Or do we add general introscpection?
@@ -56,7 +56,7 @@ module mo_optics_ssm
   ! -------------------------------------------------------------------------------------------------
   type, extends(ty_gas_optics), public :: ty_optics_ssm
     private
-    character(32), dimension(:),    allocatable :: gas_names 
+    character(32), dimension(:),    allocatable :: gas_names
     real(wp),      dimension(:),    allocatable :: mol_weights
     real(wp),      dimension(:, :), allocatable :: absorption_coeffs
     real(wp),      dimension(:),    allocatable :: nus, dnus
@@ -67,7 +67,7 @@ module mo_optics_ssm
                 tsi       = 1360._wp, &           ! Add this
                 kappa_cld = 0._wp, &              ! Add this
                 g_cld     = 0._wp, &              ! Add this
-                ssa_cld   = 0._wp 
+                ssa_cld   = 0._wp
     contains
       procedure, public :: configure
       procedure, public :: gas_optics_int
@@ -157,11 +157,11 @@ contains
         error_msg = "ssm_gas_optics(): tsi must be > 0"
       end if
     end if
-    
+
     if (.not. all(triangle_params(:, 2) >= 0.0_wp)) then
       error_msg = "ssm_gas_optics(): kappa0 needs to be >=0"
     end if
-    
+
     if (.not. all(triangle_params(:, 3) > nu_min .and. triangle_params(:, 3) < nu_max)) then
       error_msg = "ssm_gas_optics(): nu0 needs to be less than nu_max and greater than nu_min"
     end if
@@ -170,7 +170,7 @@ contains
       error_msg = "ssm_gas_optics(): l needs to be > 0"
     end if
     if (error_msg /= '') return
-    
+
     if(allocated(this%gas_names)) &
       deallocate(this%gas_names, this%mol_weights, this%nus, this%dnus, this%absorption_coeffs)
 
@@ -219,16 +219,16 @@ contains
 
     if(present(Tstar)) this%Tstar = Tstar
     if(present(tsi))   this%tsi = tsi
-    
+
     if(present(Tstar)) this%g_cld = g_cld_sw
     if(present(Tstar)) this%ssa_cld = ssa_cld_sw
     if(present(Tstar)) this%kappa_cld = kappa_cld_sw
-    
+
     if(.not. present(Tstar)) this%g_cld = g_cld_lw
     if(.not. present(Tstar)) this%ssa_cld = ssa_cld_lw
     if(.not. present(Tstar)) this%kappa_cld = kappa_cld_lw
   end function configure
-  
+
   !--------------------------------------------------------------------------------------------------------------------
   !
   !> Compute gas optical depth and Planck source functions,
@@ -368,7 +368,7 @@ contains
         call zero_array(optical_props%get_nmom(), &
                       ncol, nlay, nnu, optical_props%p)
     end select
-    
+
     !
     ! Shortwave: incoming solar irradiance
     !
@@ -376,9 +376,9 @@ contains
                                this%nus, this%dnus, spread(this%Tstar, 1, ncol),   &
                                toa_src)
 
-    ! Make sure that the integral is the tsi                                   
+    ! Make sure that the integral is the tsi
     toa_src = toa_src / spread(sum(toa_src, dim=2), dim=2, ncopies=size(toa_src,2)) * this%tsi
-    
+
   end function gas_optics_ext
 
   !------------------------------------------------------------------------------------------
@@ -402,7 +402,7 @@ contains
     ! ----------------------------------------------------------
     error_msg = ""
 
-    ! Get cloud optical depth by multiplying 
+    ! Get cloud optical depth by multiplying
     ! [kg/m2] of cloud by [m2/kg] absorption coeff
     ! Need spread because tau is 3D and cwp is 2D
     optical_props%tau = spread(1000._wp * (clwp + ciwp) * this%kappa_cld, 3, size(this%nus))
@@ -420,7 +420,7 @@ contains
         optical_props%ssa = this%ssa_cld
         ! Handle p array for nstr if needed
     end select
-    
+
   end function cloud_optics
 
   !--------------------------------------------------------------------------------------------------------------------
@@ -491,10 +491,10 @@ contains
 
     get_temp_max = huge(1._wp)
   end function get_temp_max
-  
+
   !--------------------------------------------------------------------------------------------------------------------
   !
-  !> Compute layer masses from gas concentrations and pressure levels 
+  !> Compute layer masses from gas concentrations and pressure levels
   !
   subroutine compute_layer_mass(ncol, nlay, ngas, this, plev, gas_desc, layer_mass, error_msg)
     integer,  intent(in ) :: ncol, nlay, ngas

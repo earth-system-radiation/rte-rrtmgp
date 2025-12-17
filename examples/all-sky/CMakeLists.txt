@@ -1,15 +1,32 @@
 #
 # All-sky tests with clouds/by-band optics and aerosols
 #
+if(TEST_WITH EQUAL "RRTMGP")
+  set(optics-lib rte-rrtmgp::rrtmgp)
+elseif(TEST_WITH EQUAL "SSM")
+  set(optics-lib rte-rrtmgp::ssm)
+endif()
+
 add_library(
   all_sky_utils STATIC # cmake-format: sort
   mo_load_aerosol_coefficients.F90 mo_load_cloud_coefficients.F90
 )
+target_include_directories(
+  all_sky_utils
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+)
+target_link_libraries(
+  all_sky_utils PRIVATE testing-utils rte-rrtmgp::rte rte-rrtmgp::rrtmgp
+)
 
-target_link_libraries(all_sky_utils PUBLIC testing-utils optics-utils)
-
+#
+# Will need to change the optics library here once the SSM cloud optics is added
+#
 add_executable(rrtmgp_allsky rrtmgp_allsky.F90)
-target_link_libraries(rrtmgp_allsky PRIVATE all_sky_utils)
+target_link_libraries(
+  rrtmgp_allsky PRIVATE all_sky_utils rte-rrtmgp::rte rte-rrtmgp::rrtmgp
+)
 
 add_test(
   NAME run_allsky_lw

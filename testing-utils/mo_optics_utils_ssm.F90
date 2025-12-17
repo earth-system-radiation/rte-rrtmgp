@@ -1,4 +1,4 @@
-module mo_optics_utils_ssm
+module mo_optics_utils
   use mo_rte_kind,      only: wp, wl
   use mo_optics_ssm,    only: ty_optics_ssm
   use mo_testing_utils, only: stop_on_err
@@ -32,4 +32,4 @@ contains
     call configure(kdist)
   end subroutine load_and_init
   !--------------------------------------------------------------------------------------------------------------------
-end module mo_optics_utils_ssm
+end module mo_optics_utils

@@ -19,10 +19,7 @@ target_include_directories(
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
     ${NetCDF_Fortran_INCLUDE_DIR}
 )
-
-target_link_libraries(
-  test_utils PUBLIC rfmip_clear_utils testing-utils optics-utils
-)
+target_link_libraries(test_utils PUBLIC rte-rrtmgp::rte rte-rrtmgp::rrtmgp)
 
 foreach(
   test_executable IN
@@ -35,9 +32,14 @@ foreach(
         test_zenith_angle_spherical_correction
 )
   add_executable(${test_executable} ${test_executable}.F90)
-  target_link_libraries(${test_executable} PRIVATE test_utils)
+  target_link_libraries(
+    ${test_executable} PUBLIC test_utils rte-rrtmgp::rte rte-rrtmgp::rrtmgp
+  )
 endforeach()
 
+#
+# Adding tests
+#
 foreach(
   test_executable IN
   ITEMS # cmake-format: sort

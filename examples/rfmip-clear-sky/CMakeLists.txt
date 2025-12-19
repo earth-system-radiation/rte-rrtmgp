@@ -5,10 +5,15 @@ elseif(TEST_WITH EQUAL "SSM")
 endif()
 
 add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
+#
+# Need to specify include directories because mo_rfmip_io.F90 uses netcdf
+# directly
+#
 target_include_directories(
   rfmip_clear_utils
   PUBLIC
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+    ${NetCDF_Fortran_INCLUDE_DIR}
 )
 target_link_libraries(rfmip_clear_utils PRIVATE testing-utils)
 

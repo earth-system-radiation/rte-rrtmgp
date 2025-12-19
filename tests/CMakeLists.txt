@@ -1,6 +1,11 @@
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
-
 set(extensions_source_dir ${PROJECT_SOURCE_DIR}/extensions)
+if(TEST_WITH EQUAL "RRTMGP")
+  set(optics-lib rte-rrtmgp::rrtmgp)
+elseif(TEST_WITH EQUAL "SSM")
+  set(optics-lib rte-rrtmgp::ssm)
+endif()
+set(optics-lib rte-rrtmgp::rrtmgp)
 
 add_library(
   test_utils STATIC # cmake-format: sort
@@ -19,7 +24,9 @@ target_include_directories(
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
     ${NetCDF_Fortran_INCLUDE_DIR}
 )
-target_link_libraries(test_utils PUBLIC rte-rrtmgp::rte rte-rrtmgp::rrtmgp)
+target_link_libraries(
+  test_utils PUBLIC testing-utils rte-rrtmgp::rte ${optics-lib}
+)
 
 foreach(
   test_executable IN
@@ -33,7 +40,8 @@ foreach(
 )
   add_executable(${test_executable} ${test_executable}.F90)
   target_link_libraries(
-    ${test_executable} PUBLIC test_utils rte-rrtmgp::rte rte-rrtmgp::rrtmgp
+    ${test_executable}
+    PRIVATE test_utils testing-utils rte-rrtmgp::rte ${optics-lib}
   )
 endforeach()
 

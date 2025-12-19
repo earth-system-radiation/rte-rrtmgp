@@ -39,6 +39,11 @@ foreach(
         test_zenith_angle_spherical_correction
 )
   add_executable(${test_executable} ${test_executable}.F90)
+  target_include_directories(
+    ${test_executable}
+    PUBLIC
+      $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+  )
   target_link_libraries(
     ${test_executable}
     PRIVATE test_utils testing-utils rte-rrtmgp::rte ${optics-lib}

@@ -43,7 +43,7 @@ program rrtmgp_rfmip_sw
   !
   ! Gas optics: maps physical state of the atmosphere to optical properties
   !
-  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
+  use mo_gas_optics,         only: ty_gas_optics_rrtmgp
   !
   ! Gas optics uses a derived type to represent gas concentrations compactly
   !
@@ -63,7 +63,7 @@ program rrtmgp_rfmip_sw
   !
   ! RRTMGP's gas optics class needs to be initialized with data read from a netCDF files
   !
-  use mo_optics_utils_rrtmgp,only: k_dist => gas_optics, load_and_init
+  use mo_optics_utils,       only: k_dist => gas_optics, load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_sw_bc, determine_gas_names
   use mo_testing_utils,      only: stop_on_err

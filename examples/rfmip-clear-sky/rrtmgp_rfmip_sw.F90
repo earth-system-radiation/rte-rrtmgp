@@ -43,7 +43,7 @@ program rrtmgp_rfmip_sw
   !
   ! Gas optics: maps physical state of the atmosphere to optical properties
   !
-  use mo_gas_optics,         only: ty_gas_optics_rrtmgp
+  ! use mo_gas_optics,         only: ty_gas_optics_rrtmgp ! Imported with mo_optics_utils
   !
   ! Gas optics uses a derived type to represent gas concentrations compactly
   !

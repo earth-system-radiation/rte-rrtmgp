@@ -24,7 +24,8 @@ program rte_check_equivalence
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_rte_util_array,     only: zero_array
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_optics_utils,       only: gas_optics, load_and_init
+  use mo_optics_utils_rrtmgp,only: load_and_init
+  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
@@ -79,6 +80,7 @@ program rte_check_equivalence
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
+  type(ty_gas_optics_rrtmgp) :: gas_optics
   type(ty_gas_concs)         :: gas_concs
   type(ty_gas_concs), dimension(:), allocatable &
                              :: gas_conc_array

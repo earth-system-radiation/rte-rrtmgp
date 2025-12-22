@@ -1,10 +1,5 @@
-if(TEST_WITH EQUAL "RRTMGP")
-  set(optics-lib rte-rrtmgp::rrtmgp)
-elseif(TEST_WITH EQUAL "SSM")
-  set(optics-lib rte-rrtmgp::ssm)
-endif()
-
 add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
+
 #
 # Need to specify include directories because mo_rfmip_io.F90 uses netcdf
 # directly
@@ -31,10 +26,18 @@ foreach(
   )
   target_link_libraries(
     ${test_executable}
-    PRIVATE rfmip_clear_utils testing-utils rte-rrtmgp::rte ${optics-lib}
+    PRIVATE rfmip_clear_utils
+            rrtmgp-load-data
+            testing-utils
+            rte-rrtmgp::rte
+            rte-rrtmgp::rrtmgp
+            rte-rrtmgp::ssm
   )
 endforeach()
 
+#
+# Copy empty output files
+#
 set(inoutputs
     rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
@@ -63,6 +66,9 @@ set_tests_properties(
              copy_rrtmgp_rfmip_inputs
 )
 
+#
+# RRTMGP tests incl. comparision to reference results
+#
 add_test(
   NAME run_rrtmgp_rfmip_lw
   COMMAND
@@ -93,18 +99,15 @@ set_tests_properties(
              run_rrtmgp_rfmip
 )
 
-if(TEST_WITH EQUAL "RRTMGP")
-  add_test(
-    NAME check_rfmip_lw_sw
-    COMMAND
-      ${Python3_EXECUTABLE}
-      ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
-      ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir
-      ${CMAKE_CURRENT_BINARY_DIR} --variables rld rlu rsd rsu --file_names
-      ${inoutputs} --failure_threshold ${FAILURE_THRESHOLD}
-  )
-  set_tests_properties(
-    check_rfmip_lw_sw
-    PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
-  )
-endif()
+add_test(
+  NAME check_rfmip_lw_sw
+  COMMAND
+    ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py
+    --ref_dir ${RRTMGP_DATA}/examples/rfmip-clear-sky/reference --tst_dir
+    ${CMAKE_CURRENT_BINARY_DIR} --variables rld rlu rsd rsu --file_names
+    ${inoutputs} --failure_threshold ${FAILURE_THRESHOLD}
+)
+set_tests_properties(
+  check_rfmip_lw_sw
+  PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
+)

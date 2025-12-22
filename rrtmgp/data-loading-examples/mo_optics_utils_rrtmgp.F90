@@ -23,7 +23,7 @@
 !    and calling gas_optics%load().
 !
 !
-module mo_optics_utils
+module mo_optics_utils_rrtmgp
   use mo_rte_kind,           only: wp, wl
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
@@ -33,9 +33,8 @@ module mo_optics_utils
   use netcdf
   implicit none
 
-  type(ty_gas_optics_rrtmgp) :: gas_optics
   private
-  public :: gas_optics, load_and_init
+  public :: load_and_init
 
 contains
   !--------------------------------------------------------------------------------------------------------------------
@@ -247,4 +246,4 @@ contains
     ncid = nf90_close(ncid)
   end subroutine load_and_init
   !--------------------------------------------------------------------------------------------------------------------
-end module mo_optics_utils
+end module mo_optics_utils_rrtmgp

@@ -3,11 +3,7 @@ add_library(
   mo_optics_ssm.F90 mo_optics_ssm_kernels.F90
 )
 
-add_library(rte-rrtmgp::ssm ALIAS ssm)
-
-if(BUILD_SHARED_LIBS)
-  set_target_properties(ssm PROPERTIES POSITION_INDEPENDENT_CODE ON)
-endif()
+target_link_libraries(ssm PUBLIC rte)
 
 target_include_directories(
   ssm
@@ -15,7 +11,11 @@ target_include_directories(
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
 )
 
-target_link_libraries(ssm PUBLIC rte)
+if(BUILD_SHARED_LIBS)
+  set_target_properties(ssm PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
+add_library(rte-rrtmgp::ssm ALIAS ssm)
 
 set_target_properties(
   ssm

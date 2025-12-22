@@ -26,12 +26,13 @@ program rte_clear_sky_regression
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
+  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_optics_utils,       only: gas_optics => gas_optics, load_and_init
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
+  use mo_optics_utils_rrtmgp,only: load_and_init
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty,  &
                                    read_and_block_lw_bc, read_and_block_sw_bc, determine_gas_names
   use mo_simple_netcdf,      only: get_dim_size, read_field
@@ -81,6 +82,7 @@ program rte_clear_sky_regression
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
+  type(ty_gas_optics_rrtmgp) :: gas_optics
   type(ty_gas_concs)         :: gas_concs
   type(ty_gas_concs), dimension(:), allocatable &
                              :: gas_conc_array

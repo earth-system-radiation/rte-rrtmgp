@@ -1,16 +1,16 @@
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
 
 add_library(
-  testing-utils STATIC # cmake-format: sort
-  mo_simple_netcdf.F90 mo_testing_utils.F90
+  rrtmgp-load-data STATIC # cmake-format: sort
+  mo_load_aerosol_coefficients.F90
+  mo_load_cloud_coefficients.F90
+  mo_optics_utils_rrtmgp.F90
 )
 target_link_libraries(
-  testing-utils
-  PUBLIC rte-rrtmgp::rrtmgp rte-rrtmgp::rte ${NetCDF_Fortran_LIBRARY}
+  rrtmgp-load-data PUBLIC testing-utils rte-rrtmgp::rrtmgp rte-rrtmgp::rte
 )
 target_include_directories(
-  testing-utils
+  rrtmgp-load-data
   PUBLIC
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
-    ${NetCDF_Fortran_INCLUDE_DIR}
 )

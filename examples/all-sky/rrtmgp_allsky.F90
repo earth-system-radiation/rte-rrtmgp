@@ -4,15 +4,15 @@ program rte_rrtmgp_allsky
   use mo_rte_kind,           only: wp, i8, wl
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
-  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp ! Gas optics imported from mo_optics_utils
-  use mo_cloud_optics_rrtmgp,only: ty_cloud_optics_rrtmgp
-  use mo_aerosol_optics_rrtmgp_merra ! Includes aerosol type integers
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
   use mo_testing_utils,      only: stop_on_err
+  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp ! Gas optics imported from mo_optics_utils
+  use mo_cloud_optics_rrtmgp,only: ty_cloud_optics_rrtmgp
+  use mo_aerosol_optics_rrtmgp_merra ! Includes aerosol type integers
   use mo_optics_utils_rrtmgp,only: load_gas_optics, load_cloud_optics, load_aerosol_optics
   use mo_rte_config,         only: rte_config_checks
   implicit none

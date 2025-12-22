@@ -101,7 +101,9 @@ program rrtmgp_rfmip_lw
   type(ty_optical_props_1scl) :: optical_props
   type(ty_fluxes_broadband)   :: fluxes
 
-  ! Which optics to use?
+  !
+  ! Optics is determined at run time
+  !
   class(ty_gas_optics), allocatable :: gas_optics
   !
   ! ty_gas_concentration holds multiple columns; we make an array of these objects to
@@ -167,9 +169,9 @@ program rrtmgp_rfmip_lw
       read(block_size_char, '(i4)') block_size
     else
       block_size = 16
-      flxdn_file = 'rld_ssm_rfmip-rad-irf.nc'
-      flxup_file = 'rlu_ssm_rfmip-rad-irf.nc'
     end if
+    flxdn_file = 'rld_ssm_rfmip-rad-irf.nc'
+    flxup_file = 'rlu_ssm_rfmip-rad-irf.nc'
   end if
 
   !

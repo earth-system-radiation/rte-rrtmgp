@@ -41,10 +41,6 @@ program rrtmgp_rfmip_sw
   !
   use mo_optical_props,      only: ty_optical_props_2str
   !
-  ! Gas optics: maps physical state of the atmosphere to optical properties
-  !
-  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp ! Imported with mo_optics_utils
-  !
   ! Gas optics uses a derived type to represent gas concentrations compactly
   !
   use mo_gas_concentrations, only: ty_gas_concs
@@ -58,6 +54,13 @@ program rrtmgp_rfmip_sw
   !
   use mo_fluxes,             only: ty_fluxes_broadband
   ! --------------------------------------------------
+  ! Gas optics: maps physical state of the atmosphere to optical properties
+  !    This example can use either a k-distribution from RRTMGP or a simple spectral model
+  !    The optics that gets used is chosen at run time from the program name
+  !
+  use mo_gas_optics,         only: ty_gas_optics
+  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
+  use mo_optics_ssm,         only: ty_optics_ssm
   !
   ! modules for reading and writing files
   !
@@ -79,7 +82,7 @@ program rrtmgp_rfmip_sw
   integer            :: nargs, ncol, nlay, nbnd, ngpt, nexp, nblocks, block_size, forcing_index
   integer            :: b, icol, ibnd, igpt
   character(len=4)   :: block_size_char, forcing_index_char = '1'
-  logical            :: do_rrtmgp
+  logical            :: do_rrtmgp, do_ssm
 
   character(len=32 ), &
             dimension(:),             allocatable :: kdist_gas_names, rfmip_gas_games
@@ -100,6 +103,10 @@ program rrtmgp_rfmip_sw
   real(wp), dimension(:  ), allocatable          :: def_tsi, mu0    ! block_size
   logical , dimension(:,:), allocatable          :: usecol ! block_size, nblocks
   !
+  ! Optics is determined at run time
+  !
+  class(ty_gas_optics), allocatable :: gas_optics
+  !
   ! ty_gas_concentration holds multiple columns; we make an array of these objects to
   !   leverage what we know about the input file
   !
@@ -114,9 +121,11 @@ program rrtmgp_rfmip_sw
   ! Based on the possibilities: rrtmgp_rfmip_lw, ssm_rfmip_lw
   call get_command_argument(0, invoked_name)
   do_rrtmgp = (invoked_name(len_trim(invoked_name)-14:len_trim(invoked_name)-8) == "rrtmgp_")
-  if (.not. do_rrtmgp) call stop_on_err("Huh?")
+  do_ssm    = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-8) == "ssm_")
+  if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
 
   if(do_rrtmgp) then
+    allocate(ty_gas_optics_rrtmgp::gas_optics)
     print *, "Usage: rrtmgp_rfmip_sw [block_size] [rfmip_file] [k-distribution_file] [forcing_index (1,2,3)]"
     nargs = command_argument_count()
     if(nargs >= 2) call get_command_argument(2, rfmip_file)
@@ -145,8 +154,19 @@ program rrtmgp_rfmip_sw
     !
     call determine_gas_names(rfmip_file, kdist_file, forcing_index, kdist_gas_names, rfmip_gas_games)
     print *, "Calculation uses RFMIP gases: ", (trim(rfmip_gas_games(b)) // " ", b = 1, size(rfmip_gas_games))
+  else if (do_ssm) then
+    allocate(ty_optics_ssm::gas_optics)
+    print *, "Usage: ssm_rfmip_sw [block_size]"
+    nargs = command_argument_count()
+    if(nargs >= 1) then
+      call get_command_argument(1, block_size_char)
+      read(block_size_char, '(i4)') block_size
+    else
+      block_size = 16
+    end if
+    flxdn_file = 'rsd_ssm_rfmip-rad-irf.nc'
+    flxup_file = 'rsu_ssm_rfmip-rad-irf.nc'
   end if
-
   !
   ! How big is the problem? Does it fit into blocks of the size we've specified?
   !
@@ -169,35 +189,40 @@ program rrtmgp_rfmip_sw
   call read_and_block_gases_ty(rfmip_file, block_size, kdist_gas_names, rfmip_gas_games, gas_conc_array)
   call read_and_block_sw_bc(rfmip_file, block_size, surface_albedo, total_solar_irradiance, solar_zenith_angle)
 
-  if (do_rrtmgp) then
-    !
-    ! Read k-distribution information. load_gas_optics() reads data from netCDF and calls
-    !   k_dist%init(); users might want to use their own reading methods
-    !
-    call load_gas_optics(k_dist, trim(kdist_file), gas_conc_array(1))
-    if(.not. k_dist%source_is_external()) &
-      stop "rrtmgp_rfmip_sw: k-distribution file isn't SW"
-    nbnd = k_dist%get_nband()
-    ngpt = k_dist%get_ngpt()
+  select type (gas_optics)
+    type is (ty_gas_optics_rrtmgp)
+      !
+      ! Read k-distribution information. load_gas_optics() reads data from netCDF and calls
+      !   k_dist%init(); users might want to use their own reading methods
+      !
+      call load_gas_optics(k_dist, trim(kdist_file), gas_conc_array(1))
+      if(.not. k_dist%source_is_external()) &
+        stop "rrtmgp_rfmip_sw: k-distribution file isn't SW"
+      nbnd = k_dist%get_nband()
+      ngpt = k_dist%get_ngpt()
 
-    !
-    ! RRTMGP won't run with pressure less than its minimum. The top level in the RFMIP file
-    !   is set to 10^-3 Pa. Here we pretend the layer is just a bit less deep.
-    !   This introduces an error but shows input sanitizing.
-    !
-    !
-    ! Are the arrays ordered in the vertical with 1 at the top or the bottom of the domain?
-    !
-    if(p_lay(1, 1, 1) < p_lay(1, nlay, 1)) then
-      p_lev(:,1,:) = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
-    else
-      p_lev(:,nlay+1,:) &
-                   = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
-    end if
-  end if
+      !
+      ! RRTMGP won't run with pressure less than its minimum. The top level in the RFMIP file
+      !   is set to 10^-3 Pa. Here we pretend the layer is just a bit less deep.
+      !   This introduces an error but shows input sanitizing.
+      !
+      !
+      ! Are the arrays ordered in the vertical with 1 at the top or the bottom of the domain?
+      !
+      if(p_lay(1, 1, 1) < p_lay(1, nlay, 1)) then
+        p_lev(:,1,:) = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
+      else
+        p_lev(:,nlay+1,:) &
+                     = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
+      end if
+    type is (ty_optics_ssm)
+      ! call stop_on_err(gas_optics%configure(Tstar = 5760._wp))
+  end select
+  nbnd = gas_optics%get_nband()
+
+
   allocate(toa_flux(block_size, k_dist%get_ngpt()), &
            def_tsi(block_size), usecol(block_size,nblocks))
-
   !
   ! RTE will fail if passed solar zenith angles greater than 90 degree. We replace any with
   !   nighttime columns with a default solar zenith angle. We'll mask these out later, of

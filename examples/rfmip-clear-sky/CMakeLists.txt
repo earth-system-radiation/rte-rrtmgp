@@ -11,6 +11,9 @@ target_include_directories(
 )
 target_link_libraries(rfmip_clear_utils PRIVATE testing-utils)
 
+# ##############################################################################
+#
+# RRTMGP tests
 #
 # Build the two executables
 #
@@ -52,8 +55,9 @@ list(
   PREPEND ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/
           OUTPUT_VARIABLE inputs
 )
-
+#
 # The tests write to the input files, therefore we copy them:
+#
 add_test(
   NAME copy_rrtmgp_rfmip_inputs
   COMMAND
@@ -69,7 +73,7 @@ set_tests_properties(
 )
 
 #
-# RRTMGP tests incl. comparision to reference results
+# Comparision to RRTMGP RFMIP reference results
 #
 add_test(
   NAME run_rrtmgp_rfmip_lw
@@ -113,11 +117,9 @@ set_tests_properties(
   check_rfmip_lw_sw
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
 )
-
+# ##############################################################################
 #
 # Simple spectral model tests
-#
-
 #
 # Copy and rename inputs
 #

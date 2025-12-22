@@ -46,13 +46,21 @@ module mo_optics_ssm
   real(wp), parameter, public :: g_cld_lw = 0._wp ! Default for lw cloud asymmetry
   real(wp), parameter, public :: g_cld_sw = 0.85_wp ! Default for sw cloud asymmetry
 
-  integer,  parameter :: nnu_def = 41
-  real(wp), parameter :: nu_min_def = 10._wp    ! cm⁻¹
-  real(wp), parameter :: nu_max_def = 3000._wp  ! cm⁻¹
+  ! Default wavenumber arrays
+  integer,  parameter :: nnu_def = 41           ! Default nnu
+  real(wp), parameter :: nu_min_lw_def = 10._wp    ! cm⁻¹
+  real(wp), parameter :: nu_max_lw_def = 3500._wp  ! cm⁻¹
 
-  real(wp), dimension(nnu_def), parameter :: nus_def = &
-    [(nu_min_def + (i-1) * (nu_max_def - nu_min_def) / (nnu_def - 1), i = 1, nnu_def)] ! Default wavenumber array
+  real(wp), parameter :: nu_min_sw_def = 10._wp    ! cm⁻¹
+  real(wp), parameter :: nu_max_sw_def = 50000._wp  ! cm⁻¹
 
+  real(wp), dimension(nnu_def), parameter :: nus_lw_def = &
+    [(50._wp + (i-1) * (3000._wp - 50._wp) / (nnu_def - 1), i = 1, nnu_def)] ! Default wavenumber array, LW
+
+  real(wp), dimension(nnu_def), parameter :: nus_sw_def = &
+    [(1000._wp + (i-1) * (45000._wp - 1000._wp) / (nnu_def - 1), i = 1, nnu_def)] ! Default wavenumber array, SW
+
+  ! Default spectoscopic params
   real(wp), dimension(4,4), parameter :: triangle_params_def_lw = reshape( &
     [1._wp, 298._wp,    0._wp, 64._wp,  &
      1._wp,  12._wp, 1600._wp, 36._wp,  &
@@ -60,7 +68,14 @@ module mo_optics_ssm
      2._wp, 110._wp,  667._wp, 12._wp], &
     shape = [4, 4])
     
-  character(len=32), dimension(2), parameter :: gas_names_def_lw = ["h2o", "co2"]
+  character(len=32), dimension(2), parameter :: gas_names_def_lw = [character(32) :: "h2o", "co2"]
+
+  real(wp), dimension(2,4), parameter :: triangle_params_def_sw = reshape( &
+    [1._wp, 298._wp,    0._wp, 64._wp,  &
+     2._wp, 110._wp,  667._wp, 12._wp], &
+    shape = [2, 4])
+    
+  character(len=32), dimension(2), parameter :: gas_names_def_sw = [character(32) :: "h2o", "o3"]
   
   !
   ! Do the other SSM defaults - absorption parameters, spectral dicretization -
@@ -113,11 +128,11 @@ contains
     
     if (.not. do_sw_local) then
       error_msg = this%configure_with_values(gas_names_def_lw, triangle_params_def_lw, &
-                                             nus_def, nu_min_def, nu_max_def,          &
+                                             nus_lw_def, nu_min_lw_def, nu_max_lw_def, &
                                              kappa_cld=kappa_cld_lw, g_cld=g_cld_lw, ssa_cld=ssa_cld_lw)
     else
-      error_msg = this%configure_with_values(gas_names_def_lw, triangle_params_def_lw, &
-                                             nus_def, nu_min_def, nu_max_def,          &
+      error_msg = this%configure_with_values(gas_names_def_sw, triangle_params_def_sw, &
+                                             nus_sw_def, nu_min_sw_def, nu_max_sw_def, &
                                              Tstar=Tsun_ssm, tsi=tsi,                  &
                                              kappa_cld=kappa_cld_sw, g_cld=g_cld_sw, ssa_cld=ssa_cld_sw)
     end if
@@ -360,13 +375,13 @@ contains
     !            sources%sfc_source_Jac
     ! How to compute 1D/sfc - another kernel subroutine?
     ! How to compute Tlev if not provided - make generic?
-    call compute_Planck_source_2D(ncol, nlay,   nnu, &
+    call compute_Planck_source(ncol, nlay,   nnu, &
                                this%nus, this%dnus, tlay,   &
                                sources%lay_source)
-    call compute_Planck_source_2D(ncol, nlay+1, nnu, &
+    call compute_Planck_source(ncol, nlay+1, nnu, &
                                this%nus, this%dnus, tlev,   &
                                sources%lev_source)
-    call compute_Planck_source_1D(ncol, nnu, &
+    call compute_Planck_source(ncol, nnu, &
                                this%nus, this%dnus, tsfc,   &
                                sources%sfc_source)
 
@@ -436,7 +451,7 @@ contains
     !
     ! Shortwave: incoming solar irradiance
     !
-    call compute_Planck_source_1D(ncol, nnu, &
+    call compute_Planck_source(ncol, nnu, &
                                this%nus, this%dnus, spread(this%Tstar, 1, ncol),   &
                                toa_src)
 

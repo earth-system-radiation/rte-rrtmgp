@@ -28,12 +28,11 @@ module mo_optics_ssm
   use mo_gas_optics_constants,   only: grav
   use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source
 
-  implicit none
   private
-
+  public :: configure
   real(wp), parameter, public :: Tsun_ssm = 5760._wp ! Default sun temperature for SSM
   real(wp), parameter, public :: tsi = 1360._wp ! Default total solar irradiance
-
+  
   real(wp), parameter, public :: mw_h2o = 0.018_wp ! Molecular weight h2o
   real(wp), parameter, public :: mw_co2 = 0.044_wp ! Molecular weight co2
   real(wp), parameter, public :: mw_o3  = 0.048_wp ! Molecular weight o3
@@ -47,6 +46,22 @@ module mo_optics_ssm
   real(wp), parameter, public :: g_cld_lw = 0._wp ! Default for lw cloud asymmetry
   real(wp), parameter, public :: g_cld_sw = 0.85_wp ! Default for sw cloud asymmetry
 
+  integer,  parameter :: nnu_def = 41
+  real(wp), parameter :: nu_min_def = 10._wp    ! cm⁻¹
+  real(wp), parameter :: nu_max_def = 3000._wp  ! cm⁻¹
+
+  real(wp), dimension(nnu_def), parameter :: nus_def = &
+    [(nu_min_def + (i-1) * (nu_max_def - nu_min_def) / (nnu_def - 1), i = 1, nnu_def)] ! Default wavenumber array
+
+  real(wp), dimension(4,4), parameter :: triangle_params_def_lw = reshape( &
+    [1._wp, 298._wp,    0._wp, 64._wp,  &
+     1._wp,  12._wp, 1600._wp, 36._wp,  &
+     1._wp,  16._wp, 1600._wp, 54._wp,  &
+     2._wp, 110._wp,  667._wp, 12._wp], &
+    shape = [4, 4])
+    
+  character(len=32), dimension(2), parameter :: gas_names_def_lw = ["h2o", "co2"]
+  
   !
   ! Do the other SSM defaults - absorption parameters, spectral dicretization -
   !   get declared here as public entities? Or do we add general introscpection?
@@ -62,27 +77,52 @@ module mo_optics_ssm
     real(wp),      dimension(:),    allocatable :: nus, dnus
       ! total absorption coefficients at spectral points (nnus, ngases)
     real(wp) :: Tstar     = 0._wp, &
-                pref      = 500._wp * 500._wp, & ! 500 hPa
+                pref      = 500._wp * 100._wp, & ! 500 hPa
                 m_dry     = 0.029_wp, & ! molecular weight of dry air [kg/mol]
-                tsi       = 1360._wp, &           ! Add this
+                tsi       = 0._wp, &           ! Add this
                 kappa_cld = 0._wp, &              ! Add this
                 g_cld     = 0._wp, &              ! Add this
-                ssa_cld   = 0._wp
+                ssa_cld   = 0._wp 
     contains
-      procedure, public :: configure
-      procedure, public :: gas_optics_int
-      procedure, public :: gas_optics_ext
-      procedure, public :: cloud_optics
-      procedure, public :: source_is_internal
-      procedure, public :: source_is_external
-      procedure, public :: get_press_min
-      procedure, public :: get_press_max
-      procedure, public :: get_temp_min
-      procedure, public :: get_temp_max
+      procedure, private :: configure_with_values
+      procedure, private :: configure_with_defaults
+      generic,   public  :: configure => configure_with_values, configure_with_defaults
+      procedure, public  :: gas_optics_int
+      procedure, public  :: gas_optics_ext
+      procedure, public  :: cloud_optics
+      procedure, public  :: source_is_internal
+      procedure, public  :: source_is_external
+      procedure, public  :: get_press_min
+      procedure, public  :: get_press_max
+      procedure, public  :: get_temp_min
+      procedure, public  :: get_temp_max
 
   end type ty_optics_ssm
 
 contains
+  !--------------------------------------------------------------------------------------------------------------------
+  function configure_with_defaults(this, do_sw) result(error_msg)
+    class(ty_optics_ssm), intent(inout) :: this
+    logical, optional,    intent(in)    :: do_sw
+    character(len=128)                  :: error_msg
+    
+    logical :: do_sw_local
+    
+    do_sw_local = .false.
+    if (present(do_sw)) do_sw_local = do_sw
+    
+    if (.not. do_sw_local) then
+      error_msg = this%configure_with_values(gas_names_def_lw, triangle_params_def_lw, &
+                                             nus_def, nu_min_def, nu_max_def,          &
+                                             kappa_cld=kappa_cld_lw, g_cld=g_cld_lw, ssa_cld=ssa_cld_lw)
+    else
+      error_msg = this%configure_with_values(gas_names_def_lw, triangle_params_def_lw, &
+                                             nus_def, nu_min_def, nu_max_def,          &
+                                             Tstar=Tsun_ssm, tsi=tsi,                  &
+                                             kappa_cld=kappa_cld_sw, g_cld=g_cld_sw, ssa_cld=ssa_cld_sw)
+    end if
+  end function configure_with_defaults
+  
   !--------------------------------------------------------------------------------------------------------------------
   !
   !> Configure the simple spectral model parameters
@@ -101,7 +141,7 @@ contains
   !>   a set of wavenumbers at which to evaluate absorption and Planck function
   !> If Tstar is provided the gas optics are for insolation
   !
-  function configure(this,                       &
+  function configure_with_values(this,           &
                      gas_names, triangle_params, &
                      nus, nu_min, nu_max,        &
                      Tstar, tsi,                 &
@@ -111,7 +151,7 @@ contains
     !   At least one of the arguments needs to distinguish LW from SW
     !   Probably need to specify the spectral discretization during configuration
     !
-    class(ty_optics_ssm),      intent(inout) :: this
+    class(ty_optics_ssm),          intent(inout) :: this
     character(32), dimension(:),   intent(in   ) :: gas_names
     real(wp),      dimension(:,:), intent(in   ) :: triangle_params
       !! (ntriangles, 4) where the second dimension holds [gas_index, kappa0, nu0, l]
@@ -138,30 +178,35 @@ contains
     ngas = size(gas_names)
     nnu  = size(nus)
 
-    ! Input sanitizing?
+    !
+    ! Input sanitizing
     ! triangle params: index <= ngases, kappa0 >= 0; nu_min < nu0s < nu_max; l > 0
     ! nus > 0; ascending? nu_min <= nus <= max_nu
     ! Tstar > 0 if specified
+    !
+
     if (.not. all(nus > nu_min .and. nus < nu_max)) then
       error_msg = "ssm_gas_optics(): nu must be less than nu_max and greater than nu_min"
     end if
 
     if (present(Tstar)) then
       if (Tstar <= 0.0_wp) then
-        error_msg = "ssm_gas_optics(): Tstar must be > 0"
+        error_msg = "ssm_gas_optics(): if specified Tstar must be > 0"
       end if
     end if
 
     if (present(tsi)) then
       if (tsi <= 0.0_wp) then
-        error_msg = "ssm_gas_optics(): tsi must be > 0"
+        error_msg = "ssm_gas_optics(): if specified tsi must be > 0"
       end if
     end if
-
+    
+    ! Be sure the first index, which says which gas, is > 0 and <= ngas 
+    !
     if (.not. all(triangle_params(:, 2) >= 0.0_wp)) then
       error_msg = "ssm_gas_optics(): kappa0 needs to be >=0"
     end if
-
+    
     if (.not. all(triangle_params(:, 3) > nu_min .and. triangle_params(:, 3) < nu_max)) then
       error_msg = "ssm_gas_optics(): nu0 needs to be less than nu_max and greater than nu_min"
     end if
@@ -170,7 +215,7 @@ contains
       error_msg = "ssm_gas_optics(): l needs to be > 0"
     end if
     if (error_msg /= '') return
-
+    
     if(allocated(this%gas_names)) &
       deallocate(this%gas_names, this%mol_weights, this%nus, this%dnus, this%absorption_coeffs)
 
@@ -180,8 +225,8 @@ contains
              this%dnus(nnu), &
              this%absorption_coeffs(ngas,nnu) )
 
-    this%nus(1:nnu) = nus(1:nnu)
-    this%gas_names(:) = gas_names(:)
+    this%nus(1:nnu)        = nus(1:nnu)
+    this%gas_names(1:ngas) = gas_names(1:ngas)
 
     ! Set molar masses based on gas names
     !   Maybe this is better as module data...
@@ -194,41 +239,60 @@ contains
         case ('o3')
           this%mol_weights(igas) = mw_o3
         case default
-          error_msg = "Unknown gas: " // trim(gas_names(igas))
+          error_msg = "Don't know the molecular weight for gas: " // trim(gas_names(igas))
           return
       end select
     end do
     if (error_msg /= '') return
 
     ! Spectral discretization - edges of "bands"
-    ! err_message = this%ty_optical_props%init(band_lims_wavenum, band2gpt)
-    ! where band2gpt = [(i, i = 1, nnu)]
+    ! err_message = this%ty_optical_props%init(band_lims_wavenum, name = "ssm_lw" or whatevs) or maybe? 
+    ! err_message = this%init(band_lims_wavenum)
+    ! where band_lims_wavenum is a 2D array (2, nnu) with the first index being lower, upper bound 
+    !  and second index being bounding wavenumbers
+    ! band_lims_wavenum(1, 1) = nu_min; band_lims_wavenum(2, nnu) = nu_max
+    ! normally band_lims_wavenum(2, inu) = band_lims_wavenum(1, inu+1)
+    ! Then when needed dnu = band_lims_wavenum(2, :) - band_lims_wavenum(1 :) 
+    !   but you'll want to get that like band_lims_wavenum = this%get_band_lims_wavenumber()
+    ! 
 
     ! Compute absorption coefficients by summing exponentials at each nu
     ! Initialize absorption coefficients to zero
     this%absorption_coeffs(:,:) = 0._wp
 
-    ! robert, can we parallelize this?
-    do itri = 1, size(triangle_params, 1)
+    do igas = 1, ngas
       do inu = 1, nnu
-        this%absorption_coeffs(nint(triangle_params(itri, 1)), inu) = &
-          this%absorption_coeffs(nint(triangle_params(itri, 1)), inu) + &
-          triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
+        do itri = 1, size(triangle_params, 1)
+          this%absorption_coeffs(igas, inu) = &
+            this%absorption_coeffs(igas, inu) + &
+            triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
+        end do
       end do
     end do
 
     if(present(Tstar)) this%Tstar = Tstar
     if(present(tsi))   this%tsi = tsi
 
-    if(present(Tstar)) this%g_cld = g_cld_sw
-    if(present(Tstar)) this%ssa_cld = ssa_cld_sw
-    if(present(Tstar)) this%kappa_cld = kappa_cld_sw
+    if(present(kappa_cld)) then
+      this%kappa_cld = kappa_cld
+    else
+      this%kappa_cld = 0._wp
+    end if
 
-    if(.not. present(Tstar)) this%g_cld = g_cld_lw
-    if(.not. present(Tstar)) this%ssa_cld = ssa_cld_lw
-    if(.not. present(Tstar)) this%kappa_cld = kappa_cld_lw
-  end function configure
+    if(present(g_cld)) then
+      this%g_cld = g_cld
+    else
+      this%g_cld = 0._wp
+    end if
 
+    if(present(ssa_cld)) then
+      this%ssa_cld = ssa_cld
+    else
+      this%ssa_cld = 0._wp
+    end if
+    
+  end function configure_with_values
+  
   !--------------------------------------------------------------------------------------------------------------------
   !
   !> Compute gas optical depth and Planck source functions,
@@ -368,7 +432,7 @@ contains
         call zero_array(optical_props%get_nmom(), &
                       ncol, nlay, nnu, optical_props%p)
     end select
-
+    
     !
     ! Shortwave: incoming solar irradiance
     !
@@ -376,9 +440,9 @@ contains
                                this%nus, this%dnus, spread(this%Tstar, 1, ncol),   &
                                toa_src)
 
-    ! Make sure that the integral is the tsi
+    ! Make sure that the integral is the tsi                                   
     toa_src = toa_src / spread(sum(toa_src, dim=2), dim=2, ncopies=size(toa_src,2)) * this%tsi
-
+    
   end function gas_optics_ext
 
   !------------------------------------------------------------------------------------------
@@ -402,25 +466,20 @@ contains
     ! ----------------------------------------------------------
     error_msg = ""
 
-    ! Get cloud optical depth by multiplying
+    ! Get cloud optical depth by multiplying 
     ! [kg/m2] of cloud by [m2/kg] absorption coeff
     ! Need spread because tau is 3D and cwp is 2D
     optical_props%tau = spread(1000._wp * (clwp + ciwp) * this%kappa_cld, 3, size(this%nus))
 
     select type(optical_props)
       type is (ty_optical_props_2str)
-        if (this%source_is_external()) then
           optical_props%ssa = this%ssa_cld
           optical_props%g   = this%g_cld
-        else
-          optical_props%ssa = this%ssa_cld
-          optical_props%g   = this%g_cld
-        end if
       type is (ty_optical_props_nstr)
-        optical_props%ssa = this%ssa_cld
+        ! bru just toss an error here no one be using n streams mofo
         ! Handle p array for nstr if needed
     end select
-
+    
   end function cloud_optics
 
   !--------------------------------------------------------------------------------------------------------------------
@@ -491,10 +550,10 @@ contains
 
     get_temp_max = huge(1._wp)
   end function get_temp_max
-
+  
   !--------------------------------------------------------------------------------------------------------------------
   !
-  !> Compute layer masses from gas concentrations and pressure levels
+  !> Compute layer masses from gas concentrations and pressure levels 
   !
   subroutine compute_layer_mass(ncol, nlay, ngas, this, plev, gas_desc, layer_mass, error_msg)
     integer,  intent(in ) :: ncol, nlay, ngas

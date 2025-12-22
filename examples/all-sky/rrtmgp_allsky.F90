@@ -198,7 +198,7 @@ program rte_rrtmgp_allsky
   call stop_on_err(gas_concs%set_vmr("o2",  0.2095_wp))
   call stop_on_err(gas_concs%set_vmr("co",  0._wp))
   ! ----------------------------------------------------------------------------
-  select class(gas_optics)
+  select type (gas_optics)
     type is (ty_gas_optics_rrtmgp)
       !
       ! load data into classes

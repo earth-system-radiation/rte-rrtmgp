@@ -157,12 +157,12 @@ endforeach()
 foreach(fn rfmip_lw rfmip_sw)
   add_test(NAME link_${fn} COMMAND ln rrtmgp_${fn} ssm_${fn})
   set_tests_properties(
-    link_${fn} PROPERTIES FIXTURES_SETUP link_rfmip_exeuctables
+    link_${fn} PROPERTIES FIXTURES_SETUP link_rfmip_executables
   )
   add_test(NAME run_ssm_${fn} COMMAND ssm_${fn})
   set_tests_properties(
     run_ssm_${fn}
     PROPERTIES FIXTURES_REQUIRED
-               "copy_rename_ssm_rfmip_inputs;link_rfmip_exeuctables"
+               "copy_rename_ssm_rfmip_inputs;link_rfmip_executables"
   )
 endforeach()

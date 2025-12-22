@@ -11,7 +11,10 @@ target_link_libraries(
           rte-rrtmgp::rrtmgp
           rte-rrtmgp::ssm
 )
-
+# ##############################################################################
+#
+# RRTMGP tests and checks
+#
 add_test(
   NAME run_allsky_lw
   COMMAND
@@ -142,4 +145,32 @@ add_test(
 set_tests_properties(
   check_allsky_gptclds_lw_sw
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_allsky_gpt_clouds"
+)
+# ##############################################################################
+#
+# SSM tests and checks
+#
+add_test(NAME link_ssm_allsky COMMAND ln rrtmgp_allsky ssm_allsky)
+set_tests_properties(
+  link_ssm_allsky PROPERTIES FIXTURES_SETUP link_allsky_executables
+)
+
+add_test(NAME run_ssm_allsky_lw COMMAND ssm_allsky 24 72 1 rrtmgp-allsky-lw.nc)
+set_tests_properties(
+  run_ssm_allsky_lw
+  PROPERTIES FIXTURES_REQUIRED
+             link_allsky_executables
+             FIXTURES_SETUP
+             run_rrtmgp_allsky
+)
+
+add_test(
+  NAME run_ssm_allsky_sw COMMAND ssm_allsky 24 72 1 rrtmgp-allsky-sw.nc 5760
+)
+set_tests_properties(
+  run_ssm_allsky_sw
+  PROPERTIES FIXTURES_REQUIRED
+             link_allsky_executables
+             FIXTURES_SETUP
+             run_rrtmgp_allsky
 )

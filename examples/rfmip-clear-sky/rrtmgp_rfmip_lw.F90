@@ -3,7 +3,7 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
+! Copyright 2015-,  Atmospheric and Environmental Research and
 ! Regents of the University of Colorado.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
@@ -16,11 +16,7 @@
 !
 ! Program is invoked as rrtmgp_rfmip_lw [block_size input_file  coefficient_file upflux_file downflux_file]
 !   All arguments are optional but need to be specified in order.
-!
-! -------------------------------------------------------------------------------------------------
-!
-! Main program
-!
+! Or as ssm_rfmip_lw [block size] to test the simple spectral model
 ! -------------------------------------------------------------------------------------------------
 program rrtmgp_rfmip_lw
   ! --------------------------------------------------

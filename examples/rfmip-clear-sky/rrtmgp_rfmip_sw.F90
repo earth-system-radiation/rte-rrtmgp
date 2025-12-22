@@ -3,7 +3,7 @@
 ! Contacts: Robert Pincus and Eli Mlawer
 ! email:  rrtmgp@aer.com
 !
-! Copyright 2015-2018,  Atmospheric and Environmental Research and
+! Copyright 2015-,  Atmospheric and Environmental Research and
 ! Regents of the University of Colorado.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
@@ -16,10 +16,7 @@
 !
 ! Program is invoked as rrtmgp_rfmip_sw [block_size input_file  coefficient_file upflux_file downflux_file]
 !   All arguments are optional but need to be specified in order.
-!
-! -------------------------------------------------------------------------------------------------
-!
-! Main program
+! Or as ssm_rfmip_sw [block size] to test the simple spectral model
 !
 ! -------------------------------------------------------------------------------------------------
 program rrtmgp_rfmip_sw
@@ -64,12 +61,13 @@ program rrtmgp_rfmip_sw
   !
   ! modules for reading and writing files
   !
-  ! RRTMGP's gas optics class needs to be initialized with data read from a netCDF files
-  !
-  use mo_optics_utils_rrtmgp,only: load_gas_optics
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_sw_bc, determine_gas_names
   use mo_testing_utils,      only: stop_on_err
+  !
+  ! RRTMGP's gas optics class needs to be initialized with data read from a netCDF files
+  !
+  use mo_optics_utils_rrtmgp,only: load_gas_optics
   implicit none
   ! --------------------------------------------------
   !

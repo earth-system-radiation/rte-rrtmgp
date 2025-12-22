@@ -218,9 +218,9 @@ program rte_rrtmgp_allsky
       end if
     type is (ty_optics_ssm)
       if (Tstar > 0) then
-        call stop_on_err(gas_optics%configure(real(Tstar, wp)))
+        ! call stop_on_err(gas_optics%configure(real(Tstar, wp)))
       else
-        call stop_on_err(gas_optics%configure())
+       !  call stop_on_err(gas_optics%configure())
       end if
   end select
   is_sw = gas_optics%source_is_external()

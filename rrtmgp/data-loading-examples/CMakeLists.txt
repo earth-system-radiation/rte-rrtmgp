@@ -2,8 +2,6 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
 
 add_library(
   rrtmgp-load-data STATIC # cmake-format: sort
-  mo_load_aerosol_coefficients.F90
-  mo_load_cloud_coefficients.F90
   mo_optics_utils_rrtmgp.F90
 )
 target_link_libraries(

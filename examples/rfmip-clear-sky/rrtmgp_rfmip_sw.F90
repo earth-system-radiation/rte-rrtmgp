@@ -63,7 +63,7 @@ program rrtmgp_rfmip_sw
   !
   ! RRTMGP's gas optics class needs to be initialized with data read from a netCDF files
   !
-  use mo_optics_utils_rrtmgp,only: load_and_init
+  use mo_optics_utils_rrtmgp,only: load_gas_optics
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty, unblock_and_write, &
                                    read_and_block_sw_bc, determine_gas_names
   use mo_testing_utils,      only: stop_on_err
@@ -171,10 +171,10 @@ program rrtmgp_rfmip_sw
 
   if (do_rrtmgp) then
     !
-    ! Read k-distribution information. load_and_init() reads data from netCDF and calls
+    ! Read k-distribution information. load_gas_optics() reads data from netCDF and calls
     !   k_dist%init(); users might want to use their own reading methods
     !
-    call load_and_init(k_dist, trim(kdist_file), gas_conc_array(1))
+    call load_gas_optics(k_dist, trim(kdist_file), gas_conc_array(1))
     if(.not. k_dist%source_is_external()) &
       stop "rrtmgp_rfmip_sw: k-distribution file isn't SW"
     nbnd = k_dist%get_nband()

@@ -13,11 +13,7 @@ program rte_rrtmgp_allsky
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
   use mo_testing_utils,      only: stop_on_err
-  use mo_optics_utils_rrtmgp,only: load_and_init
-  use mo_load_cloud_coefficients, &
-                             only: load_cld_lutcoeff
-  use mo_load_aerosol_coefficients, &
-                             only: load_aero_lutcoeff
+  use mo_optics_utils_rrtmgp,only: load_gas_optics, load_cloud_optics, load_aerosol_optics
   use mo_rte_config,         only: rte_config_checks
   implicit none
   ! ----------------------------------------------------------------------------------
@@ -164,12 +160,12 @@ program rte_rrtmgp_allsky
   call stop_on_err(gas_concs%set_vmr("co",  0._wp))
   ! ----------------------------------------------------------------------------
   ! load data into classes
-  call load_and_init(k_dist, k_dist_file, gas_concs)
+  call load_gas_optics(k_dist, k_dist_file, gas_concs)
   is_sw = k_dist%source_is_external()
   is_lw = .not. is_sw
   if (do_clouds) then
     !
-    call load_cld_lutcoeff(cloud_optics, cloud_optics_file)
+    call load_cloud_optics(cloud_optics, cloud_optics_file)
     call stop_on_err(cloud_optics%set_ice_roughness(2))
   end if
 
@@ -177,7 +173,7 @@ program rte_rrtmgp_allsky
     !
     ! Load aerosol optics coefficients from lookup tables
     !
-    call load_aero_lutcoeff (aerosol_optics, aerosol_optics_file)
+    call load_aerosol_optics (aerosol_optics, aerosol_optics_file)
   end if
 
   ! ----------------------------------------------------------------------------

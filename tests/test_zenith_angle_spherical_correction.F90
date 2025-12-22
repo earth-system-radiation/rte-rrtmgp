@@ -9,7 +9,7 @@ program test_solar_zenith_angle
   use mo_optical_props,      only: ty_optical_props_2str
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_sw,             only: rte_sw
-  use mo_optics_utils_rrtmgp,only: load_and_init
+  use mo_optics_utils_rrtmgp,only: load_gas_optics
   use mo_heating_rates,      only: compute_heating_rate
   use mo_testing_utils,      only: stop_on_err, report_err
   implicit none
@@ -59,7 +59,7 @@ program test_solar_zenith_angle
   !
   ! Initialize gas optics, optical properties variables
   !
-  call load_and_init(gas_optics, k_dist_file, gas_concs)
+  call load_gas_optics(gas_optics, k_dist_file, gas_concs)
   call stop_on_err(atmos%alloc_2str(ncol, nlay, gas_optics))
   if(gas_optics%source_is_internal()) call stop_on_err("k-distribution file is for the longwave")
   nbnd = gas_optics%get_nband()

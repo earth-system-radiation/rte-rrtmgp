@@ -24,7 +24,7 @@ program rte_check_equivalence
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_rte_util_array,     only: zero_array
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_optics_utils_rrtmgp,only: load_and_init
+  use mo_optics_utils_rrtmgp,only: load_gas_optics
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
@@ -149,7 +149,7 @@ program rte_check_equivalence
   deallocate(gas_conc_array)
   ! ----------------------------------------------------------------------------
   ! load data into classes
-  call load_and_init(gas_optics, gas_optics_file, gas_concs)
+  call load_gas_optics(gas_optics, gas_optics_file, gas_concs)
   is_sw = gas_optics%source_is_external()
   is_lw = .not. is_sw
   print *, "gas optics is for the " // merge("longwave ", "shortwave", is_lw)

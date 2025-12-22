@@ -118,8 +118,8 @@ program rrtmgp_rfmip_lw
   ! Based on the possibilities: rrtmgp_rfmip_lw, ssm_rfmip_lw
   call get_command_argument(0, invoked_name)
   do_rrtmgp = (invoked_name(len_trim(invoked_name)-14:len_trim(invoked_name)-8) == "rrtmgp_")
-  do_rrtmgp = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-8) == "ssm_")
-  if (.not. do_rrtmgp .or. do_ssm) call stop_on_err("Don't recogize which optics to use")
+  do_ssm    = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-8) == "ssm_")
+  if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
 
   if(do_rrtmgp) then
     allocate(ty_gas_optics_rrtmgp::gas_optics)
@@ -217,7 +217,7 @@ program rrtmgp_rfmip_lw
                      = gas_optics%get_press_min() + epsilon(gas_optics%get_press_min())
       end if
     type is (ty_optics_ssm)
-      call stop_on_err(gas_optics%configure())
+      ! call stop_on_err(gas_optics%configure())
   end select
   nbnd = gas_optics%get_nband()
 

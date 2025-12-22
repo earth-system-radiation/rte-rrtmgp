@@ -1,9 +1,8 @@
+#
+# Example-specific utilities. Need to specify include directories because
+# mo_rfmip_io.F90 uses netcdf directly
+#
 add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
-
-#
-# Need to specify include directories because mo_rfmip_io.F90 uses netcdf
-# directly
-#
 target_include_directories(
   rfmip_clear_utils
   PUBLIC
@@ -12,6 +11,9 @@ target_include_directories(
 )
 target_link_libraries(rfmip_clear_utils PRIVATE testing-utils)
 
+#
+# Build the two executables
+#
 foreach(
   test_executable IN
   ITEMS # cmake-format: sort
@@ -111,3 +113,54 @@ set_tests_properties(
   check_rfmip_lw_sw
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
 )
+
+#
+# Simple spectral model tests
+#
+
+#
+# Copy and rename inputs
+#
+foreach(fn IN LISTS inoutputs)
+  # Rename rule: from RFMIP-compatible to simpler name
+  string(
+    REGEX
+    REPLACE "Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1"
+            "ssm_rfmip-rad-irf"
+            new_name
+            "${fn}"
+  )
+
+  set(src "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/${fn}")
+  set(dst "${CMAKE_CURRENT_BINARY_DIR}/${new_name}")
+
+  add_test(
+    NAME copy_ssm_rfmip_inputs_${fn}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src}" "${dst}"
+  )
+  set_tests_properties(
+    copy_ssm_rfmip_inputs_${fn}
+    PROPERTIES FIXTURES_REQUIRED
+               fetch_rrtmgp_data
+               FIXTURES_SETUP
+               copy_rename_ssm_rfmip_inputs
+  )
+
+  list(APPEND RENAMED_OUTPUTS "${dst}")
+endforeach()
+
+#
+# Link/rename and run executables
+#
+foreach(fn rfmip_lw rfmip_sw)
+  add_test(NAME link_${fn} COMMAND ln rrtmgp_${fn} ssm_${fn})
+  set_tests_properties(
+    link_${fn} PROPERTIES FIXTURES_SETUP link_rfmip_exeuctables
+  )
+  add_test(NAME run_ssm_${fn} COMMAND ssm_${fn})
+  set_tests_properties(
+    run_ssm_${fn}
+    PROPERTIES FIXTURES_REQUIRED
+               "copy_rename_ssm_rfmip_inputs;link_rfmip_exeuctables"
+  )
+endforeach()

@@ -138,9 +138,10 @@ program rte_rrtmgp_allsky
   ! Based on the possibilities: rrtmgp_allsky, ssm_allsky
   call get_command_argument(0, invoked_name)
   do_rrtmgp = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-6) == "rrtmgp_")
-  do_ssm    = (invoked_name(len_trim(invoked_name)-10:len_trim(invoked_name)-6) == "ssm_")
+  do_ssm    = (invoked_name(len_trim(invoked_name)-9 :len_trim(invoked_name)-6) == "ssm_")
   if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
 
+  nUserArgs = command_argument_count()
   if (nUserArgs <  5) call stop_on_err("Usage: [rrtmgp|ssm]_allsky ncol nlay nreps output_file ...")
 
   call get_command_argument(1, char_input)
@@ -220,7 +221,7 @@ program rte_rrtmgp_allsky
       if (Tstar > 0) then
         ! call stop_on_err(gas_optics%configure(real(Tstar, wp)))
       else
-       !  call stop_on_err(gas_optics%configure())
+        call stop_on_err(gas_optics%configure())
       end if
   end select
   is_sw = gas_optics%source_is_external()

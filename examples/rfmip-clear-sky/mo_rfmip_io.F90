@@ -333,7 +333,7 @@ contains
     if(any([ncol_l, nlay_l, nexp_l]  == 0)) &
       call stop_on_err("read_and_block_lw_bc: Haven't read problem size yet.")
     if(mod(ncol_l*nexp_l, blocksize) /= 0 ) &
-      call stop_on_err("read_and_block_lw_bc: number of columns doesn't fit evenly into blocks.")
+      call stop_on_err("read_and_block_gases_ty: number of columns doesn't fit evenly into blocks.")
     nblocks = (ncol_l*nexp_l)/blocksize
     allocate(gas_conc_array(nblocks))
     !
@@ -401,16 +401,18 @@ contains
           spread(gas_conc_temp_1d(exp_num(:,b)), 2, ncopies = nlay_l)))
         end if
       end do
-      !
-      ! NO2 is the one gas known to the k-distribution that isn't provided by RFMIP
-      !   It would be better to remove it from
-      !
+    end do
+
+    !
+    ! NO2 is the one gas known to the k-distribution that isn't provided by RFMIP
+    !   It would be better to remove it from
+    !
+    if(string_in_array('no2', gas_names)) then
       do b = 1, nblocks
         call stop_on_err(gas_conc_array(b)%set_vmr('no2', 0._wp))
       end do
+    end if
 
-
-    end do
     ncid = nf90_close(ncid)
   end subroutine read_and_block_gases_ty
   !--------------------------------------------------------------------------------------------------------------------

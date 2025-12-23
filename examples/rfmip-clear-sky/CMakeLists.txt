@@ -127,7 +127,7 @@ foreach(fn IN LISTS inoutputs)
   # Rename rule: from RFMIP-compatible to simpler name
   string(
     REGEX
-    REPLACE "Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1"
+    REPLACE "Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn"
             "ssm_rfmip-rad-irf"
             new_name
             "${fn}"
@@ -154,12 +154,17 @@ endforeach()
 #
 # Link/rename and run executables
 #
-foreach(fn rfmip_lw rfmip_sw)
+foreach(fn IN ITEMS rfmip_lw rfmip_sw)
   add_test(NAME link_${fn} COMMAND ln rrtmgp_${fn} ssm_${fn})
   set_tests_properties(
     link_${fn} PROPERTIES FIXTURES_SETUP link_rfmip_executables
   )
-  add_test(NAME run_ssm_${fn} COMMAND ssm_${fn})
+  add_test(
+    NAME run_ssm_${fn}
+    COMMAND
+      ssm_${fn} 8
+      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+  )
   set_tests_properties(
     run_ssm_${fn}
     PROPERTIES FIXTURES_REQUIRED

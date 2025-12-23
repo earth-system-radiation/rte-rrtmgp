@@ -119,29 +119,33 @@ program rrtmgp_rfmip_sw
   ! Based on the possibilities: rrtmgp_rfmip_lw, ssm_rfmip_lw
   call get_command_argument(0, invoked_name)
   do_rrtmgp = (invoked_name(len_trim(invoked_name)-14:len_trim(invoked_name)-8) == "rrtmgp_")
-  do_ssm    = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-8) == "ssm_")
+  do_ssm    = (invoked_name(len_trim(invoked_name)-11:len_trim(invoked_name)-8) == "ssm_")
   if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
+
+  nargs = command_argument_count()
+  if(nargs >= 2) call get_command_argument(2, rfmip_file)
+  call read_size(rfmip_file, ncol, nlay, nexp)
+  if(nargs >= 1) then
+    call get_command_argument(1, block_size_char)
+    read(block_size_char, '(i4)') block_size
+  else
+    block_size = ncol
+  end if
 
   if(do_rrtmgp) then
     allocate(ty_gas_optics_rrtmgp::gas_optics)
     print *, "Usage: rrtmgp_rfmip_sw [block_size] [rfmip_file] [k-distribution_file] [forcing_index (1,2,3)]"
-    nargs = command_argument_count()
-    if(nargs >= 2) call get_command_argument(2, rfmip_file)
-    call read_size(rfmip_file, ncol, nlay, nexp)
-    if(nargs >= 1) then
-      call get_command_argument(1, block_size_char)
-      read(block_size_char, '(i4)') block_size
-    else
-      block_size = ncol
-    end if
+    !
+    ! Read arguments out of order
+    !
     if(nargs >= 3) call get_command_argument(3, kdist_file)
     if(nargs >= 4) then
       call get_command_argument(4, forcing_index_char)
     end if
-
     read(forcing_index_char, '(i4)') forcing_index
     if(forcing_index < 1 .or. forcing_index > 3) &
       stop "Forcing index is invalid (must be 1,2 or 3)"
+
     flxdn_file = 'rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f' // trim(forcing_index_char) // '_gn.nc'
     flxup_file = 'rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f' // trim(forcing_index_char) // '_gn.nc'
 
@@ -155,15 +159,13 @@ program rrtmgp_rfmip_sw
   else if (do_ssm) then
     allocate(ty_optics_ssm::gas_optics)
     print *, "Usage: ssm_rfmip_sw [block_size]"
-    nargs = command_argument_count()
-    if(nargs >= 1) then
-      call get_command_argument(1, block_size_char)
-      read(block_size_char, '(i4)') block_size
-    else
-      block_size = 16
-    end if
     flxdn_file = 'rsd_ssm_rfmip-rad-irf.nc'
     flxup_file = 'rsu_ssm_rfmip-rad-irf.nc'
+    !
+    ! These variables are needed for the fragile RFMIP IO
+    !
+    kdist_gas_names = ["co2"]
+    rfmip_gas_games = ["carbon_dioxide"]
   end if
   !
   ! How big is the problem? Does it fit into blocks of the size we've specified?
@@ -196,7 +198,6 @@ program rrtmgp_rfmip_sw
       call load_gas_optics(k_dist, trim(kdist_file), gas_conc_array(1))
       if(.not. k_dist%source_is_external()) &
         stop "rrtmgp_rfmip_sw: k-distribution file isn't SW"
-      nbnd = k_dist%get_nband()
       ngpt = k_dist%get_ngpt()
 
       !

@@ -150,7 +150,7 @@ set_tests_properties(
 #
 # SSM tests and checks
 #
-add_test(NAME link_ssm_allsky COMMAND ln rrtmgp_allsky ssm_allsky)
+add_test(NAME link_ssm_allsky COMMAND ln -f rrtmgp_allsky ssm_allsky)
 set_tests_properties(
   link_ssm_allsky PROPERTIES FIXTURES_SETUP link_allsky_executables
 )

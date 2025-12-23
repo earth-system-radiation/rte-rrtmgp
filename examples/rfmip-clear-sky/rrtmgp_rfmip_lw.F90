@@ -116,22 +116,23 @@ program rrtmgp_rfmip_lw
   ! Based on the possibilities: rrtmgp_rfmip_lw, ssm_rfmip_lw
   call get_command_argument(0, invoked_name)
   do_rrtmgp = (invoked_name(len_trim(invoked_name)-14:len_trim(invoked_name)-8) == "rrtmgp_")
-  do_ssm    = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-8) == "ssm_")
+  do_ssm    = (invoked_name(len_trim(invoked_name)-11:len_trim(invoked_name)-8) == "ssm_")
   if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
+
+  nargs = command_argument_count()
+  if(nargs >= 2) call get_command_argument(2, rfmip_file)
+  call read_size(rfmip_file, ncol, nlay, nexp)
+  if(nargs >= 1) then
+    call get_command_argument(1, block_size_char)
+    read(block_size_char, '(i4)') block_size
+  else
+    block_size = ncol
+  end if
 
   if(do_rrtmgp) then
     allocate(ty_gas_optics_rrtmgp::gas_optics)
 
     print *, "Usage: rrtmgp_rfmip_lw [block_size] [rfmip_file] [k-distribution_file] [forcing_index (1,2,3)] [physics_index (1,2)]"
-    nargs = command_argument_count()
-    if(nargs >= 2) call get_command_argument(2, rfmip_file)
-    call read_size(rfmip_file, ncol, nlay, nexp)
-    if(nargs >= 1) then
-      call get_command_argument(1, block_size_char)
-      read(block_size_char, '(i4)') block_size
-    else
-      block_size = ncol
-    end if
     if(nargs >= 3) call get_command_argument(3, kdist_file)
     if(nargs >= 4) call get_command_argument(4, forcing_index_char)
     if(nargs >= 5) call get_command_argument(5, physics_index_char)
@@ -158,16 +159,14 @@ program rrtmgp_rfmip_lw
     print *, "Calculation uses RFMIP gases: ", (trim(rfmip_gas_games(b)) // " ", b = 1, size(rfmip_gas_games))
   else if (do_ssm) then
     allocate(ty_optics_ssm::gas_optics)
-    print *, "Usage: ssm_rfmip_lw [block_size]"
-    nargs = command_argument_count()
-    if(nargs >= 1) then
-      call get_command_argument(1, block_size_char)
-      read(block_size_char, '(i4)') block_size
-    else
-      block_size = 16
-    end if
+    print *, "Usage: ssm_rfmip_lw [block_size] [rfmip_file]"
     flxdn_file = 'rld_ssm_rfmip-rad-irf.nc'
     flxup_file = 'rlu_ssm_rfmip-rad-irf.nc'
+    !
+    ! These variables are needed for the fragile RFMIP IO
+    !
+    kdist_gas_names = ["co2"]
+    rfmip_gas_games = ["carbon_dioxide"]
   end if
 
   !
@@ -185,7 +184,6 @@ program rrtmgp_rfmip_lw
   ! Allocation on assignment within reading routines
   !
   call read_and_block_pt(rfmip_file, block_size, p_lay, p_lev, t_lay, t_lev)
-
   !
   ! Read the gas concentrations and surface properties
   !
@@ -201,7 +199,6 @@ program rrtmgp_rfmip_lw
       call load_gas_optics(gas_optics, trim(kdist_file), gas_conc_array(1))
       if(.not. gas_optics%source_is_internal()) &
         stop "rrtmgp_rfmip_lw: k-distribution file isn't LW"
-      nbnd = gas_optics%get_nband()
       !
       ! RRTMGP won't run with pressure less than its minimum. The top level in the RFMIP file
       !   is set to 10^-3 Pa. Here we pretend the layer is just a bit less deep.
@@ -215,9 +212,10 @@ program rrtmgp_rfmip_lw
                      = gas_optics%get_press_min() + epsilon(gas_optics%get_press_min())
       end if
     type is (ty_optics_ssm)
-      ! call stop_on_err(gas_optics%configure())
+      call stop_on_err(gas_optics%configure())
   end select
   nbnd = gas_optics%get_nband()
+  print *, "number of bands is", nbnd
 
   !
   ! Allocate space for output fluxes (accessed via pointers in ty_fluxes_broadband),

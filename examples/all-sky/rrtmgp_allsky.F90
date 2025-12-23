@@ -335,8 +335,15 @@ program rte_rrtmgp_allsky
     !
     ! Cloud optics
     !
-    if(do_clouds) &
-      call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+    if(do_clouds) then
+      select type (gas_optics)
+        type is (ty_gas_optics_rrtmgp)
+          call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+        type is (ty_optics_ssm)
+          call stop_on_err(  gas_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+      end select
+    end if
+
     !
     ! Aerosol optics
     !

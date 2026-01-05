@@ -194,6 +194,7 @@ contains
     ! ----------------------------------------------------------
     integer :: nnu, ngas
     integer :: inu, itri, igas
+    real(wp), dimension(2, size(nus)) :: band_lims_wavenum
 
     error_msg = ""
     ngas = size(gas_names)
@@ -245,6 +246,22 @@ contains
     this%nus(1:nnu)        = nus(1:nnu)
     this%gas_names(1:ngas) = gas_names(1:ngas)
 
+    ! Then construct the band limits (place edges at midpoints between nus values):
+
+    ! First band: starts at nu_min
+    band_lims_wavenum(1, 1) = nu_min
+    band_lims_wavenum(2, 1) = (nus(1) + nus(2)) * 0.5_wp
+    
+    ! Middle bands: edges at midpoints
+    do inu = 2, nnu - 1
+      band_lims_wavenum(1, inu) = (nus(inu-1) + nus(inu))   * 0.5_wp
+      band_lims_wavenum(2, inu) = (nus(inu)   + nus(inu+1)) * 0.5_wp
+    end do
+    
+    ! Last band: ends at nu_max
+    band_lims_wavenum(1, nnu) = (nus(nnu-1) + nus(nnu)) * 0.5_wp
+    band_lims_wavenum(2, nnu) = nu_max
+
     ! Set molar masses based on gas names
     !   Maybe this is better as module data...
     do igas = 1, ngas
@@ -272,6 +289,12 @@ contains
     ! Then when needed dnu = band_lims_wavenum(2, :) - band_lims_wavenum(1 :) 
     !   but you'll want to get that like band_lims_wavenum = this%get_band_lims_wavenumber()
     ! 
+    ! Initialize the parent class
+    error_msg = this%ty_optical_props%init(band_lims_wavenum, name="ssm")
+    if (error_msg /= '') return
+    
+    ! Now you can get dnus from the initialized structure:
+    this%dnus = band_lims_wavenum(2, :) - band_lims_wavenum(1, :)
 
     ! Compute absorption coefficients by summing exponentials at each nu
     ! Initialize absorption coefficients to zero

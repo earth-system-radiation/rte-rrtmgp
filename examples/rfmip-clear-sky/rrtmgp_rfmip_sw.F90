@@ -215,7 +215,7 @@ program rrtmgp_rfmip_sw
                      = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
       end if
     type is (ty_optics_ssm)
-      ! call stop_on_err(gas_optics%configure(Tstar = 5760._wp))
+      call stop_on_err(gas_optics%configure(do_sw = .true.))
   end select
   nbnd = gas_optics%get_nband()
 

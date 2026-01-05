@@ -28,6 +28,11 @@ module mo_optics_ssm
   use mo_gas_optics_constants,   only: grav
   use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source
 
+  implicit none
+  interface configure
+    module procedure configure_with_values, configure_with_defaults
+  end interface 
+  
   private
   public :: configure
   real(wp), parameter, public :: Tsun_ssm = 5760._wp ! Default sun temperature for SSM
@@ -47,6 +52,7 @@ module mo_optics_ssm
   real(wp), parameter, public :: g_cld_sw = 0.85_wp ! Default for sw cloud asymmetry
 
   ! Default wavenumber arrays
+  integer :: i 
   integer,  parameter :: nnu_def = 41           ! Default nnu
   real(wp), parameter :: nu_min_lw_def = 10._wp    ! cm⁻¹
   real(wp), parameter :: nu_max_lw_def = 3500._wp  ! cm⁻¹
@@ -222,10 +228,6 @@ contains
       error_msg = "ssm_gas_optics(): kappa0 needs to be >=0"
     end if
     
-    if (.not. all(triangle_params(:, 3) > nu_min .and. triangle_params(:, 3) < nu_max)) then
-      error_msg = "ssm_gas_optics(): nu0 needs to be less than nu_max and greater than nu_min"
-    end if
-
     if (.not. all(triangle_params(:, 4) > 0.0_wp)) then
       error_msg = "ssm_gas_optics(): l needs to be > 0"
     end if

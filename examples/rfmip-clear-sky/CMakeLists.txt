@@ -37,7 +37,7 @@ foreach(
             rte-rrtmgp::rte
             rte-rrtmgp::rrtmgp
             rte-rrtmgp::ssm
-  )
+)
 endforeach()
 
 #
@@ -154,10 +154,22 @@ endforeach()
 #
 # Link/rename and run executables
 #
+
 foreach(fn IN ITEMS rfmip_lw rfmip_sw)
-  add_test(NAME link_${fn} COMMAND ln rrtmgp_${fn} ssm_${fn})
-  set_tests_properties(
-    link_${fn} PROPERTIES FIXTURES_SETUP link_rfmip_executables
+  add_executable(ssm_${fn} rrtmgp_${fn}.F90)
+  target_include_directories(
+    ssm_${fn}
+    PUBLIC
+      $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+  )
+  target_link_libraries(
+    ssm_${fn}
+    PRIVATE rfmip_clear_utils
+            rrtmgp-load-data
+            testing-utils
+            rte-rrtmgp::rte
+            rte-rrtmgp::rrtmgp
+            rte-rrtmgp::ssm
   )
   add_test(
     NAME run_ssm_${fn}
@@ -168,6 +180,6 @@ foreach(fn IN ITEMS rfmip_lw rfmip_sw)
   set_tests_properties(
     run_ssm_${fn}
     PROPERTIES FIXTURES_REQUIRED
-               "copy_rename_ssm_rfmip_inputs;link_rfmip_executables"
+               "copy_rename_ssm_rfmip_inputs"
   )
 endforeach()

@@ -257,11 +257,11 @@ program rrtmgp_rfmip_sw
     !    from pressures, temperatures, and gas concentrations...
     !
     call stop_on_err(gas_optics%gas_optics(p_lay(:,:,b), &
-                                       p_lev(:,:,b),       &
-                                       t_lay(:,:,b),       &
-                                       gas_conc_array(b),  &
-                                       optical_props,      &
-                                       toa_flux))
+                                           p_lev(:,:,b),       &
+                                           t_lay(:,:,b),       &
+                                           gas_conc_array(b),  &
+                                           optical_props,      &
+                                           toa_flux))
     ! Boundary conditions
     !   (This is partly to show how to keep work on GPUs using OpenACC in a host application)
     ! What's the total solar irradiance assumed by RRTMGP?

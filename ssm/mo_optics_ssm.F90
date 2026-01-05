@@ -262,23 +262,6 @@ contains
     band_lims_wavenum(1, nnu) = (nus(nnu-1) + nus(nnu)) * 0.5_wp
     band_lims_wavenum(2, nnu) = nu_max
 
-    ! Set molar masses based on gas names
-    !   Maybe this is better as module data...
-    do igas = 1, ngas
-      select case (trim(lower_case(gas_names(igas))))
-        case ('h2o')
-          this%mol_weights(igas) = mw_h2o
-        case ('co2')
-          this%mol_weights(igas) = mw_co2
-        case ('o3')
-          this%mol_weights(igas) = mw_o3
-        case default
-          error_msg = "Don't know the molecular weight for gas: " // trim(gas_names(igas))
-          return
-      end select
-    end do
-    if (error_msg /= '') return
-
     ! Spectral discretization - edges of "bands"
     ! err_message = this%ty_optical_props%init(band_lims_wavenum, name = "ssm_lw" or whatevs) or maybe? 
     ! err_message = this%init(band_lims_wavenum)
@@ -295,6 +278,23 @@ contains
     
     ! Now you can get dnus from the initialized structure:
     this%dnus = band_lims_wavenum(2, :) - band_lims_wavenum(1, :)
+
+    ! Set molar masses based on gas names
+    !   Maybe this is better as module data...
+    do igas = 1, ngas
+      select case (trim(lower_case(gas_names(igas))))
+        case ('h2o')
+          this%mol_weights(igas) = mw_h2o
+        case ('co2')
+          this%mol_weights(igas) = mw_co2
+        case ('o3')
+          this%mol_weights(igas) = mw_o3
+        case default
+          error_msg = "Don't know the molecular weight for gas: " // trim(gas_names(igas))
+          return
+      end select
+    end do
+    if (error_msg /= '') return
 
     ! Compute absorption coefficients by summing exponentials at each nu
     ! Initialize absorption coefficients to zero

@@ -93,7 +93,6 @@ program rrtmgp_rfmip_sw
   ! Classes used by rte+rrtmgp
   !
   ! mo_optics_utils_rrtmgp declares a variable
-  type(ty_gas_optics_rrtmgp)                     :: k_dist
   type(ty_optical_props_2str)                    :: optical_props
   type(ty_fluxes_broadband)                      :: fluxes
 
@@ -193,12 +192,12 @@ program rrtmgp_rfmip_sw
     type is (ty_gas_optics_rrtmgp)
       !
       ! Read k-distribution information. load_gas_optics() reads data from netCDF and calls
-      !   k_dist%init(); users might want to use their own reading methods
+      !   gas_optics%init(); users might want to use their own reading methods
       !
-      call load_gas_optics(k_dist, trim(kdist_file), gas_conc_array(1))
-      if(.not. k_dist%source_is_external()) &
+      call load_gas_optics(gas_optics, trim(kdist_file), gas_conc_array(1))
+      if(.not. gas_optics%source_is_external()) &
         stop "rrtmgp_rfmip_sw: k-distribution file isn't SW"
-      ngpt = k_dist%get_ngpt()
+      ngpt = gas_optics%get_ngpt()
 
       !
       ! RRTMGP won't run with pressure less than its minimum. The top level in the RFMIP file
@@ -209,10 +208,10 @@ program rrtmgp_rfmip_sw
       ! Are the arrays ordered in the vertical with 1 at the top or the bottom of the domain?
       !
       if(p_lay(1, 1, 1) < p_lay(1, nlay, 1)) then
-        p_lev(:,1,:) = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
+        p_lev(:,1,:) = gas_optics%get_press_min() + epsilon(gas_optics%get_press_min())
       else
         p_lev(:,nlay+1,:) &
-                     = k_dist%get_press_min() + epsilon(k_dist%get_press_min())
+                     = gas_optics%get_press_min() + epsilon(gas_optics%get_press_min())
       end if
     type is (ty_optics_ssm)
       call stop_on_err(gas_optics%configure(do_sw = .true.))
@@ -220,7 +219,7 @@ program rrtmgp_rfmip_sw
   nbnd = gas_optics%get_nband()
 
 
-  allocate(toa_flux(block_size, k_dist%get_ngpt()), &
+  allocate(toa_flux(block_size, gas_optics%get_ngpt()), &
            def_tsi(block_size), usecol(block_size,nblocks))
   !
   ! RTE will fail if passed solar zenith angles greater than 90 degree. We replace any with
@@ -239,7 +238,7 @@ program rrtmgp_rfmip_sw
   allocate(flux_up(block_size, nlay+1, nblocks), &
            flux_dn(block_size, nlay+1, nblocks))
   allocate(mu0(block_size), sfc_alb_spec(nbnd,block_size))
-  call stop_on_err(optical_props%alloc_2str(block_size, nlay, k_dist))
+  call stop_on_err(optical_props%alloc_2str(block_size, nlay, gas_optics))
   !$acc enter data create(optical_props, optical_props%tau, optical_props%ssa, optical_props%g)
   !$omp target enter data map(alloc:optical_props%tau, optical_props%ssa, optical_props%g)
   !$acc enter data create (toa_flux, def_tsi)
@@ -257,7 +256,7 @@ program rrtmgp_rfmip_sw
     ! Compute the optical properties of the atmosphere and the Planck source functions
     !    from pressures, temperatures, and gas concentrations...
     !
-    call stop_on_err(k_dist%gas_optics(p_lay(:,:,b), &
+    call stop_on_err(gas_optics%gas_optics(p_lay(:,:,b), &
                                        p_lev(:,:,b),       &
                                        t_lay(:,:,b),       &
                                        gas_conc_array(b),  &

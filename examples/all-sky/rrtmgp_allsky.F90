@@ -175,12 +175,12 @@ program rte_rrtmgp_allsky
   else if (do_ssm) then
     allocate(ty_optics_ssm::gas_optics)
 
+    ! Specify shortwave by putting any text in argument 6
     if (nUserArgs >= 6) then
       call get_command_argument(6, char_input)
-      read(char_input, '(i8)') Tstar
-      if(Tstar < 0) call stop_on_err("Specify Tstar >= 0.")
+      Tstar = 6760._wp
     end if
-    do_clouds = .true.
+    do_clouds = .false.
   end if
   ! -----------------------------------------------------------------------------------
   allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
@@ -219,7 +219,7 @@ program rte_rrtmgp_allsky
       end if
     type is (ty_optics_ssm)
       if (Tstar > 0) then
-        ! call stop_on_err(gas_optics%configure(real(Tstar, wp)))
+        call stop_on_err(gas_optics%configure(do_sw = .true.))
       else
         call stop_on_err(gas_optics%configure())
       end if
@@ -364,11 +364,11 @@ program rte_rrtmgp_allsky
       !$omp target data map(alloc:            lw_sources%lay_source,     lw_sources%lev_source) &
       !$omp             map(alloc:            lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
       call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
-                                         t_lay, t_sfc, &
-                                         gas_concs,    &
-                                         atmos,        &
-                                         lw_sources,   &
-                                         tlev = t_lev))
+                                             t_lay, t_sfc, &
+                                             gas_concs,    &
+                                             atmos,        &
+                                             lw_sources,   &
+                                             tlev = t_lev))
       if(do_clouds)   call stop_on_err(clouds%increment(atmos))
       if(do_aerosols) call stop_on_err(aerosols%increment(atmos))
       call stop_on_err(rte_lw(atmos,      &

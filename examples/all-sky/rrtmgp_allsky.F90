@@ -142,7 +142,7 @@ program rte_rrtmgp_allsky
   if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
 
   nUserArgs = command_argument_count()
-  if (nUserArgs <  5) call stop_on_err("Usage: [rrtmgp|ssm]_allsky ncol nlay nreps output_file ...")
+  if (nUserArgs <  4) call stop_on_err("Usage: [rrtmgp|ssm]_allsky ncol nlay nreps output_file ...")
 
   call get_command_argument(1, char_input)
   read(char_input, '(i8)') ncol
@@ -175,11 +175,12 @@ program rte_rrtmgp_allsky
   else if (do_ssm) then
     allocate(ty_optics_ssm::gas_optics)
 
-    ! Specify shortwave by putting any text in argument 6
-    if (nUserArgs >= 6) then
-      call get_command_argument(6, char_input)
+    ! Specify shortwave by putting any text in argument 5
+    if (nUserArgs >= 5) then
+      call get_command_argument(5, char_input)
       Tstar = 6760._wp
     end if
+    if (nUserArgs >  5) print *, "Ignoring command line arguments beyond the first five..."
     do_clouds = .false.
   end if
   ! -----------------------------------------------------------------------------------
@@ -259,7 +260,6 @@ program rte_rrtmgp_allsky
     class default
       call stop_on_err("rte_rrtmgp_allsky: Don't recognize the kind of optical properties ")
   end select
-
   ! ----------------------------------------------------------------------------
   !  Boundary conditions depending on whether the k-distribution being supplied
   !   is LW or SW

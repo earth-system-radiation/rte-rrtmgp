@@ -1,4 +1,3 @@
-set(rrtmgp_load_source_dir ${PROJECT_SOURCE_DIR}/rrtmgp/data-loading-examples)
 #
 # All-sky tests with clouds/by-band optics and aerosols
 #

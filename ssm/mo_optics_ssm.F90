@@ -71,15 +71,15 @@ module mo_optics_ssm
     [1._wp, 298._wp,    0._wp, 64._wp,  &
      1._wp,  12._wp, 1600._wp, 36._wp,  &
      1._wp,  16._wp, 1600._wp, 54._wp,  &
-     2._wp, 110._wp,  667._wp, 12._wp], &
-    shape = [4, 4])
+     2._wp, 110._wp,  667._wp, 12._wp], & 
+    shape = [4, 4], order = [2, 1])
     
   character(len=32), dimension(2), parameter :: gas_names_def_lw = [character(32) :: "h2o", "co2"]
 
   real(wp), dimension(2,4), parameter :: triangle_params_def_sw = reshape( &
     [1._wp, 298._wp,    0._wp, 64._wp,  &
-     2._wp,   0._wp,    7._wp, 12._wp], & ! Todo, add o3 triangles in SW
-    shape = [2, 4])
+     2._wp,  0.0_wp,    7._wp, 12._wp], & ! Todo, add o3 triangles in SW
+    shape = [2, 4], order = [2, 1])
     
   character(len=32), dimension(2), parameter :: gas_names_def_sw = [character(32) :: "h2o", "o3"]
   
@@ -223,8 +223,13 @@ contains
       end if
     end if
     
-    ! Be sure the first index, which says which gas, is > 0 and <= ngas 
-    !
+    ! Validate gas indices in triangle_params
+    if (.not. all(triangle_params(:, 1) >= 1._wp .and. &
+                  triangle_params(:, 1) <= real(ngas, wp) .and. &
+                  triangle_params(:, 1) == floor(triangle_params(:, 1)))) then
+      error_msg = "ssm_gas_optics(): gas index in triangle_params must be integer >= 1 and <= ngas"
+      return
+    end if
     if (.not. all(triangle_params(:, 2) >= 0.0_wp)) then
       error_msg = "ssm_gas_optics(): kappa0 needs to be >=0"
     end if

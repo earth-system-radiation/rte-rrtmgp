@@ -181,7 +181,7 @@ program rte_rrtmgp_allsky
       Tstar = 6760._wp
     end if
     if (nUserArgs >  5) print *, "Ignoring command line arguments beyond the first five..."
-    do_clouds = .false.
+    do_clouds = .true.
   end if
   ! -----------------------------------------------------------------------------------
   allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
@@ -596,7 +596,15 @@ contains
     else
       allocate(ty_optical_props_1scl::clouds)
     end if
-    call stop_on_err(clouds%init(cloud_optics))
+    !
+    ! Copy spectral discretization
+    !
+    if(do_rrtmgp) then
+      call stop_on_err(clouds%init(cloud_optics))
+    else if (do_ssm) then
+      call stop_on_err(clouds%init(gas_optics))
+    end if
+
 
     select type(clouds)
       class is (ty_optical_props_1scl)
@@ -622,8 +630,14 @@ contains
     !   and not very close to the ground (< 900 hPa), and
     !   put them in 2/3 of the columns since that's roughly the
     !   total cloudiness of earth
-    rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
-    rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
+    if(do_rrtmgp) then
+      rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
+      rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
+    else if (do_ssm) then
+      ! Arbitrary values - SSM doesn't care
+      rel_val = 10._wp
+      rei_val = 20._wp
+    end if
     !$acc                         parallel loop    collapse(2) copyin(t_lay) copyout( lwp, iwp, rel, rei)
     !$omp target teams distribute parallel do simd collapse(2) map(to:t_lay) map(from:lwp, iwp, rel, rei)
     do ilay=1,nlay

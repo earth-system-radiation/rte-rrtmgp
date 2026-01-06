@@ -154,7 +154,7 @@ set_tests_properties(
   link_ssm_allsky PROPERTIES FIXTURES_SETUP link_allsky_executables
 )
 
-add_test(NAME run_ssm_allsky_lw COMMAND ssm_allsky 24 72 1 rrtmgp-allsky-lw.nc)
+add_test(NAME run_ssm_allsky_lw COMMAND ssm_allsky 24 72 1 ssm-allsky-lw.nc)
 set_tests_properties(
   run_ssm_allsky_lw
   PROPERTIES FIXTURES_REQUIRED
@@ -164,7 +164,7 @@ set_tests_properties(
 )
 
 add_test(
-  NAME run_ssm_allsky_sw COMMAND ssm_allsky 24 72 1 rrtmgp-allsky-sw.nc 5760
+  NAME run_ssm_allsky_sw COMMAND ssm_allsky 24 72 1 ssm-allsky-sw.nc 5760
 )
 set_tests_properties(
   run_ssm_allsky_sw

@@ -78,7 +78,7 @@ module mo_optics_ssm
 
   real(wp), dimension(2,4), parameter :: triangle_params_def_sw = reshape( &
     [1._wp, 298._wp,    0._wp, 64._wp,  &
-     2._wp, 110._wp,  667._wp, 12._wp], &
+     2._wp,   0._wp,    7._wp, 12._wp], & ! Todo, add o3 triangles in SW
     shape = [2, 4])
     
   character(len=32), dimension(2), parameter :: gas_names_def_sw = [character(32) :: "h2o", "o3"]
@@ -384,6 +384,9 @@ contains
                      this%absorption_coeffs, play, this%pref, layer_mass, &
                      optical_props%tau)
 
+    !
+    call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
+
     select type(optical_props)
       type is (ty_optical_props_2str)
         call zero_array(ncol, nlay, nnu, optical_props%ssa)
@@ -462,6 +465,9 @@ contains
                      this%absorption_coeffs, play, this%pref, layer_mass, &
                      optical_props%tau)
 
+    !
+    call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
+    
     ! Not doing scattering of gases
     select type(optical_props)
       type is (ty_optical_props_2str)

@@ -197,7 +197,7 @@ program rrtmgp_rfmip_sw
       call load_gas_optics(gas_optics, trim(kdist_file), gas_conc_array(1))
       if(.not. gas_optics%source_is_external()) &
         stop "rrtmgp_rfmip_sw: k-distribution file isn't SW"
-      ngpt = gas_optics%get_ngpt()
+      !ngpt = gas_optics%get_ngpt()
 
       !
       ! RRTMGP won't run with pressure less than its minimum. The top level in the RFMIP file
@@ -216,8 +216,10 @@ program rrtmgp_rfmip_sw
     type is (ty_optics_ssm)
       call stop_on_err(gas_optics%configure(do_sw = .true.))
   end select
-  nbnd = gas_optics%get_nband()
 
+  ! Set ngpt for both cases
+  ngpt = gas_optics%get_ngpt()
+  nbnd = gas_optics%get_nband()
 
   allocate(toa_flux(block_size, gas_optics%get_ngpt()), &
            def_tsi(block_size), usecol(block_size,nblocks))

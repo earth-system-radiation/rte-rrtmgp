@@ -79,7 +79,7 @@ contains
     real(wp), intent(in) :: T, nu
     real(wp)             :: B_nu
     B_nu = 100._wp*2._wp*planck_h*((nu*100._wp)**3)*(lightspeed**2) / &
-                  exp( (planck_h * lightspeed * nu * 100._wp) / (boltzmann_k * T) - 1._wp)
+         (exp((planck_h * lightspeed * nu * 100._wp) / (boltzmann_k * T)) - 1._wp)
   end function
   ! -------
   subroutine compute_Planck_source_2D(&

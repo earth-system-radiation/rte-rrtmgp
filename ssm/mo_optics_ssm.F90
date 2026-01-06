@@ -54,10 +54,10 @@ module mo_optics_ssm
   ! Default wavenumber arrays
   integer :: i 
   integer,  parameter :: nnu_def = 41           ! Default nnu
-  real(wp), parameter :: nu_min_lw_def = 10._wp    ! cm⁻¹
+  real(wp), parameter :: nu_min_lw_def = 0._wp    ! cm⁻¹
   real(wp), parameter :: nu_max_lw_def = 3500._wp  ! cm⁻¹
 
-  real(wp), parameter :: nu_min_sw_def = 10._wp    ! cm⁻¹
+  real(wp), parameter :: nu_min_sw_def = 0._wp    ! cm⁻¹
   real(wp), parameter :: nu_max_sw_def = 50000._wp  ! cm⁻¹
 
   real(wp), dimension(nnu_def), parameter :: nus_lw_def = &

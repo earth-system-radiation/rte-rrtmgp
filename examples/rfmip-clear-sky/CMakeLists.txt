@@ -37,7 +37,7 @@ foreach(
             rte-rrtmgp::rte
             rte-rrtmgp::rrtmgp
             rte-rrtmgp::ssm
-)
+  )
 endforeach()
 
 #
@@ -178,8 +178,6 @@ foreach(fn IN ITEMS rfmip_lw rfmip_sw)
       ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
   )
   set_tests_properties(
-    run_ssm_${fn}
-    PROPERTIES FIXTURES_REQUIRED
-               "copy_rename_ssm_rfmip_inputs"
+    run_ssm_${fn} PROPERTIES FIXTURES_REQUIRED "copy_rename_ssm_rfmip_inputs"
   )
 endforeach()

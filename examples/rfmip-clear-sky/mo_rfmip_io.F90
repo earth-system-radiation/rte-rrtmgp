@@ -350,7 +350,10 @@ contains
       if(any( [(string_in_array(gas_names(g), ['h2o', 'o3 ', 'no2']), g = 1, size(gas_names) )])) then
         call stop_on_err(gas_conc_array(b)%init(gas_names))
       else
-        call stop_on_err(gas_conc_array(b)%init([gas_names, 'h2o    ', 'o3     ', 'no2    ']))
+        call stop_on_err(gas_conc_array(b)%init([gas_names,                          &
+                                                 'h2o                             ', &
+                                                 'o3                              ', &
+                                                 'no2                             ']))
       end if
     end do
     !

@@ -135,10 +135,12 @@ program rte_rrtmgp_allsky
   ! Parse command line: rrtmgp_allsky ncol nlay nreps kdist [clouds [aerosols]]
   ! Determine which gas optics to use based on the name by which the program is evoked
   !   (possibly fragile)
-  ! Based on the possibilities: rrtmgp_allsky, ssm_allsky
+  ! Based on the possibilities: rrtmgp_allsky, ssm_allsky (with or without .exe on Windows)
   call get_command_argument(0, invoked_name)
-  do_rrtmgp = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-6) == "rrtmgp_")
-  do_ssm    = (invoked_name(len_trim(invoked_name)-9 :len_trim(invoked_name)-6) == "ssm_")
+  do_rrtmgp = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-6 ) == "rrtmgp_" .or. &
+               invoked_name(len_trim(invoked_name)-16:len_trim(invoked_name)-10) == "rrtmgp_")
+  do_ssm    = (invoked_name(len_trim(invoked_name)-9 :len_trim(invoked_name)-6 ) == "ssm_"     .or. &
+               invoked_name(len_trim(invoked_name)-13:len_trim(invoked_name)-10) == "ssm_")
   if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
 
   nUserArgs = command_argument_count()

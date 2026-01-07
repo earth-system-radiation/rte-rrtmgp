@@ -113,10 +113,12 @@ program rrtmgp_rfmip_lw
   !
   ! Determine which gas optics to use based on the name by which the program is evoked
   !   (possibly fragile)
-  ! Based on the possibilities: rrtmgp_rfmip_lw, ssm_rfmip_lw
+  ! Based on the possibilities: rrtmgp_rfmip_lw, ssm_rfmip_lw (with or without .exe on Windows)
   call get_command_argument(0, invoked_name)
-  do_rrtmgp = (invoked_name(len_trim(invoked_name)-14:len_trim(invoked_name)-8) == "rrtmgp_")
-  do_ssm    = (invoked_name(len_trim(invoked_name)-11:len_trim(invoked_name)-8) == "ssm_")
+  do_rrtmgp = (invoked_name(len_trim(invoked_name)-14:len_trim(invoked_name)-8 ) == "rrtmgp_" .or. &
+               invoked_name(len_trim(invoked_name)-18:len_trim(invoked_name)-12) == "rrtmgp_")
+  do_ssm    = (invoked_name(len_trim(invoked_name)-11:len_trim(invoked_name)-8 ) == "ssm_"    .or. &
+               invoked_name(len_trim(invoked_name)-15:len_trim(invoked_name)-12) == "ssm_")
   if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
 
   nargs = command_argument_count()

@@ -44,8 +44,8 @@ repos:
     - id: mdformat
       # Optionally add plugins
       additional_dependencies:
-      - mdformat-myst
+      - mdformat-myst>=0.3.0
       - mdformat-black
       - mdformat-config
-      - mdformat-tables
+      - mdformat-gfm
       - mdformat-web

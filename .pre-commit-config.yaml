@@ -27,11 +27,11 @@ repos:
         types: [file]
         files: \.cmake\.in$
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
+    rev: 7.0.0
     hooks:
       - id: isort
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.1.0
+    rev: 25.12.0
     hooks:
       - id: black
   - repo: https://github.com/csachs/pyproject-flake8
@@ -39,13 +39,13 @@ repos:
     hooks:
       - id: pyproject-flake8
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.22  # Use the ref you want to point at
+    rev: 1.0.0  # Use the ref you want to point at
     hooks:
     - id: mdformat
       # Optionally add plugins
       additional_dependencies:
-      - mdformat-myst
+      - mdformat-myst>=0.3.0
       - mdformat-black
       - mdformat-config
-      - mdformat-tables
+      - mdformat-gfm
       - mdformat-web

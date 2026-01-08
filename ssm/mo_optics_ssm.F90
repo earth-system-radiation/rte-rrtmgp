@@ -78,7 +78,7 @@ module mo_optics_ssm
 
   real(wp), dimension(2,4), parameter :: triangle_params_def_sw = reshape( &
     [1._wp,   1._wp,    0._wp, 1200._wp,  &
-     2._wp,  10._wp,    0._wp,  250._wp], & ! Todo, add o3 triangles in SW
+     2._wp,  10._wp,    0._wp,  250._wp], & 
     shape = [2, 4], order = [2, 1])
 
   character(len=32), dimension(2), parameter :: gas_names_def_sw = [character(32) :: "h2o", "o3"]

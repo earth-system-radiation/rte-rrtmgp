@@ -5,6 +5,7 @@ ford ford_site/rrtmgp-fortran-interface.md
 ford ford_site/rrtmgp-kernels.md
 ford ford_site/rte-fortran-interface.md
 ford ford_site/rte-kernels.md
+ford ford_site/ssm.md
 cd jekyll_site/
 bundle exec jekyll build
 cd _site/

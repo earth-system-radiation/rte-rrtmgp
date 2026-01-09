@@ -316,9 +316,9 @@ contains
     !end do
 
 
-    do itri = 1, size(triangle_params, 1)
-      igas = int(triangle_params(itri, 1))
-      do inu = 1, nnu
+    do itri = 1, size(triangle_params, 1)  ! Loop over triangles
+      igas = int(triangle_params(itri, 1)) ! Identify which gas this triangle corresponds to
+      do inu = 1, nnu                      ! Loop over wavenumber
         this%absorption_coeffs(igas, inu) = &
           this%absorption_coeffs(igas, inu) + &
           triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))

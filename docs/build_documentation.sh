@@ -2,7 +2,7 @@
 rm -rf ../../public
 mkdir ../../public
 #
-# Ford auto-documentation file 
+# Ford auto-documentation file
 #
 ford ford_templates/rrtmgp-fortran-interface.md
 ford ford_templates/rrtmgp-kernels.md

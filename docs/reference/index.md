@@ -36,6 +36,6 @@ RTE and its related optics packages aspire to follow a set of coding conventions
 
 [RRTMGP kernels: Fortran interface](./rrtmgp-kernels/index.html)
 
-# Simple spectral model 
+# Simple spectral model
 
 [SSM Fortran interface and kernels](./ssm/index.html)

@@ -162,16 +162,12 @@ set_tests_properties(
 
 add_test(NAME run_ssm_allsky_lw COMMAND ssm_allsky 24 72 1 ssm-allsky-lw.nc)
 set_tests_properties(
-  run_ssm_allsky_lw
-  PROPERTIES FIXTURES_SETUP
-             run_rrtmgp_allsky
+  run_ssm_allsky_lw PROPERTIES FIXTURES_SETUP run_rrtmgp_allsky
 )
 
 add_test(
   NAME run_ssm_allsky_sw COMMAND ssm_allsky 24 72 1 ssm-allsky-sw.nc 5760
 )
 set_tests_properties(
-  run_ssm_allsky_sw
-  PROPERTIES FIXTURES_SETUP
-             run_rrtmgp_allsky
+  run_ssm_allsky_sw PROPERTIES FIXTURES_SETUP run_rrtmgp_allsky
 )

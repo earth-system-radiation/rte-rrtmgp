@@ -78,7 +78,7 @@ module mo_optics_ssm
 
   real(wp), dimension(2,4), parameter :: triangle_params_def_sw = reshape( &
     [1._wp,   1._wp,    0._wp, 1200._wp,  &
-     2._wp,   0._wp,    0._wp,  250._wp], & 
+     2._wp,   0._wp,    0._wp,  250._wp], &
     shape = [2, 4], order = [2, 1])
 
   character(len=32), dimension(2), parameter :: gas_names_def_sw = [character(32) :: "h2o", "o3"]
@@ -406,9 +406,9 @@ contains
     call compute_Planck_source(ncol, nlay,   nnu, &
                                this%nus, this%dnus, tlay,   &
                                sources%lay_source)
-    ! This will fail if Tlev isn't provided 
-    !   There's interpolation code in RRTMGP gas optics - 
-    !   should we make this generic and package it with the gas optics type? 
+    ! This will fail if Tlev isn't provided
+    !   There's interpolation code in RRTMGP gas optics -
+    !   should we make this generic and package it with the gas optics type?
     call compute_Planck_source(ncol, nlay+1, nnu, &
                                this%nus, this%dnus, tlev,   &
                                sources%lev_source)

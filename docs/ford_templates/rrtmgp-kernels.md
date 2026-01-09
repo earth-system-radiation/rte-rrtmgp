@@ -11,8 +11,7 @@ github: https://github.com/earth-system-radiation/
 license: by
 output_dir: ../reference/rrtmgp-kernels
 src_dir: ../../rrtmgp/kernels
-exclude_dir: ../../rte-kernels/api
-  ../../rte-kernels/accel
+exclude_dir: ../../rte-kernels/api ../../rte-kernels/accel
 ---
 
 These pages document the low-level computational kernels used by RRTMGP.

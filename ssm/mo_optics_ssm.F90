@@ -1,6 +1,7 @@
 ! See documentation in other modules...
 !
-! Contacts: could provide here... names, emails or web site
+! Contacts: Andrew Williams and Robert Pincus
+! email:  andrewwilliams@ucsd.edu
 !
 ! Copyright 2025-,  ... Trustees of Columbia University.  All right reserved.
 !
@@ -77,17 +78,13 @@ module mo_optics_ssm
   character(len=32), dimension(2), parameter :: gas_names_def_lw = [character(32) :: "h2o", "co2"]
 
   real(wp), dimension(2,4), parameter :: triangle_params_def_sw = reshape( &
-    [1._wp,   1._wp,    0._wp, 1200._wp,  &
-     2._wp,   0._wp,    0._wp,  250._wp], & 
+    [1._wp,   1._wp,  0._wp,    1200._wp,  &
+     2._wp,   0._wp,  0._wp, 1000000._wp], &  ! No O3 triangle for now, todo
     shape = [2, 4], order = [2, 1])
 
   character(len=32), dimension(2), parameter :: gas_names_def_sw = [character(32) :: "h2o", "o3"]
 
   !
-  ! Do the other SSM defaults - absorption parameters, spectral dicretization -
-  !   get declared here as public entities? Or do we add general introscpection?
-  !   (General introspection won't let us recover the triangles)
-  ! If used before configured do we just call this%configure() using defaults?
   !
   ! -------------------------------------------------------------------------------------------------
   type, extends(ty_gas_optics), public :: ty_optics_ssm
@@ -98,12 +95,12 @@ module mo_optics_ssm
     real(wp),      dimension(:),    allocatable :: nus, dnus
       ! total absorption coefficients at spectral points (nnus, ngases)
     real(wp) :: Tstar     = 0._wp, &
-                pref      = 500._wp * 100._wp, & ! 500 hPa
+                pref      = 500._wp * 100._wp, & ! reference pressure, assumes 500 hPa by default
                 m_dry     = 0.029_wp, & ! molecular weight of dry air [kg/mol]
-                tsi       = 0._wp, &           ! Add this
-                kappa_cld = 0._wp, &              ! Add this
-                g_cld     = 0._wp, &              ! Add this
-                ssa_cld   = 0._wp
+                tsi       = 0._wp, &           ! total solar irradiance
+                kappa_cld = 0._wp, &              ! cloud absorption coefficient [m2/kg]
+                g_cld     = 0._wp, &              ! cloud asymmetry factor
+                ssa_cld   = 0._wp                 ! cloud single scattering albedo
     contains
       procedure, private :: configure_with_values
       procedure, private :: configure_with_defaults
@@ -124,7 +121,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------------
   function configure_with_defaults(this, do_sw) result(error_msg)
     class(ty_optics_ssm), intent(inout) :: this
-    logical, optional,    intent(in)    :: do_sw
+    logical, optional,    intent(in)    :: do_sw ! Configure with SW defaults? Else LW
     character(len=128)                  :: error_msg
 
     logical :: do_sw_local
@@ -168,9 +165,6 @@ contains
                      Tstar, tsi,                 &
                      kappa_cld, g_cld, ssa_cld) result(error_msg)
     !
-    ! All the parameters for the SSM need to get added to the argument list
-    !   At least one of the arguments needs to distinguish LW from SW
-    !   Probably need to specify the spectral discretization during configuration
     !
     class(ty_optics_ssm),          intent(inout) :: this
     character(32), dimension(:),   intent(in   ) :: gas_names
@@ -203,7 +197,7 @@ contains
     !
     ! Input sanitizing
     ! triangle params: index <= ngases, kappa0 >= 0; nu_min < nu0s < nu_max; l > 0
-    ! nus > 0; ascending? nu_min <= nus <= max_nu
+    ! nu_min <= nus <= max_nu
     ! Tstar > 0 if specified
     !
 
@@ -251,8 +245,10 @@ contains
     this%nus(1:nnu)        = nus(1:nnu)
     this%gas_names(1:ngas) = gas_names(1:ngas)
 
+    !
+    ! Spectral discretization - edges of "bands"
     ! Then construct the band limits (place edges at midpoints between nus values):
-
+    !
     ! First band: starts at nu_min
     band_lims_wavenum(1, 1) = nu_min
     band_lims_wavenum(2, 1) = (nus(1) + nus(2)) * 0.5_wp
@@ -267,15 +263,6 @@ contains
     band_lims_wavenum(1, nnu) = (nus(nnu-1) + nus(nnu)) * 0.5_wp
     band_lims_wavenum(2, nnu) = nu_max
 
-    ! Spectral discretization - edges of "bands"
-    ! err_message = this%ty_optical_props%init(band_lims_wavenum, name = "ssm_lw" or whatevs) or maybe?
-    ! err_message = this%init(band_lims_wavenum)
-    ! where band_lims_wavenum is a 2D array (2, nnu) with the first index being lower, upper bound
-    !  and second index being bounding wavenumbers
-    ! band_lims_wavenum(1, 1) = nu_min; band_lims_wavenum(2, nnu) = nu_max
-    ! normally band_lims_wavenum(2, inu) = band_lims_wavenum(1, inu+1)
-    ! Then when needed dnu = band_lims_wavenum(2, :) - band_lims_wavenum(1 :)
-    !   but you'll want to get that like band_lims_wavenum = this%get_band_lims_wavenumber()
     !
     ! Initialize the parent class
     error_msg = this%ty_optical_props%init(band_lims_wavenum, name="ssm")
@@ -285,7 +272,7 @@ contains
     this%dnus = band_lims_wavenum(2, :) - band_lims_wavenum(1, :)
 
     ! Set molar masses based on gas names
-    !   Maybe this is better as module data...
+    ! Maybe this is better as module data...
     do igas = 1, ngas
       select case (trim(lower_case(gas_names(igas))))
         case ('h2o')
@@ -525,8 +512,7 @@ contains
           optical_props%ssa = this%ssa_cld
           optical_props%g   = this%g_cld
       type is (ty_optical_props_nstr)
-        ! bru just toss an error here no one be using n streams mofo
-        ! Handle p array for nstr if needed
+        ! Toss an error here? No one uses n-streams
     end select
 
   end function cloud_optics

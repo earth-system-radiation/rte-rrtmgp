@@ -1,5 +1,8 @@
 ! See documentation in other modules...
 !
+! Contacts: Andrew Williams and Robert Pincus
+! email:  andrewwilliams@ucsd.edu
+!
 ! Contacts: could provide here... names, emails or web site
 !
 ! Copyright 2025-,  ... Trustees of Columbia University.  All right reserved.
@@ -32,7 +35,7 @@ module mo_optics_ssm_kernels
 
 contains
   !
-  ! Doesn't account for pressure broadening yet...
+  ! Computes optical depth from atmospheric state and gas optics
   !
   subroutine compute_tau(ncol, nlay, nnu, ngas,   &
                          absorption_coeffs, play, pref, layer_mass, &
@@ -42,11 +45,11 @@ contains
     real(wp), dimension(ngas, nnu), &
       intent(in ) :: absorption_coeffs
     real(wp), dimension(ncol, nlay), &
-      intent(in   ) :: play    !! layer pressures [Pa]; (ncol,nlay)
+      intent(in   ) :: play     !! layer pressures [Pa]; (ncol,nlay)
     real(wp), dimension(ngas, ncol, nlay), &
-      intent(in ) :: layer_mass
+      intent(in ) :: layer_mass !! !! mass of atm layer [kg/m2]; (ngas, ncol, nlay)
     real(wp), &
-      intent(in ) :: pref
+      intent(in ) :: pref       !! reference pressure [Pa], do foreign broadening if this is non-zero
     real(wp), dimension(ncol, nlay, nnu), &
       intent(out) :: tau
 
@@ -73,7 +76,7 @@ contains
   end subroutine compute_tau
   ! -------------------------------------------------------------------------------------------------
   !
-  ! Maybe make an elemental function then call with 1D and 2D wrappers?
+  ! Planck function (gets wrapped by 1D, 2D codes)
   !
   elemental function B_nu(T, nu)
     real(wp), intent(in) :: T, nu

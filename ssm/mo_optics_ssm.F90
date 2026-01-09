@@ -78,7 +78,7 @@ module mo_optics_ssm
 
   real(wp), dimension(2,4), parameter :: triangle_params_def_sw = reshape( &
     [1._wp,   1._wp,    0._wp, 1200._wp,  &
-     2._wp,  10._wp,    0._wp,  250._wp], & 
+     2._wp,  1000._wp,    0._wp,  250._wp], & 
     shape = [2, 4], order = [2, 1])
 
   character(len=32), dimension(2), parameter :: gas_names_def_sw = [character(32) :: "h2o", "o3"]
@@ -305,13 +305,23 @@ contains
     ! Initialize absorption coefficients to zero
     this%absorption_coeffs(:,:) = 0._wp
 
-    do igas = 1, ngas
+    !do igas = 1, ngas
+    !  do inu = 1, nnu
+    !    do itri = 1, size(triangle_params, 1)
+    !      this%absorption_coeffs(igas, inu) = &
+    !        this%absorption_coeffs(igas, inu) + &
+    !        triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
+    !    end do
+    !  end do
+    !end do
+
+
+    do itri = 1, size(triangle_params, 1)
+      igas = int(triangle_params(itri, 1))
       do inu = 1, nnu
-        do itri = 1, size(triangle_params, 1)
-          this%absorption_coeffs(igas, inu) = &
-            this%absorption_coeffs(igas, inu) + &
-            triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
-        end do
+        this%absorption_coeffs(igas, inu) = &
+          this%absorption_coeffs(igas, inu) + &
+          triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
       end do
     end do
 

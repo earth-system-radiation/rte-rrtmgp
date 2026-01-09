@@ -10,6 +10,16 @@ target_link_libraries(
           rte-rrtmgp::rrtmgp
           rte-rrtmgp::ssm
 )
+
+add_executable(ssm_allsky rrtmgp_allsky.F90)
+target_link_libraries(
+  ssm_allsky
+  PRIVATE rrtmgp-load-data
+          testing-utils
+          rte-rrtmgp::rte
+          rte-rrtmgp::rrtmgp
+          rte-rrtmgp::ssm
+)
 # ##############################################################################
 #
 # RRTMGP tests and checks
@@ -149,17 +159,11 @@ set_tests_properties(
 #
 # SSM tests and checks
 #
-add_test(NAME link_ssm_allsky COMMAND ln -f rrtmgp_allsky ssm_allsky)
-set_tests_properties(
-  link_ssm_allsky PROPERTIES FIXTURES_SETUP link_allsky_executables
-)
 
 add_test(NAME run_ssm_allsky_lw COMMAND ssm_allsky 24 72 1 ssm-allsky-lw.nc)
 set_tests_properties(
   run_ssm_allsky_lw
-  PROPERTIES FIXTURES_REQUIRED
-             link_allsky_executables
-             FIXTURES_SETUP
+  PROPERTIES FIXTURES_SETUP
              run_rrtmgp_allsky
 )
 
@@ -168,8 +172,6 @@ add_test(
 )
 set_tests_properties(
   run_ssm_allsky_sw
-  PROPERTIES FIXTURES_REQUIRED
-             link_allsky_executables
-             FIXTURES_SETUP
+  PROPERTIES FIXTURES_SETUP
              run_rrtmgp_allsky
 )

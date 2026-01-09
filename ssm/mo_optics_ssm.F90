@@ -414,13 +414,12 @@ contains
 
     !
     ! Planck function sources
-    ! Longwave: sources%sfc_source, sources%lay_source, sources%lev_source, &
-    !            sources%sfc_source_Jac
-    ! How to compute 1D/sfc - another kernel subroutine?
-    ! How to compute Tlev if not provided - make generic?
     call compute_Planck_source(ncol, nlay,   nnu, &
                                this%nus, this%dnus, tlay,   &
                                sources%lay_source)
+    ! This will fail if Tlev isn't provided 
+    !   There's interpolation code in RRTMGP gas optics - 
+    !   should we make this generic and package it with the gas optics type? 
     call compute_Planck_source(ncol, nlay+1, nnu, &
                                this%nus, this%dnus, tlev,   &
                                sources%lev_source)

@@ -78,7 +78,7 @@ module mo_optics_ssm
 
   real(wp), dimension(2,4), parameter :: triangle_params_def_sw = reshape( &
     [1._wp,   1._wp,    0._wp, 1200._wp,  &
-     2._wp,  1000._wp,    0._wp,  250._wp], & 
+     2._wp,   0._wp,    0._wp,  250._wp], & 
     shape = [2, 4], order = [2, 1])
 
   character(len=32), dimension(2), parameter :: gas_names_def_sw = [character(32) :: "h2o", "o3"]
@@ -150,10 +150,10 @@ contains
   !> Gas optics for simple spectral models are described as N triangles of ln(kappa) for
   !>   each of M gases.
   !> Each triangle id defined by
+  !>    the absorption coefficient at central wavenumber, nu0
   !>    a central wavenumber nu0
-  !>    the absorption coefficient at that wavenumber
   !>    the slope d ln(kappa)/d nu
-  !> By default there are two gases (h2o and co2).
+  !> By default there are two gases (h2o and co2) (for the LW).
   !>   h2o has three triangles (rotational lines, and a continuum with infinite slope)
   !>   co2 has a single triangle
   !> Absorption coefficents are defined at pref and pressure-broadened as p/pref
@@ -304,17 +304,6 @@ contains
     ! Compute absorption coefficients by summing exponentials at each nu
     ! Initialize absorption coefficients to zero
     this%absorption_coeffs(:,:) = 0._wp
-
-    !do igas = 1, ngas
-    !  do inu = 1, nnu
-    !    do itri = 1, size(triangle_params, 1)
-    !      this%absorption_coeffs(igas, inu) = &
-    !        this%absorption_coeffs(igas, inu) + &
-    !        triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
-    !    end do
-    !  end do
-    !end do
-
 
     do itri = 1, size(triangle_params, 1)  ! Loop over triangles
       igas = int(triangle_params(itri, 1)) ! Identify which gas this triangle corresponds to

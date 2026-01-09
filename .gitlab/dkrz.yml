@@ -126,7 +126,8 @@ nag-cpu-accel-DP:
     - .scheduler-levante-cpu
     - .build-and-test-levante
   variables:
-    FC: /sw/spack-levante/nag-7.1-lqjbej/bin/nagfor
+    FC: /sw/spack-levante/nag-7.2-wdh36u/bin/nagfor
+    # FC: /sw/spack-levante/nag-7.1-lqjbej/bin/nagfor
     CC: /sw/spack-levante/gcc-11.2.0-bcn7mb/bin/gcc
     NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-5di6qe
     # Compiler flags used for ICON model:

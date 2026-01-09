@@ -26,12 +26,13 @@ program rte_clear_sky_regression
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
+  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
   use mo_gas_concentrations, only: ty_gas_concs
-  use mo_optics_utils_rrtmgp,only: gas_optics => gas_optics, load_and_init
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
+  use mo_optics_utils_rrtmgp,only: load_gas_optics
   use mo_rfmip_io,           only: read_size, read_and_block_pt, read_and_block_gases_ty,  &
                                    read_and_block_lw_bc, read_and_block_sw_bc, determine_gas_names
   use mo_simple_netcdf,      only: get_dim_size, read_field
@@ -81,6 +82,7 @@ program rte_clear_sky_regression
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
+  type(ty_gas_optics_rrtmgp) :: gas_optics
   type(ty_gas_concs)         :: gas_concs
   type(ty_gas_concs), dimension(:), allocatable &
                              :: gas_conc_array
@@ -150,7 +152,7 @@ program rte_clear_sky_regression
   deallocate(gas_conc_array)
   ! ----------------------------------------------------------------------------
   ! load data into classes
-  call load_and_init(gas_optics, gas_optics_file, gas_concs)
+  call load_gas_optics(gas_optics, gas_optics_file, gas_concs)
   is_sw = gas_optics%source_is_external()
   is_lw = .not. is_sw
   print *, "gas optics is for the " // merge("longwave ", "shortwave", is_lw)
@@ -229,7 +231,7 @@ program rte_clear_sky_regression
     ! Replaces default gas optics with alternative
     !
     if(len_trim(gas_optics_file_2) > 0) then
-      call load_and_init(gas_optics, gas_optics_file_2, gas_concs)
+      call load_gas_optics(gas_optics, gas_optics_file_2, gas_concs)
       print *, "Alternate gas optics is for the " // merge("longwave ", "shortwave", gas_optics%source_is_internal())
       print *, "  Resolution :", gas_optics%get_nband(), gas_optics%get_ngpt()
       ngpt = gas_optics%get_ngpt()
@@ -242,7 +244,7 @@ program rte_clear_sky_regression
     call make_optical_props_2str(gas_optics)
     call sw_clear_sky_default
     if(len_trim(gas_optics_file_2) > 0) then
-      call load_and_init(gas_optics, gas_optics_file_2, gas_concs)
+      call load_gas_optics(gas_optics, gas_optics_file_2, gas_concs)
       print *, "Alternate gas optics is for the " // merge("longwave ", "shortwave", gas_optics%source_is_internal())
       print *, "  Resolution :", gas_optics%get_nband(), gas_optics%get_ngpt()
       call atmos%finalize()

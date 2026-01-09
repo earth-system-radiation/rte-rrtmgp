@@ -33,6 +33,7 @@ jobs:
         ford ford_templates/rrtmgp-kernels.md
         ford ford_templates/rte-fortran-interface.md
         ford ford_templates/rte-kernels.md
+        ford ford_templates/ssm.md
     #
     # Deploy
     #

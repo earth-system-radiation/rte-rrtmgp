@@ -8,7 +8,7 @@ How to build the libraries, tests, and examples, run the tests, and verify the r
 # In a nutshell
 
 RTE+RRTMGP uses `CMake`. To generate a configuration using the `ninja` build system:
-`cmake -S . -B build -G "Ninja" \               -DCMAKE_BUILD_TYPE=RelWithDebInfo \               -DBUILD_TESTING=ON`
+`cmake -S . -B build -G "Ninja"  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON`
 
 To build the code once a configuation has been generated:
 `cmake --build build`

@@ -17,7 +17,8 @@ dependencies:
   - matplotlib
   - seaborn
   - colorcet
-  - gfortran
+# Fortran version see https://github.com/scipy/scipy/issues/23361
+  - gfortran=14.3.0
   - netcdf-fortran
   - cmake
   - ninja

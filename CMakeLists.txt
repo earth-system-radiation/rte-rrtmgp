@@ -7,8 +7,8 @@ project(
 )
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(BUILD_C_HEADERS "Build c headers" OFF)
 option(BUILD_TESTING "Build tests" OFF)
-option(BUILD_C_HEADERS "Build c headers" ON)
 
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
 
@@ -60,6 +60,7 @@ endif()
 add_subdirectory(rte-kernels)
 add_subdirectory(rte-frontend)
 add_subdirectory(rrtmgp)
+add_subdirectory(ssm)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -138,8 +139,8 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
   set_tests_properties(
     fetch_rrtmgp_data PROPERTIES FIXTURES_SETUP fetch_rrtmgp_data
   )
-
   add_subdirectory(testing-utils)
+  add_subdirectory(rrtmgp/data-loading-examples)
   add_subdirectory(examples)
   add_subdirectory(tests)
 else()

@@ -62,10 +62,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     tst = xr.open_mfdataset(
-        [os.path.join(args.tst_dir, f) for f in args.file_names], combine="by_coords"
+        [os.path.join(args.tst_dir, f) for f in args.file_names],
+        combine="by_coords",
+        compat="override",
     )
     ref = xr.open_mfdataset(
-        [os.path.join(args.ref_dir, f) for f in args.file_names], combine="by_coords"
+        [os.path.join(args.ref_dir, f) for f in args.file_names],
+        combine="by_coords",
+        compat="override",
     )
     variables = args.variables if args.variables is not None else tst.variables
 

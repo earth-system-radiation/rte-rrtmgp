@@ -1,16 +1,29 @@
 #
 # All-sky tests with clouds/by-band optics and aerosols
 #
-add_library(
-  all_sky_utils STATIC # cmake-format: sort
-  mo_load_aerosol_coefficients.F90 mo_load_cloud_coefficients.F90
+add_executable(rrtmgp_allsky rrtmgp_allsky.F90)
+target_link_libraries(
+  rrtmgp_allsky
+  PRIVATE rrtmgp-load-data
+          testing-utils
+          rte-rrtmgp::rte
+          rte-rrtmgp::rrtmgp
+          rte-rrtmgp::ssm
 )
 
-target_link_libraries(all_sky_utils PUBLIC testing-utils optics-utils)
-
-add_executable(rrtmgp_allsky rrtmgp_allsky.F90)
-target_link_libraries(rrtmgp_allsky PRIVATE all_sky_utils)
-
+add_executable(ssm_allsky rrtmgp_allsky.F90)
+target_link_libraries(
+  ssm_allsky
+  PRIVATE rrtmgp-load-data
+          testing-utils
+          rte-rrtmgp::rte
+          rte-rrtmgp::rrtmgp
+          rte-rrtmgp::ssm
+)
+# ##############################################################################
+#
+# RRTMGP tests and checks
+#
 add_test(
   NAME run_allsky_lw
   COMMAND
@@ -141,4 +154,20 @@ add_test(
 set_tests_properties(
   check_allsky_gptclds_lw_sw
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_allsky_gpt_clouds"
+)
+# ##############################################################################
+#
+# SSM tests and checks
+#
+
+add_test(NAME run_ssm_allsky_lw COMMAND ssm_allsky 24 72 1 ssm-allsky-lw.nc)
+set_tests_properties(
+  run_ssm_allsky_lw PROPERTIES FIXTURES_SETUP run_rrtmgp_allsky
+)
+
+add_test(
+  NAME run_ssm_allsky_sw COMMAND ssm_allsky 24 72 1 ssm-allsky-sw.nc 5760
+)
+set_tests_properties(
+  run_ssm_allsky_sw PROPERTIES FIXTURES_SETUP run_rrtmgp_allsky
 )

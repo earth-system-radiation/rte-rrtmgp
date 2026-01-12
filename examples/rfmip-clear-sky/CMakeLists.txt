@@ -1,7 +1,22 @@
+#
+# Example-specific utilities. Need to specify include directories because
+# mo_rfmip_io.F90 uses netcdf directly
+#
 add_library(rfmip_clear_utils STATIC mo_rfmip_io.F90)
+target_include_directories(
+  rfmip_clear_utils
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+    ${NetCDF_Fortran_INCLUDE_DIR}
+)
+target_link_libraries(rfmip_clear_utils PRIVATE testing-utils)
 
-target_link_libraries(rfmip_clear_utils PUBLIC testing-utils optics-utils)
-
+# ##############################################################################
+#
+# RRTMGP tests
+#
+# Build the two executables
+#
 foreach(
   test_executable IN
   ITEMS # cmake-format: sort
@@ -9,9 +24,25 @@ foreach(
         rrtmgp_rfmip_sw
 )
   add_executable(${test_executable} ${test_executable}.F90)
-  target_link_libraries(${test_executable} PRIVATE rfmip_clear_utils)
+  target_include_directories(
+    ${test_executable}
+    PUBLIC
+      $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+  )
+  target_link_libraries(
+    ${test_executable}
+    PRIVATE rfmip_clear_utils
+            rrtmgp-load-data
+            testing-utils
+            rte-rrtmgp::rte
+            rte-rrtmgp::rrtmgp
+            rte-rrtmgp::ssm
+  )
 endforeach()
 
+#
+# Copy empty output files
+#
 set(inoutputs
     rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
     rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
@@ -24,8 +55,9 @@ list(
   PREPEND ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/
           OUTPUT_VARIABLE inputs
 )
-
+#
 # The tests write to the input files, therefore we copy them:
+#
 add_test(
   NAME copy_rrtmgp_rfmip_inputs
   COMMAND
@@ -40,6 +72,9 @@ set_tests_properties(
              copy_rrtmgp_rfmip_inputs
 )
 
+#
+# Comparision to RRTMGP RFMIP reference results
+#
 add_test(
   NAME run_rrtmgp_rfmip_lw
   COMMAND
@@ -82,3 +117,67 @@ set_tests_properties(
   check_rfmip_lw_sw
   PROPERTIES FIXTURES_REQUIRED "fetch_rrtmgp_data;run_rrtmgp_rfmip"
 )
+# ##############################################################################
+#
+# Simple spectral model tests
+#
+# Copy and rename inputs
+#
+foreach(fn IN LISTS inoutputs)
+  # Rename rule: from RFMIP-compatible to simpler name
+  string(
+    REGEX
+    REPLACE "Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn"
+            "ssm_rfmip-rad-irf"
+            new_name
+            "${fn}"
+  )
+
+  set(src "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/${fn}")
+  set(dst "${CMAKE_CURRENT_BINARY_DIR}/${new_name}")
+
+  add_test(
+    NAME copy_ssm_rfmip_inputs_${fn}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${src}" "${dst}"
+  )
+  set_tests_properties(
+    copy_ssm_rfmip_inputs_${fn}
+    PROPERTIES FIXTURES_REQUIRED
+               fetch_rrtmgp_data
+               FIXTURES_SETUP
+               copy_rename_ssm_rfmip_inputs
+  )
+
+  list(APPEND RENAMED_OUTPUTS "${dst}")
+endforeach()
+
+#
+# Link/rename and run executables
+#
+
+foreach(fn IN ITEMS rfmip_lw rfmip_sw)
+  add_executable(ssm_${fn} rrtmgp_${fn}.F90)
+  target_include_directories(
+    ssm_${fn}
+    PUBLIC
+      $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+  )
+  target_link_libraries(
+    ssm_${fn}
+    PRIVATE rfmip_clear_utils
+            rrtmgp-load-data
+            testing-utils
+            rte-rrtmgp::rte
+            rte-rrtmgp::rrtmgp
+            rte-rrtmgp::ssm
+  )
+  add_test(
+    NAME run_ssm_${fn}
+    COMMAND
+      ssm_${fn} 8
+      ${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+  )
+  set_tests_properties(
+    run_ssm_${fn} PROPERTIES FIXTURES_REQUIRED "copy_rename_ssm_rfmip_inputs"
+  )
+endforeach()

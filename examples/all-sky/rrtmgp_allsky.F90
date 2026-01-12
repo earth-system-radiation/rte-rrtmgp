@@ -4,21 +4,25 @@ program rte_rrtmgp_allsky
   use mo_rte_kind,           only: wp, i8, wl
   use mo_optical_props,      only: ty_optical_props, &
                                    ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str
-  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
-  use mo_cloud_optics_rrtmgp,only: ty_cloud_optics_rrtmgp
-  use mo_aerosol_optics_rrtmgp_merra ! Includes aerosol type integers
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_source_functions,   only: ty_source_func_lw
   use mo_fluxes,             only: ty_fluxes_broadband
   use mo_rte_lw,             only: rte_lw
   use mo_rte_sw,             only: rte_sw
-  use mo_optics_utils_rrtmgp,only: k_dist => gas_optics, load_and_init
   use mo_testing_utils,      only: stop_on_err
-  use mo_load_cloud_coefficients, &
-                             only: load_cld_lutcoeff
-  use mo_load_aerosol_coefficients, &
-                             only: load_aero_lutcoeff
   use mo_rte_config,         only: rte_config_checks
+  ! --------------------------------------------------
+  ! Optics: maps physical state of the atmosphere to optical properties
+  !    This example can use gas, cloud, and aerosols optics from RRTMGP or
+  !    a simple spectral model with all optics in a single class
+  !    The optics that gets used is chosen at run time from the program name
+  !
+  use mo_gas_optics,         only: ty_gas_optics
+  use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp
+  use mo_cloud_optics_rrtmgp,only: ty_cloud_optics_rrtmgp
+  use mo_aerosol_optics_rrtmgp_merra ! Includes aerosol type integers
+  use mo_optics_utils_rrtmgp,only: load_gas_optics, load_cloud_optics, load_aerosol_optics
+  use mo_optics_ssm,         only: ty_optics_ssm
   implicit none
   ! ----------------------------------------------------------------------------------
   ! Variables
@@ -78,32 +82,44 @@ program rte_rrtmgp_allsky
   !
   ! Derived types from the RTE and RRTMGP libraries
   !
-  ! Gas optics variable is defined in mo_optics_utils_rrtmgp
-  type(ty_cloud_optics_rrtmgp) :: cloud_optics
-  type(ty_aerosol_optics_rrtmgp_merra)   &
-                               :: aerosol_optics
   type(ty_gas_concs)           :: gas_concs, gas_concs_garand, gas_concs_1col
   class(ty_optical_props_arry), &
                  allocatable   :: atmos, clouds, aerosols
   type(ty_fluxes_broadband)    :: fluxes
+  !
+  ! Optics is determined at run time
+  !
+  class(ty_gas_optics), allocatable :: gas_optics
+  type(ty_cloud_optics_rrtmgp) :: cloud_optics
+  type(ty_aerosol_optics_rrtmgp_merra)   &
+                               :: aerosol_optics
 
   !
-  ! Inputs to RRTMGP
+  ! Inputs
   !
   logical :: is_sw, is_lw
+  logical :: do_rrtmgp, do_ssm
 
   integer  :: nbnd, ngpt, nspec
   integer  :: icol, ilay, ibnd, iloop, igas
   logical  :: top_is_at_1 ! CCE OMP workaround
 
+  character(len=512) :: invoked_name
   character(len=8) :: char_input
   integer :: nUserArgs, nloops, ncol, nlay
   ! logical :: write_fluxes = .false.
-  logical :: do_clouds = .false., use_luts = .true.
+  !
+  ! RRTMGP specific
+  !
+  logical :: do_clouds = .false.
   logical :: do_aerosols = .false.
   integer, parameter :: ngas = 8
+  !
+  ! SSM specific
+  !
+  integer :: Tstar = 0
 
-  character(len=512) :: output_file, k_dist_file, cloud_optics_file, aerosol_optics_file
+  character(len=512) :: output_file, gas_optics_file, cloud_optics_file, aerosol_optics_file
   !
   ! Timing variables
   !
@@ -117,10 +133,18 @@ program rte_rrtmgp_allsky
   ! ----------------------------------------------------------------------------------
   !
   ! Parse command line: rrtmgp_allsky ncol nlay nreps kdist [clouds [aerosols]]
+  ! Determine which gas optics to use based on the name by which the program is evoked
+  !   (possibly fragile)
+  ! Based on the possibilities: rrtmgp_allsky, ssm_allsky (with or without .exe on Windows)
+  call get_command_argument(0, invoked_name)
+  do_rrtmgp = (invoked_name(len_trim(invoked_name)-12:len_trim(invoked_name)-6 ) == "rrtmgp_" .or. &
+               invoked_name(len_trim(invoked_name)-16:len_trim(invoked_name)-10) == "rrtmgp_")
+  do_ssm    = (invoked_name(len_trim(invoked_name)-9 :len_trim(invoked_name)-6 ) == "ssm_"     .or. &
+               invoked_name(len_trim(invoked_name)-13:len_trim(invoked_name)-10) == "ssm_")
+  if (.not. (do_rrtmgp .or. do_ssm)) call stop_on_err("Don't recogize which optics to use")
 
-  !
   nUserArgs = command_argument_count()
-  if (nUserArgs <  5) call stop_on_err("Usage: rrtmgp_allsky ncol nlay nreps output_file gas-optics [cloud-optics [aerosol-optics]]")
+  if (nUserArgs <  4) call stop_on_err("Usage: [rrtmgp|ssm]_allsky ncol nlay nreps output_file ...")
 
   call get_command_argument(1, char_input)
   read(char_input, '(i8)') ncol
@@ -135,17 +159,32 @@ program rte_rrtmgp_allsky
   if(nloops <= 0) call stop_on_err("Specify positive nreps (number of times to do ncol examples.")
 
   call get_command_argument(4,output_file)
-  call get_command_argument(5,k_dist_file)
 
-  if (nUserArgs >= 6) then
-    call get_command_argument(6,cloud_optics_file)
+  if (do_rrtmgp) then
+    allocate(ty_gas_optics_rrtmgp::gas_optics)
+
+    call get_command_argument(5,gas_optics_file)
+
+    if (nUserArgs >= 6) then
+      call get_command_argument(6,cloud_optics_file)
+      do_clouds = .true.
+    end if
+    if (nUserArgs >= 7) then
+      call get_command_argument(7,aerosol_optics_file)
+      do_aerosols = .true.
+    end if
+    if (nUserArgs >  7) print *, "Ignoring command line arguments beyond the first seven..."
+  else if (do_ssm) then
+    allocate(ty_optics_ssm::gas_optics)
+
+    ! Specify shortwave by putting any text in argument 5
+    if (nUserArgs >= 5) then
+      call get_command_argument(5, char_input)
+      Tstar = 6760._wp
+    end if
+    if (nUserArgs >  5) print *, "Ignoring command line arguments beyond the first five..."
     do_clouds = .true.
   end if
-  if (nUserArgs >= 7) then
-    call get_command_argument(7,aerosol_optics_file)
-    do_aerosols = .true.
-  end if
-  if (nUserArgs >  7) print *, "Ignoring command line arguments beyond the first seven..."
   ! -----------------------------------------------------------------------------------
   allocate(p_lay(ncol, nlay), t_lay(ncol, nlay), p_lev(ncol, nlay+1), t_lev(ncol, nlay+1))
   allocate(q    (ncol, nlay),    o3(ncol, nlay))
@@ -163,29 +202,40 @@ program rte_rrtmgp_allsky
   call stop_on_err(gas_concs%set_vmr("o2",  0.2095_wp))
   call stop_on_err(gas_concs%set_vmr("co",  0._wp))
   ! ----------------------------------------------------------------------------
-  ! load data into classes
-  call load_and_init(k_dist, k_dist_file, gas_concs)
-  is_sw = k_dist%source_is_external()
-  is_lw = .not. is_sw
-  if (do_clouds) then
-    !
-    call load_cld_lutcoeff(cloud_optics, cloud_optics_file)
-    call stop_on_err(cloud_optics%set_ice_roughness(2))
-  end if
+  select type (gas_optics)
+    type is (ty_gas_optics_rrtmgp)
+      !
+      ! load data into classes
+      !
+      call load_gas_optics(gas_optics, gas_optics_file, gas_concs)
+      if (do_clouds) then
+        !
+        call load_cloud_optics(cloud_optics, cloud_optics_file)
+        call stop_on_err(cloud_optics%set_ice_roughness(2))
+      end if
 
-  if (do_aerosols) then
-    !
-    ! Load aerosol optics coefficients from lookup tables
-    !
-    call load_aero_lutcoeff (aerosol_optics, aerosol_optics_file)
-  end if
+      if (do_aerosols) then
+        !
+        ! Load aerosol optics coefficients from lookup tables
+        !
+        call load_aerosol_optics (aerosol_optics, aerosol_optics_file)
+      end if
+    type is (ty_optics_ssm)
+      if (Tstar > 0) then
+        call stop_on_err(gas_optics%configure(do_sw = .true.))
+      else
+        call stop_on_err(gas_optics%configure())
+      end if
+  end select
+  is_sw = gas_optics%source_is_external()
+  is_lw = .not. is_sw
 
   ! ----------------------------------------------------------------------------
   !
   ! Problem sizes
   !
-  nbnd = k_dist%get_nband()
-  ngpt = k_dist%get_ngpt()
+  nbnd = gas_optics%get_nband()
+  ngpt = gas_optics%get_ngpt()
 
   ! ----------------------------------------------------------------------------
   ! LW calculations neglect scattering; SW calculations use the 2-stream approximation
@@ -202,17 +252,16 @@ program rte_rrtmgp_allsky
   select type(atmos)
     class is (ty_optical_props_1scl)
       !$acc enter data copyin(atmos)
-      call stop_on_err(atmos%alloc_1scl(ncol, nlay, k_dist))
+      call stop_on_err(atmos%alloc_1scl(ncol, nlay, gas_optics))
       !$acc enter data copyin(atmos) create(atmos%tau)
       !$omp target enter data map(alloc:atmos%tau)
     class is (ty_optical_props_2str)
-      call stop_on_err(atmos%alloc_2str( ncol, nlay, k_dist))
+      call stop_on_err(atmos%alloc_2str( ncol, nlay, gas_optics))
       !$acc enter data copyin(atmos) create(atmos%tau, atmos%ssa, atmos%g)
       !$omp target enter data map(alloc:atmos%tau, atmos%ssa, atmos%g)
     class default
       call stop_on_err("rte_rrtmgp_allsky: Don't recognize the kind of optical properties ")
   end select
-
   ! ----------------------------------------------------------------------------
   !  Boundary conditions depending on whether the k-distribution being supplied
   !   is LW or SW
@@ -236,7 +285,7 @@ program rte_rrtmgp_allsky
   else
     ! lw_sorces is threadprivate
     !!$omp parallel
-    call stop_on_err(lw_sources%alloc(ncol, nlay, k_dist))
+    call stop_on_err(lw_sources%alloc(ncol, nlay, gas_optics))
     !!$omp end parallel
 
     allocate(t_sfc(ncol), emis_sfc(nbnd, ncol))
@@ -288,8 +337,15 @@ program rte_rrtmgp_allsky
     !
     ! Cloud optics
     !
-    if(do_clouds) &
-      call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+    if(do_clouds) then
+      select type (gas_optics)
+        type is (ty_gas_optics_rrtmgp)
+          call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+        type is (ty_optics_ssm)
+          call stop_on_err(  gas_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+      end select
+    end if
+
     !
     ! Aerosol optics
     !
@@ -309,12 +365,12 @@ program rte_rrtmgp_allsky
       !$acc             create(               lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
       !$omp target data map(alloc:            lw_sources%lay_source,     lw_sources%lev_source) &
       !$omp             map(alloc:            lw_sources%sfc_source,     lw_sources%sfc_source_Jac)
-      call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
-                                         t_lay, t_sfc, &
-                                         gas_concs,    &
-                                         atmos,        &
-                                         lw_sources,   &
-                                         tlev = t_lev))
+      call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
+                                             t_lay, t_sfc, &
+                                             gas_concs,    &
+                                             atmos,        &
+                                             lw_sources,   &
+                                             tlev = t_lev))
       if(do_clouds)   call stop_on_err(clouds%increment(atmos))
       if(do_aerosols) call stop_on_err(aerosols%increment(atmos))
       call stop_on_err(rte_lw(atmos,      &
@@ -329,7 +385,7 @@ program rte_rrtmgp_allsky
       !$omp target  data map(alloc:toa_flux)
       fluxes%flux_dn_dir => flux_dir(:,:)
 
-      call stop_on_err(k_dist%gas_optics(p_lay, p_lev, &
+      call stop_on_err(gas_optics%gas_optics(p_lay, p_lev, &
                                          t_lay,        &
                                          gas_concs,    &
                                          atmos,        &
@@ -422,7 +478,7 @@ program rte_rrtmgp_allsky
   !
   ! k-distribution
   !
-  call k_dist%finalize
+  call gas_optics%finalize
 
   if(.not. is_lw) then
     !$acc        exit data delete(     flux_dir)
@@ -542,7 +598,15 @@ contains
     else
       allocate(ty_optical_props_1scl::clouds)
     end if
-    call stop_on_err(clouds%init(cloud_optics))
+    !
+    ! Copy spectral discretization
+    !
+    if(do_rrtmgp) then
+      call stop_on_err(clouds%init(cloud_optics))
+    else if (do_ssm) then
+      call stop_on_err(clouds%init(gas_optics))
+    end if
+
 
     select type(clouds)
       class is (ty_optical_props_1scl)
@@ -568,8 +632,14 @@ contains
     !   and not very close to the ground (< 900 hPa), and
     !   put them in 2/3 of the columns since that's roughly the
     !   total cloudiness of earth
-    rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
-    rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
+    if(do_rrtmgp) then
+      rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
+      rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
+    else if (do_ssm) then
+      ! Arbitrary values - SSM doesn't care
+      rel_val = 10._wp
+      rei_val = 20._wp
+    end if
     !$acc                         parallel loop    collapse(2) copyin(t_lay) copyout( lwp, iwp, rel, rei)
     !$omp target teams distribute parallel do simd collapse(2) map(to:t_lay) map(from:lwp, iwp, rel, rei)
     do ilay=1,nlay
@@ -604,7 +674,7 @@ contains
     else
       allocate(ty_optical_props_1scl::aerosols)
     end if
-    call stop_on_err(aerosols%init(k_dist%get_band_lims_wavenumber()))
+    call stop_on_err(aerosols%init(gas_optics%get_band_lims_wavenumber()))
     select type(aerosols)
       class is (ty_optical_props_1scl)
         call stop_on_err(aerosols%alloc_1scl(ncol, nlay))

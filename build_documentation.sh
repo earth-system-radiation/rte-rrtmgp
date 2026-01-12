@@ -1,10 +1,18 @@
 #!/bin/sh
 rm -rf ../../public
 mkdir ../../public
-ford ford_site/rrtmgp-fortran-interface.md
-ford ford_site/rrtmgp-kernels.md
-ford ford_site/rte-fortran-interface.md
-ford ford_site/rte-kernels.md
+#
+# Ford auto-documentation file
+#
+ford ford_templates/rrtmgp-fortran-interface.md
+ford ford_templates/rrtmgp-kernels.md
+ford ford_templates/rte-fortran-interface.md
+ford ford_templates/rte-kernels.md
+ford ford_templates/ssm.md
+
+#
+#
+#
 cd jekyll_site/
 bundle exec jekyll build
 cd _site/

@@ -44,8 +44,8 @@ jobs:
           cmake -S . -B build \
               -DCMAKE_BUILD_TYPE=RelWithDebugInfo \
               -DRTE_ENABLE_SP="$(test '${{ matrix.fpmodel }}' = SP && echo ON || echo OFF)" \
-              -DKERNEL_MODE=${{ matrix.rte-kernels }} \
-              -DBUILD_TESTING=ON
+              -DRTE_KERNEL_MODE=${{ matrix.rte-kernels }} \
+              -DRTE_BUILD_TESTING=ON
       - name: Build
         run: cmake --build build
       - name: Test

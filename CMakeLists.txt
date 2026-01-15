@@ -6,10 +6,9 @@ project(
   LANGUAGES Fortran
 )
 
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-option(BUILD_C_HEADERS "Build c headers" OFF)
-option(BUILD_TESTING "Build tests" OFF)
-
+option(RTE_BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(RTE_BUILD_C_HEADERS "Build c headers" OFF)
+option(RTE_BUILD_TESTING "Build tests" OFF)
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
 
 if(BUILD_C_HEADERS)

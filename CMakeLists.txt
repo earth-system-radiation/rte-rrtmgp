@@ -56,8 +56,7 @@ if(BUILD_TESTING OR BUILD_C_HEADERS)
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
 endif()
 
-add_subdirectory(rte-kernels)
-add_subdirectory(rte-frontend)
+add_subdirectory(rte)
 add_subdirectory(rrtmgp)
 add_subdirectory(ssm)
 

@@ -1,5 +1,5 @@
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/modules)
-set(extensions_source_dir ${PROJECT_SOURCE_DIR}/extensions)
+set(extensions_source_dir ${PROJECT_SOURCE_DIR}/rte/extensions)
 
 add_library(
   test_utils STATIC # cmake-format: sort

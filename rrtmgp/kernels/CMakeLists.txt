@@ -13,7 +13,7 @@ else()
     PRIVATE # cmake-format: sort
             mo_cloud_optics_rrtmgp_kernels.F90
   )
-  if(KERNEL_MODE STREQUAL "accel")
+  if(RTE_KERNEL_MODE STREQUAL "accel")
     target_sources(
       rrtmgpkernels
       PRIVATE # cmake-format: sort
@@ -71,7 +71,7 @@ if(RTE_BUILD_C_HEADERS)
     # Ensure that rrtmgpkernels depends on rrtmgpkernels_header
     add_dependencies(rrtmgpkernels rrtmgpkernels_header)
 
-    if(KERNEL_MODE STREQUAL "extern")
+    if(RTE_KERNEL_MODE STREQUAL "extern")
       target_sources(
         rrtmgpkernels
         PRIVATE # cmake-format: sort

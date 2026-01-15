@@ -1,6 +1,6 @@
 add_library(rtekernels OBJECT mo_rte_kind.F90)
 
-if(KERNEL_MODE STREQUAL "extern")
+if(RTE_KERNEL_MODE STREQUAL "extern")
   target_sources(
     rtekernels
     PRIVATE # cmake-format: sort
@@ -16,7 +16,7 @@ else()
             mo_fluxes_broadband_kernels.F90
             mo_rte_util_array.F90
   )
-  if(KERNEL_MODE STREQUAL "accel")
+  if(RTE_KERNEL_MODE STREQUAL "accel")
     target_sources(
       rtekernels
       PRIVATE # cmake-format: sort
@@ -33,7 +33,7 @@ else()
   endif()
 endif()
 
-if(BUILD_SHARED_LIBS)
+if(RTE_BUILD_SHARED_LIBS)
   set_target_properties(rtekernels PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
@@ -43,7 +43,7 @@ target_compile_definitions(
 
 target_include_directories(rtekernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 
-if(BUILD_C_HEADERS)
+if(RTE_BUILD_C_HEADERS)
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/api/rte_types.h.in
     ${CMAKE_BINARY_DIR}/headers/rte_types.h
@@ -82,7 +82,7 @@ if(BUILD_C_HEADERS)
     # Ensure that rtekernels depends on rtekernels_header
     add_dependencies(rtekernels rtekernels_header)
 
-    if(KERNEL_MODE STREQUAL "extern")
+    if(RTE_KERNEL_MODE STREQUAL "extern")
       target_sources(
         rtekernels
         PRIVATE # cmake-format: sort

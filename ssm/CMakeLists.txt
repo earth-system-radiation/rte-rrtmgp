@@ -11,7 +11,7 @@ target_include_directories(
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
 )
 
-if(BUILD_SHARED_LIBS)
+if(RTE_BUILD_SHARED_LIBS)
   set_target_properties(ssm PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 

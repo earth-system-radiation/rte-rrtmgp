@@ -17,6 +17,6 @@ Class [ty_fluxes_broadband](../reference/rte-fortran-interface/type/ty_fluxes_br
 
 # Other extensions
 
-Class `ty_fluxes_byband` in subdirectory `extensions/` provides another example that makes use of the spectral discretization information.
+Class `ty_fluxes_byband` in subdirectory `rte/extensions/` provides another example that makes use of the spectral discretization information.
 
 It's useful to extend the class when particular subsets of fluxes, such as photosynthetically-active radiation at the surface, are required.

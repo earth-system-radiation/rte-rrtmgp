@@ -1,6 +1,6 @@
 add_library(rrtmgpkernels OBJECT)
 
-if(KERNEL_MODE STREQUAL "extern")
+if(RTE_KERNEL_MODE STREQUAL "extern")
   target_sources(
     rrtmgpkernels
     PRIVATE # cmake-format: sort
@@ -13,7 +13,7 @@ else()
     PRIVATE # cmake-format: sort
             mo_cloud_optics_rrtmgp_kernels.F90
   )
-  if(KERNEL_MODE STREQUAL "accel")
+  if(RTE_KERNEL_MODE STREQUAL "accel")
     target_sources(
       rrtmgpkernels
       PRIVATE # cmake-format: sort
@@ -28,7 +28,7 @@ else()
   endif()
 endif()
 
-if(BUILD_SHARED_LIBS)
+if(RTE_BUILD_SHARED_LIBS)
   set_target_properties(rrtmgpkernels PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
@@ -38,7 +38,7 @@ target_include_directories(
 
 target_link_libraries(rrtmgpkernels PRIVATE rte)
 
-if(BUILD_C_HEADERS)
+if(RTE_BUILD_C_HEADERS)
   get_target_property(RRTMGPKERNELS_SOURCES rrtmgpkernels SOURCES)
 
   if(RRTMGPKERNELS_SOURCES)
@@ -71,7 +71,7 @@ if(BUILD_C_HEADERS)
     # Ensure that rrtmgpkernels depends on rrtmgpkernels_header
     add_dependencies(rrtmgpkernels rrtmgpkernels_header)
 
-    if(KERNEL_MODE STREQUAL "extern")
+    if(RTE_KERNEL_MODE STREQUAL "extern")
       target_sources(
         rrtmgpkernels
         PRIVATE # cmake-format: sort

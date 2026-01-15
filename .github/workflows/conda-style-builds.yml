@@ -74,7 +74,7 @@ jobs:
           cmake -S . -B build -G "Ninja" \
               -DCMAKE_BUILD_TYPE=${{ matrix.build-type}} \
               -DRTE_ENABLE_SP=OFF \
-              -DBUILD_TESTING=ON
+              -DRTE_BUILD_TESTING=ON
           cmake --build build
       #
       # Run examples, tests and checks

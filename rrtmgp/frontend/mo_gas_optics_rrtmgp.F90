@@ -757,7 +757,7 @@ contains
   !>
   !> Users provide the NRLSSI2 facular ("Bremen") index and sunspot ("SPOT67") index.
   !>   Changing either of these indicies will change the total solar irradiance (TSI)
-  !>   Code in extensions/mo_solar_variability may be used to compute the value of these
+  !>   Code in rte/extensions/mo_solar_variability may be used to compute the value of these
   !>   indices through an average solar cycle
   !> Users may also specify the TSI, either alone or in conjunction with the facular and sunspot indices
   !

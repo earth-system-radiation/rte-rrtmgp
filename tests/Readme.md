@@ -14,7 +14,7 @@ comparisons among different approaches (e.g. different numbers of streams).
 
 The Makefile target `test_zenith_angle_spherical_correction` tests features related
 to computing solar radiation in spherical geometry, including codes for computing
-solar zenith angle as a function of height (`extensions/mo_zenith_angle_spherical_correction.F90`)
+solar zenith angle as a function of height (`rte/extensions/mo_zenith_angle_spherical_correction.F90`)
 and fluxes computed with height-dependent zenith angle.
 
 Module `mo_rcemip_profiles.F90` provides profiles of temperature, height, and gas

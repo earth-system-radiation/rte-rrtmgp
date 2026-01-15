@@ -52,7 +52,7 @@ include:
 
 .build-and-test:
   variables:
-    KERNEL_MODE: accel
+    RTE_KERNEL_MODE: accel
     RTE_ENABLE_SP: "OFF"
     CMAKE_BUILD_PARALLEL_LEVEL: ${NTASKS}
     VERBOSE:  # any given value is ignored, it's just checked for existence
@@ -62,9 +62,9 @@ include:
     - >
       cmake -S . -B build
       -DCMAKE_BUILD_TYPE=None
-      -DKERNEL_MODE=${KERNEL_MODE}
+      -DRTE_KERNEL_MODE=${RTE_KERNEL_MODE}
       -DRTE_ENABLE_SP=${RTE_ENABLE_SP}
-      -DBUILD_TESTING=ON
+      -DRTE_BUILD_TESTING=ON
     - cmake --build build
     - ctest --test-dir build
 
@@ -136,7 +136,7 @@ nag-cpu-accel-DP:
 nag-cpu-default-SP:
   extends: nag-cpu-accel-DP
   variables:
-    KERNEL_MODE: default
+    RTE_KERNEL_MODE: default
     RTE_ENABLE_SP: "ON"
 
 cce-gpu-openacc-DP:

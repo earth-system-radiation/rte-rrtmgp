@@ -6,13 +6,12 @@ project(
   LANGUAGES Fortran
 )
 
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-option(BUILD_C_HEADERS "Build c headers" OFF)
-option(BUILD_TESTING "Build tests" OFF)
-
+option(RTE_BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(RTE_BUILD_C_HEADERS "Build c headers" OFF)
+option(RTE_BUILD_TESTING "Build tests" OFF)
 option(RTE_ENABLE_SP "Enable single-precision floating-point model" OFF)
 
-if(BUILD_C_HEADERS)
+if(RTE_BUILD_C_HEADERS)
   set(RTE_BOOL "_Bool")
   set(RTE_PRECISION "double")
   set(RTE_EPSILON "2.2204460492503131e-16")
@@ -24,11 +23,11 @@ if(BUILD_C_HEADERS)
 endif()
 
 set(PREFERRED_KERNEL_MODES "default" "accel" "extern")
-set(KERNEL_MODE
+set(RTE_KERNEL_MODE
     "default"
-    CACHE STRING "Select the kernel mode: ${PREFERRED_KERNEL_MODES}"
+    CACHE STRING "Select the RTE kernel mode: ${PREFERRED_KERNEL_MODES}"
 )
-set_property(CACHE KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
+set_property(CACHE RTE_KERNEL_MODE PROPERTY STRINGS ${PREFERRED_KERNEL_MODES})
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -53,17 +52,16 @@ endif()
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
-if(BUILD_TESTING OR BUILD_C_HEADERS)
+if(RTE_BUILD_TESTING OR RTE_BUILD_C_HEADERS)
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
 endif()
 
-add_subdirectory(rte-kernels)
-add_subdirectory(rte-frontend)
+add_subdirectory(rte)
 add_subdirectory(rrtmgp)
 add_subdirectory(ssm)
 
 include(CTest)
-if(BUILD_TESTING)
+if(RTE_BUILD_TESTING)
   if(NOT _RTE_RRTMGP_HAVE_PY_PACKAGES)
     include(CheckPython3Package)
     check_python3_package(numpy)

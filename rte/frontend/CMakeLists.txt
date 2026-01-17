@@ -1,4 +1,4 @@
-set(gas_optics_source_dir ${PROJECT_SOURCE_DIR}/gas-optics)
+set(gas_optics_source_dir ./gas-optics-template)
 
 add_library(
   rte # cmake-format: sort

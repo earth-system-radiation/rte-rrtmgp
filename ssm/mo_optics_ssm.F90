@@ -300,6 +300,8 @@ contains
           triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
       end do
     end do
+   !$acc        enter data copyin(this%gas_names, this%mol_weights, this%absorption_coeffs, this%nus, this%dnus)
+   !$omp target enter data map(to:this%gas_names, this%mol_weights, this%absorption_coeffs, this%nus, this%dnus)
 
     if(present(Tstar)) this%Tstar = Tstar
     if(present(tsi))   this%tsi = tsi

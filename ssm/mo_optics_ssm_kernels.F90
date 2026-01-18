@@ -57,13 +57,30 @@ contains
     integer :: icol, ilay, inu, igas
     real(wp), dimension(size(play,1), size(play,2)) :: p_scaling
 
+    !$acc        data create(   p_scaling)
+    !$omp target data map(alloc:p_scaling)
+
     ! Apply pressure broadening if pref input is non-zero
     if (pref /= 0._wp) then
-      p_scaling(:,:) = play(:,:) / pref
+      !$acc                         parallel loop    collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          p_scaling(icol, ilay) =  play(icol, ilay) / pref
+        end do
+      end do
     else
-      p_scaling(:,:) = 1._wp
+      !$acc                         parallel loop    collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          p_scaling(icol, ilay) = 1._wp
+        end do
+      end do
     end if
 
+    !$acc                         parallel loop    collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do inu = 1, nnu
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -72,6 +89,9 @@ contains
         end do
       end do
     end do
+
+    !$acc end data
+    !$omp end target data
 
   end subroutine compute_tau
   ! -------------------------------------------------------------------------------------------------
@@ -99,9 +119,11 @@ contains
       intent(out) :: source
 
      ! Local variables
-     integer :: icol, ilay, inu
+    integer :: icol, ilay, inu
 
-    do inu = 1, nnu
+   !$acc                         parallel loop    collapse(3)
+   !$omp target teams distribute parallel do simd collapse(3)
+   do inu = 1, nnu
       do ilay = 1, nlay
         do icol = 1, ncol
           source(icol, ilay, inu) = B_nu(T(icol, ilay), nus(inu)) * dnus(inu)
@@ -127,6 +149,8 @@ contains
      ! Local variables
      integer :: icol, ilay, inu
 
+    !$acc                         parallel loop    collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do inu = 1, nnu
       do icol = 1, ncol
         source(icol, inu) = B_nu(T(icol), nus(inu)) * dnus(inu)

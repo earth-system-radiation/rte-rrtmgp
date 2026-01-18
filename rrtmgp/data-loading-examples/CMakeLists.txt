@@ -5,7 +5,7 @@ add_library(
   mo_optics_utils_rrtmgp.F90
 )
 target_link_libraries(
-  rrtmgp-load-data PUBLIC testing-utils rte-rrtmgp::rrtmgp rte-rrtmgp::rte
+  rrtmgp-load-data PUBLIC shared-utils rte-rrtmgp::rrtmgp rte-rrtmgp::rte
 )
 target_include_directories(
   rrtmgp-load-data

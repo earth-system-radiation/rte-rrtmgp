@@ -15,6 +15,8 @@ authors:
   - family-names: Hillman
     given-names: Benjamin R.
     orcid: "https://orcid.org/0000-0002-9264-9872"
+  - family-names: Kosukhin
+    given-names: Sergey S.
   - family-names: Norman
     given-names: Matthew
     orcid: "https://orcid.org/0000-0003-4764-3348"
@@ -25,10 +27,11 @@ authors:
     given-names: Igor N.
   - family-names: Romero
     given-names: Nicols A.
-  - family-names: Kosukhin
-    given-names: Sergey S.
   - family-names: Wehe
     given-names: Andre
+  - family-names: Williams
+    given-names: Andrew I.L.
+    orcid: "https://orcid.org/0000-0002-5457-5075"
 type: software
 repository-code: "https://github.com/earth-system-radiaton/rte-rrtmgp"
 license: BSD-3-Clause

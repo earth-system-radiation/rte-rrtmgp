@@ -137,7 +137,6 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
   set_tests_properties(
     fetch_rrtmgp_data PROPERTIES FIXTURES_SETUP fetch_rrtmgp_data
   )
-  add_subdirectory(testing-utils)
   add_subdirectory(rrtmgp/data-loading-examples)
   add_subdirectory(examples)
   add_subdirectory(tests)

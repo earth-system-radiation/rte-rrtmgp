@@ -4,7 +4,7 @@ This directory contains testing codes used in development.
 
 ## Verification and validation
 
-The Makefile target `clear_sky_regression` is used for verification, meaning
+Programs in this directory are used for verification, meaning
 ensuring the package produces results as expected (e.g. that the
 rescaling approximation used for LW scattering reduces to the no-scattering
 solution in the absence of clouds), and for validation, meaning
@@ -12,7 +12,7 @@ comparisons among different approaches (e.g. different numbers of streams).
 
 ## Feature testing
 
-The Makefile target `test_zenith_angle_spherical_correction` tests features related
+The exectuable `test_zenith_angle_spherical_correction` tests features related
 to computing solar radiation in spherical geometry, including codes for computing
 solar zenith angle as a function of height (`rte/extensions/mo_zenith_angle_spherical_correction.F90`)
 and fluxes computed with height-dependent zenith angle.

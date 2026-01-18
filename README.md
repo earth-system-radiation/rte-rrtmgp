@@ -6,7 +6,7 @@ The RTE+RRTMGP libraries and data files can be installed via `conda-forge`.
 # Documentation
 
 [RTE+RRTMGP's documentation](https://earth-system-radiation.github.io/rte-rrtmgp/) contains
-a mix of automatically-generated pages and hand-written descriptions. The Wiki is deprecated.
+a mix of automatically-generated pages and hand-written descriptions.
 
 # RTE+RRTMGP
 

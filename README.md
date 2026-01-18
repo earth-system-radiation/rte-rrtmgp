@@ -10,11 +10,13 @@ a mix of automatically-generated pages and hand-written descriptions. The Wiki i
 
 # RTE+RRTMGP
 
-This is the repository for RTE+RRTMGP, a set of codes for computing radiative fluxes in planetary atmospheres. RTE+RRTMGP is described in a [paper](https://doi.org/10.1029/2019MS001621) in [Journal of Advances in Modeling Earth Systems](http://james.agu.org).
+This is the repository for RTE+RRTMGP, a set of codes for computing radiative fluxes in planetary atmospheres. The inital implementation of RTE+RRTMGP is described in a [paper](https://doi.org/10.1029/2019MS001621) in Journal of Advances in Modeling Earth Systems.
+
+RTE computes fluxes given spectrally-resolved optical descriptions and source functions and provides infrastructure for specifiying such problems. Fluxes are normally summarized or reduced via a user extensible class.
 
 RRTMGP uses a correlated _k_-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. The k-distribution currently distributed with this package is applicable to the Earth's atmosphere under present-day, pre-industrial, and 4xCO2 conditions.
 
-RTE computes fluxes given spectrally-resolved optical descriptions and source functions. The fluxes are normally summarized or reduced via a user extensible class.
+RTE and RRTMGP have re-implemented in \[Julia\](https://github.com/CliMA/RRTMGP.jl, [JAX](https://github.com/climate-analytics-lab/jax-rrtmgp), and [C++/Kokkos](https://github.com/E3SM-Project/E3SM/tree/master/components/eamxx/src/physics/rrtmgp).
 
 ## Building the libraries, examples, and unit-testing codes.
 
@@ -36,6 +38,4 @@ Please cite the code using these DOIs and the information in the `CITATION.cff` 
 
 ## Acknowledgements
 
-The development of RTE+RRTMGP has been funded in the US by the Office of Naval Research, NASA, NOAA, and the Department of Energy. We
-are grateful for contributions from a range of collaborators at institutions including the Swiss Supercomputing Center,
-the German Climate Computing Center, and Nvidia.
+The development of RTE+RRTMGP has been funded in the US by the Office of Naval Research, NASA, NOAA, and the Department of Energy. Weare grateful for contributions from a range of collaborators at institutions including the Swiss Supercomputing Center, the German Climate Computing Center, and Nvidia.

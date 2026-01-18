@@ -29,6 +29,8 @@ authors:
     given-names: Sergey S.
   - family-names: Wehe
     given-names: Andre
+  - family-names: Williams
+    given-names: Andrew I.L.
 type: software
 repository-code: "https://github.com/earth-system-radiaton/rte-rrtmgp"
 license: BSD-3-Clause

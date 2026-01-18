@@ -27,7 +27,7 @@ module mo_optics_ssm
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
   use mo_gas_optics_constants,   only: grav
-  use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source
+  use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source, compute_layer_mass
 
   implicit none
   interface configure
@@ -365,9 +365,9 @@ contains
     nnu  = size(this%nus)
     ngas = size(this%gas_names)
 
-    call compute_layer_mass(ncol, nlay, ngas, &
-                            this, plev, gas_desc, layer_mass, &
-                            error_msg)
+    call get_layer_mass(ncol, nlay, ngas, &
+                        this, plev, gas_desc, layer_mass, &
+                        error_msg)
     if (error_msg /= '') return
 
     !
@@ -445,9 +445,9 @@ contains
     nnu  = size(this%nus)
     ngas = size(this%gas_names)
 
-    call compute_layer_mass(ncol, nlay, ngas, &
-                            this, plev, gas_desc, layer_mass, &
-                            error_msg)
+    call get_layer_mass(ncol, nlay, ngas, &
+                        this, plev, gas_desc, layer_mass, &
+                        error_msg)
     if (error_msg /= '') return
 
     !
@@ -592,7 +592,7 @@ contains
   !
   !> Compute layer masses from gas concentrations and pressure levels
   !
-  subroutine compute_layer_mass(ncol, nlay, ngas, this, plev, gas_desc, layer_mass, error_msg)
+  subroutine get_layer_mass(ncol, nlay, ngas, this, plev, gas_desc, layer_mass, error_msg)
     integer,  intent(in ) :: ncol, nlay, ngas
     class(ty_optics_ssm),     intent(in   ) :: this
     real(wp), dimension(:,:), intent(in   ) :: plev       !! level pressures [Pa]; (ncol,nlay+1)
@@ -600,12 +600,14 @@ contains
     real(wp), dimension(:,:,:), intent(  out) :: layer_mass !! (ngas, ncol, nlay)
     character(len=128),       intent(  out) :: error_msg
 
-    integer :: igas, icol, ilay
+    integer :: igas
     real(wp), dimension(size(layer_mass,1), size(layer_mass,2), size(layer_mass,3)) :: vmr
-
+    ! --------------
     error_msg = ""
 
-    vmr(:,:,:) = 0._wp
+    !$acc        data create(   vmr)
+    !$omp target data map(alloc:vmr)
+    call zero_array(size(vmr,1), size(vmr,2), size(vmr,3), vmr)
 
     ! Get vmr if gas is provided in ty_gas_concs
     do igas = 1, ngas
@@ -616,17 +618,10 @@ contains
     end do
 
     ! Convert pressures and vmr to layer masses (ngas, ncol, nlay)
-    ! mmr = vmr * (Mgas/Mair)
-    ! layer_mass = mmr * dp / g
-    do ilay = 1, nlay
-      do icol = 1, ncol
-        do igas = 1, ngas
-          layer_mass(igas, icol, ilay) = vmr(igas, icol, ilay) * &
-            (this%mol_weights(igas) / this%m_dry) * &
-            abs(plev(icol, ilay+1) - plev(icol, ilay)) / grav
-        end do
-      end do
-    end do
+    call compute_layer_mass(ncol, nlay, ngas, vmr, plev, this%mol_weights, this%m_dry, layer_mass)
 
-  end subroutine compute_layer_mass
+    !$acc end data
+    !$omp end target data
+
+  end subroutine get_layer_mass
 end module mo_optics_ssm

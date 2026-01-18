@@ -9,7 +9,7 @@ target_include_directories(
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
     ${NetCDF_Fortran_INCLUDE_DIR}
 )
-target_link_libraries(rfmip_clear_utils PRIVATE testing-utils)
+target_link_libraries(rfmip_clear_utils PRIVATE shared-utils)
 
 # ##############################################################################
 #
@@ -33,7 +33,7 @@ foreach(
     ${test_executable}
     PRIVATE rfmip_clear_utils
             rrtmgp-load-data
-            testing-utils
+            shared-utils
             rte-rrtmgp::rte
             rte-rrtmgp::rrtmgp
             rte-rrtmgp::ssm
@@ -166,7 +166,7 @@ foreach(fn IN ITEMS rfmip_lw rfmip_sw)
     ssm_${fn}
     PRIVATE rfmip_clear_utils
             rrtmgp-load-data
-            testing-utils
+            shared-utils
             rte-rrtmgp::rte
             rte-rrtmgp::rrtmgp
             rte-rrtmgp::ssm

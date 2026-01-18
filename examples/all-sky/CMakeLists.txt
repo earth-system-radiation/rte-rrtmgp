@@ -5,7 +5,7 @@ add_executable(rrtmgp_allsky rrtmgp_allsky.F90)
 target_link_libraries(
   rrtmgp_allsky
   PRIVATE rrtmgp-load-data
-          testing-utils
+          shared-utils
           rte-rrtmgp::rte
           rte-rrtmgp::rrtmgp
           rte-rrtmgp::ssm
@@ -15,7 +15,7 @@ add_executable(ssm_allsky rrtmgp_allsky.F90)
 target_link_libraries(
   ssm_allsky
   PRIVATE rrtmgp-load-data
-          testing-utils
+          shared-utils
           rte-rrtmgp::rte
           rte-rrtmgp::rrtmgp
           rte-rrtmgp::ssm

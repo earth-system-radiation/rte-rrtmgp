@@ -20,7 +20,7 @@ target_include_directories(
 )
 target_link_libraries(
   test_utils
-  PUBLIC testing-utils rte-rrtmgp::rte rte-rrtmgp::rrtmgp rte-rrtmgp::ssm
+  PUBLIC shared-utils rte-rrtmgp::rte rte-rrtmgp::rrtmgp rte-rrtmgp::ssm
 )
 
 foreach(
@@ -44,7 +44,7 @@ foreach(
     PRIVATE test_utils
             rrtmgp-load-data
             rfmip_clear_utils
-            testing-utils
+            shared-utils
             rte-rrtmgp::rte
             ${optics-lib}
   )

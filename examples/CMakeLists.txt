@@ -9,5 +9,6 @@ set(FAILURE_THRESHOLD
     CACHE STRING "Default failure threshold for tests"
 )
 
+add_subdirectory(shared-utils)
 add_subdirectory(all-sky)
 add_subdirectory(rfmip-clear-sky)

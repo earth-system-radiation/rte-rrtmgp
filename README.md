@@ -16,7 +16,7 @@ RTE computes fluxes given spectrally-resolved optical descriptions and source fu
 
 RRTMGP uses a correlated _k_-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. The k-distribution currently distributed with this package is applicable to the Earth's atmosphere under present-day, pre-industrial, and 4xCO2 conditions.
 
-RTE and RRTMGP have re-implemented in \[Julia\](https://github.com/CliMA/RRTMGP.jl, [JAX](https://github.com/climate-analytics-lab/jax-rrtmgp), and [C++/Kokkos](https://github.com/E3SM-Project/E3SM/tree/master/components/eamxx/src/physics/rrtmgp).
+RTE and RRTMGP have re-implemented in [Julia](https://github.com/CliMA/RRTMGP.jl), [JAX](https://github.com/climate-analytics-lab/jax-rrtmgp), and [C++/Kokkos](https://github.com/E3SM-Project/E3SM/tree/master/components/eamxx/src/physics/rrtmgp).
 
 ## Building the libraries, examples, and unit-testing codes.
 

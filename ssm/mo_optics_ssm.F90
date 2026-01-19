@@ -16,12 +16,12 @@
 module mo_optics_ssm
   use mo_rte_kind,           only: wp, wl
   use mo_rte_config,         only: check_extents, check_values
-  use mo_rte_util_array,     only: zero_array
+  use mo_rte_util_array,     only: zero_array, set_to_scalar
   use mo_rte_util_array_validation, &
                              only: any_vals_less_than, any_vals_outside, extents_are
   use mo_optical_props,      only: ty_optical_props
   use mo_source_functions,   only: ty_source_func_lw
-  use mo_gas_optics_util_string, only: lower_case, string_in_array, string_loc_in_array
+  use mo_gas_optics_util_string, only: lower_case
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
@@ -92,8 +92,11 @@ module mo_optics_ssm
     character(32), dimension(:),    allocatable :: gas_names
     real(wp),      dimension(:),    allocatable :: mol_weights
     real(wp),      dimension(:, :), allocatable :: absorption_coeffs
-    real(wp),      dimension(:),    allocatable :: nus, dnus
       ! total absorption coefficients at spectral points (nnus, ngases)
+    real(wp),      dimension(:),    allocatable :: nus, dnus
+      ! spectral discretization
+    real(wp),      dimension(:),    allocatable :: toa_src
+      ! determined at configuration time
     real(wp) :: Tstar     = 0._wp, &
                 pref      = 500._wp * 100._wp, & ! reference pressure, assumes 500 hPa by default
                 m_dry     = 0.029_wp, & ! molecular weight of dry air [kg/mol]
@@ -189,6 +192,7 @@ contains
     integer :: nnu, ngas
     integer :: inu, itri, igas
     real(wp), dimension(2, size(nus)) :: band_lims_wavenum
+    real(wp), dimension(1, size(nus)) :: toa_src_1col
 
     error_msg = ""
     ngas = size(gas_names)
@@ -234,13 +238,15 @@ contains
     if (error_msg /= '') return
 
     if(allocated(this%gas_names)) &
-      deallocate(this%gas_names, this%mol_weights, this%nus, this%dnus, this%absorption_coeffs)
+      deallocate(this%gas_names, this%mol_weights, this%nus, this%dnus, &
+                 this%absorption_coeffs, this%toa_src)
 
     allocate(this%gas_names(ngas), &
              this%mol_weights(ngas), &
              this%nus (nnu), &
              this%dnus(nnu), &
-             this%absorption_coeffs(ngas,nnu) )
+             this%absorption_coeffs(ngas,nnu), &
+             this%toa_src(nnu))
 
     this%nus(1:nnu)        = nus(1:nnu)
     this%gas_names(1:ngas) = gas_names(1:ngas)
@@ -300,11 +306,25 @@ contains
           triangle_params(itri, 2) * exp(-abs(this%nus(inu) - triangle_params(itri, 3)) / triangle_params(itri, 4))
       end do
     end do
-   !$acc        enter data copyin(this%gas_names, this%mol_weights, this%absorption_coeffs, this%nus, this%dnus)
-   !$omp target enter data map(to:this%gas_names, this%mol_weights, this%absorption_coeffs, this%nus, this%dnus)
 
     if(present(Tstar)) this%Tstar = Tstar
     if(present(tsi))   this%tsi = tsi
+
+    if(this%Tstar > 0) then
+      !
+      ! Shortwave: incoming solar irradiance
+      !   (Need to have a 1xnnu array for compute_Planck_source)
+      !
+      call compute_Planck_source(1, nnu, &
+                                 this%nus, this%dnus, [this%Tstar],   &
+                                 toa_src_1col)
+
+      ! Tstar sets spectral distribution; normalize to top-of-atmosphere
+      !   total solar irradiance (flux)
+      this%toa_src(:) = toa_src_1col(1,:) * this%tsi/sum(this%toa_src)
+    else
+      call zero_array(nnu, this%toa_src)
+    end if
 
     if(present(kappa_cld)) then
       this%kappa_cld = kappa_cld
@@ -323,6 +343,11 @@ contains
     else
       this%ssa_cld = 0._wp
     end if
+
+    !$acc        enter data copyin(this%gas_names, this%mol_weights, this%absorption_coeffs, &
+    !$acc                          this%nus, this%dnus, this%toa_src)
+    !$omp target enter data map(to:this%gas_names, this%mol_weights, this%absorption_coeffs, &
+    !$omp                          this%nus, this%dnus, this%toa_src)
 
   end function configure_with_values
 
@@ -354,16 +379,20 @@ contains
                                                tlev        !! level temperatures [K]; (ncol,nlay+1)
     ! ----------------------------------------------------------
     ! Local variables
-    ! ----------------------------------------------------------
+    !
     integer :: ncol, nlay, nnu, ngas
     integer :: igas, icol, ilay, idx_gas
     real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: layer_mass
+    ! ----------------------------------------------------------
     error_msg = ""
 
     ncol = size(play,1)
     nlay = size(play,2)
-    nnu  = size(this%nus)
+    nnu  = this%get_ngpt()
     ngas = size(this%gas_names)
+
+    ! Ideally some data sanitization goes here - size of optical props agrees with size of play etc.
+    !   use extents_are() function
 
     call get_layer_mass(ncol, nlay, ngas, &
                         this, plev, gas_desc, layer_mass, &
@@ -390,8 +419,8 @@ contains
                       ncol, nlay, nnu, optical_props%p)
     end select
 
-    !
     ! Planck function sources
+    !
     call compute_Planck_source(ncol, nlay,   nnu, &
                                this%nus, this%dnus, tlay,   &
                                sources%lay_source)
@@ -434,16 +463,20 @@ contains
                            optional, target :: col_dry ! Column dry amount; dim(ncol,nlay)
     ! ----------------------------------------------------------
     ! Local variables
-    ! ----------------------------------------------------------
+    !
     integer :: ncol, nlay, nnu, ngas
-    integer :: igas, icol, ilay, idx_gas
+    integer :: igas, icol, ilay, inu, idx_gas
     real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: layer_mass
     error_msg = ""
 
+    ! ----------------------------------------------------------
     ncol = size(play,1)
     nlay = size(play,2)
-    nnu  = size(this%nus)
+    nnu  = this%get_ngpt()
     ngas = size(this%gas_names)
+
+    ! Ideally some data sanitization goes here - size of optical props agrees with size of play etc.
+    !   use extents_are() function
 
     call get_layer_mass(ncol, nlay, ngas, &
                         this, plev, gas_desc, layer_mass, &
@@ -471,16 +504,13 @@ contains
                       ncol, nlay, nnu, optical_props%p)
     end select
 
-    !
-    ! Shortwave: incoming solar irradiance
-    !
-    call compute_Planck_source(ncol, nnu, &
-                               this%nus, this%dnus, spread(this%Tstar, 1, ncol),   &
-                               toa_src)
-
-    ! Make sure that the integral is the tsi
-    toa_src = toa_src / spread(sum(toa_src, dim=2), dim=2, ncopies=size(toa_src,2)) * this%tsi
-
+    !$acc parallel loop collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
+    do inu = 1, this%get_ngpt()
+      do icol = 1, optical_props%get_ncol()
+        toa_src(icol, inu) = this%toa_src(inu)
+      end do
+    end do
   end function gas_optics_ext
 
   !------------------------------------------------------------------------------------------
@@ -501,23 +531,75 @@ contains
     character(len=128)      :: error_msg
     ! ----------------------------------------------------------
     ! Local variables
+    integer :: icol, ilay, inu
     ! ----------------------------------------------------------
     error_msg = ""
 
     ! Get cloud optical depth by multiplying
     ! [kg/m2] of cloud by [m2/kg] absorption coeff
-    ! Need spread because tau is 3D and cwp is 2D
-    optical_props%tau = spread(1000._wp * (clwp + ciwp) * this%kappa_cld, 3, size(this%nus))
+
+    !$acc parallel loop collapse(3) copyout(optical_props%tau)
+    !$omp target teams distribute parallel do simd collapse(3) map(from:optical_props%tau)
+    do inu = 1, this%get_ngpt()
+      do ilay = 1, optical_props%get_nlay()
+        do icol = 1, optical_props%get_ncol()
+          optical_props%tau(icol, ilay, inu) = 1000._wp * (clwp(icol, ilay) + ciwp(icol, ilay)) * this%kappa_cld
+        end do
+      end do
+    end do
 
     select type(optical_props)
       type is (ty_optical_props_2str)
-          optical_props%ssa = this%ssa_cld
-          optical_props%g   = this%g_cld
+          call set_to_scalar(optical_props%get_ncol(), &
+                             optical_props%get_nlay(), &
+                             optical_props%get_ngpt(), &
+                         optical_props%ssa, this%ssa_cld)
+          call set_to_scalar(optical_props%get_ncol(), &
+                             optical_props%get_nlay(), &
+                             optical_props%get_ngpt(), &
+                         optical_props%g,    this%g_cld)
       type is (ty_optical_props_nstr)
         ! Toss an error here? No one uses n-streams
     end select
 
   end function cloud_optics
+
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  !> Compute layer masses from gas concentrations and pressure levels
+  !
+  subroutine get_layer_mass(ncol, nlay, ngas, this, plev, gas_desc, layer_mass, error_msg)
+    integer,  intent(in ) :: ncol, nlay, ngas
+    class(ty_optics_ssm),     intent(in   ) :: this
+    real(wp), dimension(:,:), intent(in   ) :: plev       !! level pressures [Pa]; (ncol,nlay+1)
+    type(ty_gas_concs),       intent(in   ) :: gas_desc   !! Gas volume mixing ratios
+    real(wp), dimension(:,:,:), intent(  out) :: layer_mass !! (ngas, ncol, nlay)
+    character(len=128),       intent(  out) :: error_msg
+
+    integer :: igas
+    real(wp), dimension(size(layer_mass,1), size(layer_mass,2), size(layer_mass,3)) :: vmr
+    ! --------------
+    error_msg = ""
+
+    !$acc        data create(   vmr)
+    !$omp target data map(alloc:vmr)
+    call zero_array(size(vmr,1), size(vmr,2), size(vmr,3), vmr)
+
+    ! Get vmr if gas is provided in ty_gas_concs
+    do igas = 1, ngas
+      if (any(lower_case(this%gas_names(igas)) == gas_desc%get_gas_names())) then
+        error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(igas,:,:))
+        if (error_msg /= '') return
+      endif
+    end do
+
+    ! Convert pressures and vmr to layer masses (ngas, ncol, nlay)
+    call compute_layer_mass(ncol, nlay, ngas, vmr, plev, this%mol_weights, this%m_dry, layer_mass)
+
+    !$acc end data
+    !$omp end target data
+
+  end subroutine get_layer_mass
 
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -588,40 +670,4 @@ contains
     get_temp_max = huge(1._wp)
   end function get_temp_max
 
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  !> Compute layer masses from gas concentrations and pressure levels
-  !
-  subroutine get_layer_mass(ncol, nlay, ngas, this, plev, gas_desc, layer_mass, error_msg)
-    integer,  intent(in ) :: ncol, nlay, ngas
-    class(ty_optics_ssm),     intent(in   ) :: this
-    real(wp), dimension(:,:), intent(in   ) :: plev       !! level pressures [Pa]; (ncol,nlay+1)
-    type(ty_gas_concs),       intent(in   ) :: gas_desc   !! Gas volume mixing ratios
-    real(wp), dimension(:,:,:), intent(  out) :: layer_mass !! (ngas, ncol, nlay)
-    character(len=128),       intent(  out) :: error_msg
-
-    integer :: igas
-    real(wp), dimension(size(layer_mass,1), size(layer_mass,2), size(layer_mass,3)) :: vmr
-    ! --------------
-    error_msg = ""
-
-    !$acc        data create(   vmr)
-    !$omp target data map(alloc:vmr)
-    call zero_array(size(vmr,1), size(vmr,2), size(vmr,3), vmr)
-
-    ! Get vmr if gas is provided in ty_gas_concs
-    do igas = 1, ngas
-      if (any(lower_case(this%gas_names(igas)) == gas_desc%get_gas_names())) then
-        error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(igas,:,:))
-        if (error_msg /= '') return
-      endif
-    end do
-
-    ! Convert pressures and vmr to layer masses (ngas, ncol, nlay)
-    call compute_layer_mass(ncol, nlay, ngas, vmr, plev, this%mol_weights, this%m_dry, layer_mass)
-
-    !$acc end data
-    !$omp end target data
-
-  end subroutine get_layer_mass
 end module mo_optics_ssm

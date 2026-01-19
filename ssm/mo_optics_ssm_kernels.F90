@@ -158,9 +158,9 @@ contains
     end do
 
   end subroutine compute_Planck_source_1D
-  ! -------
-
-  subroutine compute_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass)
+  ! -------------------------------------------------------------------------------------------------
+  subroutine compute_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass) &
+     bind(C, name="ssm_compute_layer_mass")
     integer, intent(in)                                  :: ncol, nlay, ngas
     real(wp), dimension(ngas, ncol, nlay  ), intent(in ) :: vmr
     real(wp), dimension(      ncol, nlay+1), intent(in ) :: plev

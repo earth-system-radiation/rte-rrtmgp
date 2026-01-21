@@ -394,10 +394,10 @@ contains
     ! Ideally some data sanitization goes here - size of optical props agrees with size of play etc.
     !   use extents_are() function
 
-    ! Variable layer_mass is used in the next two subroutines 
+    ! Variable layer_mass is used in the next two subroutines
     !$acc        data create(   layer_mass)
     !$omp target data map(alloc:layer_mass)
- 
+
     call get_layer_mass(ncol, nlay, ngas, &
                         this, plev, gas_desc, layer_mass, &
                         error_msg)
@@ -439,7 +439,7 @@ contains
     if(.not. present(tlev)) then
       error_msg = "tlev required for SSM (Andrew and Robert should fix this)"
       return
-    end if 
+    end if
     call compute_Planck_source(ncol, nlay+1, nnu, &
                                this%nus, this%dnus, tlev,   &
                                sources%lev_source)
@@ -493,7 +493,7 @@ contains
     ! Ideally some data sanitization goes here - size of optical props agrees with size of play etc.
     !   use extents_are() function
 
-    ! Variable layer_mass is used in the next two subroutines 
+    ! Variable layer_mass is used in the next two subroutines
     !$acc        data create(   layer_mass)
     !$omp target data map(alloc:layer_mass)
 

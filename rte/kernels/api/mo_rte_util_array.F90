@@ -14,7 +14,7 @@
 module mo_rte_util_array
   use mo_rte_kind,      only: wp, wl
   implicit none
-  public :: zero_array
+  public :: zero_array, set_to_scalar
 
   !-------------------------------------------------------------------------------------------------
   ! Initializing arrays to a constant

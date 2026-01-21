@@ -394,6 +394,10 @@ contains
     ! Ideally some data sanitization goes here - size of optical props agrees with size of play etc.
     !   use extents_are() function
 
+    ! Variable layer_mass is used in the next two subroutines 
+    !$acc        data create(   layer_mass)
+    !$omp target data map(alloc:layer_mass)
+ 
     call get_layer_mass(ncol, nlay, ngas, &
                         this, plev, gas_desc, layer_mass, &
                         error_msg)
@@ -406,6 +410,8 @@ contains
                      this%absorption_coeffs, play, this%pref, layer_mass, &
                      optical_props%tau)
 
+    !$acc end data
+    !$omp end target data
     !
     call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
 
@@ -419,6 +425,9 @@ contains
                       ncol, nlay, nnu, optical_props%p)
     end select
 
+    !$acc        data copyin(   this, this%nus, this%dnus)
+    !$omp target data map(alloc:this, this%nus, this%dnus)
+    !
     ! Planck function sources
     !
     call compute_Planck_source(ncol, nlay,   nnu, &
@@ -427,12 +436,18 @@ contains
     ! This will fail if Tlev isn't provided
     !   There's interpolation code in RRTMGP gas optics -
     !   should we make this generic and package it with the gas optics type?
+    if(.not. present(tlev)) then
+      error_msg = "tlev required for SSM (Andrew and Robert should fix this)"
+      return
+    end if 
     call compute_Planck_source(ncol, nlay+1, nnu, &
                                this%nus, this%dnus, tlev,   &
                                sources%lev_source)
     call compute_Planck_source(ncol, nnu, &
                                this%nus, this%dnus, tsfc,   &
                                sources%sfc_source)
+    !$acc end data
+    !$omp end target data
 
     call zero_array(ncol, nnu, sources%sfc_source_Jac)
   end function gas_optics_int
@@ -478,6 +493,10 @@ contains
     ! Ideally some data sanitization goes here - size of optical props agrees with size of play etc.
     !   use extents_are() function
 
+    ! Variable layer_mass is used in the next two subroutines 
+    !$acc        data create(   layer_mass)
+    !$omp target data map(alloc:layer_mass)
+
     call get_layer_mass(ncol, nlay, ngas, &
                         this, plev, gas_desc, layer_mass, &
                         error_msg)
@@ -489,11 +508,12 @@ contains
     call compute_tau(ncol, nlay, nnu, ngas,   &
                      this%absorption_coeffs, play, this%pref, layer_mass, &
                      optical_props%tau)
+    !$acc end data
+    !$omp end target data
 
-    !
     call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
 
-    ! Not doing scattering of gases
+    ! Not doing scattering of gases so no Rayleigh optical depth and ssa = 0
     select type(optical_props)
       type is (ty_optical_props_2str)
         call zero_array(ncol, nlay, nnu, optical_props%ssa)

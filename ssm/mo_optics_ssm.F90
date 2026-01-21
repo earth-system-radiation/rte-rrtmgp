@@ -321,7 +321,7 @@ contains
 
       ! Tstar sets spectral distribution; normalize to top-of-atmosphere
       !   total solar irradiance (flux)
-      this%toa_src(:) = toa_src_1col(1,:) * this%tsi/sum(this%toa_src)
+      this%toa_src(:) = toa_src_1col(1,:) * this%tsi/sum(toa_src_1col(1,:))
     else
       call zero_array(nnu, this%toa_src)
     end if

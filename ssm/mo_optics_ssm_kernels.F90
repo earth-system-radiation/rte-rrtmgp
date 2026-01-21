@@ -149,8 +149,8 @@ contains
      ! Local variables
      integer :: icol, ilay, inu
 
-    !$acc                         parallel loop    collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
+    !$acc                         parallel loop    collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do inu = 1, nnu
       do icol = 1, ncol
         source(icol, inu) = B_nu(T(icol), nus(inu)) * dnus(inu)

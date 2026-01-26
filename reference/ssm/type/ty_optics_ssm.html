@@ -87,7 +87,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p>100.0% of total for derived types.</p>Including implementation: 348 statements, 100.0% of total for derived types.">21 statements</a>
+    title="<p>100.0% of total for derived types.</p>Including implementation: 377 statements, 100.0% of total for derived types.">22 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_optics_ssm.F90"> Source File</a></li>
   </ul>
@@ -127,6 +127,7 @@
       <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-nus">nus</a>
       <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-pref">pref</a>
       <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-ssa_cld">ssa_cld</a>
+      <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-toa_src">toa_src</a>
       <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-tsi">tsi</a>
     </div>
   </div>
@@ -249,6 +250,7 @@
       <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-nus">nus</a>
       <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-pref">pref</a>
       <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-ssa_cld">ssa_cld</a>
+      <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-toa_src">toa_src</a>
       <a class="list-group-item" href="../type/ty_optics_ssm.html#variable-tsi">tsi</a>
     </div>
   </div>
@@ -333,6 +335,11 @@
   <td><span class="anchor" id="variable-ssa_cld"></span>real(kind=wp),</td>
 <td>public</td>  <td></td><td>::</td>
   <td><strong>ssa_cld</strong></td><td> =</td><td>0._wp</td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-toa_src"></span>real(kind=wp),</td>
+<td>public,</td>  <td>dimension(:), allocatable</td><td>::</td>
+  <td><strong>toa_src</strong></td><td></td><td></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" id="variable-tsi"></span>real(kind=wp),</td>

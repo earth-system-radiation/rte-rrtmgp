@@ -85,7 +85,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 2.1% of total for modules and submodules.">53 statements</a>
+    title=" 3.1% of total for modules and submodules.">81 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_rte_util_array.F90"> Source File</a></li>
   </ul>
@@ -113,18 +113,8 @@
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#inters-0">Interfaces</a></h3></div>
   <div id="inters-0" class="panel-collapse collapse">
     <div class="list-group">
+      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#interface-set_to_scalar">set_to_scalar</a>
       <a class="list-group-item" href="../module/mo_rte_util_array~2.html#interface-zero_array">zero_array</a>
-    </div>
-  </div>
-</div>
-<div class="panel panel-primary">
-  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-0">Subroutines</a></h3></div>
-  <div class="list-group">
-    <div id="subs-0" class="panel-collapse collapse">
-      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#proc-zero_array_1d">zero_array_1D</a>
-      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#proc-zero_array_2d">zero_array_2D</a>
-      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#proc-zero_array_3d">zero_array_3D</a>
-      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#proc-zero_array_4d">zero_array_4D</a>
     </div>
   </div>
 </div>
@@ -383,18 +373,8 @@
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#inters-1">Interfaces</a></h3></div>
   <div id="inters-1" class="panel-collapse collapse">
     <div class="list-group">
+      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#interface-set_to_scalar">set_to_scalar</a>
       <a class="list-group-item" href="../module/mo_rte_util_array~2.html#interface-zero_array">zero_array</a>
-    </div>
-  </div>
-</div>
-<div class="panel panel-primary">
-  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-1">Subroutines</a></h3></div>
-  <div class="list-group">
-    <div id="subs-1" class="panel-collapse collapse">
-      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#proc-zero_array_1d">zero_array_1D</a>
-      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#proc-zero_array_2d">zero_array_2D</a>
-      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#proc-zero_array_3d">zero_array_3D</a>
-      <a class="list-group-item" href="../module/mo_rte_util_array~2.html#proc-zero_array_4d">zero_array_4D</a>
     </div>
   </div>
 </div>
@@ -408,13 +388,167 @@
     <section>
    <h2>Interfaces</h2>
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="interface-zero_array"></span><h3>public interface <a href='../interface/zero_array.html'>zero_array</a>  </h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="interface-set_to_scalar"></span><h3>public interface <a href='../interface/set_to_scalar.html'>set_to_scalar</a>  </h3></div>
   <div class="panel-body">
     <p>Efficiently set arrays to zero</p>
   </div>
   <ul class="list-group">
     <li class="list-group-item">
-    <h3>public subroutine <a href='../proc/zero_array_1d.html'>zero_array_1D</a>(ni, array) bind(C, name="0")</h3>    
+    <h3>private subroutine set_to_scalar_1D(ni, array, value) bind(C, name="0")</h3>    
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ni</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ni)</td><td>::</td>
+  <td><strong>array</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>value</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+
+    </li>
+    <li class="list-group-item">
+    <h3>private subroutine set_to_scalar_2D(ni, nj, array, value) bind(C, name="0")</h3>    
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ni</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nj</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ni, nj)</td><td>::</td>
+  <td><strong>array</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>value</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+
+    </li>
+    <li class="list-group-item">
+    <h3>private subroutine set_to_scalar_3D(ni, nj, nk, array, value) bind(C, name="0")</h3>    
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ni</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nj</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nk</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ni, nj, nk)</td><td>::</td>
+  <td><strong>array</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>value</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+
+    </li>
+    <li class="list-group-item">
+    <h3>private subroutine set_to_scalar_4D(ni, nj, nk, nl, array, value) bind(C, name="0")</h3>    
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ni</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nj</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nk</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nl</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ni, nj, nk, nl)</td><td>::</td>
+  <td><strong>array</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>value</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+
+    </li>
+  </ul>
+</div>
+
+     <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-zero_array"></span><h3>public interface <a href='../interface/zero_array.html'>zero_array</a>  </h3></div>
+  <ul class="list-group">
+    <li class="list-group-item">
+    <h3>private subroutine zero_array_1D(ni, array) bind(C, name="0")</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -436,7 +570,7 @@
 
     </li>
     <li class="list-group-item">
-    <h3>public subroutine <a href='../proc/zero_array_2d.html'>zero_array_2D</a>(ni, nj, array) bind(C, name="0")</h3>    
+    <h3>private subroutine zero_array_2D(ni, nj, array) bind(C, name="0")</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -464,7 +598,7 @@
 
     </li>
     <li class="list-group-item">
-    <h3>public subroutine <a href='../proc/zero_array_3d.html'>zero_array_3D</a>(ni, nj, nk, array) bind(C, name="0")</h3>    
+    <h3>private subroutine zero_array_3D(ni, nj, nk, array) bind(C, name="0")</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -498,7 +632,7 @@
 
     </li>
     <li class="list-group-item">
-    <h3>public subroutine <a href='../proc/zero_array_4d.html'>zero_array_4D</a>(ni, nj, nk, nl, array) bind(C, name="0")</h3>    
+    <h3>private subroutine zero_array_4D(ni, nj, nk, nl, array) bind(C, name="0")</h3>    
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -546,150 +680,6 @@
     
     
 
-    <section>
-    <h2>Subroutines</h2>
-      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-zero_array_1d"></span><h3>public subroutine <a href='../proc/zero_array_1d.html'>zero_array_1D</a>(ni, array) bind(C, name="0")</h3></div>
-  <div class="panel-body">
-           
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ni</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(out),</td>
-  <td></td>  <td>dimension(ni)</td><td>::</td>
-  <td><strong>array</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-
-  </div>
-  </div>
-
-      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-zero_array_2d"></span><h3>public subroutine <a href='../proc/zero_array_2d.html'>zero_array_2D</a>(ni, nj, array) bind(C, name="0")</h3></div>
-  <div class="panel-body">
-           
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ni</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nj</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(out),</td>
-  <td></td>  <td>dimension(ni, nj)</td><td>::</td>
-  <td><strong>array</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-
-  </div>
-  </div>
-
-      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-zero_array_3d"></span><h3>public subroutine <a href='../proc/zero_array_3d.html'>zero_array_3D</a>(ni, nj, nk, array) bind(C, name="0")</h3></div>
-  <div class="panel-body">
-           
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ni</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nj</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nk</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(out),</td>
-  <td></td>  <td>dimension(ni, nj, nk)</td><td>::</td>
-  <td><strong>array</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-
-  </div>
-  </div>
-
-      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-zero_array_4d"></span><h3>public subroutine <a href='../proc/zero_array_4d.html'>zero_array_4D</a>(ni, nj, nk, nl, array) bind(C, name="0")</h3></div>
-  <div class="panel-body">
-           
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ni</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nj</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nk</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nl</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(out),</td>
-  <td></td>  <td>dimension(ni, nj, nk, nl)</td><td>::</td>
-  <td><strong>array</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-
-  </div>
-  </div>
-
-    </section>    
-    <br>
     
     </div>
   </div>

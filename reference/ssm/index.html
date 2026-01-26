@@ -85,8 +85,8 @@
         <div class="col-md-8">
           <h1>SSM optics</h1>
           <p>These pages document the Simple Spectral Models of gas and cloud optics used by RTE-SSM.</p>
-<p>The gas optics is described in <a href="https://doi.org/10.48550/arXiv.2508.09353">Williams (2026)</a> and <a href="https://github.com/earth-system-radiation/rte-rrtmgp/pull/379">PR #379</a>, and includes simple analytic representations to the absorption coefficients of H(<em>{2})O and CO(</em>{2}) line absorption (in the longwave) and H(<em>{2})O and O(</em>{3}) line absorption (in the shortwave).</p>
-<p>The cloud optics is highly simplified and just prescribes a single mass absorption coefficient (\kappa), single scattering albedo (\omega_0), and asymmetry factor (g) for clouds in the longwave and shortwave, respectively.</p>
+<p>The gas optics is described in <a href="https://doi.org/10.48550/arXiv.2508.09353">Williams (2026)</a> and <a href="https://github.com/earth-system-radiation/rte-rrtmgp/pull/379">PR #379</a>, and includes simple analytic representations to the absorption coefficients of H<sub>2</sub>O and CO<sub>2</sub> line absorption (in the longwave) and H<sub>2</sub>O and O<sub>3</sub> line absorption (in the shortwave).</p>
+<p>The cloud optics is highly simplified and just prescribes a single mass absorption coefficient <code>kappa</code>, single scattering albedo <code>ssa</code>, and asymmetry factor <code>g</code> for clouds in the longwave and shortwave, respectively.</p>
 <p>The listings below are not exhaustive.
 To see the full listings use the links at the top of the page.
 There is a search bar in the top right.</p>
@@ -118,7 +118,8 @@ There is a search bar in the top right.</p>
           </div>
 		  <div class="col-xs-6 col-sm-3">
               <h3>Procedures</h3>
-              <ul>                    <li><a href='./interface/compute_planck_source.html'>compute_Planck_source</a></li>
+              <ul>                    <li><a href='./proc/compute_layer_mass.html'>compute_layer_mass</a></li>
+                    <li><a href='./interface/compute_planck_source.html'>compute_Planck_source</a></li>
                     <li><a href='./proc/compute_tau.html'>compute_tau</a></li>
                     <li><a href='./interface/configure.html'>configure</a></li>
 </ul>

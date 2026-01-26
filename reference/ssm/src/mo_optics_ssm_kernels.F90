@@ -1,11 +1,9 @@
-! See documentation in other modules...
+! This is an implementation of a simple spectral model
 !
 ! Contacts: Andrew Williams and Robert Pincus
 ! email:  andrewwilliams@ucsd.edu
-!
-! Contacts: could provide here... names, emails or web site
-!
-! Copyright 2025-,  ... Trustees of Columbia University.  All right reserved.
+!!
+! Copyright 2025-,  ... and Trustees of Columbia University.  All right reserved.
 !
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
@@ -18,13 +16,15 @@
 module mo_optics_ssm_kernels
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array
+  use mo_gas_optics_constants, &
+                        only: grav
   implicit none
   interface compute_Planck_source
     module procedure compute_Planck_source_1D, compute_Planck_source_2D
   end interface
 
   private
-  public :: compute_tau, compute_Planck_source
+  public :: compute_tau, compute_Planck_source, compute_layer_mass
 
   !
   ! Physical constants
@@ -57,13 +57,30 @@ contains
     integer :: icol, ilay, inu, igas
     real(wp), dimension(size(play,1), size(play,2)) :: p_scaling
 
+    !$acc        data create(   p_scaling)
+    !$omp target data map(alloc:p_scaling)
+
     ! Apply pressure broadening if pref input is non-zero
     if (pref /= 0._wp) then
-      p_scaling(:,:) = play(:,:) / pref
+      !$acc                         parallel loop    collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          p_scaling(icol, ilay) =  play(icol, ilay) / pref
+        end do
+      end do
     else
-      p_scaling(:,:) = 1._wp
+      !$acc                         parallel loop    collapse(2)
+      !$omp target teams distribute parallel do simd collapse(2)
+      do ilay = 1, nlay
+        do icol = 1, ncol
+          p_scaling(icol, ilay) = 1._wp
+        end do
+      end do
     end if
 
+    !$acc                         parallel loop    collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do inu = 1, nnu
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -72,6 +89,9 @@ contains
         end do
       end do
     end do
+
+    !$acc end data
+    !$omp end target data
 
   end subroutine compute_tau
   ! -------------------------------------------------------------------------------------------------
@@ -99,9 +119,11 @@ contains
       intent(out) :: source
 
      ! Local variables
-     integer :: icol, ilay, inu
+    integer :: icol, ilay, inu
 
-    do inu = 1, nnu
+   !$acc                         parallel loop    collapse(3)
+   !$omp target teams distribute parallel do simd collapse(3)
+   do inu = 1, nnu
       do ilay = 1, nlay
         do icol = 1, ncol
           source(icol, ilay, inu) = B_nu(T(icol, ilay), nus(inu)) * dnus(inu)
@@ -127,6 +149,8 @@ contains
      ! Local variables
      integer :: icol, ilay, inu
 
+    !$acc                         parallel loop    collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do inu = 1, nnu
       do icol = 1, ncol
         source(icol, inu) = B_nu(T(icol), nus(inu)) * dnus(inu)
@@ -134,6 +158,31 @@ contains
     end do
 
   end subroutine compute_Planck_source_1D
-  ! -------
+  ! -------------------------------------------------------------------------------------------------
+  subroutine compute_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass) &
+     bind(C, name="ssm_compute_layer_mass")
+    integer, intent(in)                                  :: ncol, nlay, ngas
+    real(wp), dimension(ngas, ncol, nlay  ), intent(in ) :: vmr
+    real(wp), dimension(      ncol, nlay+1), intent(in ) :: plev
+    real(wp), dimension(ngas),               intent(in ) :: mol_weights
+    real(wp),                                intent(in ) :: m_dry
+    real(wp), dimension(ngas, ncol, nlay),   intent(out) :: layer_mass
+
+    integer :: igas, icol, ilay
+    ! Convert pressures and vmr to layer masses (ngas, ncol, nlay)
+    ! mmr = vmr * (Mgas/Mair)
+    ! layer_mass = mmr * dp / g
+    !$acc                         parallel loop    collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
+    do ilay = 1, nlay
+      do icol = 1, ncol
+        do igas = 1, ngas
+          layer_mass(igas, icol, ilay) = vmr(igas, icol, ilay) * &
+            (mol_weights(igas) / m_dry) * &
+            abs(plev(icol, ilay+1) - plev(icol, ilay)) / grav
+        end do
+      end do
+    end do
+  end subroutine compute_layer_mass
 
 end module mo_optics_ssm_kernels

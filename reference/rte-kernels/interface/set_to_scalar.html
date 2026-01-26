@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-   <meta name="description" content="Simple spectral models for gas and cloud optics">
+   <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
     <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
-    <title>compute_Planck_source &ndash; SSM optics</title>
+    <title>set_to_scalar &ndash; RTE kernels</title>
 
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/pygments.css" rel="stylesheet">
@@ -39,7 +39,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="../index.html">SSM optics </a>
+          <a class="navbar-brand" href="../index.html">RTE kernels </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -52,16 +52,14 @@
             <li><a href="../lists/files.html">Source Files</a></li>
             <li><a href="../lists/modules.html">Modules</a></li>
             <li><a href="../lists/procedures.html">Procedures</a></li>
-                   <li><a href="../lists/types.html">Derived Types</a></li>
-       
+              
             </ul>
         
             </li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
-                             <li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
-          </ul>
+                                       </ul>
         <form action="../search.html" class="navbar-form navbar-right" role="search">
         <div class="form-group">
           <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
@@ -76,7 +74,7 @@
 
     <div class="container">
   <div class="row">
-    <h1>compute_Planck_source
+    <h1>set_to_scalar
    <small>Interface</small>
     </h1>
     <div class="row">
@@ -87,14 +85,14 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p> 5.8% of total for procedures.</p>Including implementation: 29 statements, 55.8% of total for procedures.">3 statements</a>
+    title="<p> 0.2% of total for procedures.</p>Including implementation: 51 statements,  3.2% of total for procedures.">3 statements</a>
      </li> 
-    <li><i class="fa fa-code"></i><a href="../src/mo_optics_ssm_kernels.F90"> Source File</a></li>
+    <li><i class="fa fa-code"></i><a href="../src/mo_rte_util_array.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_optics_ssm_kernels.f90.html'>mo_optics_ssm_kernels.F90</a></li>
-     <li><a href='../module/mo_optics_ssm_kernels.html'>mo_optics_ssm_kernels</a></li>
-     <li class="active">compute_Planck_source</li>
+     <li><a href='../sourcefile/mo_rte_util_array.f90.html'>mo_rte_util_array.F90</a></li>
+     <li><a href='../module/mo_rte_util_array~2.html'>mo_rte_util_array</a></li>
+     <li class="active">set_to_scalar</li>
   </ol>
 </div>
 </div>
@@ -116,8 +114,10 @@
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#modprocs-0">Module Procedures</a></h3></div>
   <div id="modprocs-0" class="panel-collapse collapse">
     <div class="list-group">
-      <a class="list-group-item" href="../interface/compute_planck_source.html#moduleprocedure-compute_planck_source_1d">compute_Planck_source_1D</a>
-      <a class="list-group-item" href="../interface/compute_planck_source.html#moduleprocedure-compute_planck_source_2d">compute_Planck_source_2D</a>
+      <a class="list-group-item" href="../interface/set_to_scalar.html#moduleprocedure-set_to_scalar_1d">set_to_scalar_1D</a>
+      <a class="list-group-item" href="../interface/set_to_scalar.html#moduleprocedure-set_to_scalar_2d">set_to_scalar_2D</a>
+      <a class="list-group-item" href="../interface/set_to_scalar.html#moduleprocedure-set_to_scalar_3d">set_to_scalar_3D</a>
+      <a class="list-group-item" href="../interface/set_to_scalar.html#moduleprocedure-set_to_scalar_4d">set_to_scalar_4D</a>
     </div>
   </div>
 </div>
@@ -127,9 +127,9 @@
     </div>
     
     <div class="col-md-9" id='text'>
-      <h2>public interface compute_Planck_source</h2>
-   
-
+      <h2>public interface set_to_scalar</h2>
+   <p>Efficiently set arrays to zero</p>
+<br>
      <section class="visible-xs visible-sm hidden-md">
        <h3>Contents</h3>
  
@@ -137,8 +137,10 @@
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#modprocs-1">Module Procedures</a></h3></div>
   <div id="modprocs-1" class="panel-collapse collapse">
     <div class="list-group">
-      <a class="list-group-item" href="../interface/compute_planck_source.html#moduleprocedure-compute_planck_source_1d">compute_Planck_source_1D</a>
-      <a class="list-group-item" href="../interface/compute_planck_source.html#moduleprocedure-compute_planck_source_2d">compute_Planck_source_2D</a>
+      <a class="list-group-item" href="../interface/set_to_scalar.html#moduleprocedure-set_to_scalar_1d">set_to_scalar_1D</a>
+      <a class="list-group-item" href="../interface/set_to_scalar.html#moduleprocedure-set_to_scalar_2d">set_to_scalar_2D</a>
+      <a class="list-group-item" href="../interface/set_to_scalar.html#moduleprocedure-set_to_scalar_3d">set_to_scalar_3D</a>
+      <a class="list-group-item" href="../interface/set_to_scalar.html#moduleprocedure-set_to_scalar_4d">set_to_scalar_4D</a>
     </div>
   </div>
 </div>
@@ -150,7 +152,7 @@
 
    <h2>Module Procedures</h2>
       <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_planck_source_1d"></span><h3>private subroutine compute_Planck_source_1D(ncol, nnu, nus, dnus, T, source) bind(C, name="0")</h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="proc-set_to_scalar_1d"></span><h3>private subroutine set_to_scalar_1D(ni, array, value) bind(C, name="0")</h3></div>
   <div class="panel-body">
            
 <h4>Arguments</h4>      <table class="table table-striped varlist">
@@ -160,37 +162,19 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nnu</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(nnu)</td><td>::</td>
-  <td><strong>nus</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(nnu)</td><td>::</td>
-  <td><strong>dnus</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(ncol)</td><td>::</td>
-  <td><strong>T</strong></td><td></td>
+  <td><strong>ni</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol, nnu)</td><td>::</td>
-  <td><strong>source</strong></td><td></td>
+  <td></td>  <td>dimension(ni)</td><td>::</td>
+  <td><strong>array</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>value</strong></td><td></td>
 </tr>
 </tbody>
 </table>
@@ -200,7 +184,7 @@
   </div>
 
       <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_planck_source_2d"></span><h3>private subroutine compute_Planck_source_2D(ncol, nlay, nnu, nus, dnus, T, source) bind(C, name="0")</h3></div>
+  <div class="panel-heading codesum"><span class="anchor" id="proc-set_to_scalar_2d"></span><h3>private subroutine set_to_scalar_2D(ni, nj, array, value) bind(C, name="0")</h3></div>
   <div class="panel-body">
            
 <h4>Arguments</h4>      <table class="table table-striped varlist">
@@ -210,43 +194,119 @@
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
+  <td><strong>ni</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nnu</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(nnu)</td><td>::</td>
-  <td><strong>nus</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(nnu)</td><td>::</td>
-  <td><strong>dnus</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(ncol, nlay)</td><td>::</td>
-  <td><strong>T</strong></td><td></td>
+  <td><strong>nj</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(out),</td>
-  <td></td>  <td>dimension(ncol, nlay, nnu)</td><td>::</td>
-  <td><strong>source</strong></td><td></td>
+  <td></td>  <td>dimension(ni, nj)</td><td>::</td>
+  <td><strong>array</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>value</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+
+  </div>
+  </div>
+
+      <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-set_to_scalar_3d"></span><h3>private subroutine set_to_scalar_3D(ni, nj, nk, array, value) bind(C, name="0")</h3></div>
+  <div class="panel-body">
+           
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ni</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nj</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nk</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ni, nj, nk)</td><td>::</td>
+  <td><strong>array</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>value</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+
+  </div>
+  </div>
+
+      <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-set_to_scalar_4d"></span><h3>private subroutine set_to_scalar_4D(ni, nj, nk, nl, array, value) bind(C, name="0")</h3></div>
+  <div class="panel-body">
+           
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ni</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nj</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nk</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nl</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ni, nj, nk, nl)</td><td>::</td>
+  <td><strong>array</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>value</strong></td><td></td>
 </tr>
 </tbody>
 </table>
@@ -264,7 +324,7 @@
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>SSM optics was developed by The RTE+RRTTMGP consortium<br>&copy; 2026 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2026 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

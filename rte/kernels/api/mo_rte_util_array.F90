@@ -14,8 +14,40 @@
 module mo_rte_util_array
   use mo_rte_kind,      only: wp, wl
   implicit none
-  public :: zero_array
+  public :: zero_array, set_to_scalar
 
+  !-------------------------------------------------------------------------------------------------
+  ! Initializing arrays to a constant
+  !-------------------------------------------------------------------------------------------------
+  interface set_to_scalar
+    subroutine set_to_scalar_1D(ni, array, value) bind(C, name="set_to_scalar_1D")
+      use mo_rte_kind,      only: wp, wl
+      integer,                 intent(in ) :: ni
+      real(wp), dimension(ni), intent(out) :: array
+      real(wp),                intent(in ) :: value
+    end subroutine set_to_scalar_1D
+    ! ----------------------------------------------------------
+    subroutine set_to_scalar_2D(ni, nj, array, value) bind(C, name="set_to_scalar_2D")
+      use mo_rte_kind,      only: wp, wl
+      integer,                     intent(in ) :: ni, nj
+      real(wp), dimension(ni, nj), intent(out) :: array
+      real(wp),                    intent(in ) :: value
+    end subroutine set_to_scalar_2D
+    ! ----------------------------------------------------------
+    subroutine set_to_scalar_3D(ni, nj, nk, array, value) bind(C, name="set_to_scalar_3D")
+      use mo_rte_kind,      only: wp, wl
+      integer,                         intent(in ) :: ni, nj, nk
+      real(wp), dimension(ni, nj, nk), intent(out) :: array
+      real(wp),                        intent(in ) :: value
+    end subroutine set_to_scalar_3D
+    ! ----------------------------------------------------------
+    subroutine set_to_scalar_4D(ni, nj, nk, nl, array, value) bind(C, name="set_to_scalar_4D")
+      use mo_rte_kind,      only: wp, wl
+      integer,                             intent(in ) :: ni, nj, nk, nl
+      real(wp), dimension(ni, nj, nk, nl), intent(out) :: array
+      real(wp),                            intent(in ) :: value
+    end subroutine set_to_scalar_4D
+  end interface set_to_scalar
   !-------------------------------------------------------------------------------------------------
   ! Initializing arrays to 0
   !-------------------------------------------------------------------------------------------------

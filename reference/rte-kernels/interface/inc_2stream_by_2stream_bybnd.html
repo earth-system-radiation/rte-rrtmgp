@@ -91,7 +91,7 @@
     <li><i class="fa fa-code"></i><a href="../src/mo_optical_props_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_optical_props_kernels.f90~2.html'>mo_optical_props_kernels.F90</a></li>
+     <li><a href='../sourcefile/mo_optical_props_kernels.f90~3.html'>mo_optical_props_kernels.F90</a></li>
      <li><a href='../module/mo_optical_props_kernels~2.html'>mo_optical_props_kernels</a></li>
      <li class="active">inc_2stream_by_2stream_bybnd</li>
   </ol>
@@ -130,67 +130,67 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~37"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~65"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~36"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~63"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ngpt~37"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngpt~65"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ngpt</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau1~23"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau1~41"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>tau1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ssa1~14"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-ssa1~26"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>ssa1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-g1~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-g1~9"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>g1</strong></td><td><p>optical properties to be modified (defined on g-points)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau2~23"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau2~41"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
   <td><strong>tau2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ssa2~15"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-ssa2~27"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
   <td><strong>ssa2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-g2~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-g2~9"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,nbnd)</td><td>::</td>
   <td><strong>g2</strong></td><td><p>optical properties to be added to original (defined on bands)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nbnd~14"></span>integer,</td>
+  <td><span class="anchor" id="variable-nbnd~23"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nbnd</strong></td><td><p>array sizes</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-gpt_lims~14"></span>integer,</td>
+  <td><span class="anchor" id="variable-gpt_lims~23"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nbnd)</td><td>::</td>
   <td><strong>gpt_lims</strong></td><td><p>Starting and ending gpoint for each band</p></td>

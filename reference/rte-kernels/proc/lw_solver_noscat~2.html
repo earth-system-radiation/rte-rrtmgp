@@ -90,7 +90,7 @@
     <li><i class="fa fa-code"></i><a href="../src/mo_rte_solver_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_rte_solver_kernels.f90~3.html'>mo_rte_solver_kernels.F90</a></li>
+     <li><a href='../sourcefile/mo_rte_solver_kernels.f90~2.html'>mo_rte_solver_kernels.F90</a></li>
      <li><a href='../module/mo_rte_solver_kernels~3.html'>mo_rte_solver_kernels</a></li>
      <li class="active">lw_solver_noscat</li>
   </ol>
@@ -126,145 +126,145 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~53"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~30"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~51"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~29"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ngpt~53"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngpt~30"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ngpt</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-top_at_1~10"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-top_at_1~6"></span>logical(kind=wl),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>top_at_1</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nmus~3"></span>integer,</td>
+  <td><span class="anchor" id="variable-nmus~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nmus</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ds~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-ds~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension (ncol,      ngpt, nmus)</td><td>::</td>
   <td><strong>Ds</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-weights~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-weights~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nmus)</td><td>::</td>
   <td><strong>weights</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau~12"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau~8"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>tau</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lay_source~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lay_source~4"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>lay_source</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lev_source~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lev_source~4"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
   <td><strong>lev_source</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-sfc_emis~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-sfc_emis~4"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>sfc_emis</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-sfc_src~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-sfc_src~4"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>sfc_src</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-inc_flux~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-inc_flux~4"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>inc_flux</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-flux_up~8"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-flux_up~5"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt), target</td><td>::</td>
   <td><strong>flux_up</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-flux_dn~8"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-flux_dn~5"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt), target</td><td>::</td>
   <td><strong>flux_dn</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-do_broadband~5"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-do_broadband~3"></span>logical(kind=wl),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>do_broadband</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-broadband_up~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-broadband_up~3"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay+1     ), target</td><td>::</td>
   <td><strong>broadband_up</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-broadband_dn~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-broadband_dn~3"></span>real(kind=wp),</td>
 <td>intent(inout),</td>
   <td></td>  <td>dimension(ncol,nlay+1     ), target</td><td>::</td>
   <td><strong>broadband_dn</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-do_jacobians~3"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-do_jacobians~2"></span>logical(kind=wl),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>do_Jacobians</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-sfc_srcjac~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-sfc_srcjac~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol       ,ngpt)</td><td>::</td>
   <td><strong>sfc_srcJac</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-flux_upjac~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-flux_upjac~2"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay+1     ), target</td><td>::</td>
   <td><strong>flux_upJac</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-do_rescaling~3"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-do_rescaling~2"></span>logical(kind=wl),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>do_rescaling</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ssa~10"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-ssa~7"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay  ,ngpt)</td><td>::</td>
   <td><strong>ssa</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-g~10"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-g~7"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay  ,ngpt)</td><td>::</td>
   <td><strong>g</strong></td><td></td>

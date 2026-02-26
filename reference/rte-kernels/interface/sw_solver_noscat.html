@@ -91,7 +91,7 @@
     <li><i class="fa fa-code"></i><a href="../src/mo_rte_solver_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_rte_solver_kernels.f90~2.html'>mo_rte_solver_kernels.F90</a></li>
+     <li><a href='../sourcefile/mo_rte_solver_kernels.f90~3.html'>mo_rte_solver_kernels.F90</a></li>
      <li><a href='../module/mo_rte_solver_kernels~2.html'>mo_rte_solver_kernels</a></li>
      <li class="active">sw_solver_noscat</li>
   </ol>
@@ -128,49 +128,49 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~32"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~60"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~31"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~58"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ngpt~32"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngpt~60"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ngpt</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-top_at_1~8"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-top_at_1~12"></span>logical(kind=wl),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>top_at_1</strong></td><td><p>ilay = 1 is the top of the atmosphere?</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau~10"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau~16"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>tau</strong></td><td><p>Absorption optical thickness []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-mu0~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-mu0~6"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay       )</td><td>::</td>
   <td><strong>mu0</strong></td><td><p>cosine of solar zenith angle</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-inc_flux_dir~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-inc_flux_dir~6"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>inc_flux_dir</strong></td><td><p>Direct beam incident flux [W/m2]</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-flux_dir~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-flux_dir~6"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
   <td><strong>flux_dir</strong></td><td></td>

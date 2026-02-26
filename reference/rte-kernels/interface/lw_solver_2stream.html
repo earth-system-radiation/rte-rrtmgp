@@ -91,7 +91,7 @@
     <li><i class="fa fa-code"></i><a href="../src/mo_rte_solver_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_rte_solver_kernels.f90~2.html'>mo_rte_solver_kernels.F90</a></li>
+     <li><a href='../sourcefile/mo_rte_solver_kernels.f90~3.html'>mo_rte_solver_kernels.F90</a></li>
      <li><a href='../module/mo_rte_solver_kernels~2.html'>mo_rte_solver_kernels</a></li>
      <li class="active">lw_solver_2stream</li>
   </ol>
@@ -134,85 +134,85 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~29"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~57"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~28"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~55"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ngpt~29"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngpt~57"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ngpt</strong></td><td><p>Number of columns, layers, g-points</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-top_at_1~5"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-top_at_1~9"></span>logical(kind=wl),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>top_at_1</strong></td><td><p>ilay = 1 is the top of the atmosphere?</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tau~7"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tau~13"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>tau</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ssa~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-ssa~11"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>ssa</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-g~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-g~11"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>g</strong></td><td><p>Optical thickness, single-scattering albedo, asymmetry parameter []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lay_source~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lay_source~5"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>lay_source</strong></td><td><p>Planck source at layer average temperature [W/m2]</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lev_source~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lev_source~5"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
   <td><strong>lev_source</strong></td><td><p>Planck source at layer edge for radiation [W/m2]</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-sfc_emis~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-sfc_emis~5"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>sfc_emis</strong></td><td><p>Surface emissivity      []</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-sfc_src~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-sfc_src~5"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>sfc_src</strong></td><td><p>Surface source function [W/m2]</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-inc_flux~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-inc_flux~5"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>inc_flux</strong></td><td><p>Incident diffuse flux, probably 0 [W/m2]</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-flux_up~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-flux_up~7"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
   <td><strong>flux_up</strong></td><td><p>Fluxes [W/m2]</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-flux_dn~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-flux_dn~7"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
   <td><strong>flux_dn</strong></td><td><p>Fluxes [W/m2]</p></td>

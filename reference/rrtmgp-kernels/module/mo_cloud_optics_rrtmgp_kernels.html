@@ -85,12 +85,12 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 1.9% of total for modules and submodules.">17 statements</a>
+    title=" 4.2% of total for modules and submodules.">38 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_cloud_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_cloud_optics_rrtmgp_kernels.f90~2.html'>mo_cloud_optics_rrtmgp_kernels.F90</a></li>
+     <li><a href='../sourcefile/mo_cloud_optics_rrtmgp_kernels.f90.html'>mo_cloud_optics_rrtmgp_kernels.F90</a></li>
      <li class="active">mo_cloud_optics_rrtmgp_kernels</li>
   </ol>
 </div>
@@ -110,10 +110,10 @@
   <h3>Contents</h3>
  
 <div class="panel panel-primary">
-  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#inters-0">Interfaces</a></h3></div>
-  <div id="inters-0" class="panel-collapse collapse">
-    <div class="list-group">
-      <a class="list-group-item" href="../module/mo_cloud_optics_rrtmgp_kernels.html#interface-compute_cld_from_table">compute_cld_from_table</a>
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-0">Subroutines</a></h3></div>
+  <div class="list-group">
+    <div id="subs-0" class="panel-collapse collapse">
+      <a class="list-group-item" href="../module/mo_cloud_optics_rrtmgp_kernels.html#proc-compute_cld_from_table">compute_cld_from_table</a>
     </div>
   </div>
 </div>
@@ -235,10 +235,10 @@
       <h3>Contents</h3>
  
 <div class="panel panel-primary">
-  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#inters-1">Interfaces</a></h3></div>
-  <div id="inters-1" class="panel-collapse collapse">
-    <div class="list-group">
-      <a class="list-group-item" href="../module/mo_cloud_optics_rrtmgp_kernels.html#interface-compute_cld_from_table">compute_cld_from_table</a>
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-1">Subroutines</a></h3></div>
+  <div class="list-group">
+    <div id="subs-1" class="panel-collapse collapse">
+      <a class="list-group-item" href="../module/mo_cloud_optics_rrtmgp_kernels.html#proc-compute_cld_from_table">compute_cld_from_table</a>
     </div>
   </div>
 </div>
@@ -249,13 +249,16 @@
 
     
     
+
+    
+    
+
     <section>
-   <h2>Interfaces</h2>
-     <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="interface-compute_cld_from_table"></span><h3>interface   </h3></div>
-  <ul class="list-group">
-    <li class="list-group-item">
-    <h3>public subroutine compute_cld_from_table(ncol, nlay, ngpt, mask, lwp, re, nsteps, step_size, offset, tau_table, ssa_table, asy_table, tau, taussa, taussag) bind(C, name="0")</h3>    
+    <h2>Subroutines</h2>
+      <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_cld_from_table"></span><h3>public subroutine <a href='../proc/compute_cld_from_table.html'>compute_cld_from_table</a>(ncol, nlay, ngpt, mask, lwp, re, nsteps, step_size, offset, tau_table, ssa_table, asy_table, tau, taussa, taussag) bind(C, name="0")</h3></div>
+  <div class="panel-body">
+           
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
@@ -333,19 +336,19 @@
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
-<td></td>
+<td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>tau</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
-<td></td>
+<td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>taussa</strong></td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>real(kind=wp),</td>
-<td></td>
+<td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay,ngpt)</td><td>::</td>
   <td><strong>taussag</strong></td><td></td>
 </tr>
@@ -353,16 +356,11 @@
 </table>
 
 
-    </li>
-  </ul>
-</div>
+  </div>
+  </div>
 
-    </section>
-  <br>
-
-    
-    
-
+    </section>    
+    <br>
     
     </div>
   </div>

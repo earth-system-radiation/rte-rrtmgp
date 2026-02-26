@@ -91,8 +91,8 @@
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_gas_optics_rrtmgp_kernels.f90~2.html'>mo_gas_optics_rrtmgp_kernels.F90</a></li>
-     <li><a href='../module/mo_gas_optics_rrtmgp_kernels~3.html'>mo_gas_optics_rrtmgp_kernels</a></li>
+     <li><a href='../sourcefile/mo_gas_optics_rrtmgp_kernels.f90~3.html'>mo_gas_optics_rrtmgp_kernels.F90</a></li>
+     <li><a href='../module/mo_gas_optics_rrtmgp_kernels~2.html'>mo_gas_optics_rrtmgp_kernels</a></li>
      <li class="active">interpolation</li>
   </ol>
 </div>
@@ -128,151 +128,151 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~14"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>physical domain size</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~14"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>physical domain size</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ngas~6"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngas~9"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ngas</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nflav~8"></span>integer,</td>
+  <td><span class="anchor" id="variable-nflav~12"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nflav</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-neta~8"></span>integer,</td>
+  <td><span class="anchor" id="variable-neta~12"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>neta</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-npres~8"></span>integer,</td>
+  <td><span class="anchor" id="variable-npres~12"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>npres</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ntemp~8"></span>integer,</td>
+  <td><span class="anchor" id="variable-ntemp~12"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ntemp</strong></td><td><p>k-distribution table dimensions</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-flavor~2"></span>integer,</td>
+  <td><span class="anchor" id="variable-flavor~3"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,nflav)</td><td>::</td>
   <td><strong>flavor</strong></td><td><p>index into vmr_ref of major gases for each flavor</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-press_ref_log~2"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-press_ref_log~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(npres)</td><td>::</td>
   <td><strong>press_ref_log</strong></td><td><p>log of pressure dimension in RRTMGP tables</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-temp_ref~2"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-temp_ref~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ntemp)</td><td>::</td>
   <td><strong>temp_ref</strong></td><td><p>temperature dimension in RRTMGP tables</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-press_ref_log_delta~2"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-press_ref_log_delta~3"></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>press_ref_log_delta</strong></td><td><p>constants related to RRTMGP tables</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-temp_ref_min~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-temp_ref_min~6"></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>temp_ref_min</strong></td><td><p>constants related to RRTMGP tables</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-temp_ref_delta~2"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-temp_ref_delta~3"></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>temp_ref_delta</strong></td><td><p>constants related to RRTMGP tables</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-press_ref_trop_log~2"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-press_ref_trop_log~3"></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>press_ref_trop_log</strong></td><td><p>constants related to RRTMGP tables</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-vmr_ref~2"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-vmr_ref~3"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,0:ngas,ntemp)</td><td>::</td>
   <td><strong>vmr_ref</strong></td><td><p>reference volume mixing ratios used in compute "binary species parameter" eta</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-play~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-play~6"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
   <td><strong>play</strong></td><td><p>input pressure (Pa?) and temperature (K)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tlay~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tlay~9"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
   <td><strong>tlay</strong></td><td><p>input pressure (Pa?) and temperature (K)</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-col_gas~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-col_gas~9"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay,0:ngas)</td><td>::</td>
   <td><strong>col_gas</strong></td><td><p>input column gas amount - molecules/cm^2</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-jtemp~8"></span>integer,</td>
+  <td><span class="anchor" id="variable-jtemp~12"></span>integer,</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
   <td><strong>jtemp</strong></td><td><p>temperature and pressure interpolation indexes</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-fmajor~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-fmajor~9"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(2,2,2,ncol,nlay,nflav)</td><td>::</td>
   <td><strong>fmajor</strong></td><td><p>Interpolation weights in pressure, eta, strat/trop</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-fminor~6"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-fminor~9"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(2,2,  ncol,nlay,nflav)</td><td>::</td>
   <td><strong>fminor</strong></td><td><p>Interpolation fraction in eta, strat/trop</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-col_mix~4"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-col_mix~6"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(:,       :,   :,    :)</td><td>::</td>
   <td><strong>col_mix</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tropo~8"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-tropo~12"></span>logical(kind=wl),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
   <td><strong>tropo</strong></td><td><p>use lower (or upper) atmosphere tables</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-jeta~8"></span>integer,</td>
+  <td><span class="anchor" id="variable-jeta~12"></span>integer,</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(2,    ncol,nlay,nflav)</td><td>::</td>
   <td><strong>jeta</strong></td><td><p>Index for binary species interpolation</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-jpress~6"></span>integer,</td>
+  <td><span class="anchor" id="variable-jpress~9"></span>integer,</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay)</td><td>::</td>
   <td><strong>jpress</strong></td><td><p>temperature and pressure interpolation indexes</p></td>

@@ -90,8 +90,8 @@
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_gas_optics_rrtmgp_kernels.f90~3.html'>mo_gas_optics_rrtmgp_kernels.F90</a></li>
-     <li><a href='../module/mo_gas_optics_rrtmgp_kernels~2.html'>mo_gas_optics_rrtmgp_kernels</a></li>
+     <li><a href='../sourcefile/mo_gas_optics_rrtmgp_kernels.f90~2.html'>mo_gas_optics_rrtmgp_kernels.F90</a></li>
+     <li><a href='../module/mo_gas_optics_rrtmgp_kernels~3.html'>mo_gas_optics_rrtmgp_kernels</a></li>
      <li class="active">compute_Planck_source</li>
   </ol>
 </div>
@@ -126,175 +126,175 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~11"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~6"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~11"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~6"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nbnd~7"></span>integer,</td>
+  <td><span class="anchor" id="variable-nbnd~4"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nbnd</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ngpt~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-ngpt~5"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ngpt</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nflav~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-nflav~5"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nflav</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-neta~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-neta~5"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>neta</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-npres~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-npres~5"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>npres</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-ntemp~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-ntemp~5"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ntemp</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nplancktemp~3"></span>integer,</td>
+  <td><span class="anchor" id="variable-nplancktemp~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nPlanckTemp</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tlay~7"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tlay~4"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay  )</td><td>::</td>
   <td><strong>tlay</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tlev~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tlev~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol,nlay+1)</td><td>::</td>
   <td><strong>tlev</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tsfc~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-tsfc~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ncol       )</td><td>::</td>
   <td><strong>tsfc</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-sfc_lay~3"></span>integer,</td>
+  <td><span class="anchor" id="variable-sfc_lay~2"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>sfc_lay</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-fmajor~7"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-fmajor~4"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,2,2,ncol,nlay,nflav)</td><td>::</td>
   <td><strong>fmajor</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-jeta~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-jeta~5"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,    ncol,nlay,nflav)</td><td>::</td>
   <td><strong>jeta</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-tropo~9"></span>logical(kind=wl),</td>
+  <td><span class="anchor" id="variable-tropo~5"></span>logical(kind=wl),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
   <td><strong>tropo</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-jtemp~9"></span>integer,</td>
+  <td><span class="anchor" id="variable-jtemp~5"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
   <td><strong>jtemp</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-jpress~7"></span>integer,</td>
+  <td><span class="anchor" id="variable-jpress~4"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(            ncol,nlay)</td><td>::</td>
   <td><strong>jpress</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-gpoint_bands~3"></span>integer,</td>
+  <td><span class="anchor" id="variable-gpoint_bands~2"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ngpt)</td><td>::</td>
   <td><strong>gpoint_bands</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-band_lims_gpt~7"></span>integer,</td>
+  <td><span class="anchor" id="variable-band_lims_gpt~4"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2, nbnd)</td><td>::</td>
   <td><strong>band_lims_gpt</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-pfracin~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-pfracin~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(ntemp,neta,npres+1,ngpt)</td><td>::</td>
   <td><strong>pfracin</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-temp_ref_min~5"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-temp_ref_min~3"></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>temp_ref_min</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-totplnk_delta~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-totplnk_delta~2"></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>totplnk_delta</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-totplnk~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-totplnk~2"></span>real(kind=wp),</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(nPlanckTemp,nbnd)</td><td>::</td>
   <td><strong>totplnk</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-gpoint_flavor~7"></span>integer,</td>
+  <td><span class="anchor" id="variable-gpoint_flavor~4"></span>integer,</td>
 <td>intent(in),</td>
   <td></td>  <td>dimension(2,ngpt)</td><td>::</td>
   <td><strong>gpoint_flavor</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-sfc_src~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-sfc_src~2"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>sfc_src</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lay_src~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lay_src~2"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay,  ngpt)</td><td>::</td>
   <td><strong>lay_src</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-lev_src~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-lev_src~2"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,nlay+1,ngpt)</td><td>::</td>
   <td><strong>lev_src</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-sfc_source_jac~3"></span>real(kind=wp),</td>
+  <td><span class="anchor" id="variable-sfc_source_jac~2"></span>real(kind=wp),</td>
 <td>intent(out),</td>
   <td></td>  <td>dimension(ncol,       ngpt)</td><td>::</td>
   <td><strong>sfc_source_Jac</strong></td><td></td>

@@ -27,7 +27,7 @@ include:
     - .default  # from anw_dienste/ci-templates/.slurm-ci.yml
     - .scheduler
   variables:
-    ACCOUNT: mh0287
+    ACCOUNT: ka1125
     PARTITION: shared
     # Levante runners fetch from scratch each time:
     GIT_DEPTH: 1

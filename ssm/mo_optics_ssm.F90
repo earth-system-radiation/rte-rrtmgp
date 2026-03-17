@@ -69,9 +69,8 @@ module mo_optics_ssm
 
   ! Default spectoscopic params
   real(wp), dimension(4,4), parameter :: triangle_params_def_lw = reshape( &
-    [1._wp, 298._wp,    0._wp, 64._wp,  &
-     1._wp,  12._wp, 1600._wp, 36._wp,  &
-     1._wp,  16._wp, 1600._wp, 54._wp,  &
+    [1._wp, 282._wp,    0._wp, 64._wp,  &
+     1._wp,  24._wp, 1600._wp, 52._wp,  &
      2._wp, 110._wp,  667._wp, 12._wp], &
     shape = [4, 4], order = [2, 1])
 

@@ -68,12 +68,11 @@ module mo_optics_ssm
     [(1000._wp + (i-1) * (45000._wp - 1000._wp) / (nnu_def - 1), i = 1, nnu_def)] ! Default wavenumber array, SW
 
   ! Default spectoscopic params
-  real(wp), dimension(4,4), parameter :: triangle_params_def_lw = reshape( &
-    [1._wp, 298._wp,    0._wp, 64._wp,  &
-     1._wp,  12._wp, 1600._wp, 36._wp,  &
-     1._wp,  16._wp, 1600._wp, 54._wp,  &
+  real(wp), dimension(3,4), parameter :: triangle_params_def_lw = reshape( &
+    [1._wp, 282._wp,    0._wp, 64._wp,  &
+     1._wp,  24._wp, 1600._wp, 52._wp,  &
      2._wp, 110._wp,  667._wp, 12._wp], &
-    shape = [4, 4], order = [2, 1])
+    shape = [3, 4], order = [2, 1])
 
   character(len=32), dimension(2), parameter :: gas_names_def_lw = [character(32) :: "h2o", "co2"]
 

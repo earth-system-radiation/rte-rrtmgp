@@ -1912,7 +1912,7 @@
 <a id="ln-1756" name="ln-1756" href="#ln-1756"></a><span class="w">      </span><span class="c">!$acc           delete(this%idx_minor_upper, this%idx_minor_scaling_upper)  &amp;</span>
 <a id="ln-1757" name="ln-1757" href="#ln-1757"></a><span class="w">      </span><span class="c">!$acc           delete(this%kminor_start_upper, this%kminor_upper)</span>
 <a id="ln-1758" name="ln-1758" href="#ln-1758"></a><span class="w">      </span><span class="c">!$omp target exit data map(release:this%gas_names, this%vmr_ref, this%flavor) &amp;</span>
-<a id="ln-1759" name="ln-1759" href="#ln-1759"></a><span class="w">      </span><span class="c">!$omp map(release:this%press_ref, this%press_ref_log, this%temp_ref)</span>
+<a id="ln-1759" name="ln-1759" href="#ln-1759"></a><span class="w">      </span><span class="c">!$omp map(release:this%press_ref, this%press_ref_log, this%temp_ref) &amp;</span>
 <a id="ln-1760" name="ln-1760" href="#ln-1760"></a><span class="w">      </span><span class="c">!$omp map(release:this%gpoint_flavor, this%kmajor)  &amp;</span>
 <a id="ln-1761" name="ln-1761" href="#ln-1761"></a><span class="w">      </span><span class="c">!$omp map(release:this%minor_limits_gpt_lower) &amp;</span>
 <a id="ln-1762" name="ln-1762" href="#ln-1762"></a><span class="w">      </span><span class="c">!$omp map(release:this%minor_scales_with_density_lower, this%scale_by_complement_lower)  &amp;</span>
@@ -1946,7 +1946,7 @@
 <a id="ln-1790" name="ln-1790" href="#ln-1790"></a><span class="k">      if</span><span class="p">(</span><span class="nb">allocated</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">solar_source</span><span class="p">))</span><span class="w"> </span><span class="k">then</span>
 <a id="ln-1791" name="ln-1791" href="#ln-1791"></a><span class="w">        </span><span class="c">!$acc exit data delete(this%solar_source, this%solar_source_quiet) &amp;</span>
 <a id="ln-1792" name="ln-1792" href="#ln-1792"></a><span class="w">        </span><span class="c">!$acc           delete(this%solar_source_facular,this%solar_source_sunspot)</span>
-<a id="ln-1793" name="ln-1793" href="#ln-1793"></a><span class="w">        </span><span class="c">!$omp target exit data map(release:this%solar_source, this%solar_source_quiet)</span>
+<a id="ln-1793" name="ln-1793" href="#ln-1793"></a><span class="w">        </span><span class="c">!$omp target exit data map(release:this%solar_source, this%solar_source_quiet) &amp;</span>
 <a id="ln-1794" name="ln-1794" href="#ln-1794"></a><span class="w">        </span><span class="c">!$omp map(release:this%solar_source_facular,this%solar_source_sunspot)</span>
 <a id="ln-1795" name="ln-1795" href="#ln-1795"></a><span class="w">        </span><span class="k">deallocate</span><span class="p">(</span><span class="n">this</span><span class="p">%</span><span class="n">solar_source</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
 <a id="ln-1796" name="ln-1796" href="#ln-1796"></a><span class="w">                   </span><span class="n">this</span><span class="p">%</span><span class="n">solar_source_quiet</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="p">%</span><span class="n">solar_source_facular</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="p">%</span><span class="n">solar_source_sunspot</span><span class="p">)</span>

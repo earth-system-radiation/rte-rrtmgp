@@ -10,9 +10,4 @@ set -e
 (unset CDPATH) >/dev/null 2>&1 && unset CDPATH
 cd '@abs_builddir@'
 
-RRTMGP_DATA=${RRTMGP_DATA-'@abs_top_builddir@/@testcachedir@'}
-
-input='rrtmgp-gas-sw-g112.nc'
-test -f "${input}" || @LN_S@ "${RRTMGP_DATA}/${input}" "${input}"
-
 @LAUNCH_PREFIX@ ./test_zenith_angle_spherical_correction@EXEEXT@

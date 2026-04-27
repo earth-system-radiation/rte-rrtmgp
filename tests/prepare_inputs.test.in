@@ -1,0 +1,23 @@
+#!@SHELL@
+
+set -e
+
+@TESTS_ENABLED_FALSE@exit 77
+
+(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
+cd '@abs_builddir@'
+
+RRTMGP_DATA=${RRTMGP_DATA-'@abs_top_builddir@/@testcachedir@'}
+
+inputs='
+examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+rrtmgp-gas-lw-g128.nc
+rrtmgp-gas-lw-g256.nc
+rrtmgp-gas-sw-g112.nc
+rrtmgp-gas-sw-g224.nc
+'
+
+for input in ${inputs}; do
+  filename=`echo "${input}" | sed 's|.*/||'`
+  test -f "${filename}" || @LN_S@ "${RRTMGP_DATA}/${input}" "${filename}"
+done

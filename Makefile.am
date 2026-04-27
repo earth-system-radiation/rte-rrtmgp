@@ -113,7 +113,12 @@ TESTS = \
   examples/rfmip-clear-sky/rfmip-clear-sky.test \
   tests/check_equivalence.test \
   tests/check_variants.test \
+  tests/prepare_inputs.test \
   tests/test_zenith_angle_spherical_correction.test
+
+tests/check_equivalence.log \
+tests/check_variants.log \
+tests/test_zenith_angle_spherical_correction.log: tests/prepare_inputs.log
 
 $(TEST_LOGS): @TESTS_ENABLED_TRUE@ $(testcachedir)/$(am__dirstamp)
 TEST_DATA_URL= https://github.com/earth-system-radiation/rrtmgp-data/archive

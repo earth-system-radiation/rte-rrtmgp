@@ -4869,7 +4869,7 @@ $as_echo "no, using $LN_S" >&6; }
 fi
 
 
-ac_config_files="$ac_config_files examples/all-sky/all-sky.test examples/rfmip-clear-sky/rfmip-clear-sky.test tests/check_equivalence.test tests/check_variants.test tests/test_zenith_angle_spherical_correction.test"
+ac_config_files="$ac_config_files examples/all-sky/all-sky.test examples/rfmip-clear-sky/rfmip-clear-sky.test tests/check_equivalence.test tests/check_variants.test tests/prepare_inputs.test tests/test_zenith_angle_spherical_correction.test"
 
 
 ac_config_files="$ac_config_files Makefile"
@@ -5631,6 +5631,7 @@ do
     "examples/rfmip-clear-sky/rfmip-clear-sky.test") CONFIG_FILES="$CONFIG_FILES examples/rfmip-clear-sky/rfmip-clear-sky.test" ;;
     "tests/check_equivalence.test") CONFIG_FILES="$CONFIG_FILES tests/check_equivalence.test" ;;
     "tests/check_variants.test") CONFIG_FILES="$CONFIG_FILES tests/check_variants.test" ;;
+    "tests/prepare_inputs.test") CONFIG_FILES="$CONFIG_FILES tests/prepare_inputs.test" ;;
     "tests/test_zenith_angle_spherical_correction.test") CONFIG_FILES="$CONFIG_FILES tests/test_zenith_angle_spherical_correction.test" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "fortran_dependencies") CONFIG_COMMANDS="$CONFIG_COMMANDS fortran_dependencies" ;;
@@ -6067,6 +6068,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
     "examples/rfmip-clear-sky/rfmip-clear-sky.test":F) chmod a+x "$ac_file" ;;
     "tests/check_equivalence.test":F) chmod a+x "$ac_file" ;;
     "tests/check_variants.test":F) chmod a+x "$ac_file" ;;
+    "tests/prepare_inputs.test":F) chmod a+x "$ac_file" ;;
     "tests/test_zenith_angle_spherical_correction.test":F) chmod a+x "$ac_file" ;;
     "fortran_dependencies":C) touch Makefile.exe.deps Makefile.lib.deps; sleep 1; touch Makefile ;;
 

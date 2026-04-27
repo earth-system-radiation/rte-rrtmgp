@@ -261,6 +261,7 @@ AC_CONFIG_FILES([
    examples/rfmip-clear-sky/rfmip-clear-sky.test
    tests/check_equivalence.test
    tests/check_variants.test
+   tests/prepare_inputs.test
    tests/test_zenith_angle_spherical_correction.test
 ], [chmod a+x "$ac_file"])
 

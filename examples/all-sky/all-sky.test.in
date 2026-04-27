@@ -9,12 +9,26 @@ cd '@abs_builddir@'
 
 RRTMGP_DATA=${RRTMGP_DATA-'@abs_top_builddir@/@testcachedir@'}
 
+inputs='
+rrtmgp-aerosols-merra-lw.nc
+rrtmgp-aerosols-merra-sw.nc
+rrtmgp-clouds-lw.nc
+rrtmgp-clouds-sw.nc
+rrtmgp-gas-lw-g256.nc
+rrtmgp-gas-sw-g224.nc
+'
+
+for input in ${inputs}; do
+  filename=`echo "${input}" | sed 's|.*/||'`
+  test -f "${filename}" || @LN_S@ "${RRTMGP_DATA}/${input}" "${filename}"
+done
+
 @LAUNCH_PREFIX@ @SHELL@ - <<_EOF
 set -e
-./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-lw.nc "${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc" "${RRTMGP_DATA}/rrtmgp-clouds-lw.nc" "${RRTMGP_DATA}/rrtmgp-aerosols-merra-lw.nc"
-./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-sw.nc "${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc" "${RRTMGP_DATA}/rrtmgp-clouds-sw.nc" "${RRTMGP_DATA}/rrtmgp-aerosols-merra-sw.nc"
-./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-lw-no-aerosols.nc "${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc" "${RRTMGP_DATA}/rrtmgp-clouds-lw.nc"
-./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-sw-no-aerosols.nc "${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc" "${RRTMGP_DATA}/rrtmgp-clouds-sw.nc"
+./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-lw.nc rrtmgp-gas-lw-g256.nc rrtmgp-clouds-lw.nc rrtmgp-aerosols-merra-lw.nc
+./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-sw.nc rrtmgp-gas-sw-g224.nc rrtmgp-clouds-sw.nc rrtmgp-aerosols-merra-sw.nc
+./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-lw-no-aerosols.nc rrtmgp-gas-lw-g256.nc rrtmgp-clouds-lw.nc
+./rrtmgp_allsky@EXEEXT@ 24 72 1 rrtmgp-allsky-sw-no-aerosols.nc rrtmgp-gas-sw-g224.nc rrtmgp-clouds-sw.nc
 _EOF
 
 @SP_ENABLED_FALSE@FAILURE_THRESHOLD='7.e-4'

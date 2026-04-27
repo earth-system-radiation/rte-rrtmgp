@@ -10,25 +10,40 @@ cd '@abs_builddir@'
 RRTMGP_DATA=${RRTMGP_DATA-'@abs_top_builddir@/@testcachedir@'}
 
 inoutputs='
-rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
-rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
-rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
-rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+examples/rfmip-clear-sky/inputs/rld_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+examples/rfmip-clear-sky/inputs/rlu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+examples/rfmip-clear-sky/inputs/rsd_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
+examples/rfmip-clear-sky/inputs/rsu_Efx_RTE-RRTMGP-181204_rad-irf_r1i1p1f1_gn.nc
 '
+
+outputs=
 
 # The tests write to the input files, therefore we copy them instead of
 # symlinking:
 for inoutput in ${inoutputs}; do
-  cp "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/${inoutput}" "${inoutput}"
+  filename=`echo "${inoutput}" | sed 's|.*/||'`
+  cp "${RRTMGP_DATA}/${inoutput}" "${filename}"
+  outputs="${outputs} ${filename}"
+done
+
+inputs='
+examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc
+rrtmgp-gas-lw-g256.nc
+rrtmgp-gas-sw-g224.nc
+'
+
+for input in ${inputs}; do
+  filename=`echo "${input}" | sed 's|.*/||'`
+  test -f "${filename}" || @LN_S@ "${RRTMGP_DATA}/${input}" "${filename}"
 done
 
 @LAUNCH_PREFIX@ @SHELL@ - <<_EOF
 set -e
-./rrtmgp_rfmip_lw@EXEEXT@ 8 "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc" "${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc"
-./rrtmgp_rfmip_sw@EXEEXT@ 8 "${RRTMGP_DATA}/examples/rfmip-clear-sky/inputs/multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc" "${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc"
+./rrtmgp_rfmip_lw@EXEEXT@ 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc rrtmgp-gas-lw-g256.nc
+./rrtmgp_rfmip_sw@EXEEXT@ 8 multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc rrtmgp-gas-sw-g224.nc
 _EOF
 
 @SP_ENABLED_FALSE@FAILURE_THRESHOLD='7.e-4'
 @SP_ENABLED_TRUE@FAILURE_THRESHOLD='3.5e-1'
 export FAILURE_THRESHOLD
-@PYTHON@ '@abs_top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/rfmip-clear-sky/reference" --var rld rlu rsd rsu --file ${inoutputs}
+@PYTHON@ '@abs_top_srcdir@/examples/compare-to-reference.py' --ref_dir "${RRTMGP_DATA}/examples/rfmip-clear-sky/reference" --var rld rlu rsd rsu --file ${outputs}

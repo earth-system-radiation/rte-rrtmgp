@@ -132,11 +132,11 @@ contains
         !
         ! Values provided are for mu = cos(theta); we require the inverse
         !
-        gauss_Ds  = 1._wp / &
-                    RESHAPE([0.6096748751_wp, huge(1._wp)    , huge(1._wp)    , huge(1._wp),      &
-                             0.2509907356_wp, 0.7908473988_wp, huge(1._wp)    , huge(1._wp),      &
-                             0.1024922169_wp, 0.4417960320_wp, 0.8633751621_wp, huge(1._wp),      &
-                             0.0454586727_wp, 0.2322334416_wp, 0.5740198775_wp, 0.9030775973_wp], &
+        gauss_Ds  = RESHAPE([1._wp/0.6096748751_wp, 0._wp,                 0._wp,                 0._wp, &
+                             1._wp/0.2509907356_wp, 1._wp/0.7908473988_wp, 0._wp,                 0._wp, &
+                             1._wp/0.1024922169_wp, 1._wp/0.4417960320_wp, 1._wp/0.8633751621_wp, 0._wp, &
+                             1._wp/0.0454586727_wp, 1._wp/0.2322334416_wp,  &
+                             1._wp/0.5740198775_wp, 1._wp/0.9030775973_wp], &
                             [max_gauss_pts, max_gauss_pts]),              &
         gauss_wts = RESHAPE([1._wp,           0._wp,           0._wp,           0._wp, &
                              0.2300253764_wp, 0.7699746236_wp, 0._wp,           0._wp, &

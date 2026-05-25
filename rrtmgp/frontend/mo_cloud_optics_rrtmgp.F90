@@ -209,14 +209,14 @@ contains
   ! Compute single-scattering properties
   !
   function cloud_optics(this,                     &
-                        clwp, ciwp, reliq, reice, &
+                        clwp, ciwp, reliq, diamice, &
                         optical_props) result(error_msg)
     class(ty_cloud_optics_rrtmgp), &
               intent(in   ) :: this
     real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud liquid water path (g/m2)
                                ciwp  (:,:), &   ! cloud ice water path    (g/m2)
                                reliq (:,:), &   ! cloud liquid particle effective size (microns)
-                               reice (:,:)      ! cloud ice particle effective radius  (microns)
+                               diamice (:,:)    ! cloud ice particle effective diameter  (microns)
     class(ty_optical_props_arry), &
               intent(inout) :: optical_props
                                                ! Dimensions: (ncol,nlay,ngpt/nbnd)
@@ -261,8 +261,8 @@ contains
         error_msg = "cloud optics: ciwp has wrong extents"
       if(size(reliq, 1) /= ncol .or. size(reliq, 2) /= nlay) &
         error_msg = "cloud optics: reliq has wrong extents"
-      if(size(reice, 1) /= ncol .or. size(reice, 2) /= nlay) &
-        error_msg = "cloud optics: reice has wrong extents"
+      if(size(diamice, 1) /= ncol .or. size(diamice, 2) /= nlay) &
+        error_msg = "cloud optics: diamice has wrong extents"
       if(optical_props%get_ncol() /= ncol .or. optical_props%get_nlay() /= nlay) &
         error_msg = "cloud optics: optical_props have wrong extents"
       if(error_msg /= "") return
@@ -277,10 +277,10 @@ contains
       if(error_msg /= "") return
     end if
 
-    !$acc data copyin(clwp, ciwp, reliq, reice)                         &
+    !$acc data copyin(clwp, ciwp, reliq, diamice)                         &
     !$acc      create(ltau, ltaussa, ltaussag, itau, itaussa, itaussag) &
     !$acc      create(liqmsk,icemsk)
-    !$omp target data map(to:clwp, ciwp, reliq, reice) &
+    !$omp target data map(to:clwp, ciwp, reliq, diamice) &
     !$omp map(alloc:ltau, ltaussa, ltaussag, itau, itaussa, itaussag) &
     !$omp map(alloc:liqmsk, icemsk)
     !
@@ -301,8 +301,8 @@ contains
     if(check_values) then
       if(any_vals_outside(reliq, liqmsk, this%radliq_lwr, this%radliq_upr)) &
         error_msg = 'cloud optics: liquid effective radius is out of bounds'
-      if(any_vals_outside(reice, icemsk, this%diamice_lwr, this%diamice_upr)) &
-        error_msg = 'cloud optics: ice effective radius is out of bounds'
+      if(any_vals_outside(diamice, icemsk, this%diamice_lwr, this%diamice_upr)) &
+        error_msg = 'cloud optics: ice effective diameter is out of bounds'
       if(any_vals_less_than(clwp, liqmsk, 0._wp) .or. any_vals_less_than(ciwp, icemsk, 0._wp)) &
         error_msg = 'cloud optics: negative clwp or ciwp where clouds are supposed to be'
     end if
@@ -332,7 +332,7 @@ contains
         !
         ! Ice
         !
-        call compute_cld_from_table(ncol, nlay, ngpt, icemsk, ciwp, reice,              &
+        call compute_cld_from_table(ncol, nlay, ngpt, icemsk, ciwp, diamice,              &
                                     this%ice_nsteps,this%ice_step_size,this%diamice_lwr,&
                                     this%extice(:,:,this%icergh),                       &
                                     this%ssaice(:,:,this%icergh),                       &

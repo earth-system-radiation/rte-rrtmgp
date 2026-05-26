@@ -653,7 +653,7 @@ contains
         lwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) .and. t_lay(icol,ilay) > 263._wp)
         iwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) .and. t_lay(icol,ilay) < 273._wp)
         rel(icol,ilay) = merge(rel_val, 0._wp, lwp(icol,ilay) > 0._wp)
-        rei(icol,ilay) = merge(dei_val, 0._wp, iwp(icol,ilay) > 0._wp)
+        dei(icol,ilay) = merge(dei_val, 0._wp, iwp(icol,ilay) > 0._wp)
       end do
     end do
     !$acc exit data delete(cloud_mask)

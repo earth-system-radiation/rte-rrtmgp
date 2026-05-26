@@ -537,14 +537,14 @@ contains
   !> Derive cloud optical properties from provided cloud physical properties
   !
   function cloud_optics(this,                     &
-                        clwp, ciwp, reliq, reice, &
+                        clwp, ciwp, reliq, deice, &
                         optical_props) result(error_msg)
     class(ty_optics_ssm), &
               intent(in   ) :: this
     real(wp), intent(in   ) :: clwp  (:,:), &   ! cloud liquid water path (g/m2)
                                ciwp  (:,:), &   ! cloud ice water path    (g/m2)
                                reliq (:,:), &   ! cloud liquid particle effective size (microns)
-                               reice (:,:)      ! cloud ice particle effective radius  (microns)
+                               deice (:,:)      ! cloud ice particle effective diameter (microns)
     class(ty_optical_props_arry), &
               intent(inout) :: optical_props
     character(len=128)      :: error_msg

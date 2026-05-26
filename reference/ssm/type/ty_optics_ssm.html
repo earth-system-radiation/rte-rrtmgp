@@ -361,7 +361,7 @@
   <div class="panel-heading codesum"><span class="anchor" id="boundprocedure-cloud_optics"></span><h3>procedure, public :: <strong>cloud_optics</strong>    </h3></div>
   <ul class="list-group">
       <li class="list-group-item">
-          <h3>private function cloud_optics(this, clwp, ciwp, reliq, reice, optical_props) result(error_msg)</h3><p>Derive cloud optical properties from provided cloud physical properties</p>
+          <h3>private function cloud_optics(this, clwp, ciwp, reliq, deice, optical_props) result(error_msg)</h3><p>Derive cloud optical properties from provided cloud physical properties</p>
     
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
@@ -394,7 +394,7 @@
   <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
-  <td><strong>reice</strong>(:,:)</td><td></td>
+  <td><strong>deice</strong>(:,:)</td><td></td>
 </tr>
 <tr>
   <td><span class="anchor" ></span>class(ty_optical_props_arry),</td>

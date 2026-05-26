@@ -57,7 +57,7 @@ program rte_rrtmgp_allsky
   !
   ! Clouds
   !
-  real(wp), allocatable, dimension(:,:) :: lwp, iwp, rel, rei
+  real(wp), allocatable, dimension(:,:) :: lwp, iwp, rel, dei
   logical,  allocatable, dimension(:,:) :: cloud_mask
   !
   ! Aerosols
@@ -340,9 +340,9 @@ program rte_rrtmgp_allsky
     if(do_clouds) then
       select type (gas_optics)
         type is (ty_gas_optics_rrtmgp)
-          call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+          call stop_on_err(cloud_optics%cloud_optics(lwp, iwp, rel, dei, clouds))
         type is (ty_optics_ssm)
-          call stop_on_err(  gas_optics%cloud_optics(lwp, iwp, rel, rei, clouds))
+          call stop_on_err(  gas_optics%cloud_optics(lwp, iwp, rel, dei, clouds))
       end select
     end if
 
@@ -441,9 +441,9 @@ program rte_rrtmgp_allsky
 #ifndef _CRAYFTN
     ! ACCWA cloud_mask is already deallocated, Cray does not currently allow
     ! ACCWA delete in that case
-    !$acc        exit data delete(     cloud_mask, lwp, iwp, rel, rei)
+    !$acc        exit data delete(     cloud_mask, lwp, iwp, rel, dei)
 #endif
-    !$omp target exit data map(release:cloud_mask, lwp, iwp, rel, rei)
+    !$omp target exit data map(release:cloud_mask, lwp, iwp, rel, dei)
     select type(clouds)
       class is (ty_optical_props_1scl)
         !$acc        exit data delete     (clouds%tau, clouds)
@@ -589,7 +589,7 @@ contains
   !
   subroutine compute_clouds
 
-    real(wp) :: rel_val, rei_val
+    real(wp) :: rel_val, dei_val
     !
     ! Variable and memory allocation
     !
@@ -624,9 +624,9 @@ contains
     ! Cloud physical properties
     !
     allocate(lwp(ncol,nlay), iwp(ncol,nlay), &
-             rel(ncol,nlay), rei(ncol,nlay), cloud_mask(ncol,nlay))
-    !$acc enter        data create(   cloud_mask, lwp, iwp, rel, rei)
-    !$omp target enter data map(alloc:cloud_mask, lwp, iwp, rel, rei)
+             rel(ncol,nlay), dei(ncol,nlay), cloud_mask(ncol,nlay))
+    !$acc enter        data create(   cloud_mask, lwp, iwp, rel, dei)
+    !$omp target enter data map(alloc:cloud_mask, lwp, iwp, rel, dei)
 
     ! Restrict clouds to troposphere (> 100 hPa = 100*100 Pa)
     !   and not very close to the ground (< 900 hPa), and
@@ -634,14 +634,14 @@ contains
     !   total cloudiness of earth
     if(do_rrtmgp) then
       rel_val = 0.5 * (cloud_optics%get_min_radius_liq() + cloud_optics%get_max_radius_liq())
-      rei_val = 0.5 * (cloud_optics%get_min_radius_ice() + cloud_optics%get_max_radius_ice())
+      dei_val = 0.5 * (cloud_optics%get_min_diameter_ice() + cloud_optics%get_max_diameter_ice())
     else if (do_ssm) then
       ! Arbitrary values - SSM doesn't care
       rel_val = 10._wp
-      rei_val = 20._wp
+      dei_val = 20._wp
     end if
-    !$acc                         parallel loop    collapse(2) copyin(t_lay) copyout( lwp, iwp, rel, rei)
-    !$omp target teams distribute parallel do simd collapse(2) map(to:t_lay) map(from:lwp, iwp, rel, rei)
+    !$acc                         parallel loop    collapse(2) copyin(t_lay) copyout( lwp, iwp, rel, dei)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:t_lay) map(from:lwp, iwp, rel, dei)
     do ilay=1,nlay
       do icol=1,ncol
         cloud_mask(icol,ilay) = p_lay(icol,ilay) > 100._wp * 100._wp .and. &
@@ -653,7 +653,7 @@ contains
         lwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) .and. t_lay(icol,ilay) > 263._wp)
         iwp(icol,ilay) = merge(10._wp,  0._wp, cloud_mask(icol,ilay) .and. t_lay(icol,ilay) < 273._wp)
         rel(icol,ilay) = merge(rel_val, 0._wp, lwp(icol,ilay) > 0._wp)
-        rei(icol,ilay) = merge(rei_val, 0._wp, iwp(icol,ilay) > 0._wp)
+        rei(icol,ilay) = merge(dei_val, 0._wp, iwp(icol,ilay) > 0._wp)
       end do
     end do
     !$acc exit data delete(cloud_mask)
@@ -824,7 +824,7 @@ contains
       call create_var("lwp", ncid, [col_dim, lay_dim])
       call create_var("iwp", ncid, [col_dim, lay_dim])
       call create_var("rel", ncid, [col_dim, lay_dim])
-      call create_var("rei", ncid, [col_dim, lay_dim])
+      call create_var("dei", ncid, [col_dim, lay_dim])
     end if
     if(do_aerosols) then
       if(nf90_def_var(ncid, "aero_type", NF90_SHORT, [col_dim, lay_dim], varid) /= NF90_NOERR) &
@@ -863,12 +863,12 @@ contains
     call stop_on_err(write_field(ncid, "o3",     vmr))
 
     if(do_clouds) then
-      !$acc        update host(lwp, iwp, rel, rei)
-      !$omp target update from(lwp, iwp, rel, rei)
+      !$acc        update host(lwp, iwp, rel, dei)
+      !$omp target update from(lwp, iwp, rel, dei)
       call stop_on_err(write_field(ncid, "lwp",  lwp))
       call stop_on_err(write_field(ncid, "iwp",  iwp))
       call stop_on_err(write_field(ncid, "rel",  rel))
-      call stop_on_err(write_field(ncid, "rei",  rei))
+      call stop_on_err(write_field(ncid, "dei",  dei))
     end if
 
     if(do_aerosols) then

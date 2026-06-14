@@ -35,8 +35,8 @@ authors:
 type: software
 repository-code: "https://github.com/earth-system-radiaton/rte-rrtmgp"
 license: BSD-3-Clause
-date-released: "2023-11-27"
-version: 1.7
+date-released: "2026-06-14"
+version: 1.9.3
 
 abstract: "RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres.
   RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions. The fluxes are normally summarized or reduced via a user extensible class."

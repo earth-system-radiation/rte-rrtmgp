@@ -136,8 +136,11 @@ contains
   ! -------------------------------------------------------------------------------------------------
   ! Layer mass (kg), layer number density 
   ! -------------------------------------------------------------------------------------------------
-  subroutine compute_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass) &
-     bind(C, name="rte_compute_layer_mass")
+  subroutine get_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass) &
+     bind(C, name="rte_get_layer_mass")
+    !
+    !> mass (kg m^-2) each gas in the layer
+    !>    
     integer, intent(in)                                  :: ncol, nlay, ngas
     real(wp), dimension(ngas, ncol, nlay  ), intent(in ) :: vmr
     real(wp), dimension(      ncol, nlay+1), intent(in ) :: plev
@@ -160,5 +163,34 @@ contains
         end do
       end do
     end do
-  end subroutine compute_layer_mass
+  end subroutine get_layer_mass
+  !--------------------------------------------------------------------------------------------------------------------
+  function get_layer_number(vmr_h2o, plev) result(col_dry)
+    !
+    !> Number density (#/cm^-2) of dry air molecules
+    !>    "col_dry" in RRTMGP
+    ! input
+    real(wp), dimension(:,:), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air; (ncol,nlay)
+    real(wp), dimension(:,:), intent(in) :: plev     ! Layer boundary pressures [Pa] (ncol,nlay+1)
+    ! output
+    real(wp), dimension(size(plev,dim=1),size(plev,dim=2)-1) :: col_dry ! Column dry amount (ncol,nlay)
+    ! ------------------------------------------------
+    real(wp):: delta_plev, m_air, fact
+    integer :: ncol, nlev
+    integer :: icol, ilev ! nlay = nlev-1
+    ! ------------------------------------------------
+    ncol = size(plev, dim=1)
+    nlev = size(plev, dim=2)
+    !$acc                parallel loop gang vector collapse(2) copyin(plev,vmr_h2o)  copyout(col_dry)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:plev,vmr_h2o) map(from:col_dry)
+    do ilev = 1, nlev-1
+      do icol = 1, ncol
+        delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1))
+        ! Get average mass of moist air per mole of moist air
+        fact = 1._wp / (1.+vmr_h2o(icol,ilev))
+        m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact
+        col_dry(icol,ilev) = 10._wp * delta_plev * avogad * fact/(1000._wp*m_air*100._wp*grav)
+      end do
+    end do
+  end function get_layer_number
 end module mo_rte_gas_optics_utils

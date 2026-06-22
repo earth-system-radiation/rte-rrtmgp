@@ -15,7 +15,7 @@ else()
     PRIVATE # cmake-format: sort
             mo_fluxes_broadband_kernels.F90
             mo_rte_util_array.F90
-            mo_rte_gas_optics_utils.F90
+            mo_gas_optics_utils.F90
   )
   if(RTE_KERNEL_MODE STREQUAL "accel")
     target_sources(

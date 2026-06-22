@@ -9,7 +9,7 @@
 ! Use and duplication is permitted under the terms of the
 !    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
 ! -------------------------------------------------------------------------------------------------
-module mo_rte_gas_optics_utils
+module mo_gas_optics_utils
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array
 
@@ -193,4 +193,4 @@ contains
       end do
     end do
   end function get_layer_number
-end module mo_rte_gas_optics_utils
+end module mo_gas_optics_utils

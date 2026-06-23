@@ -57,6 +57,7 @@ module mo_gas_optics_utils
       !>    "col_dry" in RRTMGP
       ! input
       use mo_rte_kind,      only : wp, wl
+      integer, intent(in) :: ncol, nlay
       real(wp), dimension(ncol, nlay  ), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air
       real(wp), dimension(ncol, nlay+1), intent(in) :: plev     ! Layer boundary pressures [Pa] 
       ! output

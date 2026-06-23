@@ -56,7 +56,7 @@ contains
      ! Local variables
     integer :: icol, ilay, inu
 
-   !$acc                         parallel loop    collapse(3)
+   !$acc                         parallel loop    collapse(3) copyin(nus,dnus,T) copyout(source)
    !$omp target teams distribute parallel do simd collapse(3)
    do inu = 1, nnu
       do ilay = 1, nlay
@@ -84,8 +84,8 @@ contains
      ! Local variables
      integer :: icol, ilay, inu
 
-    !$acc                         parallel loop    collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
+    !$acc                         parallel loop    collapse(2) copyin(nus,dnus,T)  copyout(source)
+    !$omp target teams distribute parallel do simd collapse(2) map(to:nus,dnus,T) map(from:source)
     do inu = 1, nnu
       do icol = 1, ncol
         source(icol, inu) = B_nu(T(icol), nus(inu)) * dnus(inu)
@@ -111,8 +111,8 @@ contains
     ! Convert pressures and vmr to layer masses (ngas, ncol, nlay)
     ! mmr = vmr * (Mgas/Mair)
     ! layer_mass = mmr * dp / g
-    !$acc                         parallel loop    collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
+    !$acc                         parallel loop    collapse(3) copyin(vmr,mol_weights,plev)  copyout(layer_mass)
+    !$omp target teams distribute parallel do simd collapse(3) map(to:vmr,mol_weights,plev) map(from:layer_mass)
     do ilay = 1, nlay
       do icol = 1, ncol
         do igas = 1, ngas

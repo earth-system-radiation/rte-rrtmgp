@@ -30,5 +30,6 @@ jobs:
         $FC --version
         cmake -S . -B build \
          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-         -DRTE_KERNEL_MODE="$RTE_KERNELS"
+         -DRTE_KERNEL_MODE="$RTE_KERNELS" \
+         -DBUILD_TESTING=OFF
         cmake --build build

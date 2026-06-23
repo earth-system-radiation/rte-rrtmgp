@@ -49,7 +49,7 @@ contains
         do ilay = 1, nlay
           do icol = 1, ncol
             tau(icol, ilay, inu) = &
-              sum( [(layer_mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas)] ) & 
+              sum( [(layer_mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas)] ) &
               * play(icol, ilay) / pref
           end do
         end do
@@ -65,7 +65,7 @@ contains
           end do
         end do
       end do
-    end if 
+    end if
   end subroutine compute_tau
 
 end module mo_optics_ssm_kernels

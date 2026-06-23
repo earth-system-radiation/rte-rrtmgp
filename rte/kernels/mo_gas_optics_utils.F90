@@ -1,7 +1,7 @@
-!> Physical constants, planetary/atmospheric parameters, and utility functions for 
-!>    low-level gas optics calculations including Planck source functions. 
+!> Physical constants, planetary/atmospheric parameters, and utility functions for
+!>    low-level gas optics calculations including Planck source functions.
 !>
-!> layer mass for each species 
+!> layer mass for each species
 !> layer number density for each species (TK)
 !> The latter two don't have C bindings
 !
@@ -13,7 +13,7 @@
 module mo_gas_optics_utils
   use mo_rte_kind,       only : wp, wl
   use mo_gas_optics_constants, &
-                         only: boltzmann_k, planck_h, lightspeed, & 
+                         only: boltzmann_k, planck_h, lightspeed, &
                                m_h2o, m_dry, avogad, R_univ_gconst, grav
   use mo_rte_util_array, only : zero_array
 
@@ -28,7 +28,7 @@ module mo_gas_optics_utils
 
 contains
   ! -------------------------------------------------------------------------------------------------
-  ! Planck source functions 
+  ! Planck source functions
   ! -------------------------------------------------------------------------------------------------
   !
   ! Planck function (gets wrapped by 1D, 2D codes)
@@ -94,12 +94,12 @@ contains
 
   end subroutine compute_Planck_source_1D
   ! -------------------------------------------------------------------------------------------------
-  ! Layer mass (kg), layer number density 
+  ! Layer mass (kg), layer number density
   ! -------------------------------------------------------------------------------------------------
-  subroutine get_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass) 
+  subroutine get_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass)
     !
     !> mass (kg m^-2) each gas in the layer
-    !>    
+    !>
     integer, intent(in)                                  :: ncol, nlay, ngas
     real(wp), dimension(ngas, ncol, nlay  ), intent(in ) :: vmr
     real(wp), dimension(      ncol, nlay+1), intent(in ) :: plev
@@ -124,19 +124,19 @@ contains
     end do
   end subroutine get_layer_mass
   !--------------------------------------------------------------------------------------------------------------------
-  function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry) 
+  function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)
     !
     !> Number density (#/cm^-2) of dry air molecules
     !>    "col_dry" in RRTMGP
     ! input
     integer, intent(in)                           :: ncol, nlay
     real(wp), dimension(ncol, nlay  ), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air
-    real(wp), dimension(ncol, nlay+1), intent(in) :: plev     ! Layer boundary pressures [Pa] 
+    real(wp), dimension(ncol, nlay+1), intent(in) :: plev     ! Layer boundary pressures [Pa]
     ! output
     real(wp), dimension(ncol, nlay) :: col_dry ! Column dry amount
     ! ------------------------------------------------
     real(wp):: delta_plev, m_air, fact
-    integer :: icol, ilev 
+    integer :: icol, ilev
     ! ------------------------------------------------
     !$acc                parallel loop gang vector collapse(2) copyin(plev,vmr_h2o)  copyout(col_dry)
     !$omp target teams distribute parallel do simd collapse(2) map(to:plev,vmr_h2o) map(from:col_dry)

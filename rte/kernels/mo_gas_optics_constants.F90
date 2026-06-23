@@ -18,7 +18,7 @@ module mo_gas_optics_constants
   ! Universal gas constant [J/(mol K)]
   real(wp), parameter :: R_univ_gconst = avogad * boltzmann_k
 
-  ! Need to verify against NIST values 
+  ! Need to verify against NIST values
   real(wp), parameter :: planck_h     = 6.626075540e-34_wp    ! Planck's constant
   real(wp), parameter :: lightspeed   = 2.99792458e8_wp       ! Speed of light
 

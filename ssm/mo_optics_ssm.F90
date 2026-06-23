@@ -411,8 +411,8 @@ contains
                      optical_props%tau)
     !$acc end data
     !$omp end target data
-    if (error_msg /="") return 
-    
+    if (error_msg /="") return
+
     call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
 
     select type(optical_props)
@@ -511,7 +511,7 @@ contains
                      optical_props%tau)
     !$acc end data
     !$omp end target data
-    if (error_msg /="") return 
+    if (error_msg /="") return
 
     call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
 

@@ -39,7 +39,7 @@ module mo_gas_optics_utils
     subroutine get_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass)
       !>
       !> mass (kg m^-2) each gas in the layer
-      !>    
+      !>
       use mo_rte_kind,      only : wp, wl
       integer, intent(in)                                  :: ncol, nlay, ngas
       real(wp), dimension(ngas, ncol, nlay  ), intent(in ) :: vmr
@@ -48,7 +48,7 @@ module mo_gas_optics_utils
       real(wp),                                intent(in ) :: m_dry
       real(wp), dimension(ngas, ncol, nlay),   intent(out) :: layer_mass
     end subroutine get_layer_mass
-  end interface 
+  end interface
   !--------------------------------------------------------------------------------------------------------------------
   interface
     function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)
@@ -59,9 +59,9 @@ module mo_gas_optics_utils
       use mo_rte_kind,      only : wp, wl
       integer, intent(in) :: ncol, nlay
       real(wp), dimension(ncol, nlay  ), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air
-      real(wp), dimension(ncol, nlay+1), intent(in) :: plev     ! Layer boundary pressures [Pa] 
+      real(wp), dimension(ncol, nlay+1), intent(in) :: plev     ! Layer boundary pressures [Pa]
       ! output
       real(wp), dimension(ncol, nlay) :: col_dry ! Column dry amount
-    end function get_layer_number 
+    end function get_layer_number
   end interface
 end module mo_gas_optics_utils

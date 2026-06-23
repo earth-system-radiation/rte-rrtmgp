@@ -26,7 +26,8 @@ module mo_optics_ssm
   use mo_optical_props,      only: ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
-  use mo_gas_optics_utils,   only: compute_Planck_source, get_layer_mass, m_dry
+  use mo_gas_optics_constants,only: m_dry
+  use mo_gas_optics_utils,   only: compute_Planck_source, get_layer_mass
   use mo_optics_ssm_kernels, only: compute_tau
 
   implicit none

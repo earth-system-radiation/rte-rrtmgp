@@ -3,6 +3,7 @@ module mo_gas_optics_constants
   use mo_rte_util_array,only : zero_array
 
   implicit none
+  public
   ! -----------------------------------------
   ! Physical constants, 2018 SI defintion of metric system
   !   doi:10.1088/1681-7575/aa950a (see also https://www.nist.gov/si-redefinition/meet-constants)

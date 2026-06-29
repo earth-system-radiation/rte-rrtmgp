@@ -5,15 +5,19 @@ if(RTE_KERNEL_MODE STREQUAL "extern")
     rtekernels
     PRIVATE # cmake-format: sort
             api/mo_fluxes_broadband_kernels.F90
+            api/mo_gas_optics_utils.F90
             api/mo_optical_props_kernels.F90
             api/mo_rte_solver_kernels.F90
             api/mo_rte_util_array.F90
+            mo_gas_optics_constants.F90
   )
 else()
   target_sources(
     rtekernels
     PRIVATE # cmake-format: sort
             mo_fluxes_broadband_kernels.F90
+            mo_gas_optics_constants.F90
+            mo_gas_optics_utils.F90
             mo_rte_util_array.F90
   )
   if(RTE_KERNEL_MODE STREQUAL "accel")

@@ -1,34 +1,14 @@
-! This code is part of RRTM for GCM Applications - Parallel (RRTMGP)
-!
-! Contacts: Robert Pincus and Eli Mlawer
-! email:  rrtmgp@aer.com
-!
-! Copyright 2015-,  Atmospheric and Environmental Research,
-! Regents of the University of Colorado, Trustees of Columbia University.  All right reserved.
-!
-! Use and duplication is permitted under the terms of the
-!    BSD 3-clause license, see http://opensource.org/licenses/BSD-3-Clause
-! -------------------------------------------------------------------------------------------------
-!> ##  Physical and mathematical constants used in RRTMGP gas optics calculation
-!>
-!>   If the host model in which RRTGMP is embedded has defined these constants elsewhere
-!>   the model definitions can be used instead by renaming. For example,
-!> ```use  mo_model_constants, only k_boltz => boltzman_k, ...```
-!>   where the syntax is local_name => original_name
-!>   and all the local names need to be defined
-!
-!> "Constants" specific to the earth's atmosphere should also be made consistent with the
-!>   host model but may be changed in a call to init_constants(), normally at initialization
-! -------------------------------------------------------------------------------------------------
 module mo_gas_optics_constants
-  use mo_rte_kind, only: wp
-  public
+  use mo_rte_kind,      only : wp, wl
+  use mo_rte_util_array,only : zero_array
 
+  implicit none
+  public
   ! -----------------------------------------
   ! Physical constants, 2018 SI defintion of metric system
   !   doi:10.1088/1681-7575/aa950a (see also https://www.nist.gov/si-redefinition/meet-constants)
-  ! Boltzmann constant [J/K] = [(kg m^2)/(K s^2)]
-  real(wp), parameter :: k_boltz = 1.380649e-23_wp
+  ! Boltzmann therrmodynamics constant [J/K] = [(kg m^2)/(K s^2)]
+  real(wp), parameter :: boltzmann_k = 1.380649e-23_wp
 
   !  molecular weight of water [kg/mol]
   real(wp), parameter :: m_h2o =  0.018016_wp
@@ -37,7 +17,11 @@ module mo_gas_optics_constants
   real(wp), parameter :: avogad = 6.02214076e23_wp
 
   ! Universal gas constant [J/(mol K)]
-  real(wp), parameter :: R_univ_gconst = avogad * k_boltz
+  real(wp), parameter :: R_univ_gconst = avogad * boltzmann_k
+
+  ! Need to verify against NIST values
+  real(wp), parameter :: planck_h     = 6.626075540e-34_wp    ! Planck's constant
+  real(wp), parameter :: lightspeed   = 2.99792458e8_wp       ! Speed of light
 
   ! -----------------------------------------
   !
@@ -52,7 +36,7 @@ module mo_gas_optics_constants
 
   ! Specific heat at constant pressure for dry air [J/(K kg)]
   real(wp), protected :: cp_dry = 1004.64_wp
-
+! -------------------------------------------------------------------------------------------------
 contains
   ! -----------------------------------------
   subroutine init_constants(gravity, mol_weight_dry_air, heat_capacity_dry_air)
@@ -65,5 +49,5 @@ contains
     if(present(heat_capacity_dry_air)) cp_dry = heat_capacity_dry_air
 
   end subroutine init_constants
-  ! -----------------------------------------
+  ! -------------------------------------------------------------------------------------------------
 end module mo_gas_optics_constants

@@ -26,9 +26,8 @@ module mo_optics_ssm
   use mo_optical_props,      only: ty_optical_props_arry, &
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
-  use mo_gas_optics_constants,only: m_dry
-!  use mo_gas_optics_utils,   only: compute_Planck_source, get_layer_mass
-  use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source_ssm, get_layer_mass
+  use mo_gas_optics_constants,   only: grav
+  use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source, compute_layer_mass
 
   implicit none
   interface configure
@@ -315,7 +314,7 @@ contains
       ! Shortwave: incoming solar irradiance
       !   (Need to have a 1xnnu array for compute_Planck_source)
       !
-      call compute_Planck_source_ssm(1, nnu, &
+      call compute_Planck_source(1, nnu, &
                                  this%nus, this%dnus, [this%Tstar],   &
                                  toa_src_1col)
 
@@ -350,6 +349,7 @@ contains
     !$omp                          this%nus, this%dnus, this%toa_src)
 
   end function configure_with_values
+
   !--------------------------------------------------------------------------------------------------------------------
   !
   !> Compute gas optical depth and Planck source functions,
@@ -381,7 +381,7 @@ contains
     !
     integer :: ncol, nlay, nnu, ngas
     integer :: igas, icol, ilay, idx_gas
-    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: vmr, layer_mass
+    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: layer_mass
     ! ----------------------------------------------------------
     error_msg = ""
 
@@ -394,24 +394,24 @@ contains
     !   use extents_are() function
 
     ! Variable layer_mass is used in the next two subroutines
-    !$acc        data create(   vmr, layer_mass)
-    !$omp target data map(alloc:vmr, layer_mass)
-    do i = 1, ngas
-      error_msg = gas_desc%get_vmr(this%gas_names(i), vmr(i, :, :))
-    end do
+    !$acc        data create(   layer_mass)
+    !$omp target data map(alloc:layer_mass)
+
     call get_layer_mass(ncol, nlay, ngas, &
-                        vmr, plev, this%mol_weights, m_dry, &
-                        layer_mass)
+                        this, plev, gas_desc, layer_mass, &
+                        error_msg)
+    if (error_msg /= '') return
+
     !
     ! Absorption optical depth
     !
     call compute_tau(ncol, nlay, nnu, ngas,   &
                      this%absorption_coeffs, play, this%pref, layer_mass, &
                      optical_props%tau)
+
     !$acc end data
     !$omp end target data
-    if (error_msg /="") return
-
+    !
     call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
 
     select type(optical_props)
@@ -429,7 +429,7 @@ contains
     !
     ! Planck function sources
     !
-    call compute_Planck_source_ssm(ncol, nlay,   nnu, &
+    call compute_Planck_source(ncol, nlay,   nnu, &
                                this%nus, this%dnus, tlay,   &
                                sources%lay_source)
     ! This will fail if Tlev isn't provided
@@ -439,10 +439,10 @@ contains
       error_msg = "tlev required for SSM (Andrew and Robert should fix this)"
       return
     end if
-    call compute_Planck_source_ssm(ncol, nlay+1, nnu, &
+    call compute_Planck_source(ncol, nlay+1, nnu, &
                                this%nus, this%dnus, tlev,   &
                                sources%lev_source)
-    call compute_Planck_source_ssm(ncol, nnu, &
+    call compute_Planck_source(ncol, nnu, &
                                this%nus, this%dnus, tsfc,   &
                                sources%sfc_source)
     !$acc end data
@@ -480,7 +480,7 @@ contains
     !
     integer :: ncol, nlay, nnu, ngas
     integer :: igas, icol, ilay, inu, idx_gas
-    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: vmr, layer_mass
+    real(wp), dimension(size(this%gas_names), size(play,1), size(play,2)) :: layer_mass
     error_msg = ""
 
     ! ----------------------------------------------------------
@@ -493,14 +493,13 @@ contains
     !   use extents_are() function
 
     ! Variable layer_mass is used in the next two subroutines
-    !$acc        data create(   vmr, layer_mass)
-    !$omp target data map(alloc:vmr, layer_mass)
-    do i = 1, ngas
-      error_msg = gas_desc%get_vmr(this%gas_names(i), vmr(i, :, :))
-    end do
+    !$acc        data create(   layer_mass)
+    !$omp target data map(alloc:layer_mass)
+
     call get_layer_mass(ncol, nlay, ngas, &
-                        vmr, plev, this%mol_weights, m_dry, &
-                        layer_mass)
+                        this, plev, gas_desc, layer_mass, &
+                        error_msg)
+    if (error_msg /= '') return
 
     !
     ! Absorption optical depth
@@ -510,7 +509,6 @@ contains
                      optical_props%tau)
     !$acc end data
     !$omp end target data
-    if (error_msg /="") return
 
     call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
 
@@ -533,9 +531,10 @@ contains
       end do
     end do
   end function gas_optics_ext
+
   !------------------------------------------------------------------------------------------
   !
-  !> Cloud optical properties from provided cloud physical properties
+  !> Derive cloud optical properties from provided cloud physical properties
   !
   function cloud_optics(this,                     &
                         clwp, ciwp, reliq, deice, &
@@ -583,6 +582,44 @@ contains
     end select
 
   end function cloud_optics
+
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  !> Compute layer masses from gas concentrations and pressure levels
+  !
+  subroutine get_layer_mass(ncol, nlay, ngas, this, plev, gas_desc, layer_mass, error_msg)
+    integer,  intent(in ) :: ncol, nlay, ngas
+    class(ty_optics_ssm),     intent(in   ) :: this
+    real(wp), dimension(:,:), intent(in   ) :: plev       !! level pressures [Pa]; (ncol,nlay+1)
+    type(ty_gas_concs),       intent(in   ) :: gas_desc   !! Gas volume mixing ratios
+    real(wp), dimension(:,:,:), intent(  out) :: layer_mass !! (ngas, ncol, nlay)
+    character(len=128),       intent(  out) :: error_msg
+
+    integer :: igas
+    real(wp), dimension(size(layer_mass,1), size(layer_mass,2), size(layer_mass,3)) :: vmr
+    ! --------------
+    error_msg = ""
+
+    !$acc        data create(   vmr)
+    !$omp target data map(alloc:vmr)
+    call zero_array(size(vmr,1), size(vmr,2), size(vmr,3), vmr)
+
+    ! Get vmr if gas is provided in ty_gas_concs
+    do igas = 1, ngas
+      if (any(lower_case(this%gas_names(igas)) == gas_desc%get_gas_names())) then
+        error_msg = gas_desc%get_vmr(this%gas_names(igas), vmr(igas,:,:))
+        if (error_msg /= '') return
+      endif
+    end do
+
+    ! Convert pressures and vmr to layer masses (ngas, ncol, nlay)
+    call compute_layer_mass(ncol, nlay, ngas, vmr, plev, this%mol_weights, this%m_dry, layer_mass)
+
+    !$acc end data
+    !$omp end target data
+
+  end subroutine get_layer_mass
+
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Inquiry functions

@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-   <meta name="description" content="Simple spectral models for gas and cloud optics">
+   <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
     <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
-    <title>compute_Planck_source &ndash; SSM optics</title>
+    <title>get_layer_number &ndash; RTE kernels</title>
 
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/pygments.css" rel="stylesheet">
@@ -39,7 +39,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="../index.html">SSM optics </a>
+          <a class="navbar-brand" href="../index.html">RTE kernels </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -52,16 +52,14 @@
             <li><a href="../lists/files.html">Source Files</a></li>
             <li><a href="../lists/modules.html">Modules</a></li>
             <li><a href="../lists/procedures.html">Procedures</a></li>
-                   <li><a href="../lists/types.html">Derived Types</a></li>
-       
+              
             </ul>
         
             </li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
-                             <li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
-          </ul>
+                                       </ul>
         <form action="../search.html" class="navbar-form navbar-right" role="search">
         <div class="form-group">
           <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
@@ -76,8 +74,8 @@
 
     <div class="container">
   <div class="row">
-    <h1>compute_Planck_source
-   <small>Interface</small>
+    <h1>get_layer_number
+      <small>Function</small>
     </h1>
     <div class="row">
   <div class="col-lg-12">
@@ -87,14 +85,14 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p> 5.8% of total for procedures.</p>Including implementation: 29 statements, 55.8% of total for procedures.">3 statements</a>
+    title=" 1.0% of total for procedures.">16 statements</a>
      </li> 
-    <li><i class="fa fa-code"></i><a href="../src/mo_optics_ssm_kernels.F90"> Source File</a></li>
+    <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_utils.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_optics_ssm_kernels.f90.html'>mo_optics_ssm_kernels.F90</a></li>
-     <li><a href='../module/mo_optics_ssm_kernels.html'>mo_optics_ssm_kernels</a></li>
-     <li class="active">compute_Planck_source</li>
+     <li><a href='../sourcefile/mo_gas_optics_utils.f90.html'>mo_gas_optics_utils.F90</a></li>
+     <li><a href='../module/mo_gas_optics_utils.html'>mo_gas_optics_utils</a></li>
+     <li class="active">get_layer_number</li>
   </ol>
 </div>
 </div>
@@ -109,162 +107,84 @@
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-      <div id="sidebar">
+    <div id="sidebar">
   <h3>Contents</h3>
  
-<div class="panel panel-primary">
-  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#modprocs-0">Module Procedures</a></h3></div>
-  <div id="modprocs-0" class="panel-collapse collapse">
-    <div class="list-group">
-      <a class="list-group-item" href="../interface/compute_planck_source.html#moduleprocedure-compute_planck_source_1d">compute_Planck_source_1D</a>
-      <a class="list-group-item" href="../interface/compute_planck_source.html#moduleprocedure-compute_planck_source_2d">compute_Planck_source_2D</a>
-    </div>
-  </div>
-</div>
+<em>None</em>
 
 </div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-      <h2>public interface compute_Planck_source</h2>
-   
+    <h2>public function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)</h2>
+    
 
-     <section class="visible-xs visible-sm hidden-md">
-       <h3>Contents</h3>
+
+    <h3>Arguments</h3>
+      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" id="variable-ncol~29"></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ncol</strong></td><td><p>Number density (#/cm^-2) of dry air molecules
+   "col_dry" in RRTMGP</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-nlay~28"></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nlay</strong></td><td><p>Number density (#/cm^-2) of dry air molecules
+   "col_dry" in RRTMGP</p></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-vmr_h2o"></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(ncol, nlay  )</td><td>::</td>
+  <td><strong>vmr_h2o</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" id="variable-plev"></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
+  <td><strong>plev</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+   <h3>Return Value <small><span class="anchor" id="variable-col_dry"></span>real(kind=wp),dimension(ncol, nlay)</small></h3>
+    
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      <h3>Contents</h3>
  
-<div class="panel panel-primary">
-  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#modprocs-1">Module Procedures</a></h3></div>
-  <div id="modprocs-1" class="panel-collapse collapse">
-    <div class="list-group">
-      <a class="list-group-item" href="../interface/compute_planck_source.html#moduleprocedure-compute_planck_source_1d">compute_Planck_source_1D</a>
-      <a class="list-group-item" href="../interface/compute_planck_source.html#moduleprocedure-compute_planck_source_2d">compute_Planck_source_2D</a>
+<em>None</em>
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+
+    
+    
+
+    
+    
+
+
+    
+    
     </div>
   </div>
-</div>
-
-     </section>
-     <br class="visible-xs visible-sm hidden-md">
-     
-
-
-   <h2>Module Procedures</h2>
-      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_planck_source_1d"></span><h3>private subroutine compute_Planck_source_1D(ncol, nnu, nus, dnus, T, source) bind(C, name="0")</h3></div>
-  <div class="panel-body">
-           
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nnu</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(nnu)</td><td>::</td>
-  <td><strong>nus</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(nnu)</td><td>::</td>
-  <td><strong>dnus</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(ncol)</td><td>::</td>
-  <td><strong>T</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(out),</td>
-  <td></td>  <td>dimension(ncol, nnu)</td><td>::</td>
-  <td><strong>source</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-
-  </div>
-  </div>
-
-      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_planck_source_2d"></span><h3>private subroutine compute_Planck_source_2D(ncol, nlay, nnu, nus, dnus, T, source) bind(C, name="0")</h3></div>
-  <div class="panel-body">
-           
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nnu</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(nnu)</td><td>::</td>
-  <td><strong>nus</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(nnu)</td><td>::</td>
-  <td><strong>dnus</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(ncol, nlay)</td><td>::</td>
-  <td><strong>T</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(out),</td>
-  <td></td>  <td>dimension(ncol, nlay, nnu)</td><td>::</td>
-  <td><strong>source</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-
-  </div>
-  </div>
-
-
- </div>
-</div>
 
     <hr>    
     </div> <!-- /container -->
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>SSM optics was developed by The RTE+RRTTMGP consortium<br>&copy; 2026 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2026 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

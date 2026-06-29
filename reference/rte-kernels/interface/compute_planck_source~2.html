@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-   <meta name="description" content="RRTMGP is a correlated k-distribution for computing fluxes in earth's atmosphere.">
+   <meta name="description" content="RTE describes radiation problems in planetary atmospheres and computes radiative fluxes.">
     <meta name="author" content="The RTE+RRTTMGP consortium" >
     <link rel="icon" href="../favicon.png">
 
-    <title>get_col_dry &ndash; RRTMGP-Fortran</title>
+    <title>compute_Planck_source &ndash; RTE kernels</title>
 
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/pygments.css" rel="stylesheet">
@@ -39,7 +39,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="../index.html">RRTMGP-Fortran </a>
+          <a class="navbar-brand" href="../index.html">RTE kernels </a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
@@ -52,16 +52,14 @@
             <li><a href="../lists/files.html">Source Files</a></li>
             <li><a href="../lists/modules.html">Modules</a></li>
             <li><a href="../lists/procedures.html">Procedures</a></li>
-                   <li><a href="../lists/types.html">Derived Types</a></li>
-       
+              
             </ul>
         
             </li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
 <li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
-                             <li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
-          </ul>
+                                       </ul>
         <form action="../search.html" class="navbar-form navbar-right" role="search">
         <div class="form-group">
           <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
@@ -76,8 +74,8 @@
 
     <div class="container">
   <div class="row">
-    <h1>get_col_dry
-      <small>Function</small>
+    <h1>compute_Planck_source
+   <small>Interface</small>
     </h1>
     <div class="row">
   <div class="col-lg-12">
@@ -87,14 +85,14 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="100.0% of total for procedures.">31 statements</a>
+    title="<p> 1.0% of total for procedures.</p>Including implementation: 16 statements,  1.0% of total for procedures.">16 statements</a>
      </li> 
-    <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp.F90"> Source File</a></li>
+    <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_utils.F90"> Source File</a></li>
   </ul>
   <ol class="breadcrumb in-well text-right">
-     <li><a href='../sourcefile/mo_gas_optics_rrtmgp.f90.html'>mo_gas_optics_rrtmgp.F90</a></li>
-     <li><a href='../module/mo_gas_optics_rrtmgp.html'>mo_gas_optics_rrtmgp</a></li>
-     <li class="active">get_col_dry</li>
+     <li><a href='../sourcefile/mo_gas_optics_utils.f90~2.html'>mo_gas_optics_utils.F90</a></li>
+     <li><a href='../module/mo_gas_optics_utils~2.html'>mo_gas_optics_utils</a></li>
+     <li class="active">compute_Planck_source</li>
   </ol>
 </div>
 </div>
@@ -109,78 +107,162 @@
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
-    <div id="sidebar">
+      <div id="sidebar">
   <h3>Contents</h3>
  
-<em>None</em>
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-0">Subroutines</a></h3></div>
+  <div class="list-group">
+    <div id="subs-0" class="panel-collapse collapse">
+      <a class="list-group-item" href="../interface/compute_planck_source~2.html#proc-compute_planck_source_1d~2">compute_Planck_source_1D</a>
+      <a class="list-group-item" href="../interface/compute_planck_source~2.html#proc-compute_planck_source_2d~2">compute_Planck_source_2D</a>
+    </div>
+  </div>
+</div>
 
 </div>
 
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public function get_col_dry(vmr_h2o, plev, latitude) result(col_dry)</h2>
-    
+      <h2>public interface compute_Planck_source</h2>
+   
 
-    <p>Utility function, provided for user convenience
-computes column amounts of dry air using hydrostatic equation</p>
+     <section class="visible-xs visible-sm hidden-md">
+       <h3>Contents</h3>
+ 
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#subs-1">Subroutines</a></h3></div>
+  <div class="list-group">
+    <div id="subs-1" class="panel-collapse collapse">
+      <a class="list-group-item" href="../interface/compute_planck_source~2.html#proc-compute_planck_source_1d~2">compute_Planck_source_1D</a>
+      <a class="list-group-item" href="../interface/compute_planck_source~2.html#proc-compute_planck_source_2d~2">compute_Planck_source_2D</a>
+    </div>
+  </div>
+</div>
 
-    <h3>Arguments</h3>
-      <table class="table table-striped varlist">
+     </section>
+     <br class="visible-xs visible-sm hidden-md">
+     
+
+   <h2>Subroutines</h2>
+      <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_planck_source_1d~2"></span><h3>public subroutine compute_Planck_source_1D(ncol, nnu, nus, dnus, T, source) bind(C, name="0")</h3></div>
+  <div class="panel-body">
+           
+<h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-vmr_h2o"></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>vmr_h2o</strong></td><td></td>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ncol</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-plev"></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(:,:)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nnu</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-latitude"></span>real(kind=wp),</td>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
 <td>intent(in),</td>
-  <td>optional</td>  <td>dimension(:)</td><td>::</td>
-  <td><strong>latitude</strong></td><td></td>
+  <td></td>  <td>dimension(nnu)</td><td>::</td>
+  <td><strong>nus</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(nnu)</td><td>::</td>
+  <td><strong>dnus</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(ncol)</td><td>::</td>
+  <td><strong>T</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ncol, nnu)</td><td>::</td>
+  <td><strong>source</strong></td><td></td>
 </tr>
 </tbody>
 </table>
 
-   <h3>Return Value <small><span class="anchor" id="variable-col_dry"></span>real(kind=wp),dimension(size(plev,dim=1),size(plev,dim=2)-1)</small></h3>
-    
-    <br>
 
-    <section class="visible-xs visible-sm hidden-md">
-      <h3>Contents</h3>
- 
-<em>None</em>
-
-    </section>
-    <br class="visible-xs visible-sm hidden-md">
-
-
-    
-    
-
-    
-    
-
-
-    
-    
-    </div>
   </div>
+  </div>
+
+      <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="proc-compute_planck_source_2d~2"></span><h3>public subroutine compute_Planck_source_2D(ncol, nlay, nnu, nus, dnus, T, source) bind(C, name="0")</h3></div>
+  <div class="panel-body">
+           
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ncol</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nlay</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nnu</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(nnu)</td><td>::</td>
+  <td><strong>nus</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(nnu)</td><td>::</td>
+  <td><strong>dnus</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(ncol, nlay)</td><td>::</td>
+  <td><strong>T</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ncol, nlay, nnu)</td><td>::</td>
+  <td><strong>source</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+
+  </div>
+  </div>
+
+
+
+ </div>
+</div>
 
     <hr>    
     </div> <!-- /container -->
     <footer>
       <div class="container">
       <div class="row">
-        <div class="col-xs-6 col-md-6"><p>RRTMGP-Fortran was developed by The RTE+RRTTMGP consortium<br>&copy; 2026 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
+        <div class="col-xs-6 col-md-6"><p>RTE kernels was developed by The RTE+RRTTMGP consortium<br>&copy; 2026 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a>
 </p>
         </div>
         <div class="col-xs-6 col-md-6">

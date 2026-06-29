@@ -34,6 +34,7 @@ module mo_gas_optics_rrtmgp
                              only: interpolation, compute_tau_absorption, compute_tau_rayleigh, compute_Planck_source
   use mo_gas_optics_constants,   only: avogad, m_dry, m_h2o, grav
   use mo_gas_optics_util_string, only: lower_case, string_in_array, string_loc_in_array
+  use mo_gas_optics_utils,   only: get_col_dry => get_layer_number
   use mo_gas_concentrations, only: ty_gas_concs
   use mo_optical_props,      only: ty_optical_props_arry, ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
@@ -184,12 +185,6 @@ module mo_gas_optics_rrtmgp
     procedure, private :: get_ntemp
     procedure, private :: get_nPlanckTemp
   end type ty_gas_optics_rrtmgp
-  ! -------------------------------------------------------------------------------------------------
-  !
-  !> col_dry is the number of molecules per cm-2 of dry air
-  !
-  public :: get_col_dry ! Utility function, not type-bound
-
 contains
   ! --------------------------------------------------------------------------------------
   !
@@ -590,7 +585,7 @@ contains
       else
         !$acc        enter data create(   col_dry_arr)
         !$omp target enter data map(alloc:col_dry_arr)
-        col_dry_arr = get_col_dry(vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
+        col_dry_arr = get_col_dry(ncol, nlay, vmr(:,:,idx_h2o), plev) ! dry air column amounts computation
         col_dry_wk => col_dry_arr
       end if
       !
@@ -1492,63 +1487,7 @@ contains
 
     get_temp_max = this%temp_ref_max
   end function get_temp_max
-  !--------------------------------------------------------------------------------------------------------------------
-  !
-  !> Utility function, provided for user convenience
-  !> computes column amounts of dry air using hydrostatic equation
-  !
-  function get_col_dry(vmr_h2o, plev, latitude) result(col_dry)
-    ! input
-    real(wp), dimension(:,:), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air; (ncol,nlay)
-    real(wp), dimension(:,:), intent(in) :: plev     ! Layer boundary pressures [Pa] (ncol,nlay+1)
-    real(wp), dimension(:),   optional, &
-                              intent(in) :: latitude ! Latitude [degrees] (ncol)
-    ! output
-    real(wp), dimension(size(plev,dim=1),size(plev,dim=2)-1) :: col_dry ! Column dry amount (ncol,nlay)
-    ! ------------------------------------------------
-    ! first and second term of Helmert formula
-    real(wp), parameter :: helmert1 = 9.80665_wp
-    real(wp), parameter :: helmert2 = 0.02586_wp
-    ! local variables
-    real(wp), dimension(size(plev,dim=1)) :: g0 ! (ncol)
-    real(wp):: delta_plev, m_air, fact
-    integer :: ncol, nlev
-    integer :: icol, ilev ! nlay = nlev-1
-    ! ------------------------------------------------
-    ncol = size(plev, dim=1)
-    nlev = size(plev, dim=2)
-    !$acc        data    create(g0)
-    !$omp target data map(alloc:g0)
-    if(present(latitude)) then
-      ! A purely OpenACC implementation would probably compute g0 within the kernel below
-      !$acc parallel loop
-      !$omp target teams distribute parallel do simd
-      do icol = 1, ncol
-        g0(icol) = helmert1 - helmert2 * cos(2.0_wp * pi * latitude(icol) / 180.0_wp) ! acceleration due to gravity [m/s^2]
-      end do
-    else
-      !$acc parallel loop
-      !$omp target teams distribute parallel do simd
-      do icol = 1, ncol
-        g0(icol) = grav
-      end do
-    end if
-
-    !$acc                parallel loop gang vector collapse(2) copyin(plev,vmr_h2o)  copyout(col_dry)
-    !$omp target teams distribute parallel do simd collapse(2) map(to:plev,vmr_h2o) map(from:col_dry)
-    do ilev = 1, nlev-1
-      do icol = 1, ncol
-        delta_plev = abs(plev(icol,ilev) - plev(icol,ilev+1))
-        ! Get average mass of moist air per mole of moist air
-        fact = 1._wp / (1.+vmr_h2o(icol,ilev))
-        m_air = (m_dry + m_h2o * vmr_h2o(icol,ilev)) * fact
-        col_dry(icol,ilev) = 10._wp * delta_plev * avogad * fact/(1000._wp*m_air*100._wp*g0(icol))
-      end do
-    end do
-    !$acc end        data
-    !$omp end target data
-  end function get_col_dry
-  !--------------------------------------------------------------------------------------------------------------------
+ !--------------------------------------------------------------------------------------------------------------------
   !
   !> Compute a transport angle that minimizes flux errors at surface and TOA based on empirical fits
   !

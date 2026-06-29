@@ -16,7 +16,7 @@
 module mo_optics_ssm_kernels
   use mo_rte_kind,      only : wp, wl
   use mo_rte_util_array,only : zero_array
-  use mo_gas_optics_utils, &
+  use mo_gas_optics_constants, &
                         only: grav, planck_h, lightspeed, boltzmann_k
   implicit none
   interface compute_Planck_source

@@ -54,103 +54,36 @@ contains
     !$omp target data map(alloc:p_scaling)
 
     ! Apply pressure broadening if pref input is non-zero
-    if (pref /= 0._wp) then
-      !$acc                         parallel loop    collapse(2)
-      !$omp target teams distribute parallel do simd collapse(2)
-      do ilay = 1, nlay
-        do icol = 1, ncol
-          p_scaling(icol, ilay) =  play(icol, ilay) / pref
+    if (pref > 0._wp) then
+      !$acc                         parallel loop    collapse(3)
+      !$omp target teams distribute parallel do simd collapse(3)
+      do inu = 1, nnu
+        do ilay = 1, nlay
+          do icol = 1, ncol
+            tau(icol, ilay, inu) = &
+              sum( [(layer_mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas)] ) &
+              * play(icol, ilay)/pref
+          end do
         end do
       end do
     else
-      !$acc                         parallel loop    collapse(2)
-      !$omp target teams distribute parallel do simd collapse(2)
-      do ilay = 1, nlay
-        do icol = 1, ncol
-          p_scaling(icol, ilay) = 1._wp
+      !$acc                         parallel loop    collapse(3)
+      !$omp target teams distribute parallel do simd collapse(3)
+      do inu = 1, nnu
+        do ilay = 1, nlay
+          do icol = 1, ncol
+            tau(icol, ilay, inu) = &
+              sum( [(layer_mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas)] )
+          end do
         end do
       end do
     end if
 
-    !$acc                         parallel loop    collapse(3)
-    !$omp target teams distribute parallel do simd collapse(3)
-    do inu = 1, nnu
-      do ilay = 1, nlay
-        do icol = 1, ncol
-          tau(icol, ilay, inu) = &
-            p_scaling(icol, ilay) * sum( [(layer_mass(igas, icol, ilay) * absorption_coeffs(igas, inu), igas = 1, ngas)] )
-        end do
-      end do
-    end do
 
     !$acc end data
     !$omp end target data
 
   end subroutine compute_tau
-  ! -------------------------------------------------------------------------------------------------
-  !
-  ! Planck function (gets wrapped by 1D, 2D codes)
-  !
-  elemental function B_nu(T, nu)
-    real(wp), intent(in) :: T, nu
-    real(wp)             :: B_nu
-    B_nu = 100._wp*2._wp*planck_h*((nu*100._wp)**3)*(lightspeed**2) / &
-         (exp((planck_h * lightspeed * nu * 100._wp) / (boltzmann_k * T)) - 1._wp)
-  end function
-  ! -------
-  subroutine compute_Planck_source_2D(&
-      ncol, nlay, nnu, &
-      nus, dnus, T, &
-      source) bind(C, name="ssm_compute_Planck_source_2D_ssm")
-    integer,  &
-      intent(in ) :: ncol, nlay, nnu
-    real(wp), dimension(nnu), &
-      intent(in ) :: nus, dnus
-    real(wp), dimension(ncol, nlay), &
-      intent(in ) :: T
-    real(wp), dimension(ncol, nlay, nnu), &
-      intent(out) :: source
-
-     ! Local variables
-    integer :: icol, ilay, inu
-
-   !$acc                         parallel loop    collapse(3)
-   !$omp target teams distribute parallel do simd collapse(3)
-   do inu = 1, nnu
-      do ilay = 1, nlay
-        do icol = 1, ncol
-          source(icol, ilay, inu) = B_nu(T(icol, ilay), nus(inu)) * dnus(inu)
-        end do
-      end do
-    end do
-
-  end subroutine compute_Planck_source_2D
-  ! -------
-  subroutine compute_Planck_source_1D(&
-      ncol, nnu, &
-      nus, dnus, T, &
-      source) bind(C, name="ssm_compute_Planck_source_1D_ssm")
-    integer,  &
-      intent(in ) :: ncol, nnu
-    real(wp), dimension(nnu), &
-      intent(in ) :: nus, dnus
-    real(wp), dimension(ncol), &
-      intent(in ) :: T
-    real(wp), dimension(ncol, nnu), &
-      intent(out) :: source
-
-     ! Local variables
-     integer :: icol, ilay, inu
-
-    !$acc                         parallel loop    collapse(2)
-    !$omp target teams distribute parallel do simd collapse(2)
-    do inu = 1, nnu
-      do icol = 1, ncol
-        source(icol, inu) = B_nu(T(icol), nus(inu)) * dnus(inu)
-      end do
-    end do
-
-  end subroutine compute_Planck_source_1D
   ! -------------------------------------------------------------------------------------------------
   subroutine compute_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass) &
      bind(C, name="ssm_compute_layer_mass")

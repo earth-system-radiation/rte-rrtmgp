@@ -19,12 +19,8 @@ module mo_optics_ssm_kernels
   use mo_gas_optics_constants, &
                         only: grav, planck_h, lightspeed, boltzmann_k
   implicit none
-  interface compute_Planck_source
-    module procedure compute_Planck_source_1D, compute_Planck_source_2D
-  end interface
-
   private
-  public :: compute_tau, compute_Planck_source, compute_layer_mass
+  public :: compute_tau, compute_layer_mass
 
 contains
   !

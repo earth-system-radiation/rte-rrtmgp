@@ -27,8 +27,8 @@ module mo_optics_ssm
                                    ty_optical_props_1scl, ty_optical_props_2str, ty_optical_props_nstr
   use mo_gas_optics,         only: ty_gas_optics
   use mo_gas_optics_constants,only: m_dry
-  use mo_gas_optics_utils,   only: compute_Planck_source, get_layer_mass
-  use mo_optics_ssm_kernels, only: compute_tau
+!  use mo_gas_optics_utils,   only: compute_Planck_source, get_layer_mass
+  use mo_optics_ssm_kernels, only: compute_tau, compute_Planck_source_ssm, get_layer_mass
 
   implicit none
   interface configure
@@ -315,7 +315,7 @@ contains
       ! Shortwave: incoming solar irradiance
       !   (Need to have a 1xnnu array for compute_Planck_source)
       !
-      call compute_Planck_source(1, nnu, &
+      call compute_Planck_source_ssm(1, nnu, &
                                  this%nus, this%dnus, [this%Tstar],   &
                                  toa_src_1col)
 
@@ -402,7 +402,6 @@ contains
     call get_layer_mass(ncol, nlay, ngas, &
                         vmr, plev, this%mol_weights, m_dry, &
                         layer_mass)
-
     !
     ! Absorption optical depth
     !
@@ -430,7 +429,7 @@ contains
     !
     ! Planck function sources
     !
-    call compute_Planck_source(ncol, nlay,   nnu, &
+    call compute_Planck_source_ssm(ncol, nlay,   nnu, &
                                this%nus, this%dnus, tlay,   &
                                sources%lay_source)
     ! This will fail if Tlev isn't provided
@@ -440,10 +439,10 @@ contains
       error_msg = "tlev required for SSM (Andrew and Robert should fix this)"
       return
     end if
-    call compute_Planck_source(ncol, nlay+1, nnu, &
+    call compute_Planck_source_ssm(ncol, nlay+1, nnu, &
                                this%nus, this%dnus, tlev,   &
                                sources%lev_source)
-    call compute_Planck_source(ncol, nnu, &
+    call compute_Planck_source_ssm(ncol, nnu, &
                                this%nus, this%dnus, tsfc,   &
                                sources%sfc_source)
     !$acc end data

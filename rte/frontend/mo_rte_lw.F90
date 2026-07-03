@@ -62,11 +62,11 @@ module mo_rte_lw
 
   public :: rte_lw
 
-#undef STATIC
-#ifndef STATIC
+#ifdef AMDFLANG_WORKAROUND
   integer, parameter :: max_gauss_pts = 4
   real(wp), dimension(max_gauss_pts, max_gauss_pts) :: gauss_Ds, gauss_wts
   !$omp declare target(gauss_Ds, gauss_wts)
+  !$acc declare create(gauss_Ds, gauss_wts)
 #endif
 
 contains
@@ -135,7 +135,7 @@ contains
     ! Weights and angle secants for "Gauss-Jacobi-5" quadrature.
     !   Values from Table 1, R. J. Hogan 2023, doi:10.1002/qj.4598
     !
-#ifdef STATIC
+#ifndef AMDFLANG_WORKAROUND
     integer,  parameter :: max_gauss_pts = 4
     real(wp), parameter,                         &
       dimension(max_gauss_pts, max_gauss_pts) :: &
@@ -149,7 +149,7 @@ contains
                              1._wp/0.0454586727_wp, 1._wp/0.2322334416_wp,  &
                              1._wp/0.5740198775_wp, 1._wp/0.9030775973_wp], &
                             [max_gauss_pts, max_gauss_pts])
-#ifdef STATIC
+#ifndef AMDFLANG_WORKAROUND
     real(wp), parameter,                         &
       dimension(max_gauss_pts, max_gauss_pts) :: &
 #endif

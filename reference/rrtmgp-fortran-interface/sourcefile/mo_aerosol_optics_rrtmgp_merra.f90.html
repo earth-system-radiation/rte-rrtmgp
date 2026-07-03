@@ -85,7 +85,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="19.7% of total for source files.">269 statements</a>
+    title="19.5% of total for source files.">275 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_aerosol_optics_rrtmgp_merra.F90"> Source File</a></li>
   </ul>
@@ -735,19 +735,30 @@
 <a id="ln-581" name="ln-581" href="#ln-581"></a><span class="w">    </span><span class="kt">integer</span><span class="p">,</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="k">array</span>
 <a id="ln-582" name="ln-582" href="#ln-582"></a><span class="k">    </span><span class="kt">integer</span><span class="p">,</span><span class="w">                 </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">checkMin</span><span class="p">,</span><span class="w"> </span><span class="n">checkMax</span>
 <a id="ln-583" name="ln-583" href="#ln-583"></a>
-<a id="ln-584" name="ln-584" href="#ln-584"></a><span class="w">    </span><span class="kt">integer</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">minValue</span><span class="p">,</span><span class="w"> </span><span class="n">maxValue</span>
+<a id="ln-584" name="ln-584" href="#ln-584"></a><span class="w">    </span><span class="kt">integer</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">minValue</span><span class="p">,</span><span class="w"> </span><span class="n">maxValue</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span>
 <a id="ln-585" name="ln-585" href="#ln-585"></a>
-<a id="ln-586" name="ln-586" href="#ln-586"></a><span class="w">    </span><span class="c">!$acc kernels copyin(array)</span>
-<a id="ln-587" name="ln-587" href="#ln-587"></a><span class="w">    </span><span class="c">!$omp target map(to:array) map(from:minValue, maxValue)</span>
-<a id="ln-588" name="ln-588" href="#ln-588"></a><span class="w">    </span><span class="n">minValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">minval</span><span class="p">(</span><span class="k">array</span><span class="p">)</span>
-<a id="ln-589" name="ln-589" href="#ln-589"></a><span class="w">    </span><span class="n">maxValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">maxval</span><span class="p">(</span><span class="k">array</span><span class="p">)</span>
-<a id="ln-590" name="ln-590" href="#ln-590"></a><span class="w">    </span><span class="c">!$acc end kernels</span>
-<a id="ln-591" name="ln-591" href="#ln-591"></a><span class="w">    </span><span class="c">!$omp end target</span>
-<a id="ln-592" name="ln-592" href="#ln-592"></a><span class="w">    </span><span class="n">any_int_vals_outside_2D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">minValue</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">checkMin</span><span class="w"> </span><span class="p">.</span><span class="nb">or</span><span class="p">.</span><span class="w"> </span><span class="n">maxValue</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">checkMax</span>
-<a id="ln-593" name="ln-593" href="#ln-593"></a>
-<a id="ln-594" name="ln-594" href="#ln-594"></a><span class="w">  </span><span class="k">end function </span><span class="n">any_int_vals_outside_2D</span>
-<a id="ln-595" name="ln-595" href="#ln-595"></a>
-<a id="ln-596" name="ln-596" href="#ln-596"></a><span class="k">end module </span><span class="n">mo_aerosol_optics_rrtmgp_merra</span>
+<a id="ln-586" name="ln-586" href="#ln-586"></a><span class="cp">#ifndef AMDFLANG_WORKAROUND</span>
+<a id="ln-587" name="ln-587" href="#ln-587"></a><span class="w">    </span><span class="c">!$acc kernels copyin(array)</span>
+<a id="ln-588" name="ln-588" href="#ln-588"></a><span class="w">    </span><span class="c">!$omp target map(to:array) map(from:minValue, maxValue)</span>
+<a id="ln-589" name="ln-589" href="#ln-589"></a><span class="w">    </span><span class="n">minValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">minval</span><span class="p">(</span><span class="k">array</span><span class="p">)</span>
+<a id="ln-590" name="ln-590" href="#ln-590"></a><span class="w">    </span><span class="n">maxValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">maxval</span><span class="p">(</span><span class="k">array</span><span class="p">)</span>
+<a id="ln-591" name="ln-591" href="#ln-591"></a><span class="w">    </span><span class="c">!$acc end kernels</span>
+<a id="ln-592" name="ln-592" href="#ln-592"></a><span class="w">    </span><span class="c">!$omp end target</span>
+<a id="ln-593" name="ln-593" href="#ln-593"></a><span class="cp">#else</span>
+<a id="ln-594" name="ln-594" href="#ln-594"></a><span class="w">    </span><span class="c">!$omp target teams distribute parallel do collapse(2) &amp;</span>
+<a id="ln-595" name="ln-595" href="#ln-595"></a><span class="w">    </span><span class="c">!$omp&amp; reduction(min:minValue) reduction(max:maxValue) map(to:array)</span>
+<a id="ln-596" name="ln-596" href="#ln-596"></a><span class="w">    </span><span class="k">do </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">(</span><span class="k">array</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<a id="ln-597" name="ln-597" href="#ln-597"></a><span class="w">       </span><span class="k">do </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">(</span><span class="k">array</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<a id="ln-598" name="ln-598" href="#ln-598"></a><span class="w">          </span><span class="n">minValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">min</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">),</span><span class="w"> </span><span class="n">minValue</span><span class="p">)</span>
+<a id="ln-599" name="ln-599" href="#ln-599"></a><span class="w">          </span><span class="n">maxValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">),</span><span class="w"> </span><span class="n">maxValue</span><span class="p">)</span>
+<a id="ln-600" name="ln-600" href="#ln-600"></a><span class="w">       </span><span class="k">end do</span>
+<a id="ln-601" name="ln-601" href="#ln-601"></a><span class="k">    end do</span>
+<a id="ln-602" name="ln-602" href="#ln-602"></a><span class="cp">#endif</span>
+<a id="ln-603" name="ln-603" href="#ln-603"></a><span class="w">    </span><span class="n">any_int_vals_outside_2D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">minValue</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">checkMin</span><span class="w"> </span><span class="p">.</span><span class="nb">or</span><span class="p">.</span><span class="w"> </span><span class="n">maxValue</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">checkMax</span>
+<a id="ln-604" name="ln-604" href="#ln-604"></a>
+<a id="ln-605" name="ln-605" href="#ln-605"></a><span class="w">  </span><span class="k">end function </span><span class="n">any_int_vals_outside_2D</span>
+<a id="ln-606" name="ln-606" href="#ln-606"></a>
+<a id="ln-607" name="ln-607" href="#ln-607"></a><span class="k">end module </span><span class="n">mo_aerosol_optics_rrtmgp_merra</span>
 </pre></div>
 
     </section>

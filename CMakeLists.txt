@@ -51,6 +51,8 @@ if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU AND NOT RTE_RRTMGP_Fortran_is_NEC)
 endif()
 
 if(${CMAKE_Fortran_COMPILER_ID} MATCHES LLVMFlang)
+  # replace parameter local array in kernel by module global array use explicit
+  # openmp target loops
   add_compile_definitions(AMDFLANG_WORKAROUND)
 endif()
 

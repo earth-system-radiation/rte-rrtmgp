@@ -85,6 +85,7 @@ program rte_examples
   real(wp), dimension(:, :), allocatable  &
 	   :: sfc_props_spectral, toa_flux
 
+
   logical :: do_rrtmgp = .false., &
              do_ssm    = .false., &
              do_ddq    = .false.
@@ -131,6 +132,8 @@ program rte_examples
   !
   ! Read longwave/shortwave example, expand boundary conditions to spectral dimension
   !
+  allocate(fluxes%flux_up(ncol, nlay), fluxes%flux_dn(ncol, nlay))
+  allocate(sfc_props_spectral(gas_optics%get_nband(), ncol))
   if (gas_optics%source_is_internal()) then
     print *, "reading LW problem"
     call read_rte_example(problem_file, do_lw, &
@@ -143,7 +146,7 @@ program rte_examples
     ! From broadband to spectral surface emissivity
     !
     sfc_props_spectral(:,:) = spread(surface_emissivity, &
-    	                             dim=2, ncopies = gas_optics%get_ngpt())
+    	                             dim=1, ncopies = gas_optics%get_nband())
 
   else
     print *, "reading SW problem"
@@ -154,7 +157,7 @@ program rte_examples
                    total_solar_irradiance = total_solar_irradiance)
     allocate(ty_optical_props_2str::optical_props)
     sfc_props_spectral(:,:) = spread(surface_albedo, &
-    	                               dim=2, ncopies = gas_optics%get_ngpt())
+    	                               dim=1, ncopies = gas_optics%get_nband())
   end if
   select type (optical_props)
     type is (ty_optical_props_1scl)
@@ -162,7 +165,6 @@ program rte_examples
     type is (ty_optical_props_2str)
       call stop_on_err(optical_props%alloc_2str(ncol, nlay, gas_optics))
   end select
-  print *, "Things seem set up..."
   ! ------------------------------------------------------------------------
   !
   ! Cycle over blocks, compute fluxes
@@ -172,7 +174,6 @@ program rte_examples
     !
     ! Longwave calculations
     !
-    print *, "Calling LW gas optics"
   	call stop_on_err( &
 	    gas_optics%gas_optics(pres_layer,  &
                             pres_level,  &
@@ -183,7 +184,6 @@ program rte_examples
                             source,        &
                             tlev = temp_level) &
 	  )
-    print *, "Calling LW solver"
 	  call stop_on_err(         &
 	    rte_lw(optical_props,   &
 	           source,          &

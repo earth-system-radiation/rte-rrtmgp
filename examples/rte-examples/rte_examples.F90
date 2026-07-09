@@ -112,7 +112,6 @@ program rte_examples
   !   determine which gas concetentrations are available (needed by RRTMGP)
   !
   call inquire_rte_example(problem_file, ncol, nlay, gas_concs)
-
   !
   ! Initialize optics schemes
   !
@@ -133,34 +132,49 @@ program rte_examples
   ! Read longwave/shortwave example, expand boundary conditions to spectral dimension
   !
   if (gas_optics%source_is_internal()) then
+    print *, "reading LW problem"
     call read_rte_example(problem_file, do_lw, &
   	               pres_layer, pres_level, temp_layer, temp_level, gas_concs, &
-  	               surface_emissivity, surface_temperature)
+  	               surface_emissivity = surface_emissivity, &
+                   surface_temperature = surface_temperature)
     allocate(ty_optical_props_1scl::optical_props)
-    call stop_on_err(source%init(source))
+    call stop_on_err(source%alloc(ncol, nlay, gas_optics))
     !
     ! From broadband to spectral surface emissivity
     !
     sfc_props_spectral(:,:) = spread(surface_emissivity, &
     	                             dim=2, ncopies = gas_optics%get_ngpt())
+
   else
+    print *, "reading SW problem"
     call read_rte_example(problem_file, do_lw, &
   	               pres_layer, pres_level, temp_layer, temp_level, gas_concs, &
-  	               surface_albedo, solar_zenith_angle, total_solar_irradiance)
+  	               surface_albedo     = surface_albedo,     &
+                   solar_zenith_angle = solar_zenith_angle, &
+                   total_solar_irradiance = total_solar_irradiance)
     allocate(ty_optical_props_2str::optical_props)
     sfc_props_spectral(:,:) = spread(surface_albedo, &
-    	                             dim=2, ncopies = gas_optics%get_ngpt())
+    	                               dim=2, ncopies = gas_optics%get_ngpt())
   end if
-  call stop_on_err(optical_props%init(gas_optics))
-
+  select type (optical_props)
+    type is (ty_optical_props_1scl)
+      call stop_on_err(optical_props%alloc_1scl(ncol, nlay, gas_optics))
+    type is (ty_optical_props_2str)
+      call stop_on_err(optical_props%alloc_2str(ncol, nlay, gas_optics))
+  end select
+  print *, "Things seem set up..."
+  ! ------------------------------------------------------------------------
   !
   ! Cycle over blocks, compute fluxes
-  !
   ! We'll add the cycling over blocks later
   !
   if (gas_optics%source_is_internal()) then
-	call stop_on_err( &
-	  gas_optics%gas_optics(pres_layer,  &
+    !
+    ! Longwave calculations
+    !
+    print *, "Calling LW gas optics"
+  	call stop_on_err( &
+	    gas_optics%gas_optics(pres_layer,  &
                             pres_level,  &
                             temp_layer,  &
                             surface_temperature, &
@@ -168,14 +182,18 @@ program rte_examples
                             optical_props, &
                             source,        &
                             tlev = temp_level) &
-	)
-	call stop_on_err(         &
-	  rte_lw(optical_props,   &
-	         source,          &
-	         sfc_props_spectral,   &
-	         fluxes) &
-	)
+	  )
+    print *, "Calling LW solver"
+	  call stop_on_err(         &
+	    rte_lw(optical_props,   &
+	           source,          &
+	           sfc_props_spectral,   &
+	           fluxes) &
+	  )
   else
+    !
+    ! Shortwave calculations
+    !
     call stop_on_err( &
       gas_optics%gas_optics(pres_layer,  &
                             pres_level,  &
@@ -183,18 +201,16 @@ program rte_examples
                             gas_concs,     &
                             optical_props, &
                             toa_flux)      &
-    )
-    !
-    ! ... and compute the spectrally-resolved fluxes, providing reduced values
-    !    via ty_fluxes_broadband
-    !
-    call stop_on_err(rte_sw(optical_props,   &
-                            solar_zenith_angle, & !!! cosine probably
-                            toa_flux,        &
-                            sfc_props_spectral, &
-                            sfc_props_spectral, &
-                            fluxes)          &
+      )
+    call stop_on_err( &
+      rte_sw(optical_props,   &
+             solar_zenith_angle, & !!! cosine probably
+             toa_flux,        &
+             sfc_props_spectral, &
+             sfc_props_spectral, &
+             fluxes)          &
     )
   end if
+  ! ------------------------------------------------------------------------
 
 end program rte_examples

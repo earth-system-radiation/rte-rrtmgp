@@ -1,15 +1,17 @@
 module mo_rte_examples_io
   use mo_rte_kind,           only: wp
   use mo_gas_concentrations, only: ty_gas_concs
+  use mo_fluxes,             only: ty_fluxes_broadband
   use mo_gas_optics_util_string, &
                             only: lower_case, string_in_array
   use mo_testing_utils,     only: stop_on_err
-  use mo_simple_netcdf,     only: get_dim_size, read_field
+  use mo_simple_netcdf,     only: get_dim_size, read_field, &
+                                  create_dim, create_var, write_field
   use netcdf
   implicit none
 
   private
-  public :: inquire_rte_example, read_rte_example
+  public :: inquire_rte_example, read_rte_example, write_rte_example
   ! h2o, co2, ch4, n2o, co, n2, o2, cfc11, cfc12, ! DDQ
   ! h2o co2 o3 n2o co ch4 o2 n2 ccl4 cfc11 cfc12 cfc22 hfc143a hfc125 hfc23 hfc32 hfc134a cf4 no2 ! all gases in RRTMGP
   character(len=24), parameter, &
@@ -94,7 +96,7 @@ contains
                    surface_emissivity, surface_temperature
 
     integer :: ncid
-    integer :: ncol, nlay, nvar, ngas, igas
+    integer :: ncol, nlay, ngas, igas
     character(len=32) :: gas_names(gas_concs%get_num_gases())
     real(wp), dimension(:), allocatable :: temp_conc
 
@@ -110,13 +112,13 @@ contains
     !
     ! State variables
     !
-    pres_layer = reorder(spread(read_field(ncid, "pres_layer", ncol, nlay  ), &
+    pres_layer = to_cols(spread(read_field(ncid, "pres_layer", ncol, nlay  ), &
                                 dim = 3, ncopies = nvar))
-    pres_level = reorder(spread(read_field(ncid, "pres_level", ncol, nlay+1), &
+    pres_level = to_cols(spread(read_field(ncid, "pres_level", ncol, nlay+1), &
                                 dim = 3, ncopies = nvar))
-    temp_layer = reorder(read_field(ncid, "temp_layer", &
+    temp_layer = to_cols(read_field(ncid, "temp_layer", &
     	                              ncol, nlay,   nvar))
-    temp_level = reorder(read_field(ncid, "temp_level", &
+    temp_level = to_cols(read_field(ncid, "temp_level", &
     	                              ncol, nlay+1, nvar))
     if(present(surface_emissivity)) &
 	    surface_emissivity = reshape(read_field(ncid, "surface_emissivity", &
@@ -144,14 +146,14 @@ contains
       if (string_in_array(gas_names(igas), ["h2o", "o3 "])) then
           call stop_on_err(                    &
           	gas_concs%set_vmr(gas_names(igas), &
-          	                  reorder(read_field(ncid, gas_names(igas), &
+          	                  to_cols(read_field(ncid, gas_names(igas), &
     	                                            ncol, nlay, nvar)) )  &
           )
       else
           temp_conc = read_field(ncid, gas_names(igas), nvar)
           call stop_on_err( &
             gas_concs%set_vmr(gas_names(igas), &
-                              reorder(spread(spread(temp_conc, dim=1, ncopies=nlay), &
+                              to_cols(spread(spread(temp_conc, dim=1, ncopies=nlay), &
                                              dim=1, ncopies=ncol)))                  &
           )
       end if
@@ -161,10 +163,49 @@ contains
 
   end subroutine read_rte_example
   ! --------------------------------------------------
+  subroutine write_rte_example(ncol, nlay, fluxes, solution_file)
+    integer,                   intent(in) :: ncol, nlay
+    type(ty_fluxes_broadband), intent(in) :: fluxes
+    character(len=*),          intent(in) :: solution_file
+
+    integer :: ncid
+    real(wp), dimension(ncol, nlay+1, nvar) :: temp
+
+    if(nf90_create(trim(solution_file), NF90_NETCDF4, ncid) /= NF90_NOERR) &
+      call stop_on_err("Can't create file " // trim(solution_file))
+
+    call create_dim(ncid, "col",    ncol/nVar)
+    call create_dim(ncid, "layer",  nlay)
+    call create_dim(ncid, "level",  nlay+1)
+    call create_dim(ncid, "variant", nvar)
+    call create_var(ncid, "flux_up",                         &
+                          ["col    ", "level  ", "variant"], &
+                          [ncol/nvar, nlay+1, nvar])
+    call create_var(ncid, "flux_dn",                         &
+                          ["col    ", "level  ", "variant"], &
+                          [ncol/nvar, nlay+1, nvar])
+    call stop_on_err( &
+      write_field(ncid, "flux_up", to_variant(fluxes%flux_up)) &
+    )
+    call stop_on_err( &
+      write_field(ncid, "flux_dn", to_variant(fluxes%flux_dn)) &
+    )
+
+    if(associated(fluxes%flux_dn_dir)) then
+      call create_var(ncid, "flux_dir",                      &
+                        ["col    ", "level  ", "variant"],   &
+                          [ncol/nvar, nlay+1, nvar])
+      call stop_on_err( &
+        write_field(ncid, "flux_dir", to_variant(fluxes%flux_dn_dir)) &
+      )
+    end if
+
+  end subroutine write_rte_example
+  ! --------------------------------------------------
   !
   ! Convert from ncol, nlay, nvariant to ncol*nvariant, nlay
   !
-  function reorder(array_in) result(array_out)
+  function to_cols(array_in) result(array_out)
     real(wp), dimension(:,:,:), intent(in) :: array_in
     real(wp), dimension(size(array_in, 1) * size(array_in, 3), &
     	                  size(array_in, 2)) :: array_out
@@ -177,6 +218,23 @@ contains
     do v = 1, nv
       array_out(nx*(v-1)+1:nx*v, :) = array_in(:, :, v)
     end do
-  end function reorder
+  end function to_cols
   ! --------------------------------------------------
+  !
+  ! Convert from ncol, nlay, nvariant to ncol*nvariant, nlay
+  !
+  function to_variant(array_in) result(array_out)
+    real(wp), dimension(:,:), intent(in) :: array_in
+    real(wp), dimension(size(array_in, 1)/nvar, &
+                        size(array_in, 2),      &
+                        nvar) :: array_out
+
+    integer :: nx, v
+    nx = size(array_in, 1)/nvar
+    do v = 1, nvar
+      array_out(:,:,v) = array_in(nx*(v-1)+1:nx*v, :)
+    end do
+  end function to_variant
+  ! --------------------------------------------------
+
 end module mo_rte_examples_io

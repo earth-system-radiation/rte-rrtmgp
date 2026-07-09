@@ -50,7 +50,7 @@ program rte_examples
   !
   use mo_optics_utils_rrtmgp,only: load_gas_optics_rrtmgp => load_gas_optics
 
-  use mo_rte_examples_io,    only: inquire_rte_example, read_rte_example
+  use mo_rte_examples_io,    only: inquire_rte_example, read_rte_example, write_rte_example
   ! --------------------------------------------------
   implicit none
   !
@@ -132,10 +132,8 @@ program rte_examples
   !
   ! Read longwave/shortwave example, expand boundary conditions to spectral dimension
   !
-  allocate(fluxes%flux_up(ncol, nlay), fluxes%flux_dn(ncol, nlay))
   allocate(sfc_props_spectral(gas_optics%get_nband(), ncol))
   if (gas_optics%source_is_internal()) then
-    print *, "reading LW problem"
     call read_rte_example(problem_file, do_lw, &
   	               pres_layer, pres_level, temp_layer, temp_level, gas_concs, &
   	               surface_emissivity = surface_emissivity, &
@@ -149,13 +147,13 @@ program rte_examples
     	                             dim=1, ncopies = gas_optics%get_nband())
 
   else
-    print *, "reading SW problem"
     call read_rte_example(problem_file, do_lw, &
   	               pres_layer, pres_level, temp_layer, temp_level, gas_concs, &
   	               surface_albedo     = surface_albedo,     &
                    solar_zenith_angle = solar_zenith_angle, &
                    total_solar_irradiance = total_solar_irradiance)
     allocate(ty_optical_props_2str::optical_props)
+    allocate(toa_flux(ncol, gas_optics%get_ngpt()))
     sfc_props_spectral(:,:) = spread(surface_albedo, &
     	                               dim=1, ncopies = gas_optics%get_nband())
   end if
@@ -170,6 +168,8 @@ program rte_examples
   ! Cycle over blocks, compute fluxes
   ! We'll add the cycling over blocks later
   !
+  allocate(fluxes%flux_up(ncol, nlay+1), &
+           fluxes%flux_dn(ncol, nlay+1))
   if (gas_optics%source_is_internal()) then
     !
     ! Longwave calculations
@@ -194,6 +194,7 @@ program rte_examples
     !
     ! Shortwave calculations
     !
+    allocate(fluxes%flux_dn_dir(ncol, nlay+1))
     call stop_on_err( &
       gas_optics%gas_optics(pres_layer,  &
                             pres_level,  &
@@ -212,5 +213,5 @@ program rte_examples
     )
   end if
   ! ------------------------------------------------------------------------
-
+  call write_rte_example(ncol, nlay, fluxes, solution_file)
 end program rte_examples

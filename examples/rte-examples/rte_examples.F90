@@ -126,8 +126,8 @@ program rte_examples
     type is (ty_gas_optics_rrtmgp)
       call load_gas_optics_rrtmgp(gas_optics, trim(scheme_file), gas_concs)
     type is (ty_optics_ssm)
-      ! How to choose?
-      call stop_on_err(gas_optics%configure(do_sw = .false.))
+      ! SSM requires no files, instead use "lw" or "sw" as the file name to pick
+      call stop_on_err(gas_optics%configure(do_sw = trim(scheme_file) == "sw"))
   end select
   !
   ! Read longwave/shortwave example, expand boundary conditions to spectral dimension
@@ -205,7 +205,7 @@ program rte_examples
       )
     call stop_on_err( &
       rte_sw(optical_props,   &
-             solar_zenith_angle, & !!! cosine probably
+             cos(solar_zenith_angle * acos(-1._wp)/180._wp), &
              toa_flux,        &
              sfc_props_spectral, &
              sfc_props_spectral, &

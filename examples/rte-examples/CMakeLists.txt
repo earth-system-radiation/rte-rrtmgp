@@ -41,18 +41,20 @@ else()
   )
 
   set(fetch_rte_examples_data_command
-    ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --config
-      "$<CONFIG>" --target rte-examples-data
+      ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --config "$<CONFIG>"
+      --target rte-examples-data
   )
 
-  add_test(NAME fetch_rte_examples_data COMMAND ${fetch_rte_examples_data_command})
+  add_test(
+    NAME fetch_rte_examples_data COMMAND ${fetch_rte_examples_data_command}
+  )
 
   install(CODE "execute_process(COMMAND ${fetch_rte_examples_data_command})")
   install(
     FILES # cmake-format: sort
-          ${RTE_EXAMPLES_DATA}/rfmip-states.nc
           ${RTE_EXAMPLES_DATA}/ckdmip-states.nc
           ${RTE_EXAMPLES_DATA}/rce-states.nc
+          ${RTE_EXAMPLES_DATA}/rfmip-states.nc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/
   )
 endif()

@@ -29,8 +29,8 @@ else()
   include(ExternalProject)
   ExternalProject_Add(
     rte-examples-data
-    GIT_REPOSITORY git@github.com:earth-system-radiation/rte-examples.git
-    GIT_TAG "main"
+    GIT_REPOSITORY https://github.com/earth-system-radiation/rte-examples.git
+    GIT_TAG "v0.1.1"
     GIT_SHALLOW True
     EXCLUDE_FROM_ALL True
     PREFIX rte-examples-data-cmake

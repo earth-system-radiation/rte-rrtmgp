@@ -69,8 +69,15 @@ contains
                         .and. (xtype == NF90_FLOAT .or. xtype == NF90_DOUBLE))
       end if
     end do
+    ! write out varnames and is_gas for debugging
+    ngases = 0
+    do ivar = 1, max_vars
+      if (trim(varnames(ivar)) == "") exit
+      ngases = ngases + 1
+    end do
+
     is_gas(ivar:max_vars) = .false.
-    call stop_on_err(available_gases%init(gas_names=pack(varnames, mask=is_gas(1:ivar))))
+    call stop_on_err(available_gases%init(gas_names=pack(varnames(1:ngases), mask=is_gas(1:ivar))))
 
     !
     ! The problem sizes as the calling routines will see them

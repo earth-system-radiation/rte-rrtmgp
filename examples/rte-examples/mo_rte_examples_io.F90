@@ -77,7 +77,7 @@ contains
     end do
 
     is_gas(ivar:max_vars) = .false.
-    call stop_on_err(available_gases%init(gas_names=pack(varnames(1:ngases), mask=is_gas(1:ivar))))
+    call stop_on_err(available_gases%init(gas_names=pack(varnames(1:ngases), mask=is_gas(1:ngases))))
 
     !
     ! The problem sizes as the calling routines will see them

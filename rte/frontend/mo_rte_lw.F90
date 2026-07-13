@@ -261,7 +261,6 @@ contains
         error_msg = trim(optical_props%get_name()) // ': ' // trim(error_msg)
       return
     end if
-
     ! ------------------------------------------------------------------------------------
     !  Boundary conditions
     !    Lower boundary condition -- expand surface emissivity by band to gpoints

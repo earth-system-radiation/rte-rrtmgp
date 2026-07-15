@@ -134,7 +134,7 @@ foreach(scheme IN ITEMS rrtmgp ssm)
       set_tests_properties(
         run_rte_examples_${scheme}_${band}_${state}
         PROPERTIES FIXTURES_REQUIRED
-                   run_rte_examples_${scheme}_${band}_${state}
+                   "fetch_ssm_data;run_rte_examples_${scheme}_${band}_${state}"
       )
     endforeach()
   endforeach()

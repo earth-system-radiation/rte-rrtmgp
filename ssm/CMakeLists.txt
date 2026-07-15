@@ -41,7 +41,7 @@ else()
 
   include(ExternalProject)
   ExternalProject_Add(
-    rte-examples-data
+    ssm-data
     GIT_REPOSITORY https://github.com/earth-system-radiation/ssm-data.git
     GIT_TAG "main"
     GIT_SHALLOW True

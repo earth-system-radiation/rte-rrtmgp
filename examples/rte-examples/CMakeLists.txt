@@ -90,13 +90,19 @@ target_link_libraries(
 # RTE tests: 2 schemes x 2 bands x 3 states = 12 tests
 #
 foreach(scheme IN ITEMS rrtmgp ssm)
+  if(scheme STREQUAL "rrtmgp")
+    set(data_dir ${RRTMGP_DATA})
+  else() # ssm
+    set(data_dir ${SSM_DATA})
+  endif()
+
   foreach(band IN ITEMS lw sw)
     # scheme_data depends on scheme and band
     if(scheme STREQUAL "rrtmgp")
       if(band STREQUAL "lw")
-        set(scheme_data ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc)
+        set(scheme_data ${data_dir}/rrtmgp-gas-lw-g128.nc)
       else()
-        set(scheme_data ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc)
+        set(scheme_data ${data_dir}/rrtmgp-gas-sw-g112.nc)
       endif()
     else() # ssm
       set(scheme_data ${band})
@@ -116,23 +122,20 @@ foreach(scheme IN ITEMS rrtmgp ssm)
                    "fetch_rrtmgp_data;fetch_rte_examples_data"
       )
 
-      if(scheme STREQUAL "rrtmgp")
-        add_test(
-          NAME check_rte_examples_${scheme}_${band}_${state}
-          COMMAND
-            ${Python3_EXECUTABLE}
-            ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
-            ${RRTMGP_DATA}/examples/rte-examples/reference --tst_dir
-            ${CMAKE_CURRENT_BINARY_DIR} --file_names ${output_data}
-            --failure_threshold ${FAILURE_THRESHOLD}
-        )
-        set_tests_properties(
-          run_rte_examples_${scheme}_${band}_${state}
-          PROPERTIES
-            FIXTURES_REQUIRED
-            "fetch_rrtmgp_data;fetch_rte_examples_data;run_rte_examples_${scheme}_${band}_${state}"
-        )
-      endif()
+      add_test(
+        NAME check_rte_examples_${scheme}_${band}_${state}
+        COMMAND
+          ${Python3_EXECUTABLE}
+          ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
+          ${data_dir}/examples/rte-examples/reference --tst_dir
+          ${CMAKE_CURRENT_BINARY_DIR} --file_names ${output_data}
+          --failure_threshold ${FAILURE_THRESHOLD}
+      )
+      set_tests_properties(
+        run_rte_examples_${scheme}_${band}_${state}
+        PROPERTIES FIXTURES_REQUIRED
+                   run_rte_examples_${scheme}_${band}_${state}
+      )
     endforeach()
   endforeach()
 endforeach()

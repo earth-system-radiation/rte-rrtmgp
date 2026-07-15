@@ -25,3 +25,50 @@ set_target_properties(
 )
 
 install(TARGETS ssm EXPORT rte-rrtmgp-targets)
+
+# ##############################################################################
+#
+# Fetch the rte-examples atmospheric state data
+#
+if(SSM_DATA)
+  add_test(NAME fetch_ssm_data COMMAND ${CMAKE_COMMAND} -E true)
+  message(
+    NOTICE
+    "Using an external dataset from ${SSM_DATA}: the data files will not be installed"
+  )
+else()
+  set(SSM_DATA "${PROJECT_BINARY_DIR}/ssm-data")
+
+  include(ExternalProject)
+  ExternalProject_Add(
+    rte-examples-data
+    GIT_REPOSITORY https://github.com/earth-system-radiation/ssm-data.git
+    GIT_TAG "main"
+    GIT_SHALLOW True
+    EXCLUDE_FROM_ALL True
+    PREFIX ssm-data-cmake
+    SOURCE_DIR ${SSM_DATA}
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+  )
+
+  set(fetch_ssm_data_command
+      ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --config "$<CONFIG>"
+      --target ssm-data
+  )
+
+  add_test(NAME fetch_ssm_data COMMAND ${fetch_ssm_data_command})
+
+  install(CODE "execute_process(COMMAND ${fetch_ssm_data_command})")
+  install(
+    FILES # cmake-format: sort
+          ${SSM_DATA}/ssm-lw-ckdmip.nc
+          ${SSM_DATA}/ssm-lw-rce.nc
+          ${SSM_DATA}/ssm-lw-rfmip.nc
+          ${SSM_DATA}/ssm-sw-ckdmip.nc
+          ${SSM_DATA}/ssm-sw-rce.nc
+          ${SSM_DATA}/ssm-sw-rfmip.nc
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/
+  )
+endif()

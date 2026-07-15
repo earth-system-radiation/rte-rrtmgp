@@ -94,27 +94,45 @@ foreach(scheme IN ITEMS rrtmgp ssm)
     # scheme_data depends on scheme and band
     if(scheme STREQUAL "rrtmgp")
       if(band STREQUAL "lw")
-        set(scheme_data ${RRTMGP_DATA}/rrtmgp-gas-lw-g256.nc)
+        set(scheme_data ${RRTMGP_DATA}/rrtmgp-gas-lw-g128.nc)
       else()
-        set(scheme_data ${RRTMGP_DATA}/rrtmgp-gas-sw-g224.nc)
+        set(scheme_data ${RRTMGP_DATA}/rrtmgp-gas-sw-g112.nc)
       endif()
     else() # ssm
       set(scheme_data ${band})
     endif()
 
     foreach(state IN ITEMS rfmip ckdmip rce)
+      set(output_data ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-${band}-${state}.nc)
       add_test(
         NAME run_rte_examples_${scheme}_${band}_${state}
         COMMAND
           rte_examples 8 ${scheme} ${scheme_data}
-          ${RTE_EXAMPLES_DATA}/${state}-states.nc
-          ${CMAKE_CURRENT_BINARY_DIR}/${scheme}_${band}_${state}.nc
+          ${RTE_EXAMPLES_DATA}/${state}-states.nc ${output_data}
       )
       set_tests_properties(
         run_rte_examples_${scheme}_${band}_${state}
         PROPERTIES FIXTURES_REQUIRED
                    "fetch_rrtmgp_data;fetch_rte_examples_data"
       )
+
+      if(scheme STREQUAL "rrtmgp")
+        add_test(
+          NAME check_rte_examples_${scheme}_${band}_${state}
+          COMMAND
+            ${Python3_EXECUTABLE}
+            ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
+            ${RRTMGP_DATA}/examples/rte-examples/reference --tst_dir
+            ${CMAKE_CURRENT_BINARY_DIR} --file_names ${output_data}
+            --failure_threshold ${FAILURE_THRESHOLD}
+        )
+        set_tests_properties(
+          run_rte_examples_${scheme}_${band}_${state}
+          PROPERTIES
+            FIXTURES_REQUIRED
+            "fetch_rrtmgp_data;fetch_rte_examples_data;run_rte_examples_${scheme}_${band}_${state}"
+        )
+      endif()
     endforeach()
   endforeach()
 endforeach()

@@ -50,7 +50,7 @@ jobs:
           activate-environment: rte_rrtmgp_test
           environment-file: environment-noplots.yml
           python-version: 3.11
-          auto-activate-base: false
+          auto-activate: false
           conda-remove-defaults: true
           # Use the cache properly:
           use-only-tar-bz2: false

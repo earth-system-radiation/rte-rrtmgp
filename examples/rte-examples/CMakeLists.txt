@@ -134,7 +134,7 @@ foreach(scheme IN ITEMS rrtmgp ssm)
           --failure_threshold ${FAILURE_THRESHOLD}
       )
       set_tests_properties(
-        run_rte_examples_${scheme}_${band}_${state}
+        check_rte_examples_${scheme}_${band}_${state}
         PROPERTIES FIXTURES_REQUIRED
                    "fetch_ssm_data;run_rte_examples_${scheme}_${band}_${state}"
       )

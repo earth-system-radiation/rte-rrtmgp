@@ -59,4 +59,16 @@ else()
   )
 
   add_test(NAME fetch_ssm_data COMMAND ${fetch_ssm_data_command})
+
+  install(CODE "execute_process(COMMAND ${fetch_ssm_data_command})")
+  install(
+    FILES # cmake-format: sort
+          ${SSM_DATA}/ssm-lw-ckdmip.nc
+          ${SSM_DATA}/ssm-lw-rce.nc
+          ${SSM_DATA}/ssm-lw-rfmip.nc
+          ${SSM_DATA}/ssm-sw-ckdmip.nc
+          ${SSM_DATA}/ssm-sw-rce.nc
+          ${SSM_DATA}/ssm-sw-rfmip.nc
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/
+  )
 endif()

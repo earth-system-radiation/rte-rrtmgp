@@ -120,6 +120,8 @@ foreach(scheme IN ITEMS rrtmgp ssm)
         run_rte_examples_${scheme}_${band}_${state}
         PROPERTIES FIXTURES_REQUIRED
                    "fetch_rrtmgp_data;fetch_rte_examples_data"
+                   FIXTURES_SETUP
+                   "run_rte_examples_${scheme}_${band}_${state}"
       )
 
       add_test(

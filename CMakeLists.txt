@@ -62,11 +62,12 @@ if(RTE_BUILD_TESTING OR RTE_BUILD_C_HEADERS)
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
 endif()
 
+include(CTest)
+
 add_subdirectory(rte)
 add_subdirectory(rrtmgp)
 add_subdirectory(ssm)
 
-include(CTest)
 if(RTE_BUILD_TESTING)
   if(NOT _RTE_RRTMGP_HAVE_PY_PACKAGES)
     include(CheckPython3Package)

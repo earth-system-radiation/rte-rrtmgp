@@ -124,20 +124,26 @@ foreach(scheme IN ITEMS rrtmgp ssm)
                    "run_rte_examples_${scheme}_${band}_${state}"
       )
 
-      add_test(
-        NAME check_rte_examples_${scheme}_${band}_${state}
-        COMMAND
-          ${Python3_EXECUTABLE}
-          ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
-          ${data_dir}/examples/rte-examples/reference --tst_dir
-          ${CMAKE_CURRENT_BINARY_DIR} --file_names ${output_data}
-          --failure_threshold ${FAILURE_THRESHOLD}
-      )
-      set_tests_properties(
-        check_rte_examples_${scheme}_${band}_${state}
-        PROPERTIES FIXTURES_REQUIRED
-                   "fetch_ssm_data;run_rte_examples_${scheme}_${band}_${state}"
-      )
     endforeach()
+  endforeach()
+
+  foreach(state IN ITEMS rfmip ckdmip rce)
+    add_test(
+      NAME check_rte_examples_${scheme}_${state}
+      COMMAND
+        ${Python3_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
+        ${data_dir}/examples/rte-examples/reference --tst_dir
+        ${CMAKE_CURRENT_BINARY_DIR} --file_names
+        ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-lw-${state}.nc
+        ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-sw-${state}.nc
+        --failure_threshold ${FAILURE_THRESHOLD}
+    )
+    set_tests_properties(
+      check_rte_examples_${scheme}_${state}
+      PROPERTIES
+        FIXTURES_REQUIRED
+        "fetch_ssm_data;run_rte_examples_${scheme}_lw_${state};run_rte_examples_${scheme}_sw_${state}"
+    )
   endforeach()
 endforeach()

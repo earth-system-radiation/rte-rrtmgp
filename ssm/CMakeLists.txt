@@ -56,14 +56,13 @@ else()
   set(REF_DIR examples/rte-examples/reference)
 
   # The build already fetched the data (ssm-data is part of the ALL target).
-  # This fixture verifies the files are present before any test that needs
-  # them runs, and fails with an actionable message if the project was not
-  # built first.
+  # This fixture verifies the files are present before any test that needs them
+  # runs, and fails with an actionable message if the project was not built
+  # first.
   add_test(
     NAME fetch_ssm_data
     COMMAND
-      ${CMAKE_COMMAND} -D DATA_DIR=${SSM_DATA}/${REF_DIR} -D DATA_LABEL=SSM
-      -D
+      ${CMAKE_COMMAND} -D DATA_DIR=${SSM_DATA}/${REF_DIR} -D DATA_LABEL=SSM -D
       "DATA_FILES=ssm-lw-ckdmip.nc;ssm-lw-rce.nc;ssm-lw-rfmip.nc;ssm-sw-ckdmip.nc;ssm-sw-rce.nc;ssm-sw-rfmip.nc"
       -P ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
   )
@@ -73,4 +72,7 @@ set_tests_properties(fetch_ssm_data PROPERTIES FIXTURES_SETUP fetch_ssm_data)
 
 # propagate the SSM_DATA variable to the parent scope so that the sibling
 # subdirectories (examples, tests) can inherit it
-set(SSM_DATA "${SSM_DATA}" PARENT_SCOPE)
+set(SSM_DATA
+    "${SSM_DATA}"
+    PARENT_SCOPE
+)

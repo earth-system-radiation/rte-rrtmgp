@@ -24,10 +24,10 @@ else()
     LOG_DOWNLOAD TRUE
   )
 
-  # The build already fetched the data (rrtmgp-data is part of the ALL
-  # target). This fixture verifies the files are present before any test that
-  # needs them runs, and fails with an actionable message if the project was
-  # not built first.
+  # The build already fetched the data (rrtmgp-data is part of the ALL target).
+  # This fixture verifies the files are present before any test that needs them
+  # runs, and fails with an actionable message if the project was not built
+  # first.
   add_test(
     NAME fetch_rrtmgp_data
     COMMAND
@@ -54,6 +54,9 @@ set_tests_properties(
   fetch_rrtmgp_data PROPERTIES FIXTURES_SETUP fetch_rrtmgp_data
 )
 
-# propagate the RRTMGP_DATA variable to the parent scope so that the 
-# sibling subdirectories (examples, tests) can inherit it
-set(RRTMGP_DATA "${RRTMGP_DATA}" PARENT_SCOPE)
+# propagate the RRTMGP_DATA variable to the parent scope so that the sibling
+# subdirectories (examples, tests) can inherit it
+set(RRTMGP_DATA
+    "${RRTMGP_DATA}"
+    PARENT_SCOPE
+)

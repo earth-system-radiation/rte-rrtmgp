@@ -65,17 +65,6 @@ if(RTE_BUILD_TESTING)
         ${CMAKE_COMMAND} -D SSM_DATA=${SSM_DATA}/${REF_DIR} -P
         ${PROJECT_SOURCE_DIR}/cmake/CheckSSMData.cmake
     )
-
-    install(
-      FILES # cmake-format: sort
-            ${SSM_DATA}/${REF_DIR}/ssm-lw-ckdmip.nc
-            ${SSM_DATA}/${REF_DIR}/ssm-lw-rce.nc
-            ${SSM_DATA}/${REF_DIR}/ssm-lw-rfmip.nc
-            ${SSM_DATA}/${REF_DIR}/ssm-sw-ckdmip.nc
-            ${SSM_DATA}/${REF_DIR}/ssm-sw-rce.nc
-            ${SSM_DATA}/${REF_DIR}/ssm-sw-rfmip.nc
-      DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/
-    )
   endif()
 
   set_tests_properties(fetch_ssm_data PROPERTIES FIXTURES_SETUP fetch_ssm_data)

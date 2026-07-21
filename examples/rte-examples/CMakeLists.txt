@@ -49,14 +49,6 @@ else()
       ${CMAKE_COMMAND} -D RTE_EXAMPLES_DATA=${RTE_EXAMPLES_DATA} -P
       ${PROJECT_SOURCE_DIR}/cmake/CheckRTEExamplesData.cmake
   )
-
-  install(
-    FILES # cmake-format: sort
-          ${RTE_EXAMPLES_DATA}/ckdmip-states.nc
-          ${RTE_EXAMPLES_DATA}/rce-states.nc
-          ${RTE_EXAMPLES_DATA}/rfmip-states.nc
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/
-  )
 endif()
 
 set_tests_properties(

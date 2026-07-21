@@ -7,7 +7,8 @@
 # that tests requiring the data fail with an actionable message if the project
 # was not built before running ctest.
 
-set(_required_files # cmake-format: sort
+set(_required_files
+    # cmake-format: sort
     rrtmgp-aerosols-merra-lw.nc
     rrtmgp-aerosols-merra-sw.nc
     rrtmgp-clouds-lw-bnd.nc
@@ -29,8 +30,8 @@ if(_missing)
   string(REPLACE ";" "\n  " _missing_pretty "${_missing}")
   message(
     FATAL_ERROR
-    "RRTMGP data files are missing:\n  ${_missing_pretty}\n"
-    "Build the project first (e.g. 'cmake --build <build-dir>') so the "
-    "rrtmgp-data target fetches the data before running ctest."
+      "RRTMGP data files are missing:\n  ${_missing_pretty}\n"
+      "Build the project first (e.g. 'cmake --build <build-dir>') so the "
+      "rrtmgp-data target fetches the data before running ctest."
   )
 endif()

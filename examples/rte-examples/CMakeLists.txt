@@ -41,8 +41,8 @@ else()
 
   # The build already fetched the data (rte-examples-data is part of the ALL
   # target). This fixture verifies the files are present before any test that
-  # needs them runs, and fails with an actionable message if the project was
-  # not built first.
+  # needs them runs, and fails with an actionable message if the project was not
+  # built first.
   add_test(
     NAME fetch_rte_examples_data
     COMMAND

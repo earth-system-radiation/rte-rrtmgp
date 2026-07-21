@@ -119,9 +119,9 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
     )
 
     # The build already fetched the data (rrtmgp-data is part of the ALL
-    # target). This fixture verifies the files are present before any test
-    # that needs them runs, and fails with an actionable message if the
-    # project was not built first.
+    # target). This fixture verifies the files are present before any test that
+    # needs them runs, and fails with an actionable message if the project was
+    # not built first.
     add_test(
       NAME fetch_rrtmgp_data
       COMMAND

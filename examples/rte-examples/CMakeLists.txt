@@ -27,12 +27,11 @@ else()
   set(RTE_EXAMPLES_DATA "${PROJECT_BINARY_DIR}/rte-examples-data")
 
   include(ExternalProject)
+  # Fetched at build time (part of the default ALL target) so the data is
+  # present before install and before ctest.
   ExternalProject_Add(
     rte-examples-data
-    GIT_REPOSITORY https://github.com/earth-system-radiation/rte-examples.git
-    GIT_TAG "v0.1.1"
-    GIT_SHALLOW True
-    EXCLUDE_FROM_ALL True
+    URL https://github.com/earth-system-radiation/rte-examples/archive/refs/tags/v0.1.1.tar.gz
     PREFIX rte-examples-data-cmake
     SOURCE_DIR ${RTE_EXAMPLES_DATA}
     CONFIGURE_COMMAND ""
@@ -40,16 +39,17 @@ else()
     INSTALL_COMMAND ""
   )
 
-  set(fetch_rte_examples_data_command
-      ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --config "$<CONFIG>"
-      --target rte-examples-data
-  )
-
+  # The build already fetched the data (rte-examples-data is part of the ALL
+  # target). This fixture verifies the files are present before any test that
+  # needs them runs, and fails with an actionable message if the project was
+  # not built first.
   add_test(
-    NAME fetch_rte_examples_data COMMAND ${fetch_rte_examples_data_command}
+    NAME fetch_rte_examples_data
+    COMMAND
+      ${CMAKE_COMMAND} -D RTE_EXAMPLES_DATA=${RTE_EXAMPLES_DATA} -P
+      ${PROJECT_SOURCE_DIR}/cmake/CheckRTEExamplesData.cmake
   )
 
-  install(CODE "execute_process(COMMAND ${fetch_rte_examples_data_command})")
   install(
     FILES # cmake-format: sort
           ${RTE_EXAMPLES_DATA}/ckdmip-states.nc

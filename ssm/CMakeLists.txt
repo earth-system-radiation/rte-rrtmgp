@@ -62,7 +62,8 @@ if(RTE_BUILD_TESTING)
     add_test(
       NAME fetch_ssm_data
       COMMAND
-        ${CMAKE_COMMAND} -D DATA_DIR=${SSM_DATA}/${REF_DIR} -D DATA_LABEL=SSM -D
+        ${CMAKE_COMMAND} -D DATA_DIR=${SSM_DATA}/${REF_DIR} -D DATA_LABEL=SSM
+        -D
         "DATA_FILES=ssm-lw-ckdmip.nc;ssm-lw-rce.nc;ssm-lw-rfmip.nc;ssm-sw-ckdmip.nc;ssm-sw-rce.nc;ssm-sw-rfmip.nc"
         -P ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
     )

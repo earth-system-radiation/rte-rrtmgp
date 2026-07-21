@@ -1,10 +1,7 @@
 # Verify that a set of data files is present in a directory.
 #
-# Run as:
-#   cmake -D DATA_DIR=<dir> \
-#         -D DATA_FILES=<file1>[;<file2>...] \
-#         -D DATA_LABEL=<label> \
-#         -P CheckData.cmake
+# Run as: cmake -D DATA_DIR=<dir> \ -D DATA_FILES=<file1>[;<file2>...] \ -D
+# DATA_LABEL=<label> \ -P CheckData.cmake
 #
 # Data sets are fetched at build time by their ExternalProject targets (part of
 # the default ALL target). This script is used as a test fixture so that tests

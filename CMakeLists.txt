@@ -125,8 +125,9 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
     add_test(
       NAME fetch_rrtmgp_data
       COMMAND
-        ${CMAKE_COMMAND} -D RRTMGP_DATA=${RRTMGP_DATA} -P
-        ${PROJECT_SOURCE_DIR}/cmake/CheckRRTMGPData.cmake
+        ${CMAKE_COMMAND} -D DATA_DIR=${RRTMGP_DATA} -D DATA_LABEL=RRTMGP -D
+        "DATA_FILES=rrtmgp-aerosols-merra-lw.nc;rrtmgp-aerosols-merra-sw.nc;rrtmgp-clouds-lw-bnd.nc;rrtmgp-clouds-sw-bnd.nc;rrtmgp-gas-lw-g128.nc;rrtmgp-gas-lw-g256.nc;rrtmgp-gas-sw-g112.nc;rrtmgp-gas-sw-g224.nc"
+        -P ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
     )
 
     install(

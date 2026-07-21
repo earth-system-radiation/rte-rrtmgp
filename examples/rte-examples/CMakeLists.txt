@@ -46,8 +46,10 @@ else()
   add_test(
     NAME fetch_rte_examples_data
     COMMAND
-      ${CMAKE_COMMAND} -D RTE_EXAMPLES_DATA=${RTE_EXAMPLES_DATA} -P
-      ${PROJECT_SOURCE_DIR}/cmake/CheckRTEExamplesData.cmake
+      ${CMAKE_COMMAND} -D DATA_DIR=${RTE_EXAMPLES_DATA} -D
+      DATA_LABEL=rte-examples -D
+      "DATA_FILES=ckdmip-states.nc;rce-states.nc;rfmip-states.nc" -P
+      ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
   )
 endif()
 

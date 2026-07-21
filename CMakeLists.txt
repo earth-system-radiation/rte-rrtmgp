@@ -106,12 +106,11 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
     set(RRTMGP_DATA "${PROJECT_BINARY_DIR}/rrtmgp-data")
 
     include(ExternalProject)
+    # Fetched at build time (part of the default ALL target) so the data is
+    # present before install and before ctest.
     ExternalProject_Add(
       rrtmgp-data
-      GIT_REPOSITORY https://github.com/earth-system-radiation/rrtmgp-data.git
-      GIT_TAG "v1.9"
-      GIT_SHALLOW True
-      EXCLUDE_FROM_ALL True
+      URL https://github.com/earth-system-radiation/rrtmgp-data/archive/refs/tags/v1.9.1.tar.gz
       PREFIX rrtmgp-data-cmake
       SOURCE_DIR ${RRTMGP_DATA}
       CONFIGURE_COMMAND ""
@@ -119,14 +118,17 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
       INSTALL_COMMAND ""
     )
 
-    set(fetch_rrtmgp_data_command
-        ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR} --config
-        "$<CONFIG>" --target rrtmgp-data
+    # The build already fetched the data (rrtmgp-data is part of the ALL
+    # target). This fixture verifies the files are present before any test
+    # that needs them runs, and fails with an actionable message if the
+    # project was not built first.
+    add_test(
+      NAME fetch_rrtmgp_data
+      COMMAND
+        ${CMAKE_COMMAND} -D RRTMGP_DATA=${RRTMGP_DATA} -P
+        ${PROJECT_SOURCE_DIR}/cmake/CheckRRTMGPData.cmake
     )
 
-    add_test(NAME fetch_rrtmgp_data COMMAND ${fetch_rrtmgp_data_command})
-
-    install(CODE "execute_process(COMMAND ${fetch_rrtmgp_data_command})")
     install(
       FILES # cmake-format: sort
             ${RRTMGP_DATA}/rrtmgp-aerosols-merra-lw.nc

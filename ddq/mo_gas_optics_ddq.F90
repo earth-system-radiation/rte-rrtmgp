@@ -728,7 +728,7 @@ contains
     class(ty_gas_optics_ddq), intent(in) :: this
     real(wp)                             :: get_temp_min !! minimum temperature for which fits are valid
 
-    get_temp_min = 150._wp
+    get_temp_min = 120._wp
   end function get_temp_min
 
   !--------------------------------------------------------------------------------------------------------------------
@@ -739,7 +739,7 @@ contains
     class(ty_gas_optics_ddq), intent(in) :: this
     real(wp)                             :: get_temp_max !! maximum temperature for which fits are valid
 
-    get_temp_max = 350._wp
+    get_temp_max = 360._wp
   end function get_temp_max
   !--------------------------------------------------------------------------------------------------------------------
 

@@ -85,7 +85,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="40.0% of total for source files.">366 statements</a>
+    title="40.2% of total for source files.">368 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_rrtmgp_kernels.F90"> Source File</a></li>
   </ul>
@@ -111,7 +111,7 @@
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#mods-0">Modules</a></h3></div>
   <div id="mods-0" class="panel-collapse collapse">
     <div class="list-group">
-      <a class="list-group-item" href="../module/mo_gas_optics_rrtmgp_kernels~3.html">mo_gas_optics_rrtmgp_kernels</a>
+      <a class="list-group-item" href="../module/mo_gas_optics_rrtmgp_kernels~2.html">mo_gas_optics_rrtmgp_kernels</a>
     </div>
   </div>
 </div>
@@ -136,7 +136,7 @@
   <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#mods-1">Modules</a></h3></div>
   <div id="mods-1" class="panel-collapse collapse">
     <div class="list-group">
-      <a class="list-group-item" href="../module/mo_gas_optics_rrtmgp_kernels~3.html">mo_gas_optics_rrtmgp_kernels</a>
+      <a class="list-group-item" href="../module/mo_gas_optics_rrtmgp_kernels~2.html">mo_gas_optics_rrtmgp_kernels</a>
     </div>
   </div>
 </div>
@@ -417,7 +417,7 @@
 <a id="ln-263" name="ln-263" href="#ln-263"></a><span class="w">      </span><span class="c">!$omp target teams distribute parallel do simd</span>
 <a id="ln-264" name="ln-264" href="#ln-264"></a><span class="w">      </span><span class="k">do </span><span class="n">icol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="n">ncol</span>
 <a id="ln-265" name="ln-265" href="#ln-265"></a><span class="w">        </span><span class="n">itropo_lower</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nlay</span>
-<a id="ln-266" name="ln-266" href="#ln-266"></a><span class="cp">#if ( defined(_CRAYFTN) &amp;&amp; _RELEASE_MAJOR &lt;= 14 ) || ( defined(_OPENMP) &amp;&amp; defined(__NVCOMPILER) )</span>
+<a id="ln-266" name="ln-266" href="#ln-266"></a><span class="cp">#if ( defined(_CRAYFTN) &amp;&amp; _RELEASE_MAJOR &lt;= 14 ) || defined(__NVCOMPILER)</span>
 <a id="ln-267" name="ln-267" href="#ln-267"></a><span class="w">        </span><span class="n">itropo_upper</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
 <a id="ln-268" name="ln-268" href="#ln-268"></a><span class="w">        </span><span class="k">call </span><span class="n">minmaxloc</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="w"> </span><span class="n">tropo</span><span class="p">,</span><span class="w"> </span><span class="n">play</span><span class="p">,</span><span class="w"> </span><span class="n">itropo_lower</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="n">itropo_upper</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
 <a id="ln-269" name="ln-269" href="#ln-269"></a><span class="cp">#else</span>
@@ -431,7 +431,7 @@
 <a id="ln-277" name="ln-277" href="#ln-277"></a><span class="w">      </span><span class="c">!$omp target teams distribute parallel do simd</span>
 <a id="ln-278" name="ln-278" href="#ln-278"></a><span class="w">      </span><span class="k">do </span><span class="n">icol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="n">ncol</span>
 <a id="ln-279" name="ln-279" href="#ln-279"></a><span class="w">        </span><span class="n">itropo_lower</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
-<a id="ln-280" name="ln-280" href="#ln-280"></a><span class="cp">#if ( defined(_CRAYFTN) &amp;&amp; _RELEASE_MAJOR &lt;= 14 ) || ( defined(_OPENMP) &amp;&amp; defined(__NVCOMPILER) )</span>
+<a id="ln-280" name="ln-280" href="#ln-280"></a><span class="cp">#if ( defined(_CRAYFTN) &amp;&amp; _RELEASE_MAJOR &lt;= 14 ) || defined(__NVCOMPILER)</span>
 <a id="ln-281" name="ln-281" href="#ln-281"></a><span class="w">        </span><span class="n">itropo_upper</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nlay</span>
 <a id="ln-282" name="ln-282" href="#ln-282"></a><span class="w">        </span><span class="k">call </span><span class="n">minmaxloc</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="w"> </span><span class="n">tropo</span><span class="p">,</span><span class="w"> </span><span class="n">play</span><span class="p">,</span><span class="w"> </span><span class="n">itropo_lower</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">itropo_upper</span><span class="p">(</span><span class="n">icol</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
 <a id="ln-283" name="ln-283" href="#ln-283"></a><span class="cp">#else</span>
@@ -920,24 +920,26 @@
 <a id="ln-766" name="ln-766" href="#ln-766"></a><span class="nb">    </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">size</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
 <a id="ln-767" name="ln-767" href="#ln-767"></a><span class="w">    </span><span class="nb">amax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="nb">huge</span><span class="p">(</span><span class="nb">amax</span><span class="p">)</span>
 <a id="ln-768" name="ln-768" href="#ln-768"></a><span class="w">    </span><span class="nb">amin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">huge</span><span class="p">(</span><span class="nb">amin</span><span class="p">)</span>
-<a id="ln-769" name="ln-769" href="#ln-769"></a><span class="w">    </span><span class="k">do </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
-<a id="ln-770" name="ln-770" href="#ln-770"></a><span class="w">      </span><span class="n">aij</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span>
-<a id="ln-771" name="ln-771" href="#ln-771"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">mask</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">))</span><span class="w"> </span><span class="k">then</span>
-<a id="ln-772" name="ln-772" href="#ln-772"></a><span class="k">        if</span><span class="w"> </span><span class="p">(</span><span class="n">aij</span><span class="p">.</span><span class="n">lt</span><span class="p">.</span><span class="nb">amin</span><span class="p">)</span><span class="w"> </span><span class="k">then</span>
-<a id="ln-773" name="ln-773" href="#ln-773"></a><span class="k">          </span><span class="nb">amin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aij</span>
-<a id="ln-774" name="ln-774" href="#ln-774"></a><span class="w">          </span><span class="n">minl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">j</span>
-<a id="ln-775" name="ln-775" href="#ln-775"></a><span class="w">        </span><span class="k">end if</span>
-<a id="ln-776" name="ln-776" href="#ln-776"></a><span class="k">      else</span>
-<a id="ln-777" name="ln-777" href="#ln-777"></a><span class="k">        if</span><span class="w"> </span><span class="p">(</span><span class="n">aij</span><span class="p">.</span><span class="n">gt</span><span class="p">.</span><span class="nb">amax</span><span class="p">)</span><span class="w"> </span><span class="k">then</span>
-<a id="ln-778" name="ln-778" href="#ln-778"></a><span class="k">          </span><span class="nb">amax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aij</span>
-<a id="ln-779" name="ln-779" href="#ln-779"></a><span class="w">          </span><span class="n">maxl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">j</span>
-<a id="ln-780" name="ln-780" href="#ln-780"></a><span class="w">        </span><span class="k">end if</span>
-<a id="ln-781" name="ln-781" href="#ln-781"></a><span class="k">      end if</span>
-<a id="ln-782" name="ln-782" href="#ln-782"></a><span class="k">    end do</span>
-<a id="ln-783" name="ln-783" href="#ln-783"></a><span class="k">  end subroutine</span>
-<a id="ln-784" name="ln-784" href="#ln-784"></a><span class="w">  </span><span class="c">! ----------------------------------------------------------</span>
-<a id="ln-785" name="ln-785" href="#ln-785"></a>
-<a id="ln-786" name="ln-786" href="#ln-786"></a><span class="k">end module </span><span class="n">mo_gas_optics_rrtmgp_kernels</span>
+<a id="ln-769" name="ln-769" href="#ln-769"></a><span class="w">    </span><span class="n">minl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<a id="ln-770" name="ln-770" href="#ln-770"></a><span class="w">    </span><span class="n">maxl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<a id="ln-771" name="ln-771" href="#ln-771"></a><span class="w">    </span><span class="k">do </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span>
+<a id="ln-772" name="ln-772" href="#ln-772"></a><span class="w">      </span><span class="n">aij</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span>
+<a id="ln-773" name="ln-773" href="#ln-773"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">mask</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">))</span><span class="w"> </span><span class="k">then</span>
+<a id="ln-774" name="ln-774" href="#ln-774"></a><span class="k">        if</span><span class="w"> </span><span class="p">(</span><span class="n">aij</span><span class="p">.</span><span class="n">lt</span><span class="p">.</span><span class="nb">amin</span><span class="p">)</span><span class="w"> </span><span class="k">then</span>
+<a id="ln-775" name="ln-775" href="#ln-775"></a><span class="k">          </span><span class="nb">amin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aij</span>
+<a id="ln-776" name="ln-776" href="#ln-776"></a><span class="w">          </span><span class="n">minl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">j</span>
+<a id="ln-777" name="ln-777" href="#ln-777"></a><span class="w">        </span><span class="k">end if</span>
+<a id="ln-778" name="ln-778" href="#ln-778"></a><span class="k">      else</span>
+<a id="ln-779" name="ln-779" href="#ln-779"></a><span class="k">        if</span><span class="w"> </span><span class="p">(</span><span class="n">aij</span><span class="p">.</span><span class="n">gt</span><span class="p">.</span><span class="nb">amax</span><span class="p">)</span><span class="w"> </span><span class="k">then</span>
+<a id="ln-780" name="ln-780" href="#ln-780"></a><span class="k">          </span><span class="nb">amax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aij</span>
+<a id="ln-781" name="ln-781" href="#ln-781"></a><span class="w">          </span><span class="n">maxl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">j</span>
+<a id="ln-782" name="ln-782" href="#ln-782"></a><span class="w">        </span><span class="k">end if</span>
+<a id="ln-783" name="ln-783" href="#ln-783"></a><span class="k">      end if</span>
+<a id="ln-784" name="ln-784" href="#ln-784"></a><span class="k">    end do</span>
+<a id="ln-785" name="ln-785" href="#ln-785"></a><span class="k">  end subroutine</span>
+<a id="ln-786" name="ln-786" href="#ln-786"></a><span class="w">  </span><span class="c">! ----------------------------------------------------------</span>
+<a id="ln-787" name="ln-787" href="#ln-787"></a>
+<a id="ln-788" name="ln-788" href="#ln-788"></a><span class="k">end module </span><span class="n">mo_gas_optics_rrtmgp_kernels</span>
 </pre></div>
 
     </section>

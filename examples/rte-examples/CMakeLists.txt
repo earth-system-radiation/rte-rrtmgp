@@ -31,7 +31,7 @@ else()
   # present before install and before ctest.
   ExternalProject_Add(
     rte-examples-data
-    URL https://github.com/earth-system-radiation/rte-examples/archive/refs/tags/v0.1.1.tar.gz
+    URL https://github.com/earth-system-radiation/rte-examples/archive/refs/tags/v0.2.0.tar.gz
     PREFIX rte-examples-data-cmake
     SOURCE_DIR ${RTE_EXAMPLES_DATA}
     CONFIGURE_COMMAND ""

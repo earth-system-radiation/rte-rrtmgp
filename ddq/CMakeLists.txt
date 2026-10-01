@@ -60,8 +60,8 @@ if(RTE_BUILD_TESTING)
     install(CODE "execute_process(COMMAND ${fetch_ddq_data_command})")
     install(
       FILES # cmake-format: sort
-            ${DDQ_DATA}/gas-optics-lw.nc
-            ${DDQ_DATA}/gas-optics-sw.nc
+            ${DDQ_DATA}/gas_optics_lw.nc
+            ${DDQ_DATA}/gas_optics_sw.nc
             ${DDQ_DATA}/rrtmgp-clouds-lw-ddq.nc
             ${DDQ_DATA}/rrtmgp-clouds-sw-ddq.nc
       DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/

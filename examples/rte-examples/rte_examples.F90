@@ -210,10 +210,6 @@ program rte_examples
                             optical_props, &
                             toa_flux)      &
       )
-    select type (optical_props)
-      type is (ty_optical_props_2str)
-        print *, "ssa: ", minval(optical_props%ssa), maxval(optical_props%ssa)
-    end select
     call stop_on_err( &
       rte_sw(optical_props,   &
              cos(solar_zenith_angle * acos(-1._wp)/180._wp), &

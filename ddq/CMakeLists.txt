@@ -37,27 +37,29 @@ if(RTE_BUILD_TESTING)
     set(DDQ_DATA "${PROJECT_BINARY_DIR}/ddq-data")
 
     include(ExternalProject)
+    # Fetched at build time so the data is
+    # present before install and before ctest.
     ExternalProject_Add(
       ddq-data
       GIT_REPOSITORY https://github.com/ravikiran-hegde/ddq-data.git
       GIT_TAG "main"
       GIT_SHALLOW True
-      EXCLUDE_FROM_ALL True
       PREFIX ddq-data-cmake
       SOURCE_DIR ${DDQ_DATA}
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
+      LOG_DOWNLOAD TRUE
     )
 
-    set(fetch_ddq_data_command
-        ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR} --config
-        "$<CONFIG>" --target ddq-data
+    add_test(
+      NAME fetch_ddq_data
+      COMMAND
+        ${CMAKE_COMMAND} -D DATA_DIR=${DDQ_DATA} -D DATA_LABEL=DDQ -D
+        "DATA_FILES=gas_optics_lw.nc;gas_optics_sw.nc" -P
+        ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
     )
 
-    add_test(NAME fetch_ddq_data COMMAND ${fetch_ddq_data_command})
-
-    install(CODE "execute_process(COMMAND ${fetch_ddq_data_command})")
     install(
       FILES # cmake-format: sort
             ${DDQ_DATA}/gas_optics_lw.nc
@@ -66,10 +68,9 @@ if(RTE_BUILD_TESTING)
             ${DDQ_DATA}/rrtmgp-clouds-sw-ddq.nc
       DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/
     )
-
-    set(REF_DIR examples/rte-examples/reference)
-
   endif()
+
+  set_tests_properties(fetch_ddq_data PROPERTIES FIXTURES_SETUP fetch_ddq_data)
 
   # Propagate the resolved value to the parent so sibling subdirectories
   # (examples, tests) inherit it.

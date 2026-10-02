@@ -146,7 +146,7 @@ foreach(scheme IN ITEMS rrtmgp ssm ddq)
       check_rte_examples_${scheme}_${state}
       PROPERTIES
         FIXTURES_REQUIRED
-        "fetch_ssm_data;run_rte_examples_${scheme}_lw_${state};run_rte_examples_${scheme}_sw_${state}"
+        "fetch_${scheme}_data;run_rte_examples_${scheme}_lw_${state};run_rte_examples_${scheme}_sw_${state}"
     )
   endforeach()
 endforeach()

@@ -1,6 +1,6 @@
 module mo_gas_optics_utils
   implicit none
-  public  :: compute_Planck_source, get_layer_mass, get_layer_number
+  public  :: compute_Planck_source, get_layer_number, interp_tlev_from_tlay
   ! ------------------------------------------
   interface compute_Planck_source
     subroutine compute_Planck_source_2D(&
@@ -36,24 +36,9 @@ module mo_gas_optics_utils
 
   !--------------------------------------------------------------------------------------------------------------------
   interface
-    subroutine get_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass)
-      !>
-      !> mass (kg m^-2) each gas in the layer
-      !>
-      use mo_rte_kind,      only : wp, wl
-      integer, intent(in)                                  :: ncol, nlay, ngas
-      real(wp), dimension(ngas, ncol, nlay  ), intent(in ) :: vmr
-      real(wp), dimension(      ncol, nlay+1), intent(in ) :: plev
-      real(wp), dimension(ngas),               intent(in ) :: mol_weights
-      real(wp),                                intent(in ) :: m_dry
-      real(wp), dimension(ngas, ncol, nlay),   intent(out) :: layer_mass
-    end subroutine get_layer_mass
-  end interface
-  !--------------------------------------------------------------------------------------------------------------------
-  interface
     function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)
       !>
-      !> Number density (#/cm^-2) of dry air molecules
+      !> Number density (#/m^-2) of dry air molecules
       !>    "col_dry" in RRTMGP
       ! input
       use mo_rte_kind,      only : wp, wl
@@ -63,5 +48,19 @@ module mo_gas_optics_utils
       ! output
       real(wp), dimension(ncol, nlay) :: col_dry ! Column dry amount
     end function get_layer_number
+  end interface
+  !--------------------------------------------------------------------------------------------------------------------
+  interface
+    subroutine interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev)
+      !>
+      !> Temperature at layer boundaries, interpolated from layer centers
+      !>
+      use mo_rte_kind,      only : wp, wl
+      integer,  intent(in ) :: ncol, nlay
+      real(wp), dimension(ncol, nlay  ), intent(in ) :: tlay, play ! Layer temperatures [K], pressures [Pa]
+      real(wp), dimension(ncol, nlay+1), intent(in ) :: plev       ! Layer boundary pressures [Pa]
+      ! output
+      real(wp), dimension(ncol, nlay+1), intent(out) :: tlev       ! Level temperatures [K]
+    end subroutine interp_tlev_from_tlay
   end interface
 end module mo_gas_optics_utils

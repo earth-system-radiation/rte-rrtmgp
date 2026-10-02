@@ -335,8 +335,6 @@ contains
     !
     ! Check input data sizes and values
     !
-    !$acc        data copyin(play,plev,tlay) create(   vmr,col_gas)
-    !$omp target data map(to:play,plev,tlay) map(alloc:vmr,col_gas)
     if(check_extents) then
       if(.not. extents_are(play, ncol, nlay  )) &
         error_msg = "gas_optics(): array play has wrong size"
@@ -414,12 +412,8 @@ contains
                       )]
 
     if (present(col_dry)) then
-      !$acc        enter data copyin(col_dry)
-      !$omp target enter data map(to:col_dry)
       dry_num => col_dry
     else
-      !$acc        enter data create(   col_dry_arr)
-      !$omp target enter data map(alloc:col_dry_arr)
       dry_num => dry_num_arr
       idx_h2o = string_loc_in_array("h2o", gases_to_use)
       dry_num_arr = get_layer_number(ncol, nlay,       &

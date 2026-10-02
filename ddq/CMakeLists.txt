@@ -37,8 +37,6 @@ if(RTE_BUILD_TESTING)
     set(DDQ_DATA "${PROJECT_BINARY_DIR}/ddq-data")
 
     include(ExternalProject)
-    # Fetched at build time so the data is
-    # present before install and before ctest.
     ExternalProject_Add(
       ddq-data
       GIT_REPOSITORY https://github.com/ravikiran-hegde/ddq-data.git

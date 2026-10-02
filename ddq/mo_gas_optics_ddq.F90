@@ -131,13 +131,13 @@ contains
     real(wp), dimension(:,:), intent(  out) :: toa_src   !! Incoming solar irradiance(ncol,ngpt)
     character(len=128)                      :: error_msg !! Empty if successful
     ! Optional inputs
-    real(wp), dimension(:,:), intent(in   ), & 
+    real(wp), dimension(:,:), intent(in   ), &
                            optional, target :: col_dry !! Column dry amount (molecules/cm^2); dim(ncol,nlay)
     ! --------------
     integer :: ncol, nlay, nnu
     integer :: icol, inu
     real(wp), dimension(size(play,1), size(play,2), this%get_ngpt()) :: tau_rayleigh
-    real(wp), dimension(size(play,1), size(play,2)) :: col_dry_used   ! <-- NEW DDQ-TODO
+    real(wp), dimension(size(play,1), size(play,2)) :: col_dry_used
 
     ! ----------------------------------------------------------
     error_msg = ""
@@ -151,8 +151,8 @@ contains
     error_msg =  compute_tau_absorption(this,   &
                     play, plev, tlay, gas_desc, &
                     optical_props%tau, col_dry, &
-                    col_dry_out = col_dry_used) ! DDQ-TODO added this line 
-    if (error_msg /= "") return !DDQ-TODO added this line?
+                    col_dry_out = col_dry_used)
+    if (error_msg /= "") return
 
     if (.not. allocated(this%rayleigh_xsec)) then
       select type(optical_props)
@@ -162,18 +162,15 @@ contains
           call zero_array(ncol, nlay, nnu, optical_props%ssa)
       end select
     else
-      !
-      ! Warning TODO: col_dry might not be defined
-      !
       select type(optical_props)
         type is (ty_optical_props_2str)
           call add_tau_rayleigh(ncol, nlay, nnu,  &
-                                col_dry_used,          & ! DDQ-TODO: changed col_dry to col_dry_used
+                                col_dry_used,          &
                                 this%rayleigh_xsec,    &
                                 optical_props%tau, optical_props%ssa)
         type is (ty_optical_props_nstr)
           call add_tau_rayleigh(ncol, nlay, nnu,  &
-                                col_dry_used,          & ! DDQ-TODO: changed col_dry to col_dry_used
+                                col_dry_used,          &
                                 this%rayleigh_xsec,    &
                                 optical_props%tau, optical_props%ssa)
       end select
@@ -230,7 +227,7 @@ contains
     class(ty_source_func_lw    ),  &
                               intent(inout) :: sources    !! Planck sources
     character(len=128)                      :: error_msg  !! Empty if successful
-    real(wp), dimension(:,:), intent(in   ), &         !! 
+    real(wp), dimension(:,:), intent(in   ), &         !!
                           optional, target :: col_dry, &  !! Column dry amount (molecules/cm^2); dim(ncol,nlay)
                                                  tlev     !! level temperatures [K]l (ncol,nlay+1)
     ! --------------
@@ -253,7 +250,7 @@ contains
     ! Absoption optical depth
     error_msg = compute_tau_absorption(this,   &
                     play, plev, tlay, gas_desc, &
-                    optical_props%tau, col_dry) 
+                    optical_props%tau, col_dry)
     if(error_msg /= "") return
 
     select type(optical_props)
@@ -294,17 +291,17 @@ contains
   !
   function compute_tau_absorption(this,             &
                           play, plev, tlay, gas_desc, &
-                          tau_abs, col_dry, col_dry_out) result(error_msg) ! DDQ-TODO: added col_dry_out
+                          tau_abs, col_dry, col_dry_out) result(error_msg)
     class(ty_gas_optics_ddq),   intent(in ) :: this
     real(wp), dimension(:,:),   intent(in ) :: play, &   !! layer pressures [Pa, mb]; (ncol,nlay)
                                                plev, &   !! level pressures [Pa, mb]; (ncol,nlay+1)
                                                tlay      !! layer temperatures [K]; (ncol,nlay)
     type(ty_gas_concs),         intent(in ) :: gas_desc  !! Gas volume mixing ratios
     real(wp), dimension(:,:,:), intent(out) :: tau_abs   !! Cabsorption optical depth; (ncol,nlay,nnu)
-    real(wp), dimension(:,:),   intent(in   ), &      
+    real(wp), dimension(:,:),   intent(in   ), &
                           optional, target :: col_dry     !! Column dry amount (molecules/cm^2); dim(ncol,nlay)
-    real(wp), dimension(:,:),   intent(out   ), &      
-                        optional :: col_dry_out     !! Column dry amount (molecules/cm^2); dim(ncol,nlay) ! DDQ-TODO: added this var
+    real(wp), dimension(:,:),   intent(out   ), &
+                        optional :: col_dry_out     !! Column dry amount (molecules/cm^2); dim(ncol,nlay)
 
     character(len=128)                      :: error_msg
     ! -----------------------
@@ -378,9 +375,6 @@ contains
     ! temp_gas_names is of uniform string length
     temp_gas_names(:) = gas_desc%get_gas_names()
     ! Which gases does the user provide?
-    !provided_gases(:) = [(trim(temp_gas_names(igas)), &
-    !                      igas = 1, size(temp_gas_names))] !DDQ-TODO changed for compiler.
-
     do igas = 1, size(temp_gas_names)
       provided_gases(igas) = trim(temp_gas_names(igas))
     end do
@@ -444,7 +438,7 @@ contains
                   this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n, this%mtckd_T0, this%mtckd_p0, &
                   tau_abs)
 
-    if (present(col_dry_out)) col_dry_out = dry_num !DDQ-TODO: added this line
+    if (present(col_dry_out)) col_dry_out = dry_num
   end function compute_tau_absorption
   !--------------------------------------------------------------------------------------------------------------------
   !

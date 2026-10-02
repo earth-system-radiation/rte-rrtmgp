@@ -51,16 +51,16 @@ module mo_gas_optics_utils
   end interface
   !--------------------------------------------------------------------------------------------------------------------
   interface
-    subroutine interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev)
+    function interp_tlev_from_tlay(ncol, nlay, tlay, play, plev) result(tlev)
       !>
       !> Temperature at layer boundaries, interpolated from layer centers
       !>
       use mo_rte_kind,      only : wp, wl
-      integer,  intent(in ) :: ncol, nlay
-      real(wp), dimension(ncol, nlay  ), intent(in ) :: tlay, play ! Layer temperatures [K], pressures [Pa]
-      real(wp), dimension(ncol, nlay+1), intent(in ) :: plev       ! Layer boundary pressures [Pa]
+      integer,  intent(in) :: ncol, nlay
+      real(wp), dimension(ncol, nlay  ), intent(in) :: tlay, play ! Layer temperatures [K], pressures [Pa]
+      real(wp), dimension(ncol, nlay+1), intent(in) :: plev       ! Layer boundary pressures [Pa]
       ! output
-      real(wp), dimension(ncol, nlay+1), intent(out) :: tlev       ! Level temperatures [K]
-    end subroutine interp_tlev_from_tlay
+      real(wp), dimension(ncol, nlay+1) :: tlev ! Level temperatures [K]
+    end function interp_tlev_from_tlay
   end interface
 end module mo_gas_optics_utils

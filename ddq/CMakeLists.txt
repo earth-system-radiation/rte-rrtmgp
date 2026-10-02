@@ -73,5 +73,8 @@ if(RTE_BUILD_TESTING)
 
   # Propagate the resolved value to the parent so sibling subdirectories
   # (examples, tests) inherit it.
-  set(DDQ_DATA "${DDQ_DATA}" PARENT_SCOPE)
+  set(DDQ_DATA
+      "${DDQ_DATA}"
+      PARENT_SCOPE
+  )
 endif()

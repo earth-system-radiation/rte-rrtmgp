@@ -39,6 +39,7 @@ program rte_examples
   !    The optics that gets used is chosen at run time an argument
   use mo_gas_optics,         only: ty_gas_optics
   use mo_gas_optics_rrtmgp,  only: ty_gas_optics_rrtmgp ! Correlated-k
+  use mo_gas_optics_ddq,     only: ty_gas_optics_ddq    ! data-drvien quadrature
   use mo_optics_ssm,         only: ty_optics_ssm        ! Simple spectral models
   ! --------------------------------------------------
   !
@@ -49,6 +50,8 @@ program rte_examples
   ! Some gas optics classes need to be initialized with data read from files
   !
   use mo_optics_utils_rrtmgp,only: load_gas_optics_rrtmgp => load_gas_optics
+
+  use mo_optics_ddq_utils,   only: load_gas_optics_ddq => load_gas_optics
 
   use mo_rte_examples_io,    only: inquire_rte_example, read_rte_example, write_rte_example
   ! --------------------------------------------------
@@ -120,6 +123,8 @@ program rte_examples
     allocate(ty_gas_optics_rrtmgp::gas_optics)
   else if (do_ssm) then
     allocate(ty_optics_ssm::gas_optics)
+  else if (do_ddq) then
+    allocate(ty_gas_optics_ddq::gas_optics)
   end if
 
   select type (gas_optics)
@@ -128,6 +133,8 @@ program rte_examples
     type is (ty_optics_ssm)
       ! SSM requires no files, instead use "lw" or "sw" as the file name to pick
       call stop_on_err(gas_optics%configure(do_sw = trim(scheme_file) == "sw"))
+    type is (ty_gas_optics_ddq)
+      call load_gas_optics_ddq(gas_optics, trim(scheme_file))
   end select
   !
   ! Read longwave/shortwave example, expand boundary conditions to spectral dimension

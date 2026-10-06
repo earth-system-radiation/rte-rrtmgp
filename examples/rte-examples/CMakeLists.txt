@@ -138,8 +138,7 @@ foreach(scheme IN ITEMS rrtmgp ssm ddq)
         ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
         ${data_dir}/examples/rte-examples/reference --tst_dir
         ${CMAKE_CURRENT_BINARY_DIR} --file_names
-        ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-lw-${state}.nc
-        ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-sw-${state}.nc
+        ${scheme}-lw-${state}.nc ${scheme}-sw-${state}.nc
         --failure_threshold ${FAILURE_THRESHOLD}
     )
     set_tests_properties(

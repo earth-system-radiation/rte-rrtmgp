@@ -15,7 +15,7 @@ else()
   # present before install and before ctest.
   ExternalProject_Add(
     rrtmgp-data
-    URL https://github.com/earth-system-radiation/rrtmgp-data/archive/refs/tags/v1.9.1.tar.gz
+    URL https://github.com/earth-system-radiation/rrtmgp-data/archive/refs/tags/v1.9.2.tar.gz
     PREFIX rrtmgp-data-cmake
     SOURCE_DIR ${RRTMGP_DATA}
     CONFIGURE_COMMAND ""

@@ -85,7 +85,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 1.5% of total for modules and submodules.">40 statements</a>
+    title=" 1.4% of total for modules and submodules.">38 statements</a>
      </li> 
     <li><i class="fa fa-code"></i><a href="../src/mo_gas_optics_utils.F90"> Source File</a></li>
   </ul>
@@ -114,8 +114,8 @@
   <div id="inters-0" class="panel-collapse collapse">
     <div class="list-group">
       <a class="list-group-item" href="../module/mo_gas_optics_utils~2.html#interface-compute_planck_source~2">compute_Planck_source</a>
-      <a class="list-group-item" href="../module/mo_gas_optics_utils~2.html#interface-get_layer_mass">get_layer_mass</a>
       <a class="list-group-item" href="../module/mo_gas_optics_utils~2.html#interface-get_layer_number">get_layer_number</a>
+      <a class="list-group-item" href="../module/mo_gas_optics_utils~2.html#interface-interp_tlev_from_tlay">interp_tlev_from_tlay</a>
     </div>
   </div>
 </div>
@@ -138,8 +138,8 @@
   <div id="inters-1" class="panel-collapse collapse">
     <div class="list-group">
       <a class="list-group-item" href="../module/mo_gas_optics_utils~2.html#interface-compute_planck_source~2">compute_Planck_source</a>
-      <a class="list-group-item" href="../module/mo_gas_optics_utils~2.html#interface-get_layer_mass">get_layer_mass</a>
       <a class="list-group-item" href="../module/mo_gas_optics_utils~2.html#interface-get_layer_number">get_layer_number</a>
+      <a class="list-group-item" href="../module/mo_gas_optics_utils~2.html#interface-interp_tlev_from_tlay">interp_tlev_from_tlay</a>
     </div>
   </div>
 </div>
@@ -257,75 +257,10 @@
 </div>
 
      <div class="panel panel-default">
-  <div class="panel-heading codesum"><span class="anchor" id="interface-get_layer_mass"></span><h3>interface   </h3></div>
-  <ul class="list-group">
-    <li class="list-group-item">
-    <h3>public subroutine get_layer_mass(ncol, nlay, ngas, vmr, plev, mol_weights, m_dry, layer_mass)</h3><p>mass (kg m^-2) each gas in the layer</p>
-    
-<h4>Arguments</h4>      <table class="table table-striped varlist">
-<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
-<tbody>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ncol</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>nlay</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>integer,</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>ngas</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(ngas, ncol, nlay  )</td><td>::</td>
-  <td><strong>vmr</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(      ncol, nlay+1)</td><td>::</td>
-  <td><strong>plev</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in),</td>
-  <td></td>  <td>dimension(ngas)</td><td>::</td>
-  <td><strong>mol_weights</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(in)</td>
-  <td></td>  <td></td><td>::</td>
-  <td><strong>m_dry</strong></td><td></td>
-</tr>
-<tr>
-  <td><span class="anchor" ></span>real(kind=wp),</td>
-<td>intent(out),</td>
-  <td></td>  <td>dimension(ngas, ncol, nlay)</td><td>::</td>
-  <td><strong>layer_mass</strong></td><td></td>
-</tr>
-</tbody>
-</table>
-
-
-    </li>
-  </ul>
-</div>
-
-     <div class="panel panel-default">
   <div class="panel-heading codesum"><span class="anchor" id="interface-get_layer_number"></span><h3>interface   </h3></div>
   <ul class="list-group">
     <li class="list-group-item">
-    <h3>public function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)</h3><p>Number density (#/cm^-2) of dry air molecules
+    <h3>public function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)</h3><p>Number density (#/m^-2) of dry air molecules
    "col_dry" in RRTMGP</p>
     
 <h4>Arguments</h4>      <table class="table table-striped varlist">
@@ -359,6 +294,54 @@
 </table>
 
 <h4>Return Value <small>real(kind=wp),dimension(ncol, nlay)</small></h4>  
+
+    </li>
+  </ul>
+</div>
+
+     <div class="panel panel-default">
+  <div class="panel-heading codesum"><span class="anchor" id="interface-interp_tlev_from_tlay"></span><h3>interface   </h3></div>
+  <ul class="list-group">
+    <li class="list-group-item">
+    <h3>public function interp_tlev_from_tlay(ncol, nlay, tlay, play, plev) result(tlev)</h3><p>Temperature at layer boundaries, interpolated from layer centers</p>
+    
+<h4>Arguments</h4>      <table class="table table-striped varlist">
+<thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
+<tbody>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>ncol</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>integer,</td>
+<td>intent(in)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>nlay</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(ncol, nlay  )</td><td>::</td>
+  <td><strong>tlay</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(ncol, nlay  )</td><td>::</td>
+  <td><strong>play</strong></td><td></td>
+</tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(in),</td>
+  <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
+  <td><strong>plev</strong></td><td></td>
+</tr>
+</tbody>
+</table>
+
+<h4>Return Value <small>real(kind=wp),dimension(ncol, nlay+1)</small></h4>  
 
     </li>
   </ul>

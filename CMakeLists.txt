@@ -73,6 +73,7 @@ include(CTest)
 add_subdirectory(rte)
 add_subdirectory(rrtmgp)
 add_subdirectory(ssm)
+add_subdirectory(ddq)
 
 if(RTE_BUILD_TESTING)
   if(NOT _RTE_RRTMGP_HAVE_PY_PACKAGES)
@@ -103,6 +104,7 @@ exit(tuple(map(int, xarray.__version__.split('.'))) < (0, 12, 2))"
   find_package(NetCDF_Fortran REQUIRED)
 
   add_subdirectory(rrtmgp/data-loading-examples)
+  add_subdirectory(ddq/data-loading-examples)
   add_subdirectory(examples)
   add_subdirectory(tests)
 else()

@@ -123,16 +123,25 @@ foreach(scheme IN ITEMS rrtmgp ssm)
   endforeach()
 
   foreach(state IN ITEMS rfmip ckdmip rce)
+    # RRTMGP longwave fluxes on the 127-layer rce states lose ~1 W m-2 to
+    # rounding in single precision. See rte-rrtmgp issue #420.
+    if(RTE_ENABLE_SP
+       AND scheme STREQUAL "rrtmgp"
+       AND state STREQUAL "rce"
+    )
+      set(state_FAILURE_THRESHOLD "1.2")
+    else()
+      set(state_FAILURE_THRESHOLD ${FAILURE_THRESHOLD})
+    endif()
+
     add_test(
       NAME check_rte_examples_${scheme}_${state}
       COMMAND
         ${Python3_EXECUTABLE}
         ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
         ${data_dir}/examples/rte-examples/reference --tst_dir
-        ${CMAKE_CURRENT_BINARY_DIR} --file_names
-        ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-lw-${state}.nc
-        ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-sw-${state}.nc
-        --failure_threshold ${FAILURE_THRESHOLD}
+        ${CMAKE_CURRENT_BINARY_DIR} --file_names ${scheme}-lw-${state}.nc
+        ${scheme}-sw-${state}.nc --failure_threshold ${state_FAILURE_THRESHOLD}
     )
     set_tests_properties(
       check_rte_examples_${scheme}_${state}

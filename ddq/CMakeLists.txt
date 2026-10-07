@@ -26,54 +26,54 @@ install(TARGETS ddq EXPORT rte-rrtmgp-targets)
 #
 # Data
 #
-if(RTE_BUILD_TESTING)
-  if(DDQ_DATA)
-    add_test(NAME fetch_ddq_data COMMAND ${CMAKE_COMMAND} -E true)
-    message(
-      NOTICE
-      "Using an external dataset from ${DDQ_DATA}: the data files will not be installed"
-    )
-  else()
-    set(DDQ_DATA "${PROJECT_BINARY_DIR}/ddq-data")
+if(DDQ_DATA)
+  add_test(NAME fetch_ddq_data COMMAND ${CMAKE_COMMAND} -E true)
+  message(
+    NOTICE
+    "Using an external dataset from ${DDQ_DATA}: the data files will not be installed"
+  )
+else()
+  set(DDQ_DATA "${PROJECT_BINARY_DIR}/ddq-data")
 
-    include(ExternalProject)
-    ExternalProject_Add(
-      ddq-data
-      GIT_REPOSITORY https://github.com/ravikiran-hegde/ddq-data.git
-      GIT_TAG "main"
-      GIT_SHALLOW True
-      PREFIX ddq-data-cmake
-      SOURCE_DIR ${DDQ_DATA}
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      INSTALL_COMMAND ""
-      LOG_DOWNLOAD TRUE
-    )
+  include(ExternalProject)
+  # Fetched at build time (part of the default ALL target) so the data is
+  # present before install and before ctest.
+  ExternalProject_Add(
+    ddq-data
+    URL https://github.com/earth-system-radiation/ddq-data/archive/refs/tags/v1.0.0.tar.gz
+    PREFIX ddq-data-cmake
+    SOURCE_DIR ${DDQ_DATA}
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    LOG_DOWNLOAD TRUE
+  )
 
-    add_test(
-      NAME fetch_ddq_data
-      COMMAND
-        ${CMAKE_COMMAND} -D DATA_DIR=${DDQ_DATA} -D DATA_LABEL=DDQ -D
-        "DATA_FILES=gas_optics_lw.nc;gas_optics_sw.nc" -P
-        ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
-    )
+  # The build already fetched the data (ddq-data is part of the ALL target).
+  # This fixture verifies the files are present before any test that needs them
+  # runs, and fails with an actionable message if the project was not built
+  # first.
+  add_test(
+    NAME fetch_ddq_data
+    COMMAND
+      ${CMAKE_COMMAND} -D DATA_DIR=${DDQ_DATA} -D DATA_LABEL=DDQ -D
+      "DATA_FILES=gas_optics_lw.nc;gas_optics_sw.nc" -P
+      ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
+  )
 
-    install(
-      FILES # cmake-format: sort
-            ${DDQ_DATA}/gas_optics_lw.nc
-            ${DDQ_DATA}/gas_optics_sw.nc
-            ${DDQ_DATA}/rrtmgp-clouds-lw-ddq.nc
-            ${DDQ_DATA}/rrtmgp-clouds-sw-ddq.nc
-      DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/
-    )
-  endif()
-
-  set_tests_properties(fetch_ddq_data PROPERTIES FIXTURES_SETUP fetch_ddq_data)
-
-  # Propagate the resolved value to the parent so sibling subdirectories
-  # (examples, tests) inherit it.
-  set(DDQ_DATA
-      "${DDQ_DATA}"
-      PARENT_SCOPE
+  install(
+    FILES # cmake-format: sort
+          ${DDQ_DATA}/gas_optics_lw.nc
+          ${DDQ_DATA}/gas_optics_sw.nc
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rte-rrtmgp/
   )
 endif()
+
+set_tests_properties(fetch_ddq_data PROPERTIES FIXTURES_SETUP fetch_ddq_data)
+
+# propagate the DDQ_DATA variable to the parent scope so that the sibling
+# subdirectories (examples, tests) can inherit it
+set(DDQ_DATA
+    "${DDQ_DATA}"
+    PARENT_SCOPE
+)

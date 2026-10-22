@@ -419,7 +419,7 @@ contains
       !
       call lw_source_2str(ncol, nlay, top_at_1, &
                           sfc_emis(:,igpt), sfc_src(:,igpt), &
-                          lay_source(:,:,igpt), lev_source, &
+                          lay_source(:,:,igpt), lev_source(:,:,igpt), &
                           gamma1, gamma2, Rdif, Tdif, tau(:,:,igpt), &
                           source_dn, source_up, source_sfc)
       !

@@ -141,7 +141,7 @@ contains
             feta = mod(loceta, 1.0_wp)
 #else
             ! mod(A,P) -> A - ((int(A/P)*P)
-            feta = loceta - int(loceta)
+            feta = loceta - real(jeta(itemp,icol,ilay,iflav)-1, wp)
 #endif
             ! compute interpolation fractions needed for minor species
             ! ftemp_term = (1._wp-ftemp(icol,ilay)) for itemp = 1, ftemp(icol,ilay) for itemp=2

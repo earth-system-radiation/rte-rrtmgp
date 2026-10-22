@@ -369,8 +369,8 @@ contains
           call add_arrays(ncol, nlay+1, this_broadband_up, broadband_up)
           call add_arrays(ncol, nlay+1, this_broadband_dn, broadband_dn)
         else
-          call add_arrays(ncol, nlay+1, ngpt, flux_up, this_flux_up)
-          call add_arrays(ncol, nlay+1, ngpt, flux_dn, this_flux_dn)
+          call add_arrays(ncol, nlay+1, ngpt, this_flux_up, flux_up)
+          call add_arrays(ncol, nlay+1, ngpt, this_flux_dn, flux_dn)
         end if
         if (do_Jacobians) then
           call add_arrays(ncol, nlay+1, this_flux_upJac, flux_upJac)

@@ -52,10 +52,12 @@ contains
     ! -----------------
     integer  :: igas, icol, ilay, inu
     real(wp) :: vmr
-    real(wp) :: x, w, P_scale, T_scale, delta_T
+    real(wp) :: x, w, q, num, den, delta_T
     real(wp) :: cself, cfrgn, R ! MT_CKD
+    real(wp) :: pr, tr, wn      ! MT_CKD per-layer scalars
     ! Per-(igas,inu) coefficients hoisted to scalars
     real(wp) :: c0, xh, lin, a0, a1, a2, b0, b1, b2, sig0
+    real(wp) :: rs, omrs, omc0, omlin
     real(wp) :: q0, q1, q2, q3
     real(wp) :: cs, cf, en, nu_c
     ! Per-layer invariants, computed once per (icol,igas) instead of once
@@ -63,9 +65,8 @@ contains
     real(wp) :: acc    (ncol)
     real(wp) :: fax_x  (ncol, fax_ngas), fax_dT(ncol, fax_ngas), fax_w(ncol, fax_ngas)
     real(wp) :: xsec_w (ncol, xsec_ngas)
-    real(wp) :: mt_tr  (ncol, mtckd_ngas), mt_logr(ncol, mtckd_ngas), &
-                mt_ps  (ncol, mtckd_ngas), mt_pf  (ncol, mtckd_ngas), &
-                mt_w   (ncol, mtckd_ngas)
+    real(wp) :: mt_logr(ncol, mtckd_ngas), &
+                mt_sw  (ncol, mtckd_ngas), mt_fw  (ncol, mtckd_ngas)
     real(wp) :: inv_2kT(ncol)
 
     do ilay = 1, nlay
@@ -91,11 +92,12 @@ contains
       do igas = 1, mtckd_ngas
         do icol = 1, ncol
           vmr = vmrs(icol, ilay, mtckd_num_index(igas))
-          mt_tr  (icol, igas) = mtckd_T0/tlay(icol, ilay)
-          mt_logr(icol, igas) = log(mt_tr(icol, igas))
-          mt_ps  (icol, igas) = (play(icol, ilay)/mtckd_p0) * vmr
-          mt_pf  (icol, igas) = (play(icol, ilay)/mtckd_p0) * (1._wp - vmr)
-          mt_w   (icol, igas) = vmr * dry_num(icol, ilay)
+          pr  = play(icol, ilay)/mtckd_p0
+          tr  = mtckd_T0/tlay(icol, ilay)
+          wn  = vmr * dry_num(icol, ilay)
+          mt_logr(icol, igas) = log(tr)
+          mt_sw  (icol, igas) = pr *          vmr  * wn
+          mt_fw  (icol, igas) = pr * (1._wp - vmr) * wn * tr
         end do
       end do
       do icol = 1, ncol
@@ -114,17 +116,18 @@ contains
           a0 = fax_a(0, igas, inu); a1 = fax_a(1, igas, inu); a2 = fax_a(2, igas, inu)
           b0 = fax_b(0, igas, inu); b1 = fax_b(1, igas, inu); b2 = fax_b(2, igas, inu)
           sig0 = fax_sigma0(igas, inu)
+          rs  = 1._wp / (1._wp + xh)
+          omrs = 1._wp - rs; omc0 = 1._wp - c0; omlin = 1._wp - lin
           do icol = 1, ncol
             x       = fax_x(icol, igas)
             delta_T = fax_dT(icol, igas)
-            w       = (x + xh) / (1._wp + xh)
-            P_scale = lin * x + (1._wp - lin) / (c0 / w + (1._wp - c0) * w)
-            T_scale = (a0 + a1*delta_T + a2*delta_T**2) &
-                    / (b0 + b1*delta_T + b2*delta_T**2)
+            w       = rs * x + omrs
+            q       = c0 + omc0 * w * w
+            num     = (lin * x * q + omlin * w) &
+                    * (a0 + delta_T * (a1 + a2 * delta_T))
+            den     = q * (b0 + delta_T * (b1 + b2 * delta_T))
             acc(icol) = acc(icol) &
-              + sig0 * max( &
-                  P_scale * T_scale, &
-                  0._wp) & ! cross-section [m**2/mol]
+              + sig0 * max(num / den, 0._wp) & ! cross-section [m**2/mol]
               * fax_w(icol, igas)
           end do
         end do
@@ -136,9 +139,8 @@ contains
           q2 = xsec_p(2, igas, inu); q3 = xsec_p(3, igas, inu)
           do icol = 1, ncol
             acc(icol) = acc(icol) &
-              + (q0 + q1 * tlay(icol, ilay)    &
-                    + q2 * tlay(icol, ilay)**2 &
-                    + q3 * play(icol, ilay))   &
+              + (q0 + tlay(icol, ilay) * (q1 + q2 * tlay(icol, ilay)) &
+                    + q3 * play(icol, ilay))                          &
               * xsec_w(icol, igas)
           end do
         end do
@@ -152,15 +154,13 @@ contains
           nu_c = nus(inu)
           do icol = 1, ncol
             ! (T0/T)**(1+n) written as exp((1+n)*log(T0/T)) with the log hoisted
-            cself = exp(en * mt_logr(icol, igas)) * mt_ps(icol, igas) * cs
-            cfrgn = mt_tr(icol, igas)             * mt_pf(icol, igas) * cf
+            cself = exp(en * mt_logr(icol, igas)) * mt_sw(icol, igas) * cs
+            cfrgn =                                 mt_fw(icol, igas) * cf
             ! nu supplied in kaysers (cm^-1); convert to MKS for tanh argument;
             ! R needs to be in units cm^-1 as cself and cfrgn are in of m^2/molecule cm
             ! R * (cself + cfrgn) is in units of m^2/molecule
             R = nu_c * tanh(nu_c * inv_2kT(icol))
-            acc(icol) = acc(icol)   &
-              + R * (cself + cfrgn) &
-              * mt_w(icol, igas)
+            acc(icol) = acc(icol) + R * (cself + cfrgn)
           end do
         end do
         do icol = 1, ncol

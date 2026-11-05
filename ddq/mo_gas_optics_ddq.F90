@@ -149,6 +149,7 @@ contains
     call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
 
     !$acc        data copyout( optical_props%tau) create(   col_dry_used)
+    !$omp target data map(from:optical_props%tau) map(alloc:col_dry_used)
     ! Absoption optical depth
     error_msg =  compute_tau_absorption(this,   &
                     play, plev, tlay, gas_desc, &
@@ -179,6 +180,7 @@ contains
       end if
     end if
     !$acc end data
+    !$omp end target data
     if (error_msg /= "") return
 
     select type(optical_props)
@@ -395,6 +397,7 @@ contains
     ! column dimension first for unit-stride access in the kernel
     allocate(vmrs(ncol, nlay, 0:size(gases_to_use)))
     !$acc        data copyin(play, plev, tlay) create(   vmrs, dry_num_arr)
+    !$omp target data map(to:play, plev, tlay) map(alloc:vmrs, dry_num_arr)
     call zero_array(ncol, nlay, vmrs(:,:,0))
     do igas = 1, size(gases_to_use)
       error_msg = gas_desc%get_vmr(gases_to_use(igas), vmrs(:,:,igas))
@@ -439,6 +442,7 @@ contains
 
       if (present(col_dry_out)) then
         !$acc                         parallel loop    collapse(2) copyin(dry_num)  copyout(col_dry_out)
+        !$omp target teams distribute parallel do simd collapse(2) map(to:dry_num) map(from:col_dry_out)
         do ilay = 1, nlay
           do icol = 1, ncol
             col_dry_out(icol, ilay) = dry_num(icol, ilay)
@@ -447,6 +451,7 @@ contains
       end if
     end if
     !$acc end data
+    !$omp end target data
   end function compute_tau_absorption
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -589,16 +594,22 @@ contains
     !$acc                   copyin(this%fax_a, this%fax_b, this%fax_c, this%fax_sigma0)          &
     !$acc                   copyin(this%fax_S, this%fax_vmr0, this%fax_T0, this%fax_p0)          &
     !$acc                   copyin(this%xsec_p, this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n)
+    !$omp target enter data map(to:this%nus, this%weights)                                       &
+    !$omp                   map(to:this%fax_a, this%fax_b, this%fax_c, this%fax_sigma0)          &
+    !$omp                   map(to:this%fax_S, this%fax_vmr0, this%fax_T0, this%fax_p0)          &
+    !$omp                   map(to:this%xsec_p, this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n)
 
     if (present(rayleigh_xsec)) then
       allocate(this%rayleigh_xsec(nnu))
       this%rayleigh_xsec = rayleigh_xsec
       !$acc        enter data copyin(this%rayleigh_xsec)
+      !$omp target enter data map(to:this%rayleigh_xsec)
     end if
     if (present(solar_source)) then
       allocate(this%solar_source(nnu))
       this%solar_source = solar_source
       !$acc        enter data copyin(this%solar_source)
+      !$omp target enter data map(to:this%solar_source)
     end if
 
     ! Make a consolidated list of all gases
@@ -669,6 +680,10 @@ contains
       !$acc                  delete(this%fax_a, this%fax_b, this%fax_c, this%fax_sigma0)      &
       !$acc                  delete(this%fax_S, this%fax_vmr0, this%fax_T0, this%fax_p0)      &
       !$acc                  delete(this%xsec_p, this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n)
+      !$omp target exit data map(release:this%nus, this%weights)                              &
+      !$omp                  map(release:this%fax_a, this%fax_b, this%fax_c, this%fax_sigma0) &
+      !$omp                  map(release:this%fax_S, this%fax_vmr0, this%fax_T0, this%fax_p0) &
+      !$omp                  map(release:this%xsec_p, this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n)
       deallocate(this%nus, this%weights)
       deallocate(this%fax_species_names, this%fax_a, this%fax_b, this%fax_c, this%fax_sigma0)
       deallocate(this%fax_S, this%fax_vmr0, this%fax_T0, this%fax_p0)
@@ -678,10 +693,12 @@ contains
 
       if(allocated(this%rayleigh_xsec)) then
         !$acc        exit data delete(this%rayleigh_xsec)
+        !$omp target exit data map(release:this%rayleigh_xsec)
         deallocate(this%rayleigh_xsec)
       end if
       if(allocated(this%solar_source)) then
         !$acc        exit data delete(this%solar_source)
+        !$omp target exit data map(release:this%solar_source)
         deallocate(this%solar_source)
       end if
       !$acc exit data delete(this)

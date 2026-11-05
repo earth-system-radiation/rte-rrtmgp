@@ -67,10 +67,17 @@ contains
     !$acc             copyin(mtckd_num_index, mtckd_cself, mtckd_cfrgn, mtckd_n)                             &
     !$acc             copyout(tau)                                                                           &
     !$acc             create(fax_x, fax_dT, fax_w, fax_rs, xsec_w, mt_logr, mt_sw, mt_fw, inv_2kT)
+    !$omp target data map(to:nus, play, tlay, dry_num, vmrs)                                                 &
+    !$omp             map(to:fax_num_index, fax_a, fax_b, fax_T0, fax_c, fax_p0, fax_sigma0, fax_S, fax_vmr0) &
+    !$omp             map(to:xsec_num_index, xsec_p)                                                         &
+    !$omp             map(to:mtckd_num_index, mtckd_cself, mtckd_cfrgn, mtckd_n)                             &
+    !$omp             map(from:tau)                                                                          &
+    !$omp             map(alloc:fax_x, fax_dT, fax_w, fax_rs, xsec_w, mt_logr, mt_sw, mt_fw, inv_2kT)
     !
     ! Hoist all nu-independent quantities out of the spectral loop
     !
     !$acc                         parallel loop    collapse(3) private(vmr)
+    !$omp target teams distribute parallel do simd collapse(3) private(vmr)
     do igas = 1, fax_ngas
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -85,12 +92,14 @@ contains
       end do
     end do
     !$acc                         parallel loop    collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do inu = 1, nnu
       do igas = 1, fax_ngas
         fax_rs(igas, inu) = 1._wp / (1._wp + fax_c(1, igas, inu))
       end do
     end do
     !$acc                         parallel loop    collapse(3)
+    !$omp target teams distribute parallel do simd collapse(3)
     do igas = 1, xsec_ngas
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -99,6 +108,7 @@ contains
       end do
     end do
     !$acc                         parallel loop    collapse(3) private(vmr, pr, tr, wn)
+    !$omp target teams distribute parallel do simd collapse(3) private(vmr, pr, tr, wn)
     do igas = 1, mtckd_ngas
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -113,6 +123,7 @@ contains
       end do
     end do
     !$acc                         parallel loop    collapse(2)
+    !$omp target teams distribute parallel do simd collapse(2)
     do ilay = 1, nlay
       do icol = 1, ncol
         inv_2kT(icol, ilay) = (planck_h * lightspeed * 100._wp) &
@@ -122,6 +133,8 @@ contains
 
     !$acc                         parallel loop    collapse(3) &
     !$acc   private(acc, x, delta_T, c0, lin, rs, w, q, num, den, cself, cfrgn, R)
+    !$omp target teams distribute parallel do simd collapse(3) &
+    !$omp   private(acc, x, delta_T, c0, lin, rs, w, q, num, den, cself, cfrgn, R)
     do inu = 1, nnu
       do ilay = 1, nlay
         do icol = 1, ncol
@@ -178,6 +191,7 @@ contains
     end do
 
     !$acc end data
+    !$omp end target data
   end subroutine tau_absorption_from_fits
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -197,6 +211,8 @@ contains
 
     !$acc                         parallel loop    collapse(3) private(t, t_r) &
     !$acc   copyin(dry_num, rayleigh_xsec) copy(tau) copyout(ssa)
+    !$omp target teams distribute parallel do simd collapse(3) private(t, t_r) &
+    !$omp   map(to:dry_num, rayleigh_xsec) map(tofrom:tau) map(from:ssa)
     do inu = 1, nnu
       do ilay = 1, nlay
         do icol = 1, ncol

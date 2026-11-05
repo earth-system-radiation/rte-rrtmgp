@@ -107,6 +107,7 @@ module mo_gas_optics_ddq
 
     procedure, public :: load
     procedure, public :: set_tsi
+    procedure, public :: finalize
 
     procedure, public  :: gas_optics_int
     procedure, public  :: gas_optics_ext
@@ -147,34 +148,38 @@ contains
 
     call optical_props%set_top_at_1(play(1,1) < play(1, nlay))
 
+    !$acc        data copyout( optical_props%tau) create(   col_dry_used)
     ! Absoption optical depth
     error_msg =  compute_tau_absorption(this,   &
                     play, plev, tlay, gas_desc, &
                     optical_props%tau, col_dry, &
                     col_dry_out = col_dry_used)
-    if (error_msg /= "") return
 
-    if (.not. allocated(this%rayleigh_xsec)) then
-      select type(optical_props)
-        type is (ty_optical_props_2str)
-          call zero_array(ncol, nlay, nnu, optical_props%ssa)
-        type is (ty_optical_props_nstr)
-          call zero_array(ncol, nlay, nnu, optical_props%ssa)
-      end select
-    else
-      select type(optical_props)
-        type is (ty_optical_props_2str)
-          call add_tau_rayleigh(ncol, nlay, nnu,  &
-                                col_dry_used,          &
-                                this%rayleigh_xsec,    &
-                                optical_props%tau, optical_props%ssa)
-        type is (ty_optical_props_nstr)
-          call add_tau_rayleigh(ncol, nlay, nnu,  &
-                                col_dry_used,          &
-                                this%rayleigh_xsec,    &
-                                optical_props%tau, optical_props%ssa)
-      end select
+    if (error_msg == "") then
+      if (.not. allocated(this%rayleigh_xsec)) then
+        select type(optical_props)
+          type is (ty_optical_props_2str)
+            call zero_array(ncol, nlay, nnu, optical_props%ssa)
+          type is (ty_optical_props_nstr)
+            call zero_array(ncol, nlay, nnu, optical_props%ssa)
+        end select
+      else
+        select type(optical_props)
+          type is (ty_optical_props_2str)
+            call add_tau_rayleigh(ncol, nlay, nnu,  &
+                                  col_dry_used,          &
+                                  this%rayleigh_xsec,    &
+                                  optical_props%tau, optical_props%ssa)
+          type is (ty_optical_props_nstr)
+            call add_tau_rayleigh(ncol, nlay, nnu,  &
+                                  col_dry_used,          &
+                                  this%rayleigh_xsec,    &
+                                  optical_props%tau, optical_props%ssa)
+        end select
+      end if
     end if
+    !$acc end data
+    if (error_msg /= "") return
 
     select type(optical_props)
       type is (ty_optical_props_2str)
@@ -188,14 +193,14 @@ contains
     !
     ! External source function is constant
     !
-    !$acc enter data create(toa_src)
-    !$omp target enter data map(alloc:toa_src)
     if(check_extents) then
       if(.not. extents_are(toa_src, ncol, nnu)) &
         error_msg = "gas_optics(): array toa_src has wrong size"
     end if
     if(error_msg  /= '') return
 
+    !$acc enter data create(toa_src)
+    !$omp target enter data map(alloc:toa_src)
     !$acc parallel loop collapse(2)
     !$omp target teams distribute parallel do simd collapse(2)
     do inu = 1,nnu
@@ -318,7 +323,7 @@ contains
     character(len=gas_name_len), &             ! Gases provided by users; union of these with known gases
               dimension(:), allocatable     :: provided_gases, gases_to_use
     integer :: ncol, nlay, ngas, nnu
-    integer :: igas, idx_h2o
+    integer :: icol, ilay, igas, idx_h2o
     ! -----------------------------------------------------------
     error_msg = ""
     ncol = size(play, 1)
@@ -389,48 +394,59 @@ contains
     ! vmr array, gas index 0 stands in for gases users haven't supplied (vmr = 0);
     ! column dimension first for unit-stride access in the kernel
     allocate(vmrs(ncol, nlay, 0:size(gases_to_use)))
+    !$acc        data copyin(play, plev, tlay) create(   vmrs, dry_num_arr)
     call zero_array(ncol, nlay, vmrs(:,:,0))
     do igas = 1, size(gases_to_use)
       error_msg = gas_desc%get_vmr(gases_to_use(igas), vmrs(:,:,igas))
-      if (error_msg /= "") return
+      if (error_msg /= "") exit
     end do
 
-    fax_num_index = [(max(string_loc_in_array(this%fax_species_names(igas), &
-                                              gases_to_use),                &
-                          0), &
-                     igas = 1, size(this%fax_species_names) &
-                    )]
-    xsec_num_index = [(max(string_loc_in_array(this%xsec_species_names(igas), &
-                                               gases_to_use),                &
-                          0), &
-                       igas = 1, size(this%xsec_species_names) &
-                     )]
-    mtckd_num_index = [(max(string_loc_in_array(this%mtckd_species_names(igas), &
+    if (error_msg == "") then
+      fax_num_index = [(max(string_loc_in_array(this%fax_species_names(igas), &
                                                 gases_to_use),                &
                             0), &
-                        igas = 1, size(this%mtckd_species_names) &
+                       igas = 1, size(this%fax_species_names) &
                       )]
+      xsec_num_index = [(max(string_loc_in_array(this%xsec_species_names(igas), &
+                                                 gases_to_use),                &
+                            0), &
+                         igas = 1, size(this%xsec_species_names) &
+                       )]
+      mtckd_num_index = [(max(string_loc_in_array(this%mtckd_species_names(igas), &
+                                                  gases_to_use),                &
+                              0), &
+                          igas = 1, size(this%mtckd_species_names) &
+                        )]
 
-    if (present(col_dry)) then
-      dry_num => col_dry
-    else
-      dry_num => dry_num_arr
-      idx_h2o = max(string_loc_in_array("h2o", gases_to_use), 0)
-      ! dry air column amounts computation
-      call get_layer_number(ncol, nlay, vmrs(:,:,idx_h2o), plev, dry_num_arr)
+      if (present(col_dry)) then
+        dry_num => col_dry
+      else
+        dry_num => dry_num_arr
+        idx_h2o = max(string_loc_in_array("h2o", gases_to_use), 0)
+        ! dry air column amounts computation
+        call get_layer_number(ncol, nlay, vmrs(:,:,idx_h2o), plev, dry_num_arr)
+      end if
+      call tau_absorption_from_fits(ncol, nlay, this%get_ngpt(), size(gases_to_use), &
+                    this%nus, &
+                    play, tlay, dry_num, vmrs, &
+                    size(fax_num_index), fax_num_index,   &
+                    this%fax_a, this%fax_b, this%fax_T0, this%fax_c, this%fax_p0, this%fax_sigma0, this%fax_S, this%fax_vmr0, &
+                    size(xsec_num_index), xsec_num_index,  &
+                    this%xsec_p,                           &
+                    size(mtckd_num_index), mtckd_num_index, &
+                    this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n, this%mtckd_T0, this%mtckd_p0, &
+                    tau_abs)
+
+      if (present(col_dry_out)) then
+        !$acc                         parallel loop    collapse(2) copyin(dry_num)  copyout(col_dry_out)
+        do ilay = 1, nlay
+          do icol = 1, ncol
+            col_dry_out(icol, ilay) = dry_num(icol, ilay)
+          end do
+        end do
+      end if
     end if
-    call tau_absorption_from_fits(ncol, nlay, this%get_ngpt(), size(gases_to_use), &
-                  this%nus, &
-                  play, tlay, dry_num, vmrs, &
-                  size(fax_num_index), fax_num_index,   &
-                  this%fax_a, this%fax_b, this%fax_T0, this%fax_c, this%fax_p0, this%fax_sigma0, this%fax_S, this%fax_vmr0, &
-                  size(xsec_num_index), xsec_num_index,  &
-                  this%xsec_p,                           &
-                  size(mtckd_num_index), mtckd_num_index, &
-                  this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n, this%mtckd_T0, this%mtckd_p0, &
-                  tau_abs)
-
-    if (present(col_dry_out)) col_dry_out = dry_num
+    !$acc end data
   end function compute_tau_absorption
   !--------------------------------------------------------------------------------------------------------------------
   !
@@ -481,6 +497,8 @@ contains
     ! -------------------------------------
     integer :: nnu, fax_nspecies, xsec_nspecies, mtckd_nspecies, i
     ! -------------------------------------
+    !$acc enter data copyin(this)
+    call this%finalize()
     error_msg = this%ty_optical_props%init(band_lims_wvn = &
                                              spread(nus, dim=1, ncopies=2))
     if(len_trim(error_msg) /= 0) return
@@ -567,13 +585,20 @@ contains
     this%mtckd_T0    = mtckd_T0
     this%mtckd_p0    = mtckd_p0
 
+    !$acc        enter data copyin(this%nus, this%weights)                                   &
+    !$acc                   copyin(this%fax_a, this%fax_b, this%fax_c, this%fax_sigma0)          &
+    !$acc                   copyin(this%fax_S, this%fax_vmr0, this%fax_T0, this%fax_p0)          &
+    !$acc                   copyin(this%xsec_p, this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n)
+
     if (present(rayleigh_xsec)) then
       allocate(this%rayleigh_xsec(nnu))
       this%rayleigh_xsec = rayleigh_xsec
+      !$acc        enter data copyin(this%rayleigh_xsec)
     end if
     if (present(solar_source)) then
       allocate(this%solar_source(nnu))
       this%solar_source = solar_source
+      !$acc        enter data copyin(this%solar_source)
     end if
 
     ! Make a consolidated list of all gases
@@ -632,6 +657,37 @@ contains
     end if
 
   end function set_tsi
+  !--------------------------------------------------------------------------------------------------------------------
+  !
+  ! Release device copies and deallocate memory
+  !
+  subroutine finalize(this)
+    class(ty_gas_optics_ddq), intent(inout) :: this
+
+    if(this%is_loaded()) then
+      !$acc        exit data delete(this%nus, this%weights)                                   &
+      !$acc                  delete(this%fax_a, this%fax_b, this%fax_c, this%fax_sigma0)      &
+      !$acc                  delete(this%fax_S, this%fax_vmr0, this%fax_T0, this%fax_p0)      &
+      !$acc                  delete(this%xsec_p, this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n)
+      deallocate(this%nus, this%weights)
+      deallocate(this%fax_species_names, this%fax_a, this%fax_b, this%fax_c, this%fax_sigma0)
+      deallocate(this%fax_S, this%fax_vmr0, this%fax_T0, this%fax_p0)
+      deallocate(this%xsec_species_names, this%xsec_p)
+      deallocate(this%mtckd_species_names, this%mtckd_cself, this%mtckd_cfrgn, this%mtckd_n)
+      deallocate(this%species_names)
+
+      if(allocated(this%rayleigh_xsec)) then
+        !$acc        exit data delete(this%rayleigh_xsec)
+        deallocate(this%rayleigh_xsec)
+      end if
+      if(allocated(this%solar_source)) then
+        !$acc        exit data delete(this%solar_source)
+        deallocate(this%solar_source)
+      end if
+      !$acc exit data delete(this)
+      call this%ty_optical_props%finalize()
+    end if
+  end subroutine finalize
   !--------------------------------------------------------------------------------------------------------------------
   !
   ! Inquiry functions

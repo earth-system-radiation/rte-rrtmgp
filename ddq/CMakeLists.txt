@@ -1,8 +1,21 @@
 add_library(
     ddq # cmake-format: sort
     mo_gas_optics_ddq.F90
-    mo_gas_optics_ddq_kernels.F90
 )
+
+if(RTE_KERNEL_MODE STREQUAL "accel")
+    target_sources(
+        ddq
+        PRIVATE # cmake-format: sort
+            accel/mo_gas_optics_ddq_kernels.F90
+    )
+else()
+    target_sources(
+        ddq
+        PRIVATE # cmake-format: sort
+            mo_gas_optics_ddq_kernels.F90
+    )
+endif()
 
 add_library(rte-rrtmgp::ddq ALIAS ddq)
 

@@ -415,7 +415,7 @@ contains
       dry_num => col_dry
     else
       dry_num => dry_num_arr
-      idx_h2o = string_loc_in_array("h2o", gases_to_use)
+      idx_h2o = max(string_loc_in_array("h2o", gases_to_use), 0)
       ! dry air column amounts computation
       call get_layer_number(ncol, nlay, vmrs(:,:,idx_h2o), plev, dry_num_arr)
     end if

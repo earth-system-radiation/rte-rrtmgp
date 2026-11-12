@@ -131,13 +131,14 @@ contains
       end do
     end do
 
-    !$acc                         parallel loop    collapse(3) &
+    !$acc                         parallel loop    collapse(2) &
     !$acc   private(acc, x, delta_T, c0, lin, rs, w, q, num, den, cself, cfrgn, R)
-    !$omp target teams distribute parallel do simd collapse(3) &
+    !$omp target teams distribute parallel do simd collapse(2) &
     !$omp   private(acc, x, delta_T, c0, lin, rs, w, q, num, den, cself, cfrgn, R)
-    do inu = 1, nnu
-      do ilay = 1, nlay
-        do icol = 1, ncol
+    do ilay = 1, nlay
+      do icol = 1, ncol
+        !$acc loop seq
+        do inu = 1, nnu
           acc = 0._wp
           !
           ! Functional approximation to cross-sections

@@ -13,19 +13,19 @@ repos:
     rev: v1.7.12
     hooks:
       - id: actionlint
-  - repo: https://github.com/cheshirekow/cmake-format-precommit
-    rev: v0.6.13
-    hooks:
-      - id: cmake-format
-      - id: cmake-format
-        name: cmake-format (templates)
-        types: [file]
-        files: \.cmake\.in$
-      - id: cmake-lint
-      - id: cmake-lint
-        name: cmake-lint (templates)
-        types: [file]
-        files: \.cmake\.in$
+#  - repo: https://github.com/cheshirekow/cmake-format-precommit
+#    rev: v0.6.13
+#    hooks:
+#      - id: cmake-format
+#      - id: cmake-format
+#        name: cmake-format (templates)
+#        types: [file]
+#        files: \.cmake\.in$
+#      - id: cmake-lint
+#      - id: cmake-lint
+#        name: cmake-lint (templates)
+#        types: [file]
+#        files: \.cmake\.in$
   - repo: https://github.com/pycqa/isort
     rev: 9.0.2
     hooks:

@@ -125,10 +125,10 @@ contains
   ! -------------------------------------------------------------------------------------------------
   ! interpolate temperature at levels from value at layer centers
   ! -------------------------------------------------------------------------------------------------
-  function interp_tlev_from_tlay(ncol, nlay, tlay, play, plev) result(tlev)
-    integer,  intent(in) :: ncol, nlay
-    real(wp), intent(in) :: tlay(ncol, nlay), play(ncol, nlay), plev(ncol, nlay+1)
-    real(wp) :: tlev(ncol, nlay+1)
+  subroutine interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev)
+    integer,  intent(in ) :: ncol, nlay
+    real(wp), intent(in ) :: tlay(ncol, nlay), play(ncol, nlay), plev(ncol, nlay+1)
+    real(wp), intent(out) :: tlev(ncol, nlay+1)
 
     integer :: icol, ilay
     !$acc                parallel loop gang vector
@@ -150,6 +150,6 @@ contains
                              (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)))
         end do
       end do
-    end function interp_tlev_from_tlay
+    end subroutine interp_tlev_from_tlay
   ! -------------------------------------------------------------------------------------------------
 end module mo_gas_optics_utils

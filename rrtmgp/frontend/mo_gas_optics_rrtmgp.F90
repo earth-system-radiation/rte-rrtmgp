@@ -893,7 +893,7 @@ contains
       !   Users might have provided these
       tlev_wk => tlev
     else
-      tlev_arr = interp_tlev_from_tlay(ncol, nlay, tlay, play, plev)
+      call interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev_arr)
       tlev_wk => tlev_arr
     end if
 

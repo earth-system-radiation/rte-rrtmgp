@@ -260,7 +260,7 @@
   <div class="panel-heading codesum"><span class="anchor" id="interface-get_layer_number"></span><h3>interface   </h3></div>
   <ul class="list-group">
     <li class="list-group-item">
-    <h3>public function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)</h3><p>Number density (#/m^-2) of dry air molecules
+    <h3>public subroutine get_layer_number(ncol, nlay, vmr_h2o, plev, col_dry)</h3><p>Number density (#/m^-2) of dry air molecules
    "col_dry" in RRTMGP</p>
     
 <h4>Arguments</h4>      <table class="table table-striped varlist">
@@ -290,10 +290,15 @@
   <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
   <td><strong>plev</strong></td><td></td>
 </tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ncol, nlay)</td><td>::</td>
+  <td><strong>col_dry</strong></td><td></td>
+</tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>real(kind=wp),dimension(ncol, nlay)</small></h4>  
 
     </li>
   </ul>
@@ -303,7 +308,7 @@
   <div class="panel-heading codesum"><span class="anchor" id="interface-interp_tlev_from_tlay"></span><h3>interface   </h3></div>
   <ul class="list-group">
     <li class="list-group-item">
-    <h3>public function interp_tlev_from_tlay(ncol, nlay, tlay, play, plev) result(tlev)</h3><p>Temperature at layer boundaries, interpolated from layer centers</p>
+    <h3>public subroutine interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev)</h3><p>Temperature at layer boundaries, interpolated from layer centers</p>
     
 <h4>Arguments</h4>      <table class="table table-striped varlist">
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
@@ -338,10 +343,15 @@
   <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
   <td><strong>plev</strong></td><td></td>
 </tr>
+<tr>
+  <td><span class="anchor" ></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
+  <td><strong>tlev</strong></td><td></td>
+</tr>
 </tbody>
 </table>
 
-<h4>Return Value <small>real(kind=wp),dimension(ncol, nlay+1)</small></h4>  
 
     </li>
   </ul>

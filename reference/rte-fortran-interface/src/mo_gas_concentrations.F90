@@ -690,7 +690,7 @@ contains
   end function
   ! -------------------------------------------------------------------------------------
   !> Finalization - free all memory when the object goes out of scope
-  subroutine del(this)
+  impure elemental subroutine del(this)
     type(ty_gas_concs), intent(inout) :: this
     call this%reset()
     !$acc exit data delete(this)

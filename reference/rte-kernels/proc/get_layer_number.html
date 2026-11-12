@@ -75,7 +75,7 @@
     <div class="container">
   <div class="row">
     <h1>get_layer_number
-      <small>Function</small>
+      <small>Subroutine</small>
     </h1>
     <div class="row">
   <div class="col-lg-12">
@@ -117,7 +117,7 @@
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)</h2>
+    <h2>public subroutine get_layer_number(ncol, nlay, vmr_h2o, plev, col_dry)</h2>
     
 
 
@@ -126,14 +126,14 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~28"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~30"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td><p>Number density (#/m^-2) of dry air molecules
    "col_dry" in RRTMGP</p></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~28"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~29"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td><p>Number density (#/m^-2) of dry air molecules
@@ -151,11 +151,15 @@
   <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
   <td><strong>plev</strong></td><td></td>
 </tr>
+<tr>
+  <td><span class="anchor" id="variable-col_dry"></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ncol, nlay)</td><td>::</td>
+  <td><strong>col_dry</strong></td><td></td>
+</tr>
 </tbody>
 </table>
 
-   <h3>Return Value <small><span class="anchor" id="variable-col_dry"></span>real(kind=wp),dimension(ncol, nlay)</small></h3>
-    
     <br>
 
     <section class="visible-xs visible-sm hidden-md">

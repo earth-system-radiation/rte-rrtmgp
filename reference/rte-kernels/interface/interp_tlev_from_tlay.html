@@ -119,7 +119,7 @@
     
     <div class="col-md-9" id='text'>
       <h2>interface <br>
-      public function interp_tlev_from_tlay(ncol, nlay, tlay, play, plev) result(tlev)</h2>    
+      public subroutine interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev)</h2>    
 
     
 
@@ -157,11 +157,15 @@
   <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
   <td><strong>plev</strong></td><td></td>
 </tr>
+<tr>
+  <td><span class="anchor" id="variable-tlev~2"></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
+  <td><strong>tlev</strong></td><td></td>
+</tr>
 </tbody>
 </table>
 
-      <h3>Return Value <span class="anchor" id="variable-tlev~2"></span><small>real(kind=wp),dimension(ncol, nlay+1)</small></h3>
-    
     <h3>Description</h3>
     <p>Temperature at layer boundaries, interpolated from layer centers</p>
     <br>

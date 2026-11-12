@@ -1013,7 +1013,7 @@
 <a id="ln-690" name="ln-690" href="#ln-690"></a><span class="k">  end function</span>
 <a id="ln-691" name="ln-691" href="#ln-691"></a><span class="w">  </span><span class="c">! -------------------------------------------------------------------------------------</span>
 <a id="ln-692" name="ln-692" href="#ln-692"></a><span class="w">  </span><span class="c">!&gt; Finalization - free all memory when the object goes out of scope</span>
-<a id="ln-693" name="ln-693" href="#ln-693"></a><span class="w">  </span><span class="k">subroutine </span><span class="n">del</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
+<a id="ln-693" name="ln-693" href="#ln-693"></a><span class="w">  </span><span class="k">impure elemental subroutine </span><span class="n">del</span><span class="p">(</span><span class="n">this</span><span class="p">)</span>
 <a id="ln-694" name="ln-694" href="#ln-694"></a><span class="w">    </span><span class="k">type</span><span class="p">(</span><span class="n">ty_gas_concs</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">this</span>
 <a id="ln-695" name="ln-695" href="#ln-695"></a><span class="w">    </span><span class="k">call </span><span class="n">this</span><span class="p">%</span><span class="n">reset</span><span class="p">()</span>
 <a id="ln-696" name="ln-696" href="#ln-696"></a><span class="w">    </span><span class="c">!$acc exit data delete(this)</span>

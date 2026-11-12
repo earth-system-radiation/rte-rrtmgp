@@ -119,7 +119,7 @@
     
     <div class="col-md-9" id='text'>
       <h2>interface <br>
-      public function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)</h2>    
+      public subroutine get_layer_number(ncol, nlay, vmr_h2o, plev, col_dry)</h2>    
 
     
 
@@ -151,11 +151,15 @@
   <td></td>  <td>dimension(ncol, nlay+1)</td><td>::</td>
   <td><strong>plev</strong></td><td></td>
 </tr>
+<tr>
+  <td><span class="anchor" id="variable-col_dry~2"></span>real(kind=wp),</td>
+<td>intent(out),</td>
+  <td></td>  <td>dimension(ncol, nlay)</td><td>::</td>
+  <td><strong>col_dry</strong></td><td></td>
+</tr>
 </tbody>
 </table>
 
-      <h3>Return Value <span class="anchor" id="variable-col_dry~2"></span><small>real(kind=wp),dimension(ncol, nlay)</small></h3>
-    
     <h3>Description</h3>
     <p>Number density (#/m^-2) of dry air molecules
    "col_dry" in RRTMGP</p>

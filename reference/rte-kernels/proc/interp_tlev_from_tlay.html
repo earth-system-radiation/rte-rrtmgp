@@ -75,7 +75,7 @@
     <div class="container">
   <div class="row">
     <h1>interp_tlev_from_tlay
-      <small>Function</small>
+      <small>Subroutine</small>
     </h1>
     <div class="row">
   <div class="col-lg-12">
@@ -117,7 +117,7 @@
     </div>
     
     <div class="col-md-9" id='text'>
-    <h2>public function interp_tlev_from_tlay(ncol, nlay, tlay, play, plev) result(tlev)</h2>
+    <h2>public subroutine interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev)</h2>
     
 
 
@@ -126,13 +126,13 @@
 <thead><tr><th>Type</th><th>Intent</th><th>Optional</th><th>Attributes</th><th></th><th>Name</th><th></th></thead>
 <tbody>
 <tr>
-  <td><span class="anchor" id="variable-ncol~29"></span>integer,</td>
+  <td><span class="anchor" id="variable-ncol~31"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>ncol</strong></td><td></td>
 </tr>
 <tr>
-  <td><span class="anchor" id="variable-nlay~29"></span>integer,</td>
+  <td><span class="anchor" id="variable-nlay~30"></span>integer,</td>
 <td>intent(in)</td>
   <td></td>  <td></td><td>::</td>
   <td><strong>nlay</strong></td><td></td>
@@ -155,11 +155,15 @@
   <td></td>  <td></td><td>::</td>
   <td><strong>plev</strong>(ncol,nlay+1)</td><td></td>
 </tr>
+<tr>
+  <td><span class="anchor" id="variable-tlev"></span>real(kind=wp),</td>
+<td>intent(out)</td>
+  <td></td>  <td></td><td>::</td>
+  <td><strong>tlev</strong>(ncol,nlay+1)</td><td></td>
+</tr>
 </tbody>
 </table>
 
-   <h3>Return Value <small><span class="anchor" id="variable-tlev"></span>real(kind=wp)(ncol,nlay+1)</small></h3>
-    
     <br>
 
     <section class="visible-xs visible-sm hidden-md">

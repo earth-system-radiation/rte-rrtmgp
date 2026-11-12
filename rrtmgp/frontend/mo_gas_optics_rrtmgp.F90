@@ -585,8 +585,15 @@ contains
       else
         !$acc        enter data create(   col_dry_arr)
         !$omp target enter data map(alloc:col_dry_arr)
-        col_dry_arr = get_col_dry(ncol, nlay, vmr(:,:,idx_h2o), plev) * 1.e-4_wp
         ! dry air column amounts computation, convert to #/cm^2
+        call get_col_dry(ncol, nlay, vmr(:,:,idx_h2o), plev, col_dry_arr)
+        !$acc                         parallel loop    collapse(2)
+        !$omp target teams distribute parallel do simd collapse(2)
+        do ilay = 1, nlay
+          do icol = 1, ncol
+            col_dry_arr(icol,ilay) = col_dry_arr(icol,ilay) * 1.e-4_wp
+          end do
+        end do
         col_dry_wk => col_dry_arr
       end if
       !

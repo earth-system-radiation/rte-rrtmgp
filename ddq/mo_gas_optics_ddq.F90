@@ -416,10 +416,8 @@ contains
     else
       dry_num => dry_num_arr
       idx_h2o = string_loc_in_array("h2o", gases_to_use)
-      dry_num_arr = get_layer_number(ncol, nlay,       &
-                                    vmrs(:,:,idx_h2o), &
-                                    plev)
-                                     ! dry air column amounts computation
+      ! dry air column amounts computation
+      call get_layer_number(ncol, nlay, vmrs(:,:,idx_h2o), plev, dry_num_arr)
     end if
     call tau_absorption_from_fits(ncol, nlay, this%get_ngpt(), size(gases_to_use), &
                   this%nus, &

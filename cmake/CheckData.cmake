@@ -10,17 +10,22 @@
 
 set(missing_files "")
 foreach(data_file IN LISTS DATA_FILES)
-  if(NOT EXISTS "${DATA_DIR}/${data_file}")
-    list(APPEND missing_files "${DATA_DIR}/${data_file}")
-  endif()
+    if(NOT EXISTS "${DATA_DIR}/${data_file}")
+        list(APPEND missing_files "${DATA_DIR}/${data_file}")
+    endif()
 endforeach()
 
 if(missing_files)
-  string(REPLACE ";" "\n  " missing_pretty "${missing_files}")
-  message(
-    FATAL_ERROR
-      "${DATA_LABEL} data files are missing:\n  ${missing_pretty}\n"
-      "Build the project first (e.g. 'cmake --build <build-dir>') so the data "
-      "is fetched before running ctest."
-  )
+    string(
+        REPLACE ";"
+        "\n  "
+        missing_pretty
+        "${missing_files}"
+    )
+    message(
+        FATAL_ERROR
+        "${DATA_LABEL} data files are missing:\n  ${missing_pretty}\n"
+        "Build the project first (e.g. 'cmake --build <build-dir>') so the data "
+        "is fetched before running ctest."
+    )
 endif()

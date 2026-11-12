@@ -6,10 +6,10 @@ set(executable rte_examples)
 
 add_library(${executable}_io STATIC mo_${executable}_io.F90)
 target_include_directories(
-  ${executable}_io
-  PUBLIC
-    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
-    ${NetCDF_Fortran_INCLUDE_DIR}
+    ${executable}_io
+    PUBLIC
+        $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+        ${NetCDF_Fortran_INCLUDE_DIR}
 )
 target_link_libraries(rte_examples_io PRIVATE shared-utils)
 
@@ -18,44 +18,50 @@ target_link_libraries(rte_examples_io PRIVATE shared-utils)
 # Fetch the rte-examples atmospheric state data
 #
 if(RTE_EXAMPLES_DATA)
-  add_test(NAME fetch_rte_examples_data COMMAND ${CMAKE_COMMAND} -E true)
-  message(
-    NOTICE
-    "Using an external dataset from ${RTE_EXAMPLES_DATA}: the data files will not be installed"
-  )
+    add_test(
+        NAME fetch_rte_examples_data
+        COMMAND
+            ${CMAKE_COMMAND} -E true
+    )
+    message(NOTICE "Using an external dataset from ${RTE_EXAMPLES_DATA}: the data files will not be installed")
 else()
-  set(RTE_EXAMPLES_DATA "${PROJECT_BINARY_DIR}/rte-examples-data")
+    set(RTE_EXAMPLES_DATA "${PROJECT_BINARY_DIR}/rte-examples-data")
 
-  include(ExternalProject)
-  # Fetched at build time (part of the default ALL target) so the data is
-  # present before install and before ctest.
-  ExternalProject_Add(
-    rte-examples-data
-    URL https://github.com/earth-system-radiation/rte-examples/archive/refs/tags/v0.2.0.tar.gz
-    PREFIX rte-examples-data-cmake
-    SOURCE_DIR ${RTE_EXAMPLES_DATA}
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    LOG_DOWNLOAD TRUE
-  )
+    include(ExternalProject)
+    # Fetched at build time (part of the default ALL target) so the data is
+    # present before install and before ctest.
+    ExternalProject_Add(
+        rte-examples-data
+        URL
+            https://github.com/earth-system-radiation/rte-examples/archive/refs/tags/v0.2.0.tar.gz
+        PREFIX rte-examples-data-cmake
+        SOURCE_DIR ${RTE_EXAMPLES_DATA}
+        CONFIGURE_COMMAND
+            ""
+        BUILD_COMMAND
+            ""
+        INSTALL_COMMAND
+            ""
+        LOG_DOWNLOAD TRUE
+    )
 
-  # The build already fetched the data (rte-examples-data is part of the ALL
-  # target). This fixture verifies the files are present before any test that
-  # needs them runs, and fails with an actionable message if the project was not
-  # built first.
-  add_test(
-    NAME fetch_rte_examples_data
-    COMMAND
-      ${CMAKE_COMMAND} -D DATA_DIR=${RTE_EXAMPLES_DATA} -D
-      DATA_LABEL=rte-examples -D
-      "DATA_FILES=ckdmip-states.nc;rce-states.nc;rfmip-states.nc" -P
-      ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
-  )
+    # The build already fetched the data (rte-examples-data is part of the ALL
+    # target). This fixture verifies the files are present before any test that
+    # needs them runs, and fails with an actionable message if the project was not
+    # built first.
+    add_test(
+        NAME fetch_rte_examples_data
+        COMMAND
+            ${CMAKE_COMMAND} -D DATA_DIR=${RTE_EXAMPLES_DATA} -D DATA_LABEL=rte-examples -D
+            "DATA_FILES=ckdmip-states.nc;rce-states.nc;rfmip-states.nc" -P ${PROJECT_SOURCE_DIR}/cmake/CheckData.cmake
+    )
 endif()
 
 set_tests_properties(
-  fetch_rte_examples_data PROPERTIES FIXTURES_SETUP fetch_rte_examples_data
+    fetch_rte_examples_data
+    PROPERTIES
+        FIXTURES_SETUP
+            fetch_rte_examples_data
 )
 
 # ##############################################################################
@@ -66,19 +72,20 @@ set_tests_properties(
 #
 add_executable(${executable} ${executable}.F90)
 target_include_directories(
-  ${executable}
-  PUBLIC
-    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
+    ${executable}
+    PUBLIC
+        $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:Fortran>:${CMAKE_Fortran_MODULE_DIRECTORY}>>
 )
 target_link_libraries(
-  ${executable}
-  PRIVATE ${executable}_io
-          rrtmgp-load-data
-          ddq-load-data
-          shared-utils
-          rte-rrtmgp::rte
-          rte-rrtmgp::rrtmgp
-          rte-rrtmgp::ssm
+    ${executable}
+    PRIVATE
+        ${executable}_io
+        rrtmgp-load-data
+        ddq-load-data
+        shared-utils
+        rte-rrtmgp::rte
+        rte-rrtmgp::rrtmgp
+        rte-rrtmgp::ssm
 )
 
 # ##############################################################################
@@ -86,76 +93,71 @@ target_link_libraries(
 # RTE tests: 2 schemes x 2 bands x 3 states = 12 tests
 #
 foreach(scheme IN ITEMS rrtmgp ssm ddq)
-  if(scheme STREQUAL "rrtmgp")
-    set(data_dir ${RRTMGP_DATA})
-  elseif(scheme STREQUAL "ddq")
-    set(data_dir ${DDQ_DATA})
-  elseif(scheme STREQUAL "ssm")
-    set(data_dir ${SSM_DATA})
-  endif()
-
-  foreach(band IN ITEMS lw sw)
-    # scheme_data depends on scheme and band
     if(scheme STREQUAL "rrtmgp")
-      if(band STREQUAL "lw")
-        set(scheme_data ${data_dir}/rrtmgp-gas-lw-g128.nc)
-      else()
-        set(scheme_data ${data_dir}/rrtmgp-gas-sw-g112.nc)
-      endif()
+        set(data_dir ${RRTMGP_DATA})
     elseif(scheme STREQUAL "ddq")
-      if(band STREQUAL "lw")
-        set(scheme_data ${data_dir}/gas_optics_lw.nc)
-      else()
-        set(scheme_data ${data_dir}/gas_optics_sw.nc)
-      endif()
+        set(data_dir ${DDQ_DATA})
     elseif(scheme STREQUAL "ssm")
-      set(scheme_data ${band})
+        set(data_dir ${SSM_DATA})
     endif()
+
+    foreach(band IN ITEMS lw sw)
+        # scheme_data depends on scheme and band
+        if(scheme STREQUAL "rrtmgp")
+            if(band STREQUAL "lw")
+                set(scheme_data ${data_dir}/rrtmgp-gas-lw-g128.nc)
+            else()
+                set(scheme_data ${data_dir}/rrtmgp-gas-sw-g112.nc)
+            endif()
+        elseif(scheme STREQUAL "ddq")
+            if(band STREQUAL "lw")
+                set(scheme_data ${data_dir}/gas_optics_lw.nc)
+            else()
+                set(scheme_data ${data_dir}/gas_optics_sw.nc)
+            endif()
+        elseif(scheme STREQUAL "ssm")
+            set(scheme_data ${band})
+        endif()
+
+        foreach(state IN ITEMS rfmip ckdmip rce)
+            set(output_data ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-${band}-${state}.nc)
+            add_test(
+                NAME run_rte_examples_${scheme}_${band}_${state}
+                COMMAND
+                    rte_examples 8 ${scheme} ${scheme_data} ${RTE_EXAMPLES_DATA}/${state}-states.nc ${output_data}
+            )
+            set_tests_properties(
+                run_rte_examples_${scheme}_${band}_${state}
+                PROPERTIES
+                    FIXTURES_REQUIRED
+                        "fetch_${scheme}_data;fetch_rte_examples_data"
+                    FIXTURES_SETUP
+                        "run_rte_examples_${scheme}_${band}_${state}"
+            )
+        endforeach()
+    endforeach()
 
     foreach(state IN ITEMS rfmip ckdmip rce)
-      set(output_data ${CMAKE_CURRENT_BINARY_DIR}/${scheme}-${band}-${state}.nc)
-      add_test(
-        NAME run_rte_examples_${scheme}_${band}_${state}
-        COMMAND
-          rte_examples 8 ${scheme} ${scheme_data}
-          ${RTE_EXAMPLES_DATA}/${state}-states.nc ${output_data}
-      )
-      set_tests_properties(
-        run_rte_examples_${scheme}_${band}_${state}
-        PROPERTIES FIXTURES_REQUIRED
-                   "fetch_${scheme}_data;fetch_rte_examples_data"
-                   FIXTURES_SETUP
-                   "run_rte_examples_${scheme}_${band}_${state}"
-      )
+        # RRTMGP longwave fluxes on the 127-layer rce states lose ~1 W m-2 to
+        # rounding in single precision. See rte-rrtmgp issue #420.
+        if(RTE_ENABLE_SP AND scheme STREQUAL "rrtmgp" AND state STREQUAL "rce")
+            set(state_FAILURE_THRESHOLD "1.2")
+        else()
+            set(state_FAILURE_THRESHOLD ${FAILURE_THRESHOLD})
+        endif()
+
+        add_test(
+            NAME check_rte_examples_${scheme}_${state}
+            COMMAND
+                ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
+                ${data_dir}/examples/rte-examples/reference --tst_dir ${CMAKE_CURRENT_BINARY_DIR} --file_names
+                ${scheme}-lw-${state}.nc ${scheme}-sw-${state}.nc --failure_threshold ${state_FAILURE_THRESHOLD}
+        )
+        set_tests_properties(
+            check_rte_examples_${scheme}_${state}
+            PROPERTIES
+                FIXTURES_REQUIRED
+                    "fetch_${scheme}_data;run_rte_examples_${scheme}_lw_${state};run_rte_examples_${scheme}_sw_${state}"
+        )
     endforeach()
-  endforeach()
-
-  foreach(state IN ITEMS rfmip ckdmip rce)
-    # RRTMGP longwave fluxes on the 127-layer rce states lose ~1 W m-2 to
-    # rounding in single precision. See rte-rrtmgp issue #420.
-    if(RTE_ENABLE_SP
-       AND scheme STREQUAL "rrtmgp"
-       AND state STREQUAL "rce"
-    )
-      set(state_FAILURE_THRESHOLD "1.2")
-    else()
-      set(state_FAILURE_THRESHOLD ${FAILURE_THRESHOLD})
-    endif()
-
-    add_test(
-      NAME check_rte_examples_${scheme}_${state}
-      COMMAND
-        ${Python3_EXECUTABLE}
-        ${CMAKE_SOURCE_DIR}/examples/compare-to-reference.py --ref_dir
-        ${data_dir}/examples/rte-examples/reference --tst_dir
-        ${CMAKE_CURRENT_BINARY_DIR} --file_names ${scheme}-lw-${state}.nc
-        ${scheme}-sw-${state}.nc --failure_threshold ${state_FAILURE_THRESHOLD}
-    )
-    set_tests_properties(
-      check_rte_examples_${scheme}_${state}
-      PROPERTIES
-        FIXTURES_REQUIRED
-        "fetch_${scheme}_data;run_rte_examples_${scheme}_lw_${state};run_rte_examples_${scheme}_sw_${state}"
-    )
-  endforeach()
 endforeach()

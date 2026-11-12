@@ -13,6 +13,10 @@ repos:
     rev: v1.7.12
     hooks:
       - id: actionlint
+  - repo: https://github.com/BlankSpruce/gersemi-pre-commit
+    rev: 0.29.2
+    hooks:
+    - id: gersemi
 #  - repo: https://github.com/cheshirekow/cmake-format-precommit
 #    rev: v0.6.13
 #    hooks:
@@ -27,11 +31,11 @@ repos:
 #        types: [file]
 #        files: \.cmake\.in$
   - repo: https://github.com/pycqa/isort
-    rev: 9.0.2
+    rev: 10.0.0b2
     hooks:
       - id: isort
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.10.0
+    rev: 26.10.1
     hooks:
       - id: black
   - repo: https://github.com/csachs/pyproject-flake8

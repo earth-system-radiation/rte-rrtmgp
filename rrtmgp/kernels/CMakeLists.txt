@@ -1,86 +1,89 @@
 add_library(rrtmgpkernels OBJECT)
 
 if(RTE_KERNEL_MODE STREQUAL "extern")
-  target_sources(
-    rrtmgpkernels
-    PRIVATE # cmake-format: sort
+    target_sources(
+        rrtmgpkernels
+        PRIVATE # cmake-format: sort
             api/mo_cloud_optics_rrtmgp_kernels.F90
             api/mo_gas_optics_rrtmgp_kernels.F90
-  )
+    )
 else()
-  target_sources(
-    rrtmgpkernels
-    PRIVATE # cmake-format: sort
+    target_sources(
+        rrtmgpkernels
+        PRIVATE # cmake-format: sort
             mo_cloud_optics_rrtmgp_kernels.F90
-  )
-  if(RTE_KERNEL_MODE STREQUAL "accel")
-    target_sources(
-      rrtmgpkernels
-      PRIVATE # cmake-format: sort
-              accel/mo_gas_optics_rrtmgp_kernels.F90
     )
-  else()
-    target_sources(
-      rrtmgpkernels
-      PRIVATE # cmake-format: sort
-              mo_gas_optics_rrtmgp_kernels.F90
-    )
-  endif()
+    if(RTE_KERNEL_MODE STREQUAL "accel")
+        target_sources(
+            rrtmgpkernels
+            PRIVATE # cmake-format: sort
+                accel/mo_gas_optics_rrtmgp_kernels.F90
+        )
+    else()
+        target_sources(
+            rrtmgpkernels
+            PRIVATE # cmake-format: sort
+                mo_gas_optics_rrtmgp_kernels.F90
+        )
+    endif()
 endif()
 
 if(RTE_BUILD_SHARED_LIBS)
-  set_target_properties(rrtmgpkernels PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    set_target_properties(
+        rrtmgpkernels
+        PROPERTIES
+            POSITION_INDEPENDENT_CODE
+                ON
+    )
 endif()
 
-target_include_directories(
-  rrtmgpkernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY}
-)
+target_include_directories(rrtmgpkernels PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 
 target_link_libraries(rrtmgpkernels PRIVATE rte)
 
 if(RTE_BUILD_C_HEADERS)
-  get_target_property(RRTMGPKERNELS_SOURCES rrtmgpkernels SOURCES)
+    get_target_property(RRTMGPKERNELS_SOURCES rrtmgpkernels SOURCES)
 
-  if(RRTMGPKERNELS_SOURCES)
-    set(RRTMGP_HEADER ${CMAKE_BINARY_DIR}/headers/rrtmgp_kernels.h)
-    # Convert sources to absolute paths
-    set(ABSOLUTE_RRTMGPKERNELS_SOURCES "")
+    if(RRTMGPKERNELS_SOURCES)
+        set(RRTMGP_HEADER ${CMAKE_BINARY_DIR}/headers/rrtmgp_kernels.h)
+        # Convert sources to absolute paths
+        set(ABSOLUTE_RRTMGPKERNELS_SOURCES "")
 
-    foreach(src ${RRTMGPKERNELS_SOURCES})
-      get_filename_component(
-        ABS_PATH ${src} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR}
-      )
-      list(APPEND ABSOLUTE_RRTMGPKERNELS_SOURCES ${ABS_PATH})
-    endforeach()
+        foreach(src ${RRTMGPKERNELS_SOURCES})
+            get_filename_component(ABS_PATH ${src} ABSOLUTE ${CMAKE_CURRENT_SOURCE_DIR})
+            list(APPEND ABSOLUTE_RRTMGPKERNELS_SOURCES ${ABS_PATH})
+        endforeach()
 
-    add_custom_command(
-      OUTPUT ${RRTMGP_HEADER}
-      COMMAND
-        ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if
-        ${ABSOLUTE_RRTMGPKERNELS_SOURCES} -of ${RRTMGP_HEADER}
-      COMMENT "Generating RRTMGPKernels' C bindings header"
-      DEPENDS ${ABSOLUTE_RRTMGPKERNELS_SOURCES}
-    )
-
-    add_custom_target(
-      rrtmgpkernels_header
-      DEPENDS ${RRTMGP_HEADER}
-      COMMENT
-        "Ensure rrtmgpkernels_header is built before rrtmgpkernels can use its output"
-    )
-    # Ensure that rrtmgpkernels depends on rrtmgpkernels_header
-    add_dependencies(rrtmgpkernels rrtmgpkernels_header)
-
-    if(RTE_KERNEL_MODE STREQUAL "extern")
-      target_sources(
-        rrtmgpkernels
-        PRIVATE # cmake-format: sort
+        add_custom_command(
+            OUTPUT
                 ${RRTMGP_HEADER}
-      )
-    endif()
+            COMMAND
+                ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cbind_generator.py -if ${ABSOLUTE_RRTMGPKERNELS_SOURCES} -of
+                ${RRTMGP_HEADER}
+            COMMENT "Generating RRTMGPKernels' C bindings header"
+            DEPENDS
+                ${ABSOLUTE_RRTMGPKERNELS_SOURCES}
+        )
 
-    install(FILES ${RRTMGP_HEADER} TYPE INCLUDE)
-  else()
-    message(WARNING "No sources found for rrtmgpkernels!")
-  endif()
+        add_custom_target(
+            rrtmgpkernels_header
+            DEPENDS
+                ${RRTMGP_HEADER}
+            COMMENT "Ensure rrtmgpkernels_header is built before rrtmgpkernels can use its output"
+        )
+        # Ensure that rrtmgpkernels depends on rrtmgpkernels_header
+        add_dependencies(rrtmgpkernels rrtmgpkernels_header)
+
+        if(RTE_KERNEL_MODE STREQUAL "extern")
+            target_sources(
+                rrtmgpkernels
+                PRIVATE # cmake-format: sort
+                    ${RRTMGP_HEADER}
+            )
+        endif()
+
+        install(FILES ${RRTMGP_HEADER} TYPE INCLUDE)
+    else()
+        message(WARNING "No sources found for rrtmgpkernels!")
+    endif()
 endif()

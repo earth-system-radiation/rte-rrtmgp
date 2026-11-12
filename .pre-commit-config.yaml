@@ -17,19 +17,6 @@ repos:
     rev: 0.29.2
     hooks:
     - id: gersemi
-#  - repo: https://github.com/cheshirekow/cmake-format-precommit
-#    rev: v0.6.13
-#    hooks:
-#      - id: cmake-format
-#      - id: cmake-format
-#        name: cmake-format (templates)
-#        types: [file]
-#        files: \.cmake\.in$
-#      - id: cmake-lint
-#      - id: cmake-lint
-#        name: cmake-lint (templates)
-#        types: [file]
-#        files: \.cmake\.in$
   - repo: https://github.com/pycqa/isort
     rev: 10.0.0b2
     hooks:

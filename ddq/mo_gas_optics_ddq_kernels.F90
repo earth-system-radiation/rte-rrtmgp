@@ -109,6 +109,8 @@ contains
         acc(1:ncol) = 0._wp
         !
         ! Functional approximation to cross-sections
+        !   tau = sigma0 * max(0, [lin*x + (1-lin)/(c0/w + (1-c0)*w)] * [(a0 + a1*dT + a2*dT**2)/(b0 + b1*dT + b2*dT**2)]) * vmr*N
+        !   x = p/p0 * (1 + vmr*S)/(1 + vmr0*S),  w = (x + xh)/(1 + xh),  dT = T - T0,  N = dry air number density
         !
         do igas = 1, fax_ngas
           c0  = fax_c(0, igas, inu)
@@ -146,6 +148,7 @@ contains
         end do
         !
         ! MT_CKD continuum
+        !   tau = nu*tanh(nu*h*c/(2*k*T)) * [cself*(T0/T)**(1+n)*vmr + cfrgn*(T0/T)*(1-vmr)] * p/p0 * vmr*N
         !
         do igas = 1, mtckd_ngas
           cs   = mtckd_cself(igas, inu)

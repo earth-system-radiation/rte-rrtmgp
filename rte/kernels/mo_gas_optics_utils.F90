@@ -96,7 +96,7 @@ contains
   ! -------------------------------------------------------------------------------------------------
   ! layer number density
   ! -------------------------------------------------------------------------------------------------
-  function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)
+  subroutine get_layer_number(ncol, nlay, vmr_h2o, plev, col_dry)
     !
     !> Number density (#/m^-2) of dry air molecules
     !>    "col_dry" in RRTMGP
@@ -105,7 +105,7 @@ contains
     real(wp), dimension(ncol, nlay  ), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air
     real(wp), dimension(ncol, nlay+1), intent(in) :: plev     ! Layer boundary pressures [Pa]
     ! output
-    real(wp), dimension(ncol, nlay) :: col_dry ! Column dry amount
+    real(wp), dimension(ncol, nlay), intent(out)  :: col_dry ! Column dry amount
     ! ------------------------------------------------
     real(wp):: delta_plev, m_air, fact
     integer :: icol, ilev
@@ -121,14 +121,14 @@ contains
         col_dry(icol,ilev) = delta_plev/grav * avogad * fact/m_air
       end do
     end do
-  end function get_layer_number
+  end subroutine get_layer_number
   ! -------------------------------------------------------------------------------------------------
   ! interpolate temperature at levels from value at layer centers
   ! -------------------------------------------------------------------------------------------------
-  function interp_tlev_from_tlay(ncol, nlay, tlay, play, plev) result(tlev)
-    integer,  intent(in) :: ncol, nlay
-    real(wp), intent(in) :: tlay(ncol, nlay), play(ncol, nlay), plev(ncol, nlay+1)
-    real(wp) :: tlev(ncol, nlay+1)
+  subroutine interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev)
+    integer,  intent(in ) :: ncol, nlay
+    real(wp), intent(in ) :: tlay(ncol, nlay), play(ncol, nlay), plev(ncol, nlay+1)
+    real(wp), intent(out) :: tlev(ncol, nlay+1)
 
     integer :: icol, ilay
     !$acc                parallel loop gang vector
@@ -150,6 +150,6 @@ contains
                              (plev(icol,ilay)*(play(icol,ilay-1) - play(icol,ilay)))
         end do
       end do
-    end function interp_tlev_from_tlay
+    end subroutine interp_tlev_from_tlay
   ! -------------------------------------------------------------------------------------------------
 end module mo_gas_optics_utils

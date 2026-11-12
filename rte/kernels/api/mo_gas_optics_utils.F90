@@ -36,7 +36,7 @@ module mo_gas_optics_utils
 
   !--------------------------------------------------------------------------------------------------------------------
   interface
-    function get_layer_number(ncol, nlay, vmr_h2o, plev) result(col_dry)
+    subroutine get_layer_number(ncol, nlay, vmr_h2o, plev, col_dry)
       !>
       !> Number density (#/m^-2) of dry air molecules
       !>    "col_dry" in RRTMGP
@@ -46,21 +46,21 @@ module mo_gas_optics_utils
       real(wp), dimension(ncol, nlay  ), intent(in) :: vmr_h2o  ! volume mixing ratio of water vapor to dry air
       real(wp), dimension(ncol, nlay+1), intent(in) :: plev     ! Layer boundary pressures [Pa]
       ! output
-      real(wp), dimension(ncol, nlay) :: col_dry ! Column dry amount
-    end function get_layer_number
+      real(wp), dimension(ncol, nlay), intent(out)  :: col_dry ! Column dry amount
+    end subroutine get_layer_number
   end interface
   !--------------------------------------------------------------------------------------------------------------------
   interface
-    function interp_tlev_from_tlay(ncol, nlay, tlay, play, plev) result(tlev)
+    subroutine interp_tlev_from_tlay(ncol, nlay, tlay, play, plev, tlev)
       !>
       !> Temperature at layer boundaries, interpolated from layer centers
       !>
       use mo_rte_kind,      only : wp, wl
-      integer,  intent(in) :: ncol, nlay
-      real(wp), dimension(ncol, nlay  ), intent(in) :: tlay, play ! Layer temperatures [K], pressures [Pa]
-      real(wp), dimension(ncol, nlay+1), intent(in) :: plev       ! Layer boundary pressures [Pa]
+      integer,  intent(in ) :: ncol, nlay
+      real(wp), dimension(ncol, nlay  ), intent(in ) :: tlay, play ! Layer temperatures [K], pressures [Pa]
+      real(wp), dimension(ncol, nlay+1), intent(in ) :: plev       ! Layer boundary pressures [Pa]
       ! output
-      real(wp), dimension(ncol, nlay+1) :: tlev ! Level temperatures [K]
-    end function interp_tlev_from_tlay
+      real(wp), dimension(ncol, nlay+1), intent(out) :: tlev       ! Level temperatures [K]
+    end subroutine interp_tlev_from_tlay
   end interface
 end module mo_gas_optics_utils

@@ -193,9 +193,13 @@ contains
       do ilay = 1, nlay
         do icol = 1, ncol
           t_r = dry_num(icol, ilay) * rayleigh_xsec(inu)
-          t = tau(icol, ilay, inu)
-          tau(icol, ilay, inu) = t + t_r
-          ssa(icol, ilay, inu) = t_r/(t + t_r)
+          t = tau(icol, ilay, inu) + t_r
+          tau(icol, ilay, inu) = t
+          if (t > 2._wp * tiny(t)) then
+            ssa(icol, ilay, inu) = t_r / t
+          else
+            ssa(icol, ilay, inu) = 0._wp
+          end if
         end do
       end do
     end do

@@ -697,8 +697,8 @@ contains
     real(wp) :: frac ! fractional term
     ! -------------------------------------
     val0 = (val - offset) / delta
-    frac = val0 - int(val0) ! get fractional part
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
+    frac = val0 - real(index-1, wp) ! fractional term relative to the limited index
     res = table(index) + frac * (table(index+1) - table(index))
   end function interpolate1D
   ! ------------

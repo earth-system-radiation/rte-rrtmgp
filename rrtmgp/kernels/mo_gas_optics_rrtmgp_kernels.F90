@@ -105,7 +105,7 @@ contains
         ! index and factor for temperature interpolation
         jtemp_ = INT((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) * temp_ref_delta_inv)
         jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp_)) ! limit the index range
-        ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp_)) * temp_ref_delta_inv
+        ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) * temp_ref_delta_inv
 
         ! index and factor for pressure interpolation
         locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log_1) * press_ref_log_delta_inv
@@ -729,8 +729,8 @@ contains
     real(wp) :: frac ! fractional term
     ! -------------------------------------
     val0 = (val - offset) * delta_r
-    frac = val0 - aint(val0) ! get fractional part
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
+    frac = val0 - real(index-1, wp) ! fractional term relative to the limited index
     do i = 1, size(res)
       res(i) = table(index,i) + frac * (table(index+1,i) - table(index,i))
     end do

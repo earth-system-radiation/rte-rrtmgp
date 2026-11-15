@@ -64,9 +64,19 @@ contains
     real(wp) :: eta, feta      ! binary_species_parameter, interpolation variable for eta
     real(wp) :: loceta         ! needed to find location in eta grid
     real(wp) :: ftemp_term
+    real(wp) :: press_ref_trop
+    real(wp) :: temp_ref_delta_inv
+    real(wp) :: press_ref_log_1
+    real(wp) :: press_ref_log_delta_inv
+    real(wp) :: jpress_aint
     ! -----------------
     ! local indexes
-    integer :: icol, ilay, iflav, igases(2), itropo, itemp, k
+    integer :: icol, ilay, iflav, igas_1, igas_2, itropo, itemp
+
+    press_ref_trop = exp(press_ref_trop_log)
+    temp_ref_delta_inv = 1.0_wp / temp_ref_delta
+    press_ref_log_1 = press_ref_log(1)
+    press_ref_log_delta_inv = 1.0_wp / press_ref_log_delta
 
     !$acc data copyin(flavor,press_ref_log,temp_ref,vmr_ref,play,tlay,col_gas) &
     !$acc      copyout(jtemp,jpress,tropo,jeta,col_mix,fmajor,fminor) &
@@ -75,50 +85,47 @@ contains
     !$omp             map(alloc:jtemp, jpress, tropo, jeta, col_mix, fmajor, fminor) &
     !$omp             map(alloc:ftemp, fpress)
 
-    !$acc parallel loop gang vector collapse(2) default(present)
-    !$omp target teams distribute parallel do simd collapse(2)
+    !$acc parallel loop gang vector collapse(2) default(present) private(locpress, jpress_aint)
+    !$omp target teams distribute parallel do simd collapse(2) private(locpress, jpress_aint)
     do ilay = 1, nlay
       do icol = 1, ncol
         ! index and factor for temperature interpolation
-        jtemp(icol,ilay) = int((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) / temp_ref_delta)
-        jtemp(icol,ilay) = min(ntemp - 1, max(1, jtemp(icol,ilay))) ! limit the index range
-        ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) / temp_ref_delta
+        jtemp(icol,ilay) = min(ntemp - 1, max(1, &
+                               int((tlay(icol,ilay) - (temp_ref_min - temp_ref_delta)) * temp_ref_delta_inv))) ! limit the index range
+        ! fraction relative to the clamped index, so temperatures outside the table are extrapolated
+        ftemp(icol,ilay) = (tlay(icol,ilay) - temp_ref(jtemp(icol,ilay))) * temp_ref_delta_inv
 
         ! index and factor for pressure interpolation
-        locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log(1)) / press_ref_log_delta
-        jpress(icol,ilay) = min(npres-1, max(1, int(locpress)))
-        fpress(icol,ilay) = locpress - float(jpress(icol,ilay))
+        locpress = 1._wp + (log(play(icol,ilay)) - press_ref_log_1) * press_ref_log_delta_inv
+        jpress_aint = min(real(npres-1, wp), max(1.0_wp, aint(locpress)))
+        jpress(icol,ilay) = int(jpress_aint)
+        fpress(icol,ilay) = locpress - jpress_aint
 
         ! determine if in lower or upper part of atmosphere
-        tropo(icol,ilay) = log(play(icol,ilay)) > press_ref_trop_log
+        tropo(icol,ilay) = play(icol,ilay) > press_ref_trop
       end do
     end do
 
     ! loop over implemented combinations of major species
     ! PGI BUG WORKAROUND: if present(vmr_ref) isn't there, OpenACC runtime
     ! thinks it isn't present.
-    !$acc parallel loop gang vector collapse(4) default(present) private(igases)
-    !$omp target teams distribute parallel do simd collapse(4) private(igases)
+    !$acc parallel loop gang vector collapse(4) default(present) private(igas_1, igas_2)
+    !$omp target teams distribute parallel do simd collapse(4) private(igas_1, igas_2)
     do iflav = 1, nflav
       do ilay = 1, nlay
         ! loop over implemented combinations of major species
         do icol = 1, ncol
           do itemp = 1, 2
-#ifndef AMDFLANG_WORKAROUND
-            igases(:) = flavor(:,iflav)
-#else
-            do k=1,2
-               igases(k) = flavor(k,iflav)
-            end do
-#endif
+            igas_1 = flavor(1,iflav)
+            igas_2 = flavor(2,iflav)
             ! itropo = 1 lower atmosphere; itropo = 2 upper atmosphere
             itropo = merge(1,2,tropo(icol,ilay))
             ! compute interpolation fractions needed for lower, then upper reference temperature level
             ! compute binary species parameter (eta) for flavor and temperature and
             !  associated interpolation index and factors
-            ratio_eta_half = vmr_ref(itropo,igases(1),(jtemp(icol,ilay)+itemp-1)) / &
-                             vmr_ref(itropo,igases(2),(jtemp(icol,ilay)+itemp-1))
-            col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igases(1)) + ratio_eta_half * col_gas(icol,ilay,igases(2))
+            ratio_eta_half = vmr_ref(itropo,igas_1,(jtemp(icol,ilay)+itemp-1)) / &
+                             vmr_ref(itropo,igas_2,(jtemp(icol,ilay)+itemp-1))
+            col_mix(itemp,icol,ilay,iflav) = col_gas(icol,ilay,igas_1) + ratio_eta_half * col_gas(icol,ilay,igas_2)
             ! Keep this commented lines. Fortran does allow for
             ! substantial optimizations and in this merge cases may
             ! happen that all expressions are evaluated and so create
@@ -126,23 +133,18 @@ contains
             ! save. Merge is the way to do it in general inside of
             ! loops, but sometimes it may not work.
             !
-            ! eta = merge(col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
+            ! eta = merge(col_gas(icol,ilay,igas_1) / col_mix(itemp,icol,ilay,iflav), 0.5_wp, &
             !             col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix))
             !
             ! In essence: do not turn it back to merge(...)!
             if (col_mix(itemp,icol,ilay,iflav) > 2._wp * tiny(col_mix)) then
-              eta = col_gas(icol,ilay,igases(1)) / col_mix(itemp,icol,ilay,iflav)
+              eta = col_gas(icol,ilay,igas_1) / col_mix(itemp,icol,ilay,iflav)
             else
               eta = 0.5_wp
             endif
-            loceta = eta * float(neta-1)
+            loceta = eta * real(neta-1, wp)
             jeta(itemp,icol,ilay,iflav) = min(int(loceta)+1, neta-1)
-#ifndef AMDFLANG_WORKAROUND
-            feta = mod(loceta, 1.0_wp)
-#else
-            ! mod(A,P) -> A - ((int(A/P)*P)
-            feta = loceta - int(loceta)
-#endif
+            feta = loceta - aint(loceta)
             ! compute interpolation fractions needed for minor species
             ! ftemp_term = (1._wp-ftemp(icol,ilay)) for itemp = 1, ftemp(icol,ilay) for itemp=2
             ftemp_term = (real(2-itemp, wp) + real(2*itemp-3, wp) * ftemp(icol,ilay))
@@ -695,8 +697,8 @@ contains
     real(wp) :: frac ! fractional term
     ! -------------------------------------
     val0 = (val - offset) / delta
-    frac = val0 - int(val0) ! get fractional part
     index = min(size(table,dim=1)-1, max(1, int(val0)+1)) ! limit the index range
+    frac = val0 - real(index-1, wp) ! fractional term relative to the limited index
     res = table(index) + frac * (table(index+1) - table(index))
   end function interpolate1D
   ! ------------

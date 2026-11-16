@@ -151,7 +151,7 @@ contains
             endif
             loceta = eta * real(neta-1, wp)
             jeta(itemp,icol,ilay,iflav) = min(int(loceta)+1, neta-1)
-            feta = loceta - aint(loceta)
+            feta = loceta - real(jeta(itemp,icol,ilay,iflav)-1, wp)
             ! compute interpolation fractions needed for minor species
             ! ftemp_term = (1._wp-ftemp(icol,ilay)) for itemp = 1, ftemp(icol,ilay) for itemp=2
             ftemp_term = (real(2-itemp, wp) + real(2*itemp-3, wp) * ftemp(icol,ilay))

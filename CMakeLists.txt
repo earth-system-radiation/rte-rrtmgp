@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(rte-rrtmgp VERSION 1.9.2 LANGUAGES Fortran)
+project(rte-rrtmgp VERSION 1.10 LANGUAGES Fortran)
 
 # Use extraction-time timestamps for URL-based ExternalProject downloads so
 # dependent steps re-run when the download URL changes (CMake >= 3.24).

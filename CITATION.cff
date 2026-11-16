@@ -32,11 +32,17 @@ authors:
   - family-names: Williams
     given-names: Andrew I.L.
     orcid: "https://orcid.org/0000-0002-5457-5075"
+  - family-names: Hegde
+    given-names: Ravikiran
+    orcid: "https://orcid.org/0000-0002-3937-9009"
+  - family-names: Samanta
+    given-names: Pradipta Kumar
+    orcid: "https://orcid.org/0000-0003-1818-9510"
 type: software
 repository-code: "https://github.com/earth-system-radiaton/rte-rrtmgp"
 license: BSD-3-Clause
-date-released: "2026-06-14"
-version: 1.9.3
+date-released: "2026-11-16"
+version: 1.10
 
 abstract: "RTE+RRTMGP is a set of codes for computing radiative fluxes in planetary atmospheres.
   RRTMGP uses a k-distribution to provide an optical description (absorption and possibly Rayleigh optical depth) of the gaseous atmosphere, along with the relevant source functions, on a pre-determined spectral grid given temperatures, pressures, and gas concentration. RTE computes fluxes given spectrally-resolved optical descriptions and source functions. The fluxes are normally summarized or reduced via a user extensible class."
